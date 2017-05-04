@@ -6,12 +6,12 @@ import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-t
 import { IContextDefinition, ITestDefinition } from 'mocha';
 import { BuildHandler } from '../buildhandler';
 import rimraf = require('rimraf');
+// global.Promise = require('bluebird');
+import * as util from 'javascript-typescript-langserver/lib/util';
 import * as fs from 'mz/fs';
 import * as os from 'os';
 import * as path from 'path';
-global.Promise = require('bluebird');
 // forcing strict mode
-import * as util from 'javascript-typescript-langserver/lib/util';
 util.setStrict(true);
 
 interface TestContext extends TypeScriptServiceTestContext {
@@ -35,10 +35,10 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 
 	beforeEach(done => rimraf(tempDir, done));
 
-	describeTypeScriptService(createHandler, shutdownBuildHandler);
+	describeTypeScriptService(createHandler, shutdownBuildHandler, 'file:///');
 
 	describe('Workspace with single package.json at root', function (this: TestContext) {
-		beforeEach(initializeTypeScriptService(createHandler, new Map([
+		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'mypkg',
 				version: '4.0.2',
@@ -81,9 +81,9 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				});
+				}).toPromise();
 				assert(await fs.exists(tempDir), `Expected ${tempDir} to be created`);
-				await this.service.shutdown();
+				await this.service.shutdown().toPromise();
 				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
 			});
 		});
@@ -97,7 +97,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -121,7 +121,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 23
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -145,7 +145,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 10
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -181,7 +181,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 21
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -205,7 +205,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 40
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -229,7 +229,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 3,
 						character: 0
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -494,7 +494,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 	});
 
 	describe('Workspace with multiple package.json files', function (this: TestContext) {
-		beforeEach(initializeTypeScriptService(createHandler, new Map([
+		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'rootpkg',
 				version: '4.0.2',
@@ -529,7 +529,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -553,7 +553,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 26
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
 					range: {
@@ -578,7 +578,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							line: 0,
 							character: 12
 						}
-					}),
+					}).toPromise(),
 					this.service.textDocumentDefinition({
 						textDocument: {
 							uri: 'file:///foo/b.ts'
@@ -587,7 +587,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							line: 0,
 							character: 26
 						}
-					})
+					}).toPromise()
 				]);
 				assert.deepEqual(results, [
 					[{
@@ -622,7 +622,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 	} as any);
 
 	describe('Workspace with vendored dependencies', function (this: TestContext) {
-		beforeEach(initializeTypeScriptService(createHandler, new Map([
+		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'rootpkg',
 				version: '4.0.2',
@@ -644,7 +644,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 9
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'file:///node_modules/diff/index.d.ts',
 					range: {
@@ -663,7 +663,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 	} as any);
 
 	describe('Workspace with dependencies with package.json scripts', function (this: TestContext & IContextDefinition) {
-		beforeEach(initializeTypeScriptService(createHandler, new Map([
+		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'rootpkg',
 				version: '4.0.2',
@@ -684,7 +684,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
 					range: {
@@ -708,7 +708,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 24
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
 					range: {

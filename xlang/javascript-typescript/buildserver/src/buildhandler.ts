@@ -1,7 +1,6 @@
 
 import { Observable } from '@reactivex/rxjs';
 import iterate from 'iterare';
-import { isCancelledError } from 'javascript-typescript-langserver/lib/cancellation';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import {
@@ -12,11 +11,11 @@ import {
 	WorkspaceReferenceParams
 } from 'javascript-typescript-langserver/lib/request-type';
 import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
-import { uri2path } from 'javascript-typescript-langserver/lib/util';
+import { normalizeUri, uri2path } from 'javascript-typescript-langserver/lib/util';
 import { isEmpty } from 'lodash';
 import { Span } from 'opentracing';
 import * as path from 'path';
-import * as rimraf from 'rimraf';
+import callbackRimraf = require('rimraf');
 import * as url from 'url';
 import {
 	Hover,
@@ -28,6 +27,7 @@ import { DependencyManager, getPackageName, PackageJson } from './dependencies';
 import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
 import hashObject = require('object-hash');
 const urlRelative: (from: string, to: string) => string = require('url-relative');
+const rimraf = Observable.bindNodeCallback<string, void>(callbackRimraf);
 
 interface HasUri {
 	uri: string;
@@ -82,20 +82,19 @@ export class BuildHandler extends TypeScriptService {
 		super(client, options);
 	}
 
-	async initialize(params: InitializeParams, span = new Span()): Promise<InitializeResult> {
+	initialize(params: InitializeParams, span = new Span()): Observable<InitializeResult> {
 		// Workaround for https://github.com/sourcegraph/sourcegraph/issues/4542
 		if (params.rootPath && params.rootPath.startsWith('file://')) {
 			params.rootPath = uri2path(params.rootPath);
 		}
-		const result = await super.initialize(params, span);
-		this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.client, this.logger);
-		// Start installation of dependencies in the background
-		this.dependenciesManager.ensureScanned(span).catch(err => {
-			if (!isCancelledError(err)) {
-				this.logger.error('Dependency initialization failed: ', err);
-			}
-		});
-		return result;
+		return super.initialize(params, span)
+			.finally(() => {
+				this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.client, this.logger);
+				// Start installation of dependencies in the background
+				this.dependenciesManager.ensureScanned(span).catch(err => {
+					this.logger.error('Dependency initialization failed: ', err);
+				});
+			});
 	}
 
 	/**
@@ -108,13 +107,15 @@ export class BuildHandler extends TypeScriptService {
 		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 
-	async shutdown(params = {}, span = new Span()): Promise<null> {
+	shutdown(params = {}, span = new Span()): Observable<null> {
 		// Make sure yarn processes do not keep running and recreate the temporary directory
-		await this.dependenciesManager.killRunningProcesses();
-		// Delete workspace-specific temporary folder with dependencies
-		this.logger.log(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
-		await new Promise((resolve, reject) => rimraf(this.options.tempDir, err => err ? reject(err) : resolve()));
-		return await super.shutdown(params, span);
+		return Observable.from(this.dependenciesManager.killRunningProcesses())
+			.mergeMap(() => {
+				// Delete workspace-specific temporary folder with dependencies
+				this.logger.log(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
+				return rimraf(this.options.tempDir);
+			})
+			.mergeMap(() => super.shutdown(params, span));
 	}
 
 	/**
@@ -240,23 +241,23 @@ export class BuildHandler extends TypeScriptService {
 		}
 	}
 
-	async textDocumentDefinition(params: TextDocumentPositionParams, span = new Span()): Promise<Location[]> {
-		let locations: Location[] = [];
-		// First, attempt to get definition before dependencies
-		// fetching is finished. If it fails, wait for dependency
-		// fetching to finish and then retry.
-		try {
-			this.dependenciesManager.ensureForFile(params.textDocument.uri, span).catch(err => undefined); // don't wait, but kickoff background job
-			locations = await super.textDocumentDefinition(params, span);
-		} catch (e) {
-			// Ignore
-		}
-		if (locations.length === 0) {
-			await this.dependenciesManager.ensureForFile(params.textDocument.uri, span);
-			locations = await super.textDocumentDefinition(params, span);
-		}
-		await this._rewriteUris(locations);
-		return locations;
+	textDocumentDefinition(params: TextDocumentPositionParams, span = new Span()): Observable<Location[]> {
+		const uri = normalizeUri(params.textDocument.uri);
+		// Don't wait, but kickoff background job
+		this.dependenciesManager.ensureForFile(uri, span).catch(err => undefined);
+		// First, attempt to get definition before dependencies fetching is finished.
+		return (super.textDocumentDefinition(params, span)
+			.catch<Location[], Location[]>(err => [[]])
+			// If it fails, wait for dependency fetching to finish and then retry.
+			.mergeMap((locations: Location[]): Observable<Location[]> =>
+				locations.length > 0
+					? Observable.of(locations)
+					: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
+						.mergeMap(() => super.textDocumentDefinition(params, span))
+			)
+			.mergeAll<any>() as Observable<Location>)
+			.mergeMap(location => Observable.from(this._rewriteUris(location)).mapTo(location))
+			.toArray();
 	}
 
 	/**
@@ -270,15 +271,16 @@ export class BuildHandler extends TypeScriptService {
 	 * know some information about it.
 	 */
 	textDocumentXdefinition(params: TextDocumentPositionParams, span = new Span()): Observable<SymbolLocationInformation[]> {
+		const uri = normalizeUri(params.textDocument.uri);
 		// First, attempt to get definition before dependencies fetching is finished.
-		this.dependenciesManager.ensureForFile(params.textDocument.uri, span).catch(err => undefined);
+		this.dependenciesManager.ensureForFile(uri, span).catch(err => undefined);
 		return (super.textDocumentXdefinition(params, span)
-			.catch(err => [[]])
+			.catch<SymbolLocationInformation[], SymbolLocationInformation[]>(err => [[]])
 			// If no result, wait for dependency installation and retry
 			.mergeMap((symbolLocations): Observable<SymbolLocationInformation[]> =>
 				symbolLocations.length > 0
 					? Observable.of(symbolLocations)
-					: Observable.from(this.dependenciesManager.ensureForFile(params.textDocument.uri, span))
+					: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
 						.mergeMap(() => super.textDocumentXdefinition(params, span))
 			)
 			.mergeAll<any>() as Observable<SymbolLocationInformation>)
@@ -357,23 +359,20 @@ export class BuildHandler extends TypeScriptService {
 			.toArray();
 	}
 
-	async textDocumentHover(params: TextDocumentPositionParams, span = new Span()): Promise<Hover> {
-		let hover: Hover = { contents: [] };
-		// First, attempt to get hover info before dependencies
-		// fetching is finished. If it fails, wait for dependency
-		// fetching to finish and then retry.
-		try {
-			this.dependenciesManager.ensureForFile(params.textDocument.uri, span); // don't wait, but kickoff background job
-			hover = await super.textDocumentHover(params, span);
-		} catch (e) {
-			// Ignore
-		}
-		if (isEmpty(hover.contents)) {
-			await this.dependenciesManager.ensureForFile(params.textDocument.uri, span);
-			hover = await super.textDocumentHover(params, span);
-		}
-		await this._rewriteUris(hover);
-		return hover;
+	textDocumentHover(params: TextDocumentPositionParams, span = new Span()): Observable<Hover> {
+		const uri = normalizeUri(params.textDocument.uri);
+		this.dependenciesManager.ensureForFile(uri, span); // don't wait, but kickoff background job
+		// First, attempt to get hover info before dependencies fetching is finished.
+		return super.textDocumentHover(params, span)
+			.catch<Hover, Hover>(err => [{ contents: [] }])
+			// If it fails, wait for dependency fetching to finish and then retry.
+			.mergeMap((hover): Observable<Hover> =>
+				!isEmpty(hover.contents)
+					? Observable.of(hover)
+					: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
+						.mergeMap(() => super.textDocumentHover(params, span))
+			)
+			.mergeMap(hover => Observable.from(this._rewriteUris(hover)).mapTo(hover));
 	}
 
 	/**

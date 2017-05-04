@@ -387,12 +387,22 @@ export class DependencyManager {
 	async ensureForFile(uri: string, childOf = new Span()): Promise<void> {
 		// Ensure all own package.jsons in the workspace are available under this.packages
 		await this.ensureScanned(childOf);
-		// Find the closest one in parent directories
-		const packageJsonUri = this.getClosestPackageJsonUri(uri);
-		childOf.addTags({ packageJsonUri });
-		if (!packageJsonUri) {
-			return;
+		const span = childOf.tracer().startSpan('Ensure Dependencies', { childOf });
+		span.addTags({ uri });
+		try {
+			// Find the closest one in parent directories
+			const packageJsonUri = this.getClosestPackageJsonUri(uri);
+			span.addTags({ packageJsonUri });
+			if (!packageJsonUri) {
+				return;
+			}
+			await (this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri, span));
+		} catch (err) {
+			span.setTag('error', true);
+			span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
+			throw err;
+		} finally {
+			span.finish();
 		}
-		await (this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri, childOf));
 	}
 }

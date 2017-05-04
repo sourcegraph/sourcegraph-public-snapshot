@@ -1681,6 +1681,10 @@ opener@^1.4.1:
   version "1.4.3"
   resolved "https://registry.yarnpkg.com/opener/-/opener-1.4.3.tgz#5c6da2c5d7e5831e8ffa3964950f8d6674ac90b8"
 
+opentracing@^0.14.0:
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/opentracing/-/opentracing-0.14.0.tgz#229e9c0bfa15cf10a13f69bdf3b3abdb02c03596"
+
 opentracing@felixfbecker/opentracing-javascript#d42e8ac50e3555ca1a9a006bee0fd5856a838a47:
   version "0.13.1"
   resolved "https://codeload.github.com/felixfbecker/opentracing-javascript/tar.gz/d42e8ac50e3555ca1a9a006bee0fd5856a838a47"
