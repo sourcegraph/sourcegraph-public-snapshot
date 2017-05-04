@@ -10,10 +10,11 @@
 // To publish a vscode package, run the following:
 //
 //   # first, in vscode:
-//   gulp vscode-browser # or vscode-browser-min
+//   cd $VSCODE_PRIVATE # the path to your copy of sourcegraph/vscode-private
+//   gulp vscode-browser-min
 //
 //   # then, in sourcegraph:
-//   cmd/frontend/internal/app/bundle/publish-package.bash ~/src/github.com/Microsoft/VSCode-browser $VERSION
+//   cmd/frontend/internal/app/bundle/publish-package.bash $VSCODE_PRIVATE/../VSCode-browser $VERSION
 //
 // The $VERSION is currently chosen manually and should be
 // unique. Update fetch-and-generate.bash's version number when you
