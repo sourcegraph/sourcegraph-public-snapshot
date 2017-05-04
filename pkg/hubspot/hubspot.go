@@ -9,7 +9,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/google/go-querystring/query"
+	"github.com/gorilla/schema"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Client is a HubSpot API client
@@ -28,20 +29,11 @@ func New(portalID string, hapiKey string) *Client {
 
 // Send a POST request with form data to HubSpot APIs that accept
 // application/x-www-form-urlencoded data (e.g. the Forms API)
-func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, body interface{}) error {
-	var data url.Values
-	switch body := body.(type) {
-	case map[string]string:
-		data = make(url.Values, len(body))
-		for k, v := range body {
-			data.Set(k, v)
-		}
-	default:
-		var err error
-		data, err = query.Values(body)
-		if err != nil {
-			return wrapError(methodName, err)
-		}
+func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, form *sourcegraph.SubmittedForm) error {
+	data := url.Values{}
+	err := schema.NewEncoder().Encode(*form, data)
+	if err != nil {
+		return wrapError(methodName, err)
 	}
 
 	baseURL.Path = path.Join(baseURL.Path, suffix)

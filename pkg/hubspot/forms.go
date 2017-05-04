@@ -1,13 +1,19 @@
 package hubspot
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+)
 
 // SubmitForm submits form data.  Form submissions return an empty
 // body with status code 204 or 302 if submission was successful.
 //
 // See http://developers.hubspot.com/docs/methods/forms/submit_form.
-func (c *Client) SubmitForm(formID string, params map[string]string) error {
-	err := c.postForm("SubmitForm", c.baseFormURL(), formID, params)
+func (c *Client) SubmitForm(formID string, form *sourcegraph.SubmittedForm) error {
+	fmt.Println(4)
+	err := c.postForm("SubmitForm", c.baseFormURL(), formID, form)
 	if err != nil {
 		return err
 	}
