@@ -220,8 +220,14 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			})
 		} else if inferredOrigin := originmap.Map(uri); inferredOrigin != "" {
 			ts := time.Now()
+			cmps := strings.Split(uri, "/")
+			var owner string
+			if len(cmps) >= 2 {
+				owner = cmps[len(cmps)-2]
+			}
 			return s.tryInsertNew(ctx, &sourcegraph.Repo{
-				Name:      uri,
+				Name:      cmps[len(cmps)-1],
+				Owner:     owner,
 				URI:       uri,
 				CreatedAt: &ts,
 			})
