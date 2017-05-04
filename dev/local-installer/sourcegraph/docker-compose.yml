@@ -1,7 +1,7 @@
 version: "2.1"
 services:
   frontend:
-    image: "docker.sourcegraph.com/frontend:latest"
+    image: "docker.sourcegraph.com/frontend:local"
     environment:
       AUTH_ENABLED: "false"
       NO_GITHUB_API: "true"
@@ -32,7 +32,7 @@ services:
   github-proxy:
     image: "docker.sourcegraph.com/github-proxy:latest"
   gitserver-1:
-    image: "docker.sourcegraph.com/gitserver:latest"
+    image: "docker.sourcegraph.com/gitserver:local"
     volumes:
       - ${GIT_PARENT_DIRECTORY:-.}:/local
       - .data/gitserver-1-data:/data/repos
@@ -105,7 +105,7 @@ services:
       - "postgres"
       - "redis"
   initializer:
-    image: "docker.sourcegraph.com/initializer:latest"
+    image: "docker.sourcegraph.com/initializer:local"
     volumes:
       - ${GIT_PARENT_DIRECTORY:-.}:/local
     environment:
