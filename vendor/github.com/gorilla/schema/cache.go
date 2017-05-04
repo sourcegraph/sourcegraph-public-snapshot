@@ -178,7 +178,7 @@ func (c *cache) createField(field reflect.StructField, info *structInfo) {
 		}
 	}
 	if isStruct = ft.Kind() == reflect.Struct; !isStruct {
-		if conv := c.conv[ft.Kind()]; conv == nil {
+		if conv := c.converter(ft); conv == nil {
 			// Type is not supported.
 			return
 		}

@@ -90,7 +90,7 @@ func (d *Decoder) Decode(dst interface{}, src map[string][]string) error {
 	return d.checkRequired(t, src, "")
 }
 
-// checkRequired checks whether requred field empty
+// checkRequired checks whether required fields are empty
 //
 // check type t recursively if t has struct fields, and prefix is same as parsePath: in dotted notation
 //

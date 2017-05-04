@@ -34,6 +34,12 @@ func (e *Encoder) RegisterEncoder(value interface{}, encoder func(reflect.Value)
 	e.regenc[reflect.TypeOf(value)] = encoder
 }
 
+// SetAliasTag changes the tag used to locate custom field aliases.
+// The default tag is "schema".
+func (e *Encoder) SetAliasTag(tag string) {
+	e.cache.tag = tag
+}
+
 func (e *Encoder) encode(v reflect.Value, dst map[string][]string) error {
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -89,7 +95,10 @@ func (e *Encoder) encode(v reflect.Value, dst map[string][]string) error {
 		}
 	}
 
-	return errors
+	if len(errors) > 0 {
+		return errors
+	}
+	return nil
 }
 
 func typeEncoder(t reflect.Type, reg map[reflect.Type]encoderFunc) encoderFunc {
