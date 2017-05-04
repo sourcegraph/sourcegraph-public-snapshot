@@ -19,10 +19,10 @@ The Sourcegraph plugin for JetBrains IDEs enables you to quickly open and search
 
 ## Installation
 
-- Download the [sourcegraph.jar](https://github.com/sourcegraph/sourcegraph-jetbrains/raw/master/sourcegraph.jar) file.
 - Select `IntelliJ IDEA` then `Preferences` (or use <kbd>⌘,</kbd>)
 - Click `Plugins` in the left-hand pane.
-- Choose `Install plugin from disk...` and select the downloaded `sourcegraph.jar` file.
+- Choose `Browse repositories...`
+- Search for `Sourcegraph` -> `Install`
 
 
 ## Usage
