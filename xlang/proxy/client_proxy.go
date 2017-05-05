@@ -431,9 +431,13 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			kind := lsp.TDSKNone
 			return lsp.InitializeResult{
 				Capabilities: lsp.ServerCapabilities{
-					TextDocumentSync:        lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
-					DocumentSymbolProvider:  true,
-					WorkspaceSymbolProvider: true,
+					TextDocumentSync:             lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
+					ReferencesProvider:           true,
+					DefinitionProvider:           true,
+					HoverProvider:                true,
+					DocumentSymbolProvider:       true,
+					WorkspaceSymbolProvider:      true,
+					XWorkspaceReferencesProvider: false,
 				},
 			}, nil
 		}
