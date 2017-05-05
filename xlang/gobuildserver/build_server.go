@@ -270,6 +270,12 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		conn.Close()
 		return nil, nil
 
+	case req.Method == "$/cancelRequest":
+		// Our caching layer is pretty bad, and can easily be poisened
+		// if we cancel something. So we do not pass on cancellation
+		// requests.
+		return nil, nil
+
 	case req.Method == "workspace/xdependencies":
 		// The same as h.fetchAndSendDepsOnce except it operates locally to the
 		// request.

@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	basictracer "github.com/opentracing/basictracer-go"
@@ -47,8 +46,7 @@ func (id serverID) String() string {
 type serverProxyConn struct {
 	conn *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the server
 
-	id  serverID
-	seq uint64 // used for request IDs
+	id serverID
 
 	// clientBroadcast is used to forward incoming requests from servers
 	// to clients.
@@ -96,29 +94,6 @@ type serverProxyConnStats struct {
 
 	// NOTE: If you add a new field here, please ensure `Stats()` works
 	// correctly under concurrent read/writes.
-}
-
-// serverRequestID helps tie back a jsonrpc2 request id to a client request.
-type serverRequestID struct {
-	// Seq is a sequence number related to the server
-	Seq uint64
-	// CRID is the client request we are proxying on behalf of
-	CRID clientRequestID
-}
-
-func (s serverRequestID) String() string {
-	// We don't just marshal the struct to:
-	// * have a consistent order fields are marshalled in
-	// * have a more concise ID
-	b, _ := json.Marshal(s.CRID.RID)
-	return fmt.Sprintf("%d:%d:%s", s.Seq, s.CRID.CID, string(b))
-}
-
-func serverRequestIDFromString(s string) (i serverRequestID) {
-	var rid string
-	fmt.Sscanf(s, "%d:%d:%s", &i.Seq, &i.CRID.CID, &rid)
-	_ = json.Unmarshal([]byte(rid), &i.CRID.RID)
-	return
 }
 
 var (
@@ -475,23 +450,10 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 		// requestOriginatedFromProxy. We only want to tie back this
 		// request to the client if it actually originated from a
 		// client.
-		callOpts = append(callOpts, jsonrpc2.PickID(c.nextID(crid)))
+		callOpts = append(callOpts, jsonrpc2.PickID(crid.ID()))
 	}
 	span.LogKV("event", "sending request")
 	return c.conn.Call(ctx, method, params, result, callOpts...)
-}
-
-// nextID returns a request ID for use in a c.conn.Call. It includes the
-// client request id to help tie back requests to the client we are requesting
-// on behalf of.
-func (c *serverProxyConn) nextID(crid clientRequestID) jsonrpc2.ID {
-	return jsonrpc2.ID{
-		Str: serverRequestID{
-			Seq:  atomic.AddUint64(&c.seq, 1),
-			CRID: crid,
-		}.String(),
-		IsString: true,
-	}
 }
 
 // traceFSRequests is whether to trace the LSP proxy's incoming

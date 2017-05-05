@@ -244,6 +244,24 @@ type clientRequestID struct {
 	CID clientID
 }
 
+func (crid clientRequestID) ID() jsonrpc2.ID {
+	// We don't just marshal the struct to:
+	// * have a consistent order fields are marshalled in
+	// * have a more concise ID
+	b, _ := json.Marshal(crid.RID)
+	return jsonrpc2.ID{
+		Str:      fmt.Sprintf("%d:%s", crid.CID, string(b)),
+		IsString: true,
+	}
+}
+
+func parseClientRequestID(s string) (i clientRequestID) {
+	var rid string
+	fmt.Sscanf(s, "%d:%s", &i.CID, &rid)
+	_ = json.Unmarshal([]byte(rid), &i.RID)
+	return
+}
+
 type clientProxyConn struct {
 	proxy *Proxy         // the proxy that accepted this conn
 	conn  *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the client
@@ -590,8 +608,23 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler: text document modifications not allowed by client (%s)", req.Method)}
 
 	case "$/cancelRequest":
-		// We should forward this to all language servers, but this requires writing some logic to rewrite the ids.
-		// Since our language servers don't currently support cancellation it is fine to just not forward it for now.
+		if err := ensureInitialized(); err != nil {
+			return nil, err
+		}
+
+		// We need to rewrite the request ID to include the client ID
+		params := struct {
+			ID jsonrpc2.ID `json:"id"`
+		}{}
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		crid := clientRequestID{RID: params.ID, CID: c.id}
+		params.ID = crid.ID()
+
+		if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, params, nil); err != nil {
+			return nil, err
+		}
 		return nil, nil
 
 	case "shutdown":
@@ -681,8 +714,8 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		if err := json.Unmarshal(*req.Params, &idOnly); err != nil {
 			return nil, err
 		}
-		srid := serverRequestIDFromString(idOnly.ID.Str)
-		if srid.CRID.CID != c.id {
+		crid := parseClientRequestID(idOnly.ID.Str)
+		if crid.CID != c.id {
 			// This partialResult's clientID does not match our
 			// clientID. This partialResult is not for us so we
 			// ignore it.
@@ -695,11 +728,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		}
 
 		// Rewrite ID so it is the same as the originating request
-		paramsObj.ID = lsp.ID{
-			Str:      srid.CRID.RID.Str,
-			Num:      srid.CRID.RID.Num,
-			IsString: srid.CRID.RID.IsString,
-		}
+		paramsObj.ID = lsp.ID(crid.RID)
 
 		// Rewrite paths from server->client and send rewritten
 		// notification to client.
@@ -763,7 +792,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	lspext.WalkURIFields(params, func(uri string) {
 		uris = append(uris, uri)
 	}, nil)
-	if len(uris) != 1 && method != "workspace/symbol" && method != "workspace/xreferences" && method != "workspace/xdependencies" && method != "workspace/xpackages" {
+	if len(uris) != 1 && strings.HasPrefix(method, "textDocument/") {
 		return fmt.Errorf("expected exactly 1 document URI (got %d) in LSP params object %s", len(uris), pb)
 	}
 
