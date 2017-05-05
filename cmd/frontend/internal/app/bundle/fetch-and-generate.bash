@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VERSION=sqs38
+VERSION=jw39
 PKG=VSCode-browser-"$VERSION".zip
 rm -rf /tmp/"$PKG" /tmp/VSCode-browser
 curl -sSL https://storage.googleapis.com/sourcegraph-vscode/"$PKG" > /tmp/"$PKG"
