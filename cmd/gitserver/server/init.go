@@ -6,11 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 var (
-	sshInitDir  = os.Getenv("SSH_INIT_DIR")
-	sshDir      = os.Getenv("SSH_DIR")
+	sshInitDir  = env.Get("SSH_INIT_DIR", "", "the directory from which SSH credentials are copied (typically contains the user's SSH credentials")
+	sshDir      = env.Get("SSH_DIR", "", "the directory to which SSH credentials are copied, typically `~/.ssh`")
 	currentUser string
 )
 
