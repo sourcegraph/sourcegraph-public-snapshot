@@ -57,6 +57,12 @@ func serveSubmitForm(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	// Redirect to new user signup page
+	if form.HubSpotFormName == "AfterSignupForm" {
+		http.Redirect(w, r, "/github.com/sourcegraph/checkup/-/blob/fs.go", http.StatusSeeOther)
+		return nil
+	}
+
 	// Return the email address of the submitter
 	return writeJSON(w, &sourcegraph.SubmitFormResponse{
 		EmailAddress: form.Email,

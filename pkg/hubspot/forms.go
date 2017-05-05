@@ -1,7 +1,6 @@
 package hubspot
 
 import (
-	"fmt"
 	"net/url"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -12,7 +11,6 @@ import (
 //
 // See http://developers.hubspot.com/docs/methods/forms/submit_form.
 func (c *Client) SubmitForm(formID string, form *sourcegraph.SubmittedForm) error {
-	fmt.Println(4)
 	err := c.postForm("SubmitForm", c.baseFormURL(), formID, form)
 	if err != nil {
 		return err
