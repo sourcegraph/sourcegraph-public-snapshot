@@ -57,6 +57,14 @@ detect_dev_langservers() {
 	else
 		echo '# To add PHP language support, run `docker pull felixfbecker/php-language-server`'
 	fi
+	
+	# Swift
+	SWIFT_LS_DIR="${LS_ROOT}/swift-langserver"
+	if [[ -d "$SWIFT_LS_DIR" ]]; then
+		export LANGSERVER_SWIFT=${LANGSERVER_SWIFT-$(dirname "${BASH_SOURCE[0]}")/swift-langserver}
+	else
+		echo '# To add Swift language support, run `dev/install-langserver.sh swift-langserver` or symlink '"$SWIFT_LS_DIR"' to a local clone of swift-langserver.'
+	fi
 }
 
 install_langserver() (
@@ -91,6 +99,10 @@ install_langserver() (
 			    test -d venv || python3 -m venv venv
 			    venv/bin/pip install -r requirements.txt
 			)
+			;;
+		swift-langserver)
+			clone_repo
+			(cd "$LS_DIR" && brew install sourcekitten && go install ./)
 			;;
 		*)
 			echo '# Do not know how to install '"$LS_NAME"'. See dev/langservers.lib.bash for a list of known language servers that can be installed using this method.'

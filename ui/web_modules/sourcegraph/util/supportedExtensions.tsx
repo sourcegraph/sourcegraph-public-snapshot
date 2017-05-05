@@ -16,6 +16,9 @@ if (modes.has("php")) {
 if (modes.has("python")) {
 	betaExtensions.add("py");
 }
+if (modes.has("swift")) {
+	betaExtensions.add("swift");
+}
 
 export function isSupportedExtension(ext: string): boolean {
 	return supportedExtensions.has(ext);

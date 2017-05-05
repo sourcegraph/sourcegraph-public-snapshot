@@ -68,6 +68,7 @@ export const Features = {
 	langCSS: new Feature("lang-css").disableBeta(),
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python").disableBeta(),
+	langSwift: new Feature("lang-swift").disableBeta(),
 
 	/**
 	 * Enable logging for references
@@ -127,6 +128,9 @@ export function getModes(onPrem?: boolean): Set<string> {
 	}
 	if (Features.langPython.isEnabled()) {
 		modes.add("python");
+	}
+	if (Features.langSwift.isEnabled()) {
+		modes.add("swift");
 	}
 	return modes;
 }
