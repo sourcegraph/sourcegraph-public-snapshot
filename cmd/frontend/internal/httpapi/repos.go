@@ -39,9 +39,13 @@ type ensureOpt struct {
 var decoder = schema.NewDecoder()
 
 // serveRepoEnsure ensures the repositories specified in the request
-// body. If they don't yet exist, they are added and cloned, but this
-// function does not block on those operations. Callers should poll
-// this function.
+// body are fully available. If they don't yet exist, they are added,
+// cloned, and an indexing job is enqueued, but this function does not
+// block on those operations. The endpoint returns a list of
+// repositories that were not yet found / cloned. Callers should poll
+// this function until the returned list is empty. Note that there is
+// currently no guarantee on when the repository is indexed, just on
+// when the indexing job is enqueued.
 func serveRepoEnsure(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
