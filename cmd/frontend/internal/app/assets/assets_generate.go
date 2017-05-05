@@ -47,21 +47,23 @@ func main() {
 
 	// TEMPORARY: Skip the slow old UI (pre-vscode switchover) build
 	// steps when building for production.
+	var mainBundleFilename string
 	if skipBundle := os.Getenv("BUILDKITE") == "true"; !skipBundle {
 		// Find the hashed assets dir.
-		mainBundleFilename, err := getMainBundleFilename(dir)
+		var err error
+		mainBundleFilename, err = getMainBundleFilename(dir)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("Webpack main bundle file is", mainBundleFilename)
-		src := fmt.Sprintf(`// +build dist
+	}
+	src := fmt.Sprintf(`// +build dist
 
 package assets
 
 const mainJavaScriptBundlePath = %q
 `, "/"+mainBundleFilename)
-		if err := ioutil.WriteFile("main_bundle_dist.go", []byte(src), 0600); err != nil {
-			log.Fatal(err)
-		}
+	if err := ioutil.WriteFile("main_bundle_dist.go", []byte(src), 0600); err != nil {
+		log.Fatal(err)
 	}
 }
