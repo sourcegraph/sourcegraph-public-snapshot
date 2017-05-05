@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/shurcooL/vfsgen"
@@ -34,15 +35,8 @@ func getMainBundleFilename(dir string) (string, error) {
 }
 
 func main() {
-	// Find the hashed assets dir.
 	dir := "../../../../../ui/assets/"
-	mainBundleFilename, err := getMainBundleFilename(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Webpack main bundle file is", mainBundleFilename)
-
-	err = vfsgen.Generate(http.Dir(dir), vfsgen.Options{
+	err := vfsgen.Generate(http.Dir(dir), vfsgen.Options{
 		PackageName:  "assets",
 		BuildTags:    "dist",
 		VariableName: "Assets",
@@ -51,6 +45,18 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// TEMPORARY: Skip the slow old UI (pre-vscode switchover) build
+	// steps when building for production.
+	var mainBundleFilename string
+	if skipBundle := os.Getenv("BUILDKITE") == "true"; !skipBundle {
+		// Find the hashed assets dir.
+		var err error
+		mainBundleFilename, err = getMainBundleFilename(dir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Webpack main bundle file is", mainBundleFilename)
+	}
 	src := fmt.Sprintf(`// +build dist
 
 package assets
