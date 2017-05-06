@@ -30,6 +30,7 @@ func remoteURLToRepoURI(ctx context.Context, remoteURL string) (string, error) {
 	}
 
 	// GitHub remotes
+	u.Path = strings.TrimSuffix(u.Path, ".git")
 	if strings.Contains(u.Host, ":") {
 		return path.Join(u.Hostname(), strings.Split(u.Host, ":")[1], u.Path), nil
 	}
@@ -96,7 +97,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	u := &url.URL{Path: path.Join(repoURI, branch, "/-/blob/", file)}
+	u := &url.URL{Path: path.Join("/", repoURI, branch, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
 	u.RawQuery = q.Encode()
