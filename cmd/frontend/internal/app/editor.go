@@ -36,7 +36,7 @@ func remoteURLToRepoURI(ctx context.Context, remoteURL string) (string, error) {
 	return path.Join(u.Hostname(), u.Path), nil
 }
 
-func editorBranch(ctx context.Context, branchName, repoURI string) (string, error) {
+func editorBranch(ctx context.Context, repoURI, branchName string) (string, error) {
 	if branchName == "HEAD" {
 		return "", nil // Detached head state
 	}
