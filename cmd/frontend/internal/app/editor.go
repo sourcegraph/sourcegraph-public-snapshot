@@ -72,10 +72,10 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	remoteURL := q.Get("remote_url")                // Git repository remote URL.
 	branch := q.Get("branch")                       // Git branch name.
 	file := q.Get("file")                           // File relative to repository root.
-	startRow, _ := strconv.Atoi(q.Get("start_row")) // one-based
-	startCol, _ := strconv.Atoi(q.Get("start_col")) // one-based
-	endRow, _ := strconv.Atoi(q.Get("end_row"))     // one-based
-	endCol, _ := strconv.Atoi(q.Get("end_col"))     // one-based
+	startRow, _ := strconv.Atoi(q.Get("start_row")) // zero-based
+	startCol, _ := strconv.Atoi(q.Get("start_col")) // zero-based
+	endRow, _ := strconv.Atoi(q.Get("end_row"))     // zero-based
+	endCol, _ := strconv.Atoi(q.Get("end_col"))     // zero-based
 
 	if search != "" {
 		// Search request.
