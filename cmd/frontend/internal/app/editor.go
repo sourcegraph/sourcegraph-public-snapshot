@@ -62,8 +62,10 @@ func editorBranch(ctx context.Context, repoURI, branchName string) (string, erro
 
 func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	q := r.URL.Query()
-	editor := q.Get("editor")   // Editor name: "Atom", "Sublime", etc.
-	version := q.Get("version") // Editor extension version.
+	editor := q.Get("editor")                      // Editor name: "Atom", "Sublime", etc.
+	version := q.Get("version")                    // Editor extension version.
+	utmProductName := q.Get("utm_product_name")    // Editor product name, for JetBrains (e.g. "IntelliJ", "Gogland").
+	utmProductVersion := q.Get("utm_product_name") // Editor product version, for JetBrains.
 
 	// search query parameters. Only present if it is a search request.
 	search := q.Get("search")
@@ -83,6 +85,12 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		q := u.Query()
 		q.Add("q", search)
 		q.Add("utm_source", editor+"-"+version)
+		if utmProductName != "" {
+			q.Add("utm_product_name", utmProductName)
+		}
+		if utmProductVersion != "" {
+			q.Add("utm_product_version", utmProductVersion)
+		}
 		u.RawQuery = q.Encode()
 		http.Redirect(w, r, u.String(), http.StatusSeeOther)
 		return nil
@@ -100,6 +108,12 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	u := &url.URL{Path: path.Join("/", repoURI, branch, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
+	if utmProductName != "" {
+		q.Add("utm_product_name", utmProductName)
+	}
+	if utmProductVersion != "" {
+		q.Add("utm_product_version", utmProductVersion)
+	}
 	u.RawQuery = q.Encode()
 	if startRow == endRow && startCol == endCol {
 		u.Fragment = fmt.Sprintf("L%d:%d", startRow+1, startCol+1)
