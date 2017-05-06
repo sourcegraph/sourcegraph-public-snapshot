@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.sourcegraph.jetbrains</id>
   <name>Sourcegraph</name>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
   <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
   <description><![CDATA[

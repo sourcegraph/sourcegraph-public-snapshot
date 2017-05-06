@@ -58,14 +58,20 @@ public class Open extends AnAction {
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
         String uri;
         try {
-            uri = Util.sourcegraphURL()
-                    + repoInfo.repo
-                    + Util.branchStr(repoInfo.branch)
-                    + "/-/blob/" + repoInfo.fileRel
-                    + "?utm_source=" + URLEncoder.encode("JetBrains-" + Util.VERSION, "UTF-8")
+            LogicalPosition start = editor.visualToLogicalPosition(sel.getSelectionStartPosition());
+            LogicalPosition end = editor.visualToLogicalPosition(sel.getSelectionEndPosition());
+            uri = Util.sourcegraphURL()+"-/editor"
+                    + "?remote_url=" + URLEncoder.encode(repoInfo.remoteURL, "UTF-8")
+                    + "&branch=" + URLEncoder.encode(repoInfo.branch, "UTF-8")
+                    + "&file=" + URLEncoder.encode(repoInfo.fileRel, "UTF-8")
+                    + "&editor=" + URLEncoder.encode("JetBrains", "UTF-8")
+                    + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
                     + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
                     + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8")
-                    + Util.lineHash(editor.visualToLogicalPosition(sel.getSelectionStartPosition()), editor.visualToLogicalPosition(sel.getSelectionEndPosition()));
+                    + "&start_row=" + URLEncoder.encode(Integer.toString(start.line), "UTF-8")
+                    + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), "UTF-8")
+                    + "&end_row=" + URLEncoder.encode(Integer.toString(end.line), "UTF-8")
+                    + "&end_col=" + URLEncoder.encode(Integer.toString(end.column), "UTF-8");
         } catch (UnsupportedEncodingException err) {
             logger.debug("failed to build URL");
             err.printStackTrace();

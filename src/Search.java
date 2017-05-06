@@ -53,10 +53,10 @@ public class Search extends AnAction {
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
         try {
-            uri = Util.sourcegraphURL()
-                    + "search"
-                    + "?q=" + URLEncoder.encode(q, "UTF-8")
-                    + "&utm_source=" + URLEncoder.encode("JetBrains-" + Util.VERSION, "UTF-8")
+            uri = Util.sourcegraphURL()+"-/editor"
+                    + "?search=" + URLEncoder.encode(q, "UTF-8")
+                    + "&editor=" + URLEncoder.encode("JetBrains", "UTF-8")
+                    + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
                     + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
                     + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8");
         } catch (UnsupportedEncodingException err) {
