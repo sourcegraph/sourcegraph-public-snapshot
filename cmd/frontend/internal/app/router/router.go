@@ -32,6 +32,7 @@ const (
 	OldTreeRedirect  = "old-tree-redirect"
 
 	GDDORefs = "gddo.refs"
+	Editor   = "editor"
 
 	ShowAuth = "show-auth"
 
@@ -68,6 +69,7 @@ func New() *Router {
 	base.Path("/-/google-oauth/receive").Methods("GET", "POST").Name(GoogleOAuth2Receive)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
+	base.Path("/-/editor").Methods("GET").Name(Editor)
 
 	base.Path("/-/show-auth").Methods("GET").Name(ShowAuth)
 

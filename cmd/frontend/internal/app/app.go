@@ -53,6 +53,7 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.InstallZap).Handler(traceutil.TraceRoute(errorutil.Handler(serveInstallZap)))
 
 	r.Get(router.GDDORefs).Handler(traceutil.TraceRoute(errorutil.Handler(serveGDDORefs)))
+	r.Get(router.Editor).Handler(traceutil.TraceRoute(errorutil.Handler(serveEditor)))
 
 	r.Get(router.ShowAuth).Handler(traceutil.TraceRoute(errorutil.Handler(serveShowAuth)))
 
