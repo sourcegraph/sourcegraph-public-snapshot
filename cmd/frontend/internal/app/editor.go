@@ -102,9 +102,9 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	q.Add("utm_source", editor+"-"+version)
 	u.RawQuery = q.Encode()
 	if startRow == endRow && startCol == endCol {
-		u.Fragment = fmt.Sprintf("L%d-%d", startRow+1, startCol+1)
+		u.Fragment = fmt.Sprintf("L%d:%d", startRow+1, startCol+1)
 	} else {
-		u.Fragment = fmt.Sprintf("L%d-%d:%d-%d", startRow+1, startCol+1, endRow+1, endCol+1)
+		u.Fragment = fmt.Sprintf("L%d:%d-%d:%d", startRow+1, startCol+1, endRow+1, endCol+1)
 	}
 	http.Redirect(w, r, u.String(), http.StatusSeeOther)
 	return nil
