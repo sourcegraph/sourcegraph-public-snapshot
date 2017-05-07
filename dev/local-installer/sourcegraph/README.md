@@ -80,6 +80,24 @@ Sourcegraph can index many repository hosts, including GitHub.com. If you would 
    ```
 1. Set `ENSURE_REPOS_REMOTE` in your `.env` file to be the value of the output.
 
+### Java
+
+#### Gradle
+
+If you use Gradle as your build system, Sourcegraph by default statically analyzes Gradle files to extract the necessary build metadata. There are some cases in which this static analysis is insufficient.
+In such cases, use the [Sourcegraph Gradle plugin](https://github.com/sourcegraph/sourcegraph-gradle-plugin).
+Use the Gradle plugin to generate `javaconfig.json` configuration files, add these to your repository, and then try viewing the project in Sourcegraph.
+
+#### Custom artifact host (Artifactory, Nexus)
+
+Sourcegraph can be configured to work with your private Artifactory or Nexus instance. Simply set the following variables in your `.env` file:
+
+```
+PRIVATE_ARTIFACT_REPO_ID=${ARTIFACT_REPOSITORY_ID_FROM_YOUR_POM_OR_GRADLE}
+PRIVATE_ARTIFACT_REPO_USERNAME=${YOUR_USERNAME}
+PRIVATE_ARTIFACT_REPO_PASSWORD=${YOUR_PASSWORD}
+```
+
 ## Privacy
 
 By default, Sourcegraph collects usage data at the JavaScript layer and transmits this over HTTPS to a server controlled by Sourcegraph (the company). This data is similar to what is collected by many web applications and lets our team identify bugs and prioritize product improvements. This data DOES NOT include the contents of private source code files, but *does* include user actions like the following snippet:
