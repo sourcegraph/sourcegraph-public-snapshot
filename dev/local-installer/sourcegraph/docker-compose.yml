@@ -106,7 +106,7 @@ services:
       - "postgres"
       - "redis"
   initializer:
-    image: "docker.sourcegraph.com/initializer:local"
+    image: "docker.sourcegraph.com/initializer:latest"
     volumes:
       - ${GIT_PARENT_DIRECTORY:-.}:/local
     environment:
