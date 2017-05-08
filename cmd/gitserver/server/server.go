@@ -149,8 +149,14 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) (io.Reader, *proto
 		}
 
 		// got first output, assume no error and stream stdout to reader
-		go func() { <-reply.ProcessResult }() // discard process result
-		go chanrpcutil.Drain(reply.Stderr)    // discard stderr
+		go func() {
+			result := <-reply.ProcessResult
+			stderr := <-chanrpcutil.ReadAll(reply.Stderr)
+			if result.Error != "" || result.ExitStatus != 0 {
+				// we got stdout AND an error, should never happen
+				log.Printf("error discarded after getting stdout: %s (exit status %d, stderr: %q)", result.Error, result.ExitStatus, stderr)
+			}
+		}()
 
 		stdout := make(chan []byte, 10)
 		stdout <- b
