@@ -4,7 +4,6 @@ package main // import "sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver"
 //docker:install git openssh-client
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -50,7 +49,7 @@ func main() {
 		log.Fatal(gitserver.ServeLegacy(l))
 	}()
 
-	fmt.Println("git-server: listening on :3278 and :3178 (legacy)")
+	log.Print("git-server: listening on :3278 and :3178 (legacy)")
 	srv := &http.Server{Addr: ":3278", Handler: gitserver.Handler()}
 	log.Fatal(srv.ListenAndServe())
 }
