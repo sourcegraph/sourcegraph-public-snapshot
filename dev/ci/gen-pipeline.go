@@ -132,26 +132,20 @@ func main() {
 		Cmd("yarn run cover"),
 		ArtifactPaths("xlang/javascript-typescript/buildserver/coverage/lcov.info"))
 
-	// TODO(sqs): disabled temporarily because it causes us to exceed
-	// the max number of jobs on buildkite (100)
-	//
-	// for _, path := range pkgs {
-	// 	coverageFile := path + "/coverage.txt"
-	// 	pipeline.AddStep(":go:",
-	// 		Cmd("go test ./"+path+" -v -race -i"),
-	// 		Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic"),
-	// 		ArtifactPaths(coverageFile))
-	// }
+	for _, path := range pkgs {
+		coverageFile := path + "/coverage.txt"
+		pipeline.AddStep(":go:",
+			Cmd("go test ./"+path+" -v -race -i"),
+			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic"),
+			ArtifactPaths(coverageFile))
+	}
 
 	pipeline.AddWait()
 
-	// TODO(sqs): disabled temporarily because it causes us to exceed
-	// the max number of jobs on buildkite (100)
-	//
-	// pipeline.AddStep(":codecov:",
-	// 	Cmd("buildkite-agent artifact download '*/coverage.txt' ."),
-	// 	Cmd("buildkite-agent artifact download '*/lcov.info' ."),
-	// 	Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
+	pipeline.AddStep(":codecov:",
+		Cmd("buildkite-agent artifact download '*/coverage.txt' ."),
+		Cmd("buildkite-agent artifact download '*/lcov.info' ."),
+		Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	commit := os.Getenv("BUILDKITE_COMMIT")
