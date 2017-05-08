@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"log"
 	"net"
 	"os/exec"
@@ -80,8 +81,19 @@ func (s *Server) processRequests(requests <-chan *protocol.Request) {
 	}
 }
 
+// This is a timeout for git commands that should not take a long time.
+var shortGitCommandTimeout = time.Minute
+
+// This is a timeout for long git commands like clone or remote update.
+// that may take a while for large repos. These types of commands should
+// be run in the background.
+var longGitCommandTimeout = time.Hour
+
 // handleExecRequest handles a exec request.
 func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
+	ctx, cancel := context.WithTimeout(context.Background(), shortGitCommandTimeout)
+	defer cancel()
+
 	start := time.Now()
 	exitStatus := -10810 // sentinel value to indicate not set
 	var stdoutN, stderrN int64
@@ -146,13 +158,16 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 			s.cloningMu.Unlock()
 
 			go func() {
+				// Create a new context because this is in a background goroutine.
+				ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 				defer func() {
+					cancel()
 					s.cloningMu.Lock()
 					delete(s.cloning, dir)
 					s.cloningMu.Unlock()
 				}()
 
-				cmd := exec.Command("git", "clone", "--mirror", origin, dir)
+				cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", origin, dir)
 				if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
 					log15.Error("clone failed", "error", err, "output", string(output))
 					return
@@ -174,11 +189,11 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 	s.cloningMu.Unlock()
 
 	if req.EnsureRevision != "" {
-		cmd := exec.Command("git", "rev-parse", req.EnsureRevision)
+		cmd := exec.CommandContext(ctx, "git", "rev-parse", req.EnsureRevision)
 		cmd.Dir = dir
 		if err := cmd.Run(); err != nil {
 			// Revision not found, update before running actual command.
-			s.doRepoUpdate(req.Repo, req.Opt)
+			s.doRepoUpdate(ctx, req.Repo, req.Opt)
 		}
 	}
 
@@ -187,7 +202,7 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 	stdoutW := &writeCounter{w: stdoutWRaw}
 	stderrW := &writeCounter{w: stderrWRaw}
 
-	cmd := exec.Command("git", req.Args...)
+	cmd := exec.CommandContext(ctx, "git", req.Args...)
 	cmd.Dir = dir
 	cmd.Stdin = chanrpcutil.NewReader(req.Stdin)
 	cmd.Stdout = stdoutW
@@ -254,8 +269,13 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 				continue // git data still fresh
 			}
 			lastCheckAt[req.repo] = time.Now()
-
-			go s.doRepoUpdate(req.repo, req.opt)
+			go func(req updateRepoRequest) {
+				// Create a new context with a new timeout (instead of passing one through updateRepoRequest)
+				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
+				ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+				defer cancel()
+				s.doRepoUpdate(ctx, req.repo, req.opt)
+			}(req)
 		}
 	}()
 
@@ -264,7 +284,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 
 var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
 
-func (s *Server) doRepoUpdate(repo string, opt *vcs.RemoteOpts) {
+func (s *Server) doRepoUpdate(ctx context.Context, repo string, opt *vcs.RemoteOpts) {
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
 	if !ok {
@@ -286,12 +306,12 @@ func (s *Server) doRepoUpdate(repo string, opt *vcs.RemoteOpts) {
 		l.once = new(sync.Once) // Make new requests wait for next update.
 		s.repoUpdateLocksMu.Unlock()
 
-		s.doRepoUpdate2(repo, opt)
+		s.doRepoUpdate2(ctx, repo, opt)
 	})
 }
 
-func (s *Server) doRepoUpdate2(repo string, opt *vcs.RemoteOpts) {
-	cmd := exec.Command("git", "remote", "update", "--prune")
+func (s *Server) doRepoUpdate2(ctx context.Context, repo string, opt *vcs.RemoteOpts) {
+	cmd := exec.CommandContext(ctx, "git", "remote", "update", "--prune")
 	cmd.Dir = path.Join(s.ReposDir, repo)
 	if output, err := s.runWithRemoteOpts(cmd, opt); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
@@ -301,7 +321,7 @@ func (s *Server) doRepoUpdate2(repo string, opt *vcs.RemoteOpts) {
 	headBranch := "master"
 
 	// try to fetch HEAD from origin
-	cmd = exec.Command("git", "remote", "show", "origin")
+	cmd = exec.CommandContext(ctx, "git", "remote", "show", "origin")
 	cmd.Dir = path.Join(s.ReposDir, repo)
 	output, err := s.runWithRemoteOpts(cmd, opt)
 	if err != nil {
@@ -317,11 +337,11 @@ func (s *Server) doRepoUpdate2(repo string, opt *vcs.RemoteOpts) {
 	}
 
 	// check if branch pointed to by HEAD exists
-	cmd = exec.Command("git", "rev-parse", headBranch)
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch)
 	cmd.Dir = path.Join(s.ReposDir, repo)
 	if err := cmd.Run(); err != nil {
 		// branch does not exist, pick first branch
-		cmd := exec.Command("git", "branch")
+		cmd := exec.CommandContext(ctx, "git", "branch")
 		cmd.Dir = path.Join(s.ReposDir, repo)
 		list, err := cmd.Output()
 		if err != nil {
@@ -336,7 +356,7 @@ func (s *Server) doRepoUpdate2(repo string, opt *vcs.RemoteOpts) {
 	}
 
 	// set HEAD
-	cmd = exec.Command("git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
+	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
 	cmd.Dir = path.Join(s.ReposDir, repo)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))

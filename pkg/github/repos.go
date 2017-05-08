@@ -200,7 +200,7 @@ var lsRemoteRefMatcher = regexp.MustCompile(`^ref:\s+refs/heads/([^\s]+)\s+HEAD\
 // and using getFromGit exclusively, as it works for any generic git repository and doesn't count
 // against the GitHub API rate limit.
 func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	cmd := exec.Command("git", "ls-remote", "--symref", fmt.Sprintf("https://github.com/%s/%s", owner, repoName), "HEAD")
+	cmd := exec.CommandContext(ctx, "git", "ls-remote", "--symref", fmt.Sprintf("https://github.com/%s/%s", owner, repoName), "HEAD")
 	cmd.Stdin = nil
 	out, err := cmd.Output()
 	if err != nil {
