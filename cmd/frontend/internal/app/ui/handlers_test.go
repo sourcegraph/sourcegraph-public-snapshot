@@ -110,7 +110,7 @@ func TestRepo_OK(t *testing.T) {
 	// (Should not try to resolve the revision; see serveRepo for why.)
 
 	wantMeta := meta{
-		Title:        "r: d · Sourcegraph",
+		Title:        "r: d - Sourcegraph",
 		ShortTitle:   "r",
 		Description:  "d",
 		CanonicalURL: "http://example.com/r",
@@ -191,7 +191,7 @@ func TestRepoRev_OK(t *testing.T) {
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
 
 	wantMeta := meta{
-		Title:        "r: d · Sourcegraph",
+		Title:        "r: d - Sourcegraph",
 		ShortTitle:   "r",
 		Description:  "d",
 		CanonicalURL: "http://example.com/r@c",
@@ -263,7 +263,7 @@ func TestBlob_OK(t *testing.T) {
 	}
 
 	wantMeta := meta{
-		Title:        "f · r · Sourcegraph",
+		Title:        "f · r - Sourcegraph",
 		ShortTitle:   "f",
 		Description:  "r — desc",
 		CanonicalURL: "http://example.com/r@c/-/blob/f",
@@ -386,7 +386,7 @@ func TestTree_OK(t *testing.T) {
 	}
 
 	wantMeta := meta{
-		Title:        "d · r · Sourcegraph",
+		Title:        "d · r - Sourcegraph",
 		ShortTitle:   "d",
 		Description:  "r — desc",
 		CanonicalURL: "http://example.com/r@c/-/tree/d",
