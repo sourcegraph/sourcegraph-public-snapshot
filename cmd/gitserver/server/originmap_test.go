@@ -1,4 +1,4 @@
-package originmap
+package server
 
 import (
 	"reflect"
@@ -61,7 +61,7 @@ func TestMap(t *testing.T) {
 
 		originMap = actual
 		for _, mapping := range test.mappings {
-			if gotURI := Map(mapping[0]); gotURI != mapping[1] {
+			if gotURI := OriginMap(mapping[0]); gotURI != mapping[1] {
 				t.Errorf("on input %q, input URI %q, got %q, but expected %q", test.in, mapping[0], gotURI, mapping[1])
 			}
 		}

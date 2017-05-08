@@ -23,7 +23,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/originmap"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -258,7 +257,7 @@ func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
 		return
 	}
 	if !repoExists(dir) {
-		if origin := originmap.Map(req.Repo); origin != "" && !req.NoAutoUpdate && !noUpdates {
+		if origin := OriginMap(req.Repo); origin != "" && !req.NoAutoUpdate && !noUpdates {
 			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
 			s.cloningMu.Unlock()
 

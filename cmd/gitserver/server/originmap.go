@@ -5,7 +5,7 @@
 // It always includes the mapping
 // "github.com/!https://github.com/%.git" (github.com ->
 // https://github.com/%.git)
-package originmap
+package server
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func init() {
 }
 
 // Map maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
-func Map(repoURI string) string {
+func OriginMap(repoURI string) string {
 	for _, entry := range originMap {
 		if strings.HasPrefix(repoURI, entry.Prefix) {
 			return strings.Replace(entry.Origin, "%", strings.TrimPrefix(repoURI, entry.Prefix), 1)

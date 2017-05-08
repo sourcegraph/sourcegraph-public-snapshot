@@ -18,7 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/originmap"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
 func init() {
@@ -182,6 +182,18 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 // GetByURI returns metadata for the request repository URI. See the
 // documentation for repos.Get for the contract on the freshness of
 // the data returned.
+//
+// If the requested repository does not exist, this method will
+// attempt to clone it and add it to the DB. In the interim, it will
+// return an error that says something like "Not found (clone in
+// progress)". Callers can poll until the returned error is nil. If
+// the new candidate repository could not be cloned, no repository is
+// added to the DB.
+//
+// Note that if this method returns a repository and non-nil error, it
+// does not necessarily mean the repository has been cloned, as the
+// repository in the DB could have been added by other means (e.g.,
+// manually).
 func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
@@ -189,6 +201,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
+		var newRepo *sourcegraph.Repo
 		if github.IsRepoAndShouldCheckPermissions(uri) {
 			// Repo does not exist in DB, create new entry.
 			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
@@ -209,7 +222,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			// metadata, because it'll get stale, and fetching online from
 			// GitHub is quite easy and (with HTTP caching) performant.
 			ts := time.Now()
-			return s.tryInsertNew(ctx, &sourcegraph.Repo{
+			newRepo = &sourcegraph.Repo{
 				Owner:       ghRepo.Owner,
 				Name:        ghRepo.Name,
 				URI:         ghRepoURI,
@@ -217,22 +230,26 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				Fork:        ghRepo.Fork,
 				Private:     ghRepo.Private,
 				CreatedAt:   &ts,
-			})
-		} else if inferredOrigin := originmap.Map(uri); inferredOrigin != "" {
+			}
+		} else {
 			ts := time.Now()
 			cmps := strings.Split(uri, "/")
 			var owner string
 			if len(cmps) >= 2 {
 				owner = cmps[len(cmps)-2]
 			}
-			return s.tryInsertNew(ctx, &sourcegraph.Repo{
+			newRepo = &sourcegraph.Repo{
 				Name:      cmps[len(cmps)-1],
 				Owner:     owner,
 				URI:       uri,
 				CreatedAt: &ts,
-			})
+			}
 		}
-		return nil, err
+		// If gitserver has not yet cloned it, don't add it to the DB
+		if _, err := gitcmd.Open(newRepo).ResolveRevision(ctx, "HEAD"); err != nil {
+			return nil, err
+		}
+		return s.tryInsertNew(ctx, newRepo)
 	}
 	return repo, nil
 }
