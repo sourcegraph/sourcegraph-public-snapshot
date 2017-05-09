@@ -1,6 +1,6 @@
 # Sourcegraph: fast, global, semantic code search & cross-reference engine
 
-[![Build status](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg)](https://buildkite.com/sourcegraph/sourcegraph)
+[![Build status](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)
 [![codecov](https://codecov.io/gh/sourcegraph/sourcegraph/branch/master/graph/badge.svg?token=aV9CcZQB4l)](https://codecov.io/gh/sourcegraph/sourcegraph)
 
 Remember the last time you were in flow while coding? You got a ton done and felt great.
