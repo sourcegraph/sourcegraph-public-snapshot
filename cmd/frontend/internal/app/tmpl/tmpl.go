@@ -55,6 +55,8 @@ func Load() {
 	if err := commonTemplates(); err != nil {
 		log.Fatal(err)
 	}
+	// TODO(nick): These templates may not be used any more now that we have migrated to vscode.
+	// Can all this get deleted?
 	if err := parseHTMLTemplates([][]string{
 		{"ui.html", "head_from_meta.html", "layout.html", "scripts.html", "styles.css"},
 		{"deflanding.html", "head_from_meta.html", "layout.html", "scripts.html", "styles.css"},

@@ -18,7 +18,6 @@ services:
       SRC_SESSION_STORE_REDIS: redis:6379
       TRACKING_APP_ID:
       ZAP_SERVER: ws://zap:8433
-      USE_VSCODE_UI: "true"
     restart: "always"
     ports:
      - "${SRC_APP_PORT:-3080}:3080"
