@@ -21,33 +21,33 @@ func TestRequest(t *testing.T) {
 	tests := []Test{
 		{
 			Name:         "WithOutput",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"Repo": "github.com/gorilla/mux", "Args": ["testcommand"]}`)),
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "testoutput",
 		},
 		{
 			Name:         "WithoutOutput",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"Repo": "github.com/gorilla/mux", "Args": ["nooutput"]}`)),
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["nooutput"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "",
 		},
 		{
 			Name:         "NonexistingRepo",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"Repo": "github.com/gorilla/doesnotexist", "Args": ["testcommand"]}`)),
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"RepoNotFound":true,"CloneInProgress":false,"Error":"","ExitStatus":0,"Stderr":""}`,
+			ExpectedBody: `{"repoNotFound":true,"cloneInProgress":false,"error":"","exitStatus":0,"stderr":""}`,
 		},
 		{
 			Name:         "Error1",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"Repo": "github.com/gorilla/mux", "Args": ["testerror1"]}`)),
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror1"]}`)),
 			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"RepoNotFound":false,"CloneInProgress":false,"Error":"testerror","ExitStatus":0,"Stderr":""}`,
+			ExpectedBody: `{"repoNotFound":false,"cloneInProgress":false,"error":"testerror","exitStatus":0,"stderr":""}`,
 		},
 		{
 			Name:         "Error2",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"Repo": "github.com/gorilla/mux", "Args": ["testerror2"]}`)),
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror2"]}`)),
 			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"RepoNotFound":false,"CloneInProgress":false,"Error":"","ExitStatus":1,"Stderr":"teststderr"}`,
+			ExpectedBody: `{"repoNotFound":false,"cloneInProgress":false,"error":"","exitStatus":1,"stderr":"teststderr"}`,
 		},
 		{
 			Name:         "EmptyBody",
@@ -59,7 +59,7 @@ func TestRequest(t *testing.T) {
 			Name:         "EmptyInput",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"RepoNotFound":true,"CloneInProgress":false,"Error":"","ExitStatus":0,"Stderr":""}`,
+			ExpectedBody: `{"repoNotFound":true,"cloneInProgress":false,"error":"","exitStatus":0,"stderr":""}`,
 		},
 	}
 

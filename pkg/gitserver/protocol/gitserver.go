@@ -4,10 +4,10 @@ import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 // ExecRequest is a request to execute a command inside a git repository.
 type ExecRequest struct {
-	Repo           string
-	EnsureRevision string
-	Args           []string
-	Opt            *vcs.RemoteOpts
+	Repo           string          `json:"repo"`
+	EnsureRevision string          `json:"ensureRevision"`
+	Args           []string        `json:"args"`
+	Opt            *vcs.RemoteOpts `json:"opt"`
 
 	// NoAutoUpdate is whether to prevent gitserver from auto-updating or cloning a repository if it
 	// does not yet exist. This should be set to true if the following conditions hold:
@@ -23,15 +23,15 @@ type ExecRequest struct {
 	// - end result: nothing gets cloned, even though an authed client made a request that should have triggered an auto-clone
 	//
 	// There maybe a more elegant solution, but this will do for now.
-	NoAutoUpdate bool
+	NoAutoUpdate bool `json:"noAutoUpdate"`
 }
 
 type ExecError struct {
-	RepoNotFound    bool // If true, exec returned with noop because repo is not found.
-	CloneInProgress bool // If true, exec returned with noop because clone is in progress.
-	Error           string
-	ExitStatus      int
-	Stderr          string
+	RepoNotFound    bool   `json:"repoNotFound"`    // If true, exec returned with noop because repo is not found.
+	CloneInProgress bool   `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
+	Error           string `json:"error"`
+	ExitStatus      int    `json:"exitStatus"`
+	Stderr          string `json:"stderr"`
 }
 
 type LegacyRequest struct {

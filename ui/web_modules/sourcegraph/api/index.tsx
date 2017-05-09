@@ -279,6 +279,8 @@ export interface GitHubReposWithDetailsList {
 }
 
 export interface HTTPSConfig {
+	user: string;
+	pass: string;
 }
 
 export interface Hover {
@@ -411,6 +413,8 @@ export interface ReferenceParams {
 }
 
 export interface RemoteOpts {
+	ssh: any;
+	https: any;
 }
 
 export interface RenameParams {
@@ -522,6 +526,9 @@ export interface ResolvedRev {
 }
 
 export interface SSHConfig {
+	user?: string;
+	publicKey?: number[];
+	privateKey: number[];
 }
 
 export interface SaveOptions {
