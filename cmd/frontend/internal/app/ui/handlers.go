@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -222,7 +223,19 @@ func serveAny(w http.ResponseWriter, r *http.Request) error {
 	return tmplExec(w, r, http.StatusOK, meta{Index: true, Follow: true})
 }
 
+// testWriteMetaJSON, if set, causes tmplExec to bypass the actual
+// template rendering and just write the meta information to the
+// response as JSON. It is used when we want to unit-test the handlers
+// and don't want to have to set up the JS bundle to make
+// bundle.RenderEntrypoint succeed.
+var testWriteMetaJSON bool
+
 func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) error {
+	if testWriteMetaJSON {
+		w.WriteHeader(statusCode)
+		return json.NewEncoder(w).Encode(m)
+	}
+
 	data := &struct {
 		tmpl.Common
 		Meta meta

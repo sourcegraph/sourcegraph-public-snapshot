@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -24,6 +25,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
+func init() {
+	testWriteMetaJSON = true
+}
+
 func newTest() *httptestutil.Client {
 	backend.TestSkipZap = true
 	tmpl.LoadOnce()
@@ -43,12 +48,12 @@ func getForTest(c interface {
 		return meta{}, fmt.Errorf("got HTTP %d, want %d", resp.StatusCode, wantStatusCode)
 	}
 
-	html, err := ioutil.ReadAll(resp.Body)
+	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return meta{}, err
 	}
-	m, err := parseMeta(html)
-	if err != nil {
+	var m meta
+	if err := json.Unmarshal(data, &m); err != nil {
 		return meta{}, err
 	}
 
@@ -59,7 +64,7 @@ func getForTest(c interface {
 		}
 	}
 
-	return *m, nil
+	return m, nil
 }
 
 func TestCatchAll(t *testing.T) {
@@ -69,7 +74,7 @@ func TestCatchAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "Sourcegraph"; m.Title != want {
+	if want := ""; m.Title != want {
 		t.Errorf("got title %q, want %q", m.Title, want)
 	}
 }
@@ -110,7 +115,7 @@ func TestRepo_OK(t *testing.T) {
 	// (Should not try to resolve the revision; see serveRepo for why.)
 
 	wantMeta := meta{
-		Title:        "r: d - Sourcegraph",
+		Title:        "r: d",
 		ShortTitle:   "r",
 		Description:  "d",
 		CanonicalURL: "http://example.com/r",
@@ -191,7 +196,7 @@ func TestRepoRev_OK(t *testing.T) {
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
 
 	wantMeta := meta{
-		Title:        "r: d - Sourcegraph",
+		Title:        "r: d",
 		ShortTitle:   "r",
 		Description:  "d",
 		CanonicalURL: "http://example.com/r@c",
@@ -263,7 +268,7 @@ func TestBlob_OK(t *testing.T) {
 	}
 
 	wantMeta := meta{
-		Title:        "f · r - Sourcegraph",
+		Title:        "f · r",
 		ShortTitle:   "f",
 		Description:  "r — desc",
 		CanonicalURL: "http://example.com/r@c/-/blob/f",
@@ -386,7 +391,7 @@ func TestTree_OK(t *testing.T) {
 	}
 
 	wantMeta := meta{
-		Title:        "d · r - Sourcegraph",
+		Title:        "d · r",
 		ShortTitle:   "d",
 		Description:  "r — desc",
 		CanonicalURL: "http://example.com/r@c/-/tree/d",
