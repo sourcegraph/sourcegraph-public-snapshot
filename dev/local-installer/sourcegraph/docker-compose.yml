@@ -4,6 +4,7 @@ services:
     image: "docker.sourcegraph.com/frontend:local"
     environment:
       ON_PREM: "true"
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
       NO_GITHUB_API: "true"
       GITHUB_BASE_URL: http://github-proxy:3180
       LSP_PROXY: lsp-proxy:4388
@@ -23,6 +24,13 @@ services:
       TRACKING_APP_ID:
       CORS_ORIGIN: ${CORS_ORIGIN}
       USE_VSCODE_UI: "true"
+      SEARCHER_URL: searcher:3181
+      SRC_APP_DISABLE_SUPPORT_SERVICES: ${SRC_APP_DISABLE_SUPPORT_SERVICES}
+      DEBUG: ${DEBUG}
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_CLIENT_SECRET: ${AUTH0_CLIENT_SECRET}
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_MANAGEMENT_API_TOKEN: ${AUTH0_MANAGEMENT_API_TOKEN}
     restart: "always"
     ports:
      - "${SRC_APP_PORT:-3080}:${SRC_APP_PORT:-3080}"
@@ -38,6 +46,12 @@ services:
      - ./config:/config
   github-proxy:
     image: "docker.sourcegraph.com/github-proxy:latest"
+    environment:
+      DEBUG: ${DEBUG}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+    ports:
+      - "3180:3180"
   gitserver-1:
     image: "docker.sourcegraph.com/gitserver:local"
     volumes:
@@ -45,46 +59,68 @@ services:
       - .data/gitserver-1-data:/data/repos
       - ${SSH_KEYPAIR_FOLDER:-~/.ssh}:/root/.ssh_init
     environment:
-       NO_GITHUB_API: "true"
-       SRC_ADDR: 3178
-       ORIGIN_MAP: ${ORIGIN_MAP}
-       SRC_REPOS_DIR: /data/repos
-       SSH_INIT_DIR: /root/.ssh_init
-       SSH_DIR: /root/.ssh
+      DEBUG: ${DEBUG}
+      NO_GITHUB_API: "true"
+      SRC_ADDR: 3178
+      ORIGIN_MAP: ${ORIGIN_MAP}
+      SRC_REPOS_DIR: /data/repos
+      SSH_INIT_DIR: /root/.ssh_init
+      SSH_DIR: /root/.ssh
+    ports:
+      - "3178:3178"
   indexer:
     image: "docker.sourcegraph.com/indexer:latest"
     environment:
-       LSP_PROXY: lsp-proxy:4388
-       PGHOST: postgres
-       PGSSLMODE: disable
-       PGUSER: sg
-       REDIS_MASTER_ENDPOINT: redis-cache:6379
-       SRC_GIT_SERVERS: gitserver-1:3178
-       SRC_PROF_HTTP: :6060
+      DEBUG: ${DEBUG}
+      LSP_PROXY: lsp-proxy:4388
+      PGHOST: postgres
+      PGSSLMODE: disable
+      PGUSER: sg
+      REDIS_MASTER_ENDPOINT: redis-cache:6379
+      SRC_GIT_SERVERS: gitserver-1:3178
+      SRC_PROF_HTTP: :6060
+    ports:
+      - "3179:3179"
   lsp-proxy:
     image: "docker.sourcegraph.com/lsp-proxy:latest"
     environment:
-       LANGSERVER_GO: tcp://xlang-go:4389
-       LANGSERVER_GO_BG: tcp://xlang-go:4389
-       LANGSERVER_JAVA: tcp://xlang-java:2088
-       LANGSERVER_JAVA_BG: tcp://xlang-java:2088
-       REDIS_MASTER_ENDPOINT: redis:6379
-       SRC_GIT_SERVERS: gitserver-1:3178
+      DEBUG: ${DEBUG}
+      LANGSERVER_GO: tcp://xlang-go:4389
+      LANGSERVER_GO_BG: tcp://xlang-go:4389
+      LANGSERVER_JAVA: tcp://xlang-java:2088
+      LANGSERVER_JAVA_BG: tcp://xlang-java:2088
+      REDIS_MASTER_ENDPOINT: redis:6379
+      SRC_GIT_SERVERS: gitserver-1:3178
+    ports:
+      - "4388:4388"
   searcher:
     image: "docker.sourcegraph.com/searcher:latest"
     environment:
-       SRC_GIT_SERVERS: gitserver-1:3178
+      DEBUG: ${DEBUG}
+      SRC_GIT_SERVERS: gitserver-1:3178
+    ports:
+      - "3181:3181"
   xlang-go:
     image: "docker.sourcegraph.com/xlang-go:latest"
-    entrypoint: /usr/local/bin/xlang-go -mode=tcp -addr=:4389
+    entrypoint:
+      - /usr/local/bin/xlang-go
+      - -mode=tcp
+      - -addr=:4389
     environment:
-       CLONE_FROM_GITSERVER: "true"
-       REDIS_MASTER_ENDPOINT: redis:6379
-       SRC_GIT_SERVERS: gitserver-1:3178
+      DEBUG: ${DEBUG}
+      CLONE_FROM_GITSERVER: "true"
+      REDIS_MASTER_ENDPOINT: redis:6379
+      SRC_GIT_SERVERS: gitserver-1:3178
+    ports:
+      - "4389:4389"
   xlang-java:
     image: "docker.sourcegraph.com/xlang-java:LATEST-SKINNY"
+    ports:
+      - "2088:2088"
   redis:
     image: "redis:alpine"
+    ports:
+      - "6379:6379"
   postgres:
     image: "postgres:alpine"
     volumes: 
@@ -93,11 +129,14 @@ services:
       PGDATA: /data
       POSTGRES_USER: sg
       POSTGRES_PASSWORD:
+    ports:
+      - "5432:5432"
   initializer:
     image: "docker.sourcegraph.com/initializer:latest"
     volumes:
       - ${GIT_PARENT_DIRECTORY:-.}:/local
     environment:
+      DEBUG: ${DEBUG}
       GIT_PARENT_DIRECTORY: /local
       ENSURE_REPOS_REMOTE: ${ENSURE_REPOS_REMOTE}
       ON_PREM: "true"
