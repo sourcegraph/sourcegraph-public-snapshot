@@ -24,7 +24,7 @@ const SGDEV_SOURCEGRAPH_URL_BITBUCKET = "http://localhost:3080";
 function injectApplication(loc: Location): void {
 	switch (getDomain(loc)) {
 		case Domain.GITHUB:
-			chrome.storage.sync.get((items) => {
+			chrome.storage.sync.get(items => {
 				const sgurl = items.sourcegraphURL ? items.sourcegraphURL : "https://sourcegraph.com";
 				setSourcegraphUrl(sgurl);
 				injectGitHubApplication();

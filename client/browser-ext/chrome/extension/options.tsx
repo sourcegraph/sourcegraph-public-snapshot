@@ -20,9 +20,7 @@ getSourcegraphURLInput().focus();
 /**
  * Sync storage value to UI
  */
-chrome.storage.onChanged.addListener(function (changes, namespace) {
-	getSourcegraphURLInput().value = changes.sourcegraphURL.newValue;
-});
+chrome.storage.onChanged.addListener((changes, namespace) => getSourcegraphURLInput().value = changes.sourcegraphURL.newValue);
 
 /**
  * UI listeners
