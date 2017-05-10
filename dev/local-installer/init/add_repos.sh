@@ -13,7 +13,7 @@ REPO_LIST=$1
 for repo in $(cat $REPO_LIST); do
     set +e
     for i in {1..3}; do # retry max 3 times (might fail due to docker-compose initialization race)
-        curl -XPOST "${SRC_APP_URL}/.api/repos-ensure" -d "[\"${repo}\"]"
+        curl -XPOST "${FRONTEND_URL}/.api/repos-ensure" -d "[\"${repo}\"]"
         if [ $? -eq 0 ]; then
             break;
         fi
