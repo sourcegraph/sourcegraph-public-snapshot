@@ -14,7 +14,7 @@ For Linux users or if you don't want to use Homebrew on macOS.
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [Go](https://golang.org/doc/install) (v1.7.0 or higher)
-- [Node JS](https://nodejs.org/en/download/) (v5.6.0 or higher)
+- [Node JS](https://nodejs.org/en/download/) (v7.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
   - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
@@ -71,7 +71,6 @@ This should be a separate GitHub user account for development whose username has
 ```
 git clone git@github.com:sourcegraph/sourcegraph.git $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
 cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
-go install ./cmd/src
 ```
 
 Running the preceding commands will build and install the `src` binary in `$GOPATH/bin`, which you will use in subsequent steps such as PostgreSQL setup.
@@ -116,7 +115,6 @@ eval $(docker-machine env)
 Then run the following commands (**NOTE: Node.js and [Yarn](https://yarnpkg.com/en/docs/install) must be installed for the this step**):
 
 ```
-make dep
 make serve-dev
 ```
 
@@ -132,13 +130,6 @@ permanent for every shell session by adding the following line to your
 ```bash
 # increase max number of file descriptors for running a sourcegraph instance.
 ulimit -n 10000
-```
-
-You can also compile and install `src` directly:
-
-```
-go install ./cmd/src
-src -h
 ```
 
 ## Test
