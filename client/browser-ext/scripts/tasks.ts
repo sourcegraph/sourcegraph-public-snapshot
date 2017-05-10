@@ -18,6 +18,5 @@ export function copyAssets(type: string): void {
 	shelljs.mkdir(type);
 	shelljs.cp(`chrome/manifest.${env}.json`, `${type}/manifest.json`);
 	shelljs.cp("-R", "chrome/assets/", type);
-	shelljs.cp("chrome/views/*.html", "dev/");
 	shelljs.exec(`jade -O "{ env: '${env}' }" -o ${type} chrome/views/`);
 };

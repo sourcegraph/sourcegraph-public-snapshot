@@ -1,0 +1,10 @@
+doctype html
+
+html
+  head
+    title Sourcegraph extension
+  body
+    form
+      label Sourcegraph URL: 
+      input#sourcegraph_url
+    script(src=env == 'prod' ? '/js/options.bundle.js' : 'https://localhost:3000/js/options.bundle.js')

@@ -4,6 +4,7 @@ const webpack = require('webpack');
 module.exports = {
 	entry: {
 		background: path.join(__dirname, '../chrome/extension/background.tsx'),
+		options: path.join(__dirname, '../chrome/extension/options.tsx'),
 		inject: path.join(__dirname, '../chrome/extension/inject.tsx'),
 		sgdev: path.join(__dirname, '../phabricator/sgdev/sgdev.tsx'),
 		umami: path.join(__dirname, '../phabricator/umami/umami.tsx')
