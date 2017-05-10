@@ -42,7 +42,8 @@ This is a streamlined setup for Mac machines.
 5. Configure PostgreSQL and Redis to start automatically
 
     ```
-    brew services start postgresql redis
+    brew services start postgresql
+	brew services start redis
     ```
 
 ### Optional (but recommended)
