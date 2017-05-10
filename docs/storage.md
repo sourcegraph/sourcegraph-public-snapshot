@@ -1,7 +1,4 @@
-+++
-title = "DB and storage"
-description = "Manage the PostgreSQL database used by Sourcegraph"
-+++
+# PostgreSQL
 
 Sourcegraph stores most data in a
 [PostgreSQL database](http://www.postgresql.org). Git repositories,
@@ -14,6 +11,7 @@ After installing PostgreSQL, set up up a `sourcegraph` user and database:
 
 ```
 sudo su - postgres # this line only needed for Linux
+createdb
 createuser --superuser sourcegraph
 psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
