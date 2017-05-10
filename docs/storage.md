@@ -25,7 +25,7 @@ with `timezone =` to the following:
 timezone = 'UTC'
 ```
 
-Finally, restart your database server (e.g. `sudo service postgresql restart`).
+Finally, restart your database server (mac: `brew services restart postgresql`)
 
 # Configuring PostgreSQL
 
