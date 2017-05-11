@@ -11,6 +11,8 @@ import (
 	"sync"
 	"unicode"
 
+	"fmt"
+
 	"github.com/gobwas/glob"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -26,7 +28,7 @@ const (
 
 	// maxLineMatches is the limit on number of matches to return in a
 	// file.
-	maxLineMatches = 100
+	maxLineMatches = 500
 
 	// maxOffsets is the limit on number of matches to return on a line.
 	maxOffsets = 10
@@ -141,9 +143,9 @@ func (rg *readerGrep) Copy() *readerGrep {
 }
 
 // Find returns a LineMatch for each line that matches rg in reader.
-//
+// LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
+func (rg *readerGrep) Find(reader io.Reader) (matches []LineMatch, limitHit bool, err error) {
 	if rg.buf == nil {
 		// reader should always have maxFileSize bytes or less.
 		rg.buf = make([]byte, maxFileSize)
@@ -156,7 +158,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 	// we can simplify and avoid needing to stream the lines.
 	n, err := readAll(reader, rg.buf)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
@@ -180,15 +182,14 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 	// actually searching for results. We use the same approach when we
 	// search per-line.
 	if rg.re.Find(fileMatchBuf) == nil {
-		return nil, nil
+		return nil, false, nil
 	}
 
-	var matches []LineMatch
 	for i := 0; len(matches) < maxLineMatches; i++ {
 		advance, lineBuf, err := bufio.ScanLines(fileBuf, true)
 		if err != nil {
 			// ScanLines should never return an err
-			return nil, err
+			return nil, false, err
 		}
 		if advance == 0 { // EOF
 			break
@@ -209,6 +210,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 		// to avoid unnecessary allocations.
 		if rg.re.Find(matchBuf) != nil {
 			locs := rg.re.FindAllIndex(matchBuf, maxOffsets)
+			lineLimitHit := len(locs) == maxOffsets
 			offsetAndLengths := make([][]int, len(locs))
 			for i, match := range locs {
 				start, end := match[0], match[1]
@@ -219,10 +221,12 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 				Preview:          string(lineBuf),
 				LineNumber:       i,
 				OffsetAndLengths: offsetAndLengths,
+				LimitHit:         lineLimitHit,
 			})
 		}
 	}
-	return matches, nil
+	limitHit = len(matches) == maxLineMatches
+	return matches, limitHit, nil
 }
 
 // FindZip is a convenience function to run Find on f.
@@ -231,16 +235,17 @@ func (rg *readerGrep) FindZip(f *zip.File) (FileMatch, error) {
 	if err != nil {
 		return FileMatch{}, err
 	}
-	lm, err := rg.Find(rc)
+	lm, limitHit, err := rg.Find(rc)
 	rc.Close()
 	return FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,
+		LimitHit:    limitHit,
 	}, err
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []FileMatch, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader, fileMatchLimit int) (fm []FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	defer func() {
@@ -251,7 +256,14 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 		span.Finish()
 	}()
 
-	// If we reach maxFileMatches we use cancel to stop the search
+	if fileMatchLimit > maxFileMatches {
+		return []FileMatch{}, false, fmt.Errorf("fileMatchLimit exceeds allowed maximum: %d", maxFileMatches)
+	}
+	if fileMatchLimit <= 0 {
+		fileMatchLimit = maxFileMatches
+	}
+
+	// If we reach fileMatchLimit we use cancel to stop the search
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -317,14 +329,15 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 	m := []FileMatch{}
 	for fm := range matches {
 		m = append(m, fm)
-		if len(m) >= maxFileMatches {
+		if len(m) >= fileMatchLimit {
+			limitHit = true
 			cancel()
 			// drain matches
 			for range matches {
 			}
 		}
 	}
-	return m, wgErr
+	return m, limitHit, wgErr
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include

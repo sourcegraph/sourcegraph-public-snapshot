@@ -96,7 +96,7 @@ input SearchQuery {
 	isRegExp: Boolean!
 	isWordMatch: Boolean!
 	isCaseSensitive: Boolean!
-	maxResults: Int!
+	fileMatchLimit: Int!
 	includePattern: String
 	excludePattern: String
 }
@@ -148,8 +148,8 @@ type File {
 }
 
 type SearchResults {
-	hasNextPage: Boolean!
 	results: [FileMatch!]!
+	limitHit: Boolean!
 }
 
 type FileMatch {

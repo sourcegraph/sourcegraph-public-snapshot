@@ -307,7 +307,7 @@ declare namespace GQL {
 		isRegExp: boolean;
 		isWordMatch: boolean;
 		isCaseSensitive: boolean;
-		maxResults: number;
+		fileMatchLimit: number;
 		includePattern?: string;
 		excludePattern?: string;
 	}
@@ -317,8 +317,8 @@ declare namespace GQL {
 	*/
 	interface ISearchResults {
 		__typename: string;
-		hasNextPage: boolean;
 		results: Array<IFileMatch>;
+		limitHit: boolean;
 	}
 
 	/*
