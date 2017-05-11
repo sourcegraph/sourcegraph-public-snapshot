@@ -6,10 +6,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
+
+var UseRemoteFS = false
 
 // remoteFS returns a virtual file system interface for accessing the files in
 // the specified repo at the given commit.
@@ -22,7 +23,7 @@ import (
 // to read the repo. We assume permission checks happen before a request
 // reaches a build server.
 func remoteFS(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI string) (ctxvfs.FileSystem, error) {
-	if workspaceURI == "" || !gitserver.DefaultClient.HasServers() {
+	if workspaceURI == "" || UseRemoteFS {
 		return vfsutil.RemoteFS(conn), nil
 	}
 	u, err := uri.Parse(workspaceURI)

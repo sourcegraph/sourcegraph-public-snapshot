@@ -1,19 +1,19 @@
 package gitserver
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 	"strings"
-	"sync"
-	"time"
 
-	"github.com/neelance/chanrpc"
-	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -32,35 +32,11 @@ var DefaultClient = &Client{Addrs: strings.Fields(gitservers)}
 
 // Client is a gitserver client.
 type Client struct {
-	Addrs       []string
-	NoCreds     bool
-	servers     [](chan<- *protocol.LegacyRequest)
-	connectOnce sync.Once
+	Addrs   []string
+	NoCreds bool
 }
 
-// HasServers returns true if the client is configured with servers to access.
-func (c *Client) HasServers() bool {
-	return len(c.servers) > 0
-}
-
-func (c *Client) connect() {
-	for _, addr := range c.Addrs {
-		requestsChan := make(chan *protocol.LegacyRequest, 100)
-		c.servers = append(c.servers, requestsChan)
-
-		go func(addr string) {
-			for {
-				err := chanrpc.DialAndDeliver(addr, requestsChan)
-				log.Printf("gitserver: DialAndDeliver error: %v", err)
-				time.Sleep(time.Second)
-			}
-		}(addr)
-	}
-}
-
-func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.LegacyExecReply, errRes error) {
-	c.client.connectOnce.Do(c.client.connect)
-
+func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoURI := protocol.NormalizeRepo(c.Repo.URI)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
@@ -78,7 +54,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.LegacyExecReply, errRes
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
-		return nil, err
+		return nil, nil, err
 	}
 
 	opt := &vcs.RemoteOpts{}
@@ -96,30 +72,44 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.LegacyExecReply, errRes
 	}
 
 	sum := md5.Sum([]byte(repoURI))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.servers))
-	replyChan := make(chan *protocol.LegacyExecReply, 1)
-	c.client.servers[serverIndex] <- &protocol.LegacyRequest{Exec: &protocol.LegacyExecRequest{
+	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.Addrs))
+	addr := strings.Replace(c.client.Addrs[serverIndex], ":3178", ":3278", 1) // temporary hack while replacing chanrpc
+
+	req := &protocol.ExecRequest{
 		Repo:           repoURI,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 		Opt:            opt,
 		NoAutoUpdate:   c.Repo.Private && c.client.NoCreds,
-		Stdin:          chanrpcutil.ToChunks(nil),
-		ReplyChan:      replyChan,
-	}}
-	reply, ok := <-replyChan
-	if !ok {
-		return nil, errRPCFailed
+	}
+	reqJSON, err := json.Marshal(req)
+	if err != nil {
+		panic(err) // should never fail to encode
 	}
 
-	if reply.RepoNotFound {
-		return nil, vcs.RepoNotExistError{}
+	resp, err := http.Post("http://"+addr+"/exec", "application/json", bytes.NewReader(reqJSON))
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return reply, nil
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return resp.Body, resp.Trailer, nil
+
+	case http.StatusNotFound:
+		var payload protocol.NotFoundPayload
+		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+			resp.Body.Close()
+			return nil, nil, err
+		}
+		resp.Body.Close()
+		return nil, nil, vcs.RepoNotExistError{CloneInProgress: payload.CloneInProgress}
+
+	default:
+		resp.Body.Close()
+		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 }
-
-var errRPCFailed = errors.New("gitserver: rpc failed")
 
 var deadlineExceededCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
@@ -156,27 +146,28 @@ func (c *Client) Command(name string, arg ...string) *Cmd {
 
 // DividedOutput runs the command and returns its standard output and standard error.
 func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
-	reply, err := c.sendExec(ctx)
+	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if reply.CloneInProgress {
-		return nil, nil, vcs.RepoNotExistError{CloneInProgress: true}
+	stdout, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, nil, err
 	}
-	stdout := chanrpcutil.ReadAll(reply.Stdout)
-	stderr := chanrpcutil.ReadAll(reply.Stderr)
+	rc.Close()
 
-	processResult, ok := <-reply.ProcessResult
-	if !ok {
-		return nil, nil, errors.New("connection to gitserver lost")
+	c.ExitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
+	if err != nil {
+		return nil, nil, err
 	}
-	if processResult.Error != "" {
-		err = errors.New(processResult.Error)
-	}
-	c.ExitStatus = processResult.ExitStatus
 
-	return <-stdout, <-stderr, err
+	stderr := []byte(trailer.Get("X-Exec-Stderr"))
+	if errorMsg := trailer.Get("X-Exec-Error"); errorMsg != "" {
+		return stdout, stderr, errors.New(errorMsg)
+	}
+
+	return stdout, stderr, nil
 }
 
 // Run starts the specified command and waits for it to complete.
@@ -201,78 +192,35 @@ func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
 // started command.
 func StdoutReader(ctx context.Context, c *Cmd) (io.ReadCloser, error) {
-	reply, err := c.sendExec(ctx)
+	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if reply.CloneInProgress {
-		return nil, vcs.RepoNotExistError{CloneInProgress: true}
-	}
-
-	// Ignore stderr
-	go chanrpcutil.Drain(reply.Stderr)
-
 	return &cmdReader{
-		c:     c,
-		reply: reply,
+		rc:      rc,
+		trailer: trailer,
 	}, nil
 }
 
 type cmdReader struct {
-	c     *Cmd
-	reply *protocol.LegacyExecReply
-	err   error
-	// If we read too many bytes, we store the extra bytes here
-	buf []byte
+	rc      io.ReadCloser
+	trailer http.Header
 }
 
-func (c *cmdReader) Read(p []byte) (n int, err error) {
-	if c.err != nil {
-		return 0, c.err
-	}
-
-	// First check if we have already buffered bytes to give
-	n = copy(p, c.buf)
-	if n > 0 {
-		c.buf = c.buf[n:]
-	}
-
-	// Try to fill up p
-	for n < len(p) {
-		var ok bool
-		c.buf, ok = <-c.reply.Stdout
-		if !ok {
-			break
+func (c *cmdReader) Read(p []byte) (int, error) {
+	n, err := c.rc.Read(p)
+	if err == io.EOF {
+		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
+			return 0, errors.New(errorMsg)
 		}
-		nw := copy(p[n:], c.buf)
-		n += nw
-		c.buf = c.buf[nw:]
+		if exitStatus := c.trailer.Get("X-Exec-Exit-Status"); exitStatus != "0" {
+			return 0, fmt.Errorf("non-zero exit status: %s", exitStatus)
+		}
 	}
-
-	if n != 0 {
-		return n, nil
-	}
-
-	defer func() { c.err = err }()
-	processResult, ok := <-c.reply.ProcessResult
-	if !ok {
-		return 0, errors.New("connection to gitserver lost")
-	}
-	if processResult.Error != "" {
-		return 0, errors.New(processResult.Error)
-	}
-	if processResult.ExitStatus != 0 {
-		return 0, fmt.Errorf("non-zero exit code: %d", processResult.ExitStatus)
-	}
-	return 0, io.EOF
+	return n, err
 }
 
 func (c *cmdReader) Close() error {
-	// Drain
-	go func() {
-		chanrpcutil.Drain(c.reply.Stdout)
-		<-c.reply.ProcessResult
-	}()
-	return nil
+	return c.rc.Close()
 }

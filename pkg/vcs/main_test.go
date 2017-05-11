@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"testing"
 
@@ -18,7 +19,9 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("listen failed: %s", err)
 	}
-	go (&server.Server{InsecureSkipCheckVerifySSH: true}).ServeLegacy(l)
+
+	srv := &http.Server{Handler: (&server.Server{InsecureSkipCheckVerifySSH: true}).Handler()}
+	go srv.Serve(l)
 
 	gitserver.DefaultClient = &gitserver.Client{Addrs: []string{l.Addr().String()}}
 
