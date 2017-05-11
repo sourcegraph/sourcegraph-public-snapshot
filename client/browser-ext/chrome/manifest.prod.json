@@ -43,5 +43,6 @@
     "https://github.com/*",
     "https://sourcegraph.com/*"
   ],
+  "optional_permissions": ["http://*/", "https://*/"],
   "content_security_policy": "default-src 'self'; script-src 'self'; connect-src 'self' https://sourcegraph-logging.telligentdata.com;"
 }
