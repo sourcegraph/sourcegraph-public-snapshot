@@ -105,6 +105,7 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 
+		w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
 		w.WriteHeader(http.StatusOK)
 		stderrCh := chanrpcutil.ReadAll(reply.Stderr)
 		for b := range reply.Stdout {
