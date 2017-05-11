@@ -110,11 +110,6 @@ func main() {
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
 
-	pipeline.AddStep(":desktop_computer:",
-		Cmd("cd ui"),
-		Cmd("yarn install"),
-		Cmd("yarn run test"))
-
 	pipeline.AddStep(":chrome:",
 		Cmd("cd client/browser-ext"),
 		Cmd("yarn install"),
