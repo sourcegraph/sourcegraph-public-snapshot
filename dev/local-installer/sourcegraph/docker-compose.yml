@@ -16,10 +16,16 @@ services:
       SRC_GIT_SERVERS: gitserver-1:3178
       SRC_INDEXER: indexer:3179
       SRC_SESSION_STORE_REDIS: redis:6379
+      SRC_TLS_CERT: ${SRC_TLS_CERT}
+      SRC_TLS_KEY: ${SRC_TLS_KEY}
+      SRC_HTTP_ADDR: ${SRC_HTTP_ADDR}
+      SRC_HTTPS_ADDR: ${SRC_HTTPS_ADDR}
       TRACKING_APP_ID:
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      USE_VSCODE_UI: "true"
     restart: "always"
     ports:
-     - "${SRC_APP_PORT:-3080}:3080"
+     - "${SRC_APP_PORT:-3080}:${SRC_APP_PORT:-3080}"
     depends_on:
      - "redis"
      - "postgres"
@@ -28,6 +34,8 @@ services:
      - "lsp-proxy"
      - "xlang-go"
      - "indexer"
+    volumes:
+     - ./config:/config
   github-proxy:
     image: "docker.sourcegraph.com/github-proxy:latest"
   gitserver-1:

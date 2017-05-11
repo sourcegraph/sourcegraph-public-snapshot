@@ -80,6 +80,22 @@ Sourcegraph can index many repository hosts, including GitHub.com. If you would 
    ```
 1. Set `ENSURE_REPOS_REMOTE` in your `.env` file to be the value of the output.
 
+### SSL/TLS
+
+1. Designate a TLS certificate. If you are serving at `localhost`, you can use the existing `sg.cer`/`sg.key` cert and key in the `config` directory.
+   Otherwise, you'll need to generate a new TLS certificate. You can use a tool like [https://github.com/deckarep/EasyCert](https://github.com/deckarep/EasyCert).
+   Move the generated certificate and key files to `config/sg.cer` and `config/sg.key`.
+1. In `.env`, uncomment the `SRC_TLS_CERT`, `SRC_TLS_KEY`, and `CORS_ORIGIN` lines.
+1. In `.env`, set `SRC_APP_HOST=https://localhost` (optionally replacing "localhost" with whatever your hostname is) and `SRC_APP_PORT=3443`.
+
+### Chrome extension
+
+1. Make sure you have the latest version of the extension installed.
+1. Navigate to `chrome://extensions`, find the Sourcegraph extension item, and click the `Options` link.
+1. Set the Sourcegraph URL to be the URL of your Sourcegraph instance.
+
+**Note:** if your code host uses SSL/TLS, your Sourcegraph instance probably needs to use SSL/TLS (see the section on SSL/TLS).
+
 ### Java
 
 #### Gradle
