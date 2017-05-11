@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
 		});
 		return true;
 	} else if (message.type === "getSessionToken") {
-		chrome.cookies.get({ url: `${sourcegraphUrl}`, name: "sg-session" }, (sessionToken) => {
+		chrome.cookies.get({ url: sourcegraphUrl, name: "sg-session" }, (sessionToken) => {
 			cb(sessionToken ? sessionToken.value : null);
 		});
 		return true;
