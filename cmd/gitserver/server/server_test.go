@@ -11,43 +11,33 @@ import (
 )
 
 type Test struct {
-	Name         string
-	Request      *http.Request
-	ExpectedCode int
-	ExpectedBody string
+	Name            string
+	Request         *http.Request
+	ExpectedCode    int
+	ExpectedBody    string
+	ExpectedHeaders http.Header
 }
 
 func TestRequest(t *testing.T) {
 	tests := []Test{
 		{
-			Name:         "WithOutput",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "testoutput",
-		},
-		{
-			Name:         "WithoutOutput",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["nooutput"]}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "",
+			Name:            "Command",
+			Request:         httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
+			ExpectedCode:    http.StatusOK,
+			ExpectedBody:    "teststdout",
+			ExpectedHeaders: http.Header{"X-Exec-Error": {""}, "X-Exec-Exit-Status": {"42"}, "X-Exec-Stderr": {"teststderr"}},
 		},
 		{
 			Name:         "NonexistingRepo",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"repoNotFound":true,"cloneInProgress":false,"error":"","exitStatus":0,"stderr":""}`,
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
-			Name:         "Error1",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror1"]}`)),
-			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"repoNotFound":false,"cloneInProgress":false,"error":"testerror","exitStatus":0,"stderr":""}`,
-		},
-		{
-			Name:         "Error2",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror2"]}`)),
-			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"repoNotFound":false,"cloneInProgress":false,"error":"","exitStatus":1,"stderr":"teststderr"}`,
+			Name:            "Error",
+			Request:         httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
+			ExpectedCode:    http.StatusOK,
+			ExpectedHeaders: http.Header{"X-Exec-Error": {"testerror"}, "X-Exec-Exit-Status": {"0"}, "X-Exec-Stderr": {""}},
 		},
 		{
 			Name:         "EmptyBody",
@@ -58,8 +48,8 @@ func TestRequest(t *testing.T) {
 		{
 			Name:         "EmptyInput",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusConflict,
-			ExpectedBody: `{"repoNotFound":true,"cloneInProgress":false,"error":"","exitStatus":0,"stderr":""}`,
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 	}
 
@@ -72,12 +62,11 @@ func TestRequest(t *testing.T) {
 	runCommand = func(cmd *exec.Cmd) (error, int) {
 		switch cmd.Args[1] {
 		case "testcommand":
-			cmd.Stdout.Write([]byte("testoutput"))
-		case "testerror1":
-			return errors.New("testerror"), 0
-		case "testerror2":
+			cmd.Stdout.Write([]byte("teststdout"))
 			cmd.Stderr.Write([]byte("teststderr"))
-			return nil, 1
+			return nil, 42
+		case "testerror":
+			return errors.New("testerror"), 0
 		}
 		return nil, 0
 	}
@@ -95,6 +84,12 @@ func TestRequest(t *testing.T) {
 			body := strings.TrimSpace(w.Body.String())
 			if body != test.ExpectedBody {
 				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, body)
+			}
+
+			for k, v := range test.ExpectedHeaders {
+				if got := w.HeaderMap.Get(k); got != v[0] {
+					t.Errorf("wrong header %q: expected %q, got %q", k, v[0], got)
+				}
 			}
 		})
 	}

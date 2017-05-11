@@ -1,10 +1,8 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -89,17 +87,38 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 
-		stdout, err := s.handleExecRequest(&req)
-		if err != nil {
-			w.WriteHeader(http.StatusConflict)
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				log.Print(err)
-			}
+		replyChan := make(chan *protocol.LegacyExecReply, 1)
+		s.handleLegacyExecRequest(&protocol.LegacyExecRequest{
+			Repo:           req.Repo,
+			EnsureRevision: req.EnsureRevision,
+			Args:           req.Args,
+			Opt:            req.Opt,
+			NoAutoUpdate:   req.NoAutoUpdate,
+			ReplyChan:      replyChan,
+		})
+		reply := <-replyChan
+		if reply.RepoNotFound || reply.CloneInProgress {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: reply.CloneInProgress,
+			})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		io.Copy(w, stdout)
+		for b := range reply.Stdout {
+			w.Write(b)
+		}
+
+		result := <-reply.ProcessResult
+		stderr := <-chanrpcutil.ReadAll(reply.Stderr)
+		if len(stderr) > 1024 {
+			stderr = stderr[:1024]
+		}
+		// write trailer
+		w.Header().Set("X-Exec-Error", result.Error)
+		w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(result.ExitStatus))
+		w.Header().Set("X-Exec-Stderr", string(stderr))
 	})
 	return mux
 }
@@ -122,65 +141,6 @@ func (s *Server) processRequests(requests <-chan *protocol.LegacyRequest) {
 			go s.handleLegacyExecRequest(req.Exec)
 		}
 	}
-}
-
-func (s *Server) handleExecRequest(req *protocol.ExecRequest) (io.Reader, *protocol.ExecError) {
-	replyChan := make(chan *protocol.LegacyExecReply, 1)
-	s.handleLegacyExecRequest(&protocol.LegacyExecRequest{
-		Repo:           req.Repo,
-		EnsureRevision: req.EnsureRevision,
-		Args:           req.Args,
-		Opt:            req.Opt,
-		NoAutoUpdate:   req.NoAutoUpdate,
-		ReplyChan:      replyChan,
-	})
-	reply := <-replyChan
-	if reply.RepoNotFound || reply.CloneInProgress {
-		return nil, &protocol.ExecError{
-			RepoNotFound:    reply.RepoNotFound,
-			CloneInProgress: reply.CloneInProgress,
-		}
-	}
-
-	for b := range reply.Stdout {
-		if len(b) == 0 {
-			continue
-		}
-
-		// got first output, assume no error and stream stdout to reader
-		go func() {
-			result := <-reply.ProcessResult
-			stderr := <-chanrpcutil.ReadAll(reply.Stderr)
-			if result.Error != "" || result.ExitStatus != 0 {
-				// we got stdout AND an error, should never happen
-				log.Printf("error discarded after getting stdout: %s (exit status %d, stderr: %q)", result.Error, result.ExitStatus, stderr)
-			}
-		}()
-
-		stdout := make(chan []byte, 10)
-		stdout <- b
-		go func() {
-			for b := range reply.Stdout {
-				stdout <- b
-			}
-			close(stdout)
-		}()
-		return chanrpcutil.NewReader(stdout), nil
-	}
-
-	// stdout closed without any output, check for errors
-	result := <-reply.ProcessResult
-	if result.Error != "" || result.ExitStatus != 0 {
-		return nil, &protocol.ExecError{
-			Error:      result.Error,
-			ExitStatus: result.ExitStatus,
-			Stderr:     string(<-chanrpcutil.ReadAll(reply.Stderr)),
-		}
-	}
-
-	// no output and no error
-	chanrpcutil.Drain(reply.Stderr)
-	return bytes.NewReader(nil), nil
 }
 
 // This is a timeout for git commands that should not take a long time.

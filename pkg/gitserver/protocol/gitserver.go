@@ -26,12 +26,8 @@ type ExecRequest struct {
 	NoAutoUpdate bool `json:"noAutoUpdate"`
 }
 
-type ExecError struct {
-	RepoNotFound    bool   `json:"repoNotFound"`    // If true, exec returned with noop because repo is not found.
-	CloneInProgress bool   `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
-	Error           string `json:"error"`
-	ExitStatus      int    `json:"exitStatus"`
-	Stderr          string `json:"stderr"`
+type NotFoundPayload struct {
+	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
 }
 
 type LegacyRequest struct {
