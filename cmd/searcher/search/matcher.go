@@ -28,7 +28,7 @@ const (
 
 	// maxLineMatches is the limit on number of matches to return in a
 	// file.
-	maxLineMatches = 500
+	maxLineMatches = 100
 
 	// maxOffsets is the limit on number of matches to return on a line.
 	maxOffsets = 10

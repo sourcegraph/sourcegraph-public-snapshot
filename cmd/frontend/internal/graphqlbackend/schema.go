@@ -155,12 +155,14 @@ type SearchResults {
 type FileMatch {
 	resource: String!
 	lineMatches: [LineMatch!]!
+	limitHit: Boolean!
 }
 
 type LineMatch {
 	preview: String!
 	lineNumber: Int!
 	offsetAndLengths: [[Int!]!]!
+	limitHit: Boolean!
 }
 
 type DependencyReferences {
