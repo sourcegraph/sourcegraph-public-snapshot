@@ -106,12 +106,13 @@ func (s *Server) Handler() http.Handler {
 		}
 
 		w.WriteHeader(http.StatusOK)
+		stderrCh := chanrpcutil.ReadAll(reply.Stderr)
 		for b := range reply.Stdout {
 			w.Write(b)
 		}
 
 		result := <-reply.ProcessResult
-		stderr := <-chanrpcutil.ReadAll(reply.Stderr)
+		stderr := <-stderrCh
 		if len(stderr) > 1024 {
 			stderr = stderr[:1024]
 		}
