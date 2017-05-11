@@ -13,7 +13,8 @@
     "chai": "^3.4.34",
     "commander": "^2.9.0",
     "iterare": "^0.0.7",
-    "javascript-typescript-langserver": "^2.0.0-pre.28",
+    "javascript-typescript-langserver": "^2.0.0-pre.29",
+    "json-patch": "^0.6.1",
     "lightstep-tracer": "^0.20.3",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/chai": "3.4.34",
+    "@types/json-patch": "^0.0.29",
     "@types/lodash": "4.14.53",
     "@types/mkdirp": "0.3.29",
     "@types/mocha": "2.2.33",

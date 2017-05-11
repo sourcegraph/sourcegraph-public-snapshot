@@ -12,6 +12,10 @@
   version "3.4.34"
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-3.4.34.tgz#d5335792823bb09cddd5e38c3d211b709183854d"
 
+"@types/json-patch@0.0.29", "@types/json-patch@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@types/json-patch/-/json-patch-0.0.29.tgz#b002bf6233b2bd104feba08bcb4c98b1adc9b90e"
+
 "@types/lodash@4.14.53":
   version "4.14.53"
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.53.tgz#c81ee7f2a551f92fb8692a2f6766d0430ccce9eb"
@@ -1225,17 +1229,19 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.28:
-  version "2.0.0-pre.28"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.28.tgz#75810e6ba76576a39830e3a86d2b8b1f72f9ad86"
+javascript-typescript-langserver@^2.0.0-pre.29:
+  version "2.0.0-pre.29"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.29.tgz#02c134ba674d8c644ee7d37a7996a6ee9ef85900"
   dependencies:
     "@reactivex/rxjs" "^5.3.0"
+    "@types/json-patch" "0.0.29"
     chai "^3.4.34"
     chai-as-promised "^6.0.0"
     chalk "^1.1.3"
     commander "^2.9.0"
     glob "^7.1.1"
     iterare "^0.0.8"
+    json-patch "^0.6.1"
     lodash "^4.17.4"
     mz "^2.6.0"
     object-hash "^1.1.8"
@@ -1277,6 +1283,10 @@ jsbn@~0.1.0:
 jsesc@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/jsesc/-/jsesc-1.3.0.tgz#46c3fec8c1892b12b0833db9bc7622176dbab34b"
+
+json-patch@^0.6.1:
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/json-patch/-/json-patch-0.6.1.tgz#1407e7091f99609871ad0a638a075afff48be307"
 
 json-schema@0.2.3:
   version "0.2.3"

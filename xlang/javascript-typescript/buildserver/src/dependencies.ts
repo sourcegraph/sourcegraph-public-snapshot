@@ -3,6 +3,7 @@ import { FileSystemUpdater } from 'javascript-typescript-langserver/lib/fs';
 import { LanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { Logger, NoopLogger, PrefixedLogger } from 'javascript-typescript-langserver/lib/logging';
 import { InMemoryFileSystem } from 'javascript-typescript-langserver/lib/memfs';
+import { PackageJson, PackageManager } from 'javascript-typescript-langserver/lib/packages';
 import { ProjectManager } from 'javascript-typescript-langserver/lib/project-manager';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as path from 'path';
@@ -17,42 +18,6 @@ import * as semver from 'semver';
 import * as yarn from './yarn';
 const fetchPackageJson: (packageName: string, options?: { version?: string, fullMetadata?: boolean }) => Promise<PackageJson> = require('package-json');
 
-export interface PackageJson {
-	name: string;
-	version?: string;
-	typings?: string;
-	repository?: string | { type: string, url: string };
-	dependencies?: {
-		[packageName: string]: string;
-	};
-	devDependencies?: {
-		[packageName: string]: string;
-	};
-	peerDependencies?: {
-		[packageName: string]: string;
-	};
-	optionalDependencies?: {
-		[packageName: string]: string;
-	};
-}
-
-/**
- * Matches:
- *
- *     /foo/node_modules/(bar)/index.d.ts
- *     /foo/node_modules/bar/node_modules/(baz)/index.d.ts
- *     /foo/node_modules/(@types/bar)/index.ts
- */
-const PACKAGE_NAME_REGEXP = /.*\/node_modules\/((?:@[^\/]+\/)?[^\/]+)\/.*$/;
-
-/**
- * Returns the name of a package that a file is contained in
- */
-export function getPackageName(uri: string): string | undefined {
-	const match = decodeURIComponent(url.parse(uri).pathname || '').match(PACKAGE_NAME_REGEXP);
-	return match && match[1] || undefined;
-}
-
 export class DependencyManager {
 
 	/**
@@ -65,32 +30,15 @@ export class DependencyManager {
 	 */
 	private yarnProcesses = new Set<yarn.YarnProcess>();
 
-	/**
-	 * Fulfilled when the workspace was scanned for package.json files, they were fetched and parsed and installations kicked off
-	 */
-	private scanned = false;
-
-	/**
-	 * Set of package.json URIs _defined_ in the workspace.
-	 * This does not include package.jsons of dependencies and also not package.jsons that node_modules are vendored for
-	 */
-	private packages = new Set<string>();
-
 	constructor(
 		private tempDir: string,
 		private updater: FileSystemUpdater,
 		private inMemoryFileSystem: InMemoryFileSystem,
 		private projectManager: ProjectManager,
+		private packageManager: PackageManager,
 		private client: LanguageClient,
 		private logger: Logger = new NoopLogger()
 	) { }
-
-	/**
-	 * Returns an Iterable for all package.jsons in the workspace
-	 */
-	packageJsonUris(): IterableIterator<string> {
-		return this.packages.values();
-	}
 
 	/**
 	 * Disposes the DependencyManager and kills all running yarn processes
@@ -107,106 +55,6 @@ export class DependencyManager {
 	}
 
 	/**
-	 * Scans the workspace to find all packages _defined_ in the workspace, saves the content in `packages`
-	 * For each found package, installation is started in the background and tracked in `installations`
-	 *
-	 * @param span OpenTracing span for tracing
-	 */
-	private scan(span = new Span()): void {
-		// Find locations of package.json and node_modules folders
-		const vendoredPackageJsons = new Set<string>();
-		const packageJsons = new Set<string>();
-		let rootPackageJson: string | undefined;
-		let rootPackageJsonLevel = Infinity;
-		for (const uri of this.inMemoryFileSystem.uris()) {
-			const parts = url.parse(uri);
-			if (!parts.pathname) {
-				continue;
-			}
-			// Search for package.json files _not_ inside node_modules
-			if (parts.pathname.endsWith('/package.json') && !parts.pathname.includes('/node_modules/')) {
-				packageJsons.add(uri);
-				// If the current root package.json is further nested than this one, replace it
-				const level = parts.pathname.split('/').length;
-				if (level < rootPackageJsonLevel) {
-					rootPackageJson = uri;
-					rootPackageJsonLevel = level;
-				}
-			}
-			// Collect vendored node_modules folders found to filter package.jsons
-			const nodeModulesIndex = parts.pathname.indexOf('/node_modules/');
-			if (nodeModulesIndex !== -1) {
-				vendoredPackageJsons.add(url.format({ ...parts, pathname: uri.slice(0, nodeModulesIndex) + '/package.json' }));
-			}
-		}
-		this.logger.log(`Found ${packageJsons.size} package.json in workspace, ${vendoredPackageJsons.size} vendored node_modules`);
-		this.logger.log(`Root package.json: ${rootPackageJson}`);
-		this.packages.clear();
-		for (const uri of packageJsons) {
-			// Filter package.jsons with vendored node_modules
-			if (vendoredPackageJsons.has(uri)) {
-				continue;
-			}
-			// Start installation for the top-level package.json in the background
-			if (uri === rootPackageJson) {
-				this.ensureForFile(uri, span).catch(err => undefined);
-			}
-			this.packages.add(uri);
-		}
-		this.scanned = true;
-	}
-
-	/**
-	 * Ensures all package.json have been detected, loaded and installations kicked off
-	 *
-	 * @param span OpenTracing span for tracing
-	 */
-	async ensureScanned(span = new Span()): Promise<void> {
-		await this.updater.ensureStructure(span);
-		if (!this.scanned) {
-			this.scan(span);
-		}
-	}
-
-	/**
-	 * Gets the content of the closest package.json known to to the DependencyManager in the ancestors of a URI
-	 * Call `ensureScanned()` before.
-	 */
-	async getClosestPackageJson(uri: string, span = new Span()): Promise<PackageJson | undefined> {
-		const packageJsonUri = this.getClosestPackageJsonUri(uri);
-		if (!packageJsonUri) {
-			return undefined;
-		}
-		this.updater.ensure(packageJsonUri, span);
-		return JSON.parse(await this.inMemoryFileSystem.getContent(packageJsonUri));
-	}
-
-	/**
-	 * Walks the parent directories of a given URI to find the first package.json that is known to the InMemoryFileSystem
-	 *
-	 * TODO return multiple nested package.jsons https://github.com/sourcegraph/sourcegraph/issues/5038
-	 *
-	 * @param uri URI of a file or directory in the workspace
-	 * @return The found package.json or undefined if none found
-	 */
-	getClosestPackageJsonUri(uri: string): string | undefined {
-		const parts = url.parse(uri);
-		while (true) {
-			if (!parts.pathname) {
-				return undefined;
-			}
-			const packageJsonUri = url.format({ ...parts, pathname: path.posix.join(parts.pathname, 'package.json') });
-			if (this.packages.has(packageJsonUri)) {
-				return packageJsonUri;
-			}
-			if (parts.pathname === '/') {
-				return undefined;
-			}
-			parts.pathname = path.posix.dirname(parts.pathname);
-		}
-	}
-
-	/**
 	 * Installs dependencies for the given file or directory and refetches structure under that directory.
 	 * Call `ensureScanned()` before.
 	 *
@@ -214,7 +62,7 @@ export class DependencyManager {
 	 * @param childOf OpenTracing parent span for tracing
 	 */
 	private installForFile(uri: string, childOf = new Span()): Promise<void> {
-		const packageJsonUri = this.getClosestPackageJsonUri(uri);
+		const packageJsonUri = this.packageManager.getClosestPackageJsonUri(uri);
 		if (!packageJsonUri) {
 			return Promise.resolve();
 		}
@@ -386,12 +234,12 @@ export class DependencyManager {
 	 */
 	async ensureForFile(uri: string, childOf = new Span()): Promise<void> {
 		// Ensure all own package.jsons in the workspace are available under this.packages
-		await this.ensureScanned(childOf);
+		await this.updater.ensureStructure(childOf);
 		const span = childOf.tracer().startSpan('Ensure Dependencies', { childOf });
 		span.addTags({ uri });
 		try {
 			// Find the closest one in parent directories
-			const packageJsonUri = this.getClosestPackageJsonUri(uri);
+			const packageJsonUri = this.packageManager.getClosestPackageJsonUri(uri);
 			span.addTags({ packageJsonUri });
 			if (!packageJsonUri) {
 				return;

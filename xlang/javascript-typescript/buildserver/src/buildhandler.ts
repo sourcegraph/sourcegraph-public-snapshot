@@ -1,31 +1,31 @@
 
-import { Observable } from '@reactivex/rxjs';
+import { Observable, Subscription } from '@reactivex/rxjs';
 import iterate from 'iterare';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
+import { extractNodeModulesPackageName, PackageJson } from 'javascript-typescript-langserver/lib/packages';
 import {
 	InitializeParams,
 	PackageDescriptor,
-	ReferenceInformation,
 	SymbolLocationInformation,
 	WorkspaceReferenceParams
 } from 'javascript-typescript-langserver/lib/request-type';
 import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import { normalizeUri, uri2path } from 'javascript-typescript-langserver/lib/util';
-import { isEmpty } from 'lodash';
+import { castArray, isEmpty, isEqual } from 'lodash';
 import { Span } from 'opentracing';
 import * as path from 'path';
 import callbackRimraf = require('rimraf');
 import * as url from 'url';
 import {
 	Hover,
-	InitializeResult,
 	Location,
 	TextDocumentPositionParams
 } from 'vscode-languageserver';
-import { DependencyManager, getPackageName, PackageJson } from './dependencies';
+import { DependencyManager } from './dependencies';
 import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
 import hashObject = require('object-hash');
+import { OpPatch } from 'json-patch';
 const urlRelative: (from: string, to: string) => string = require('url-relative');
 const rimraf = Observable.bindNodeCallback<string, void>(callbackRimraf);
 
@@ -78,22 +78,63 @@ export class BuildHandler extends TypeScriptService {
 	 */
 	private dependenciesManager: DependencyManager;
 
+	/**
+	 * Subscriptions to unsubscribe on shutdown
+	 */
+	private subscriptions = new Subscription();
+
 	constructor(client: RemoteLanguageClient, options: BuildHandlerOptions) {
 		super(client, options);
 	}
 
-	initialize(params: InitializeParams, span = new Span()): Observable<InitializeResult> {
+	/**
+	 * The initialize request is sent as the first request from the client to the server. If the
+	 * server receives request or notification before the `initialize` request it should act as
+	 * follows:
+	 *
+	 * - for a request the respond should be errored with `code: -32002`. The message can be picked by
+	 * the server.
+	 * - notifications should be dropped, except for the exit notification. This will allow the exit a
+	 * server without an initialize request.
+	 *
+	 * Until the server has responded to the `initialize` request with an `InitializeResult` the
+	 * client must not sent any additional requests or notifications to the server.
+	 *
+	 * During the `initialize` request the server is allowed to sent the notifications
+	 * `window/showMessage`, `window/logMessage` and `telemetry/event` as well as the
+	 * `window/showMessageRequest` request to the client.
+	 *
+	 * @return Observable of JSON Patches that build an `InitializeResult`
+	 */
+	initialize(params: InitializeParams, span = new Span()): Observable<OpPatch> {
 		// Workaround for https://github.com/sourcegraph/sourcegraph/issues/4542
 		if (params.rootPath && params.rootPath.startsWith('file://')) {
 			params.rootPath = uri2path(params.rootPath);
 		}
 		return super.initialize(params, span)
 			.finally(() => {
-				this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.client, this.logger);
-				// Start installation of dependencies in the background
-				this.dependenciesManager.ensureScanned(span).catch(err => {
-					this.logger.error('Dependency initialization failed: ', err);
-				});
+				this.dependenciesManager = new DependencyManager(
+					this.options.tempDir,
+					this.updater,
+					this.inMemoryFileSystem,
+					this.projectManager,
+					this.packageManager,
+					this.client,
+					this.logger
+				);
+				// Start dependency installation for the root package.json in the background once all files were detected
+				this.subscriptions.add(
+					Observable.from(this.updater.ensureStructure())
+						.mergeMap(() => {
+							if (this.packageManager.rootPackageJsonUri) {
+								return this.dependenciesManager.ensureForFile(this.packageManager.rootPackageJsonUri);
+							}
+							return [];
+						})
+						.subscribe(undefined, err => {
+							this.logger.error('Error installing dependencies in the background', err);
+						})
+				);
 			});
 	}
 
@@ -107,7 +148,15 @@ export class BuildHandler extends TypeScriptService {
 		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 
-	shutdown(params = {}, span = new Span()): Observable<null> {
+	/**
+	 * The shutdown request is sent from the client to the server. It asks the server to shut down,
+	 * but to not exit (otherwise the response might not be delivered correctly to the client).
+	 * There is a separate exit notification that asks the server to exit.
+	 *
+	 * @return Observable of JSON Patches that build a `null` result
+	 */
+	shutdown(params = {}, span = new Span()): Observable<OpPatch> {
+		this.subscriptions.unsubscribe();
 		// Make sure yarn processes do not keep running and recreate the temporary directory
 		return Observable.from(this.dependenciesManager.killRunningProcesses())
 			.mergeMap(() => {
@@ -125,12 +174,11 @@ export class BuildHandler extends TypeScriptService {
 	 * TODO Install just the passed dependency for the package.json
 	 */
 	private async _ensureDependency(dependency: PackageDescriptor, dependeeName?: string, span = new Span()): Promise<void> {
-		await this.dependenciesManager.ensureScanned(span);
+		await this.updater.ensureStructure(span);
 		await Promise.all(
-			iterate(this.dependenciesManager.packageJsonUris()).map(async uri => {
+			iterate(this.packageManager.packageJsonUris()).map(async uri => {
 				try {
-					await this.updater.ensure(uri, span);
-					const packageJson = JSON.parse(this.inMemoryFileSystem.getContent(uri));
+					const packageJson = await this.packageManager.getPackageJson(uri, span);
 					if (!dependeeName || packageJson.name === dependeeName) {
 						await this.dependenciesManager.ensureForFile(uri, span);
 					}
@@ -153,7 +201,7 @@ export class BuildHandler extends TypeScriptService {
 		}
 
 		// Is the file part of a package in node_modules?
-		const packageName = getPackageName(originalUri);
+		const packageName = extractNodeModulesPackageName(originalUri);
 		if (!packageName) {
 			return originalUri;
 		}
@@ -241,161 +289,76 @@ export class BuildHandler extends TypeScriptService {
 		}
 	}
 
-	textDocumentDefinition(params: TextDocumentPositionParams, span = new Span()): Observable<Location[]> {
+	protected _getDefinitionLocations(params: TextDocumentPositionParams, span = new Span()): Observable<Location> {
 		const uri = normalizeUri(params.textDocument.uri);
 		// Don't wait, but kickoff background job
 		this.dependenciesManager.ensureForFile(uri, span).catch(err => undefined);
+		let found = false;
 		// First, attempt to get definition before dependencies fetching is finished.
-		return (super.textDocumentDefinition(params, span)
-			.catch<Location[], Location[]>(err => [[]])
-			// If it fails, wait for dependency fetching to finish and then retry.
-			.mergeMap((locations: Location[]): Observable<Location[]> =>
-				locations.length > 0
-					? Observable.of(locations)
-					: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
-						.mergeMap(() => super.textDocumentDefinition(params, span))
-			)
-			.mergeAll<any>() as Observable<Location>)
-			.mergeMap(location => Observable.from(this._rewriteUris(location)).mapTo(location))
-			.toArray();
+		return super._getDefinitionLocations(params, span)
+			.catch<Location, Location>(err => [])
+			// Check if at least one definition, else wait for dependency fetching to finish and then retry.
+			.do(() => found = true)
+			.concat(Observable.defer(() =>
+				found
+				? Observable.empty<Location>()
+				: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
+					.mergeMap(() => super._getDefinitionLocations(params, span))
+			))
+			.mergeMap(location => Observable.from(this._rewriteUris(location)).mapTo(location));
 	}
 
-	/**
-	 * This method is the same as textDocument/definition, except that:
-	 *
-	 * - The method returns metadata about the definition (the same metadata that
-	 * workspace/xreferences searches for).
-	 * - The concrete location to the definition (location field)
-	 * is optional. This is useful because the language server might not be able to resolve a goto
-	 * definition request to a concrete location (e.g. due to lack of dependencies) but still may
-	 * know some information about it.
-	 */
-	textDocumentXdefinition(params: TextDocumentPositionParams, span = new Span()): Observable<SymbolLocationInformation[]> {
+	protected _getSymbolLocationInformations(params: TextDocumentPositionParams, span = new Span()): Observable<SymbolLocationInformation> {
 		const uri = normalizeUri(params.textDocument.uri);
 		// First, attempt to get definition before dependencies fetching is finished.
 		this.dependenciesManager.ensureForFile(uri, span).catch(err => undefined);
-		return (super.textDocumentXdefinition(params, span)
-			.catch<SymbolLocationInformation[], SymbolLocationInformation[]>(err => [[]])
-			// If no result, wait for dependency installation and retry
-			.mergeMap((symbolLocations): Observable<SymbolLocationInformation[]> =>
-				symbolLocations.length > 0
-					? Observable.of(symbolLocations)
-					: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
-						.mergeMap(() => super.textDocumentXdefinition(params, span))
-			)
-			.mergeAll<any>() as Observable<SymbolLocationInformation>)
-			// Add PackageDescriptors to SymbolDescriptor
-			.mergeMap((symbolLocation: SymbolLocationInformation) => {
-				// If no location is defined, return SymbolLocationInformation unchanged
-				if (!symbolLocation.location) {
-					return [symbolLocation];
-				}
-				// Get package name of the dependency in which the symbol is defined in, if any
-				const packageName = getPackageName(symbolLocation.location.uri);
-				if (packageName) {
-					// The symbol is part of a dependency in node_modules
-					// Build URI to package.json of the Dependency
-					const encodedPackageName = packageName.split('/').map(encodeURIComponent).join('/');
-					const parts = url.parse(symbolLocation.location.uri);
-					const packageJsonUri = url.format({ ...parts, pathname: parts.pathname!.slice(0, parts.pathname!.lastIndexOf('/node_modules/' + encodedPackageName)) + `/node_modules/${encodedPackageName}/package.json` });
-					// Make sure we have the package.json of the dependency available by ensuring the dependency is installed
-					return Observable.from(this.dependenciesManager.ensureForFile(packageJsonUri, span))
-						// Fetch the package.json of the dependency
-						.mergeMap(() => this.updater.ensure(packageJsonUri))
-						.map(() => {
-							const packageJson: PackageJson = JSON.parse(this.inMemoryFileSystem.getContent(packageJsonUri));
-							const { name, version } = packageJson;
-							if (name) {
-								// Used by the LSP proxy to shortcut database lookup of repo URL for PackageDescriptor
-								let repoURL: string | undefined;
-								if (name.startsWith('@types/')) {
-									// if the dependency package is an @types/ package, point the repo to DefinitelyTyped
-									repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
-								} else {
-									// else use repository field from package.json
-									repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
-								}
-								symbolLocation.symbol.package = { name, version, repoURL };
-							}
-							// Remove location because it points to node_modules instead of the external repo
-							symbolLocation.location = undefined;
-							return symbolLocation;
-						});
-				} else {
-					// The symbol is defined in the root package of the workspace, not in a dependency
-					// Get root package.json
-					return Observable.from(this.dependenciesManager.ensureScanned(span))
-						.mergeMap(() => this.dependenciesManager.getClosestPackageJson(symbolLocation.location!.uri))
-						.map(packageJson => {
-							if (!packageJson) {
-								// Workspace has no package.json
-								return symbolLocation;
-							}
-							let { name, version } = packageJson;
-							if (name) {
-								let repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
-								// If the root package is DefinitelyTyped, find out the proper @types package name for each typing
-								if (name === 'definitely-typed') {
-									// Example:
-									// rootUri      file:///
-									// symbol URI   file:///node/v6/index.d.ts
-									// relative URI        /node/v6/index.d.ts
-									// package name         node
-									name = '@types/' + decodeURIComponent(urlRelative(this.rootUri, symbolLocation.location!.uri).split('/')[1]);
-									version = undefined;
-									repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
-								}
-								symbolLocation.symbol.package = { name, version, repoURL };
-							}
-							return symbolLocation;
-						});
+		let found = false;
+		return super._getSymbolLocationInformations(params, span)
+			.catch<SymbolLocationInformation, SymbolLocationInformation>(err => [])
+			.do(() => found = true)
+			// Check if at least one definition, else wait for dependency fetching to finish and then retry.
+			.concat(Observable.defer<SymbolLocationInformation>(() =>
+				found
+				? Observable.empty<SymbolLocationInformation>()
+				: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
+					.mergeMap(() => super._getSymbolLocationInformations(params, span))
+			))
+			// Strip locations in node_modules because those are not availabe in the client
+			.do(symbol => {
+				if (symbol.location && symbol.location.uri.includes('/node_modules/')) {
+					symbol.location = undefined;
 				}
 			})
 			// Remove duplicates
 			// These can happen if a repository defines the same symbol in multiple locations with
 			// interface merging, because we remove the location field
 			// See https://github.com/sourcegraph/sourcegraph/issues/5365#issuecomment-294431395
-			.distinct(symbolLocation => hashObject(symbolLocation, { respectType: false } as any))
-			.toArray();
+			.distinct(symbol => hashObject(symbol, { respectType: false } as any));
 	}
 
-	textDocumentHover(params: TextDocumentPositionParams, span = new Span()): Observable<Hover> {
+	protected _getHover(params: TextDocumentPositionParams, span = new Span()): Observable<Hover> {
 		const uri = normalizeUri(params.textDocument.uri);
 		this.dependenciesManager.ensureForFile(uri, span); // don't wait, but kickoff background job
-		// First, attempt to get hover info before dependencies fetching is finished.
-		return super.textDocumentHover(params, span)
+		return super._getHover(params, span)
 			.catch<Hover, Hover>(err => [{ contents: [] }])
-			// If it fails, wait for dependency fetching to finish and then retry.
-			.mergeMap((hover): Observable<Hover> =>
-				!isEmpty(hover.contents)
-					? Observable.of(hover)
-					: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
-						.mergeMap(() => super.textDocumentHover(params, span))
-			)
-			.mergeMap(hover => Observable.from(this._rewriteUris(hover)).mapTo(hover));
+			// Check if proper Hover result, else wait for dependency fetching to finish and then retry.
+			.mergeMap(hover =>
+				hover && !isEmpty(hover.contents) && !isEqual(castArray(hover.contents), [{language: 'typescript', value: 'any'}])
+				? [hover]
+				: Observable.from(this.dependenciesManager.ensureForFile(uri, span))
+					.mergeMap(() => super._getHover(params, span))
+			);
 	}
 
 	/**
 	 * The workspace references request is sent from the client to the server to locate project-wide
 	 * references to a symbol given its description / metadata.
 	 */
-	workspaceXreferences(params: WorkspaceReferenceParams, span = new Span()): Observable<ReferenceInformation[]> {
+	workspaceXreferences(params: WorkspaceReferenceParams, span = new Span()): Observable<OpPatch> {
 		const dependeePackageName = params.hints ? params.hints.dependeePackageName : undefined;
 		const packageDescriptor = params.query.package;
-		return ((packageDescriptor ? Observable.from(this._ensureDependency(packageDescriptor, dependeePackageName, span)) : Observable.of(null))
-			.mergeMap(() => {
-				// Strip the `package` field, because this was not added by the language server
-				// TODO is this needed?
-				params.query.package = undefined;
-				return super.workspaceXreferences(params, span);
-			})
-			.mergeAll<any>() as Observable<ReferenceInformation>)
-			// Add back PackageDescriptors
-			.do((referenceInformation: ReferenceInformation) => {
-				if (packageDescriptor) {
-					referenceInformation.symbol.package = packageDescriptor;
-				}
-			})
-			.toArray();
+		// If PackageDescriptor is given, install that package
+		return Observable.from(packageDescriptor ? this._ensureDependency(packageDescriptor, dependeePackageName, span) : [null])
+			.mergeMap(() => super.workspaceXreferences(params, span));
 	}
 }

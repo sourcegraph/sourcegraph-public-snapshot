@@ -8,6 +8,7 @@ import { BuildHandler } from '../buildhandler';
 import rimraf = require('rimraf');
 // global.Promise = require('bluebird');
 import * as util from 'javascript-typescript-langserver/lib/util';
+import { apply } from 'json-patch';
 import * as fs from 'mz/fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -97,7 +98,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -121,7 +122,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 23
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -145,7 +146,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 10
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -181,7 +182,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 21
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -205,7 +206,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 40
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -229,7 +230,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 3,
 						character: 0
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -255,7 +256,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -280,7 +281,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 23
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -305,7 +306,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 10
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -330,7 +331,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 21
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -355,7 +356,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 40
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -380,7 +381,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 3,
 						character: 0
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -406,7 +407,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 2,
 						character: 10
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -436,7 +437,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							version: '0.0.31'
 						}
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(referencesResult, [
 					{
 						reference: {
@@ -459,7 +460,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							name: 'diffChars',
 							package: {
 								name: '@types/diff',
-								version: '0.0.31'
+								version: '0.0.31',
+								repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
 							}
 						}
 					},
@@ -484,7 +486,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							name: 'diffChars',
 							package: {
 								name: '@types/diff',
-								version: '0.0.31'
+								version: '0.0.31',
+								repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
 							}
 						}
 					}
@@ -529,7 +532,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
@@ -553,7 +556,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 26
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
 					range: {
@@ -578,7 +581,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							line: 0,
 							character: 12
 						}
-					}).toPromise(),
+					}).toArray().map(patches => apply(null, patches)).toPromise(),
 					this.service.textDocumentDefinition({
 						textDocument: {
 							uri: 'file:///foo/b.ts'
@@ -587,7 +590,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							line: 0,
 							character: 26
 						}
-					}).toPromise()
+					}).toArray().map(patches => apply(null, patches)).toPromise()
 				]);
 				assert.deepEqual(results, [
 					[{
@@ -644,7 +647,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 9
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'file:///node_modules/diff/index.d.ts',
 					range: {
@@ -684,7 +687,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
 					range: {
@@ -708,7 +711,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 24
 					}
-				}).toPromise();
+				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
 					range: {
