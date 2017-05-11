@@ -10,7 +10,9 @@ export function setEventLogger(logger: EventLogger): void {
 	eventLogger = logger;
 }
 
-export let sourcegraphUrl: string;
+// TODO(john): fix initialization (without setting this, the background script cannot scrape cookies
+// because the Sourcegraph url is undefined).
+export let sourcegraphUrl: string = "https://sourcegraph.com";
 
 export function setSourcegraphUrl(url: string): void {
 	if (sourcegraphUrl) {

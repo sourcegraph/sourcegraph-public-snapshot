@@ -74,7 +74,7 @@ function injectModules(): void {
 function injectBlobAnnotators(): void {
 	let { repoURI, path, isDelta } = parseURL(window.location);
 	const gitHubState: GitHubUrl | null = github.getGitHubState(window.location.href);
-	// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a 
+	// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a
 	// slash in it to fix that bug
 	if (gitHubState && gitHubState.mode === GitHubMode.Blob && (gitHubState as GitHubBlobUrl).rev.indexOf("/") > 0) {
 		// correct in case branch has slash in it
@@ -87,7 +87,7 @@ function injectBlobAnnotators(): void {
 
 	const uri = repoURI;
 	function addBlobAnnotator(file: HTMLElement, mount: HTMLElement): void {
-		const {headFilePath, baseFilePath} = isDelta ? github.getDeltaFileName(file) : { headFilePath: path, baseFilePath: null };
+		const { headFilePath, baseFilePath } = isDelta ? github.getDeltaFileName(file) : { headFilePath: path, baseFilePath: null };
 		if (!headFilePath) {
 			console.error("cannot determine file path");
 			return;
@@ -136,7 +136,7 @@ function injectSourcegraphInternalTools(): void {
 	}
 
 	if (window.location.href === "https://github.com/orgs/sourcegraph/projects") {
-		const container = document.querySelector("#projects-results") !.parentElement!.children[0];
+		const container = document.querySelector("#projects-results")!.parentElement!.children[0];
 		let mount = document.createElement("span");
 		mount.id = "sourcegraph-projet-overview";
 		(container as Element).insertBefore(mount, (container as Element).firstChild);
