@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 VSCODE_BROWSER_PKG="$1"
 if [[ ! -d "$VSCODE_BROWSER_PKG" ]]; then
@@ -7,14 +7,23 @@ if [[ ! -d "$VSCODE_BROWSER_PKG" ]]; then
 	exit 1
 fi
 
+unset CDPATH
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$VSCODE_BROWSER_PKG"/..
 TMPZIPFILE=VSCode-browser.zip
 rm -rf "$TMPZIPFILE"
 zip -r "$TMPZIPFILE" $(basename "$VSCODE_BROWSER_PKG")
 
-HASH=`md5 -q $TMPZIPFILE`
-VERSION=`date -u "+%Y-%m-%d-%H:%M:%S-$USER-$HASH"`
+if [ "$(uname)" = "Linux" ]; then
+    HASH=$(md5sum $TMPZIPFILE | cut -f 1 -d ' ')
+elif [ "$(uname)" = "Darwin" ]; then
+	 HASH=$(md5 -q $TMPZIPFILE)
+else
+	echo Unsupported OS
+    exit 1
+fi
+
+VERSION=$(date -u "+%Y-%m-%d-%H:%M:%S-$USER-$HASH")
 ZIPFILE=VSCode-browser-$VERSION.zip
 mv -v $TMPZIPFILE $ZIPFILE
 gsutil cp "$ZIPFILE" gs://sourcegraph-vscode/
