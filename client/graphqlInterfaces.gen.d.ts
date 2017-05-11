@@ -281,7 +281,6 @@ declare namespace GQL {
 	*/
 	interface IRevState {
 		__typename: string;
-		zapRev: IZapRev | null;
 		commit: ICommit | null;
 		cloneInProgress: boolean;
 	}
@@ -370,16 +369,6 @@ declare namespace GQL {
 		__typename: string;
 		githubOrgs: Array<IOrganization>;
 		paymentPlan: IPlan;
-	}
-
-	/*
-	  description: null
-	*/
-	interface IZapRev {
-		__typename: string;
-		ref: string;
-		base: string;
-		branch: string;
 	}
 }
 

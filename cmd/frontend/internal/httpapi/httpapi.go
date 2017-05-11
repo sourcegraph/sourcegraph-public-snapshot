@@ -53,7 +53,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	//
 	// You can read more about this security issue here:
 	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	m.Get(apirouter.Zap).Handler(traceutil.TraceRoute(http.HandlerFunc(serveZap)))
 	m.Get(apirouter.LSP).Handler(traceutil.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
 
 	m.Get(apirouter.GraphQL).Handler(traceutil.TraceRoute(handler(serveGraphQL)))

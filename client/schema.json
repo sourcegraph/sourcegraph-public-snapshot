@@ -2127,18 +2127,6 @@
 				"description": null,
 				"fields": [
 					{
-						"name": "zapRev",
-						"description": null,
-						"args": [],
-						"type": {
-							"kind": "OBJECT",
-							"name": "ZapRev",
-							"ofType": null
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					},
-					{
 						"name": "commit",
 						"description": null,
 						"args": [],
@@ -2868,65 +2856,6 @@
 							"ofType": {
 								"kind": "OBJECT",
 								"name": "Plan",
-								"ofType": null
-							}
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					}
-				],
-				"inputFields": null,
-				"interfaces": [],
-				"enumValues": null,
-				"possibleTypes": null
-			},
-			{
-				"kind": "OBJECT",
-				"name": "ZapRev",
-				"description": null,
-				"fields": [
-					{
-						"name": "ref",
-						"description": null,
-						"args": [],
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					},
-					{
-						"name": "base",
-						"description": null,
-						"args": [],
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					},
-					{
-						"name": "branch",
-						"description": null,
-						"args": [],
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
 								"ofType": null
 							}
 						},

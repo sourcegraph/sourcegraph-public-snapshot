@@ -73,14 +73,3 @@ type OrgWithDetailsContext struct {
 type OrgMember struct {
 	MemberUserID string `json:"user_id,omitempty"`
 }
-
-// UserDetailsContext is a data structure for representing key information
-// about a Sourcegraph user that isn't otherwise available on the frontend
-//
-// These fields are designed to be linked with user events to generate a
-// `users` table
-type UserDetailsContext struct {
-	// ZapAuthCompleted indicates whether the user in question has ever authorized
-	// Zap on the command line
-	ZapAuthCompleted bool `json:"zap_auth_completed,omitempty"`
-}

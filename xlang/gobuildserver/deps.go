@@ -128,7 +128,7 @@ func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Contex
 	// vendor we need to repeat work. So what we do is normalise the
 	// srcDir w.r.t. potential vendoring. This makes the assumption that
 	// the underlying FS for bctx is always the same, which is currently a
-	// correct assumption. That may have to be revisited with zap.
+	// correct assumption.
 	//
 	// Example: A project gh.com/p/r has a single vendor folder at
 	// /goroot/gh.com/p/r/vendor. Both gh.com/p/r/foo and

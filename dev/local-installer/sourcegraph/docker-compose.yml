@@ -17,7 +17,6 @@ services:
       SRC_INDEXER: indexer:3179
       SRC_SESSION_STORE_REDIS: redis:6379
       TRACKING_APP_ID:
-      ZAP_SERVER: ws://zap:8433
     restart: "always"
     ports:
      - "${SRC_APP_PORT:-3080}:3080"
@@ -86,24 +85,6 @@ services:
       PGDATA: /data
       POSTGRES_USER: sg
       POSTGRES_PASSWORD:
-  zap:
-    image: "docker.sourcegraph.com/zap:latest"
-    ports:
-      - 8433:8433
-    environment:
-      LOGLEVEL:                 info
-      PGHOST: postgres
-      PGSSLMODE: disable
-      PGUSER: sg
-      REDIS_MASTER_ENDPOINT: redis:6379
-      SRC_GIT_SERVERS: gitserver-1:3178
-      SRC_SESSION_STORE_REDIS: redis:6379
-      ZAP_SERVER_LISTEN:        ws://:8433
-      ZAP_TEST_TRACE:           1
-    depends_on:
-      - "gitserver-1"
-      - "postgres"
-      - "redis"
   initializer:
     image: "docker.sourcegraph.com/initializer:latest"
     volumes:

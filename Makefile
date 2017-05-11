@@ -20,24 +20,3 @@ test-app:
 	cd ui && yarn test
 	CDPATH= cd ui/scripts/tsmapimports && yarn test
 	go test -race ${APPTESTPKGS}
-
-.PHONY: upgrade-zap
-upgrade-zap:
-	cd ui && yarn add libzap vscode-zap
-	git config url."git@github.com:".insteadOf "https://github.com/"
-	govendor fetch github.com/sourcegraph/zap/...
-
-.PHONY: develop-zap
-develop-zap:
-	cd ui && yarn link libzap vscode-zap
-	rm -rf vendor/github.com/sourcegraph/zap
-	ln -s $(shell go list -f '{{.Dir}}' github.com/sourcegraph/zap) vendor/github.com/sourcegraph/zap
-
-.PHONY: undevelop-zap
-undevelop-zap:
-	cd ui && yarn unlink libzap vscode-zap
-	git checkout -- vendor/github.com/sourcegraph/zap
-
-.PHONY: deploy-zap
-deploy-zap:
-	git fetch && git push origin origin/master:docker-images/zap

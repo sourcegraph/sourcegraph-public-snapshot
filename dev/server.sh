@@ -32,11 +32,9 @@ export LSP_PROXY=127.0.0.1:4388
 export REDIS_MASTER_ENDPOINT=127.0.0.1:6379
 export SRC_SESSION_STORE_REDIS=127.0.0.1:6379
 export SRC_INDEXER=127.0.0.1:3179
-export ZAP_SERVER_LISTEN="ws://$HOME/.sourcegraph/zap"
-export ZAP_SERVER="ws://$HOME/.sourcegraph/zap"
 
 mkdir -p .bin
-env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,zap,xlang-go,lsp-proxy,searcher}
+env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
 
 . dev/langservers.lib.bash
 detect_dev_langservers

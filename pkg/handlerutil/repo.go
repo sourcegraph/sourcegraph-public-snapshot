@@ -43,7 +43,7 @@ func getRepoRev(ctx context.Context, vars map[string]string, repoID int32, defau
 		}
 	}
 
-	_, res, err := backend.Repos.ResolveZapRev(ctx, &sourcegraph.ReposResolveRevOp{
+	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repoID,
 		Rev:  repoRev.Rev,
 	})

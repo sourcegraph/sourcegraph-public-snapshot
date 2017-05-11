@@ -50,12 +50,8 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate)))
 	r.Get(router.GitHubOAuth2Receive).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))
 
-	r.Get(router.InstallZap).Handler(traceutil.TraceRoute(errorutil.Handler(serveInstallZap)))
-
 	r.Get(router.GDDORefs).Handler(traceutil.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(traceutil.TraceRoute(errorutil.Handler(serveEditor)))
-
-	r.Get(router.ShowAuth).Handler(traceutil.TraceRoute(errorutil.Handler(serveShowAuth)))
 
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)

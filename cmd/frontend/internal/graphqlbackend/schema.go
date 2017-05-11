@@ -87,7 +87,6 @@ type CommitState {
 }
 
 type RevState {
-	zapRev: ZapRev
 	commit: Commit
 	cloneInProgress: Boolean!
 }
@@ -109,12 +108,6 @@ type Commit implements Node {
 	textSearch(query: SearchQuery): SearchResults!
 	file(path: String!): File
 	languages: [String!]!
-}
-
-type ZapRev {
-	ref: String!
-	base: String!
-	branch: String!
 }
 
 type CommitInfo {

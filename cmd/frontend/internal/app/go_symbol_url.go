@@ -43,20 +43,6 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
       character
       repository {
         uri
-        description
-        defaultBranch
-        expirationDate
-        revState(rev: $rev) {
-          zapRev {
-            ref
-            base
-            branch
-          }
-          commit {
-            sha1
-          }
-          cloneInProgress
-        }
       }
     }
   }

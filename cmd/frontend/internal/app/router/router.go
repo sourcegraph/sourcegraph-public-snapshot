@@ -25,16 +25,12 @@ const (
 	GoogleOAuth2Initiate = "google-oauth2.initiate"
 	GoogleOAuth2Receive  = "google-oauth2.receive"
 
-	InstallZap = "install.zap"
-
 	OldDefRedirect   = "old-def-redirect"
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
 
 	GDDORefs = "gddo.refs"
 	Editor   = "editor"
-
-	ShowAuth = "show-auth"
 
 	GoSymbolURL = "go-symbol-url"
 
@@ -71,12 +67,8 @@ func New() *Router {
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)
 
-	base.Path("/-/show-auth").Methods("GET").Name(ShowAuth)
-
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
-
-	base.Path("/install/zap").Methods("GET").Name(InstallZap)
 
 	base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
 

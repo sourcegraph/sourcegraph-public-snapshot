@@ -2,85 +2,13 @@ package backend
 
 import (
 	"context"
-	"strings"
 
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
-
-	"github.com/sourcegraph/zap"
 	"gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
-
-var TestSkipZap = false
-
-func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (zapRef *zap.RefInfo, res *sourcegraph.ResolvedRev, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "ResolveZapRev")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.SetTag("result_zap", zapRef)
-		span.SetTag("result_git", res)
-		span.Finish()
-	}()
-	span.SetTag("op", op)
-
-	if TestSkipZap {
-		goto nonZap
-	}
-
-	// TODO(matt,john): remove this hack, this zapRevInfo call was causing a front-end error
-	// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
-	if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
-		repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
-		if err != nil {
-			return nil, nil, err
-		}
-
-		// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
-		if op.Rev != "" && !strings.HasSuffix(op.Rev, "^{git}") {
-			cl, err := NewZapClient(ctx)
-			if err != nil {
-				return nil, nil, err
-			}
-			zapRevInfo, err := cl.RefInfo(ctx, zap.RefInfoParams{
-				RefIdentifier: zap.RefIdentifier{Repo: repo.URI, Ref: op.Rev},
-				Fuzzy:         true,
-			})
-			span.SetTag("zap_refinfo_resp", zapRevInfo)
-			if err != nil {
-				// Do not fatally return; instead gracefully degrade to
-				// gitserver below.
-				//
-				// TODO: distinguish between "ref does not exist" errors and
-				// other errors.
-				span.SetTag("zap_refinfo_err", err)
-			}
-			if zapRevInfo != nil && zapRevInfo.Data != nil {
-				span.SetTag("is_zap_rev", true)
-				// We want to use the Git revision that the Zap branch was based on,
-				// as all of the Zap operations were originating from that revision.
-				// Using any other revision of the same branch would be a mistake
-				// (e.g., the user may be on a revision of the master branch that is
-				// just a few commits behind.)
-				return zapRevInfo, &sourcegraph.ResolvedRev{
-					CommitID: zapRevInfo.Data.GitBase,
-				}, nil
-			}
-		}
-	}
-
-nonZap:
-	span.SetTag("is_zap_rev", false)
-	res, err = Repos.ResolveRev(ctx, op)
-	return nil, res, err
-}
 
 func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
 	if Mocks.Repos.ResolveRev != nil {

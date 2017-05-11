@@ -13,7 +13,6 @@ const (
 	GraphQL = "graphql"
 	XLang   = "xlang"
 	LSP     = "lsp"
-	Zap     = "zap"
 
 	GlobalSearch     = "global.search"
 	RepoCreate       = "repo.create"
@@ -40,7 +39,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/graphql").Methods("GET", "POST").Name(GraphQL)
 	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 	base.Path("/lsp").Methods("GET").Name(LSP)
-	base.Path("/zap").Methods("GET").Name(Zap)
 
 	base.Path("/beta-subscription").Methods("POST").Name(BetaSubscription)
 	base.Path("/submit-form").Methods("POST").Name(SubmitForm)

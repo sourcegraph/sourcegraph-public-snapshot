@@ -60,7 +60,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 }
 
 func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
-	zapRevInfo, rev, err := backend.Repos.ResolveZapRev(ctx, &sourcegraph.ReposResolveRevOp{
+	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,
 		Rev:  args.Rev,
 	})
@@ -69,22 +69,6 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 			return &commitStateResolver{cloneInProgress: true}, nil
 		}
 		return nil, err
-	}
-	if zapRevInfo != nil {
-		return &commitStateResolver{
-			zapRev: &zapRevResolver{zapRev: zapRevSpec{
-				Ref:    zapRevInfo.RefIdentifier.Ref,
-				Base:   zapRevInfo.Data.GitBase,
-				Branch: zapRevInfo.Data.GitBranch,
-			}},
-			commit: &commitResolver{
-				commit: commitSpec{
-					RepoID:        r.repo.ID,
-					CommitID:      zapRevInfo.Data.GitBase,
-					DefaultBranch: r.repo.DefaultBranch,
-				},
-			},
-		}, nil
 	}
 
 	return &commitStateResolver{
