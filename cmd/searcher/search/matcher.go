@@ -11,8 +11,6 @@ import (
 	"sync"
 	"unicode"
 
-	"fmt"
-
 	"github.com/gobwas/glob"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -256,10 +254,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader, fileMat
 		span.Finish()
 	}()
 
-	if fileMatchLimit > maxFileMatches {
-		return []FileMatch{}, false, fmt.Errorf("fileMatchLimit exceeds allowed maximum: %d", maxFileMatches)
-	}
-	if fileMatchLimit <= 0 {
+	if fileMatchLimit > maxFileMatches || fileMatchLimit <= 0 {
 		fileMatchLimit = maxFileMatches
 	}
 
