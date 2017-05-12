@@ -791,6 +791,22 @@
 						},
 						"isDeprecated": false,
 						"deprecationReason": null
+					},
+					{
+						"name": "limitHit",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
 					}
 				],
 				"inputFields": null,
@@ -1011,6 +1027,22 @@
 										}
 									}
 								}
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "limitHit",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
 							}
 						},
 						"isDeprecated": false,
@@ -2462,7 +2494,7 @@
 						"defaultValue": null
 					},
 					{
-						"name": "maxResults",
+						"name": "fileMatchLimit",
 						"description": null,
 						"type": {
 							"kind": "NON_NULL",
@@ -2506,22 +2538,6 @@
 				"description": null,
 				"fields": [
 					{
-						"name": "hasNextPage",
-						"description": null,
-						"args": [],
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "Boolean",
-								"ofType": null
-							}
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					},
-					{
 						"name": "results",
 						"description": null,
 						"args": [],
@@ -2540,6 +2556,22 @@
 										"ofType": null
 									}
 								}
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "limitHit",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
 							}
 						},
 						"isDeprecated": false,
