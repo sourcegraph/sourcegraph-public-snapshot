@@ -373,17 +373,6 @@ type UpdateEmailsOp struct {
 	Add *EmailAddrList `json:"Add,omitempty"`
 }
 
-type SubmittedForm struct {
-	HubSpotFormName string `schema:"hubSpotFormName"`
-	FirstName       string `schema:"firstname"`
-	LastName        string `schema:"lastname"`
-	UserID          string `schema:"user_id"`
-	Email           string `schema:"email"`
-	SignupEmail     string `schema:"signup_email"`
-	BetaEmail       string `schema:"beta_email"`
-	Company         string `schema:"company"`
-}
-
 // SubmitFormResponse is a response to a user submitting a form (such
 // as, e.g., a beta signup form).
 type SubmitFormResponse struct {

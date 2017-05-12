@@ -2,10 +2,8 @@ package hubspotutil
 
 import (
 	"errors"
-	"strings"
 	"unicode"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 )
@@ -52,25 +50,28 @@ func Client() (*hubspot.Client, error) {
 }
 
 // PrepareFormData does any required preprocessing for individual forms
-func PrepareFormData(formName string, form *sourcegraph.SubmittedForm) {
-	// First, split `firstname` into two pieces, if it has a space in the middle
-	if strings.TrimSpace(form.FirstName) != "" {
-		names := strings.Fields(form.FirstName)
-		form.FirstName = names[0]
-		form.LastName = strings.Join(names[1:], " ")
+func PrepareFormData(formName string, formData map[string]string) map[string]string {
+	// Convert all form keys to snake case, per HubSpot requirements
+	data := make(map[string]string)
+	for key, value := range formData {
+		if key == "hubSpotFormName" {
+			continue
+		}
+		data[ToSnake(key)] = value
 	}
 
 	// Always set `company` and `lastname` fields to "Unknown" if not set by the user.
 	// Salesforce requires these fields to be non-blank to do data ingestion from
 	// HubSpot, so ensure they always have a value
 	if formName == "AfterSignupForm" {
-		if form.Company == "" {
-			form.Company = "Unknown"
+		if company := data["company"]; company == "" {
+			data["company"] = "Unknown"
 		}
-		if form.LastName == "" {
-			form.LastName = "Unknown"
+		if lastname := data["lastname"]; lastname == "" {
+			data["lastname"] = "Unknown"
 		}
 	}
+	return data
 }
 
 // ToSnake convert the given string to snake case following the Golang format:

@@ -614,9 +614,6 @@ export interface SubmitFormResponse {
 	EmailAddress?: string;
 }
 
-export interface SubmittedForm {
-}
-
 export interface SubmoduleInfo {
 }
 
