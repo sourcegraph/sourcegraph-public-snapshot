@@ -666,8 +666,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 	} as any);
 
 	// Disabled due to flakeyness on CI. See https://github.com/sourcegraph/sourcegraph/issues/5637
-	/* 
-	describe('Workspace with dependencies with package.json scripts', function (this: TestContext & IContextDefinition) {
+	describe.skip('Workspace with dependencies with package.json scripts', function (this: TestContext & IContextDefinition) {
 		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'rootpkg',
@@ -730,5 +729,4 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			} as any);
 		});
 	});
-	*/
 });
