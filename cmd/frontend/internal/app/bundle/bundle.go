@@ -7,14 +7,7 @@
 //
 //   cmd/frontend/internal/app/bundle/fetch-and-generate.bash
 //
-// To publish a vscode package, run the following:
-//
-//   # first, in vscode:
-//   cd $VSCODE_PRIVATE # the path to your copy of sourcegraph/vscode-private
-//   gulp vscode-browser-min
-//
-//   # then, in sourcegraph:
-//   cmd/frontend/internal/app/bundle/publish-package.bash $VSCODE_PRIVATE/../VSCode-browser
+// To publish a vscode package, follow the steps in vscode-private/SOURCEGRAPH.md
 package bundle
 
 import (
