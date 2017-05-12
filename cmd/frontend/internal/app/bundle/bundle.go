@@ -14,7 +14,11 @@
 //   gulp vscode-browser-min
 //
 //   # then, in sourcegraph:
-//   cmd/frontend/internal/app/bundle/publish-package.bash $VSCODE_PRIVATE/../VSCode-browser
+//   cmd/frontend/internal/app/bundle/publish-package.bash $VSCODE_PRIVATE/../VSCode-browser $VERSION
+//
+// The $VERSION is currently chosen manually and should be
+// unique. Update fetch-and-generate.bash's version number when you
+// publish a new package.
 package bundle
 
 import (

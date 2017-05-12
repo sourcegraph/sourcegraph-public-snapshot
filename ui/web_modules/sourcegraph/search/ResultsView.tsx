@@ -34,7 +34,7 @@ export function ResultsView(props: Props): JSX.Element {
 			No results found.
 		</div>;
 	}
-	const truncated = props.results.results.length > 100;
+	const truncated = props.results.results.length > 100 || props.results.hasNextPage;
 	const results = take(props.results.results, 100);
 	return <div style={resultsSx}>
 		{results.map(FileResult)}

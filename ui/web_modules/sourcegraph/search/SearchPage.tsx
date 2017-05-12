@@ -80,6 +80,7 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 					isWordMatch: $isWordMatch,
 					isCaseSensitive: $isCaseSensitive,
 			}) {
+            	hasNextPage
 				results {
 					resource
 					lineMatches {

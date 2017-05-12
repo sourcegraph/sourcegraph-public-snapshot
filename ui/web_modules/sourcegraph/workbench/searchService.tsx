@@ -80,6 +80,7 @@ export class SearchService implements ISearchService {
 						commit(rev: $rev) {
 							commit {
 								textSearch(query: {pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, maxResults: $maxResults}) {
+									hasNextPage
 									results {
 										resource
 										lineMatches {
@@ -109,6 +110,7 @@ export class SearchService implements ISearchService {
 					});
 					complete({
 						results,
+						limitHit: searchResults.hasNextPage,
 						stats: {} as any,
 					});
 				});
