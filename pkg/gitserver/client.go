@@ -73,7 +73,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	sum := md5.Sum([]byte(repoURI))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.Addrs))
-	addr := strings.Replace(c.client.Addrs[serverIndex], ":3178", ":3278", 1) // temporary hack while replacing chanrpc
+	addr := c.client.Addrs[serverIndex]
 
 	req := &protocol.ExecRequest{
 		Repo:           repoURI,
