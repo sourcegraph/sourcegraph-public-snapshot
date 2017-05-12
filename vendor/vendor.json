@@ -699,18 +699,6 @@
 			"revisionTime": "2015-10-11T12:25:29+02:00"
 		},
 		{
-			"checksumSHA1": "dEpgq1GYh5TRRNo22ANVMK8owTA=",
-			"path": "github.com/neelance/chanrpc",
-			"revision": "872b087b93d5e76dbb999d538f20dc416c6fbcd5",
-			"revisionTime": "2016-03-29T13:10:07Z"
-		},
-		{
-			"checksumSHA1": "yOBW3lnFnE3Vn8WD6GMM+qBo2FA=",
-			"path": "github.com/neelance/chanrpc/chanrpcutil",
-			"revision": "872b087b93d5e76dbb999d538f20dc416c6fbcd5",
-			"revisionTime": "2016-03-29T13:10:07Z"
-		},
-		{
 			"checksumSHA1": "dOZUSF5us7fCNH1a82DkyzCFsGA=",
 			"path": "github.com/neelance/depprof",
 			"revision": "fc4ad4ce8cf49e318f11a2f68d2b53db4b1f426a",
