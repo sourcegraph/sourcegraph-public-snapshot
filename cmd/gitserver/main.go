@@ -45,11 +45,7 @@ func main() {
 		log.Printf("SSH initialization error: %s", err)
 	}
 
-	log.Print("git-server: listening on :3178 and :3278")
-	go func() {
-		srv := &http.Server{Addr: ":3278", Handler: gitserver.Handler()}
-		log.Fatal(srv.ListenAndServe())
-	}()
+	log.Print("git-server: listening on :3178")
 	srv := &http.Server{Addr: ":3178", Handler: gitserver.Handler()}
 	log.Fatal(srv.ListenAndServe())
 }
