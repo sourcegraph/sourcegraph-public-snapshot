@@ -150,7 +150,7 @@ func benchConcurrentFind(b *testing.B, p *Params) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := concurrentFind(ctx, rg, ar.Reader(), 0)
+		_, err := concurrentFind(ctx, rg, ar.Reader())
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -272,25 +272,16 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zr, 0)
-	if !limitHit {
-		t.Fatalf("expected limitHit on concurrentFind")
-	}
+	fileMatches, err := concurrentFind(context.Background(), rg, zr)
 
 	if len(fileMatches) != maxFileMatches {
 		t.Fatalf("expected %d file matches, got %d", maxFileMatches, len(fileMatches))
 	}
 	for _, fm := range fileMatches {
-		if !fm.LimitHit {
-			t.Fatalf("expected limitHit on file match")
-		}
 		if len(fm.LineMatches) != maxLineMatches {
 			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
 		}
 		for _, lm := range fm.LineMatches {
-			if !lm.LimitHit {
-				t.Fatalf("expected limitHit on line match")
-			}
 			if len(lm.OffsetAndLengths) != maxOffsets {
 				t.Fatalf("expected %d offsets, got %d", maxOffsets, len(lm.OffsetAndLengths))
 			}
