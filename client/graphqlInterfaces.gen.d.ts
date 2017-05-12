@@ -117,6 +117,7 @@ declare namespace GQL {
 		__typename: string;
 		resource: string;
 		lineMatches: Array<ILineMatch>;
+		limitHit: boolean;
 	}
 
 	/*
@@ -141,6 +142,7 @@ declare namespace GQL {
 		preview: string;
 		lineNumber: number;
 		offsetAndLengths: Array<Array<number>>;
+		limitHit: boolean;
 	}
 
 	/*
@@ -307,7 +309,7 @@ declare namespace GQL {
 		isRegExp: boolean;
 		isWordMatch: boolean;
 		isCaseSensitive: boolean;
-		maxResults: number;
+		fileMatchLimit: number;
 		includePattern?: string;
 		excludePattern?: string;
 	}
@@ -317,8 +319,8 @@ declare namespace GQL {
 	*/
 	interface ISearchResults {
 		__typename: string;
-		hasNextPage: boolean;
 		results: Array<IFileMatch>;
+		limitHit: boolean;
 	}
 
 	/*

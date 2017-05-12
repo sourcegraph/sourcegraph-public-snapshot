@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"sync"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -31,7 +32,8 @@ type patternInfo struct {
 	IsRegExp        bool
 	IsWordMatch     bool
 	IsCaseSensitive bool
-	MaxResults      int32
+	FileMatchLimit  int32
+
 	// We do not support IsMultiline
 	//IsMultiline     bool
 	IncludePattern *string
@@ -39,21 +41,22 @@ type patternInfo struct {
 }
 
 type searchResults struct {
-	results     []*fileMatch
-	hasNextPage bool
+	results  []*fileMatch
+	limitHit bool
 }
 
 func (sr *searchResults) Results() []*fileMatch {
 	return sr.results
 }
 
-func (sr *searchResults) HasNextPage() bool {
-	return sr.hasNextPage
+func (sr *searchResults) LimitHit() bool {
+	return sr.limitHit
 }
 
 type fileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
+	JLimitHit    bool         `json:"LimitHit"`
 	uri          string
 }
 
@@ -65,11 +68,16 @@ func (fm *fileMatch) LineMatches() []*lineMatch {
 	return fm.JLineMatches
 }
 
+func (fm *fileMatch) LimitHit() bool {
+	return fm.JLimitHit
+}
+
 // LineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
 	JPreview          string    `json:"Preview"`
 	JLineNumber       int32     `json:"LineNumber"`
 	JOffsetAndLengths [][]int32 `json:"OffsetAndLengths"`
+	JLimitHit         bool      `json:"LimitHit"`
 }
 
 func (lm *lineMatch) Preview() string {
@@ -84,45 +92,21 @@ func (lm *lineMatch) OffsetAndLengths() [][]int32 {
 	return lm.JOffsetAndLengths
 }
 
-// truncateMatches returns a copy of results with at most `limit` matches, and
-// whether there was more than `limit` matches in the input slice.
-func truncateMatches(results []*fileMatch, limit int) ([]*fileMatch, bool) {
-	count := 0
-	for i, fm := range results {
-		for j, lm := range fm.JLineMatches {
-			count += len(lm.JOffsetAndLengths)
-			if count > limit {
-				lMatch := *lm
-				lMatch.JOffsetAndLengths = lMatch.JOffsetAndLengths[:len(lMatch.JOffsetAndLengths)-(count-limit)]
-				lineMatches := make([]*lineMatch, j)
-				copy(lineMatches, fm.JLineMatches)
-				lineMatches = append(lineMatches, &lMatch)
-
-				fMatch := *fm
-				fMatch.JLineMatches = lineMatches
-
-				fileMatches := make([]*fileMatch, i)
-				copy(fileMatches, results)
-				fileMatches = append(fileMatches, &fMatch)
-				return fileMatches, true
-			}
-		}
-	}
-	return results, false
+func (lm *lineMatch) LimitHit() bool {
+	return lm.JLimitHit
 }
 
 func (r *commitResolver) TextSearch(ctx context.Context, args *struct{ Query *patternInfo }) (*searchResults, error) {
-	results, err := textSearch(ctx, r.repo.URI, r.commit.CommitID, args.Query)
+	results, limitHit, err := textSearch(ctx, r.repo.URI, r.commit.CommitID, args.Query)
 	if err != nil {
 		return nil, err
 	}
-	results, limitHit := truncateMatches(results, int(args.Query.MaxResults))
 	return &searchResults{results, limitHit}, nil
 }
 
-func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fileMatch, error) {
+func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if searcherURLs == nil {
-		return nil, errors.New("a searcher service has not been configured")
+		return nil, false, errors.New("a searcher service has not been configured")
 	}
 	var s string
 	if p.IncludePattern == nil {
@@ -138,6 +122,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 		"ExcludePattern": []string{*p.ExcludePattern},
 		"IncludePattern": []string{*p.IncludePattern},
 	}
+	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")
 	}
@@ -150,7 +135,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 	searcherURL := searcherURLs.Get(repo + "@" + commit)
 	req, err := http.NewRequest("GET", searcherURL, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	req.URL.RawQuery = q.Encode()
 	req = req.WithContext(ctx)
@@ -163,35 +148,36 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 	client := &http.Client{Transport: &nethttp.Transport{}}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		return nil, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
+		return nil, false, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
 	r := struct {
-		Matches []*fileMatch
+		Matches  []*fileMatch
+		LimitHit bool
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&r)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	workspace := "git://" + repo + "?" + commit + "#"
 	for _, fm := range r.Matches {
 		fm.uri = workspace + fm.JPath
 	}
-	return r.Matches, nil
+	return r.Matches, r.LimitHit, nil
 }
 
-func searchRepo(ctx context.Context, repoName string, info *patternInfo) ([]*fileMatch, error) {
+func searchRepo(ctx context.Context, repoName string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
 	// the user has permissions to access the repository.
@@ -199,7 +185,7 @@ func searchRepo(ctx context.Context, repoName string, info *patternInfo) ([]*fil
 		Repo: repo.ID,
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	return textSearch(ctx, repoName, commit.CommitID, info)
 }
@@ -218,16 +204,19 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		mu        sync.Mutex
 		err       error
 		flattened []*fileMatch
+		limitHit  bool
 	)
 	for _, repo := range args.Repositories {
 		wg.Add(1)
 		go func(repo string) {
 			defer wg.Done()
-			matches, searchErr := searchRepo(ctx, repo, args.Query)
+			matches, repoLimitHit, searchErr := searchRepo(ctx, repo, args.Query)
 			mu.Lock()
+			defer mu.Unlock()
+			limitHit = limitHit || repoLimitHit
 			if err, isNotFound := searchErr.(vcs.RepoNotExistError); isNotFound && err.CloneInProgress {
 				// No need to abort the entire search if one of the repos is cloning.
-				mu.Unlock()
+				limitHit = true
 				return
 			}
 			if searchErr != nil && err == nil {
@@ -237,7 +226,6 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			if len(matches) > 0 {
 				flattened = append(flattened, matches...)
 			}
-			mu.Unlock()
 		}(repo)
 	}
 	wg.Wait()
@@ -251,14 +239,7 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		}
 		return flattened[i].uri > flattened[j].uri
 	})
-	maxLinesPerFile := 6
-	for _, lm := range flattened {
-		if len(lm.JLineMatches) > maxLinesPerFile {
-			lm.JLineMatches = lm.JLineMatches[:maxLinesPerFile]
-		}
-	}
-	flattened, truncated := truncateMatches(flattened, int(args.Query.MaxResults))
-	return &searchResults{flattened, truncated}, nil
+	return &searchResults{flattened, limitHit}, nil
 }
 
 var searcherURLs *endpoint.Map
