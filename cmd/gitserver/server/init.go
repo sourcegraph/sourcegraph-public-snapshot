@@ -26,10 +26,10 @@ func init() {
 	}
 }
 
-// initializeSSH best-effort initializes the .ssh directory using the contents of another directory.
+// InitializeSSH best-effort initializes the .ssh directory using the contents of another directory.
 // This should only be used for the local installer use case (mounting the host's .ssh directory as
 // the source directory for SSH credentials).
-func initializeSSH() error {
+func InitializeSSH() error {
 	if sshInitDir == "" || sshDir == "" {
 		return nil
 	}

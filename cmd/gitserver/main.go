@@ -5,7 +5,6 @@ package main // import "sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
 	"log"
-	"net"
 	"net/http"
 	"syscall"
 
@@ -35,21 +34,22 @@ func main() {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
 	gitserver := server.Server{ReposDir: reposDir}
+	gitserver.RegisterMetrics()
 
 	if profBindAddr != "" {
 		go debugserver.Start(profBindAddr)
 		log.Printf("Profiler available on %s/pprof", profBindAddr)
 	}
 
-	go func() {
-		l, err := net.Listen("tcp", ":3178")
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Fatal(gitserver.ServeLegacy(l))
-	}()
+	if err := server.InitializeSSH(); err != nil {
+		log.Printf("SSH initialization error: %s", err)
+	}
 
-	log.Print("git-server: listening on :3278 and :3178 (legacy)")
-	srv := &http.Server{Addr: ":3278", Handler: gitserver.Handler()}
+	log.Print("git-server: listening on :3178 and :3278")
+	go func() {
+		srv := &http.Server{Addr: ":3278", Handler: gitserver.Handler()}
+		log.Fatal(srv.ListenAndServe())
+	}()
+	srv := &http.Server{Addr: ":3178", Handler: gitserver.Handler()}
 	log.Fatal(srv.ListenAndServe())
 }

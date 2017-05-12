@@ -164,12 +164,6 @@ var repoExists = func(dir string) bool {
 	return !os.IsNotExist(err)
 }
 
-func recoverAndLog() {
-	if err := recover(); err != nil {
-		log.Print(err)
-	}
-}
-
 // environ is a slice of strings representing the environment, in the form "key=value".
 type environ []string
 
@@ -198,7 +192,7 @@ func (e *environ) Unset(key string) {
 
 // writeCounter wraps an io.WriterCloser and keeps track of bytes written.
 type writeCounter struct {
-	w io.WriteCloser
+	w io.Writer
 	// n is the number of bytes written to w
 	n int64
 }
@@ -207,8 +201,4 @@ func (c *writeCounter) Write(p []byte) (n int, err error) {
 	n, err = c.w.Write(p)
 	c.n += int64(n)
 	return
-}
-
-func (c *writeCounter) Close() error {
-	return c.w.Close()
 }

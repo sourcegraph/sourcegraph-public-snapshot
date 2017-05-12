@@ -9,7 +9,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-func (s *Server) registerMetrics() {
+func (s *Server) RegisterMetrics() {
 	// test the latency of exec, which may increase under certain memory
 	// conditions
 	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{

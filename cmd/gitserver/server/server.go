@@ -1,10 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"log"
-	"net"
 	"net/http"
 	"os/exec"
 	"path"
@@ -15,8 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/neelance/chanrpc"
-	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
@@ -67,84 +64,6 @@ type updateRepoRequest struct {
 	opt  *vcs.RemoteOpts
 }
 
-// Serve serves incoming http requests on listener l.
-func (s *Server) Handler() http.Handler {
-	s.cloning = make(map[string]struct{})
-	s.updateRepo = s.repoUpdateLoop()
-	s.repoUpdateLocks = make(map[string]*locks)
-
-	if err := initializeSSH(); err != nil {
-		log.Printf("SSH initialization error: %s", err)
-	}
-
-	s.registerMetrics()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/exec", func(w http.ResponseWriter, r *http.Request) {
-		var req protocol.ExecRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		replyChan := make(chan *protocol.LegacyExecReply, 1)
-		go s.handleLegacyExecRequest(&protocol.LegacyExecRequest{
-			Repo:           req.Repo,
-			EnsureRevision: req.EnsureRevision,
-			Args:           req.Args,
-			Opt:            req.Opt,
-			NoAutoUpdate:   req.NoAutoUpdate,
-			ReplyChan:      replyChan,
-		})
-		reply := <-replyChan
-		if reply.RepoNotFound || reply.CloneInProgress {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-				CloneInProgress: reply.CloneInProgress,
-			})
-			return
-		}
-
-		w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
-		w.WriteHeader(http.StatusOK)
-		stderrCh := chanrpcutil.ReadAll(reply.Stderr)
-		for b := range reply.Stdout {
-			w.Write(b)
-		}
-
-		result := <-reply.ProcessResult
-		stderr := <-stderrCh
-		if len(stderr) > 1024 {
-			stderr = stderr[:1024]
-		}
-		// write trailer
-		w.Header().Set("X-Exec-Error", result.Error)
-		w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(result.ExitStatus))
-		w.Header().Set("X-Exec-Stderr", string(stderr))
-	})
-	return mux
-}
-
-// ServeLegacy serves incoming legacy gitserver requests on listener l.
-func (s *Server) ServeLegacy(l net.Listener) error {
-	s.cloning = make(map[string]struct{})
-	s.updateRepo = s.repoUpdateLoop()
-	s.repoUpdateLocks = make(map[string]*locks)
-
-	requests := make(chan *protocol.LegacyRequest, 100)
-	go s.processRequests(requests)
-	srv := &chanrpc.Server{RequestChan: requests}
-	return srv.Serve(l)
-}
-
-func (s *Server) processRequests(requests <-chan *protocol.LegacyRequest) {
-	for req := range requests {
-		if req.Exec != nil {
-			go s.handleLegacyExecRequest(req.Exec)
-		}
-	}
-}
-
 // This is a timeout for git commands that should not take a long time.
 var shortGitCommandTimeout = time.Minute
 
@@ -153,8 +72,24 @@ var shortGitCommandTimeout = time.Minute
 // be run in the background.
 var longGitCommandTimeout = time.Hour
 
-// handleExecRequest handles a exec request.
-func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
+// Serve serves incoming http requests on listener l.
+func (s *Server) Handler() http.Handler {
+	s.cloning = make(map[string]struct{})
+	s.updateRepo = s.repoUpdateLoop()
+	s.repoUpdateLocks = make(map[string]*locks)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/exec", s.handleExec)
+	return mux
+}
+
+func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
+	var req protocol.ExecRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), shortGitCommandTimeout)
 	defer cancel()
 
@@ -164,20 +99,7 @@ func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
 	var status string
 	var errStr string
 
-	defer recoverAndLog()
-	defer close(req.ReplyChan)
-
-	if req.Stdin != nil {
-		go chanrpcutil.Drain(req.Stdin) // deprecated
-	}
-
 	req.Repo = protocol.NormalizeRepo(req.Repo)
-
-	// This is a repo that we use for testing the cloning state of the UI
-	if req.Repo == "github.com/sourcegraphtest/alwayscloningtest" {
-		req.ReplyChan <- &protocol.LegacyExecReply{CloneInProgress: true}
-		return
-	}
 
 	// Instrumentation
 	{
@@ -212,10 +134,11 @@ func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
 	dir := path.Join(s.ReposDir, req.Repo)
 	s.cloningMu.Lock()
 	_, cloneInProgress := s.cloning[dir]
-	if cloneInProgress {
+	if cloneInProgress || req.Repo == "github.com/sourcegraphtest/alwayscloningtest" {
 		s.cloningMu.Unlock()
-		req.ReplyChan <- &protocol.LegacyExecReply{CloneInProgress: true}
 		status = "clone-in-progress"
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
 		return
 	}
 	if !repoExists(dir) {
@@ -240,14 +163,16 @@ func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
 				}
 			}()
 
-			req.ReplyChan <- &protocol.LegacyExecReply{CloneInProgress: true}
 			status = "clone-in-progress"
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
 			return
 		}
 
 		s.cloningMu.Unlock()
-		req.ReplyChan <- &protocol.LegacyExecReply{RepoNotFound: true}
 		status = "repo-not-found"
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
 		return
 	}
 	s.cloningMu.Unlock()
@@ -261,22 +186,17 @@ func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
 		}
 	}
 
-	stdoutC, stdoutWRaw := chanrpcutil.NewWriter()
-	stderrC, stderrWRaw := chanrpcutil.NewWriter()
-	stdoutW := &writeCounter{w: stdoutWRaw}
-	stderrW := &writeCounter{w: stderrWRaw}
+	w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
+	w.WriteHeader(http.StatusOK)
+
+	var stderrBuf bytes.Buffer
+	stdoutW := &writeCounter{w: w}
+	stderrW := &writeCounter{w: &stderrBuf}
 
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
 	cmd.Dir = dir
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
-
-	processResultChan := make(chan *protocol.ProcessResult, 1)
-	req.ReplyChan <- &protocol.LegacyExecReply{
-		Stdout:        stdoutC,
-		Stderr:        stderrC,
-		ProcessResult: processResultChan,
-	}
 
 	var err error
 	err, exitStatus = runCommand(cmd)
@@ -284,17 +204,19 @@ func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
 		errStr = err.Error()
 	}
 
-	stdoutW.Close()
-	stderrW.Close()
-
-	processResultChan <- &protocol.ProcessResult{
-		Error:      errStr,
-		ExitStatus: exitStatus,
-	}
-	close(processResultChan)
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
+
+	stderr := stderrBuf.String()
+	if len(stderr) > 1024 {
+		stderr = stderr[:1024]
+	}
+
+	// write trailer
+	w.Header().Set("X-Exec-Error", errStr)
+	w.Header().Set("X-Exec-Exit-Status", status)
+	w.Header().Set("X-Exec-Stderr", string(stderr))
 
 	if !req.NoAutoUpdate && !noUpdates {
 		s.updateRepo <- updateRepoRequest{req.Repo, req.Opt}
