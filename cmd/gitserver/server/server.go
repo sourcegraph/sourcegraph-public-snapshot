@@ -88,7 +88,7 @@ func (s *Server) Handler() http.Handler {
 		}
 
 		replyChan := make(chan *protocol.LegacyExecReply, 1)
-		s.handleLegacyExecRequest(&protocol.LegacyExecRequest{
+		go s.handleLegacyExecRequest(&protocol.LegacyExecRequest{
 			Repo:           req.Repo,
 			EnsureRevision: req.EnsureRevision,
 			Args:           req.Args,

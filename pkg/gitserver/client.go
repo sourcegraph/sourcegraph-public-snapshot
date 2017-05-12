@@ -152,10 +152,10 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	}
 
 	stdout, err := ioutil.ReadAll(rc)
+	rc.Close()
 	if err != nil {
 		return nil, nil, err
 	}
-	rc.Close()
 
 	c.ExitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
 	if err != nil {
