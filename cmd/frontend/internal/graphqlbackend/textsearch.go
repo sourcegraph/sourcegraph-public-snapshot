@@ -239,6 +239,12 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		}
 		return flattened[i].uri > flattened[j].uri
 	})
+	// We pass in a limit to each repository so we may end up with R*limit results
+	// where R is the number of repositories we searched.
+	// Clip the results after doing the "relevance" sorting above.
+	if len(flattened) > int(args.Query.FileMatchLimit) {
+		flattened = flattened[:args.Query.FileMatchLimit]
+	}
 	return &searchResults{flattened, limitHit}, nil
 }
 

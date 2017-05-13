@@ -237,6 +237,42 @@ func TestReadAll(t *testing.T) {
 	}
 }
 
+func TestLineLimit(t *testing.T) {
+	rg, err := compile(&Params{Pattern: "a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		size    int
+		matches bool
+	}{
+		{size: maxLineSize, matches: true},
+		{size: maxLineSize + 1, matches: false},
+	}
+	for i, test := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var buf bytes.Buffer
+			for i := 0; i < test.size; i++ {
+				if _, err := buf.WriteString("a"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			matches, limitHit, err := rg.Find(&buf)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if limitHit {
+				t.Fatalf("expected limit to not hit")
+			}
+			hasMatches := len(matches) != 0
+			if hasMatches != test.matches {
+				t.Fatalf("hasMatches=%t test.matches=%t", hasMatches, test.matches)
+			}
+		})
+	}
+}
+
 func TestMaxMatches(t *testing.T) {
 	pattern := "foo"
 

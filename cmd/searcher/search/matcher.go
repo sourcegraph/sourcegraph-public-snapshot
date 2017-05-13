@@ -21,6 +21,11 @@ const (
 	// than this are searched.
 	maxFileSize = 1 << 19 // 512KB
 
+	// maxLineSize is the maximum length of a line in bytes.
+	// Lines larger than this are not scanned for results.
+	// (e.g. minified javascript files that are all on one line).
+	maxLineSize = 500
+
 	// maxFileMatches is the limit on number of matching files we return.
 	maxFileMatches = 1000
 
@@ -201,6 +206,11 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []LineMatch, limitHit bool
 		// Advance file bufs in sync
 		fileBuf = fileBuf[advance:]
 		fileMatchBuf = fileMatchBuf[advance:]
+
+		// Skip lines that are too long.
+		if len(matchBuf) > maxLineSize {
+			continue
+		}
 
 		// FindAllIndex allocates memory. We can avoid that by just
 		// checking if we have a match first. We expect most lines to
