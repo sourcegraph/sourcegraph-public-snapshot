@@ -4,7 +4,6 @@
 	<head
 		{{/* Using data attributes is deprecated. Use scripts.html to add data to context.js. */}}
 		data-template-name="{{.TemplateName}}"
-		data-webpack-public-path="{{assetURL ""}}/"
 		>
 		<meta charset="utf-8">
 		<meta name="referrer" content="origin-when-crossorigin">
@@ -47,9 +46,7 @@
 			</div>
 		{{end}}
 
-		{{if not .Meta.SEO}}
-			<script src="{{mainJavaScriptBundleURL}}"></script>
-		{{else}}
+		{{if .Meta.SEO}}
 			<script src="{{assetURL "/scripts/static_event_logger.js"}}"></script>
 		{{end}}
 	</body>

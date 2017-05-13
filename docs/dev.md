@@ -159,7 +159,6 @@ If you use VSCode and have the "Debugger for Chrome" extension, these steps allo
 use the interactive visual debugger for our frontend codebase:
 
 - Quit Chrome
-- (optional, but recommended) set the env variable `WEBPACK_SOURCEMAPS=t` before running your dev server (fyi, this has the side effect of slowing down incremental builds 5s -> 15s).
 - Launch Chrome (Canary) from the command line with a remote debugging port:
   - Mac OS: `/Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --remote-debugging-port=9222`
   - Windows: `start chrome.exe –remote-debugging-port=9222`

@@ -73,12 +73,6 @@ The end-to-end tests use the [Selenium Docker images](https://github.com/Seleniu
 
 When running in dev, the Selenium Docker image includes a VNC server, which lets you connect a VNC client to the see exactly which actions the tests are running in the browser.
 
-### Why can't I run the tests against a development server?
-
-The end-to-end tests will not work against a development build because it relies on the existence of a webpack server running on localhost in the same machine as the browser. It's possible to rig this up, but it involves changing some environment variables to make it so the development server is running not on `localhost`, but on some other hostname, which will need to be mapped to the appropriate IP in the Selenium container.
-
-Regardless of these difficulties, we should be running the end-to-end tests in an environment as close to production as possible, so it's better anyway to run them against a production build.
-
 ### Why are they written in Python?
 
 The Python Selenium client is well-documented and widely used. This also gives us the chance to dogfood Sourcegraph on Python.

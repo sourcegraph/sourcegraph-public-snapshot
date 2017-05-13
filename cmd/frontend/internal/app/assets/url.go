@@ -14,10 +14,3 @@ var baseURL = &url.URL{}
 func URL(p string) *url.URL {
 	return baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, p)})
 }
-
-// MainJavaScriptBundleURL returns the URL to the JavaScript
-// entrypoint. In dist mode, it determines the hash from the Webpack
-// build output.
-func MainJavaScriptBundleURL() *url.URL {
-	return URL(mainJavaScriptBundlePath)
-}
