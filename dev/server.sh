@@ -39,5 +39,7 @@ env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{g
 . dev/langservers.lib.bash
 detect_dev_langservers
 
-type ulimit > /dev/null && ulimit -n 10000
+# Increase ulimit (not needed on Windows/WSL)
+type ulimit > /dev/null && ulimit -n 10000 || true
+
 exec "$PWD"/vendor/.bin/goreman -f dev/Procfile start
