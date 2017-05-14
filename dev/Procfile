@@ -1,4 +1,3 @@
-webpack: curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && yarn && yarn run start)
 gitserver: .bin/gitserver
 indexer: .bin/indexer
 searcher: .bin/searcher

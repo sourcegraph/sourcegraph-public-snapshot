@@ -31,8 +31,7 @@ var FuncMap = htmpl.FuncMap{
 		return string(b), nil
 	},
 
-	"assetURL":                assets.URL,
-	"mainJavaScriptBundleURL": assets.MainJavaScriptBundleURL,
+	"assetURL": assets.URL,
 
 	"urlToTrace": func(ctx context.Context) string {
 		if span := opentracing.SpanFromContext(ctx); span != nil {
