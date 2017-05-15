@@ -150,8 +150,16 @@ func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Contex
 	// "/gopath/src/gh.com/p/r/bar/baz" and "/gopath/src/gh.com/p/r/foo"
 	// get the same cache key findPkgKey{"gh.com/gorilla/mux", "/gopath/src/gh.com/p/r", 0}.
 	if !build.IsLocalImport(p) && srcDir != "" {
-		gopathSrc := path.Join(gopath, "src")
-		for !bctx.IsDir(path.Join(srcDir, "vendor", p)) && srcDir != gopathSrc && srcDir != goroot && srcDir != "/" {
+		srcDirs := bctx.SrcDirs()
+		isGoPathSrcDir := func(p string) bool {
+			for _, d := range srcDirs {
+				if p == d {
+					return true
+				}
+			}
+			return false
+		}
+		for !bctx.IsDir(path.Join(srcDir, "vendor", p)) && !isGoPathSrcDir(srcDir) && srcDir != goroot && srcDir != "/" {
 			srcDir = path.Dir(srcDir)
 		}
 	}
@@ -206,7 +214,7 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 	// example.com/a/b and example.com/a/b lives in a separate
 	// repo, then this will break. This is the case for some
 	// azul3d packages, but it's rare.
-	if langserver.PathHasPrefix(path, h.rootImportPath) {
+	if h.rootImportPath != "" && langserver.PathHasPrefix(path, h.rootImportPath) {
 		if pkg != nil {
 			return pkg, nil
 		}
@@ -224,7 +232,7 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 	// it; it is already on disk. If we fetch it, we might end up
 	// with multiple conflicting versions of the workspace's repo
 	// overlaid on each other.
-	if langserver.PathHasPrefix(d.projectRoot, h.rootImportPath) {
+	if h.rootImportPath != "" && langserver.PathHasPrefix(d.projectRoot, h.rootImportPath) {
 		return nil, fmt.Errorf("package %q is inside of workspace root, refusing to fetch remotely", path)
 	}
 

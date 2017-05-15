@@ -7,7 +7,6 @@
 package gobuildserver
 
 import (
-	"context"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -244,62 +243,6 @@ func TestResolveImportPath(t *testing.T) {
 		if !reflect.DeepEqual(dir, tt.dir) {
 			t.Errorf("resolveImportPath(client, %q) =\n     %+v,\nwant %+v", tt.importPath, dir, tt.dir)
 		}
-	}
-}
-
-func TestDetermineRootImportPath(t *testing.T) {
-	type tcase struct {
-		Name     string
-		RootPath string
-		Want     string
-		FS       map[string]string
-	}
-
-	cases := []tcase{
-		{
-			Name:     "glide",
-			RootPath: "git://github.com/alice/pkg",
-			Want:     "alice.org/pkg",
-			FS: map[string]string{
-				"glide.yaml": "package: alice.org/pkg",
-			},
-		},
-		{
-			Name:     "canonical",
-			RootPath: "git://github.com/alice/pkg",
-			Want:     "alice.org/pkg",
-			FS: map[string]string{
-				"doc.go": `package pkg // import "alice.org/pkg"`,
-			},
-		},
-		{
-			Name:     "nested-canonical",
-			RootPath: "git://github.com/alice/pkg",
-			Want:     "alice.org/pkg",
-			FS: map[string]string{
-				"http/doc.go": `package http // import "alice.org/pkg/http"`,
-			},
-		},
-		{
-			Name:     "fallback",
-			RootPath: "git://github.com/alice/pkg",
-			Want:     "github.com/alice/pkg",
-			FS: map[string]string{
-				"doc.go": `package pkg`,
-			},
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
-			got, err := determineRootImportPath(context.Background(), tc.RootPath, mapFS(tc.FS))
-			if err != nil {
-				t.Fatal("unexpected error", err)
-			}
-			if got != tc.Want {
-				t.Fatalf("got %q, want %q", got, tc.Want)
-			}
-		})
 	}
 }
 

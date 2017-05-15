@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"os"
 	"path"
 	pathpkg "path"
 	"path/filepath"
@@ -82,17 +81,6 @@ func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
 	}
 	return once
 }
-
-const (
-	gopath     = "/"
-	goroot     = "/goroot"
-	gocompiler = "gc"
-
-	// TODO(sqs): allow these to be customized. They're
-	// fine for now, though.
-	goos   = "linux"
-	goarch = "amd64"
-)
 
 // RuntimeVersion is the version of go stdlib to use. We allow it to be
 // different to runtime.Version for test data.
@@ -202,59 +190,16 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if err != nil {
 			return nil, err
 		}
-		rootImportPath, err := determineRootImportPath(ctx, params.OriginalRootPath, fs)
+
+		langInitParams, err := determineEnvironment(ctx, fs, params)
 		if err != nil {
-			return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootPath)
+			return nil, err
 		}
-		// Sanity-check the import path.
-		if rootImportPath == "" || rootImportPath != path.Clean(rootImportPath) || strings.Contains(rootImportPath, "..") || strings.HasPrefix(rootImportPath, string(os.PathSeparator)) || strings.HasPrefix(rootImportPath, "/") || strings.HasPrefix(rootImportPath, ".") {
-			return nil, fmt.Errorf("empty or suspicious import path: %q", rootImportPath)
-		}
-		var isStdlib bool
-		if rootImportPath == "github.com/golang/go" {
-			rootImportPath = ""
-			isStdlib = true
-		} else {
-			h.rootImportPath = rootImportPath
-		}
-
-		// Send "initialize" to the wrapped lang server.
-		langInitParams := langserver.InitializeParams{
-			InitializeParams:     params.InitializeParams,
-			NoOSFileSystemAccess: true,
-			BuildContext: &langserver.InitializeBuildContextParams{
-				GOOS:       goos,
-				GOARCH:     goarch,
-				GOPATH:     gopath,
-				GOROOT:     goroot,
-				CgoEnabled: false,
-				Compiler:   gocompiler,
-
-				// TODO(sqs): We'd like to set this to true only for
-				// the package we're analyzing (or for the whole
-				// repo), but go/loader is insufficiently
-				// configurable, so it applies it to the entire
-				// program, which takes a lot longer and causes weird
-				// error messages in the runtime package, etc. Disable
-				// it for now.
-				UseAllFiles: false,
-			},
-		}
-
-		// Put all files in the workspace under a /src/IMPORTPATH
-		// directory, such as /src/github.com/foo/bar, so that Go can
-		// build it in GOPATH=/.
-		var rootPath string
-		if isStdlib {
-			rootPath = goroot
-		} else {
-			rootPath = "/src/" + h.rootImportPath
-		}
-		langInitParams.RootPath = "file://" + rootPath
-		langInitParams.RootImportPath = h.rootImportPath
+		h.rootImportPath = langInitParams.RootImportPath
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err
 		}
+		rootPath := strings.TrimPrefix(langInitParams.RootPath, "file://")
 		h.FS.Bind(rootPath, fs, "/", ctxvfs.BindAfter)
 		var langInitResp lsp.InitializeResult
 		if err := h.callLangServer(ctx, conn, req.Method, req.ID, langInitParams, &langInitResp); err != nil {

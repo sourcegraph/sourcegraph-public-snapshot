@@ -2,20 +2,136 @@ package gobuildserver
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/parser"
 	"go/token"
 	"log"
+	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/go-langserver/langserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
+
+const (
+	gopath     = "/"
+	goroot     = "/goroot"
+	gocompiler = "gc"
+
+	// TODO(sqs): allow these to be customized. They're
+	// fine for now, though.
+	goos   = "linux"
+	goarch = "amd64"
+)
+
+// determineEnvironment will setup the LS InitializeParams based what it can
+// detect from the filesystem and what it received from the client's
+// InitializeParams.
+//
+// It is expected that fs will be mounted at the returns
+// InitializeParams.RootPath.
+func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspext.InitializeParams) (*langserver.InitializeParams, error) {
+	rootImportPath, err := determineRootImportPath(ctx, params.OriginalRootPath, fs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootPath)
+	}
+	// Sanity-check the import path.
+	if rootImportPath == "" || rootImportPath != path.Clean(rootImportPath) || strings.Contains(rootImportPath, "..") || strings.HasPrefix(rootImportPath, string(os.PathSeparator)) || strings.HasPrefix(rootImportPath, "/") || strings.HasPrefix(rootImportPath, ".") {
+		return nil, fmt.Errorf("empty or suspicious import path: %q", rootImportPath)
+	}
+
+	// Put all files in the workspace under a /src/IMPORTPATH
+	// directory, such as /src/github.com/foo/bar, so that Go can
+	// build it in GOPATH=/.
+	var rootPath string
+	if rootImportPath == "github.com/golang/go" {
+		// stdlib means our rootpath is the GOPATH
+		rootPath = goroot
+		rootImportPath = ""
+	} else {
+		rootPath = "/src/" + rootImportPath
+	}
+
+	GOPATH := gopath
+	if customGOPATH := detectCustomGOPATH(ctx, fs); len(customGOPATH) > 0 {
+		// Convert list of relative GOPATHs into absolute. We can have
+		// more than one so we root ourselves at /workspace. We still
+		// append the default GOPATH of `/` at the end. Fetched
+		// dependencies will be mounted at that location.
+		rootPath = "/workspace"
+		rootImportPath = ""
+		for i := range customGOPATH {
+			customGOPATH[i] = rootPath + customGOPATH[i]
+		}
+		customGOPATH = append(customGOPATH, gopath)
+		GOPATH = strings.Join(customGOPATH, ":")
+	}
+
+	// Send "initialize" to the wrapped lang server.
+	langInitParams := &langserver.InitializeParams{
+		InitializeParams:     params.InitializeParams,
+		NoOSFileSystemAccess: true,
+		BuildContext: &langserver.InitializeBuildContextParams{
+			GOOS:       goos,
+			GOARCH:     goarch,
+			GOPATH:     GOPATH,
+			GOROOT:     goroot,
+			CgoEnabled: false,
+			Compiler:   gocompiler,
+
+			// TODO(sqs): We'd like to set this to true only for
+			// the package we're analyzing (or for the whole
+			// repo), but go/loader is insufficiently
+			// configurable, so it applies it to the entire
+			// program, which takes a lot longer and causes weird
+			// error messages in the runtime package, etc. Disable
+			// it for now.
+			UseAllFiles: false,
+		},
+	}
+
+	langInitParams.RootPath = "file://" + rootPath
+	langInitParams.RootImportPath = rootImportPath
+
+	return langInitParams, nil
+}
+
+// detectCustomGOPATH tries to detect monorepos which require their own custom
+// GOPATH. We want to support monorepos as described in
+// https://blog.gopheracademy.com/advent-2015/go-in-a-monorepo/ We use
+// .vscode/settings.json to be informed of the custom GOPATH.
+//
+// This is best-effort. If any errors occur or we do not detect a custom
+// gopath, an empty result is returned.
+func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
+	b, err := ctxvfs.ReadFile(ctx, fs, "/.vscode/settings.json")
+	if err != nil {
+		return nil
+	}
+	settings := struct {
+		GOPATH string `json:"go.gopath"`
+	}{}
+	_ = json.Unmarshal(b, &settings)
+
+	var paths []string
+	for _, p := range filepath.SplitList(settings.GOPATH) {
+		// We only care about relative gopaths
+		if !strings.HasPrefix(p, "${workspaceRoot}") {
+			continue
+		}
+		paths = append(paths, p[len("${workspaceRoot}"):])
+	}
+	return paths
+}
 
 // determineRootImportPath determines the root import path for the Go
 // workspace. It looks at canonical import path comments and the
