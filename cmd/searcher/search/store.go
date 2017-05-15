@@ -99,8 +99,13 @@ type archive struct {
 
 // open returns a new reader to the underlying zip file. It must be closed so
 // that we can cleanly evict the archive.
-func (a *archive) open() (*archiveReadCloser, error) {
-	<-a.done
+func (a *archive) open(ctx context.Context) (*archiveReadCloser, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-a.done:
+		break
+	}
 	if a.err != nil {
 		return nil, a.err
 	}
@@ -175,8 +180,8 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 	span.LogKV("key", key)
 
 	s.archivesMu.Lock()
-	value, ok := s.archives.Get(key)
-	if !ok {
+	value, hasArchive := s.archives.Get(key)
+	if !hasArchive {
 		value = &archive{
 			path: path,
 			done: make(chan struct{}),
@@ -188,31 +193,49 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 	s.archivesMu.Unlock()
 	arch := value.(*archive)
 
-	// We already have an open reader
-	if ok {
-		span.SetTag("source", "open")
-		return arch.open()
+	if !hasArchive {
+		// We need to fetch the archive and populate s.archives. We do
+		// it in the background since other readers may be affected.
+		go func() {
+			arch.reader, arch.err = s.fetch(repo, commit, path)
+			close(arch.done)
+			// If we failed, remove from archive cache so we try again in
+			// the future.
+			if arch.err != nil {
+				s.archivesMu.Lock()
+				s.archives.Remove(key)
+				s.archivesMu.Unlock()
+			}
+		}()
 	}
 
-	// We need to fetch the archive and populate s.archives for future
-	// readers.
-	span.SetTag("source", "fetch")
-	arch.reader, arch.err = s.getArchive(ctx, repo, commit, path)
-	close(arch.done)
-	// If we failed, remove from archive cache so we try again in
-	// the future.
-	if arch.err != nil {
-		s.archivesMu.Lock()
-		s.archives.Remove(key)
-		s.archivesMu.Unlock()
-	}
-	return arch.open()
+	return arch.open(ctx)
 }
 
-// getArchive fetches an archive from the network and stores it on disk. It
-// does not populate the in-memory cache. You should probably be calling
+// fetch fetches an archive from the network and stores it on disk. It does
+// not populate the in-memory cache. You should probably be calling
 // openReader.
-func (s *Store) getArchive(ctx context.Context, repo, commit, path string) (*zip.ReadCloser, error) {
+func (s *Store) fetch(repo, commit, path string) (zr *zip.ReadCloser, err error) {
+	// Background context since can be assocaited with more than 1
+	// concurrent request.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Fetch")
+	ext.Component.Set(span, "store")
+	span.SetTag("repo", repo)
+	span.SetTag("commit", commit)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		if zr != nil {
+			span.LogKV("numfiles", len(zr.File))
+		}
+		span.Finish()
+	}()
+
 	r, err := s.FetchTar(ctx, repo, commit)
 	if err != nil {
 		return nil, err
@@ -222,7 +245,7 @@ func (s *Store) getArchive(ctx context.Context, repo, commit, path string) (*zip
 	if err != nil {
 		return nil, err
 	}
-	zr, err := zip.OpenReader(path)
+	zr, err = zip.OpenReader(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open archive after fetching")
 	}
