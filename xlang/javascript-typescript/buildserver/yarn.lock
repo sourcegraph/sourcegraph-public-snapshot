@@ -1229,9 +1229,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.29:
-  version "2.0.0-pre.29"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.29.tgz#02c134ba674d8c644ee7d37a7996a6ee9ef85900"
+javascript-typescript-langserver@^2.0.0-pre.30:
+  version "2.0.0-pre.30"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.30.tgz#375a1df71cf0c9ef6478b4ea7961834e89bb9659"
   dependencies:
     "@reactivex/rxjs" "^5.3.0"
     "@types/json-patch" "0.0.29"
