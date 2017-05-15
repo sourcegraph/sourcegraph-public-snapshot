@@ -17,12 +17,14 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/clearbit"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -170,6 +172,19 @@ func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*reposi
 	}
 
 	return s, nil
+}
+
+func (r *rootResolver) Organization(ctx context.Context, args *struct{ OrgName string }) (*organizationResolver, error) {
+	if args.OrgName == "" {
+		return nil, nil
+	}
+
+	org, err := orgs.GetOrg(ctx, args.OrgName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &organizationResolver{organization: org}, nil
 }
 
 // Resolves symbols by a global symbol ID (use case for symbol URLs)

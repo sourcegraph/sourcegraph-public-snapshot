@@ -20,6 +20,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
+// GetOrg returns a single *sourcegraph.Org representing a single GitHub organization
+func GetOrg(ctx context.Context, orgName string) (*sourcegraph.Org, error) {
+	client := extgithub.Client(ctx)
+
+	org, _, err := client.Organizations.Get(orgName)
+	if err != nil {
+		return nil, err
+	}
+
+	return toOrg(org), nil
+}
+
+// ListOrgsPage returns a *sourcegraph.OrgList represnting a single "page" of GitHub's organizations API
 func ListOrgsPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
 	if !extgithub.HasAuthedUser(ctx) {
 		return &sourcegraph.OrgsList{}, nil
@@ -94,11 +107,13 @@ func listOrgMembersPage(ctx context.Context, org *sourcegraph.OrgListOptions) (r
 	return members, nil
 }
 
+// ListOrgMembersForInvites returns a list of org members with context required to invite them to Sourcegraph
+// TODO: make this function capable of returning more than a single page of org members
 func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgMembersList, err error) {
 	if !extgithub.HasAuthedUser(ctx) {
 		return &sourcegraph.OrgMembersList{}, nil
 	}
-	client := extgithub.Client(ctx)
+	// client := extgithub.Client(ctx)
 
 	members, err := listOrgMembersPage(ctx, org)
 	if err != nil {
@@ -129,13 +144,17 @@ func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptio
 			orgInvite, _ := store.UserInvites.GetByURI(ctx, *member.Login+org.OrgID)
 			if orgInvite == nil || time.Now().Unix()-orgInvite.SentAt.Unix() > 259200 {
 				orgMember.CanInvite = true
-				fullGHUser, _, err := client.Users.Get(*member.Login)
-				if err != nil {
-					break
-				}
-				if fullGHUser.Email != nil {
-					orgMember.Email = *fullGHUser.Email
-				}
+				// TODO (Dan): temporarily commented out for rate limiting reasons. Replace with lazy email fetching on
+				// invite instead of eagerly up-front for anyone who views the team page.
+				orgMember.Email = ""
+
+				// fullGHUser, _, err := client.Users.Get(*member.Login)
+				// if err != nil {
+				// 	break
+				// }
+				// if fullGHUser.Email != nil {
+				// 	orgMember.Email = *fullGHUser.Email
+				// }
 			} else {
 				orgMember.CanInvite = false
 				orgMember.Invite = orgInvite
@@ -199,40 +218,44 @@ var sendEmail = func(template, name, email, subject string, templateContent []go
 	return nil, errors.New("email client is not configured")
 }
 
-func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*sourcegraph.UserInviteResponse, error) {
+func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.UserInviteResponse, error) {
 	user := actor.FromContext(ctx).User()
-	inviterOrgOptions := &sourcegraph.OrgListOptions{
-		OrgName:  opt.OrgName,
-		Username: user.Login,
+	if user == nil {
+		return sourcegraph.InviteError, errors.New("Inviting user is not signed in")
 	}
-	isInviterMember, err := IsOrgMember(ctx, inviterOrgOptions)
+
+	// Confirm inviting usre is a member of the GitHub organization
+	err := validateMembership(ctx, opt.OrgID, user.Login)
 	if err != nil {
-		return nil, err
+		return sourcegraph.InviteError, err
 	}
-	if !isInviterMember {
-		return nil, fmt.Errorf("error sending email: inviting user is not part of organization %s", opt.OrgName)
-	}
-	inviteeOrgOptions := &sourcegraph.OrgListOptions{
-		OrgName:  opt.OrgName,
-		Username: opt.UserID,
-	}
-	isInviteeMember, err := IsOrgMember(ctx, inviteeOrgOptions)
+
+	// Confirm invited user is a member of the GitHub organization
+	err = validateMembership(ctx, opt.OrgID, opt.UserID)
 	if err != nil {
-		return nil, err
+		return sourcegraph.InviteError, err
 	}
-	if !isInviteeMember {
-		return nil, fmt.Errorf("error sending email: invited user is not a member of %s", opt.OrgName)
+
+	// If email not provided by frontend, look up this user to see if we can get it
+	if opt.UserEmail == "" {
+		client := extgithub.Client(ctx)
+		invitee, _, err := client.Users.Get(opt.UserID)
+		if err != nil {
+			return sourcegraph.InviteError, err
+		}
+		if invitee.Email != nil {
+			opt.UserEmail = *invitee.Email
+		}
 	}
 
 	if opt.UserEmail != "" && user != nil {
-		_, err := sendEmail("invite-user", opt.UserID, opt.UserEmail, user.Login+" invited you to join "+opt.OrgName+" on Sourcegraph", nil,
-			[]gochimp.Var{gochimp.Var{Name: "INVITE_USER", Content: "sourcegraph.com/settings"}, {Name: "FROM_AVATAR", Content: user.AvatarURL}, {Name: "ORG", Content: opt.OrgName}, {Name: "FNAME", Content: user.Login}, {Name: "INVITE_LINK", Content: "https://sourcegraph.com?_event=EmailInviteClicked&_invited_by_user=" + user.Login + "&_org_invite=" + opt.OrgName}})
+		_, err := sendEmail("invite-user", opt.UserID, opt.UserEmail, user.Login+" invited you to join "+opt.OrgID+" on Sourcegraph", nil,
+			[]gochimp.Var{gochimp.Var{Name: "INVITE_USER", Content: "sourcegraph.com/settings"}, {Name: "FROM_AVATAR", Content: user.AvatarURL}, {Name: "ORG", Content: opt.OrgID}, {Name: "FNAME", Content: user.Login}, {Name: "INVITE_LINK", Content: "https://sourcegraph.com?_event=EmailInviteClicked&_invited_by_user=" + user.Login + "&_org_invite=" + opt.OrgID}})
 		if err != nil {
-			return nil, fmt.Errorf("Error sending email: %s", err)
+			return sourcegraph.InviteError, fmt.Errorf("Error sending email: %s", err)
 		}
-	}
-	if opt.UserEmail == "" {
-		return nil, errors.New("missing aruments, cannot store")
+	} else {
+		return sourcegraph.InviteMissingEmail, nil
 	}
 
 	ts := time.Now()
@@ -241,17 +264,28 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*sourcegraph.
 		UserID:    opt.UserID,
 		UserEmail: opt.UserEmail,
 		OrgID:     opt.OrgID,
-		OrgName:   opt.OrgName,
 		SentAt:    &ts,
 	})
 	if err != nil {
-		return nil, err
+		return sourcegraph.InviteError, err
 	}
 
-	return &sourcegraph.UserInviteResponse{
-		OrgName: opt.OrgName,
-		OrgID:   opt.OrgID,
-	}, nil
+	return sourcegraph.InviteSuccess, nil
+}
+
+func validateMembership(ctx context.Context, orgID string, userID string) error {
+	inviterOrgOptions := &sourcegraph.OrgListOptions{
+		OrgName:  orgID,
+		Username: userID,
+	}
+	isInviterMember, err := IsOrgMember(ctx, inviterOrgOptions)
+	if err != nil {
+		return err
+	}
+	if !isInviterMember {
+		return fmt.Errorf("Error sending email: user %s is not part of organization %s", userID, orgID)
+	}
+	return nil
 }
 
 func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
@@ -262,15 +296,23 @@ func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
 		return *s
 	}
 
+	intv := func(i *int) int32 {
+		if i == nil {
+			return 0
+		}
+		return int32(*i)
+	}
+
 	org := sourcegraph.Org{
-		Login:       *ghOrg.Login,
-		ID:          int32(*ghOrg.ID),
-		AvatarURL:   strv(ghOrg.AvatarURL),
-		Name:        strv(ghOrg.Name),
-		Blog:        strv(ghOrg.Blog),
-		Location:    strv(ghOrg.Location),
-		Email:       strv(ghOrg.Email),
-		Description: strv(ghOrg.Description)}
+		Login:         *ghOrg.Login,
+		ID:            int32(*ghOrg.ID),
+		AvatarURL:     strv(ghOrg.AvatarURL),
+		Name:          strv(ghOrg.Name),
+		Blog:          strv(ghOrg.Blog),
+		Location:      strv(ghOrg.Location),
+		Email:         strv(ghOrg.Email),
+		Description:   strv(ghOrg.Description),
+		Collaborators: intv(ghOrg.Collaborators)}
 
 	return &org
 }

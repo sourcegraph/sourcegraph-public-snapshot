@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
@@ -30,11 +31,14 @@ func serveOrgInvites(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	resp, err := orgs.InviteUser(r.Context(), &i)
+	res, err := orgs.InviteUser(r.Context(), &i)
 	if err != nil {
 		return err
 	}
-	return writeJSON(w, resp)
+	if res == sourcegraph.InviteMissingEmail {
+		return errors.New("Missing invited user's email")
+	}
+	return writeJSON(w, "")
 }
 
 func serveOrgMembers(w http.ResponseWriter, r *http.Request) error {

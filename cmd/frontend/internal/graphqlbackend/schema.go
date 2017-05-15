@@ -15,6 +15,7 @@ type Query {
 }
 
 type Root {
+	organization(orgName: String!): Organization
 	repository(uri: String!): Repository
 	repositories(query: String = ""): [Repository!]!
 	remoteRepositories: [RemoteRepository!]!
@@ -203,10 +204,32 @@ type Hunk {
 }
 
 type Organization {
+	login: String!
+	id: Int!
+	email: String!
 	name: String!
 	avatarURL: String!
 	description: String!
 	collaborators: Int!
+	members: [OrganizationMember!]!
+}
+
+type OrganizationMember {
+	login: String!
+	id: Int!
+	email: String!
+	avatarURL: String!
+	isSourcegraphUser: Boolean!
+	canInvite: Boolean!
+	invite: Invite
+}
+
+type Invite {
+	userLogin: String!
+	userEmail: String!
+	orgLogin: String!
+	sentAt: Int!
+	URI: String!
 }
 
 type Plan {
@@ -227,6 +250,7 @@ type Mutation {
 	updatePaymentSource(tokenID: String!): Boolean!
 	subscribeOrg(tokenID: String!, GitHubOrg: String!, seats: Int!): Boolean!
 	startOrgTrial(GitHubOrg: String!): Boolean!
+	inviteOrgMemberToSourcegraph(orgLogin: String!, userLogin: String!, userEmail: String = ""): Boolean!
 }
 
 type CompanyProfile {
