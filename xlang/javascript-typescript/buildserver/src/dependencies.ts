@@ -8,7 +8,7 @@ import { ProjectManager } from 'javascript-typescript-langserver/lib/project-man
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as path from 'path';
 import * as url from 'url';
-import mkdirp = require('mkdirp');
+import callbackMkdirp = require('mkdirp');
 import { Observable } from '@reactivex/rxjs';
 import iterate from 'iterare';
 import { fromPairs, toPairs } from 'lodash';
@@ -17,6 +17,7 @@ import { Span } from 'opentracing';
 import * as semver from 'semver';
 import * as yarn from './yarn';
 const fetchPackageJson: (packageName: string, options?: { version?: string, fullMetadata?: boolean }) => Promise<PackageJson> = require('package-json');
+const mkdirp = Observable.bindNodeCallback(callbackMkdirp);
 
 export class DependencyManager {
 
@@ -110,9 +111,9 @@ export class DependencyManager {
 				const globalFolder = path.join(this.tempDir, 'global', uri2path(url.format(directory)));
 				const cacheFolder = path.join(this.tempDir, 'cache', uri2path(url.format(directory)));
 				// Create temporary directory
-				await new Promise((resolve, reject) => mkdirp(cwd, err => err ? reject(err) : resolve()));
-				await new Promise((resolve, reject) => mkdirp(globalFolder, err => err ? reject(err) : resolve()));
-				await new Promise((resolve, reject) => mkdirp(cacheFolder, err => err ? reject(err) : resolve()));
+				await mkdirp(cwd).toPromise();
+				await mkdirp(globalFolder).toPromise();
+				await mkdirp(cacheFolder).toPromise();
 
 				// Write package.json into temporary directory
 				await fs.writeFile(path.join(cwd, 'package.json'), JSON.stringify(packageJson));
