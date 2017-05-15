@@ -71,6 +71,9 @@ func (c *serverProxyConn) handleWorkspaceFilesExt(ctx context.Context, req *json
 		prefix += "/"
 	}
 	prefix = strings.TrimPrefix(prefix, "/") // zip files have no leading slash
+	u := &url.URL{
+		Scheme: "file",
+	}
 	for _, filename := range filenames {
 		// Avoid returning entries from outside of the workspace. The
 		// traversal prefix above should make this never happen, but
@@ -79,9 +82,8 @@ func (c *serverProxyConn) handleWorkspaceFilesExt(ctx context.Context, req *json
 		if !strings.HasPrefix(filename, prefix) {
 			return nil, fmt.Errorf("workspace/xfiles got result %q outside of workspace path prefix %q", filename, prefix)
 		}
-
-		filename = "/" + strings.TrimPrefix(filename, prefix)
-		res = append(res, lsp.TextDocumentIdentifier{URI: "file://" + filename})
+		u.Path = "/" + strings.TrimPrefix(filename, prefix)
+		res = append(res, lsp.TextDocumentIdentifier{URI: u.String()})
 	}
 
 	return res, nil

@@ -2,6 +2,7 @@ package vfsutil
 
 import (
 	"context"
+	"net/url"
 	"os"
 	pathpkg "path"
 	"sort"
@@ -103,7 +104,11 @@ func (fs *XRemoteFS) openSingleFile(ctx context.Context, path string) (string, e
 	text, ok := fs.fileContents[path]
 	fs.mu.Unlock()
 	if !ok {
-		params := lspext2.ContentParams{TextDocument: lsp.TextDocumentIdentifier{URI: "file://" + path}}
+		u := &url.URL{
+			Scheme: "file",
+			Path:   path,
+		}
+		params := lspext2.ContentParams{TextDocument: lsp.TextDocumentIdentifier{URI: u.String()}}
 		var res lsp.TextDocumentItem
 		if err := fs.call(ctx, "textDocument/xcontent", path, params, &res); err != nil {
 			// TODO(sqs): cache error responses
@@ -129,7 +134,12 @@ func (fs *XRemoteFS) fetchPaths(ctx context.Context) error {
 		if fs.pathsErr == nil {
 			fs.paths = make(sortedPaths, len(res))
 			for i, res := range res {
-				fs.paths[i] = strings.TrimPrefix(res.URI, "file://")
+				u, err := url.Parse(res.URI)
+				if err != nil {
+					fs.pathsErr = err
+					break
+				}
+				fs.paths[i] = u.Path
 			}
 			sort.Strings(fs.paths)
 		}
