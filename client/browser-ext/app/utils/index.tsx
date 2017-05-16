@@ -10,7 +10,7 @@ export const supportedExtensions = new Set<string>([
 	"ts", "tsx", // TypeScript
 	"js", "jsx", // JavaScript
 	"java", // Java
-	"py", "pyc", "pyd", "pyo", "pyw", "pyz", // Python
+	"py", // Python
 ]);
 
 /**
