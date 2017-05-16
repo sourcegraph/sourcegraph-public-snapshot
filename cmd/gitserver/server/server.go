@@ -113,8 +113,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd, repo).Dec()
 			execDuration.WithLabelValues(cmd, repo, status).Observe(duration.Seconds())
-			// Only log to honeycomb if we have the repo to reduce noise
-			if ranGit := exitStatus != -10810; ranGit && honey.Enabled() {
+			if honey.Enabled() {
 				ev := honey.Event("gitserver-exec")
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
@@ -123,6 +122,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
+				ev.AddField("status", status)
 				if errStr != "" {
 					ev.AddField("error", errStr)
 				}
