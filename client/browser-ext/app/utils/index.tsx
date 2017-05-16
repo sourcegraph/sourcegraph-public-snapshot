@@ -10,6 +10,7 @@ export const supportedExtensions = new Set<string>([
 	"ts", "tsx", // TypeScript
 	"js", "jsx", // JavaScript
 	"java", // Java
+	"py", "pyc", "pyd", "pyo", "pyw", "pyz", // Python
 ]);
 
 /**
@@ -28,7 +29,6 @@ export const upcomingExtensions = new Set<string>([
 	// "htm", "html", // HTML
 	// "pl", "pm", "t", "pod", // Perl
 	// "clj", "cljs", "cljc", "edn", // Clojure
-	"py", "pyc", "pyd", "pyo", "pyw", "pyz", // Python
 	// "cc", "cpp", "cxx", "c++", "hh", "hpp", "hxx", "h++", // C++ ("h" and "c" overlap with C)
 	"php", "phtml", "php3", "php4", "php5", "php7", "phps", // PHP
 ]);
@@ -49,6 +49,13 @@ export function getModeFromExtension(ext: string): string {
 			return "javascript";
 		case "java":
 			return "java";
+		case "py":
+		case "pyc":
+		case "pyd":
+		case "pyo":
+		case "pyw":
+		case "pyz":
+			return "python";
 		default:
 			return "unknown";
 	}
