@@ -144,7 +144,7 @@ export class BuildHandler extends TypeScriptService {
 	protected _initializeFileSystems(accessDisk: boolean): void {
 		super._initializeFileSystems(accessDisk);
 		this.remoteFileSystem = this.fileSystem;
-		const overlayFs = new LocalRootedFileSystem(this.root, path.join(this.options.tempDir, 'workspace'));
+		const overlayFs = new LocalRootedFileSystem(this.rootUri, path.join(this.options.tempDir, 'workspace'));
 		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 

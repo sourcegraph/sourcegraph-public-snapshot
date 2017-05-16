@@ -1,7 +1,7 @@
 import iterate from 'iterare';
 import { FileSystem, LocalFileSystem } from 'javascript-typescript-langserver/lib/fs';
+import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as path from 'path';
-import * as url from 'url';
 
 // TODO Instead of calling all layers, the class could just check the path for node_modules
 //      and choose whether to ask the client or the file system (like in the PHP LS)
@@ -52,30 +52,22 @@ export class LayeredFileSystem implements FileSystem {
 }
 
 /**
- * LocalRootedFileSystem is a FileSystem implementation backed by the
- * local file system. It differs from the LocalFileSystem class in the
- * language server repository in that it exposes a mounted filesystem
- * (but don't rely on it to enforce security).
+ * A LocalFileSystem that uses a given mountPath as the root
  */
 export class LocalRootedFileSystem extends LocalFileSystem {
 
-	constructor(rootPath: string, private mountPath: string) {
-		super(rootPath);
-	}
+	private rootPath: string;
 
-	async getWorkspaceFiles(base?: string): Promise<Iterable<string>> {
-		return iterate(await super.getWorkspaceFiles(base)).map(uri => {
-			// Strip mountPath prefix
-			const parts = url.parse(uri);
-			if (parts.pathname) {
-				parts.pathname = path.relative(this.mountPath, parts.pathname);
-			}
-			return url.format(parts);
-		});
+	constructor(rootUri: string, private mountPath: string) {
+		super(rootUri);
+		this.rootPath = uri2path(rootUri);
 	}
 
 	protected resolveUriToPath(uri: string): string {
-		// Prefix with mountPath
-		return path.join(this.mountPath, super.resolveUriToPath(uri));
+		// Compute the path relative to the root path and mount it on the mount path instead
+		const filePath = super.resolveUriToPath(uri);
+		const relative = path.relative(this.rootPath, filePath);
+		const mounted = path.join(this.mountPath, relative);
+		return mounted;
 	}
 }
