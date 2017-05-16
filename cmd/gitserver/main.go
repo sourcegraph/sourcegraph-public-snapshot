@@ -6,7 +6,9 @@ package main // import "sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver"
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"syscall"
+	"time"
 
 	"os"
 	"os/signal"
@@ -16,8 +18,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
+const repoCleanupInterval = 24 * time.Hour
+
 var reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
+var runRepoCleanup, _ = strconv.ParseBool(env.Get("RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
 
 func main() {
 	env.Lock()
@@ -43,6 +48,15 @@ func main() {
 
 	if err := server.InitializeSSH(); err != nil {
 		log.Printf("SSH initialization error: %s", err)
+	}
+
+	if runRepoCleanup {
+		go func() {
+			for {
+				removeInactiveRepos(reposDir)
+				time.Sleep(repoCleanupInterval)
+			}
+		}()
 	}
 
 	log.Print("git-server: listening on :3178")
