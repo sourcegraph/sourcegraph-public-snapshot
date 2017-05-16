@@ -85,7 +85,7 @@ Sourcegraph can index many repository hosts, including GitHub.com. If you would 
 1. Designate a TLS certificate. If you are serving at `localhost`, you can use the existing `sg.cer`/`sg.key` cert and key in the `config` directory.
    Otherwise, you'll need to generate a new TLS certificate. You can use a tool like [https://github.com/deckarep/EasyCert](https://github.com/deckarep/EasyCert).
    Move the generated certificate and key files to `config/sg.cer` and `config/sg.key`.
-1. In `.env`, uncomment the appropriate `SRC_TLS_CERT`, `SRC_TLS_KEY`, and `CORS_ORIGIN` lines.
+1. In `.env`, uncomment the appropriate `TLS_CERT_FILE`, `TLS_KEY_FILE`, and `CORS_ORIGIN` lines.
 1. In `.env`, set `SRC_APP_HOST=https://localhost` (optionally replacing "localhost" with whatever your hostname is) and `SRC_APP_PORT=3443`.
 
 ### Chrome extension

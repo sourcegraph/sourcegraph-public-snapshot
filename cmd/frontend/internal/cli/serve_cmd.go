@@ -2,7 +2,6 @@ package cli
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -54,8 +53,10 @@ var (
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 	corsOrigin = env.Get("CORS_ORIGIN", "", "value for the Access-Control-Allow-Origin header returned with all requests")
 
-	certFile = env.Get("SRC_TLS_CERT", "", "certificate file for TLS")
-	keyFile  = env.Get("SRC_TLS_KEY", "", "key file for TLS")
+	tlsCert     = env.Get("TLS_CERT", "", "certificate for TLS")
+	tlsCertFile = env.Get("TLS_CERT_FILE", "", "certificate file for TLS (overrides TLS_CERT)")
+	tlsKey      = env.Get("TLS_KEY", "", "key for TLS")
+	tlsKeyFile  = env.Get("TLS_KEY_FILE", "", "key file for TLS (overrides TLS_KEY)")
 
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
 )
@@ -189,10 +190,21 @@ func Main() error {
 		})
 	}
 
-	if (certFile != "" || keyFile != "") && httpsAddr == "" {
-		return errors.New("HTTPS listen address must be specified if TLS cert and key are set")
+	if tlsCertFile != "" {
+		b, err := ioutil.ReadFile(tlsCertFile)
+		if err != nil {
+			return err
+		}
+		tlsCert = string(b)
 	}
-	useTLS := certFile != "" || keyFile != ""
+	if tlsKeyFile != "" {
+		b, err := ioutil.ReadFile(tlsKeyFile)
+		if err != nil {
+			return err
+		}
+		tlsKey = string(b)
+	}
+	useTLS := tlsCert != "" && tlsKey != ""
 
 	if useTLS && conf.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", conf.AppURL)
@@ -259,7 +271,7 @@ func Main() error {
 			return err
 		}
 
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
 		if err != nil {
 			return err
 		}
