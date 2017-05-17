@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -41,8 +42,7 @@ type service struct {
 // containers.
 var manualCmds = map[string][]string{
 	"frontend": []string{
-		`curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && yarn && yarn run start)`,
-		`PGSSLMODE=disable VSCODE_BROWSER_PKG=/tmp/VSCode-browser USE_VSCODE_UI=1 vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" -extra-watches='app/templates/*' sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend`,
+		`VSCODE_BROWSER_PKG=/tmp/VSCode-browser vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" -extra-watches='app/templates/*' sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend`,
 	},
 	"gitserver-1":  []string{"go install ./cmd/gitserver && gitserver"},
 	"indexer":      []string{"go install ./cmd/indexer && indexer"},
@@ -77,7 +77,8 @@ func (h *hostCommand) String() string {
 }
 
 var (
-	dockerComposeFile = flag.String("f", "", "path to the docker-compose.yml file")
+	dockerComposeFile   = flag.String("f", "", "path to the docker-compose.yml file")
+	dockerComposeOutDir = flag.String("o", "", "path to output directory where generated docker-compose.yml is written")
 )
 
 func main() {
@@ -87,11 +88,25 @@ func main() {
 	}
 }
 
-func run(hostSvcs []string) error {
+func run(hostSvcs []string) (err error) {
 	cfgFile := *dockerComposeFile
 	if cfgFile == "" {
 		return fmt.Errorf("must specify docker-compose.yml file")
 	}
+	outDir := *dockerComposeOutDir
+	if outDir == "" {
+		return fmt.Errorf("must specify output directory")
+	}
+	outDir, err = filepath.Abs(outDir)
+	if err != nil {
+		return err
+	}
+	outFilename := filepath.Join(outDir, "docker-compose.yml")
+	outFile, err := os.Create(outFilename)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
 
 	hostIP, err := discoverLocalhostIP()
 	if err != nil {
@@ -101,15 +116,40 @@ func run(hostSvcs []string) error {
 	if err := readConfig(cfgFile, &cfg); err != nil {
 		return err
 	}
+
+	allSvcs := make([]string, 0, len(cfg.Services))
+	for svcName, _ := range cfg.Services {
+		allSvcs = append(allSvcs, svcName)
+	}
+
 	hostCmds, err := transformConfig(&cfg, hostIP, hostSvcs)
 	if err != nil {
 		return err
 	}
 
+	for _, hostCmd := range hostCmds {
+		for k, v := range hostCmd.Env {
+			if v, ok := v.(string); ok {
+				for _, svc := range allSvcs {
+					if strings.Contains(v, svc) {
+						hostCmd.Env[k] = strings.Replace(v, svc, "localhost", -1)
+					}
+				}
+			}
+		}
+	}
+
 	if len(hostCmds) > 0 {
 		fmt.Fprintln(os.Stderr, "\nRUN the following on the host machine:")
-		for _, hostCmd := range hostCmds {
-			fmt.Fprintf(os.Stderr, "  %s\n", hostCmd)
+		for i, hostCmd := range hostCmds {
+			cmdlines := make([]string, 0, len(hostCmd.Env)+2)
+			cmdlines = append(cmdlines, fmt.Sprintf("source %s", filepath.Join(outDir, ".env"))) // TODO: CHANGE
+			for k, v := range hostCmd.Env {
+				cmdlines = append(cmdlines, fmt.Sprintf("export %s=%v", k, v))
+			}
+			cmdlines = append(cmdlines, hostCmd.Command)
+			fmt.Fprintf(os.Stderr, "\n%d.\n", i+1)
+			fmt.Fprintln(os.Stderr, strings.Join(cmdlines, "\n"))
 		}
 		fmt.Fprintln(os.Stderr, "")
 	} else {
@@ -120,11 +160,11 @@ func run(hostSvcs []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("##################################################")
-	fmt.Println("# !!! AUTO-GENERATED FILE via `go run up.go` !!! #")
-	fmt.Println("##################################################")
-	fmt.Println()
-	fmt.Printf("%s\n", string(out))
+	fmt.Fprintln(outFile, "##################################################")
+	fmt.Fprintln(outFile, "# !!! AUTO-GENERATED FILE via `go run up.go` !!! #")
+	fmt.Fprintln(outFile, "##################################################")
+	fmt.Fprintln(outFile)
+	fmt.Fprintf(outFile, "%s\n", string(out))
 	return nil
 }
 
