@@ -22,6 +22,7 @@ type Root {
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
 	searchRepos(query: SearchQuery!, repositories: [String!]!): SearchResults!
+	revealCustomerCompany(ip: String!): CompanyProfile
 }
 
 type RefFields {
@@ -226,5 +227,43 @@ type Mutation {
 	updatePaymentSource(tokenID: String!): Boolean!
 	subscribeOrg(tokenID: String!, GitHubOrg: String!, seats: Int!): Boolean!
 	startOrgTrial(GitHubOrg: String!): Boolean!
+}
+
+type CompanyProfile {
+	ip: String!
+	domain: String!
+	fuzzy: Boolean!
+	company: CompanyInfo!
+}
+
+type CompanyInfo {
+	id: String!
+	name: String!
+	legalName: String!
+	domain: String!
+	domainAliases: [String!]!
+	url: String!
+	site: SiteDetails!
+	category: CompanyCategory!
+	tags: [String!]!
+	description: String!
+	foundedYear: String!
+	location: String!
+	logo: String!
+	tech: [String!]!
+}
+
+type SiteDetails {
+	url: String!
+	title: String!
+	phoneNumbers: [String!]!
+	emailAddresses: [String!]!
+}
+
+type CompanyCategory {
+	sector: String!
+	industryGroup: String!
+	industry: String!
+	subIndustry: String!
 }
 `

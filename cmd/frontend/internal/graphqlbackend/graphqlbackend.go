@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/clearbit/clearbit-go/clearbit"
 	graphql "github.com/neelance/graphql-go"
 	gqlerrors "github.com/neelance/graphql-go/errors"
 	"github.com/neelance/graphql-go/relay"
@@ -19,6 +20,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/clearbit"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -255,4 +257,52 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 
 func (r *rootResolver) CurrentUser(ctx context.Context) (*currentUserResolver, error) {
 	return currentUser(ctx)
+}
+
+// RevealCustomerCompany transforms a user's IP addresses into a company profile by using
+// Clearbit's reveal API.
+func (r *rootResolver) RevealCustomerCompany(ctx context.Context, args *struct{ IP string }) (*revealResolver, error) {
+	c, err := clearbitutil.NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	reveal, _, err := c.Reveal.Find(clearbit.RevealFindParams{
+		IP: args.IP,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &revealResolver{
+		ip:     reveal.IP,
+		domain: reveal.Domain,
+		fuzzy:  reveal.Fuzzy,
+		company: &companyResolver{
+			id:            reveal.Company.ID,
+			name:          reveal.Company.Name,
+			legalName:     reveal.Company.LegalName,
+			domain:        reveal.Company.Domain,
+			domainAliases: reveal.Company.DomainAliases,
+			url:           reveal.Company.URL,
+			site: &siteDetailsResolver{
+				url:            reveal.Company.Site.URL,
+				title:          reveal.Company.Site.Title,
+				phoneNumbers:   reveal.Company.Site.PhoneNumbers,
+				emailAddresses: reveal.Company.Site.EmailAddresses,
+			},
+			category: &companyCategoryResolver{
+				sector:        reveal.Company.Category.Sector,
+				industryGroup: reveal.Company.Category.IndustryGroup,
+				industry:      reveal.Company.Category.Industry,
+				subIndustry:   reveal.Company.Category.SubIndustry,
+			},
+			tags:        reveal.Company.Tags,
+			description: reveal.Company.Description,
+			foundedYear: string(reveal.Company.FoundedYear),
+			location:    reveal.Company.Location,
+			logo:        reveal.Company.Logo,
+			tech:        reveal.Company.Tech,
+		},
+	}, nil
 }

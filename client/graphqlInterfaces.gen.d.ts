@@ -54,6 +54,49 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface ICompanyCategory {
+		__typename: string;
+		sector: string;
+		industryGroup: string;
+		industry: string;
+		subIndustry: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ICompanyInfo {
+		__typename: string;
+		id: string;
+		name: string;
+		legalName: string;
+		domain: string;
+		domainAliases: Array<string>;
+		url: string;
+		site: ISiteDetails;
+		category: ICompanyCategory;
+		tags: Array<string>;
+		description: string;
+		foundedYear: string;
+		location: string;
+		logo: string;
+		tech: Array<string>;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ICompanyProfile {
+		__typename: string;
+		ip: string;
+		domain: string;
+		fuzzy: boolean;
+		company: ICompanyInfo;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IDepLocation {
 		__typename: string;
 		location: string;
@@ -299,6 +342,7 @@ declare namespace GQL {
 		symbols: Array<ISymbol>;
 		currentUser: IUser | null;
 		searchRepos: ISearchResults;
+		revealCustomerCompany: ICompanyProfile | null;
 	}
 
 	/*
@@ -330,6 +374,17 @@ declare namespace GQL {
 		__typename: string;
 		person: IPerson | null;
 		date: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ISiteDetails {
+		__typename: string;
+		url: string;
+		title: string;
+		phoneNumbers: Array<string>;
+		emailAddresses: Array<string>;
 	}
 
 	/*

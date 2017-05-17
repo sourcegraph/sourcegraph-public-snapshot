@@ -65,6 +65,12 @@
 			"revisionTime": "2016-01-28T11:33:10Z"
 		},
 		{
+			"checksumSHA1": "bbunmFhXYSV2Z6BUmOL5zjpNK/Y=",
+			"path": "github.com/clearbit/clearbit-go/clearbit",
+			"revision": "20ed0925e10da443d180f7b2d5acb275c9c999cc",
+			"revisionTime": "2017-05-16T20:01:51Z"
+		},
+		{
 			"checksumSHA1": "Z2AOGSmDKKvI6nuxa+UPjQWpIeM=",
 			"origin": "k8s.io/client-go/vendor/github.com/coreos/go-oidc/http",
 			"path": "github.com/coreos/go-oidc/http",
@@ -132,6 +138,12 @@
 			"path": "github.com/daviddengcn/go-colortext",
 			"revision": "511bcaf42ccd42c38aba7427b6673277bf19e2a1",
 			"revisionTime": "2016-05-07T01:00:35Z"
+		},
+		{
+			"checksumSHA1": "nd8R/vvAuXAtxUfdldWCggnrd5M=",
+			"path": "github.com/dghubble/sling",
+			"revision": "bbfb8293bd33a6baad33d718aacf66ef73a29f30",
+			"revisionTime": "2017-03-22T05:06:59Z"
 		},
 		{
 			"checksumSHA1": "f1wARLDzsF/JoyN01yoxXEwFIp8=",
