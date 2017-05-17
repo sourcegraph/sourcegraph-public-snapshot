@@ -35,30 +35,17 @@ procotol must also be https.
 * [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked) with `./dev` folder.
 * Webpack will manage hot reloading via `react-transform`.
 
-## Build
+## Deployment to Chrome web store 
 
-```bash
-$ make build # create unzipped distribution artifact in ./build; required for e2e tests
-```
-
-## Test
-
-```bash
-$ make test-unit # run unit tests
-$ make test-watch # watch for changes & run unit tests
-$ make test-e2e # run e2e tests
-$ make test-all # run all tests
-```
-
-End-to-end tests for the extension are located above this project root, at `test/e2e2`.
-
-## Create Distributions
-
-Generate zipped artifacts (`chrome-bundle.zip` and `firefox-bundle.xpi`) to upload to the Chrome/Firefox web stores.
-
+1. In `sourcegraph/sourcegraph/client/browser-ext/build/manifest.json`, bump the version on line 2. i.e. if the current version number is `"version": "1.1.98"`, change it to `"version": "1.1.99"`.
+2. In `sourcegraph/sourcegraph/client/browser-ext`, run:
 ```bash
 $ make bundle
 ```
+3. Go to https://chrome.google.com/webstore/category/extensions and from settings, go to the developer dashboard: https://cl.ly/1J3c0N1j0E0F. 
+4. Click edit on the Sourcegraph for GitHub extension. 
+5. Click "Upload Updated Package" and select the newly generated `sourcegraph/sourcegraph/client/browser-ext/chrome-bundle.zip`
+6. Publish the Chrome extensions
 
 ## Update Phabricator plugin JavaScript
 
