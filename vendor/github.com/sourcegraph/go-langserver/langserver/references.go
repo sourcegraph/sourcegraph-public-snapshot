@@ -11,7 +11,6 @@ import (
 	"go/token"
 	"go/types"
 	"math"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -25,8 +24,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
-
-var streamExperiment = len(os.Getenv("STREAM_EXPERIMENT")) > 0
 
 func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	if !isFileURI(params.TextDocument.URI) {
@@ -249,17 +246,6 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 	if limit == 0 {
 		// If we don't have a limit, just set it to a value we should never exceed
 		limit = math.MaxInt32
-	}
-
-	if !streamExperiment {
-		var locs []lsp.Location
-		for n := range refs {
-			locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
-		}
-		if len(locs) > limit {
-			locs = locs[:limit]
-		}
-		return locs
 	}
 
 	id := lsp.ID{
