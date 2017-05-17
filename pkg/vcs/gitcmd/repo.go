@@ -341,7 +341,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 		args = append(args, "--", opt.Path)
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.MetaClient.Command("git", args...)
 	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -583,7 +583,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.MetaClient.Command("git", args...)
 	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
