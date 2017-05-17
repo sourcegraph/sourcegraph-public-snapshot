@@ -12,6 +12,9 @@ import (
 // Features is the source of truth for feature toggles. Use Features for
 // querying whether a feature is toggled or not
 var Features = struct {
+	// DisableSearch disables certain parts of the search experience.
+	// This flag is intended to be used for umami deployment.
+	DisableSearch bool `json:"disableSearch"`
 }{}
 
 func init() {
