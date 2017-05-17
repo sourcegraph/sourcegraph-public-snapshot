@@ -15,19 +15,33 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-type originMapEntry struct {
+type prefixAndOrgin struct {
 	Prefix string
 	Origin string
 }
 
-var originMap []*originMapEntry
+var originMapEnv = env.Get("ORIGIN_MAP", "", `space separated list of mappings from repo name prefix to origin url, for example "github.com/!https://github.com/%.git"`)
+var gitoliteHostsEnv = env.Get("GITOLITE_HOSTS", "", `space separated list of mappings from repo name prefix to gitolite hosts"`)
+
+var originMap []prefixAndOrgin
+var gitoliteHostMap []prefixAndOrgin
 
 func init() {
-	ogmp, err := parseFromEnv()
+	var err error
+	originMap, err = parse(originMapEnv)
 	if err != nil {
 		log.Fatal(err)
 	}
-	originMap = append(ogmp, &originMapEntry{Prefix: "github.com/", Origin: "https://github.com/%.git"})
+
+	gitoliteHostMap, err = parse(gitoliteHostsEnv)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, entry := range gitoliteHostMap {
+		originMap = append(originMap, prefixAndOrgin{Prefix: entry.Prefix, Origin: entry.Origin + "/%"})
+	}
+
+	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "https://github.com/%.git"})
 }
 
 // Map maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
@@ -40,17 +54,13 @@ func OriginMap(repoURI string) string {
 	return ""
 }
 
-func parseFromEnv() ([]*originMapEntry, error) {
-	return parse(env.Get("ORIGIN_MAP", "", `space separated list of mappings from repo name prefix to origin url, for example "github.com/!https://github.com/%.git"`))
-}
-
-func parse(raw string) (originMap []*originMapEntry, err error) {
+func parse(raw string) (originMap []prefixAndOrgin, err error) {
 	for _, e := range strings.Fields(raw) {
 		p := strings.Split(e, "!")
 		if len(p) != 2 {
-			return nil, fmt.Errorf("invalid ORIGIN_MAP entry: %s", e)
+			return nil, fmt.Errorf("invalid entry: %s", e)
 		}
-		originMap = append(originMap, &originMapEntry{Prefix: p[0], Origin: p[1]})
+		originMap = append(originMap, prefixAndOrgin{Prefix: p[0], Origin: p[1]})
 	}
 	return
 }

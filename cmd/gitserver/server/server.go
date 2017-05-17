@@ -80,6 +80,7 @@ func (s *Server) Handler() http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/list", s.handleList)
 	return mux
 }
 

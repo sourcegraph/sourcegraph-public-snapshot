@@ -10,12 +10,12 @@ import (
 func TestMap(t *testing.T) {
 	type testc struct {
 		in       string
-		exp      []*originMapEntry
+		exp      []prefixAndOrgin
 		mappings [][2]string
 	}
 	tests := []testc{{
 		in: "github.com/!https://github.com/%.git",
-		exp: []*originMapEntry{{
+		exp: []prefixAndOrgin{{
 			Prefix: "github.com/",
 			Origin: "https://github.com/%.git",
 		}},
@@ -25,7 +25,7 @@ func TestMap(t *testing.T) {
 		},
 	}, {
 		in: "local/!local/%",
-		exp: []*originMapEntry{{
+		exp: []prefixAndOrgin{{
 			Prefix: "local/",
 			Origin: "local/%",
 		}},
@@ -34,7 +34,7 @@ func TestMap(t *testing.T) {
 		},
 	}, {
 		in: "local/!local/% github.com/!https://github.com/%.git",
-		exp: []*originMapEntry{{
+		exp: []prefixAndOrgin{{
 			Prefix: "local/",
 			Origin: "local/%",
 		}, {
