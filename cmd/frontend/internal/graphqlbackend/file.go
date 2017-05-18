@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -34,6 +36,22 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// TEMPORARY: initiate shadow requests for git blame data to test gitserver
+	// load in production.
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log15.Error("gitserver shadow request failed", "err", r)
+			}
+		}()
+		ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		r.BlameRaw(ctx, &struct {
+			StartLine int32
+			EndLine   int32
+		}{StartLine: 0, EndLine: 0})
+	}()
 
 	return string(contents), nil
 }
