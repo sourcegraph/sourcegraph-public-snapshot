@@ -16,7 +16,7 @@ export interface RepoRevSpec {
  * An invisible marker is appended to the document to indicate that annotation
  * has been completed; so this function expects that it will be called once all
  * repo/annotation data is resolved from the server.
- * 
+ *
  * el should be an element that changes when the dom significantly changes.
  * datakeys are stored as properites on el, and the code shortcuts if the datakey
  * is detected.
@@ -30,21 +30,14 @@ export interface RepoRevSpec {
  */
 export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: CodeCell[], spacesToTab: number): void {
 	cells.forEach((cell) => {
-		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
-		// If the line has already been annotated,
-		// restore event handlers if necessary otherwise move to next line
-		// the first check works on GitHub, the second is required for phabricator
-		// but is a no-op for GitHub
-		// TODO(uforic):  && hasCellBeenAnnotated(cell.cell) - figure out why we need this.
-		if (el.getAttribute(dataKey)) {
-			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
-				addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
+		let annotated = false;
+		// parse, annotate and replace the node asynchronously when the user hovers over the code cell
+		const annotateCb = () => {
+			if (annotated) {
+				return;
 			}
-			return;
-		}
+			annotated = true;
 
-		// parse, annotate and replace the node asynchronously.
-		setTimeout(() => {
 			try {
 				let ignoreFirstTextChar = repoRevSpec.isDelta;
 
@@ -56,11 +49,26 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 				cell.cell.innerHTML = "";
 				cell.cell.appendChild(annLine.resultNode);
 
-				addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
+				// addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
 			} catch (e) {
 				console.error(e);
 			}
-		});
+		};
+
+		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
+		// If the line has already been annotated,
+		// restore event handlers if necessary otherwise move to next line
+		// the first check works on GitHub, the second is required for phabricator
+		// but is a no-op for GitHub
+		// TODO(uforic):  && hasCellBeenAnnotated(cell.cell) - figure out why we need this.
+		if (el.getAttribute(dataKey)) {
+			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
+				addEventListeners(cell.cell, annotateCb, path, repoRevSpec, cell.line, loggingStruct);
+			}
+			return;
+		}
+
+		addEventListeners(cell.cell, annotateCb, path, repoRevSpec, cell.line, loggingStruct);
 	});
 }
 
@@ -233,7 +241,7 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 	}
 }
 
-function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
+function addEventListeners(el: HTMLElement, annotateCb: () => void, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
 	tooltips.createTooltips();
 
 	el.onclick = e => {
@@ -260,6 +268,8 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 	};
 
 	el.onmouseover = (e) => {
+		annotateCb(); // annotate the cell
+
 		let t = getTarget(e.target as HTMLElement);
 		if (!t || activeTarget === t) {
 			// don't do anything unless target is defined and has changed
