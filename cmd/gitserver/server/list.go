@@ -20,10 +20,12 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		}
 
 		lines := strings.Split(string(out), "\n")
-		for _, line := range lines[2 : len(lines)-1] {
+		for _, line := range lines {
 			fields := strings.Fields(line)
-			name := fields[len(fields)-1]
-			repos = append(repos, entry.Prefix+name)
+			if len(fields) >= 2 && fields[0] == "R" {
+				name := fields[len(fields)-1]
+				repos = append(repos, entry.Prefix+name)
+			}
 		}
 	}
 
