@@ -38,7 +38,7 @@ func init() {
 		log.Fatal(err)
 	}
 	for _, entry := range gitoliteHostMap {
-		originMap = append(originMap, prefixAndOrgin{Prefix: entry.Prefix, Origin: entry.Origin + "/%"})
+		originMap = append(originMap, prefixAndOrgin{Prefix: entry.Prefix, Origin: entry.Origin + ":%"})
 	}
 
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "https://github.com/%.git"})
