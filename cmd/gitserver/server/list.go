@@ -12,7 +12,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	repos := make([]string, 0)
 
 	for _, entry := range gitoliteHostMap {
-		out, err := exec.Command("ssh", entry.Origin, "info").CombinedOutput()
+		out, err := exec.CommandContext(r.Context(), "ssh", entry.Origin, "info").CombinedOutput()
 		if err != nil {
 			log.Printf("listing gitolite failed: %s (Output: %q)", err, string(out))
 			http.Error(w, err.Error(), http.StatusInternalServerError)
