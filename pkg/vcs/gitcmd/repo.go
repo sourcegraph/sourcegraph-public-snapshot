@@ -508,11 +508,23 @@ func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, er
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExtensionGitCmd")
 	defer span.Finish()
 
+	if len(params) == 0 {
+		return "", errors.New("at least one argument required")
+	}
+
 	if !isWhitelistedGitCmd(params) {
 		return "", fmt.Errorf("command failed: %s is not a whitelisted git command", strings.Join(params, ""))
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", params...)
+	var client *gitserver.Client
+	switch params[0] {
+	case "blame", "log":
+		client = gitserver.MetaClient
+	default:
+		client = gitserver.DefaultClient
+	}
+
+	cmd := client.Command("git", params...)
 	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
