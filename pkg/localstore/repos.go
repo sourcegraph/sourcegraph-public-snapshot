@@ -2,9 +2,7 @@ package localstore
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
-	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -305,10 +303,28 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		opt = &RepoListOp{}
 	}
 
-	sql, args, err := reposListSQL(opt)
-	if err != nil {
-		return nil, err
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
 	}
+
+	terms := strings.Fields(opt.Query)
+	if len(terms) > 10 {
+		terms = terms[:10]
+	}
+
+	conds := []string{"TRUE"}
+	for _, term := range terms {
+		term = strings.Replace(term, `\`, `\\`, -1)
+		term = strings.Replace(term, "%", `\%`, -1)
+		term = strings.Replace(term, "_", `\_`, -1)
+		conds = append(conds, "uri ILIKE "+arg("%"+term+"%"))
+	}
+
+	// fetch matching repos unordered
+	sql := "SELECT * FROM repo WHERE " + strings.Join(conds, " AND ") + " LIMIT 1000;"
 	rawRepos, err := s.query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
@@ -322,125 +338,37 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		return nil, err
 	}
 
+	// sort by position of search terms
+	sort.Slice(repos, func(i, j int) bool {
+		uri1 := strings.ToLower(repos[i].URI)
+		uri2 := strings.ToLower(repos[j].URI)
+		for _, term := range terms {
+			term = strings.ToLower(term)
+			pos1 := strings.Index(uri1, term)
+			pos2 := strings.Index(uri2, term)
+			if pos1 < pos2 {
+				return true
+			}
+			if pos2 < pos1 {
+				return false
+			}
+		}
+		return uri1 < uri2
+	})
+
+	// pagination
+	if opt.Page > 0 {
+		start := (opt.Page - 1) * opt.PerPage
+		if int(start) >= len(repos) {
+			return nil, nil
+		}
+		repos = repos[start:]
+		if len(repos) > int(opt.PerPage) {
+			repos = repos[:opt.PerPage]
+		}
+	}
+
 	return repos, nil
-}
-
-type priorityRepo struct {
-	priority int
-	*sourcegraph.Repo
-}
-
-type priorityRepoList struct {
-	repos []*priorityRepo
-}
-
-func (repos *priorityRepoList) Len() int {
-	return len(repos.repos)
-}
-
-func (repos *priorityRepoList) Swap(i, j int) {
-	repos.repos[i], repos.repos[j] = repos.repos[j], repos.repos[i]
-}
-
-func (repos *priorityRepoList) Less(i, j int) bool {
-	return repos.repos[i].priority > repos.repos[j].priority
-}
-
-var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
-
-var (
-	repoQuerySplitter    = regexp.MustCompile(`[/\s]+`)
-	repoOwnerRepoPattern = regexp.MustCompile(`^([^/\s]+)[/\s]+([^\s]+)$`)
-	repoOwnerPattern     = regexp.MustCompile(`^([^/\s]+)[/\s]+$`)
-)
-
-// reposListSQL translates the options struct to the SQL for querying
-// PosgreSQL.
-func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
-	var selectSQL, fromSQL, whereSQL, orderBySQL string
-
-	var args []interface{}
-	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
-		args = append(args, a)
-		return v
-	}
-
-	var queryTerms []string
-	for _, v := range repoQuerySplitter.Split(opt.Query, -1) {
-		if v != "" {
-			queryTerms = append(queryTerms, v)
-		}
-	}
-
-	{ // SELECT
-		selectSQL = "repo.*"
-	}
-	{ // FROM
-		fromSQL = "repo"
-	}
-	{ // WHERE
-		var conds []string
-
-		conds = append(conds, "(NOT blocked)")
-
-		if strings.Contains(opt.Query, "/") && len(queryTerms) >= 1 {
-			fields := queryTerms
-			if queryTerms[0] == "github.com" && len(fields) > 1 {
-				fields = queryTerms[1:]
-			}
-			conds = append(conds, `owner=`+arg(fields[0]))
-			if len(fields) > 1 {
-				conds = append(conds, "name ILIKE "+arg(fields[1]+"%"))
-			}
-		} else if len(queryTerms) >= 1 {
-			var queryConds []string
-			for _, queryTerm := range queryTerms {
-				queryConds = append(queryConds, `name=`+arg(queryTerm), `owner=`+arg(queryTerm))
-			}
-			conds = append(conds, fmt.Sprintf(`(%s)`, strings.Join(queryConds, " OR ")))
-		}
-
-		if conds != nil {
-			whereSQL = "(" + strings.Join(conds, ") AND (") + ")"
-		} else {
-			whereSQL = "true"
-		}
-	}
-
-	// ORDER BY
-	var orderByTerms []string
-	if match := repoOwnerPattern.FindAllStringSubmatch(opt.Query, 1); len(match) == 1 && len(match[0]) == 2 {
-		// "$OWNER/" case
-		orderByTerms = append(orderByTerms, `owner=`+arg(match[0][1])+` DESC`)
-	} else if match := repoOwnerRepoPattern.FindAllStringSubmatch(opt.Query, 1); len(match) == 1 && len(match[0]) == 3 {
-		// "$OWNER/$REPO" case
-		orderByTerms = append(orderByTerms, `(owner=`+arg(match[0][1])+` AND `+`name=`+arg(match[0][2])+`) DESC`)
-	}
-	orderByTerms = append(orderByTerms, "NOT fork DESC")
-	if len(queryTerms) >= 1 {
-		// rank repositories with a name equaling the last search term higher
-		orderByTerms = append(orderByTerms, "name="+arg(queryTerms[len(queryTerms)-1])+" DESC")
-	}
-	if len(queryTerms) >= 2 {
-		orderByTerms = append(orderByTerms, "owner="+arg(queryTerms[len(queryTerms)-2])+" DESC")
-	}
-	if len(queryTerms) >= 2 {
-		// Prefix matching for repo name.
-		last := queryTerms[len(queryTerms)-1]
-		orderByTerms = append(orderByTerms, "name ILIKE "+arg(last+"%")+" DESC")
-	}
-	orderByTerms = append(orderByTerms, "private DESC", "name ASC")
-
-	orderByTerms = append(orderByTerms, "repo.id asc NULLS LAST")
-	orderBySQL = strings.Join(orderByTerms, ", ")
-
-	// LIMIT
-	limitSQL := arg(opt.Limit())
-	offsetSQL := arg(opt.Offset())
-
-	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE %s ORDER BY %s LIMIT %s OFFSET %s`, selectSQL, fromSQL, whereSQL, orderBySQL, limitSQL, offsetSQL)
-	return sql, args, nil
 }
 
 func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*sourcegraph.Repo, error) {

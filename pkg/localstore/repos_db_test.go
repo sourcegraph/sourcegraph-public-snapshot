@@ -164,10 +164,10 @@ func TestRepos_List_query1(t *testing.T) {
 	s := repos{}
 
 	createdRepos := []*sourcegraph.Repo{
-		{URI: "abc/def", Owner: "abc", Name: "def", DefaultBranch: "master"},
-		{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
-		{URI: "jkl/mno/pqr", Owner: "mno", Name: "pqr", DefaultBranch: "master"},
-		{URI: "github.com/abc/xyz", Owner: "abc", Name: "xyz", DefaultBranch: "master"},
+		{URI: "abc/def"},
+		{URI: "def/ghi"},
+		{URI: "jkl/mno/pqr"},
+		{URI: "github.com/abc/xyz"},
 	}
 	for _, repo := range createdRepos {
 		if created, err := createRepo(ctx, repo); err != nil {
@@ -180,7 +180,7 @@ func TestRepos_List_query1(t *testing.T) {
 		query string
 		want  []string
 	}{
-		{"def", []string{"abc/def", "def/ghi"}},
+		{"def", []string{"def/ghi", "abc/def"}},
 		{"ABC/DEF", []string{"abc/def"}},
 		{"xyz", []string{"github.com/abc/xyz"}},
 		{"mno/p", []string{"jkl/mno/pqr"}},
@@ -209,13 +209,13 @@ func TestRepos_List_query2(t *testing.T) {
 	s := repos{}
 
 	createdRepos := []*sourcegraph.Repo{
-		{URI: "a/def", Owner: "a", Name: "def", DefaultBranch: "master"},
-		{URI: "b/def", Owner: "b", Name: "def", DefaultBranch: "master", Fork: true},
-		{URI: "c/def", Owner: "c", Name: "def", DefaultBranch: "master", Private: true},
-		{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
-		{URI: "def/jkl", Owner: "def", Name: "jkl", DefaultBranch: "master", Fork: true},
-		{URI: "def/mno", Owner: "def", Name: "mno", DefaultBranch: "master", Private: true},
-		{URI: "abc/m", Owner: "abc", Name: "m", DefaultBranch: "master"},
+		{URI: "a/def"},
+		{URI: "b/def", Fork: true},
+		{URI: "c/def", Private: true},
+		{URI: "def/ghi"},
+		{URI: "def/jkl", Fork: true},
+		{URI: "def/mno", Private: true},
+		{URI: "abc/m"},
 	}
 	for _, repo := range createdRepos {
 		if created, err := createRepo(ctx, repo); err != nil {
@@ -228,9 +228,9 @@ func TestRepos_List_query2(t *testing.T) {
 		query string
 		want  []string
 	}{
-		{"def", []string{"c/def", "a/def", "def/mno", "def/ghi", "b/def", "def/jkl"}},
+		{"def", []string{"def/ghi", "def/jkl", "def/mno", "a/def", "b/def", "c/def"}},
 		{"b/def", []string{"b/def"}},
-		{"def/", []string{"def/mno", "def/ghi", "def/jkl"}},
+		{"def/", []string{"def/ghi", "def/jkl", "def/mno"}},
 		{"def/m", []string{"def/mno"}},
 	}
 	for _, test := range tests {
@@ -241,35 +241,6 @@ func TestRepos_List_query2(t *testing.T) {
 		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
 		}
-	}
-}
-
-func TestRepos_List_sort(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-
-	ctx = actor.WithActor(ctx, &actor.Actor{})
-
-	s := repos{}
-
-	// Add some repos.
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "fork/abc", Name: "abc", DefaultBranch: "master", Fork: true}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "owner/abc", Name: "abc", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-
-	// Expect forks to be ranked lower.
-	repos, err := s.List(ctx, &RepoListOp{Query: "abc"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repos[0].URI != "owner/abc" || repos[1].URI != "fork/abc" {
-		t.Errorf("Expected forks to be ranked behind original repos.")
 	}
 }
 
