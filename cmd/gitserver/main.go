@@ -22,7 +22,7 @@ const repoCleanupInterval = 24 * time.Hour
 
 var reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-var runRepoCleanup, _ = strconv.ParseBool(env.Get("RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
+var runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
 
 func main() {
 	env.Lock()
@@ -53,7 +53,7 @@ func main() {
 	if runRepoCleanup {
 		go func() {
 			for {
-				removeInactiveRepos(reposDir)
+				gitserver.CleanupRepos()
 				time.Sleep(repoCleanupInterval)
 			}
 		}()

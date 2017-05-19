@@ -84,6 +84,23 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
+func cloneCmd(ctx context.Context, repo string, dir string) *exec.Cmd {
+	origin := OriginMap(repo)
+	return exec.CommandContext(ctx, "git", "clone", "--mirror", origin, dir)
+}
+
+func (s *Server) setCloneLock(dir string) {
+	s.cloningMu.Lock()
+	s.cloning[dir] = struct{}{}
+	s.cloningMu.Unlock()
+}
+
+func (s *Server) releaseCloneLock(dir string) {
+	s.cloningMu.Lock()
+	delete(s.cloning, dir)
+	s.cloningMu.Unlock()
+}
+
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	var req protocol.ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -152,12 +169,10 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 				defer func() {
 					cancel()
-					s.cloningMu.Lock()
-					delete(s.cloning, dir)
-					s.cloningMu.Unlock()
+					s.releaseCloneLock(dir)
 				}()
 
-				cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", origin, dir)
+				cmd := cloneCmd(ctx, req.Repo, dir)
 				if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
 					log15.Error("clone failed", "error", err, "output", string(output))
 					return
