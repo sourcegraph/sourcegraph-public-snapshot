@@ -36,6 +36,7 @@ func init() {
 
 		"CREATE INDEX repo_owner_ci ON repo(owner);", // migration 2016.9.30
 		"CREATE INDEX repo_name_ci ON repo(name);",   // migration 2016.9.30
+		"CREATE INDEX repo_uri_trgm ON repo USING GIN (lower(uri) gin_trgm_ops);",
 
 		// migration 2016.9.30: `DROP INDEX repo_lower_uri_lower_name;`
 	)
@@ -317,10 +318,11 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 
 	conds := []string{"TRUE"}
 	for _, term := range terms {
+		term = strings.ToLower(term)
 		term = strings.Replace(term, `\`, `\\`, -1)
 		term = strings.Replace(term, "%", `\%`, -1)
 		term = strings.Replace(term, "_", `\_`, -1)
-		conds = append(conds, "uri ILIKE "+arg("%"+term+"%"))
+		conds = append(conds, "lower(uri) LIKE "+arg("%"+term+"%"))
 	}
 
 	// fetch matching repos unordered

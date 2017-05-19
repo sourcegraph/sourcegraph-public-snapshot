@@ -28,6 +28,7 @@ var (
 		CreateSQL: []string{
 			`CREATE EXTENSION IF NOT EXISTS citext;`,
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
+			`CREATE EXTENSION IF NOT EXISTS pg_trgm;`,
 			new(globalDeps).CreateTable(),
 			new(pkgs).CreateTable(),
 			new(payments).CreateTable(),
