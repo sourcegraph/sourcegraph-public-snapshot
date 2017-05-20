@@ -4,9 +4,11 @@ import iterate from 'iterare';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { extractNodeModulesPackageName, PackageJson } from 'javascript-typescript-langserver/lib/packages';
+import { ProjectConfiguration } from 'javascript-typescript-langserver/lib/project-manager';
 import {
 	InitializeParams,
 	PackageDescriptor,
+	SymbolDescriptor,
 	SymbolLocationInformation,
 	WorkspaceReferenceParams
 } from 'javascript-typescript-langserver/lib/request-type';
@@ -20,6 +22,7 @@ import * as url from 'url';
 import {
 	Hover,
 	Location,
+	SymbolInformation,
 	TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { DependencyManager } from './dependencies';
@@ -343,6 +346,23 @@ export class BuildHandler extends TypeScriptService {
 			// interface merging, because we remove the location field
 			// See https://github.com/sourcegraph/sourcegraph/issues/5365#issuecomment-294431395
 			.distinct(symbol => hashObject(symbol, { respectType: false } as any));
+	}
+
+	/**
+	 * Returns an Observable for all symbols in a given config that match a given SymbolDescriptor or text query
+	 *
+	 * @param config The ProjectConfiguration to search
+	 * @param query A text or SymbolDescriptor query
+	 * @return Observable of [match score, SymbolInformation]
+	 */
+	protected _getSymbolsInConfig(config: ProjectConfiguration, query?: string | Partial<SymbolDescriptor>, childOf = new Span()): Observable<[number, SymbolInformation]> {
+		const symbols = super._getSymbolsInConfig(config, query, childOf);
+		if (!query || typeof query === 'string') {
+			return symbols;
+		}
+		// If a SymbolDescriptor query is passed, reduce the Observable to only the result with the highest score
+		// Sourcegraph currently only jumps to one seemingly random result for xrepo j2d: https://github.com/sourcegraph/sourcegraph/issues/5721
+		return symbols.reduce(([score, info], [s, i]): [number, SymbolInformation] => s > score ? [s, i] : [score, info]);
 	}
 
 	protected _getHover(params: TextDocumentPositionParams, span = new Span()): Observable<Hover> {
