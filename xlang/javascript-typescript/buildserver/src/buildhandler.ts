@@ -335,7 +335,7 @@ export class BuildHandler extends TypeScriptService {
 					// Remove node_modules + package name part from a module name
 					// The SymbolDescriptor will be used in the defining repo,
 					// where the file tree will look similar to the tree below the package folder
-					const regExp = /[^"]*\/node_modules\/((?:@[^\/]+\/)?[^\/]+)\//;
+					const regExp = /[^"]*node_modules\/((?:@[^\/]+\/)?[^\/]+)\//;
 					symbol.name = symbol.name.replace(regExp, '');
 					symbol.containerName = symbol.containerName.replace(regExp, '');
 				}
