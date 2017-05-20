@@ -324,10 +324,19 @@ export class BuildHandler extends TypeScriptService {
 					.mergeMap(() => super._getSymbolLocationInformations(params, span))
 			))
 			// Strip locations in node_modules because those are not availabe in the client
-			.do(symbol => {
-				if (symbol.location && symbol.location.uri.includes('/node_modules/')) {
-					symbol.location = undefined;
+			.map(({ symbol, location }) => {
+				if (location && location.uri.includes('/node_modules/')) {
+					location = undefined;
 				}
+				if (symbol && symbol.name) {
+					// Remove node_modules + package name part from a module name
+					// The SymbolDescriptor will be used in the defining repo,
+					// where the file tree will look similar to the tree below the package folder
+					const regExp = /[^"]*\/node_modules\/((?:@[^\/]+\/)?[^\/]+)\//;
+					symbol.name = symbol.name.replace(regExp, '');
+					symbol.containerName = symbol.containerName.replace(regExp, '');
+				}
+				return { symbol, location };
 			})
 			// Remove duplicates
 			// These can happen if a repository defines the same symbol in multiple locations with
