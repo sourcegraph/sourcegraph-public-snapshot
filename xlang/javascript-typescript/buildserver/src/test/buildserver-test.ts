@@ -288,7 +288,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						containerKind: '',
 						containerName: '',
 						kind: 'module',
-						name: '"node_modules/@types/diff/index"',
+						name: '"@types/diff/index"',
 						package: {
 							name: '@types/diff',
 							version: '0.0.31',
@@ -363,7 +363,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						containerKind: '',
 						containerName: '',
 						kind: 'module',
-						name: '"node_modules/@types/diff/index"',
+						name: '"@types/diff/index"',
 						package: {
 							name: '@types/diff',
 							version: '0.0.31',

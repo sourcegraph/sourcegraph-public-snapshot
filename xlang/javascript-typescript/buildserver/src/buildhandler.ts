@@ -331,11 +331,11 @@ export class BuildHandler extends TypeScriptService {
 				if (location && location.uri.includes('/node_modules/')) {
 					location = undefined;
 				}
-				if (symbol && symbol.name) {
-					// Remove node_modules + package name part from a module name
-					// The SymbolDescriptor will be used in the defining repo,
-					// where the file tree will look similar to the tree below the package folder
-					const regExp = /[^"]*node_modules\/((?:@[^\/]+\/)?[^\/]+)\//;
+				if (symbol) {
+					// Remove node_modules part from a module name
+					// The SymbolDescriptor will be used in the defining repo, where the symbol file path will never contain node_modules
+					// It may contain the package name though if the repo is a monorepo with multiple packages
+					const regExp = /[^"]*node_modules\//;
 					symbol.name = symbol.name.replace(regExp, '');
 					symbol.containerName = symbol.containerName.replace(regExp, '');
 				}
