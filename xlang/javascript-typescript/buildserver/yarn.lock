@@ -1229,9 +1229,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.30:
-  version "2.0.0-pre.30"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.30.tgz#375a1df71cf0c9ef6478b4ea7961834e89bb9659"
+javascript-typescript-langserver@^2.0.0-pre.31:
+  version "2.0.0-pre.31"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.31.tgz#1fb34f49cd130459c341eab25190ef69202f4c14"
   dependencies:
     "@reactivex/rxjs" "^5.3.0"
     "@types/json-patch" "0.0.29"
@@ -1247,6 +1247,7 @@ javascript-typescript-langserver@^2.0.0-pre.30:
     object-hash "^1.1.8"
     opentracing "^0.14.0"
     semaphore-async-await "^1.5.1"
+    string-similarity "^1.1.0"
     typescript "2.3.2"
     vscode-jsonrpc "^3.1.0"
     vscode-languageserver "^3.1.0"
@@ -1362,7 +1363,7 @@ load-json-file@^1.0.0:
     pinkie-promise "^2.0.0"
     strip-bom "^2.0.0"
 
-lodash@^4.17.4, lodash@^4.2.0, lodash@^4.3.0:
+lodash@^4.13.1, lodash@^4.17.4, lodash@^4.2.0, lodash@^4.3.0:
   version "4.17.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
 
@@ -2176,6 +2177,12 @@ sshpk@^1.7.0:
 stack-utils@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/stack-utils/-/stack-utils-1.0.0.tgz#2392cd8ddbd222492ed6c047960f7414b46c0f83"
+
+string-similarity@^1.1.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/string-similarity/-/string-similarity-1.2.0.tgz#d75153cb383846318b7a39a8d9292bb4db4e9c30"
+  dependencies:
+    lodash "^4.13.1"
 
 string-width@^1.0.1, string-width@^1.0.2:
   version "1.0.2"
