@@ -81,9 +81,9 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 
 	if search != "" {
 		// Search request.
-		u := &url.URL{Path: "/search"}
+		u := &url.URL{Path: "/"}
 		q := u.Query()
-		q.Add("q", search)
+		q.Add("search", search)
 		q.Add("utm_source", editor+"-"+version)
 		if utmProductName != "" {
 			q.Add("utm_product_name", utmProductName)
