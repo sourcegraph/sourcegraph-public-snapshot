@@ -8,4 +8,4 @@ ADD python-langserver /src
 WORKDIR /src
 
 EXPOSE 2087
-CMD ["python3", "python-langserver.py", "--mode", "tcp", "--addr", "2087"]
+CMD ["python3", "python-langserver.py", "--mode", "tcp", "--addr", "2087", "-X", "faulthandler"]
