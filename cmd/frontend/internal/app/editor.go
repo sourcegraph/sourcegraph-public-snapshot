@@ -105,7 +105,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	u := &url.URL{Path: path.Join("/", repoURI, branch, "/-/blob/", file)}
+	u := &url.URL{Path: path.Join("/", repoURI+branch, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
 	if utmProductName != "" {
