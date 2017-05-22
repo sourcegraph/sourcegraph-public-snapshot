@@ -338,6 +338,7 @@ export class BuildHandler extends TypeScriptService {
 					const regExp = /[^"]*node_modules\//;
 					symbol.name = symbol.name.replace(regExp, '');
 					symbol.containerName = symbol.containerName.replace(regExp, '');
+					symbol.filePath = symbol.filePath.replace(regExp, '');
 				}
 				return { symbol, location };
 			})
