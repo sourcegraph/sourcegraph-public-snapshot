@@ -260,6 +260,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
+						filePath: '@types/diff/index.d.ts',
 						containerKind: '',
 						containerName: '',
 						kind: 'module',
@@ -285,10 +286,11 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
+						filePath: '@types/diff/index.d.ts',
 						containerKind: '',
 						containerName: '',
 						kind: 'module',
-						name: '/node_modules/@types/diff/index',
+						name: '"@types/diff/index"',
 						package: {
 							name: '@types/diff',
 							version: '0.0.31',
@@ -310,6 +312,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
+						filePath: '@types/diff/index.d.ts',
 						containerKind: '',
 						containerName: 'diff',
 						kind: 'function',
@@ -335,6 +338,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
+						filePath: '@types/diff/index.d.ts',
 						containerKind: '',
 						containerName: 'diff',
 						kind: 'interface',
@@ -360,10 +364,11 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
+						filePath: '@types/diff/index.d.ts',
 						containerKind: '',
 						containerName: '',
 						kind: 'module',
-						name: '/node_modules/@types/diff/index',
+						name: '"@types/diff/index"',
 						package: {
 							name: '@types/diff',
 							version: '0.0.31',
@@ -385,6 +390,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
+						filePath: '@types/diff/index.d.ts',
 						containerKind: '',
 						containerName: 'JsDiff',
 						kind: 'function',
@@ -411,6 +417,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
+						filePath: 'typescript/lib/typescript.d.ts',
 						containerKind: '',
 						containerName: 'ts',
 						kind: 'enum',
@@ -454,6 +461,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							uri: 'file:///a.ts'
 						},
 						symbol: {
+							filePath: 'node_modules/@types/diff/index.d.ts',
 							containerKind: '',
 							containerName: 'diff',
 							kind: 'function',
@@ -480,6 +488,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							uri: 'file:///a.ts'
 						},
 						symbol: {
+							filePath: 'node_modules/@types/diff/index.d.ts',
 							containerKind: '',
 							containerName: 'diff',
 							kind: 'function',

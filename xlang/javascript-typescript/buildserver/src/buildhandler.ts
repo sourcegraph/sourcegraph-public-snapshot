@@ -4,9 +4,11 @@ import iterate from 'iterare';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { extractNodeModulesPackageName, PackageJson } from 'javascript-typescript-langserver/lib/packages';
+import { ProjectConfiguration } from 'javascript-typescript-langserver/lib/project-manager';
 import {
 	InitializeParams,
 	PackageDescriptor,
+	SymbolDescriptor,
 	SymbolLocationInformation,
 	WorkspaceReferenceParams
 } from 'javascript-typescript-langserver/lib/request-type';
@@ -20,6 +22,7 @@ import * as url from 'url';
 import {
 	Hover,
 	Location,
+	SymbolInformation,
 	TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { DependencyManager } from './dependencies';
@@ -144,7 +147,7 @@ export class BuildHandler extends TypeScriptService {
 	protected _initializeFileSystems(accessDisk: boolean): void {
 		super._initializeFileSystems(accessDisk);
 		this.remoteFileSystem = this.fileSystem;
-		const overlayFs = new LocalRootedFileSystem(this.root, path.join(this.options.tempDir, 'workspace'));
+		const overlayFs = new LocalRootedFileSystem(this.rootUri, path.join(this.options.tempDir, 'workspace'));
 		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 
@@ -324,16 +327,43 @@ export class BuildHandler extends TypeScriptService {
 					.mergeMap(() => super._getSymbolLocationInformations(params, span))
 			))
 			// Strip locations in node_modules because those are not availabe in the client
-			.do(symbol => {
-				if (symbol.location && symbol.location.uri.includes('/node_modules/')) {
-					symbol.location = undefined;
+			.map(({ symbol, location }) => {
+				if (location && location.uri.includes('/node_modules/')) {
+					location = undefined;
 				}
+				if (symbol) {
+					// Remove node_modules part from a module name
+					// The SymbolDescriptor will be used in the defining repo, where the symbol file path will never contain node_modules
+					// It may contain the package name though if the repo is a monorepo with multiple packages
+					const regExp = /[^"]*node_modules\//;
+					symbol.name = symbol.name.replace(regExp, '');
+					symbol.containerName = symbol.containerName.replace(regExp, '');
+					symbol.filePath = symbol.filePath.replace(regExp, '');
+				}
+				return { symbol, location };
 			})
 			// Remove duplicates
 			// These can happen if a repository defines the same symbol in multiple locations with
 			// interface merging, because we remove the location field
 			// See https://github.com/sourcegraph/sourcegraph/issues/5365#issuecomment-294431395
 			.distinct(symbol => hashObject(symbol, { respectType: false } as any));
+	}
+
+	/**
+	 * Returns an Observable for all symbols in a given config that match a given SymbolDescriptor or text query
+	 *
+	 * @param config The ProjectConfiguration to search
+	 * @param query A text or SymbolDescriptor query
+	 * @return Observable of [match score, SymbolInformation]
+	 */
+	protected _getSymbolsInConfig(config: ProjectConfiguration, query?: string | Partial<SymbolDescriptor>, childOf = new Span()): Observable<[number, SymbolInformation]> {
+		const symbols = super._getSymbolsInConfig(config, query, childOf);
+		if (!query || typeof query === 'string') {
+			return symbols;
+		}
+		// If a SymbolDescriptor query is passed, reduce the Observable to only the result with the highest score
+		// Sourcegraph currently only jumps to one seemingly random result for xrepo j2d: https://github.com/sourcegraph/sourcegraph/issues/5721
+		return symbols.reduce(([score, info], [s, i]): [number, SymbolInformation] => s > score ? [s, i] : [score, info]);
 	}
 
 	protected _getHover(params: TextDocumentPositionParams, span = new Span()): Observable<Hover> {
