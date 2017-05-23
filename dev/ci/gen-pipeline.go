@@ -151,9 +151,6 @@ func main() {
 	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 
 	addDockerImageStep := func(app string, latest bool) {
-		if app == "xlang-php" {
-			return
-		}
 		cmdDir := "./cmd/" + app
 		if _, err := os.Stat(cmdDir); err != nil {
 			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
