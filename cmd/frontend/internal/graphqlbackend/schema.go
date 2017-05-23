@@ -15,7 +15,7 @@ type Query {
 }
 
 type Root {
-	organization(orgName: String!): Organization
+	organization(login: String!): Organization
 	repository(uri: String!): Repository
 	repositories(query: String = ""): [Repository!]!
 	remoteRepositories: [RemoteRepository!]!

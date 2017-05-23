@@ -2978,7 +2978,7 @@
 						"description": null,
 						"args": [
 							{
-								"name": "orgName",
+								"name": "login",
 								"description": null,
 								"type": {
 									"kind": "NON_NULL",

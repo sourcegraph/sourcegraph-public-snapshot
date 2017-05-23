@@ -174,12 +174,12 @@ func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*reposi
 	return s, nil
 }
 
-func (r *rootResolver) Organization(ctx context.Context, args *struct{ OrgName string }) (*organizationResolver, error) {
-	if args.OrgName == "" {
+func (r *rootResolver) Organization(ctx context.Context, args *struct{ Login string }) (*organizationResolver, error) {
+	if args.Login == "" {
 		return nil, nil
 	}
 
-	org, err := orgs.GetOrg(ctx, args.OrgName)
+	org, err := orgs.GetOrg(ctx, args.Login)
 	if err != nil {
 		return nil, err
 	}
