@@ -113,7 +113,6 @@ func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptio
 	if !extgithub.HasAuthedUser(ctx) {
 		return &sourcegraph.OrgMembersList{}, nil
 	}
-	// client := extgithub.Client(ctx)
 
 	members, err := listOrgMembersPage(ctx, org)
 	if err != nil {
@@ -145,8 +144,8 @@ func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptio
 
 			if orgInvite == nil || time.Now().Unix()-orgInvite.SentAt.Unix() > 259200 {
 				orgMember.CanInvite = true
-				// Swapped out eager email fetching (requiring a GitHub fetch for every user in the org) with lazy fetching when
-				// the invite button is clicked
+				// Emails are not available through the GH API for org members. So instead of eagerly fetching each member's email,
+				// we defer, and do lazy fetching only when the user intends to invite someone.
 				orgMember.Email = ""
 			} else {
 				orgMember.CanInvite = false
@@ -211,6 +210,9 @@ var sendEmail = func(template, name, email, subject string, templateContent []go
 	return nil, errors.New("email client is not configured")
 }
 
+// InviteUser invites a member of an organization to Sourcegraph
+// This function adds the invitation details to a Postgres database and sends the target an invitation email
+// through Mandrill
 func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.UserInviteResponse, error) {
 	user := actor.FromContext(ctx).User()
 	if user == nil {
@@ -267,6 +269,7 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	return sourcegraph.InviteSuccess, nil
 }
 
+// validateMembership validates that a given GitHub user is a member of a given GitHub organization
 func validateMembership(ctx context.Context, orgName string, userID string) error {
 	inviterOrgOptions := &sourcegraph.OrgListOptions{
 		OrgName:  orgName,
@@ -282,6 +285,7 @@ func validateMembership(ctx context.Context, orgName string, userID string) erro
 	return nil
 }
 
+// toOrg converts a GitHub API Organization object to a Sourcegraph API Org object
 func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
 	strv := func(s *string) string {
 		if s == nil {
@@ -311,6 +315,7 @@ func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
 	return &org
 }
 
+// toOrgMember converts a GitHub API User object to a Sourcegraph API OrgMember object
 func toOrgMember(ghUser *github.User) *sourcegraph.OrgMember {
 	strv := func(s *string) string {
 		if s == nil {
