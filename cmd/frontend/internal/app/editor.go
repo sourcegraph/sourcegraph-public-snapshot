@@ -8,33 +8,10 @@ import (
 	"net/url"
 	"path"
 	"strconv"
-	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
-
-func remoteURLToRepoURI(ctx context.Context, remoteURL string) (string, error) {
-	cpy := remoteURL
-	schemeIndex := strings.Index(cpy, "://")
-	if schemeIndex == -1 {
-		cpy = "git://" + cpy
-	}
-	u, err := url.Parse(cpy)
-	if err != nil {
-		return "", err
-	}
-	if u.Hostname() != "github.com" {
-		// TODO: Handle on-premises here. Consider e.g. ORIGIN_MAP and env.example (file).
-		return "", fmt.Errorf("Git remote URL %q not supported.", remoteURL)
-	}
-
-	// GitHub remotes
-	u.Path = strings.TrimSuffix(u.Path, ".git")
-	if strings.Contains(u.Host, ":") {
-		return path.Join(u.Hostname(), strings.Split(u.Host, ":")[1], u.Path), nil
-	}
-	return path.Join(u.Hostname(), u.Path), nil
-}
 
 func editorBranch(ctx context.Context, repoURI, branchName string) (string, error) {
 	if branchName == "HEAD" {
@@ -92,12 +69,16 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Open-file request.
-	repoURI, err := remoteURLToRepoURI(r.Context(), remoteURL)
+	repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(remoteURL)
 	if err != nil {
+		return err
+	}
+	if repoURI == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
+		msg := fmt.Sprintf("Git remote URL %q not supported", remoteURL)
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, html.EscapeString(err.Error()))
+		fmt.Fprintln(w, html.EscapeString(msg))
 		return nil
 	}
 	branch, err = editorBranch(r.Context(), repoURI, branch)
