@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -179,7 +178,7 @@ func (r *rootResolver) Organization(ctx context.Context, args *struct{ Login str
 		return nil, nil
 	}
 
-	org, err := orgs.GetOrg(ctx, args.Login)
+	org, err := GetOrg(ctx, args.Login)
 	if err != nil {
 		return nil, err
 	}

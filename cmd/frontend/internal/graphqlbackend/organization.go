@@ -4,8 +4,10 @@ import (
 	"context"
 	"strconv"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
+	"github.com/sourcegraph/go-github/github"
+
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 type organizationResolver struct {
@@ -40,18 +42,14 @@ func (o *organizationResolver) Collaborators() int32 {
 	return o.organization.Collaborators
 }
 
-type organizationMemberResolver struct {
-	member *sourcegraph.OrgMember
-}
-
 func (o *organizationResolver) Members(ctx context.Context) ([]*organizationMemberResolver, error) {
-	opts := &sourcegraph.OrgListOptions{
+	opts := &sourcegraph.ListMembersOptions{
 		OrgID:   strconv.Itoa(int(o.organization.ID)),
 		OrgName: o.organization.Login,
 	}
 
 	// TODO(Dan): this method currently only returns a single page of results
-	membersList, err := orgs.ListOrgMembersForInvites(ctx, opts)
+	membersList, err := ListOrgMembersForInvites(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -63,86 +61,98 @@ func (o *organizationResolver) Members(ctx context.Context) ([]*organizationMemb
 	return res, nil
 }
 
-func (m *organizationMemberResolver) Login() string {
-	return m.member.Login
-}
+// GetOrg returns a single *sourcegraph.Org representing a single GitHub organization
+func GetOrg(ctx context.Context, orgName string) (*sourcegraph.Org, error) {
+	client := extgithub.Client(ctx)
 
-func (m *organizationMemberResolver) GithubID() int32 {
-	return int32(m.member.ID)
-}
-
-func (m *organizationMemberResolver) Email() string {
-	return m.member.Email
-}
-
-func (m *organizationMemberResolver) AvatarURL() string {
-	return m.member.AvatarURL
-}
-
-func (m *organizationMemberResolver) IsSourcegraphUser() bool {
-	return m.member.SourcegraphUser
-}
-
-func (m *organizationMemberResolver) CanInvite() bool {
-	return m.member.CanInvite
-}
-
-type inviteResolver struct {
-	invite *sourcegraph.UserInvite
-}
-
-func (m *organizationMemberResolver) Invite() *inviteResolver {
-	if m.member.Invite == nil {
-		return nil
-	}
-	return &inviteResolver{invite: m.member.Invite}
-}
-
-func (i *inviteResolver) UserLogin() string {
-	return i.invite.UserLogin
-}
-
-func (i *inviteResolver) UserEmail() string {
-	return i.invite.UserEmail
-}
-
-func (i *inviteResolver) OrgLogin() string {
-	return i.invite.OrgLogin
-}
-
-func (i *inviteResolver) OrgGithubID() (int32, error) {
-	v, err := strconv.Atoi(i.invite.OrgID)
+	org, _, err := client.Organizations.Get(orgName)
 	if err != nil {
-		return int32(v), nil
+		return nil, err
 	}
-	return 0, err
+
+	return toOrg(org), nil
 }
 
-func (i *inviteResolver) SentAt() int32 {
-	return int32(i.invite.SentAt.Unix())
-}
+// listOrgsPage returns a single page of the current user's GitHub organizations
+func listOrgsPage(ctx context.Context, opt *sourcegraph.ListOptions) (res *sourcegraph.OrgsList, err error) {
+	if !extgithub.HasAuthedUser(ctx) {
+		return &sourcegraph.OrgsList{}, nil
+	}
+	client := extgithub.Client(ctx)
 
-func (i *inviteResolver) URI() string {
-	return i.invite.URI
-}
-
-func (*schemaResolver) InviteOrgMemberToSourcegraph(ctx context.Context, args *struct {
-	OrgLogin    string
-	OrgGithubID int32
-	UserLogin   string
-	UserEmail   string
-}) (bool, error) {
-	res, err := orgs.InviteUser(ctx, &sourcegraph.UserInvite{
-		OrgLogin:  args.OrgLogin,
-		OrgID:     strconv.Itoa(int(args.OrgGithubID)),
-		UserLogin: args.UserLogin,
-		UserEmail: args.UserEmail,
+	orgs, _, err := client.Organizations.List("", &github.ListOptions{
+		Page:    int(opt.Page),
+		PerPage: int(opt.PerPage),
 	})
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	if res == sourcegraph.InviteMissingEmail {
-		return false, nil
+
+	slice := []*sourcegraph.Org{}
+	for _, k := range orgs {
+		slice = append(slice, toOrg(k))
 	}
-	return true, nil
+
+	return &sourcegraph.OrgsList{
+		Orgs: slice}, nil
+}
+
+// ListAllOrgs is a convenience wrapper around listOrgsPage (since GitHub's API is paginated), returning
+// a list of all of the current user's GitHub organizations
+//
+// This method may return an error and a partial list of organizations
+func ListAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourcegraph.OrgsList, err error) {
+	// Get a maximum of 1000 organizations per user
+	const perPage = 100
+	const maxPage = 10
+	opts := *op
+	opts.PerPage = perPage
+
+	var allOrgs []*sourcegraph.Org
+	for page := 1; page <= maxPage; page++ {
+		opts.Page = int32(page)
+		orgsPage, err := listOrgsPage(ctx, &opts)
+		if err != nil {
+			// If an error occurs, return that error, as well as a list of all organizations
+			// collected so far
+			return &sourcegraph.OrgsList{
+				Orgs: allOrgs}, err
+		}
+		allOrgs = append(allOrgs, orgsPage.Orgs...)
+		if len(orgsPage.Orgs) < perPage {
+			break
+		}
+	}
+	return &sourcegraph.OrgsList{
+		Orgs: allOrgs}, nil
+}
+
+// toOrg converts a GitHub API Organization object to a Sourcegraph API Org object
+func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
+	strv := func(s *string) string {
+		if s == nil {
+			return ""
+		}
+		return *s
+	}
+
+	intv := func(i *int) int32 {
+		if i == nil {
+			return 0
+		}
+		return int32(*i)
+	}
+
+	org := sourcegraph.Org{
+		Login:         *ghOrg.Login,
+		ID:            int32(*ghOrg.ID),
+		AvatarURL:     strv(ghOrg.AvatarURL),
+		Name:          strv(ghOrg.Name),
+		Blog:          strv(ghOrg.Blog),
+		Location:      strv(ghOrg.Location),
+		Email:         strv(ghOrg.Email),
+		Description:   strv(ghOrg.Description),
+		Collaborators: intv(ghOrg.Collaborators)}
+
+	return &org
 }

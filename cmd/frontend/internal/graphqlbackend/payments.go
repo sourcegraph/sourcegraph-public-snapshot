@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/stripe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -32,7 +31,7 @@ func (p planResolver) Name() string {
 }
 
 func (p planResolver) Organization(ctx context.Context) (*organizationResolver, error) {
-	organization, err := orgs.GetOrg(ctx, p.OrgName)
+	organization, err := GetOrg(ctx, p.OrgName)
 	if err != nil {
 		return nil, err
 	}

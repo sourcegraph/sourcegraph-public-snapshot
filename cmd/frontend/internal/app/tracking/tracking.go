@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -87,24 +87,24 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 
 	// Fetch orgs and org members data
 	// ListAllOrgs may return partial results
-	orgList, err := orgs.ListAllOrgs(tempCtx, &sourcegraph.OrgListOptions{})
+	orgList, err := graphqlbackend.ListAllOrgs(tempCtx, &sourcegraph.ListOptions{})
 	if err != nil {
-		log15.Warn("orgs.ListAllOrgs: failed to fetch some user organizations", "source", "GitHub", "error", err)
+		log15.Warn("graphqlbackend.ListAllOrgs: failed to fetch some user organizations", "source", "GitHub", "error", err)
 	}
 
 	orgMembersErrCounter := 0
 	owd := make(map[string]([]*github.User))
 	for _, org := range orgList.Orgs {
-		members, err := orgs.ListAllOrgMembers(tempCtx, &sourcegraph.OrgListOptions{OrgName: org.Login})
+		members, err := graphqlbackend.ListAllOrgMembers(tempCtx, &sourcegraph.ListMembersOptions{OrgName: org.Login})
 		if err != nil {
 			// ListAllOrgMembers may return partial results
 			// Don't give up unless maxOrgMemberErrors errors are caught
 			orgMembersErrCounter = orgMembersErrCounter + 1
 			if orgMembersErrCounter > maxOrgMemberErrors {
-				log15.Warn("Orgs.ListAllOrgMembers: failed to fetch some user org members (max errors exceeded)", "source", "GitHub", "error", err)
+				log15.Warn("graphqlbackend.ListAllOrgMembers: failed to fetch some user org members (max errors exceeded)", "source", "GitHub", "error", err)
 				break
 			} else {
-				log15.Warn("Orgs.ListAllOrgMembers: failed to fetch some user org members", "source", "GitHub", "error", err)
+				log15.Warn("graphqlbackend.ListAllOrgMembers: failed to fetch some user org members", "source", "GitHub", "error", err)
 			}
 		}
 		owd[org.Login] = members
