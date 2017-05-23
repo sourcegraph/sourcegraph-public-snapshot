@@ -16,6 +16,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -214,10 +215,11 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit = limitHit || repoLimitHit
-			if err, isNotFound := searchErr.(vcs.RepoNotExistError); isNotFound && err.CloneInProgress {
-				// No need to abort the entire search if one of the repos is cloning.
-				limitHit = true
-				return
+			if err, ok := searchErr.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+				searchErr = fmt.Errorf("%s is cloning, please try again soon.", repo)
+			}
+			if err, ok := searchErr.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
+				searchErr = fmt.Errorf("%s does not exist.", repo)
 			}
 			if searchErr != nil && err == nil {
 				err = searchErr
