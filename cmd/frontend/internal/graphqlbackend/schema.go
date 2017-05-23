@@ -230,7 +230,7 @@ type Invite {
 	orgGithubId: Int!
 	orgLogin: String!
 	sentAt: Int!
-	URI: String!
+	uri: String!
 }
 
 type Plan {

@@ -1458,7 +1458,7 @@
 						"deprecationReason": null
 					},
 					{
-						"name": "URI",
+						"name": "uri",
 						"description": null,
 						"args": [],
 						"type": {

@@ -187,7 +187,7 @@ declare namespace GQL {
 		orgGithubId: number;
 		orgLogin: string;
 		sentAt: number;
-		URI: string;
+		uri: string;
 	}
 
 	/*
