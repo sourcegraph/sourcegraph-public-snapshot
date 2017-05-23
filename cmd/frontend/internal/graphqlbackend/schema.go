@@ -250,7 +250,7 @@ type Mutation {
 	updatePaymentSource(tokenID: String!): Boolean!
 	subscribeOrg(tokenID: String!, GitHubOrg: String!, seats: Int!): Boolean!
 	startOrgTrial(GitHubOrg: String!): Boolean!
-	inviteOrgMemberToSourcegraph(orgLogin: String!, userLogin: String!, userEmail: String = ""): Boolean!
+	inviteOrgMemberToSourcegraph(orgLogin: String!, orgId: Int!, userLogin: String!, userEmail: String = ""): Boolean!
 }
 
 type CompanyProfile {

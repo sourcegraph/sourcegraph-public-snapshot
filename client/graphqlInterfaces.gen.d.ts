@@ -180,15 +180,6 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
-	interface IInvitationError {
-		__typename: string;
-		code: number;
-		message: string;
-	}
-
-	/*
-	  description: null
-	*/
 	interface IInvite {
 		__typename: string;
 		userLogin: string;
@@ -218,7 +209,7 @@ declare namespace GQL {
 		updatePaymentSource: boolean;
 		subscribeOrg: boolean;
 		startOrgTrial: boolean;
-		inviteOrgMemberToSourcegraph: number;
+		inviteOrgMemberToSourcegraph: boolean;
 	}
 
 	/*

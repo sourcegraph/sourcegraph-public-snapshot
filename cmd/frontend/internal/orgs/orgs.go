@@ -142,19 +142,12 @@ func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptio
 			orgMember.Email = rUser.Email
 		} else {
 			orgInvite, _ := store.UserInvites.GetByURI(ctx, *member.Login+org.OrgID)
+
 			if orgInvite == nil || time.Now().Unix()-orgInvite.SentAt.Unix() > 259200 {
 				orgMember.CanInvite = true
-				// TODO (Dan): temporarily commented out for rate limiting reasons. Replace with lazy email fetching on
-				// invite instead of eagerly up-front for anyone who views the team page.
+				// Swapped out eager email fetching (requiring a GitHub fetch for every user in the org) with lazy fetching when
+				// the invite button is clicked
 				orgMember.Email = ""
-
-				// fullGHUser, _, err := client.Users.Get(*member.Login)
-				// if err != nil {
-				// 	break
-				// }
-				// if fullGHUser.Email != nil {
-				// 	orgMember.Email = *fullGHUser.Email
-				// }
 			} else {
 				orgMember.CanInvite = false
 				orgMember.Invite = orgInvite
@@ -225,13 +218,13 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	}
 
 	// Confirm inviting usre is a member of the GitHub organization
-	err := validateMembership(ctx, opt.OrgID, user.Login)
+	err := validateMembership(ctx, opt.OrgName, user.Login)
 	if err != nil {
 		return sourcegraph.InviteError, err
 	}
 
 	// Confirm invited user is a member of the GitHub organization
-	err = validateMembership(ctx, opt.OrgID, opt.UserID)
+	err = validateMembership(ctx, opt.OrgName, opt.UserID)
 	if err != nil {
 		return sourcegraph.InviteError, err
 	}
@@ -249,8 +242,8 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	}
 
 	if opt.UserEmail != "" && user != nil {
-		_, err := sendEmail("invite-user", opt.UserID, opt.UserEmail, user.Login+" invited you to join "+opt.OrgID+" on Sourcegraph", nil,
-			[]gochimp.Var{gochimp.Var{Name: "INVITE_USER", Content: "sourcegraph.com/settings"}, {Name: "FROM_AVATAR", Content: user.AvatarURL}, {Name: "ORG", Content: opt.OrgID}, {Name: "FNAME", Content: user.Login}, {Name: "INVITE_LINK", Content: "https://sourcegraph.com?_event=EmailInviteClicked&_invited_by_user=" + user.Login + "&_org_invite=" + opt.OrgID}})
+		_, err := sendEmail("invite-user", opt.UserID, opt.UserEmail, user.Login+" invited you to join "+opt.OrgName+" on Sourcegraph", nil,
+			[]gochimp.Var{gochimp.Var{Name: "INVITE_USER", Content: "sourcegraph.com/settings"}, {Name: "FROM_AVATAR", Content: user.AvatarURL}, {Name: "ORG", Content: opt.OrgName}, {Name: "FNAME", Content: user.Login}, {Name: "INVITE_LINK", Content: "https://sourcegraph.com?_event=EmailInviteClicked&_invited_by_user=" + user.Login + "&_org_invite=" + opt.OrgName}})
 		if err != nil {
 			return sourcegraph.InviteError, fmt.Errorf("Error sending email: %s", err)
 		}
@@ -264,6 +257,7 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 		UserID:    opt.UserID,
 		UserEmail: opt.UserEmail,
 		OrgID:     opt.OrgID,
+		OrgName:   opt.OrgName,
 		SentAt:    &ts,
 	})
 	if err != nil {
@@ -273,9 +267,9 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	return sourcegraph.InviteSuccess, nil
 }
 
-func validateMembership(ctx context.Context, orgID string, userID string) error {
+func validateMembership(ctx context.Context, orgName string, userID string) error {
 	inviterOrgOptions := &sourcegraph.OrgListOptions{
-		OrgName:  orgID,
+		OrgName:  orgName,
 		Username: userID,
 	}
 	isInviterMember, err := IsOrgMember(ctx, inviterOrgOptions)
@@ -283,7 +277,7 @@ func validateMembership(ctx context.Context, orgID string, userID string) error 
 		return err
 	}
 	if !isInviterMember {
-		return fmt.Errorf("Error sending email: user %s is not part of organization %s", userID, orgID)
+		return fmt.Errorf("Error sending email: user %s is not part of organization %s", userID, orgName)
 	}
 	return nil
 }

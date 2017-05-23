@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -45,6 +46,7 @@ type organizationMemberResolver struct {
 
 func (o *organizationResolver) Members(ctx context.Context) ([]*organizationMemberResolver, error) {
 	opts := &sourcegraph.OrgListOptions{
+		OrgID:   o.organization.Login,
 		OrgName: o.organization.Login,
 	}
 
@@ -118,11 +120,13 @@ func (i *inviteResolver) URI() string {
 
 func (*schemaResolver) InviteOrgMemberToSourcegraph(ctx context.Context, args *struct {
 	OrgLogin  string
+	OrgID     int32
 	UserLogin string
 	UserEmail string
 }) (bool, error) {
 	res, err := orgs.InviteUser(ctx, &sourcegraph.UserInvite{
-		OrgID:     args.OrgLogin,
+		OrgName:   args.OrgLogin,
+		OrgID:     strconv.Itoa(int(args.OrgID)),
 		UserID:    args.UserLogin,
 		UserEmail: args.UserEmail,
 	})

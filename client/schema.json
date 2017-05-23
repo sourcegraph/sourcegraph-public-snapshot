@@ -1374,49 +1374,6 @@
 			},
 			{
 				"kind": "OBJECT",
-				"name": "InvitationError",
-				"description": null,
-				"fields": [
-					{
-						"name": "code",
-						"description": null,
-						"args": [],
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "Int",
-								"ofType": null
-							}
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					},
-					{
-						"name": "message",
-						"description": null,
-						"args": [],
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					}
-				],
-				"inputFields": null,
-				"interfaces": [],
-				"enumValues": null,
-				"possibleTypes": null
-			},
-			{
-				"kind": "OBJECT",
 				"name": "Invite",
 				"description": null,
 				"fields": [
@@ -1758,6 +1715,20 @@
 								"defaultValue": null
 							},
 							{
+								"name": "orgId",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
 								"name": "userLogin",
 								"description": null,
 								"type": {
@@ -1770,6 +1741,16 @@
 									}
 								},
 								"defaultValue": null
+							},
+							{
+								"name": "userEmail",
+								"description": null,
+								"type": {
+									"kind": "SCALAR",
+									"name": "String",
+									"ofType": null
+								},
+								"defaultValue": "\"\""
 							}
 						],
 						"type": {
@@ -1777,7 +1758,7 @@
 							"name": null,
 							"ofType": {
 								"kind": "SCALAR",
-								"name": "Int",
+								"name": "Boolean",
 								"ofType": null
 							}
 						},
