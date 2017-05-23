@@ -28,18 +28,18 @@ func init() {
 type dbUserInvite struct {
 	URI       string
 	ID        int32
-	UserID    string    `db:"user_id"`
+	UserLogin string    `db:"user_id"`
 	UserEmail string    `db:"user_email"`
 	OrgID     string    `db:"org_id"`
-	OrgName   string    `db:"org_name"`
+	OrgLogin  string    `db:"org_name"`
 	SentAt    time.Time `db:"sent_at"`
 }
 
 func (r *dbUserInvite) toUserInvite() *sourcegraph.UserInvite {
 	r2 := &sourcegraph.UserInvite{
 		URI:       r.URI,
-		UserID:    r.UserID,
-		OrgName:   r.OrgName,
+		UserLogin: r.UserLogin,
+		OrgLogin:  r.OrgLogin,
 		UserEmail: r.UserEmail,
 		OrgID:     r.OrgID,
 	}
@@ -51,8 +51,8 @@ func (r *dbUserInvite) toUserInvite() *sourcegraph.UserInvite {
 
 func (r *dbUserInvite) fromUserInvite(r2 *sourcegraph.UserInvite) {
 	r.URI = r2.URI
-	r.OrgName = r2.OrgName
-	r.UserID = r2.UserID
+	r.OrgLogin = r2.OrgLogin
+	r.UserLogin = r2.UserLogin
 	r.OrgID = r2.OrgID
 	r.UserEmail = r2.UserEmail
 	if r2.SentAt != nil {
@@ -79,8 +79,8 @@ type UserInviteListOp struct {
 	// URIs filters the list of invites to the unique identifer of the invite
 	URIs []string
 
-	// UserID filters the list of invites sent to the UserID
-	UserID string
+	// UserLogin filters the list of invites sent to the UserLogin
+	UserLogin string
 
 	// OrgID filters the list of invites by the organization the invite was sent to
 	OrgID string
@@ -88,8 +88,8 @@ type UserInviteListOp struct {
 	// UserEmail filters the list of invites by the email address the invite was sent to
 	UserEmail string
 
-	// OrgName filters the list of invites by the organization name the invite was sent to
-	OrgName string
+	// OrgLogin filters the list of invites by the organization name the invite was sent to
+	OrgLogin string
 
 	sourcegraph.ListOptions
 }
@@ -187,8 +187,8 @@ func userInvitesListSQL(opt *UserInviteListOp) (string, []interface{}, error) {
 			uriQuery = strings.ToLower(uriQuery)
 			conds = append(conds, "lower(uri) LIKE "+arg("/"+uriQuery+"%")+" OR lower(uri) LIKE "+arg(uriQuery+"%/%")+" OR lower(name) LIKE "+arg(uriQuery+"%")+" OR lower(uri) = "+arg(uriQuery))
 		}
-		if opt.UserID != "" {
-			conds = append(conds, `lower(user_id)=`+arg(strings.ToLower(opt.UserID)))
+		if opt.UserLogin != "" {
+			conds = append(conds, `lower(user_id)=`+arg(strings.ToLower(opt.UserLogin)))
 		}
 		if opt.UserEmail != "" {
 			conds = append(conds, `lower(user_email)=`+arg(strings.ToLower(opt.UserEmail)))
@@ -196,8 +196,8 @@ func userInvitesListSQL(opt *UserInviteListOp) (string, []interface{}, error) {
 		if opt.OrgID != "" {
 			conds = append(conds, `lower(org_id)=`+arg(strings.ToLower(opt.OrgID)))
 		}
-		if opt.OrgName != "" {
-			conds = append(conds, `lower(org_name)=`+arg(strings.ToLower(opt.OrgName)))
+		if opt.OrgLogin != "" {
+			conds = append(conds, `lower(org_name)=`+arg(strings.ToLower(opt.OrgLogin)))
 		}
 
 		if conds != nil {
@@ -263,8 +263,8 @@ func (s *userInvites) RemindInvite(ctx context.Context, op *sourcegraph.UserInvi
 	if op.URI != "" {
 		updates = append(updates, `"uri"=`+arg(op.URI))
 	}
-	if op.UserID != "" {
-		updates = append(updates, `"user_id"=`+arg(op.UserID))
+	if op.UserLogin != "" {
+		updates = append(updates, `"user_id"=`+arg(op.UserLogin))
 	}
 	if op.OrgID != "" {
 		updates = append(updates, `"org_id"=`+arg(op.OrgID))

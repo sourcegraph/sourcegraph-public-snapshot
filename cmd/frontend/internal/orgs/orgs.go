@@ -220,13 +220,13 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	}
 
 	// Confirm inviting usre is a member of the GitHub organization
-	err := validateMembership(ctx, opt.OrgName, user.Login)
+	err := validateMembership(ctx, opt.OrgLogin, user.Login)
 	if err != nil {
 		return sourcegraph.InviteError, err
 	}
 
 	// Confirm invited user is a member of the GitHub organization
-	err = validateMembership(ctx, opt.OrgName, opt.UserID)
+	err = validateMembership(ctx, opt.OrgLogin, opt.UserLogin)
 	if err != nil {
 		return sourcegraph.InviteError, err
 	}
@@ -234,7 +234,7 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	// If email not provided by frontend, look up this user to see if we can get it
 	if opt.UserEmail == "" {
 		client := extgithub.Client(ctx)
-		invitee, _, err := client.Users.Get(opt.UserID)
+		invitee, _, err := client.Users.Get(opt.UserLogin)
 		if err != nil {
 			return sourcegraph.InviteError, err
 		}
@@ -244,8 +244,8 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	}
 
 	if opt.UserEmail != "" && user != nil {
-		_, err := sendEmail("invite-user", opt.UserID, opt.UserEmail, user.Login+" invited you to join "+opt.OrgName+" on Sourcegraph", nil,
-			[]gochimp.Var{gochimp.Var{Name: "INVITE_USER", Content: "sourcegraph.com/settings"}, {Name: "FROM_AVATAR", Content: user.AvatarURL}, {Name: "ORG", Content: opt.OrgName}, {Name: "FNAME", Content: user.Login}, {Name: "INVITE_LINK", Content: "https://sourcegraph.com?_event=EmailInviteClicked&_invited_by_user=" + user.Login + "&_org_invite=" + opt.OrgName}})
+		_, err := sendEmail("invite-user", opt.UserLogin, opt.UserEmail, user.Login+" invited you to join "+opt.OrgLogin+" on Sourcegraph", nil,
+			[]gochimp.Var{gochimp.Var{Name: "INVITE_USER", Content: "sourcegraph.com/settings"}, {Name: "FROM_AVATAR", Content: user.AvatarURL}, {Name: "ORG", Content: opt.OrgLogin}, {Name: "FNAME", Content: user.Login}, {Name: "INVITE_LINK", Content: "https://sourcegraph.com?_event=EmailInviteClicked&_invited_by_user=" + user.Login + "&_org_invite=" + opt.OrgLogin}})
 		if err != nil {
 			return sourcegraph.InviteError, fmt.Errorf("Error sending email: %s", err)
 		}
@@ -255,11 +255,11 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 
 	ts := time.Now()
 	err = store.UserInvites.Create(ctx, &sourcegraph.UserInvite{
-		URI:       opt.UserID + opt.OrgID,
-		UserID:    opt.UserID,
+		URI:       opt.UserLogin + opt.OrgID,
+		UserLogin: opt.UserLogin,
 		UserEmail: opt.UserEmail,
 		OrgID:     opt.OrgID,
-		OrgName:   opt.OrgName,
+		OrgLogin:  opt.OrgLogin,
 		SentAt:    &ts,
 	})
 	if err != nil {

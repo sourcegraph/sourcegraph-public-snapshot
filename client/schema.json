@@ -1410,7 +1410,7 @@
 						"deprecationReason": null
 					},
 					{
-						"name": "orgId",
+						"name": "orgGithubId",
 						"description": null,
 						"args": [],
 						"type": {
@@ -1731,7 +1731,7 @@
 								"defaultValue": null
 							},
 							{
-								"name": "orgId",
+								"name": "orgGithubId",
 								"description": null,
 								"type": {
 									"kind": "NON_NULL",
@@ -1847,7 +1847,7 @@
 						"deprecationReason": null
 					},
 					{
-						"name": "id",
+						"name": "githubId",
 						"description": null,
 						"args": [],
 						"type": {
@@ -1994,7 +1994,7 @@
 						"deprecationReason": null
 					},
 					{
-						"name": "id",
+						"name": "githubId",
 						"description": null,
 						"args": [],
 						"type": {

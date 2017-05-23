@@ -16,7 +16,7 @@ func (o *organizationResolver) Login() string {
 	return o.organization.Login
 }
 
-func (o *organizationResolver) ID() int32 {
+func (o *organizationResolver) GithubID() int32 {
 	return int32(o.organization.ID)
 }
 
@@ -67,7 +67,7 @@ func (m *organizationMemberResolver) Login() string {
 	return m.member.Login
 }
 
-func (m *organizationMemberResolver) ID() int32 {
+func (m *organizationMemberResolver) GithubID() int32 {
 	return int32(m.member.ID)
 }
 
@@ -99,7 +99,7 @@ func (m *organizationMemberResolver) Invite() *inviteResolver {
 }
 
 func (i *inviteResolver) UserLogin() string {
-	return i.invite.UserID
+	return i.invite.UserLogin
 }
 
 func (i *inviteResolver) UserEmail() string {
@@ -107,10 +107,10 @@ func (i *inviteResolver) UserEmail() string {
 }
 
 func (i *inviteResolver) OrgLogin() string {
-	return i.invite.OrgName
+	return i.invite.OrgLogin
 }
 
-func (i *inviteResolver) OrgID() (int32, error) {
+func (i *inviteResolver) OrgGithubID() (int32, error) {
 	v, err := strconv.Atoi(i.invite.OrgID)
 	if err != nil {
 		return int32(v), nil
@@ -127,15 +127,15 @@ func (i *inviteResolver) URI() string {
 }
 
 func (*schemaResolver) InviteOrgMemberToSourcegraph(ctx context.Context, args *struct {
-	OrgLogin  string
-	OrgID     int32
-	UserLogin string
-	UserEmail string
+	OrgLogin    string
+	OrgGithubID int32
+	UserLogin   string
+	UserEmail   string
 }) (bool, error) {
 	res, err := orgs.InviteUser(ctx, &sourcegraph.UserInvite{
-		OrgName:   args.OrgLogin,
-		OrgID:     strconv.Itoa(int(args.OrgID)),
-		UserID:    args.UserLogin,
+		OrgLogin:  args.OrgLogin,
+		OrgID:     strconv.Itoa(int(args.OrgGithubID)),
+		UserLogin: args.UserLogin,
 		UserEmail: args.UserEmail,
 	})
 	if err != nil {

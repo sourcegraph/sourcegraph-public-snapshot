@@ -528,12 +528,13 @@ type OrgMember struct {
 
 // UserInvite holds the result of an invite for Orgs.InviteUser
 type UserInvite struct {
-	UserID    string     `json:"UserID,omitempty"`
-	UserEmail string     `json:"UserEmail,omitempty"`
-	OrgID     string     `json:"OrgID,omitempty"`
-	OrgName   string     `json:"OrgName,omitempty"`
-	SentAt    *time.Time `json:"SentAt,omitempty"`
-	URI       string     `json:"URI,omitempty"`
+	UserLogin string `json:"UserID,omitempty"`
+	UserEmail string `json:"UserEmail,omitempty"`
+	// OrgID is a string representation of the organiztion's unique GitHub ID (e.g., for Sourcegraph: "3979584")
+	OrgID    string     `json:"OrgID,omitempty"`
+	OrgLogin string     `json:"OrgName,omitempty"`
+	SentAt   *time.Time `json:"SentAt,omitempty"`
+	URI      string     `json:"URI,omitempty"`
 }
 type UserInviteResponse int
 

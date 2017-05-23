@@ -184,7 +184,7 @@ declare namespace GQL {
 		__typename: string;
 		userLogin: string;
 		userEmail: string;
-		orgId: number;
+		orgGithubId: number;
 		orgLogin: string;
 		sentAt: number;
 		URI: string;
@@ -232,7 +232,7 @@ declare namespace GQL {
 	interface IOrganization {
 		__typename: string;
 		login: string;
-		id: number;
+		githubId: number;
 		email: string;
 		name: string;
 		avatarURL: string;
@@ -247,7 +247,7 @@ declare namespace GQL {
 	interface IOrganizationMember {
 		__typename: string;
 		login: string;
-		id: number;
+		githubId: number;
 		email: string;
 		avatarURL: string;
 		isSourcegraphUser: boolean;

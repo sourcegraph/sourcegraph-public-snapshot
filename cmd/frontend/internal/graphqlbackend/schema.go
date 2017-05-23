@@ -205,7 +205,7 @@ type Hunk {
 
 type Organization {
 	login: String!
-	id: Int!
+	githubId: Int!
 	email: String!
 	name: String!
 	avatarURL: String!
@@ -216,7 +216,7 @@ type Organization {
 
 type OrganizationMember {
 	login: String!
-	id: Int!
+	githubId: Int!
 	email: String!
 	avatarURL: String!
 	isSourcegraphUser: Boolean!
@@ -227,7 +227,7 @@ type OrganizationMember {
 type Invite {
 	userLogin: String!
 	userEmail: String!
-	orgId: Int!
+	orgGithubId: Int!
 	orgLogin: String!
 	sentAt: Int!
 	URI: String!
@@ -251,7 +251,7 @@ type Mutation {
 	updatePaymentSource(tokenID: String!): Boolean!
 	subscribeOrg(tokenID: String!, GitHubOrg: String!, seats: Int!): Boolean!
 	startOrgTrial(GitHubOrg: String!): Boolean!
-	inviteOrgMemberToSourcegraph(orgLogin: String!, orgId: Int!, userLogin: String!, userEmail: String = ""): Boolean!
+	inviteOrgMemberToSourcegraph(orgLogin: String!, orgGithubId: Int!, userLogin: String!, userEmail: String = ""): Boolean!
 }
 
 type CompanyProfile {
