@@ -483,15 +483,6 @@ type EventList struct {
 	AppURL string `json:"AppURL,omitempty"`
 }
 
-// OrgListOptions holds the options for listing organization details
-type OrgListOptions struct {
-	// ListOptions controls pagination.
-	ListOptions `json:""`
-	OrgName     string `json:"OrgName,omitempty"`
-	Username    string `json:"Username,omitempty"`
-	OrgID       string `json:"OrgID,omitempty"`
-}
-
 // ListMembersOptions holds the options for listing organization members
 type ListMembersOptions struct {
 	// ListOptions controls pagination.
