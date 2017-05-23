@@ -9,9 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func remoteURLToRepoURI(ctx context.Context, remoteURL string) (string, error) {
@@ -43,19 +41,15 @@ func editorBranch(ctx context.Context, repoURI, branchName string) (string, erro
 	}
 	repo, err := backend.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
-		return "", err
+		// We weren't able to fetch the repo. This means it either doesn't
+		// exist (unlikely) or that the user is not logged in (most likely). In
+		// this case, the best user experience is to send them to the branch
+		// they asked for. The front-end will inform them if the branch does
+		// not exist.
+		return "@" + branchName, nil
 	}
 	if branchName == repo.DefaultBranch {
 		return "", nil // default branch, so make a clean URL without a branch.
-	}
-	_, err = backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  branchName,
-	})
-	if err == vcs.ErrRevisionNotFound {
-		// Branch does not exist. The user probably didn't push it to the
-		// remote. Using the default branch is the best hope.
-		return "", nil
 	}
 	return "@" + branchName, nil
 }
