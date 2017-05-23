@@ -184,6 +184,7 @@ declare namespace GQL {
 		__typename: string;
 		userLogin: string;
 		userEmail: string;
+		orgId: number;
 		orgLogin: string;
 		sentAt: number;
 		URI: string;

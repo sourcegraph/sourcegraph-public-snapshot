@@ -227,6 +227,7 @@ type OrganizationMember {
 type Invite {
 	userLogin: String!
 	userEmail: String!
+	orgId: Int!
 	orgLogin: String!
 	sentAt: Int!
 	URI: String!

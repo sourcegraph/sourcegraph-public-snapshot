@@ -46,7 +46,7 @@ type organizationMemberResolver struct {
 
 func (o *organizationResolver) Members(ctx context.Context) ([]*organizationMemberResolver, error) {
 	opts := &sourcegraph.OrgListOptions{
-		OrgID:   o.organization.Login,
+		OrgID:   strconv.Itoa(int(o.organization.ID)),
 		OrgName: o.organization.Login,
 	}
 
@@ -107,7 +107,15 @@ func (i *inviteResolver) UserEmail() string {
 }
 
 func (i *inviteResolver) OrgLogin() string {
-	return i.invite.OrgID
+	return i.invite.OrgName
+}
+
+func (i *inviteResolver) OrgID() (int32, error) {
+	v, err := strconv.Atoi(i.invite.OrgID)
+	if err != nil {
+		return int32(v), nil
+	}
+	return 0, err
 }
 
 func (i *inviteResolver) SentAt() int32 {
