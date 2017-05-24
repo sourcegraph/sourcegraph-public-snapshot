@@ -4,12 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import sun.plugin.dom.exception.InvalidStateException;
 import com.intellij.openapi.editor.LogicalPosition;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Properties;
 
 public class Util {
     public static String VERSION = "v1.0.3";
@@ -50,8 +48,32 @@ public class Util {
         return exec("git rev-parse --abbrev-ref HEAD", repoDir).trim();
     }
 
+    // readProps tries to read the $HOME/sourcegraph-jetbrains.properties file.
+    private static Properties readProps() {
+        Properties props = new Properties();
+        InputStream input = null;
+
+        String path = System.getProperty("user.home") + File.separator + "sourcegraph-jetbrains.properties";
+        try{
+            input = new FileInputStream(path);
+            props.load(input);
+        } catch (IOException e) {
+            // no-op
+        } finally {
+            if (input != null) {
+                try{
+                    input.close();
+                } catch (IOException e) {
+                    // no-op
+                }
+            }
+        }
+        return props;
+    }
+
     public static String sourcegraphURL() {
-        String url = "https://sourcegraph.com"; // TODO: Make this user configurable!
+        Properties props = readProps();
+        String url = props.getProperty("url", "https://sourcegraph.com");
         if (!url.endsWith("/")) {
             return url + "/";
         }
