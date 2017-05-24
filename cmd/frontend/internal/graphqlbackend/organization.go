@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/sourcegraph/go-github/github"
 
@@ -43,13 +42,8 @@ func (o *organizationResolver) Collaborators() int32 {
 }
 
 func (o *organizationResolver) Members(ctx context.Context) ([]*organizationMemberResolver, error) {
-	opts := &sourcegraph.ListMembersOptions{
-		OrgID:   strconv.Itoa(int(o.organization.ID)),
-		OrgName: o.organization.Login,
-	}
-
 	// TODO(Dan): this method currently only returns a single page of results
-	membersList, err := ListOrgMembersForInvites(ctx, opts)
+	membersList, err := ListOrgMembersForInvites(ctx, o.organization.Login, int(o.organization.ID), &sourcegraph.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

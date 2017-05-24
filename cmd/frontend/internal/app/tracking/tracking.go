@@ -95,7 +95,7 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 	orgMembersErrCounter := 0
 	owd := make(map[string]([]*github.User))
 	for _, org := range orgList.Orgs {
-		members, err := graphqlbackend.ListAllOrgMembers(tempCtx, &sourcegraph.ListMembersOptions{OrgName: org.Login})
+		members, err := graphqlbackend.ListAllOrgMembers(tempCtx, org.Login, &sourcegraph.ListOptions{})
 		if err != nil {
 			// ListAllOrgMembers may return partial results
 			// Don't give up unless maxOrgMemberErrors errors are caught

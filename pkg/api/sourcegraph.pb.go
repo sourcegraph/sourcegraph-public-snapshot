@@ -483,15 +483,6 @@ type EventList struct {
 	AppURL string `json:"AppURL,omitempty"`
 }
 
-// ListMembersOptions holds the options for listing organization members
-type ListMembersOptions struct {
-	// ListOptions controls pagination.
-	ListOptions `json:""`
-	OrgName     string `json:"OrgName,omitempty"`
-	Username    string `json:"Username,omitempty"`
-	OrgID       string `json:"OrgID,omitempty"`
-}
-
 // OrgsList is a list of GitHub organizations for a given user
 type OrgsList struct {
 	Orgs []*Org `json:"Orgs,omitempty"`

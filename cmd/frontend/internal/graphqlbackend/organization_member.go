@@ -49,20 +49,20 @@ func (m *organizationMemberResolver) Invite() *inviteResolver {
 }
 
 // listOrgMembersPage returns a single page of an organization's members
-func listOrgMembersPage(ctx context.Context, org *sourcegraph.ListMembersOptions) (res []*github.User, err error) {
+func listOrgMembersPage(ctx context.Context, orgLogin string, opt *sourcegraph.ListOptions) (res []*github.User, err error) {
 	if !extgithub.HasAuthedUser(ctx) {
 		return []*github.User{}, nil
 	}
 	client := extgithub.Client(ctx)
 
-	opts := &github.ListMembersOptions{
+	optGh := &github.ListMembersOptions{
 		ListOptions: github.ListOptions{
-			Page:    int(org.Page),
-			PerPage: int(org.PerPage),
+			Page:    int(opt.Page),
+			PerPage: int(opt.PerPage),
 		},
 	}
 	// Fetch members of the organization.
-	members, _, err := client.Organizations.ListMembers(org.OrgName, opts)
+	members, _, err := client.Organizations.ListMembers(orgLogin, optGh)
 	if err != nil {
 		return nil, err
 	}
@@ -74,17 +74,17 @@ func listOrgMembersPage(ctx context.Context, org *sourcegraph.ListMembersOptions
 // a list of all of the specified org's GitHub members
 //
 // This method may return an error and a partial list of organization members
-func ListAllOrgMembers(ctx context.Context, op *sourcegraph.ListMembersOptions) (res []*github.User, err error) {
+func ListAllOrgMembers(ctx context.Context, orgLogin string, opt *sourcegraph.ListOptions) (res []*github.User, err error) {
 	// Get a maximum of 1,000 members per org
 	const perPage = 100
 	const maxPage = 10
-	opts := *op
+	opts := *opt
 	opts.PerPage = perPage
 
 	var allMembers []*github.User
 	for page := 1; page <= maxPage; page++ {
 		opts.Page = int32(page)
-		members, err := listOrgMembersPage(ctx, &opts)
+		members, err := listOrgMembersPage(ctx, orgLogin, &opts)
 		if err != nil {
 			// If an error occurs, return that error, as well as a list of all members
 			// collected so far
@@ -100,12 +100,12 @@ func ListAllOrgMembers(ctx context.Context, op *sourcegraph.ListMembersOptions) 
 
 // ListOrgMembersForInvites returns a list of org members with context required to invite them to Sourcegraph
 // TODO: make this function capable of returning more than a single page of org members
-func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.ListMembersOptions) (res *sourcegraph.OrgMembersList, err error) {
+func ListOrgMembersForInvites(ctx context.Context, orgLogin string, orgID int, opt *sourcegraph.ListOptions) (res *sourcegraph.OrgMembersList, err error) {
 	if !extgithub.HasAuthedUser(ctx) {
 		return &sourcegraph.OrgMembersList{}, nil
 	}
 
-	members, err := listOrgMembersPage(ctx, org)
+	members, err := listOrgMembersPage(ctx, orgLogin, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.ListMembersO
 			orgMember.CanInvite = false
 			orgMember.Email = rUser.Email
 		} else {
-			orgInvite, _ := store.UserInvites.GetByURI(ctx, *member.Login+org.OrgID)
+			orgInvite, _ := store.UserInvites.GetByURI(ctx, *member.Login+strconv.Itoa(orgID))
 
 			if orgInvite == nil || time.Now().Unix()-orgInvite.SentAt.Unix() > 259200 {
 				orgMember.CanInvite = true
