@@ -223,7 +223,11 @@ func Main() error {
 			// headers for security
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 			w.Header().Set("X-XSS-Protection", "1; mode=block")
-			w.Header().Set("X-Frame-Options", "DENY")
+			// Open up X-Frame-Options for the chrome extension when running on github.com
+			url, _ := url.Parse(r.Referer())
+			if !(url != nil && url.Scheme == "https" && url.Host == "github.com") {
+				w.Header().Set("X-Frame-Options", "DENY")
+			}
 			if v, _ := strconv.ParseBool(enableHSTS); v {
 				w.Header().Set("Strict-Transport-Security", "max-age=8640000")
 			}
