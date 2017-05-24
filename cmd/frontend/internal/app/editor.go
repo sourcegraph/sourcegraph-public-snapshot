@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http"
 	"net/url"
 	"path"
@@ -93,7 +94,11 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// Open-file request.
 	repoURI, err := remoteURLToRepoURI(r.Context(), remoteURL)
 	if err != nil {
-		return err
+		// Any error here is a problem with the user's configured git remote
+		// URL. We want them to actually read this error message.
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, html.EscapeString(err.Error()))
+		return nil
 	}
 	branch, err = editorBranch(r.Context(), repoURI, branch)
 	if err != nil {
