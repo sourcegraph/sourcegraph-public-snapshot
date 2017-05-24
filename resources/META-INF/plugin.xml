@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.sourcegraph.jetbrains</id>
   <name>Sourcegraph</name>
-  <version>1.0.3</version>
+  <version>1.1.0</version>
   <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
   <description><![CDATA[
@@ -10,6 +10,11 @@
 
   <change-notes><![CDATA[
     <ul>
+      <li>v1.1.0 - Configurable Sourcegraph URL
+        <ul>
+          <li>Added support for using the plugin with on-premises Sourcegraph instances.</li>
+        </ul>
+      </li>
       <li>v1.0.0 - Initial Release
         <ul>
           <li>Basic Open File & Search functionality.</li>

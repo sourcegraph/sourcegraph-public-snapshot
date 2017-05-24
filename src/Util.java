@@ -10,7 +10,7 @@ import java.net.URL;
 import java.util.Properties;
 
 public class Util {
-    public static String VERSION = "v1.0.3";
+    public static String VERSION = "v1.1.0";
 
     // gitRemotes returns the names of all git remotes, e.g. ["origin", "foobar"]
     public static String[] gitRemotes(String repoDir) throws IOException {

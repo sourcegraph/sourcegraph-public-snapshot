@@ -37,6 +37,15 @@ Keyboard Shortcuts:
 | Search selection in Sourcegraph | <kbd>Option+S</kbd> | <kbd>Alt+S</kbd> |
 
 
+## Settings
+
+The plugin is configurable by creating a `sourcegraph-jetbrains.properties` in your home directory. For example, modify the following URL to match your on-premises Sourcegraph instance URL:
+
+```
+url = https://sourcegraph.com
+```
+
+
 ## Questions & Feedback
 
 Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issues/new
@@ -57,11 +66,12 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
   1. Update `plugin.xml` (change version AND describe changes in change notes).
   2. Update `Util.java` (change `VERSION` constant).
   3. Update `README.md` (copy changelog from plugin.xml).
-  5. `git commit -m "all: release v<THE VERSION>`" and `git push` and `git tag v<THE VERSION>` and `git push --tags`
-  6. choose `Build` -> `Prepare Plugin Module 'sourcegraph' For Deployment`
+  5. choose `Build` -> `Prepare Plugin Module 'sourcegraph' For Deployment`
+  6. `git commit -m "all: release v<THE VERSION>"` and `git push` and `git tag v<THE VERSION>` and `git push --tags`
   7. Publish according to http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/publishing_plugin.html (note: it takes ~2 business days for JetBrains support team to review the plugin).
 
 
 ## Version History
 
+- v1.1.0 - Added support for using the plugin with on-premises Sourcegraph instances.
 - v1.0.0 - Initial Release; basic Open File & Search functionality.
