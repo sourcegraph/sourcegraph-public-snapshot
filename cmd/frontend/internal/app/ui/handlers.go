@@ -62,7 +62,7 @@ func init() {
 	router.Get(routeRepoLanding).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoLanding)))
 	router.Get(routeTree).Handler(traceutil.TraceRoute(handler(serveTree)))
 	router.Get(routeAboutSubdomain).Handler(traceutil.TraceRoute(http.HandlerFunc(redirectAboutSubdomain)))
-	router.Get(routeHomePage).Handler(traceutil.TraceRoute(errorutil.Handler(serveAny)))
+	router.Get(routeHomePage).Handler(traceutil.TraceRoute(errorutil.Handler(serveHome)))
 	router.PathPrefix("/").Methods("GET").Handler(traceutil.TraceRouteFallback("app.serve-any", errorutil.Handler(serveAny)))
 	router.NotFoundHandler = traceutil.TraceRouteFallback("app.serve-any-404", errorutil.Handler(serveAny))
 }
@@ -228,9 +228,8 @@ func redirectAboutSubdomain(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, aboutBaseURL()+path, http.StatusTemporaryRedirect)
 }
 
-// serveAny is the fallback/catch-all route. It preloads nothing and
-// returns a page that will merely bootstrap the JavaScript app.
-func serveAny(w http.ResponseWriter, r *http.Request) error {
+// serveHome served the home page at "/"
+func serveHome(w http.ResponseWriter, r *http.Request) error {
 	if !envvar.DeploymentOnPrem() && !actor.FromContext(r.Context()).IsAuthenticated() {
 		// The user is not signed in and we are not on-prem so we are going to redirect to about.sourcegraph.com.
 		u, err := url.Parse(aboutBaseURL())
@@ -247,6 +246,12 @@ func serveAny(w http.ResponseWriter, r *http.Request) error {
 		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
 		return nil
 	}
+	return serveAny(w, r)
+}
+
+// serveAny is the fallback/catch-all route. It preloads nothing and
+// returns a page that will merely bootstrap the JavaScript app.
+func serveAny(w http.ResponseWriter, r *http.Request) error {
 	return tmplExec(w, r, http.StatusOK, meta{Index: true, Follow: true})
 }
 
