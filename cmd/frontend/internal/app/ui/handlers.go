@@ -62,6 +62,7 @@ func init() {
 	router.Get(routeRepoLanding).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoLanding)))
 	router.Get(routeTree).Handler(traceutil.TraceRoute(handler(serveTree)))
 	router.Get(routeAboutSubdomain).Handler(traceutil.TraceRoute(http.HandlerFunc(redirectAboutSubdomain)))
+	router.Get(routeAppPaths).Handler(traceutil.TraceRoute(errorutil.Handler(serveAny)))
 	router.Get(routeHomePage).Handler(traceutil.TraceRoute(errorutil.Handler(serveHome)))
 	router.PathPrefix("/").Methods("GET").Handler(traceutil.TraceRouteFallback("app.serve-any", errorutil.Handler(serveAny)))
 	router.NotFoundHandler = traceutil.TraceRouteFallback("app.serve-any-404", errorutil.Handler(serveAny))

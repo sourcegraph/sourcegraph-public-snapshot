@@ -21,6 +21,7 @@ const (
 	routeJobs           = "page.jobs"
 	routeHomePage       = "page.home"
 	routeAboutSubdomain = "about.sourcegraph.com" // top level redirects to about.sourcegraph.com
+	routeAppPaths       = "app.paths"             // paths that are handled by our javascript app and should not 404
 
 	routeDefRedirectToDefLanding     = "page.def.redirect"
 	routeDefInfoRedirectToDefLanding = "page.def.info.redirect"
@@ -62,10 +63,17 @@ func newRouter() *mux.Router {
 		"tools/browser",
 		"zap/beta",
 	}
+
+	// Top level paths served by the app.
+	// This is just so we don't return a 404 status.
+	appPaths := []string{
+		"login",
+	}
 	m.Path("/sitemap").Methods("GET").Name(routeLangsIndex)
 	m.Path("/sitemap/{Lang:.*}").Methods("GET").Name(routeReposIndex)
 	m.Path("/{Path:(?:jobs|careers)}").Methods("GET").Name(routeJobs)
 	m.Path("/{Path:(?:" + strings.Join(aboutPaths, "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
+	m.Path("/{Path:(?:" + strings.Join(appPaths, "|") + ")}").Methods("GET").Name(routeAppPaths)
 	m.Path("/").Methods("GET").Name(routeHomePage)
 
 	// Repo
