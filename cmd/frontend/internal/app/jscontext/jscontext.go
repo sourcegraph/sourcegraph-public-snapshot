@@ -4,15 +4,14 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"log"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/stripe"
@@ -24,7 +23,6 @@ import (
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
-var authEnabledEnvVar = env.Get("AUTH_ENABLED", "true", "require login for users to view repositories")
 var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
 
 // TrackingAppID is used by the Telligent data pipeline
@@ -47,7 +45,7 @@ type JSContext struct {
 	SentryDSN           string                     `json:"sentryDSN"`
 	IntercomHash        string                     `json:"intercomHash"`
 	TrackingAppID       string                     `json:"trackingAppID"`
-	AuthEnabled         bool                       `json:"authEnabled"`
+	OnPrem              bool                       `json:"onPrem"`
 	RepoHomeRegexFilter string                     `json:"repoHomeRegexFilter"`
 	StripePublicKey     string                     `json:"stripePublicKey"`
 }
@@ -88,12 +86,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		}
 	}
 
-	var authEnabled, err = strconv.ParseBool(authEnabledEnvVar)
-	if err != nil {
-		log.Fatal(err)
-		authEnabled = true
-	}
-
 	return JSContext{
 		AppRoot:           "/main",
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
@@ -110,7 +102,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		GitHubToken:         gitHubToken,
 		SentryDSN:           sentryDSNFrontend,
 		IntercomHash:        intercomHMAC(actor.UID),
-		AuthEnabled:         authEnabled,
+		OnPrem:              envvar.DeploymentOnPrem(),
 		TrackingAppID:       TrackingAppID,
 		RepoHomeRegexFilter: repoHomeRegexFilter,
 		StripePublicKey:     stripe.StripePublicKey,

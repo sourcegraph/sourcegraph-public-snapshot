@@ -3,7 +3,7 @@ services:
   frontend:
     image: "docker.sourcegraph.com/frontend:local"
     environment:
-      AUTH_ENABLED: "false"
+      ON_PREM: "true"
       NO_GITHUB_API: "true"
       GITHUB_BASE_URL: http://github-proxy:3180
       LSP_PROXY: lsp-proxy:4388
@@ -100,7 +100,7 @@ services:
     environment:
       GIT_PARENT_DIRECTORY: /local
       ENSURE_REPOS_REMOTE: ${ENSURE_REPOS_REMOTE}
-      AUTH_ENABLED: "false"
+      ON_PREM: "true"
       GITHUB_BASE_URL: http://github-proxy:3180
       LSP_PROXY: lsp-proxy:4388
       PGHOST: postgres
