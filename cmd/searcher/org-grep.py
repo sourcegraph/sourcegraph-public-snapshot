@@ -47,10 +47,10 @@ graphql = {
     'query': '''
 query SearchText(
     $pattern: String!,
-    $maxResults: Int!,
+    $fileMatchLimit: Int!,
     $isRegExp: Boolean!,
     $isWordMatch: Boolean!,
-    $repositories: [String!]!,
+    $repositories: [RepositoryRevision!]!,
     $isCaseSensitive: Boolean!,
 ) {
     root {
@@ -59,7 +59,7 @@ query SearchText(
             query: {
                 pattern: $pattern,
                 isRegExp: $isRegExp,
-                maxResults: $maxResults,
+                fileMatchLimit: $fileMatchLimit,
                 isWordMatch: $isWordMatch,
                 isCaseSensitive: $isCaseSensitive,
         }) {
@@ -77,11 +77,11 @@ query SearchText(
     '''.strip(),
      'variables': {
 	 'pattern': args.pattern,
-	 'repositories': repos,
+	 'repositories': [{'repo': repo} for repo in repos],
 	 'isCaseSensitive': not args.ignore_case,
 	 'isRegExp': args.regexp,
 	 'isWordMatch': args.word_regexp,
-	 'maxResults': 1000,
+	 'fileMatchLimit': 1000,
 }}
 
 r = requests.post(domain + '/.api/graphql', json=graphql)

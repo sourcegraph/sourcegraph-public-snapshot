@@ -2895,8 +2895,8 @@
 											"kind": "NON_NULL",
 											"name": null,
 											"ofType": {
-												"kind": "SCALAR",
-												"name": "String",
+												"kind": "INPUT_OBJECT",
+												"name": "RepositoryRevision",
 												"ofType": null
 											}
 										}
@@ -2926,6 +2926,41 @@
 						"ofType": null
 					}
 				],
+				"enumValues": null,
+				"possibleTypes": null
+			},
+			{
+				"kind": "INPUT_OBJECT",
+				"name": "RepositoryRevision",
+				"description": null,
+				"fields": null,
+				"inputFields": [
+					{
+						"name": "repo",
+						"description": null,
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"defaultValue": null
+					},
+					{
+						"name": "rev",
+						"description": null,
+						"type": {
+							"kind": "SCALAR",
+							"name": "String",
+							"ofType": null
+						},
+						"defaultValue": null
+					}
+				],
+				"interfaces": null,
 				"enumValues": null,
 				"possibleTypes": null
 			},

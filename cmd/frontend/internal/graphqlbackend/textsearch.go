@@ -175,7 +175,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	return r.Matches, r.LimitHit, nil
 }
 
-func searchRepo(ctx context.Context, repoName string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return nil, false, err
@@ -184,6 +184,7 @@ func searchRepo(ctx context.Context, repoName string, info *patternInfo) (matche
 	// the user has permissions to access the repository.
 	commit, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
+		Rev:  rev,
 	})
 	if err != nil {
 		return nil, false, err
@@ -193,7 +194,14 @@ func searchRepo(ctx context.Context, repoName string, info *patternInfo) (matche
 
 type repoSearchArgs struct {
 	Query        *patternInfo
-	Repositories []string
+	Repositories []*repositoryRevision
+}
+
+// repositoryRevision specifies a repository at an (optional) revision. If no revision is
+// specified, then the repository's default branch is used.
+type repositoryRevision struct {
+	Repo string
+	Rev  *string
 }
 
 // SearchRepos searches a set of repos for a pattern.
@@ -207,19 +215,23 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		flattened []*fileMatch
 		limitHit  bool
 	)
-	for _, repo := range args.Repositories {
+	for _, repoRev := range args.Repositories {
 		wg.Add(1)
-		go func(repo string) {
+		go func(repoRev repositoryRevision) {
 			defer wg.Done()
-			matches, repoLimitHit, searchErr := searchRepo(ctx, repo, args.Query)
+			var rev string
+			if repoRev.Rev != nil {
+				rev = *repoRev.Rev
+			}
+			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.Repo, rev, args.Query)
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit = limitHit || repoLimitHit
 			if err, ok := searchErr.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-				searchErr = fmt.Errorf("%s is cloning, please try again soon.", repo)
+				searchErr = fmt.Errorf("%s is cloning, please try again soon.", repoRev.Repo)
 			}
 			if err, ok := searchErr.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
-				searchErr = fmt.Errorf("%s does not exist.", repo)
+				searchErr = fmt.Errorf("%s does not exist.", repoRev.Repo)
 			}
 			if searchErr != nil && err == nil {
 				err = searchErr
@@ -228,7 +240,7 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			if len(matches) > 0 {
 				flattened = append(flattened, matches...)
 			}
-		}(repo)
+		}(*repoRev)
 	}
 	wg.Wait()
 	if err != nil {

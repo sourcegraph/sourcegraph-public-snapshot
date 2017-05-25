@@ -356,6 +356,14 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IRepositoryRevision {
+		repo: string;
+		rev?: string;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IRevState {
 		__typename: string;
 		commit: ICommit | null;
