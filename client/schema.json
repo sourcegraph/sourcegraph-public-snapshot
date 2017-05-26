@@ -2895,8 +2895,8 @@
 											"kind": "NON_NULL",
 											"name": null,
 											"ofType": {
-												"kind": "INPUT_OBJECT",
-												"name": "RepositoryRevision",
+												"kind": "SCALAR",
+												"name": "String",
 												"ofType": null
 											}
 										}
@@ -3241,8 +3241,8 @@
 											"kind": "NON_NULL",
 											"name": null,
 											"ofType": {
-												"kind": "SCALAR",
-												"name": "String",
+												"kind": "INPUT_OBJECT",
+												"name": "RepositoryRevision",
 												"ofType": null
 											}
 										}
