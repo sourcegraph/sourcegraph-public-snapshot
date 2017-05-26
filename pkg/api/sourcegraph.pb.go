@@ -483,15 +483,6 @@ type EventList struct {
 	AppURL string `json:"AppURL,omitempty"`
 }
 
-// OrgListOptions holds the options for listing organization details
-type OrgListOptions struct {
-	OrgName  string `json:"OrgName,omitempty"`
-	Username string `json:"Username,omitempty"`
-	OrgID    string `json:"OrgID,omitempty"`
-	// ListOptions controls pagination.
-	ListOptions `json:""`
-}
-
 // OrgsList is a list of GitHub organizations for a given user
 type OrgsList struct {
 	Orgs []*Org `json:"Orgs,omitempty"`
@@ -499,14 +490,15 @@ type OrgsList struct {
 
 // Org holds the result of an org for Orgs.ListOrgs
 type Org struct {
-	Login       string `json:"Login"`
-	ID          int32  `json:"ID"`
-	AvatarURL   string `json:"AvatarURL,omitempty"`
-	Name        string `json:"Name,omitempty"`
-	Blog        string `json:"Blog,omitempty"`
-	Location    string `json:"Location,omitempty"`
-	Email       string `json:"Email,omitempty"`
-	Description string `json:"Description,omitempty"`
+	Login         string `json:"Login"`
+	ID            int32  `json:"ID"`
+	AvatarURL     string `json:"AvatarURL,omitempty"`
+	Name          string `json:"Name,omitempty"`
+	Blog          string `json:"Blog,omitempty"`
+	Location      string `json:"Location,omitempty"`
+	Email         string `json:"Email,omitempty"`
+	Description   string `json:"Description,omitempty"`
+	Collaborators int32  `json:"Collaborators,omitempty"`
 }
 
 // OrgMembersList is a list of GitHub organization members for an organization
@@ -527,15 +519,18 @@ type OrgMember struct {
 
 // UserInvite holds the result of an invite for Orgs.InviteUser
 type UserInvite struct {
-	UserID    string     `json:"UserID,omitempty"`
-	UserEmail string     `json:"UserEmail,omitempty"`
-	OrgID     string     `json:"OrgID,omitempty"`
-	OrgName   string     `json:"OrgName,omitempty"`
-	SentAt    *time.Time `json:"SentAt,omitempty"`
-	URI       string     `json:"URI,omitempty"`
+	UserLogin string `json:"UserID,omitempty"`
+	UserEmail string `json:"UserEmail,omitempty"`
+	// OrgID is a string representation of the organiztion's unique GitHub ID (e.g., for Sourcegraph: "3979584")
+	OrgID    string     `json:"OrgID,omitempty"`
+	OrgLogin string     `json:"OrgName,omitempty"`
+	SentAt   *time.Time `json:"SentAt,omitempty"`
+	URI      string     `json:"URI,omitempty"`
 }
+type UserInviteResponse int
 
-type UserInviteResponse struct {
-	OrgName string `json:"OrgName,omitempty"`
-	OrgID   string `json:"OrgID,omitempty"`
-}
+const (
+	InviteSuccess UserInviteResponse = iota
+	InviteMissingEmail
+	InviteError
+)

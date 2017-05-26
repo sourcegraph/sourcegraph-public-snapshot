@@ -6,14 +6,13 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/stripe"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 type Plan interface {
 	Name() string
 	Seats() *int32
-	Organization(ctx context.Context) (*orgResolver, error)
+	Organization(ctx context.Context) (*organizationResolver, error)
 	Cost() int32
 	RenewalDate() *int32
 }
@@ -31,12 +30,12 @@ func (p planResolver) Name() string {
 	return "organization"
 }
 
-func (p planResolver) Organization(ctx context.Context) (*orgResolver, error) {
-	organization, _, err := github.Client(ctx).Organizations.Get(p.OrgName)
+func (p planResolver) Organization(ctx context.Context) (*organizationResolver, error) {
+	organization, err := GetOrg(ctx, p.OrgName)
 	if err != nil {
 		return nil, err
 	}
-	return &orgResolver{*organization}, nil
+	return &organizationResolver{organization}, nil
 }
 
 func (p planResolver) Cost() int32 {
@@ -60,7 +59,7 @@ func (f fakePlan) Name() string {
 	return f.name
 }
 
-func (f fakePlan) Organization(ctx context.Context) (*orgResolver, error) {
+func (f fakePlan) Organization(ctx context.Context) (*organizationResolver, error) {
 	return nil, nil
 }
 

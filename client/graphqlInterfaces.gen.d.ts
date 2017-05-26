@@ -180,6 +180,19 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IInvite {
+		__typename: string;
+		userLogin: string;
+		userEmail: string;
+		orgGithubId: number;
+		orgLogin: string;
+		sentAt: number;
+		uri: string;
+	}
+
+	/*
+	  description: null
+	*/
 	interface ILineMatch {
 		__typename: string;
 		preview: string;
@@ -197,6 +210,7 @@ declare namespace GQL {
 		updatePaymentSource: boolean;
 		subscribeOrg: boolean;
 		startOrgTrial: boolean;
+		inviteOrgMemberToSourcegraph: boolean;
 	}
 
 	/*
@@ -217,10 +231,28 @@ declare namespace GQL {
 	*/
 	interface IOrganization {
 		__typename: string;
+		login: string;
+		githubId: number;
+		email: string;
 		name: string;
 		avatarURL: string;
 		description: string;
 		collaborators: number;
+		members: Array<IOrganizationMember>;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IOrganizationMember {
+		__typename: string;
+		login: string;
+		githubId: number;
+		email: string;
+		avatarURL: string;
+		isSourcegraphUser: boolean;
+		canInvite: boolean;
+		invite: IInvite | null;
 	}
 
 	/*
@@ -335,6 +367,7 @@ declare namespace GQL {
 	*/
 	interface IRoot {
 		__typename: string;
+		organization: IOrganization | null;
 		repository: IRepository | null;
 		repositories: Array<IRepository>;
 		remoteRepositories: Array<IRemoteRepository>;
