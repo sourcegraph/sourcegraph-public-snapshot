@@ -59,7 +59,7 @@ func (o *organizationResolver) Members(ctx context.Context) ([]*organizationMemb
 func GetOrg(ctx context.Context, orgName string) (*sourcegraph.Org, error) {
 	client := extgithub.Client(ctx)
 
-	org, _, err := client.Organizations.Get(orgName)
+	org, _, err := client.Organizations.Get(ctx, orgName)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func listOrgsPage(ctx context.Context, opt *sourcegraph.ListOptions) (res *sourc
 	}
 	client := extgithub.Client(ctx)
 
-	orgs, _, err := client.Organizations.List("", &github.ListOptions{
+	orgs, _, err := client.Organizations.List(ctx, "", &github.ListOptions{
 		Page:    int(opt.Page),
 		PerPage: int(opt.PerPage),
 	})

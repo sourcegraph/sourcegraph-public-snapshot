@@ -103,7 +103,7 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 	// If email not provided by frontend, look up this user to see if we can get it
 	if opt.UserEmail == "" {
 		client := extgithub.Client(ctx)
-		invitee, _, err := client.Users.Get(opt.UserLogin)
+		invitee, _, err := client.Users.Get(ctx, opt.UserLogin)
 		if err != nil {
 			return sourcegraph.InviteError, err
 		}

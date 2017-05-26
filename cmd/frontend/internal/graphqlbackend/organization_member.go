@@ -62,7 +62,7 @@ func listOrgMembersPage(ctx context.Context, orgLogin string, opt *sourcegraph.L
 		},
 	}
 	// Fetch members of the organization.
-	members, _, err := client.Organizations.ListMembers(orgLogin, optGh)
+	members, _, err := client.Organizations.ListMembers(ctx, orgLogin, optGh)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func IsOrgMember(ctx context.Context, orgLogin string, userLogin string) (res bo
 	}
 	client := extgithub.Client(ctx)
 
-	isMember, _, err := client.Organizations.IsMember(orgLogin, userLogin)
+	isMember, _, err := client.Organizations.IsMember(ctx, orgLogin, userLogin)
 	if err != nil {
 		return false, err
 	}

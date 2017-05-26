@@ -182,7 +182,7 @@ func listAllGitHubReposWithDetails(ctx context.Context, opt *github.RepositoryLi
 // abuse or rate limit issue, or if it has encountered more than maxRepoDetailsErrors of them.
 // In those cases, it returns the data it has collected to that point
 func listGitHubReposWithDetailsPage(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.GitHubRepoWithDetails, error) {
-	ghRepos, _, err := extgithub.Client(ctx).Repositories.List("", opt)
+	ghRepos, _, err := extgithub.Client(ctx).Repositories.List(ctx, "", opt)
 	if err != nil {
 		return nil, errors.Wrap(err, "Repositories.List")
 	}
@@ -203,7 +203,7 @@ func listGitHubReposWithDetailsPage(ctx context.Context, opt *github.RepositoryL
 			continue
 		}
 
-		ghLanguages, resp, err := extgithub.Client(ctx).Repositories.ListLanguages(*ghRepo.Owner.Login, *ghRepo.Name)
+		ghLanguages, resp, err := extgithub.Client(ctx).Repositories.ListLanguages(ctx, *ghRepo.Owner.Login, *ghRepo.Name)
 		if err != nil {
 			repoErrCounter = repoErrCounter + 1
 			rwds[i].ErrorFetchingDetails = true
@@ -231,7 +231,7 @@ func listGitHubReposWithDetailsPage(ctx context.Context, opt *github.RepositoryL
 			rwds[i].Languages = languages
 		}
 
-		commits, _, err := extgithub.Client(ctx).Repositories.ListCommits(*ghRepo.Owner.Login, *ghRepo.Name, nil)
+		commits, _, err := extgithub.Client(ctx).Repositories.ListCommits(ctx, *ghRepo.Owner.Login, *ghRepo.Name, nil)
 		if err != nil {
 			repoErrCounter = repoErrCounter + 1
 			rwds[i].ErrorFetchingDetails = true

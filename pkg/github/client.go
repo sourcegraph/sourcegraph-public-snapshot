@@ -50,7 +50,7 @@ func Client(ctx context.Context) *github.Client {
 }
 
 func OrganizationRepos(ctx context.Context, org string, opt *github.RepositoryListByOrgOptions) ([]*github.Repository, error) {
-	repo, _, err := Client(ctx).Repositories.ListByOrg(org, opt)
+	repo, _, err := Client(ctx).Repositories.ListByOrg(ctx, org, opt)
 	return repo, err
 }
 
