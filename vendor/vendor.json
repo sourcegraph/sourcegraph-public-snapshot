@@ -982,10 +982,10 @@
 			"revisionTime": "2017-04-21T11:34:29Z"
 		},
 		{
-			"checksumSHA1": "bOxJoQEBxI70CzZgvfHEMftHtmE=",
+			"checksumSHA1": "fLD9gCZRF+kfsBerLK1rkwhDjXU=",
 			"path": "github.com/sourcegraph/go-github/github",
-			"revision": "93d3f730320429a6e1ecf2ac1778db832930948a",
-			"revisionTime": "2016-09-28T03:47:51Z"
+			"revision": "ebfec748347a9af6793c723f8859afcd906860fb",
+			"revisionTime": "2017-05-19T03:19:03Z"
 		},
 		{
 			"checksumSHA1": "Ab5+tuLbMHfAIBzxvg8uWYFPHSQ=",
