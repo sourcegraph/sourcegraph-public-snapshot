@@ -18,10 +18,10 @@ const (
 	routeRepoLanding   = "page.repo.landing"
 	routeTree          = "page.tree"
 
-	routeJobs     = "page.jobs"
-	routePlan     = "page.plan"
-	routeHomePage = "page.home"
-	routeTopLevel = "page.toplevel" // non-repo top-level routes
+	routeJobs           = "page.jobs"
+	routeHomePage       = "page.home"
+	routeAboutSubdomain = "about.sourcegraph.com" // top level redirects to about.sourcegraph.com
+	routeAppPaths       = "app.paths"             // paths that are handled by our javascript app and should not 404
 
 	routeDefRedirectToDefLanding     = "page.def.redirect"
 	routeDefInfoRedirectToDefLanding = "page.def.info.redirect"
@@ -34,11 +34,9 @@ func newRouter() *mux.Router {
 
 	m.StrictSlash(true)
 
-	// Special top-level routes that do NOT refer to repos.
-	//
-	// NOTE: Keep in sync with routePatterns.tsx. See the NOTE in that
-	// file for more information.
-	topLevel := []string{
+	// Top level paths that should redirect to
+	// about.sourcegraph.com/$PATH
+	aboutPaths := []string{
 		// These all omit the leading "/".
 		"about",
 		"plan",
@@ -51,9 +49,7 @@ func newRouter() *mux.Router {
 		"enterprise",
 		"forgot",
 		"join",
-		"jobs",
 		"legal",
-		"login",
 		"pricing",
 		"privacy",
 		"reset",
@@ -67,11 +63,17 @@ func newRouter() *mux.Router {
 		"tools/browser",
 		"zap/beta",
 	}
+
+	// Top level paths served by the app.
+	// This is just so we don't return a 404 status.
+	appPaths := []string{
+		"login",
+	}
 	m.Path("/sitemap").Methods("GET").Name(routeLangsIndex)
 	m.Path("/sitemap/{Lang:.*}").Methods("GET").Name(routeReposIndex)
 	m.Path("/{Path:(?:jobs|careers)}").Methods("GET").Name(routeJobs)
-	m.Path("/plan").Methods("GET").Name(routePlan)
-	m.Path("/{Path:(?:" + strings.Join(topLevel, "|") + ")}").Methods("GET").Name(routeTopLevel)
+	m.Path("/{Path:(?:" + strings.Join(aboutPaths, "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
+	m.Path("/{Path:(?:" + strings.Join(appPaths, "|") + ")}").Methods("GET").Name(routeAppPaths)
 	m.Path("/").Methods("GET").Name(routeHomePage)
 
 	// Repo

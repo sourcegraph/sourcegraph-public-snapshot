@@ -22,7 +22,7 @@ type Root {
 	remoteStarredRepositories: [RemoteRepository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
-	searchRepos(query: SearchQuery!, repositories: [String!]!): SearchResults!
+	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	revealCustomerCompany(ip: String!): CompanyProfile
 }
 
@@ -101,6 +101,11 @@ input SearchQuery {
 	fileMatchLimit: Int!
 	includePattern: String
 	excludePattern: String
+}
+
+input RepositoryRevision {
+	repo: String!
+	rev: String	
 }
 
 type Commit implements Node {

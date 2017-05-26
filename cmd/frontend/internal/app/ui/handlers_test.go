@@ -69,12 +69,13 @@ func getForTest(c interface {
 func TestCatchAll(t *testing.T) {
 	c := newTest()
 
-	m, err := getForTest(c, "/tools", http.StatusOK)
+	resp, err := c.Get("/tools")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := ""; m.Title != want {
-		t.Errorf("got title %q, want %q", m.Title, want)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusTemporaryRedirect {
+		t.Fatalf("got HTTP %d, want %d", resp.StatusCode, http.StatusTemporaryRedirect)
 	}
 }
 

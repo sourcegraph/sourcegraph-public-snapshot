@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -13,8 +14,10 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/bundle"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tmpl"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -29,7 +32,6 @@ func init() {
 	router.Get(routeJobs).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://boards.greenhouse.io/sourcegraph", http.StatusFound)
 	}))
-	router.Get(routePlan).Handler(traceutil.TraceRoute(handler(servePlan)))
 
 	// Redirect from old /land/ def landing URLs to new /info/ URLs
 	router.Get(oldRouteDefLanding).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -59,8 +61,9 @@ func init() {
 	router.Get(routeRepo).Handler(traceutil.TraceRoute(handler(serveRepo)))
 	router.Get(routeRepoLanding).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoLanding)))
 	router.Get(routeTree).Handler(traceutil.TraceRoute(handler(serveTree)))
-	router.Get(routeTopLevel).Handler(traceutil.TraceRoute(errorutil.Handler(serveAny)))
-	router.Get(routeHomePage).Handler(traceutil.TraceRoute(errorutil.Handler(serveAny)))
+	router.Get(routeAboutSubdomain).Handler(traceutil.TraceRoute(http.HandlerFunc(redirectAboutSubdomain)))
+	router.Get(routeAppPaths).Handler(traceutil.TraceRoute(errorutil.Handler(serveAny)))
+	router.Get(routeHomePage).Handler(traceutil.TraceRoute(errorutil.Handler(serveHome)))
 	router.PathPrefix("/").Methods("GET").Handler(traceutil.TraceRouteFallback("app.serve-any", errorutil.Handler(serveAny)))
 	router.NotFoundHandler = traceutil.TraceRouteFallback("app.serve-any-404", errorutil.Handler(serveAny))
 }
@@ -215,6 +218,36 @@ func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repoRev.CommitID,
 	)
 	return m, nil
+}
+
+func aboutBaseURL() string {
+	return "https://about.sourcegraph.com/"
+}
+
+func redirectAboutSubdomain(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["Path"]
+	http.Redirect(w, r, aboutBaseURL()+path, http.StatusTemporaryRedirect)
+}
+
+// serveHome served the home page at "/"
+func serveHome(w http.ResponseWriter, r *http.Request) error {
+	if !envvar.DeploymentOnPrem() && !actor.FromContext(r.Context()).IsAuthenticated() {
+		// The user is not signed in and we are not on-prem so we are going to redirect to about.sourcegraph.com.
+		u, err := url.Parse(aboutBaseURL())
+		if err != nil {
+			return err
+		}
+		query := url.Values{}
+		if r.Host != "sourcegraph.com" {
+			// This allows about.sourcegraph.com to properly redirect back to
+			// dev or staging environment after sign in.
+			query.Set("host", r.Host)
+		}
+		u.RawQuery = query.Encode()
+		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
+		return nil
+	}
+	return serveAny(w, r)
 }
 
 // serveAny is the fallback/catch-all route. It preloads nothing and
