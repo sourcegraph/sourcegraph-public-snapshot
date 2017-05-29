@@ -294,7 +294,6 @@ func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn jsonrpc
 
 	fset := token.NewFileSet()
 	bctx := h.BuildContext(ctx)
-	fmt.Println(filepath.Dir(path), filepath.Base(path))
 	src, err := buildutil.ParseFile(fset, bctx, nil, filepath.Dir(path), filepath.Base(path), 0)
 	if err != nil {
 		return nil, err
