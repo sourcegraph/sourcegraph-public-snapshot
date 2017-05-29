@@ -7,7 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 working_copy_hash=$((git diff; git status) | (md5sum || md5) 2> /dev/null)
 
-go list ./... | grep -v /vendor/ | grep -v app/assets | xargs go generate
+go list ./... | grep -v /vendor/ | grep -v app/assets | grep -v app/bundle | xargs go generate
 
 new_working_copy_hash=$((git diff; git status) | (md5sum || md5) 2> /dev/null)
 
