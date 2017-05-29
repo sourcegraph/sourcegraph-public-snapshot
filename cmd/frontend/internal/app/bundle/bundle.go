@@ -14,14 +14,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"path"
+	"strings"
 
 	"github.com/shurcooL/httpgzip"
 )
 
 var (
-	noCache  bool
+	cacheKey     string
+	cacheControl string
+
 	errNoApp = errors.New("vscode app is not enabled on this server")
 )
 
@@ -36,10 +38,20 @@ func Handler() http.Handler {
 	fs := httpgzip.FileServer(Data, httpgzip.FileServerOptions{})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if noCache && os.Getenv("VSCODE_CACHE") == "" {
-			w.Header().Set("Cache-Control", "no-cache")
-		} else {
-			w.Header().Set("Cache-Control", "max-age=300")
+		// If a cache key is specified for the bundle, then require it as a prefix on all
+		// URL paths.
+		if cacheKey != "" {
+			prefix := "/" + cacheKey
+			if p := strings.TrimPrefix(r.URL.Path, prefix); len(p) < len(r.URL.Path) {
+				r.URL.Path = p
+			} else {
+				http.NotFound(w, r)
+				return
+			}
+		}
+
+		if cacheControl != "" {
+			w.Header().Set("Cache-Control", cacheControl)
 		}
 		w.Header().Set("Vary", "Accept-Encoding")
 
