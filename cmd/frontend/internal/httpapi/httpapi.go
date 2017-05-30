@@ -34,6 +34,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoRefresh).Handler(traceutil.TraceRoute(handler(func(w http.ResponseWriter, r *http.Request) error { return nil }))) // legacy
 	m.Get(apirouter.RepoResolveRev).Handler(traceutil.TraceRoute(handler(serveRepoResolveRev)))
 	m.Get(apirouter.RepoShield).Handler(traceutil.TraceRoute(handler(serveRepoShield)))
+	m.Get(apirouter.ReposUpdate).Handler(traceutil.TraceRoute(handler(serveReposUpdate)))
 
 	m.Get(apirouter.SubmitForm).Handler(traceutil.TraceRoute(handler(serveSubmitForm)))
 

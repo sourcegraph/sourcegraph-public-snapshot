@@ -248,7 +248,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 		if _, err := gitcmd.Open(newRepo).ResolveRevision(ctx, "HEAD"); err != nil {
 			return nil, err
 		}
-		return s.tryInsertNew(ctx, newRepo)
+		return s.TryInsertNew(ctx, newRepo)
 	}
 	return repo, nil
 }
@@ -459,9 +459,9 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	return nil
 }
 
-// tryInsertNew attempts to insert the repository rp into the db. On
+// TryInsertNew attempts to insert the repository rp into the db. On
 // success, it returns the repository that was actually inserted.
-func (s *repos) tryInsertNew(ctx context.Context, rp *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+func (s *repos) TryInsertNew(ctx context.Context, rp *sourcegraph.Repo) (*sourcegraph.Repo, error) {
 	var r dbRepo
 	r.fromRepo(rp)
 	if err := appDBH(ctx).Insert(&r.dbRepoOrig); err != nil {

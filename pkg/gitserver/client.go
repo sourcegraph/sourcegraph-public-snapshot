@@ -228,3 +228,15 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
+
+func (c *Client) List() ([]string, error) {
+	resp, err := http.Get("http://" + c.Addrs[0] + "/list")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var list []string
+	err = json.NewDecoder(resp.Body).Decode(&list)
+	return list, err
+}

@@ -20,6 +20,7 @@ const (
 	RepoRefresh      = "repo.refresh"
 	RepoResolveRev   = "repo.resolve-rev"
 	RepoShield       = "repo.shield"
+	ReposUpdate      = "repos.update"
 	BetaSubscription = "beta-subscription"
 	SubmitForm       = "submit-form"
 )
@@ -42,6 +43,7 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
 	base.Path("/repos-ensure").Methods("POST").Name(RepoEnsure)
+	base.Path("/repos-update").Methods("POST").Name(ReposUpdate)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
