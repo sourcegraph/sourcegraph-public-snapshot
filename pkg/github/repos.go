@@ -2,6 +2,7 @@ package github
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,7 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -223,7 +225,30 @@ func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
+	var ghrepo *github.Repository
+	var resp *github.Response
+	var err error
+	if feature.Features.GitHubApps {
+		// The current GitHub API only allows users to access their repos by listing them via their installations.
+		installs, _, err := Client(ctx).Users.ListInstallations(ctx, nil)
+		if err != nil {
+			return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.User.ListInstallations%q", githubutil.RepoURI(owner, repoName)))
+		}
+		for _, ins := range installs {
+			repos, resp, err := Client(ctx).Users.ListInstallationRepos(ctx, *ins.ID, nil)
+			if err != nil {
+				return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.User.ListInstallationRepos%q", githubutil.RepoURI(owner, repoName)))
+			}
+			for _, r := range repos {
+				if *r.Name == repoName && *r.Owner.Login == owner {
+					return ToRepo(r), nil
+				}
+			}
+		}
+		return nil, errors.New("repo not found")
+	} else {
+		ghrepo, resp, err = Client(ctx).Repositories.Get(ctx, owner, repoName)
+	}
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
 	}
