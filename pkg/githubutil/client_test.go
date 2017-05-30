@@ -1,6 +1,7 @@
 package githubutil
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -34,7 +35,7 @@ func TestGitHubClient_noCacheLeak(t *testing.T) {
 	ghA.BaseURL = baseURL
 	ghB.BaseURL = baseURL
 
-	userA, _, err := ghA.Users.Get("")
+	userA, _, err := ghA.Users.Get(context.Background(), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +47,7 @@ func TestGitHubClient_noCacheLeak(t *testing.T) {
 	}
 
 	responseLogin = "b"
-	userB, _, err := ghB.Users.Get("")
+	userB, _, err := ghB.Users.Get(context.Background(), "")
 	if err != nil {
 		t.Fatal(err)
 	}

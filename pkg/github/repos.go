@@ -155,7 +155,7 @@ func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]
 		return SearchRepoMock(ctx, query, op)
 	}
 
-	res, _, err := Client(ctx).Search.Repositories(query, op)
+	res, _, err := Client(ctx).Search.Repositories(ctx, query, op)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	ghrepo, resp, err := Client(ctx).Repositories.Get(owner, repoName)
+	ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
 	}
@@ -301,7 +301,7 @@ func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions)
 		return ListAccessibleReposMock(ctx, opt)
 	}
 
-	ghRepos, resp, err := Client(ctx).Repositories.List("", opt)
+	ghRepos, resp, err := Client(ctx).Repositories.List(ctx, "", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
 	}
@@ -314,7 +314,7 @@ func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions)
 }
 
 func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
-	ghRepos, resp, err := Client(ctx).Activity.ListStarred("", opt)
+	ghRepos, resp, err := Client(ctx).Activity.ListStarred(ctx, "", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
 	}
