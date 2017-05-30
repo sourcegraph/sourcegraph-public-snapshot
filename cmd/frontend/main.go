@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
@@ -11,6 +12,7 @@ func main() {
 	env.Lock()
 	err := cli.Main()
 	if err != nil {
+		fmt.Fprintln(os.Stderr, "fatal:", err)
 		os.Exit(1)
 	}
 }
