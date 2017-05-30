@@ -10,7 +10,7 @@ set -x
 if [ ! -d "python-langserver" ]; then
     git clone https://github.com/sourcegraph/python-langserver python-langserver
 else
-    cd python-langserver && git pull && git checkout ca457aa92e2f63082258df161ead2ecb709a0c87 && cd ..
+    cd python-langserver && git checkout master && git pull origin master && cd ..
 fi
 
 docker build -t $IMAGE:$TAG .

@@ -124,7 +124,6 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 				return nil, errors.Wrap(err, "getting repo by package db query")
 			}
 			span.LogEvent("listed repository packages")
-
 			for _, pkg := range pkgs {
 				repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: pkg.RepoID})
 				if err != nil {

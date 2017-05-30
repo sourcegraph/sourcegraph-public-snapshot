@@ -50,6 +50,7 @@ func SymbolRepoURL(symDescriptor lspext.SymbolDescriptor) string {
 var HasXDefinitionAndXPackages = map[string]struct{}{
 	"typescript": struct{}{},
 	"java":       struct{}{},
+	"python":     struct{}{},
 }
 
 // HasCrossRepoHover records the languages for which we support cross-repo
@@ -113,6 +114,12 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 		}
 		return packageIdentifiers["java"](symbol["package"].(map[string]interface{}))
 	},
+	"python": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
+		if _, ok := symbol["package"].(map[string]interface{}); !ok {
+			return nil
+		}
+		return packageIdentifiers["python"](symbol["package"].(map[string]interface{}))
+	},
 }
 
 var packageIdentifiers = map[string]func(map[string]interface{}) map[string]interface{}{
@@ -130,6 +137,11 @@ var packageIdentifiers = map[string]func(map[string]interface{}) map[string]inte
 		return map[string]interface{}{
 			"id":   pkg["id"],
 			"type": pkg["type"],
+		}
+	},
+	"python": func(pkg map[string]interface{}) map[string]interface{} {
+		return map[string]interface{}{
+			"name": pkg["name"],
 		}
 	},
 }
