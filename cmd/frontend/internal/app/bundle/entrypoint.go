@@ -40,6 +40,10 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 		}
 		jsctx.XHRHeaders = nil
 
+		if cacheKey != "" {
+			jsctx.AppRoot += "/" + cacheKey
+		}
+
 		field.Set(reflect.ValueOf(tmpl.Common{
 			AuthInfo: actor.FromContext(r.Context()).AuthInfo(),
 			Ctx:      r.Context(),

@@ -30,5 +30,9 @@ func init() {
 
 	// Cache when vscode is built; if serving from $VSCODE/out, do not
 	// cache.
-	noCache = !strings.HasPrefix(filepath.Base(BaseDir), "VSCode-browser")
+	if isBuilt := strings.HasPrefix(filepath.Base(BaseDir), "VSCode-browser"); isBuilt {
+		cacheControl = "max-age=300, must-revalidate" // long enough for cached perf testing
+	} else {
+		cacheControl = "no-cache"
+	}
 }
