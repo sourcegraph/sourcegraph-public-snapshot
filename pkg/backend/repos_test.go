@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"context"
@@ -241,10 +242,9 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 		calledGHSearch := github.MockSearch_Return([]*sourcegraph.Repo{{URI: "remote1"}})
 		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 
-		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "local1"}}}
-		results, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteSearch: true, Query: "my query"})
-		if err != nil {
-			t.Fatal(err)
+		_, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteSearch: true, Query: "my query"})
+		if want := "refusing to perform remote search"; err == nil || !strings.Contains(err.Error(), want) {
+			t.Fatalf("in test case %q, got error %q, want non-nil containing %q", testcase, err, want)
 		}
 
 		if *calledGHSearch {
@@ -252,9 +252,6 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 		}
 		if !*calledReposList {
 			t.Errorf("in test case %q, !calledReposList", testcase)
-		}
-		if !reflect.DeepEqual(want, results) {
-			t.Errorf("in test case %q, wanted %+v, but got %+v", testcase, want, results)
 		}
 	}
 
