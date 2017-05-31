@@ -3,8 +3,7 @@ services:
   frontend:
     image: "docker.sourcegraph.com/frontend:latest"
     environment:
-      ON_PREM: "true"
-      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      DEPLOYMENT_ON_PREM: ${DEPLOYMENT_ON_PREM:-true}
       NO_GITHUB_API: "true"
       GITHUB_BASE_URL: http://github-proxy:3180
       LSP_PROXY: lsp-proxy:4388
