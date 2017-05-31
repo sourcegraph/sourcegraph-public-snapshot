@@ -1,7 +1,7 @@
 version: "2.1"
 services:
   frontend:
-    image: "docker.sourcegraph.com/frontend:local"
+    image: "docker.sourcegraph.com/frontend:latest"
     environment:
       ON_PREM: "true"
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
@@ -53,7 +53,7 @@ services:
     ports:
       - "3180:3180"
   gitserver-1:
-    image: "docker.sourcegraph.com/gitserver:local"
+    image: "docker.sourcegraph.com/gitserver:latest"
     volumes:
       - ${GIT_PARENT_DIRECTORY:-.}:/local
       - .data/gitserver-1-data:/data/repos
