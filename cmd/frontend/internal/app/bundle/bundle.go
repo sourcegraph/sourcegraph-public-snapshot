@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
@@ -55,7 +56,11 @@ func Handler() http.Handler {
 		}
 		w.Header().Set("Vary", "Accept-Encoding")
 
-		if name := path.Base(r.URL.Path); name == "index.html" || name == "webview.html" {
+		url, _ := url.Parse(r.Referer())
+		// Open up X-Frame-Options for the chrome extension when running on github.com.
+		if url != nil && url.Scheme == "https" && url.Host == "github.com" {
+			w.Header().Del("X-Frame-Options")
+		} else if name := path.Base(r.URL.Path); name == "index.html" || name == "webview.html" {
 			// The UI uses iframes, so we need to allow iframes.
 			w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 		}
