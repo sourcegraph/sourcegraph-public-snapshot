@@ -65,6 +65,12 @@
 			"revisionTime": "2016-01-28T11:33:10Z"
 		},
 		{
+			"checksumSHA1": "uO02HOcjU7quLBROmBlg1IVT1SI=",
+			"path": "github.com/bradleyfalzon/ghinstallation",
+			"revision": "412fbc903c22a34a5bed2cc30497b11f0eb819fb",
+			"revisionTime": "2017-05-28T22:39:02Z"
+		},
+		{
 			"checksumSHA1": "bbunmFhXYSV2Z6BUmOL5zjpNK/Y=",
 			"path": "github.com/clearbit/clearbit-go/clearbit",
 			"revision": "20ed0925e10da443d180f7b2d5acb275c9c999cc",
@@ -144,6 +150,12 @@
 			"path": "github.com/dghubble/sling",
 			"revision": "bbfb8293bd33a6baad33d718aacf66ef73a29f30",
 			"revisionTime": "2017-03-22T05:06:59Z"
+		},
+		{
+			"checksumSHA1": "FwjxyOGlOWp5TqkqLSYfrdxC1E4=",
+			"path": "github.com/dgrijalva/jwt-go",
+			"revision": "6c8dedd55f8a2e41f605de6d5d66e51ed1f299fc",
+			"revisionTime": "2017-05-08T16:54:58Z"
 		},
 		{
 			"checksumSHA1": "f1wARLDzsF/JoyN01yoxXEwFIp8=",
@@ -982,10 +994,10 @@
 			"revisionTime": "2017-04-21T11:34:29Z"
 		},
 		{
-			"checksumSHA1": "fLD9gCZRF+kfsBerLK1rkwhDjXU=",
+			"checksumSHA1": "xEgNUrK1a50xI2h4mFsxI0W9vCE=",
 			"path": "github.com/sourcegraph/go-github/github",
-			"revision": "ebfec748347a9af6793c723f8859afcd906860fb",
-			"revisionTime": "2017-05-19T03:19:03Z"
+			"revision": "838e43b94ac4d48495c777df81d1f5ede7c2bc02",
+			"revisionTime": "2017-06-01T01:01:11Z"
 		},
 		{
 			"checksumSHA1": "t+SG7XI/v+OLR/wrLFil0EgPzFY=",

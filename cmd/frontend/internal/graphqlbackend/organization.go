@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
@@ -96,6 +97,21 @@ func listOrgsPage(ctx context.Context, opt *sourcegraph.ListOptions) (res *sourc
 //
 // This method may return an error and a partial list of organizations
 func ListAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourcegraph.OrgsList, err error) {
+	if feature.Features.GitHubApps {
+		var orgs []*sourcegraph.Org
+		if !extgithub.HasAuthedUser(ctx) {
+			return &sourcegraph.OrgsList{}, nil
+		}
+		installs, err := extgithub.ListAllAccessibleInstallations(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, ins := range installs {
+			orgs = append(orgs, toOrgFromAccount(ins.Account))
+		}
+		return &sourcegraph.OrgsList{Orgs: orgs}, nil
+	}
+
 	// Get a maximum of 1000 organizations per user
 	const perPage = 100
 	const maxPage = 10
@@ -117,8 +133,12 @@ func ListAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourceg
 			break
 		}
 	}
-	return &sourcegraph.OrgsList{
-		Orgs: allOrgs}, nil
+	return &sourcegraph.OrgsList{Orgs: allOrgs}, nil
+}
+
+func OrganizationRepos(ctx context.Context, org string, opt *github.RepositoryListByOrgOptions) ([]*github.Repository, error) {
+	repo, _, err := extgithub.Client(ctx).Repositories.ListByOrg(ctx, org, opt)
+	return repo, err
 }
 
 // toOrg converts a GitHub API Organization object to a Sourcegraph API Org object
@@ -147,6 +167,36 @@ func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
 		Email:         strv(ghOrg.Email),
 		Description:   strv(ghOrg.Description),
 		Collaborators: intv(ghOrg.Collaborators)}
+
+	return &org
+}
+
+func toOrgFromAccount(user *github.User) *sourcegraph.Org {
+	strv := func(s *string) string {
+		if s == nil {
+			return ""
+		}
+		return *s
+	}
+
+	intv := func(i *int) int32 {
+		if i == nil {
+			return 0
+		}
+		return int32(*i)
+	}
+
+	org := sourcegraph.Org{
+		Login:         *user.Login,
+		ID:            int32(*user.ID),
+		AvatarURL:     strv(user.AvatarURL),
+		Name:          strv(user.Name),
+		Blog:          strv(user.Blog),
+		Location:      strv(user.Location),
+		Email:         strv(user.Email),
+		Description:   "",
+		Collaborators: intv(user.Collaborators),
+	}
 
 	return &org
 }

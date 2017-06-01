@@ -2,6 +2,7 @@ package github
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,7 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -223,19 +225,41 @@ func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
-	if err != nil {
-		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
-	}
-	// Temporary: Track where anonymous requests are coming from that don't hit the cache.
-	if _, ok := resp.Header["X-From-Cache"]; !HasAuthedUser(ctx) && !ok {
-		src, ok := ctx.Value(GitHubTrackingContextKey).(string)
-		if !ok {
-			src = "unknown"
+	if feature.Features.GitHubApps {
+		// The current GitHub App API only allows users to access their repos by
+		// listing them via their installations. Check each installation and find the
+		// repo we're looking for.
+		installs, err := ListAllAccessibleInstallations(ctx)
+		if err != nil {
+			return nil, err
 		}
-		reposGitHubRequestsCounter.WithLabelValues(src).Inc()
+		for _, ins := range installs {
+			repos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range repos {
+				if *r.Name == repoName && *r.Owner.Login == owner {
+					return ToRepo(r), nil
+				}
+			}
+		}
+		return nil, errors.New("repo not found")
+	} else {
+		ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
+		if err != nil {
+			return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
+		}
+		// Temporary: Track where anonymous requests are coming from that don't hit the cache.
+		if _, ok := resp.Header["X-From-Cache"]; !HasAuthedUser(ctx) && !ok {
+			src, ok := ctx.Value(GitHubTrackingContextKey).(string)
+			if !ok {
+				src = "unknown"
+			}
+			reposGitHubRequestsCounter.WithLabelValues(src).Inc()
+		}
+		return ToRepo(ghrepo), nil
 	}
-	return ToRepo(ghrepo), nil
 }
 
 func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {

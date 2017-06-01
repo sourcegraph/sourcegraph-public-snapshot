@@ -15,6 +15,9 @@ var Features = struct {
 	// DisableSearch disables certain parts of the search experience.
 	// This flag is intended to be used for umami deployment.
 	DisableSearch bool `json:"disableSearch"`
+
+	// GitHubApps enables GitHub app-based authentication.
+	GitHubApps bool `json:"githubApps"`
 }{}
 
 func init() {
