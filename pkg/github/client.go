@@ -6,14 +6,20 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
+	"strconv"
 
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 )
+
+var ghAppID, _ = strconv.Atoi(env.Get("SRC_GITHUB_APP_ID", "", "Integration ID for the Sourcegraph GitHub app."))
+var ghAppKey = env.Get("SRC_GITHUB_APP_PRIVATE_KEY", "", "Path to .pem file containing private key for the Sourcegraph GitHub app.")
 
 var (
 	abuseDetectionMechanismCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -49,9 +55,14 @@ func Client(ctx context.Context) *github.Client {
 	return ghConf.UnauthedClient()
 }
 
-func OrganizationRepos(ctx context.Context, org string, opt *github.RepositoryListByOrgOptions) ([]*github.Repository, error) {
-	repo, _, err := Client(ctx).Repositories.ListByOrg(ctx, org, opt)
-	return repo, err
+func InstallationClient(ctx context.Context, installationID int) (*github.Client, error) {
+	tr := http.DefaultTransport
+	itr, err := ghinstallation.NewKeyFromFile(tr, ghAppID, installationID, ghAppKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return github.NewClient(&http.Client{Transport: itr}), nil
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {

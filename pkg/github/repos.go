@@ -230,12 +230,12 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	var err error
 	if feature.Features.GitHubApps {
 		// The current GitHub API only allows users to access their repos by listing them via their installations.
-		installs, _, err := Client(ctx).Users.ListInstallations(ctx, nil)
+		installs, _, err := Client(ctx).Users.ListInstallations(ctx, nil) // TODO Paginate
 		if err != nil {
 			return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.User.ListInstallations%q", githubutil.RepoURI(owner, repoName)))
 		}
 		for _, ins := range installs {
-			repos, resp, err := Client(ctx).Users.ListInstallationRepos(ctx, *ins.ID, nil)
+			repos, resp, err := Client(ctx).Users.ListInstallationRepos(ctx, *ins.ID, nil) // TODO Paginate
 			if err != nil {
 				return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.User.ListInstallationRepos%q", githubutil.RepoURI(owner, repoName)))
 			}
