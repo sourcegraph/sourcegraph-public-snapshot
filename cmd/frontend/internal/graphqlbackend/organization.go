@@ -102,8 +102,7 @@ func ListAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourceg
 		if !extgithub.HasAuthedUser(ctx) {
 			return &sourcegraph.OrgsList{}, nil
 		}
-		cl := extgithub.Client(ctx)
-		installs, _, err := cl.Users.ListInstallations(ctx, nil)
+		installs, err := extgithub.ListAllAccessibleInstallations(ctx)
 		if err != nil {
 			return nil, err
 		}
