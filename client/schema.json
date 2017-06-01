@@ -3084,7 +3084,7 @@
 									"name": "Boolean",
 									"ofType": null
 								},
-								"defaultValue": "false"
+								"defaultValue": "true"
 							}
 						],
 						"type": {
