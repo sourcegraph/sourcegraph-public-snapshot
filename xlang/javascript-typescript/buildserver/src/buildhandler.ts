@@ -316,6 +316,7 @@ export class BuildHandler extends TypeScriptService {
 		// First, attempt to get definition before dependencies fetching is finished.
 		this.dependenciesManager.ensureForFile(uri, span).catch(err => undefined);
 		let found = false;
+		let externalResults = 0;
 		return super._getSymbolLocationInformations(params, span)
 			.catch<SymbolLocationInformation, SymbolLocationInformation>(err => [])
 			.do(() => found = true)
@@ -346,7 +347,15 @@ export class BuildHandler extends TypeScriptService {
 			// These can happen if a repository defines the same symbol in multiple locations with
 			// interface merging, because we remove the location field
 			// See https://github.com/sourcegraph/sourcegraph/issues/5365#issuecomment-294431395
-			.distinct(symbol => hashObject(symbol, { respectType: false } as any));
+			.distinct(symbol => hashObject(symbol, { respectType: false } as any))
+			// Limit external results without location to limit the amount of workspace/symbol queries done for global j2d
+			// We currently only use one result anyway
+			.takeWhile(({ location }) => {
+				if (!location) {
+					externalResults++;
+				}
+				return externalResults <= 1;
+			});
 	}
 
 	/**
