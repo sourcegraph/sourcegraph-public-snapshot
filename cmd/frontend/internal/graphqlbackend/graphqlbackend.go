@@ -129,8 +129,17 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 	return &repositoryResolver{repo: repo}, nil
 }
 
-func (r *rootResolver) Repositories(ctx context.Context, args *struct{ Query string }) ([]*repositoryResolver, error) {
+func (r *rootResolver) Repositories(ctx context.Context, args *struct {
+	Query string
+	Fast  bool
+}) ([]*repositoryResolver, error) {
 	opt := &sourcegraph.RepoListOptions{Query: args.Query}
+
+	// Remote searching is slow.
+	if !args.Fast {
+		opt.RemoteSearch = true
+	}
+
 	opt.PerPage = 200
 	return listRepos(ctx, opt)
 }

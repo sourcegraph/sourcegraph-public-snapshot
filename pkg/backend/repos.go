@@ -3,13 +3,15 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	gogithub "github.com/sourcegraph/go-github/github"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -118,7 +120,14 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 
 	// Augment with external results if user is authenticated,
 	// RemoteSearch is true, and Query is non-empty.
-	if actor.FromContext(ctx).IsAuthenticated() && opt.RemoteSearch {
+	if opt.RemoteSearch {
+		if !actor.FromContext(ctx).IsAuthenticated() {
+			// GitHub repo search API calls are subject to a strict
+			// rate limit shared by all unauthenticated users. We
+			// would quickly exceed it if we allowed this.
+			return nil, errors.New("refusing to perform remote search for unauthenticated user")
+		}
+
 		ghquery := opt.Query
 		if matches := ghRepoQueryMatcher.FindStringSubmatch(opt.Query); matches != nil {
 			// Apply query transformation to make GitHub results better.

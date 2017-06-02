@@ -17,7 +17,7 @@ type Query {
 type Root {
 	organization(login: String!): Organization
 	repository(uri: String!): Repository
-	repositories(query: String = ""): [Repository!]!
+	repositories(query: String = "", fast: Boolean = true): [Repository!]!
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
