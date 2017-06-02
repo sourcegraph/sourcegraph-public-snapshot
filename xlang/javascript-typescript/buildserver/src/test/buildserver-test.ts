@@ -6,14 +6,10 @@ import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-t
 import { IContextDefinition, ITestDefinition } from 'mocha';
 import { BuildHandler } from '../buildhandler';
 import rimraf = require('rimraf');
-// global.Promise = require('bluebird');
-import * as util from 'javascript-typescript-langserver/lib/util';
 import { apply } from 'json-patch';
 import * as fs from 'mz/fs';
 import * as os from 'os';
 import * as path from 'path';
-// forcing strict mode
-util.setStrict(true);
 
 interface TestContext extends TypeScriptServiceTestContext {
 	service: BuildHandler;

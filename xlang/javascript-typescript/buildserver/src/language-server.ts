@@ -4,7 +4,6 @@ import * as cluster from 'cluster';
 import { FileLogger } from 'javascript-typescript-langserver/lib/logging';
 import { createClusterLogger, serve, ServeOptions } from 'javascript-typescript-langserver/lib/server';
 import { TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
-import * as util from 'javascript-typescript-langserver/lib/util';
 import * as os from 'os';
 import * as path from 'path';
 import * as uuid from 'uuid';
@@ -27,7 +26,6 @@ program
 	.option('--no-color', 'disable colored output in logs')
 	.parse(process.argv);
 
-util.setStrict(program.strict);
 const lspPort = program.port || defaultLspPort;
 const clusterSize = program.cluster || numCPUs;
 

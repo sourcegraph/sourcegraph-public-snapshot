@@ -3,7 +3,6 @@
 import { MessageEmitter, MessageLogOptions, MessageWriter, registerLanguageHandler, RegisterLanguageHandlerOptions } from 'javascript-typescript-langserver/lib/connection';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { FileLogger, StderrLogger } from 'javascript-typescript-langserver/lib/logging';
-import * as util from 'javascript-typescript-langserver/lib/util';
 import * as os from 'os';
 import * as path from 'path';
 import * as uuid from 'uuid';
@@ -25,8 +24,6 @@ program
 	.option('--color', 'force colored output in logs')
 	.option('--no-color', 'disable colored output in logs')
 	.parse(process.argv);
-
-util.setStrict(program.strict);
 
 // Create Tracer if LightStep environment variables are set
 const tracer = process.env.LIGHTSTEP_ACCESS_TOKEN && new Tracer({
