@@ -100,7 +100,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 8,
@@ -124,7 +124,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 5,
@@ -148,7 +148,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 55,
@@ -160,7 +160,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}, {
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 55,
@@ -184,7 +184,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 9,
@@ -208,7 +208,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 5,
@@ -232,7 +232,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 55,
@@ -543,7 +543,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
 						start: {
 							line: 8,
@@ -567,7 +567,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}).toArray().map(patches => apply(null, patches)).toPromise();
 				assert.deepEqual(result, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/resolve/index.d.ts',
 					range: {
 						start: {
 							line: 13,
@@ -603,7 +603,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				]);
 				assert.deepEqual(results, [
 					[{
-						uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+						uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 						range: {
 							start: {
 								line: 8,
@@ -616,7 +616,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}],
 					[{
-						uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
+						uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/resolve/index.d.ts',
 						range: {
 							start: {
 								line: 13,

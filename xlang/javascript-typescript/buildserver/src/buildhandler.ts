@@ -268,8 +268,8 @@ export class BuildHandler extends TypeScriptService {
 		sourcegraphUrl.hash = urlRelative(packageRootUri, originalUri);
 
 		if (packageName.startsWith('@types/')) {
-			// Special case: @types/ packages are in a subfolder of DefinitelyTyped, named after the package name
-			sourcegraphUrl.hash = packageName.substr('@types/'.length) + '/' + sourcegraphUrl.hash;
+			// Special case: @types/ packages are in a subfolder of DefinitelyTyped, named types/<package name>
+			sourcegraphUrl.hash = packageName.substr('@'.length) + '/' + sourcegraphUrl.hash;
 		}
 
 		return url.format(sourcegraphUrl);
