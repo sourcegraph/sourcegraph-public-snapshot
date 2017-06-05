@@ -2,59 +2,50 @@ import { Observable } from '@reactivex/rxjs';
 import { FileSystem, LocalFileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import { noop } from 'lodash';
+import { Span } from 'opentracing';
 import * as path from 'path';
 
-// TODO Instead of calling all layers, the class could just check the path for node_modules
-//      and choose whether to ask the client or the file system (like in the PHP LS)
 /**
- * LayeredFileSystem is a layered file system that builds a composite
- * virtual FS made from the ordered layering of its constituent file
- * systems. File systems earlier in the list take precendence over
- * ones later in the list.
+ * Will use a local file system for dependencies (URIs that contain `node_modules`)
+ * and a remote file system otherwise
  */
-export class LayeredFileSystem implements FileSystem {
+export class DependencyAwareFileSystem implements FileSystem {
 
-	constructor(public filesystems: FileSystem[]) {
-		if (filesystems.length === 0) {
-			throw new Error('Must at least pass one filesystem');
-		}
-	}
+	constructor(private dependencyFs: FileSystem, private workspaceFs: FileSystem) {}
 
-	getWorkspaceFiles(base?: string): Observable<string> {
-		// Try all file systems and return the results, only error if all filesystems do
+	/**
+	 * Gets aggregated workspace files from both file systems.
+	 * Errors only if both file systems error.
+	 */
+	getWorkspaceFiles(base?: string, span = new Span()): Observable<string> {
 		const errors: any[] = [];
-		return Observable.from(this.filesystems)
+		return Observable.of(this.dependencyFs, this.workspaceFs)
 			.mergeMap(filesystem =>
-				filesystem.getWorkspaceFiles(base)
+				filesystem.getWorkspaceFiles(base, span)
 					.catch(err => {
 						errors.push(err);
 						return [];
 					})
 			)
 			.do(noop, noop, () => {
-				if (errors.length === this.filesystems.length) {
-					throw Object.assign(new Error('Failed to get workspace files, all layered file systems errored: ' + errors.map(e => e.message).join(', ')), { errors });
+				if (errors.length === 2) {
+					throw Object.assign(new Error('Failed to get workspace files: ' + errors.map(e => e.message).join(', ')), { errors });
 				}
 			});
 	}
 
-	getTextDocumentContent(uri: string): Observable<string> {
-		const errors: any[] = [];
-		// TODO: do in parallel?
-		return Observable.from(this.filesystems)
-			.concatMap(filesystem =>
-				filesystem.getTextDocumentContent(uri)
-					.catch(e => {
-					errors.push(e);
-					return [];
-				})
-			)
-			.take(1)
-			.do(noop, noop, () => {
-				if (errors.length === this.filesystems.length) {
-					throw Object.assign(new Error(`Failed to get content of ${uri}, all layered file systems errored: ` + errors.map(e => e.message).join(', ')), { errors });
-				}
-			});
+	/**
+	 * Gets the content from the dependency file system if the URI includes `node_modules`, from remote file system otherwise.
+	 * Also falls back to remote file system of dependency file system errors.
+	 */
+	getTextDocumentContent(uri: string, span = new Span()): Observable<string> {
+		if (uri.includes('/node_modules/')) {
+			return this.dependencyFs.getTextDocumentContent(uri, span)
+				// If the dependency file system fails, fallback to the remote file system
+				// node_modules is sometimes vendored
+				.catch(err => this.workspaceFs.getTextDocumentContent(uri, span));
+		}
+		return this.workspaceFs.getTextDocumentContent(uri, span);
 	}
 }
 

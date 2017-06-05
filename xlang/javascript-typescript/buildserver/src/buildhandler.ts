@@ -26,7 +26,7 @@ import {
 	TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { DependencyManager } from './dependencies';
-import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
+import { DependencyAwareFileSystem, LocalRootedFileSystem } from './vfs';
 import hashObject = require('object-hash');
 import jsonpatch from 'fast-json-patch';
 const urlRelative: (from: string, to: string) => string = require('url-relative');
@@ -147,8 +147,8 @@ export class BuildHandler extends TypeScriptService {
 	protected _initializeFileSystems(accessDisk: boolean): void {
 		super._initializeFileSystems(accessDisk);
 		this.remoteFileSystem = this.fileSystem;
-		const overlayFs = new LocalRootedFileSystem(this.rootUri, path.join(this.options.tempDir, 'workspace'));
-		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
+		const dependencyFileSystem = new LocalRootedFileSystem(this.rootUri, path.join(this.options.tempDir, 'workspace'));
+		this.fileSystem = new DependencyAwareFileSystem(dependencyFileSystem, this.remoteFileSystem);
 	}
 
 	/**
