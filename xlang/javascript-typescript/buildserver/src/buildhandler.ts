@@ -28,7 +28,7 @@ import {
 import { DependencyManager } from './dependencies';
 import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
 import hashObject = require('object-hash');
-import { OpPatch } from 'json-patch';
+import jsonpatch from 'fast-json-patch';
 const urlRelative: (from: string, to: string) => string = require('url-relative');
 const rimraf = Observable.bindNodeCallback<string, void>(callbackRimraf);
 
@@ -109,7 +109,7 @@ export class BuildHandler extends TypeScriptService {
 	 *
 	 * @return Observable of JSON Patches that build an `InitializeResult`
 	 */
-	initialize(params: InitializeParams, span = new Span()): Observable<OpPatch> {
+	initialize(params: InitializeParams, span = new Span()): Observable<jsonpatch.Operation> {
 		// Workaround for https://github.com/sourcegraph/sourcegraph/issues/4542
 		if (params.rootPath && params.rootPath.startsWith('file://')) {
 			params.rootPath = uri2path(params.rootPath);
@@ -127,13 +127,13 @@ export class BuildHandler extends TypeScriptService {
 				);
 				// Start dependency installation for the root package.json in the background once all files were detected
 				this.subscriptions.add(
-					Observable.from(this.updater.ensureStructure())
-						.mergeMap(() => {
+					this.updater.ensureStructure()
+						.concat(Observable.defer(() => {
 							if (this.packageManager.rootPackageJsonUri) {
 								return this.dependenciesManager.ensureForFile(this.packageManager.rootPackageJsonUri);
 							}
-							return [];
-						})
+							return Observable.empty<never>();
+						}))
 						.subscribe(undefined, err => {
 							this.logger.error('Error installing dependencies in the background', err);
 						})
@@ -158,7 +158,7 @@ export class BuildHandler extends TypeScriptService {
 	 *
 	 * @return Observable of JSON Patches that build a `null` result
 	 */
-	shutdown(params = {}, span = new Span()): Observable<OpPatch> {
+	shutdown(params = {}, span = new Span()): Observable<jsonpatch.Operation> {
 		this.subscriptions.unsubscribe();
 		// Make sure yarn processes do not keep running and recreate the temporary directory
 		return Observable.from(this.dependenciesManager.killRunningProcesses())
@@ -177,11 +177,11 @@ export class BuildHandler extends TypeScriptService {
 	 * TODO Install just the passed dependency for the package.json
 	 */
 	private async _ensureDependency(dependency: PackageDescriptor, dependeeName?: string, span = new Span()): Promise<void> {
-		await this.updater.ensureStructure(span);
+		await this.updater.ensureStructure(span).toPromise();
 		await Promise.all(
 			iterate(this.packageManager.packageJsonUris()).map(async uri => {
 				try {
-					const packageJson = await this.packageManager.getPackageJson(uri, span);
+					const packageJson: PackageJson | undefined = await this.packageManager.getPackageJson(uri, span).toPromise();
 					if (!dependeeName || packageJson.name === dependeeName) {
 						await this.dependenciesManager.ensureForFile(uri, span);
 					}
@@ -217,7 +217,7 @@ export class BuildHandler extends TypeScriptService {
 
 		// Get package.json of dependency
 		try {
-			await this.updater.ensure(packageJsonUri);
+			await this.updater.ensure(packageJsonUri).toPromise();
 		} catch (err) {
 			// Can't rewrite URI if package.json ist not available
 			return originalUri;
@@ -393,7 +393,7 @@ export class BuildHandler extends TypeScriptService {
 	 * The workspace references request is sent from the client to the server to locate project-wide
 	 * references to a symbol given its description / metadata.
 	 */
-	workspaceXreferences(params: WorkspaceReferenceParams, span = new Span()): Observable<OpPatch> {
+	workspaceXreferences(params: WorkspaceReferenceParams, span = new Span()): Observable<jsonpatch.Operation> {
 		const dependeePackageName = params.hints ? params.hints.dependeePackageName : undefined;
 		const packageDescriptor = params.query.package;
 		// If PackageDescriptor is given, install that package

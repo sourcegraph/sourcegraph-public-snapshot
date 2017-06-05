@@ -12,7 +12,7 @@
   version "3.4.34"
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-3.4.34.tgz#d5335792823bb09cddd5e38c3d211b709183854d"
 
-"@types/json-patch@0.0.29", "@types/json-patch@^0.0.29":
+"@types/json-patch@0.0.29":
   version "0.0.29"
   resolved "https://registry.yarnpkg.com/@types/json-patch/-/json-patch-0.0.29.tgz#b002bf6233b2bd104feba08bcb4c98b1adc9b90e"
 
@@ -24,9 +24,9 @@
   version "0.3.29"
   resolved "https://registry.yarnpkg.com/@types/mkdirp/-/mkdirp-0.3.29.tgz#7f2ad7ec55f914482fc9b1ec4bb1ae6028d46066"
 
-"@types/mocha@2.2.33":
-  version "2.2.33"
-  resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.33.tgz#d79a0061ec270379f4d9e225f4096fb436669def"
+"@types/mocha@2.2.41":
+  version "2.2.41"
+  resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.41.tgz#e27cf0817153eb9f2713b2d3f6c68f1e1c3ca608"
 
 "@types/mz@0.0.30":
   version "0.0.30"
@@ -708,6 +708,10 @@ extglob@^0.3.1:
 extsprintf@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.0.2.tgz#e1080e0658e300b06294990cc70e1502235fd550"
+
+fast-json-patch@^1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/fast-json-patch/-/fast-json-patch-1.2.2.tgz#d377d97c6911dbdd2a1c80bfacda048a4f83bbf9"
 
 figures@^2.0.0:
   version "2.0.0"

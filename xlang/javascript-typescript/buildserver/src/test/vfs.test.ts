@@ -1,5 +1,4 @@
 import * as chai from 'chai';
-import iterate from 'iterare';
 import * as fs from 'mz/fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -36,7 +35,7 @@ describe('vfs.ts', () => {
 
 		describe('getWorkspaceFiles()', () => {
 			it('should return all files in the workspace', async () => {
-				const files = iterate(await fileSystem.getWorkspaceFiles()).toArray();
+				const files = await fileSystem.getWorkspaceFiles().toArray().toPromise();
 				assert.sameMembers(files, [
 					'file:///a/project/tweedledee',
 					'file:///a/project/tweedledum',
@@ -46,7 +45,7 @@ describe('vfs.ts', () => {
 				]);
 			});
 			it('should return all files under specific root', async () => {
-				const files = iterate(await fileSystem.getWorkspaceFiles('file:///a/project/foo')).toArray();
+				const files = await fileSystem.getWorkspaceFiles('file:///a/project/foo').toArray().toPromise();
 				assert.sameMembers(files, [
 					'file:///a/project/foo/bar.ts'
 				]);
@@ -54,7 +53,7 @@ describe('vfs.ts', () => {
 		});
 		describe('getTextDocumentContent()', () => {
 			it('should read files denoted by absolute URI', async () => {
-				const content = await fileSystem.getTextDocumentContent('file:///a/project/tweedledee');
+				const content = await fileSystem.getTextDocumentContent('file:///a/project/tweedledee').toPromise();
 				assert.equal(content, 'hi');
 			});
 		});

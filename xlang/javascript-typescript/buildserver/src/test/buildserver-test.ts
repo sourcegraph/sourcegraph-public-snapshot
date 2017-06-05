@@ -3,10 +3,10 @@ import * as assert from 'assert';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { describeTypeScriptService, initializeTypeScriptService, shutdownTypeScriptService, TestContext as TypeScriptServiceTestContext } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
 import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
-import { IContextDefinition, ITestDefinition } from 'mocha';
+import { IBeforeAndAfterContext, ISuiteCallbackContext, ITestCallbackContext } from 'mocha';
 import { BuildHandler } from '../buildhandler';
 import rimraf = require('rimraf');
-import { apply } from 'json-patch';
+import jsonpatch from 'fast-json-patch';
 import * as fs from 'mz/fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -21,20 +21,20 @@ const createHandler: TypeScriptServiceFactory = (client: RemoteLanguageClient, o
 /**
  * Shuts the TypeScriptService down (to be used in `afterEach()`) and deletes its temporary directory
  */
-export async function shutdownBuildHandler(this: TestContext): Promise<void> {
+export async function shutdownBuildHandler(this: TestContext & IBeforeAndAfterContext): Promise<void> {
 	await shutdownTypeScriptService.call(this);
 	await new Promise((resolve, reject) => rimraf(tempDir, err => err ? reject(err) : resolve()));
 }
 
 // Run build-handler-specific tests
-describe('BuildHandler', function (this: TestContext & IContextDefinition) {
+describe('BuildHandler', function (this: TestContext & ISuiteCallbackContext) {
 	this.timeout(30000);
 
 	beforeEach(done => rimraf(tempDir, done));
 
 	describeTypeScriptService(createHandler, shutdownBuildHandler, 'file:///');
 
-	describe('Workspace with single package.json at root', function (this: TestContext) {
+	describe('Workspace with single package.json at root', function (this: TestContext & ISuiteCallbackContext) {
 		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'mypkg',
@@ -65,10 +65,10 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				'var t = s;',
 				''
 			].join('\n')]
-		])) as any);
+		])));
 		afterEach(shutdownBuildHandler as any);
 		describe('shutdown()', () => {
-			it('should delete the temporary directory passed in options', async function (this: TestContext) {
+			it('should delete the temporary directory passed in options', async function (this: TestContext & ITestCallbackContext) {
 				// Do a random request just to trigger dependency installation
 				await this.service.textDocumentDefinition({
 					textDocument: {
@@ -84,8 +84,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
 			});
 		});
-		describe('textDocumentDefinition()', function (this: TestContext) {
-			it('should return the location of the `JsDiff` namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext) {
+		describe('textDocumentDefinition()', function (this: TestContext & ISuiteCallbackContext) {
+			it('should return the location of the `JsDiff` namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -94,7 +94,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
@@ -108,8 +108,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the location of the `diff` module export in DefinitelyTyped on the module name', async function (this: TestContext) {
+			});
+			it('should return the location of the `diff` module export in DefinitelyTyped on the module name', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -118,7 +118,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 23
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
@@ -132,8 +132,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the location of the `diffChars` function declaration on a named import', async function (this: TestContext) {
+			});
+			it('should return the location of the `diffChars` function declaration on a named import', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -142,7 +142,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 10
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
@@ -168,8 +168,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the location of the `IDiffResult` interface on a named import', async function (this: TestContext) {
+			});
+			it('should return the location of the `IDiffResult` interface on a named import', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -178,7 +178,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 21
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
@@ -192,8 +192,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the location of the `diff` module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext) {
+			});
+			it('should return the location of the `diff` module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -202,7 +202,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 40
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
@@ -216,8 +216,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the location of the `diffChars` function definition in DefinitelyTyped on a function call', async function (this: TestContext) {
+			});
+			it('should return the location of the `diffChars` function definition in DefinitelyTyped on a function call', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -226,7 +226,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 3,
 						character: 0
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
@@ -240,10 +240,10 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-		} as any);
-		describe('textDocumentXdefinition()', function (this: TestContext) {
-			it('should return the SymbolDescriptor of the `JsDiff` namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext) {
+			});
+		});
+		describe('textDocumentXdefinition()', function (this: TestContext & ISuiteCallbackContext) {
+			it('should return the SymbolDescriptor of the `JsDiff` namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -252,7 +252,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -268,8 +268,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the SymbolDescriptor of the `diff` module export in DefinitelyTyped on the module name', async function (this: TestContext) {
+			});
+			it('should return the SymbolDescriptor of the `diff` module export in DefinitelyTyped on the module name', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -278,7 +278,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 23
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -294,8 +294,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the SymbolDescriptor of the `diffChars` function declaration on a named import', async function (this: TestContext) {
+			});
+			it('should return the SymbolDescriptor of the `diffChars` function declaration on a named import', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -304,7 +304,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 10
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -320,8 +320,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the SymbolDescriptor of the `IDiffResult` interface on a named import', async function (this: TestContext) {
+			});
+			it('should return the SymbolDescriptor of the `IDiffResult` interface on a named import', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -330,7 +330,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 21
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -346,8 +346,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the SymbolDescriptor of the `diff` module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext) {
+			});
+			it('should return the SymbolDescriptor of the `diff` module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -356,7 +356,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 40
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -372,8 +372,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the SymbolDescriptor of the `diffChars` function definition in DefinitelyTyped on function call', async function (this: TestContext) {
+			});
+			it('should return the SymbolDescriptor of the `diffChars` function definition in DefinitelyTyped on function call', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -382,7 +382,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 3,
 						character: 0
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -398,8 +398,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the SymbolDescriptor with PackageDescriptor of typescript package on `ts.SyntaxKind`', async function (this: TestContext & ITestDefinition) {
+			});
+			it('should return the SymbolDescriptor with PackageDescriptor of typescript package on `ts.SyntaxKind`', async function (this: TestContext & ITestCallbackContext) {
 				this.timeout(60000);
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
@@ -409,7 +409,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 2,
 						character: 10
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -425,10 +425,10 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-		} as any);
-		describe('workspaceXreferences()', async function (this: TestContext) {
-			it('should return all references to the diffChars function', async function (this: TestContext) {
+			});
+		});
+		describe('workspaceXreferences()', function (this: TestContext & ISuiteCallbackContext) {
+			it('should return all references to the diffChars function', async function (this: TestContext & ITestCallbackContext) {
 				const referencesResult = await this.service.workspaceXreferences({
 					query: {
 						containerKind: '',
@@ -440,7 +440,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							version: '0.0.31'
 						}
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(referencesResult, [
 					{
 						reference: {
@@ -450,7 +450,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 									line: 1
 								},
 								start: {
-									character: 9,
+									character: 8,
 									line: 1
 								}
 							},
@@ -477,7 +477,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 									line: 1
 								},
 								start: {
-									character: 9,
+									character: 8,
 									line: 1
 								}
 							},
@@ -497,11 +497,11 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				]);
-			} as any);
+			});
 		});
 	});
 
-	describe('Workspace with multiple package.json files', function (this: TestContext) {
+	describe('Workspace with multiple package.json files', function (this: TestContext & ISuiteCallbackContext) {
 		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'rootpkg',
@@ -525,10 +525,10 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					'@types/resolve': '0.0.4'
 				}
 			})]
-		])) as any);
+		])));
 		afterEach(shutdownBuildHandler as any);
 		describe('textDocumentDefinition()', () => {
-			it('should return the location of the diff typings on DefinitelyTyped for the first package.json', async function (this: TestContext) {
+			it('should return the location of the diff typings on DefinitelyTyped for the first package.json', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -537,7 +537,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/diff/index.d.ts',
 					range: {
@@ -551,8 +551,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return the location of the resolve typings on DefinitelyTyped for the second package.json', async function (this: TestContext) {
+			});
+			it('should return the location of the resolve typings on DefinitelyTyped for the second package.json', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///foo/b.ts'
@@ -561,7 +561,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 26
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#types/resolve/index.d.ts',
 					range: {
@@ -575,8 +575,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should return both locations when requested concurrently', async function (this: TestContext) {
+			});
+			it('should return both locations when requested concurrently', async function (this: TestContext & ITestCallbackContext) {
 				const results = await Promise.all([
 					this.service.textDocumentDefinition({
 						textDocument: {
@@ -586,7 +586,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							line: 0,
 							character: 12
 						}
-					}).toArray().map(patches => apply(null, patches)).toPromise(),
+					}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise(),
 					this.service.textDocumentDefinition({
 						textDocument: {
 							uri: 'file:///foo/b.ts'
@@ -595,7 +595,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							line: 0,
 							character: 26
 						}
-					}).toArray().map(patches => apply(null, patches)).toPromise()
+					}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise()
 				]);
 				assert.deepEqual(results, [
 					[{
@@ -625,11 +625,11 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}]
 				]);
-			} as any);
+			});
 		});
-	} as any);
+	});
 
-	describe('Workspace with vendored dependencies', function (this: TestContext) {
+	describe('Workspace with vendored dependencies', function (this: TestContext & ISuiteCallbackContext) {
 		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'rootpkg',
@@ -640,10 +640,10 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			})],
 			['file:///a.ts', "import { x } from 'diff';"],
 			['file:///node_modules/diff/index.d.ts', 'export const x = 1;']
-		])) as any);
+		])));
 		afterEach(shutdownBuildHandler as any);
 		describe('textDocumentDefinition()', () => {
-			it('should return the location of the diff index.d.ts in node_modules', async function (this: TestContext) {
+			it('should return the location of the diff index.d.ts in node_modules', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -652,7 +652,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 9
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'file:///node_modules/diff/index.d.ts',
 					range: {
@@ -666,12 +666,12 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
+			});
 		});
-	} as any);
+	});
 
 	// Disabled due to flakeyness on CI. See https://github.com/sourcegraph/sourcegraph/issues/5637
-	describe.skip('Workspace with dependencies with package.json scripts', function (this: TestContext & IContextDefinition) {
+	describe.skip('Workspace with dependencies with package.json scripts', function (this: TestContext & ISuiteCallbackContext) {
 		beforeEach(initializeTypeScriptService(createHandler, 'file:///', new Map([
 			['file:///package.json', JSON.stringify({
 				name: 'rootpkg',
@@ -681,10 +681,10 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}
 			})],
 			['file:///a.ts', "import * as xyz from 'javascript-dep-npm';"]
-		])) as any);
+		])));
 		afterEach(shutdownBuildHandler as any);
 		describe('textDocumentDefinition()', () => {
-			it('should not run the scripts when getting definition of a symbol', async function (this: TestContext) {
+			it('should not run the scripts when getting definition of a symbol', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -693,7 +693,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
 					range: {
@@ -707,8 +707,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
-			it('should not run the scripts when getting definition of the module identifier', async function (this: TestContext) {
+			});
+			it('should not run the scripts when getting definition of the module identifier', async function (this: TestContext & ITestCallbackContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -717,7 +717,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 24
 					}
-				}).toArray().map(patches => apply(null, patches)).toPromise();
+				}).reduce<jsonpatch.Operation, any>(jsonpatch.applyReducer, null as any).toPromise();
 				assert.deepEqual(result, [{
 					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
 					range: {
@@ -731,7 +731,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						}
 					}
 				}]);
-			} as any);
+			});
 		});
 	});
 });

@@ -1,6 +1,7 @@
-import iterate from 'iterare';
+import { Observable } from '@reactivex/rxjs';
 import { FileSystem, LocalFileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
+import { noop } from 'lodash';
 import * as path from 'path';
 
 // TODO Instead of calling all layers, the class could just check the path for node_modules
@@ -19,35 +20,41 @@ export class LayeredFileSystem implements FileSystem {
 		}
 	}
 
-	async getWorkspaceFiles(base?: string): Promise<Iterable<string>> {
-		// Try all file systems and return the results, if all error reject
+	getWorkspaceFiles(base?: string): Observable<string> {
+		// Try all file systems and return the results, only error if all filesystems do
 		const errors: any[] = [];
-		let files = iterate<string>([]);
-		// TODO: do in parallel?
-		for (const filesystem of this.filesystems) {
-			try {
-				files = files.concat(await filesystem.getWorkspaceFiles(base));
-			} catch (e) {
-				errors.push(e);
-			}
-		}
-		if (errors.length === this.filesystems.length) {
-			throw Object.assign(new Error('All layered file systems errored: ' + errors.map(e => e.message)), { errors });
-		}
-		return files;
+		return Observable.from(this.filesystems)
+			.mergeMap(filesystem =>
+				filesystem.getWorkspaceFiles(base)
+					.catch(err => {
+						errors.push(err);
+						return [];
+					})
+			)
+			.do(noop, noop, () => {
+				if (errors.length === this.filesystems.length) {
+					throw Object.assign(new Error('Failed to get workspace files, all layered file systems errored: ' + errors.map(e => e.message).join(', ')), { errors });
+				}
+			});
 	}
 
-	async getTextDocumentContent(uri: string): Promise<string> {
+	getTextDocumentContent(uri: string): Observable<string> {
 		const errors: any[] = [];
 		// TODO: do in parallel?
-		for (const filesystem of this.filesystems) {
-			try {
-				return await filesystem.getTextDocumentContent(uri);
-			} catch (e) {
-				errors.push(e);
-			}
-		}
-		throw Object.assign(new Error('All layered file systems errored: ' + errors.map(e => e.message)), { errors });
+		return Observable.from(this.filesystems)
+			.concatMap(filesystem =>
+				filesystem.getTextDocumentContent(uri)
+					.catch(e => {
+					errors.push(e);
+					return [];
+				})
+			)
+			.take(1)
+			.do(noop, noop, () => {
+				if (errors.length === this.filesystems.length) {
+					throw Object.assign(new Error(`Failed to get content of ${uri}, all layered file systems errored: ` + errors.map(e => e.message).join(', ')), { errors });
+				}
+			});
 	}
 }
 
