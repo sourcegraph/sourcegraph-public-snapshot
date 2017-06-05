@@ -15,9 +15,6 @@ export function setEventLogger(logger: EventLogger): void {
 export let sourcegraphUrl: string = "https://sourcegraph.com";
 
 export function setSourcegraphUrl(url: string): void {
-	if (sourcegraphUrl) {
-		console.error(`event logger is being set twice, currently is ${sourcegraphUrl} and being set to ${url}`);
-	}
 	sourcegraphUrl = url;
 }
 
