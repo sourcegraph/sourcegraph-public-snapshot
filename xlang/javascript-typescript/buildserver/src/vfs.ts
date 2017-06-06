@@ -35,11 +35,11 @@ export class DependencyAwareFileSystem implements FileSystem {
 	}
 
 	/**
-	 * Gets the content from the dependency file system if the URI includes `node_modules`, from remote file system otherwise.
+	 * Gets the content from the dependency file system if the URI includes `node_modules` or `yarn.lock`, from remote file system otherwise.
 	 * Also falls back to remote file system of dependency file system errors.
 	 */
 	getTextDocumentContent(uri: string, span = new Span()): Observable<string> {
-		if (uri.includes('/node_modules/')) {
+		if (uri.includes('/node_modules/') || uri.endsWith('/yarn.lock')) {
 			return this.dependencyFs.getTextDocumentContent(uri, span)
 				// If the dependency file system fails, fallback to the remote file system
 				// node_modules is sometimes vendored
