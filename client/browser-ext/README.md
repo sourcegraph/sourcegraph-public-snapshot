@@ -27,6 +27,7 @@ $ yarn
 ## Development
 
 ```bash
+$ yarn install
 $ yarn run dev
 ```
 * Allow `https://localhost:3000` (insecure) connections in Chrome (navigate to https://localhost:3000, click "ADVANCED",
