@@ -332,15 +332,6 @@ export class BuildHandler extends TypeScriptService {
 				if (location && location.uri.includes('/node_modules/')) {
 					location = undefined;
 				}
-				if (symbol) {
-					// Remove node_modules part from a module name
-					// The SymbolDescriptor will be used in the defining repo, where the symbol file path will never contain node_modules
-					// It may contain the package name though if the repo is a monorepo with multiple packages
-					const regExp = /[^"]*node_modules\//;
-					symbol.name = symbol.name.replace(regExp, '');
-					symbol.containerName = symbol.containerName.replace(regExp, '');
-					symbol.filePath = symbol.filePath.replace(regExp, '');
-				}
 				return { symbol, location };
 			})
 			// Remove duplicates
@@ -350,12 +341,7 @@ export class BuildHandler extends TypeScriptService {
 			.distinct(symbol => hashObject(symbol, { respectType: false } as any))
 			// Limit external results without location to limit the amount of workspace/symbol queries done for global j2d
 			// We currently only use one result anyway
-			.takeWhile(({ location }) => {
-				if (!location) {
-					externalResults++;
-				}
-				return externalResults <= 1;
-			});
+			.filter(symbol => !!symbol.location || ++externalResults <= 1);
 	}
 
 	/**

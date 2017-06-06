@@ -457,7 +457,7 @@ describe('BuildHandler', function (this: TestContext & ISuiteCallbackContext) {
 							uri: 'file:///a.ts'
 						},
 						symbol: {
-							filePath: 'node_modules/@types/diff/index.d.ts',
+							filePath: '@types/diff/index.d.ts',
 							containerKind: '',
 							containerName: 'diff',
 							kind: 'function',
@@ -484,7 +484,7 @@ describe('BuildHandler', function (this: TestContext & ISuiteCallbackContext) {
 							uri: 'file:///a.ts'
 						},
 						symbol: {
-							filePath: 'node_modules/@types/diff/index.d.ts',
+							filePath: '@types/diff/index.d.ts',
 							containerKind: '',
 							containerName: 'diff',
 							kind: 'function',
