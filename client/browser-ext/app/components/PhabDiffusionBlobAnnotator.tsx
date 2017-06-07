@@ -40,11 +40,8 @@ export class PhabDiffusionBlobAnnotator extends PhabBlobAnnotator<DiffusionProps
 			return null;
 		}
 		return SourcegraphButton(
-			utils.supportedExtensions.has(this.fileExtension),
-			this.state.resolvedRevs[this.props.repoURI].cloneInProgress as boolean,
 			utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.repoURI, this.props.path, this.props.rev),
 			this.props.repoURI,
-			utils.upcomingExtensions.has(this.fileExtension),
 			DIFFUSION_CLASSES,
 			this.getFileOpenCallback,
 		);

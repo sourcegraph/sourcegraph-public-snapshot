@@ -131,7 +131,7 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string, 
  * isSplitDiff returns if the current view shows diffs with split (vs. unified) view.
  */
 export function isSplitDiff(): boolean {
-	const {isDelta, isPullRequest} = utils.parseURL(window.location);
+	const { isDelta, isPullRequest } = utils.parseURL(window.location);
 	if (!isDelta) {
 		return false;
 	}
@@ -172,7 +172,7 @@ export interface DeltaRevs {
  * getDeltaRevs returns the base and head revision SHA, or null for non-diff views.
  */
 export function getDeltaRevs(): DeltaRevs | null {
-	const {isDelta, isCommit, isPullRequest} = utils.parseURL(window.location);
+	const { isDelta, isCommit, isPullRequest } = utils.parseURL(window.location);
 	if (!isDelta) {
 		return null;
 	}
@@ -250,7 +250,7 @@ export interface DeltaInfo {
  * getDeltaInfo returns the base and head branches & URIs, or null for non-diff views.
  */
 export function getDeltaInfo(): DeltaInfo | null {
-	const {repoURI, isDelta, isPullRequest, isCommit} = utils.parseURL(window.location);
+	const { repoURI, isDelta, isPullRequest, isCommit } = utils.parseURL(window.location);
 	if (!isDelta) {
 		return null;
 	}
@@ -377,6 +377,7 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: { isDelt
 		const innerCode = codeCell.querySelector(".blob-code-inner"); // ignore extraneous inner elements, like "comment" button on diff views
 		cells.push({
 			cell: (innerCode || codeCell) as HTMLElement,
+			eventHandler: codeCell, // allways the TD element
 			line,
 			isAddition,
 			isDeletion,

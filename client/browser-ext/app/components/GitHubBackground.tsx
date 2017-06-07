@@ -29,6 +29,13 @@ export class GitHubBackground extends React.Component<{}, {}> {
 		// event may not have fired (and the elem may no longer be on the page).
 		tooltips.hideTooltip();
 		this.refresh();
+
+		// Remove all ".sg-annotated"; this allows tooltip event handlers to be re-registered.
+		const sgAnnotated = document.querySelectorAll(".sg-annotated");
+		// tslint:disable-next-line
+		for (let i = 0; i < sgAnnotated.length; ++i) {
+			(sgAnnotated.item[i] as HTMLElement).className = (sgAnnotated.item[i] as HTMLElement).className.replace(/sg-annotated/, "");
+		}
 	}
 
 	private popstateUpdate = (): void => {
@@ -37,7 +44,6 @@ export class GitHubBackground extends React.Component<{}, {}> {
 
 	private refresh = (): void => {
 		(eventLogger as ExtensionEventLogger).updateIdentity();
-		let urlProps = utils.parseURL(window.location);
 	}
 
 	render(): JSX.Element | null {

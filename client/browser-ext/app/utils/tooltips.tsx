@@ -1,41 +1,70 @@
+import * as Rx from "@reactivex/rxjs";
 import * as _ from "lodash";
 import * as marked from "marked";
 import { style } from "typestyle";
-import { eventLogger } from "../utils/context";
-
-// tslint:disable-next-line
-const truncate = require("html-truncate");
-
-export type TooltipData = { title: string, doc?: string } | null;
+import { parseURL } from ".";
+import { getPlatformName } from "../utils";
+import { eventLogger, sourcegraphUrl } from "../utils/context";
+import { fetchJumpURL } from "./lsp";
+import { getTooltipEventProperties, store, TooltipState } from "./store";
+import { TooltipData } from "./types";
 
 const tooltipClassName = style({
-	backgroundColor: "#2D2D30",
+	backgroundColor: "#fafbfc",
 	maxWidth: "500px",
 	maxHeight: "250px",
-	border: "solid 1px #555",
-	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
-	color: "rgba(213, 229, 242, 1)",
+	border: "solid 1px #e1e4e8",
+	fontFamily: `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
+	color: "rgb(36, 41, 69)",
 	fontSize: "12px",
 	zIndex: 100,
 	position: "absolute",
 	overflow: "auto",
 	padding: "5px 5px",
+	borderRadius: "2px",
 });
 
 const tooltipTitleStyle = style({
-	fontFamily: `Menlo, Monaco, Consolas, "Courier New", monospace`,
-	wordWrap: "break-all",
+	fontFamily: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
+	wordWrap: "break-word",
+	paddingBottom: "5px",
+	borderBottom: "solid 1px #e1e4e8",
 });
 
+// TODO(john): set max height on tooltip, maybe allow expanding.
 const tooltipDocStyle = style({
-	marginTop: "5px",
 	paddingTop: "10px",
-	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
-	wordWrap: "break-all",
+	maxHeight: "150px",
+	overflow: "auto",
+	fontFamily: `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
+	borderBottom: "1px solid #e1e4e8",
 });
 
-let tooltip;
-let loadingTooltip;
+const tooltipActionsStyle = style({
+	display: "flex",
+	textAlign: "center",
+	paddingTop: "5px",
+});
+
+const moreContextStyle = style({
+	fontStyle: "italic",
+	fontWeight: "bold",
+	color: "#666",
+	paddingTop: "5px",
+});
+
+const tooltipAction = style({
+	flex: 1,
+	cursor: "pointer",
+});
+
+let tooltip: HTMLElement;
+let loadingTooltip: HTMLElement;
+let tooltipActions: HTMLElement;
+let j2dAction: HTMLAnchorElement;
+let findRefsAction: HTMLAnchorElement;
+let searchAction: HTMLAnchorElement;
+let moreContext: HTMLElement;
 
 /**
  * createTooltips initializes the DOM elements used for the hover
@@ -55,76 +84,74 @@ export function createTooltips(): void {
 
 	loadingTooltip = document.createElement("DIV");
 	loadingTooltip.appendChild(document.createTextNode("Loading..."));
-};
 
-let activeTarget: HTMLElement | null = null;
-let hoverEventProps: Object | null = null;
+	tooltipActions = document.createElement("DIV");
+	tooltipActions.className = tooltipActionsStyle;
 
-/**
- * setContext registers the active target (element) being moused over, as well
- * as properties to send to the event logger on when the tooltip is shown.
- */
-export function setContext(target: HTMLElement | null, loggingStruct: Object | null): void {
-	activeTarget = target;
-	hoverEventProps = loggingStruct;
+	moreContext = document.createElement("DIV");
+	moreContext.className = moreContextStyle;
+	moreContext.appendChild(document.createTextNode("Click for more actions"));
+
+	j2dAction = document.createElement("A") as HTMLAnchorElement;
+	j2dAction.appendChild(document.createTextNode("Go to Def"));
+	j2dAction.className = `${tooltipAction} btn btn-sm BtnGroup-item`;
+	j2dAction.onclick = (e) => {
+		e.preventDefault();
+		const { data, context } = store.getValue();
+		if (data && context && context.coords && context.path && context.repoRevSpec) {
+			fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevSpec)
+				.then((defUrl) => {
+					eventLogger.logJumpToDef({ ...getTooltipEventProperties(data, context), hasResolvedJ2D: Boolean(defUrl) });
+					if (defUrl) {
+						window.open(defUrl, "_blank");
+					}
+				});
+		}
+	};
+
+	findRefsAction = document.createElement("A") as HTMLAnchorElement;
+	findRefsAction.appendChild(document.createTextNode("Find Refs"));
+	findRefsAction.className = `${tooltipAction} btn btn-sm BtnGroup-item`;
+	findRefsAction.onclick = (e) => {
+		e.preventDefault();
+		const { data, context } = store.getValue();
+		if (data && context && context.coords && context.path && context.repoRevSpec) {
+			window.open(`${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`, "_blank");
+		}
+	};
+
+	searchAction = document.createElement("A") as HTMLAnchorElement;
+	searchAction.appendChild(document.createTextNode("Search"));
+	searchAction.className = `${tooltipAction} btn btn-sm BtnGroup-item`;
+	searchAction.onclick = (e) => {
+		e.preventDefault();
+
+		const searchForm = document.querySelector(".js-site-search-form") as HTMLFormElement;
+		const searchInput = document.querySelector(".js-site-search-field") as HTMLInputElement;
+		scroll(0, 0);
+		searchInput.value = ""; // just in case
+		searchInput.style.color = "black";
+		searchInput.style.backgroundColor = "rgba(239, 232, 147, 0.84)";
+		const searchText = store.getValue().context && store.getValue().context!.selectedText ?
+			store.getValue().context!.selectedText! :
+			store.getValue().target!.textContent!;
+		const { data, context } = store.getValue();
+		if (data && context) {
+			eventLogger.logSearch(getTooltipEventProperties(data, context));
+		}
+		searchInput.value = searchText;
+		searchForm.submit();
+	};
+
+	tooltipActions.appendChild(j2dAction);
+	// tooltipActions.appendChild(findRefsAction); TODO(john): bring back when working on Sourcegraph.com
+	tooltipActions.appendChild(searchAction);
 }
 
-/**
- * clearContext removes all registered tooltip state and hides the tooltip.
- */
-export function clearContext(): void {
-	setContext(null, null);
-	setTooltip(null, null);
-	hideTooltip();
-}
-
-let currentTooltipText: string | null = null;
-let currentTooltipDoc: string | null = null;
-let isLoading = false; // whether the tooltip should show "Loading..." text
-
-let loadingTimer: NodeJS.Timer; // a handle to a timeout which sets the "Loading..." text indicator
-
-/**
- * clearLoading clears the "Loading..." tooltip, as well as any timeout
- * which would show the loading text.
- */
-function clearLoading(): void {
-	if (loadingTimer) {
-		clearTimeout(loadingTimer);
-	}
-	isLoading = false;
-}
-
-/**
- * queueLoading shows the "Loading..." tooltip after 0.5 seconds.
- */
-export function queueLoading(): void {
-	clearLoading();
-	loadingTimer = setTimeout(() => {
-		isLoading = true;
-		updateTooltip(activeTarget);
-	}, 500);
-}
-
-/**
- * setTooltip shows the provided tooltip text (or hides the tooltip, if a null
- * argument is provided). It overrides the "Loading..." tooltip.
- */
-export function setTooltip(data: TooltipData, target: HTMLElement | null): void {
-	if (target !== activeTarget) {
-		// setTooltip is called asynchronously after a fetch; only update the tooltip
-		// if the currently set active target matches the target argument
-		return;
-	}
-	clearLoading();
-
-	if (!data) {
-		currentTooltipText = null;
-	} else {
-		currentTooltipText = data.title;
-		currentTooltipDoc = data.doc || null;
-	}
-	updateTooltip(target);
+function constructBaseTooltip(): void {
+	tooltip.appendChild(loadingTooltip);
+	tooltip.appendChild(moreContext);
+	tooltip.appendChild(tooltipActions);
 }
 
 /**
@@ -142,44 +169,80 @@ export function hideTooltip(): void {
 }
 
 /**
- * _updateTooltip displays the appropriate tooltip given current state (and may hide
+ * updateTooltip displays the appropriate tooltip given current state (and may hide
  * the tooltip if no text is available).
  */
-function _updateTooltip(target: HTMLElement | null): void {
+function updateTooltip(state: TooltipState): void {
 	hideTooltip(); // hide before updating tooltip text
+
+	const { target, data, docked, context } = state;
 
 	if (!target) {
 		// no target to show hover for; tooltip is hidden
 		return;
 	}
+	if (!data) {
+		// no data; bail
+		return;
+	}
+	if (!context) {
+		// no context; bail
+		return;
+	}
 
-	if (!isLoading) {
-		if (!currentTooltipText) {
-			// no tooltip text for hovered token; tooltip is hidden
+	constructBaseTooltip();
+	loadingTooltip.style.display = data.loading ? "block" : "none";
+	moreContext.style.display = docked || data.loading ? "none" : "flex";
+	tooltipActions.style.display = docked ? "flex" : "none";
+
+	if (context && context.selectedText) {
+		j2dAction.style.display = "none";
+		findRefsAction.style.display = "none";
+	} else {
+		j2dAction.style.display = "block";
+		findRefsAction.style.display = "block";
+	}
+
+	if (data.j2dUrl) {
+		j2dAction.href = data.j2dUrl;
+	} else {
+		j2dAction.href = "";
+	}
+
+	if (data && context && context.coords && context.path && context.repoRevSpec) {
+		findRefsAction.href = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`;
+	} else {
+		findRefsAction.href = "";
+	}
+
+	const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
+	if (searchText) {
+		searchAction.href = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}&q=${searchText}`;
+	} else {
+		searchAction.href = "";
+	}
+
+	if (!data.loading) {
+		loadingTooltip.style.visibility = "hidden";
+
+		if (!data.title) {
+			// no tooltip text / search context; tooltip is hidden
 			return;
-		}
-
-		target.style.cursor = "pointer";
-		if (!target.className.includes("sg-clickable")) {
-			target.className = `${target.className} sg-clickable`;
 		}
 
 		const tooltipText = document.createElement("DIV");
 		tooltipText.className = tooltipTitleStyle;
-		tooltipText.appendChild(document.createTextNode(currentTooltipText));
-		tooltip.appendChild(tooltipText);
+		tooltipText.appendChild(document.createTextNode(data.title));
+		tooltip.insertBefore(tooltipText, moreContext);
 
-		if (currentTooltipDoc) {
+		if (data.doc) {
 			const tooltipDoc = document.createElement("DIV");
 			tooltipDoc.className = tooltipDocStyle;
-			tooltipDoc.innerHTML = truncate(marked(currentTooltipDoc, { gfm: true, breaks: true, sanitize: true }), 300);
-			tooltip.appendChild(tooltipDoc);
+			tooltipDoc.innerHTML = marked(data.doc, { gfm: true, breaks: true, sanitize: true });
+			tooltip.insertBefore(tooltipDoc, moreContext);
 		}
-
-		// only log when displaying a real tooltip (not a loading indicator)
-		eventLogger.logHover(Object.assign({}, hoverEventProps || undefined));
 	} else {
-		tooltip.appendChild(loadingTooltip);
+		loadingTooltip.style.visibility = "visible";
 	}
 
 	// Anchor it horizontally, prior to rendering to account for wrapping
@@ -195,4 +258,4 @@ function _updateTooltip(target: HTMLElement | null): void {
 	tooltip.style.visibility = "visible";
 }
 
-const updateTooltip = _.throttle(_updateTooltip, 50, { leading: true, trailing: true }); // prevent tooltip flashes as cursor moves quickly across the page
+store.subscribe(updateTooltip);

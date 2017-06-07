@@ -85,11 +85,8 @@ export class PhabDifferentialBlobAnnotator extends PhabBlobAnnotator<Differentia
 			return null;
 		}
 		return SourcegraphButton(
-			utils.supportedExtensions.has(this.fileExtension),
-			this.state.resolvedRevs[this.props.headRepoURI].cloneInProgress as boolean,
 			utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.headRepoURI, this.props.path, this.props.headBranch),
 			this.props.headRepoURI,
-			utils.upcomingExtensions.has(this.fileExtension),
 			DIFFERENTIAL_CLASSES,
 			this.getFileOpenCallback,
 		);

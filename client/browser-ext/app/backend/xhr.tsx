@@ -33,11 +33,20 @@ function defaultOptions(): FetchOptions | undefined {
 		// the chrome extension uses the Authorization field
 		credentials: isBrowserExtension() ? "omit" : "include",
 	};
-};
+}
 
 function getExtensionVersion(): string {
+	if (chrome && chrome.app && chrome.app.getDetails) {
+		const details = chrome.app.getDetails();
+		if (details && details.version) {
+			return details.version;
+		}
+	}
 	if (chrome && chrome.runtime && chrome.runtime.getManifest) {
-		return chrome.runtime.getManifest().version;
+		const manifest = chrome.runtime.getManifest();
+		if (manifest && manifest.version) {
+			return manifest.version;
+		}
 	}
 	return "NO_VERSION";
 }

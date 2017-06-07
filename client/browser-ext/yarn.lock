@@ -2,6 +2,12 @@
 # yarn lockfile v1
 
 
+"@reactivex/rxjs@^5.4.0":
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/@reactivex/rxjs/-/rxjs-5.4.0.tgz#87eb67e8e6a4fbe8ee07ee4ea94c1fa928ba1691"
+  dependencies:
+    symbol-observable "^1.0.1"
+
 "@types/bluebird":
   version "3.0.35"
   resolved "https://registry.yarnpkg.com/@types/bluebird/-/bluebird-3.0.35.tgz#e6e2d375a7b7a0a22f155ce74eb28d0da303740c"
@@ -704,7 +710,16 @@ encoding@^0.1.11:
   dependencies:
     iconv-lite "~0.4.13"
 
-enhanced-resolve@^0.9.0, enhanced-resolve@~0.9.0:
+enhanced-resolve@^3.0.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/enhanced-resolve/-/enhanced-resolve-3.1.0.tgz#9f4b626f577245edcf4b2ad83d86e17f4f421dec"
+  dependencies:
+    graceful-fs "^4.1.2"
+    memory-fs "^0.4.0"
+    object-assign "^4.0.1"
+    tapable "^0.2.5"
+
+enhanced-resolve@~0.9.0:
   version "0.9.1"
   resolved "https://registry.yarnpkg.com/enhanced-resolve/-/enhanced-resolve-0.9.1.tgz#4d6e689b3725f86090927ccc86cd9f1635b89e2e"
   dependencies:
@@ -927,9 +942,9 @@ forwarded@~0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.1.0.tgz#19ef9874c4ae1c297bcf078fde63a09b66a84363"
 
-free-style@2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/free-style/-/free-style-2.0.0.tgz#1c348c8b6b362da0bd9dfde547dd9442a2f311e0"
+free-style@2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/free-style/-/free-style-2.3.1.tgz#ae256f7e78926bf034d2a51f4ba45715b4e6a709"
 
 fresh@0.3.0:
   version "0.3.0"
@@ -1124,10 +1139,6 @@ html-encoding-sniffer@^1.0.1:
   resolved "https://registry.yarnpkg.com/html-encoding-sniffer/-/html-encoding-sniffer-1.0.1.tgz#79bf7a785ea495fe66165e734153f363ff5437da"
   dependencies:
     whatwg-encoding "^1.0.1"
-
-html-truncate@1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/html-truncate/-/html-truncate-1.2.2.tgz#db2e331dcf1cba0bd432a507d16e988609f2575f"
 
 http-browserify@^1.3.2:
   version "1.7.0"
@@ -1475,7 +1486,7 @@ levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
-loader-utils@^0.2.11, loader-utils@^0.2.6:
+loader-utils@^0.2.11:
   version "0.2.16"
   resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-0.2.16.tgz#f08632066ed8282835dff88dfb52704765adee6d"
   dependencies:
@@ -1483,6 +1494,14 @@ loader-utils@^0.2.11, loader-utils@^0.2.6:
     emojis-list "^2.0.0"
     json5 "^0.5.0"
     object-assign "^4.0.1"
+
+loader-utils@^1.0.2:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-1.1.0.tgz#c98aef488bcceda2ffb5e2de646d6a754429f5cd"
+  dependencies:
+    big.js "^3.1.3"
+    emojis-list "^2.0.0"
+    json5 "^0.5.0"
 
 lodash.filter@^4.2.1:
   version "4.6.0"
@@ -1571,6 +1590,13 @@ media-typer@0.3.0:
 memory-fs@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/memory-fs/-/memory-fs-0.2.0.tgz#f2bb25368bc121e391c2520de92969caee0a0290"
+
+memory-fs@^0.4.0:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/memory-fs/-/memory-fs-0.4.1.tgz#3a9a20b8462523e447cfbc7e8bb80ed667bfc552"
+  dependencies:
+    errno "^0.1.3"
+    readable-stream "^2.0.1"
 
 memory-fs@~0.3.0:
   version "0.3.0"
@@ -2367,6 +2393,10 @@ supports-color@^3.1.0, supports-color@^3.1.1:
   dependencies:
     has-flag "^1.0.0"
 
+symbol-observable@^1.0.1:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/symbol-observable/-/symbol-observable-1.0.4.tgz#29bf615d4aa7121bdd898b22d4b3f9bc4e2aa03d"
+
 "symbol-tree@>= 3.1.0 < 4.0.0":
   version "3.1.4"
   resolved "https://registry.yarnpkg.com/symbol-tree/-/symbol-tree-3.1.4.tgz#02b279348d337debc39694c5c95f882d448a312a"
@@ -2374,6 +2404,10 @@ supports-color@^3.1.0, supports-color@^3.1.1:
 tapable@^0.1.8, tapable@~0.1.8:
   version "0.1.10"
   resolved "https://registry.yarnpkg.com/tapable/-/tapable-0.1.10.tgz#29c35707c2b70e50d07482b5d202e8ed446dafd4"
+
+tapable@^0.2.5:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/tapable/-/tapable-0.2.6.tgz#206be8e188860b514425375e6f1ae89bfb01fd8d"
 
 tar-pack@~3.1.0:
   version "3.1.4"
@@ -2449,15 +2483,13 @@ transformers@2.1.0:
     promise "~2.0"
     uglify-js "~2.2.5"
 
-ts-loader:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-1.2.0.tgz#9833f7024ce157200c6f9b169c49422ef3976e27"
+ts-loader@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-2.1.0.tgz#5a8efcc5c72c06fc49d69bad69c85617c6194f77"
   dependencies:
-    arrify "^1.0.0"
     colors "^1.0.3"
-    enhanced-resolve "^0.9.0"
-    loader-utils "^0.2.6"
-    object-assign "^4.1.0"
+    enhanced-resolve "^3.0.0"
+    loader-utils "^1.0.2"
     semver "^5.0.1"
 
 ts-node:
@@ -2518,10 +2550,6 @@ type-is@~1.6.13:
     media-typer "0.3.0"
     mime-types "~2.1.11"
 
-typescript:
-  version "2.0.9"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.0.9.tgz#b4f5fecc3f44d5c717f3b3e7c331e5bbb147a53d"
-
 typescript-formatter:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/typescript-formatter/-/typescript-formatter-4.0.1.tgz#ed82daf856cc9a379bb16b7f1aac9affee2974cd"
@@ -2530,11 +2558,15 @@ typescript-formatter:
     editorconfig "^0.13.2"
     glob-expand "^0.2.1"
 
-typestyle:
-  version "0.7.4"
-  resolved "https://registry.yarnpkg.com/typestyle/-/typestyle-0.7.4.tgz#4d1e5b6cf846e179b7d533a1034accd4bcc72ac1"
+typescript@^2.3.3:
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.3.3.tgz#9639f3c3b40148e8ca97fe08a51dd1891bb6be22"
+
+typestyle@^1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/typestyle/-/typestyle-1.3.2.tgz#c230cce7d3ffaa0f6316f6bf443af97121189219"
   dependencies:
-    free-style "2.0.0"
+    free-style "2.3.1"
 
 ua-parser-js@^0.7.9:
   version "0.7.10"

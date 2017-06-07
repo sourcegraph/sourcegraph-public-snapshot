@@ -106,9 +106,6 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 	 * multiple times as the DOM changes as the user scrolls.
 	 */
 	addAnnotationsIfResolvedRev(uri: string, isBase: boolean, rev?: string): void {
-		if (!utils.supportedExtensions.has(this.fileExtension)) {
-			return; // Don't annotate unsupported languages
-		}
 		// this is outside of the resolveRev area, becuase this is asking if the view changed
 		// and is less concerned with if we happened to have annotations. I figure it's safer
 		// to put this code outside of that if, to avoid the 1 second poller overwhelming the page

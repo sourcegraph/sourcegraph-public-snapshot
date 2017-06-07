@@ -112,9 +112,6 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 	}
 
 	applyAnnotationsIfResolvedRev(uri: string, isBase: boolean, rev?: string): void {
-		if (!utils.supportedExtensions.has(this.fileExtension)) {
-			return; // Don't annotate unsupported languages
-		}
 		// this is outside of the resolveRev area, becuase this is asking if the view changed
 		// and is less concerned with if we happened to have annotations. I figure it's safer
 		// to put this code outside of that if, to avoid the 1 second poller overwhelming the page
@@ -149,24 +146,11 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 
 const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px", height: ".8em", width: ".8em" };
 const disabledStyle = { cursor: "default", opacity: 0.6 };
-export function SourcegraphButton(isFileSupported: boolean, isLoading: boolean, blobUrl: string, repoName: string, comingSoon: boolean, classNames: string, eventHandler: () => void): JSX.Element {
-	if (!isFileSupported) {
-		const tooltipLabel = !comingSoon ? "File not supported" : "Language support coming soon!";
-		return (<a className={classNames} title={tooltipLabel} style={disabledStyle}>
-			<SourcegraphIcon style={iconStyle} />
-			Sourcegraph
-			</a>);
-
-	} else if (isLoading) {
-		return (<a className={classNames} title={`Sourcegraph is analyzing ${repoName}`} style={disabledStyle}>
-			<SourcegraphIcon style={iconStyle} />
-			Loading...
-			</a>);
-	} else {
-		return (
-			<a title="View in Sourcegraph" className={classNames} href={blobUrl} onClick={() => eventHandler()}><SourcegraphIcon style={iconStyle} />
-				<span className="sg-clickable">Sourcegraph</span>
-			</a>
-		);
-	}
+export function SourcegraphButton(blobUrl: string, repoName: string, classNames: string, eventHandler: () => void): JSX.Element {
+	// TODO(john): consolidate w/ other blob annotators (and bring back auth-required grayscale)
+	return (
+		<a title="View in Sourcegraph" className={classNames} href={blobUrl} onClick={() => eventHandler()}><SourcegraphIcon style={iconStyle} />
+			<span className="sg-clickable">Sourcegraph</span>
+		</a>
+	);
 }

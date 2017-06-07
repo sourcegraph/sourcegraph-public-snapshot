@@ -1,6 +1,20 @@
+export interface TooltipData {
+	loading?: boolean;
+	title?: string;
+	doc?: string;
+	j2dUrl?: string;
+}
+
+export interface RepoRevSpec {
+	repoURI: string;
+	rev: string;
+	isDelta: boolean;
+	isBase: boolean;
+}
+
 /**
  * PhabUrl represents the state contained in a Phabricator URL.
- * PhabDiffusionUrl is the page state for code reading. 
+ * PhabDiffusionUrl is the page state for code reading.
  * PhabDifferentialUrl is the page state for pull requests i.e. diffusion.
  */
 export interface PhabUrl {
@@ -52,6 +66,7 @@ export enum Domain {
 
 export interface CodeCell {
 	cell: HTMLElement;
+	eventHandler: HTMLElement;
 	line: number;
 	isAddition?: boolean; // for diff views
 	isDeletion?: boolean; // for diff views

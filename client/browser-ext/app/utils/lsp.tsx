@@ -1,16 +1,14 @@
 import { doFetch as fetch } from "../backend/xhr";
+import { supportedExtensions } from "../utils";
 import { sourcegraphUrl } from "../utils/context";
 import { RepoRevSpec } from "./annotations";
 import * as utils from "./index";
-import * as tooltips from "./tooltips";
+import { TooltipData } from "./types";
 
-// TODO(uforic): Use consts. Also, these caches don't eject over time, which could be a problem.
-let tooltipCache: { [key: string]: tooltips.TooltipData } = {};
-let j2dCache = {};
+const tooltipCache: { [key: string]: TooltipData | null } = {};
+const j2dCache = {};
 
-function wrapLSP(req: { method: string, params: Object }, repoRevSpec: RepoRevSpec, path: string): Object[] {
-	// TODO(uforic): Do { ...req, id: 1 } instead of casting above
-	(req as any).id = 1;
+function wrapLSP(req: { method: string, params: any }, repoRevSpec: RepoRevSpec, path: string): any[] {
 	return [
 		{
 			id: 0,
@@ -20,44 +18,30 @@ function wrapLSP(req: { method: string, params: Object }, repoRevSpec: RepoRevSp
 				mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
 			},
 		},
-		req,
+		{
+			id: 1,
+			...req,
+		},
 		{
 			id: 2,
 			method: "shutdown",
 		},
 		{
+			// id not included on 'exit' requests
 			method: "exit",
 		},
 	];
 }
 
-const prewarmCache = new Set<string>();
-export function prewarmLSP(path: string, repoRevSpec: RepoRevSpec): void {
-	const uri = `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`;
-	if (prewarmCache.has(uri)) {
-		return;
+export function getTooltip(path: string, line: number, char: number, repoRevSpec: RepoRevSpec): Promise<TooltipData> {
+	const ext = utils.getPathExtension(path);
+	if (!supportedExtensions.has(ext)) {
+		return Promise.resolve({});
 	}
-	prewarmCache.add(uri);
 
-	const body = wrapLSP({
-		method: "textDocument/hover?prepare",
-		params: {
-			textDocument: { uri },
-			position: {
-				character: 0,
-				line: 0,
-			},
-		},
-	}, repoRevSpec, path);
+	const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${char}`;
 
-	fetch(`${sourcegraphUrl}/.api/xlang/textDocument/hover?prepare`, { method: "POST", body: JSON.stringify(body) });
-}
-
-export function getTooltip(target: HTMLElement, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<tooltips.TooltipData> {
-	const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${target.dataset["byteoffset"]}`;
-
-	//TODO(uforic): Can this just be if(tooltipCache[cacheKey])?
-	if (typeof tooltipCache[cacheKey] !== "undefined") {
+	if (tooltipCache[cacheKey]) {
 		return Promise.resolve(tooltipCache[cacheKey]);
 	}
 
@@ -68,7 +52,7 @@ export function getTooltip(target: HTMLElement, path: string, line: number, repo
 				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
 			},
 			position: {
-				character: parseInt(target.dataset["byteoffset"], 10) - 1,
+				character: char - 1,
 				line: line - 1,
 			},
 		},
@@ -88,16 +72,19 @@ export function getTooltip(target: HTMLElement, path: string, line: number, repo
 				});
 				tooltipCache[cacheKey] = { title, doc };
 			} else {
-				tooltipCache[cacheKey] = null;
+				tooltipCache[cacheKey] = {};
 			}
 			return tooltipCache[cacheKey];
 		});
 }
 
-export function fetchJumpURL(col: string, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<string | null> {
+export function fetchJumpURL(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<string | null> {
+	const ext = utils.getPathExtension(path);
+	if (!supportedExtensions.has(ext)) {
+		return Promise.resolve(null);
+	}
 	const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
-	// TODO(uforic): can you do this better?
-	if (typeof j2dCache[cacheKey] !== "undefined") {
+	if (j2dCache[cacheKey]) {
 		return Promise.resolve(j2dCache[cacheKey]);
 	}
 
@@ -108,7 +95,7 @@ export function fetchJumpURL(col: string, path: string, line: number, repoRevSpe
 				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
 			},
 			position: {
-				character: parseInt(col, 10) - 1,
+				character: col - 1,
 				line: line - 1,
 			},
 		},
@@ -116,6 +103,10 @@ export function fetchJumpURL(col: string, path: string, line: number, repoRevSpe
 
 	return fetch(`${sourcegraphUrl}/.api/xlang/textDocument/definition`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
+			if (!json || !json[1] || !json[1].result || !json[1].result[0] || !json[1].result[0].uri) {
+				// TODO(john): better error handling.
+				return null;
+			}
 			const respUri = json[1].result[0].uri.split("git://")[1];
 			const prt0Uri = respUri.split("?");
 			const prt1Uri = prt0Uri[1].split("#");

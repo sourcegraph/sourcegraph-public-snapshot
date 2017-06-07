@@ -52,7 +52,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 		let { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
 		const gitHubState = github.getGitHubState(window.location.href);
-		// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a 
+		// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a
 		// slash in it to fix that bug
 		if (gitHubState && gitHubState.mode === GitHubMode.Blob && (gitHubState as GitHubBlobUrl).rev.indexOf("/") > 0) {
 			// correct in case branch has slash in it
@@ -165,9 +165,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 
 	addAnnotations = (): void => {
-		if (!utils.supportedExtensions.has(this.fileExtension)) {
-			return; // Don't annotate unsupported languages
-		}
 		// this check is for either when the blob is collapsed or the dom element is not rendered
 		const blobElement = github.tryGetBlobElement(this.props.fileElement);
 		if (!blobElement) {
@@ -218,12 +215,9 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		}
 		// this is crappy, and only works because we stick in the cache both the repoURI as key as well as the repoURI@revision
 		const resolvedRevs = this.state.resolvedRevs[this.props.repoURI] as backend.ResolvedRevResp;
-		return getSourcegraphButton(utils.supportedExtensions.has(this.fileExtension),
-			github.isPrivateRepo() && resolvedRevs.notFound as boolean,
-			resolvedRevs.cloneInProgress as boolean,
+		return getSourcegraphButton(github.isPrivateRepo() && resolvedRevs.notFound as boolean,
 			this.props.repoURI.split("github.com/")[1],
 			this.isDelta ? utils.getSourcegraphBlobUrl(sourcegraphUrl, this.headRepoURI as string, this.props.headPath, this.headCommitID) : utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.repoURI, this.props.headPath, this.rev),
-			utils.upcomingExtensions.has(this.fileExtension),
 			this.getFileOpenCallback,
 			this.getAuthFileCallback);
 	}
@@ -237,14 +231,8 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 }
 
-function getSourcegraphButton(isFileSupported: boolean, cantFindPrivateRepo: boolean, isLoading: boolean, repoName: string, blobUrl: string, supportedSoon: boolean, fileCallack: () => void, authCallback: () => void): JSX.Element {
-	if (!isFileSupported) {
-		let ariaLabel = !supportedSoon ? "File not supported" : "Language support coming soon!";
-		return (<div style={Object.assign({ cursor: "not-allowed", WebkitFilter: "grayscale(100%)" }, buttonStyle)} className={className} aria-label={ariaLabel}>
-			<SourcegraphIcon style={iconStyle} />
-			Sourcegraph
-		</div>);
-	} else if (cantFindPrivateRepo) {
+function getSourcegraphButton(cantFindPrivateRepo: boolean, repoName: string, blobUrl: string, fileCallack: () => void, authCallback: () => void): JSX.Element {
+	if (cantFindPrivateRepo) {
 		// Not signed in or not auth'd for private repos
 		return (<a href={`${sourcegraphUrl}/login?private=true&utm_source=${utils.getPlatformName()}`}
 			style={{ textDecoration: "none", color: "inherit" }} onClick={authCallback}>
@@ -253,11 +241,6 @@ function getSourcegraphButton(isFileSupported: boolean, cantFindPrivateRepo: boo
 				Sourcegraph
 			</div>
 		</a>);
-	} else if (isLoading) {
-		return (<div style={buttonStyle} className={className} aria-label={`Sourcegraph is analyzing ${repoName}`}>
-			<SourcegraphIcon style={iconStyle} />
-			Loading...
-		</div>);
 	}
 	return (<a href={blobUrl} style={{ textDecoration: "none", color: "inherit" }} onClick={fileCallack}>
 		<div style={buttonStyle} className={className} aria-label="View on Sourcegraph"><SourcegraphIcon style={iconStyle} />
