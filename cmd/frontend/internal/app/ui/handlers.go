@@ -275,7 +275,16 @@ func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) er
 	}{
 		Meta: m,
 	}
-	return bundle.RenderEntrypoint(w, r, statusCode, nil, data)
+	// Check the config to determine the entrypoint.
+	rawConfig := r.URL.Query().Get("config")
+	var config map[string]interface{}
+	json.Unmarshal([]byte(rawConfig), &config)
+	if config != nil {
+		if config["standaloneWorkbench"] == true {
+			return bundle.RenderEntrypoint(w, r, statusCode, nil, data, true)
+		}
+	}
+	return bundle.RenderEntrypoint(w, r, statusCode, nil, data, false)
 }
 
 func getRouteName(r *http.Request) string {

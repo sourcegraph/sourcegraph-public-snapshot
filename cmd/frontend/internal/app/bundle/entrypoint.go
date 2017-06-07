@@ -17,13 +17,16 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 
-// Entrypoint is the HTML template that launches the app.
-var Entrypoint *htmltemplate.Template
+// LauncherEntrypoint is the HTML template that launches the app.
+var LauncherEntrypoint *htmltemplate.Template
+
+// WorkbenchEntrypoint is the HTML template that launches the standalone workbench. This is used when something (such as the browser extension) wants to embed only the workbench in an iframe, for example.
+var WorkbenchEntrypoint *htmltemplate.Template
 
 // RenderEntrypoint renders the entrypoint template to the HTTP
 // response.
-func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, header http.Header, data interface{}) error {
-	if Data == nil || Entrypoint == nil {
+func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, header http.Header, data interface{}, standaloneWorkbench bool) error {
+	if Data == nil || WorkbenchEntrypoint == nil || LauncherEntrypoint == nil {
 		return errNoApp
 	}
 
@@ -98,33 +101,50 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 		}
 	}
 
-	if err := Entrypoint.Execute(&bw, data); err != nil {
+	var template *htmltemplate.Template
+	if standaloneWorkbench {
+		template = WorkbenchEntrypoint
+	} else {
+		template = LauncherEntrypoint
+	}
+	if err := template.Execute(&bw, data); err != nil {
 		return err
 	}
+
 	return bw.WriteTo(w)
 }
 
-const entrypointPath = "/out/vs/launcher/browser/bootstrap/index.html"
+const (
+	launcherEntrypointPath  = "/out/vs/launcher/browser/bootstrap/index.html"
+	workbenchEntrypointPath = "/out/vs/workbench/browser/bootstrap/index.html"
+)
 
 func init() {
 	if Data != nil {
-		f, err := Data.Open(entrypointPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-		data, err := ioutil.ReadAll(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-		data = bytes.Replace(data, []byte("<!-- INSERT SOURCEGRAPH CONTEXT -->"), []byte(insertHead), 1)
-
-		Entrypoint = htmltemplate.New("entrypoint")
-		Entrypoint.Funcs(tmpl.FuncMap)
-		if _, err := Entrypoint.Parse(string(data)); err != nil {
-			log.Fatal("parsing entrypoint template:", err)
-		}
+		LauncherEntrypoint = createEntrypointTemplate(launcherEntrypointPath)
+		WorkbenchEntrypoint = createEntrypointTemplate(workbenchEntrypointPath)
 	}
+}
+
+func createEntrypointTemplate(entrypoint string) *htmltemplate.Template {
+	f, err := Data.Open(entrypoint)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	data = bytes.Replace(data, []byte("<!-- INSERT SOURCEGRAPH CONTEXT -->"), []byte(insertHead), 1)
+
+	template := htmltemplate.New("entrypoint")
+	template.Funcs(tmpl.FuncMap)
+	if _, err := template.Parse(string(data)); err != nil {
+		log.Fatal("parsing entrypoint template:", err)
+	}
+
+	return template
 }
 
 const insertHead = `
