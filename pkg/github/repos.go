@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	gogithub "github.com/sourcegraph/go-github/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
@@ -157,6 +158,33 @@ func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]
 		return SearchRepoMock(ctx, query, op)
 	}
 
+	if feature.Features.GitHubApps {
+		installs, err := ListAllAccessibleInstallations(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, ins := range installs {
+			cl, err := InstallationClient(ctx, *ins.ID)
+			if err != nil {
+				return nil, err
+			}
+			res, _, err := cl.Search.Repositories(ctx, query, op)
+			if err != nil {
+				return nil, err
+			}
+			repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
+			for _, ghrepo := range res.Repositories {
+				// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
+				// have access to within one of their installations. Filter out all private
+				// repos (private repos can be obtained with ListAllGitHubRepos)
+				if *ghrepo.Private {
+					continue
+				}
+				repos = append(repos, ToRepo(&ghrepo))
+			}
+			return repos, nil
+		}
+	}
 	res, _, err := Client(ctx).Search.Repositories(ctx, query, op)
 	if err != nil {
 		return nil, err
@@ -321,6 +349,29 @@ func MockListAccessibleRepos_Return(returns []*sourcegraph.Repo) (called *bool) 
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
 func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+	// Note: When GitHubApps is enabled a list of all repositories that are
+	// accessible to a user via their installations are returned. This API does not
+	// support RepositoryListOptions.
+	//
+	// TODO: remove unused "opt" agrument when removing this feature flag.
+	if feature.Features.GitHubApps {
+		var repos []*sourcegraph.Repo
+		installs, err := ListAllAccessibleInstallations(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, ins := range installs {
+			ghRepos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
+			if err != nil {
+				return nil, err
+			}
+			repos = make([]*sourcegraph.Repo, 0, len(ghRepos))
+			for _, r := range ghRepos {
+				repos = append(repos, ToRepo(r))
+			}
+		}
+		return repos, nil
+	}
 	if ListAccessibleReposMock != nil {
 		return ListAccessibleReposMock(ctx, opt)
 	}
@@ -338,7 +389,18 @@ func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions)
 }
 
 func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
-	ghRepos, resp, err := Client(ctx).Activity.ListStarred(ctx, "", opt)
+	var ghRepos []*gogithub.StarredRepository
+	var resp *gogithub.Response
+	var err error
+	if feature.Features.GitHubApps {
+		// We can't get access to private starred repo's with the API. This only returns public starred repos.
+		ghRepos, resp, err = gogithub.NewClient(nil).Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		ghRepos, resp, err = Client(ctx).Activity.ListStarred(ctx, "", opt)
+	}
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
 	}
