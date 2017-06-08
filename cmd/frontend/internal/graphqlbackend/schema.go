@@ -63,6 +63,7 @@ type Repository implements Node {
 	branches: [String!]!
 	tags: [String!]!
 	expirationDate: Int
+	listTotalRefs: [Repository!]!
 	gitCmdRaw(params: [String!]!): String!
 }
 

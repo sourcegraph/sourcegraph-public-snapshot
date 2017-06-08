@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"log"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
@@ -21,6 +22,17 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 		return nil, err
 	}
 	repo, err := localstore.Repos.Get(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
+		return nil, err
+	}
+	return &repositoryResolver{repo: repo}, nil
+}
+
+func repositoryByIDInt32(ctx context.Context, id int32) (*repositoryResolver, error) {
+	repo, err := localstore.Repos.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -193,4 +205,37 @@ func (r *repositoryResolver) ExpirationDate(ctx context.Context) (*int32, error)
 
 	n := int32(t.Unix())
 	return &n, nil
+}
+
+func (r *repositoryResolver) ListTotalRefs(ctx context.Context) ([]*repositoryResolver, error) {
+	totalRefs, err := backend.Defs.ListTotalRefs(ctx, r.repo.URI)
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform repo IDs into repository resolvers.
+	var (
+		firstErr  error
+		resolvers = make([]*repositoryResolver, 0, len(totalRefs))
+	)
+	for _, repoSpec := range totalRefs {
+		resolver, err := repositoryByIDInt32(ctx, repoSpec.ID)
+		if err != nil {
+			if firstErr != nil {
+				firstErr = err
+			}
+			continue
+		}
+		resolvers = append(resolvers, resolver)
+	}
+	if firstErr != nil {
+		// Log the error if we still have good results; otherwise return just
+		// the error.
+		if len(resolvers) > 5 {
+			log.Println("ListTotalRefs:", r.repo.URI, firstErr)
+			return resolvers, nil
+		}
+		return nil, err
+	}
+	return resolvers, nil
 }
