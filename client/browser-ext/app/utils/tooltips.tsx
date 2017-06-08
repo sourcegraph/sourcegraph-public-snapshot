@@ -144,7 +144,7 @@ export function createTooltips(): void {
 	};
 
 	tooltipActions.appendChild(j2dAction);
-	// tooltipActions.appendChild(findRefsAction); TODO(john): bring back when working on Sourcegraph.com
+	tooltipActions.appendChild(findRefsAction);
 	tooltipActions.appendChild(searchAction);
 }
 
