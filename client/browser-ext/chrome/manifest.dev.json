@@ -14,6 +14,18 @@
   "web_accessible_resources": [
     "inject.html"
   ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://github.com/*",
+        "https://sourcegraph.com/*"
+      ],
+      "run_at": "document_end",
+      "css": [
+        "css/highlight.css"
+      ]
+    }
+  ],
   "background": {
     "page": "background.html"
   },
@@ -21,7 +33,19 @@
     "page": "options.html",
     "chrome_style": true
   },
-  "permissions": [ "cookies", "tabs", "storage", "https://github.com/*", "https://sourcegraph.com/*", "http://phabricator.aws.sgdev.org/*", "http://node.aws.sgdev.org:30000/*", "http://localhost:7990/*"],
-  "optional_permissions": ["http://*/", "https://*/"],
+  "permissions": [
+    "cookies",
+    "tabs",
+    "storage",
+    "https://github.com/*",
+    "https://sourcegraph.com/*",
+    "http://phabricator.aws.sgdev.org/*",
+    "http://node.aws.sgdev.org:30000/*",
+    "http://localhost:7990/*"
+  ],
+  "optional_permissions": [
+    "http://*/",
+    "https://*/"
+  ],
   "content_security_policy": "default-src 'self'; script-src 'self' https://localhost:3000  https://sourcegraph-logging.telligentdata.com 'unsafe-eval'; connect-src https://sourcegraph.com/ https://sourcegraph-logging.telligentdata.com https://localhost:3000 wss://localhost:3000;"
 }

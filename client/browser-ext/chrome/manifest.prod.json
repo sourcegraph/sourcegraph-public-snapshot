@@ -25,6 +25,9 @@
       "run_at": "document_end",
       "js": [
         "js/inject.bundle.js"
+      ],
+      "css": [
+        "css/highlight.css"
       ]
     }
   ],

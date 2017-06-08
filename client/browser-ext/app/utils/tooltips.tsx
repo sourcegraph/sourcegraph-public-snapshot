@@ -3,11 +3,13 @@ import * as _ from "lodash";
 import * as marked from "marked";
 import { style } from "typestyle";
 import { parseURL } from ".";
-import { getPlatformName } from "../utils";
+import { getModeFromExtension, getPlatformName } from "../utils";
 import { eventLogger, sourcegraphUrl } from "../utils/context";
 import { fetchJumpURL } from "./lsp";
 import { getTooltipEventProperties, store, TooltipState } from "./store";
 import { TooltipData } from "./types";
+
+import { highlightBlock } from "highlight.js";
 
 const tooltipClassName = style({
 	backgroundColor: "#fafbfc",
@@ -231,9 +233,10 @@ function updateTooltip(state: TooltipState): void {
 		}
 
 		const tooltipText = document.createElement("DIV");
-		tooltipText.className = tooltipTitleStyle;
+		tooltipText.className = `${tooltipTitleStyle} ${getModeFromExtension(context.path)}`;
 		tooltipText.appendChild(document.createTextNode(data.title));
 		tooltip.insertBefore(tooltipText, moreContext);
+		highlightBlock(tooltipText);
 
 		if (data.doc) {
 			const tooltipDoc = document.createElement("DIV");
