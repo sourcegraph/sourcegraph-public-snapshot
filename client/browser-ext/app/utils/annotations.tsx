@@ -1,5 +1,5 @@
-import * as Rx from "@reactivex/rxjs";
 import * as _ from "lodash";
+import * as Rx from "rxjs";
 import { getPathExtension } from "../utils";
 import { eventLogger, isBrowserExtension } from "../utils/context";
 import * as github from "./github";
@@ -43,6 +43,7 @@ function addEventListeners(el: HTMLElement, hoverCb: () => void): DOMObservables
 
 	const click = Rx.Observable.fromEvent<MouseEvent>(el, "click");
 	const mouseover = Rx.Observable.fromEvent<MouseEvent>(el, "mouseover").do(hoverCb);
+	const mouseenter = Rx.Observable.fromEvent<MouseEvent>(el, "mouseenter");
 	const mouseout = Rx.Observable.fromEvent<MouseEvent>(el, "mouseout");
 	const mouseup = Rx.Observable.fromEvent<MouseEvent>(el, "mouseup");
 	const mousedown = Rx.Observable.fromEvent<MouseEvent>(el, "mousedown");
@@ -309,17 +310,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		return addEventListeners(cell.eventHandler, hoverCb);
 	})) as DOMObservables[];
 
-	function allEvents(pick: (obs: DOMObservables) => Rx.Observable<MouseEvent>): Rx.Observable<MouseEvent> {
-		return domObservables.reduce((prev, next) => prev.merge(pick(next)), Rx.Observable.from<MouseEvent>([]));
-	}
-
-	const clicks = allEvents((obs) => obs.click);
-	const mouseovers = allEvents((obs) => obs.mouseover);
-	const mousouts = allEvents((obs) => obs.mouseout);
-	const mouseups = allEvents((obs) => obs.mouseup);
-	const mousedowns = allEvents((obs) => obs.mousedown);
-
-	mouseovers.subscribe(e => {
+	domObservables.forEach(observable => observable.mouseover.subscribe((e) => {
 		const t = e.target as HTMLElement;
 		if (!store.getValue().docked) {
 			activeTarget = t;
@@ -339,9 +330,9 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 			}
 		});
 		loadingTooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.HOVER));
-	});
+	}));
 
-	clicks.subscribe(e => {
+	domObservables.forEach(observable => observable.click.subscribe((e => {
 		const t = e.target as HTMLElement;
 		const clickedActiveTarget = t === activeTarget;
 		activeTarget = t;
@@ -374,6 +365,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
 		tooltipObservable.subscribe((ev) => {
 			if (ev.data.loading || !ev.data.title) {
+				clearTooltip(t);
 				return;
 			}
 			tooltipEvent(ev, context, TooltipEventType.CLICK);
@@ -384,29 +376,25 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 				tooltipEvent(ev[0], context, TooltipEventType.CLICK, false);
 			}
 		});
-	});
+	})));
 
-	mousouts.subscribe(e => {
+	domObservables.forEach(observable => observable.mouseout.subscribe((e => {
 		if (!store.getValue().docked) {
 			activeTarget = null;
 			clearTooltip();
 		}
-	});
+	})));
 
-	mousedowns.subscribe(e => {
+	domObservables.forEach(observable => observable.mousedown.subscribe((e => {
 		mousedownRow = e.target as HTMLElement;
-	});
+	})));
 
-	mouseups.subscribe(e => {
+	domObservables.forEach(observable => observable.mouseup.subscribe((e => {
 		mouseupRow = e.target as HTMLElement;
 		if (mousedownRow !== mouseupRow) {
 
 			const selectedText = getSelectedText();
 			if (selectedText !== "") {
-				// if (store.getValue().docked) {
-				// 	return;
-				// }
-
 				const target = getSelectedTextTarget();
 				activeTarget = target;
 
@@ -415,7 +403,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 				return;
 			}
 		}
-	});
+	})));
 }
 
 /**

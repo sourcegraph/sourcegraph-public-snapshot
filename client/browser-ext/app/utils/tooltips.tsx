@@ -1,6 +1,6 @@
-import * as Rx from "@reactivex/rxjs";
 import * as _ from "lodash";
 import * as marked from "marked";
+import * as Rx from "rxjs";
 import { style } from "typestyle";
 import { parseURL } from ".";
 import { getModeFromExtension, getPlatformName } from "../utils";
