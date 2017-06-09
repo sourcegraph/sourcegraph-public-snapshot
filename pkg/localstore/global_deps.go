@@ -350,9 +350,11 @@ func (g *globalDeps) doListTotalRefs(ctx context.Context, repo int32, lang strin
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err := rows.Scan(&results); err != nil {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
+		results = append(results, int32(id))
 	}
 	return results, nil
 }
@@ -414,10 +416,12 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]in
 	defer rows.Close()
 	var results []int32
 	for rows.Next() {
-		err := rows.Scan(&results)
+		var id int64
+		err := rows.Scan(&id)
 		if err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
+		results = append(results, int32(id))
 	}
 	return results, nil
 }
