@@ -2,10 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"sync"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
+	"github.com/neelance/parallel"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -207,35 +210,70 @@ func (r *repositoryResolver) ExpirationDate(ctx context.Context) (*int32, error)
 	return &n, nil
 }
 
-func (r *repositoryResolver) ListTotalRefs(ctx context.Context) ([]*repositoryResolver, error) {
+func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListResolver, error) {
 	totalRefs, err := backend.Defs.ListTotalRefs(ctx, r.repo.URI)
 	if err != nil {
 		return nil, err
 	}
+	originalLength := len(totalRefs)
+
+	// Limit total references to 250 to prevent the many localstore.Repos.Get
+	// operations from taking too long.
+	if limit := 250; len(totalRefs) > limit {
+		totalRefs = totalRefs[:limit]
+	}
 
 	// Transform repo IDs into repository resolvers.
 	var (
-		firstErr  error
-		resolvers = make([]*repositoryResolver, 0, len(totalRefs))
+		par         = 8
+		resolversMu sync.Mutex
+		resolvers   = make([]*repositoryResolver, 0, len(totalRefs))
+		run         = parallel.NewRun(par)
 	)
 	for _, repoSpec := range totalRefs {
-		resolver, err := repositoryByIDInt32(ctx, repoSpec.ID)
-		if err != nil {
-			if firstErr != nil {
-				firstErr = err
+		repoSpec := repoSpec
+		run.Acquire()
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					run.Error(fmt.Errorf("recover: %v", r))
+				}
+				run.Release()
+			}()
+			resolver, err := repositoryByIDInt32(ctx, repoSpec.ID)
+			if err != nil {
+				run.Error(err)
+				return
 			}
-			continue
-		}
-		resolvers = append(resolvers, resolver)
+			resolversMu.Lock()
+			resolvers = append(resolvers, resolver)
+			resolversMu.Unlock()
+		}()
 	}
-	if firstErr != nil {
+	if err := run.Wait(); err != nil {
 		// Log the error if we still have good results; otherwise return just
 		// the error.
 		if len(resolvers) > 5 {
-			log.Println("ListTotalRefs:", r.repo.URI, firstErr)
-			return resolvers, nil
+			log.Println("ListTotalRefs:", r.repo.URI, err)
+		} else {
+			return nil, err
 		}
-		return nil, err
 	}
-	return resolvers, nil
+	return &totalRefListResolver{
+		repositories: resolvers,
+		total:        int32(originalLength),
+	}, nil
+}
+
+type totalRefListResolver struct {
+	repositories []*repositoryResolver
+	total        int32
+}
+
+func (t *totalRefListResolver) Repositories() []*repositoryResolver {
+	return t.repositories
+}
+
+func (t *totalRefListResolver) Total() int32 {
+	return t.total
 }
