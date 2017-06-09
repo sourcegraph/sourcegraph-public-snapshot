@@ -142,6 +142,37 @@ func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inv
 	return sum, nil
 }
 
+// ListTotalRefs is like TotalRefs, except it returns a list of repo IDs
+// instead of just the length of that list. Obviously, this is less efficient
+// if you just need the count, however.
+func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) ([]int32, error) {
+	repo, err := Repos.GetByURI(ctx, repoURI)
+	if err != nil {
+		return nil, errors.Wrap(err, "Repos.GetByURI")
+	}
+
+	var results []int32
+	for _, lang := range langs {
+		switch lang.Name {
+		case inventory.LangGo:
+			for _, expandedSources := range repoURIToGoPathPrefixes(repoURI) {
+				refs, err := g.doListTotalRefsGo(ctx, expandedSources)
+				if err != nil {
+					return nil, errors.Wrap(err, "doListTotalRefsGo")
+				}
+				results = append(results, refs...)
+			}
+		case inventory.LangJava:
+			refs, err := g.doListTotalRefs(ctx, repo.ID, "java")
+			if err != nil {
+				return nil, errors.Wrap(err, "doListTotalRefs")
+			}
+			results = append(results, refs...)
+		}
+	}
+	return results, nil
+}
+
 // repoURIToGoPathPrefixes translates a repository URI like
 // github.com/kubernetes/kubernetes into its _prefix_ matching Go import paths
 // (e.g. k8s.io/kubernetes). In the case of the standard library,
@@ -279,6 +310,53 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 	return count, nil
 }
 
+// doListTotalRefs is the generic implementation of list total references,
+// using the `pkgs` table.
+func (g *globalDeps) doListTotalRefs(ctx context.Context, repo int32, lang string) (results []int32, err error) {
+	// Get packages contained in the repo
+	packages, err := (&pkgs{}).ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
+	if err != nil {
+		return nil, errors.Wrap(err, "ListPackages")
+	}
+	if len(packages) == 0 {
+		return nil, nil
+	}
+
+	// Find all repos that depend on that set of packages
+	var args []interface{}
+	arg := func(a interface{}) string {
+		args = append(args, a)
+		return fmt.Sprintf("$%d", len(args))
+	}
+	var pkgClauses []string
+	for _, pkg := range packages {
+		pkgID, ok := xlang.PackageIdentifier(pkg.Pkg, lang)
+		if !ok {
+			return nil, errors.Wrap(err, "PackageIdentifier")
+		}
+		containmentQuery, err := json.Marshal(pkgID)
+		if err != nil {
+			return nil, errors.Wrap(err, "Marshal")
+		}
+		pkgClauses = append(pkgClauses, `dep_data @> `+arg(string(containmentQuery)))
+	}
+	whereSQL := `(language=` + arg(lang) + `) AND ((` + strings.Join(pkgClauses, ") OR (") + `))`
+	sql := `SELECT distinct(repo_id)
+			FROM global_dep
+			WHERE ` + whereSQL
+	rows, err := appDBH(ctx).Db.Query(sql, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "Query")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(&results); err != nil {
+			return nil, errors.Wrap(err, "Scan")
+		}
+	}
+	return results, nil
+}
+
 // doTotalRefsGo is the Go-specific implementation of total references, since we can extract package metadata directly
 // from Go repository URLs, without going through the `pkgs` table.
 func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, error) {
@@ -309,6 +387,39 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 		}
 	}
 	return count, nil
+}
+
+// doListTotalRefsGo is the Go-specific implementation of list total
+// references, since we can extract package metadata directly from Go
+// repository URLs, without going through the `pkgs` table.
+func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]int32, error) {
+	// 🚨 SECURITY: Note that we do not speak to global_dep_private here, because 🚨
+	// that could hint towards private repositories existing. We may decide to
+	// relax this constraint in the future, but we should be extremely careful
+	// in doing so.
+
+	// Because global_dep only store Go package paths, not repository URIs, we
+	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
+	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
+	// but not custom import paths etc.
+	rows, err := appDBH(ctx).Db.Query(`SELECT DISTINCT repo_id
+		FROM global_dep
+		WHERE language='go'
+		AND dep_data->>'depth' = '0'
+		AND dep_data->>'package' LIKE $1;
+	`, source+"%")
+	if err != nil {
+		return nil, errors.Wrap(err, "Query")
+	}
+	defer rows.Close()
+	var results []int32
+	for rows.Next() {
+		err := rows.Scan(&results)
+		if err != nil {
+			return nil, errors.Wrap(err, "Scan")
+		}
+	}
+	return results, nil
 }
 
 func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *sourcegraph.Repo, commitID string) (err error) {

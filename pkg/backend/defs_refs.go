@@ -32,10 +32,19 @@ var (
 		Name:      "totalrefs_cache_hit",
 		Help:      "Counts cache hits and misses for Defs.TotalRefs repo ref counts.",
 	}, []string{"type"})
+
+	listTotalRefsCache        = rcache.NewWithTTL("listtotalrefs", 3600) // 1h
+	listTotalRefsCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "defs",
+		Name:      "listtotalrefs_cache_hit",
+		Help:      "Counts cache hits and misses for Defs.ListTotalRefs repo ref counts.",
+	}, []string{"type"})
 )
 
 func init() {
 	prometheus.MustRegister(totalRefsCacheCounter)
+	prometheus.MustRegister(listTotalRefsCacheCounter)
 }
 
 func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
@@ -82,6 +91,70 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	}
 	totalRefsCache.Set(source, jsonRes)
 	return res, nil
+}
+
+func repoSpecsToInts(v []sourcegraph.RepoSpec) (r []int32) {
+	r = make([]int32, len(v))
+	for i, v := range v {
+		r[i] = v.ID
+	}
+	return
+}
+
+func intsToRepoSpecs(v []int32) (r []sourcegraph.RepoSpec) {
+	r = make([]sourcegraph.RepoSpec, len(v))
+	for i, v := range v {
+		r[i] = sourcegraph.RepoSpec{ID: v}
+	}
+	return
+}
+
+func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []sourcegraph.RepoSpec, err error) {
+	if Mocks.Defs.ListTotalRefs != nil {
+		return Mocks.Defs.ListTotalRefs(ctx, source)
+	}
+
+	ctx, done := trace(ctx, "Deps", "ListTotalRefs", source, &err)
+	defer done()
+
+	// Check if value is in the cache.
+	jsonRes, ok := listTotalRefsCache.Get(source)
+	if ok {
+		listTotalRefsCacheCounter.WithLabelValues("hit").Inc()
+		var ints []int32
+		if err := json.Unmarshal(jsonRes, &ints); err != nil {
+			return nil, err
+		}
+		return intsToRepoSpecs(ints), nil
+	}
+
+	// Query value from the database.
+	rp, err := Repos.GetByURI(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID, Rev: rp.DefaultBranch})
+	if err != nil {
+		return nil, err
+	}
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: rev.CommitID})
+	if err != nil {
+		return nil, err
+	}
+	listTotalRefsCacheCounter.WithLabelValues("miss").Inc()
+	ints, err := localstore.GlobalDeps.ListTotalRefs(ctx, source, inv.Languages)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store value in the cache.
+	_ = []int32(ints) // important so that we don't accidentally change encoding type
+	jsonRes, err = json.Marshal(ints)
+	if err != nil {
+		return nil, err
+	}
+	listTotalRefsCache.Set(source, jsonRes)
+	return intsToRepoSpecs(ints), nil
 }
 
 // Dependencies returns the dependency references for the given repoID. I.e., the repo's dependencies.
@@ -199,6 +272,7 @@ func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 
 type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
+	ListTotalRefs        func(ctx context.Context, source string) (res []sourcegraph.RepoSpec, err error)
 	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
 	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
 	Dependencies         func(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error)

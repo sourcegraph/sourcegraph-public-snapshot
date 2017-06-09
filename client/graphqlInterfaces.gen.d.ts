@@ -350,6 +350,7 @@ declare namespace GQL {
 		branches: Array<string>;
 		tags: Array<string>;
 		expirationDate: number | null;
+		listTotalRefs: Array<IRepository>;
 		gitCmdRaw: string;
 	}
 
