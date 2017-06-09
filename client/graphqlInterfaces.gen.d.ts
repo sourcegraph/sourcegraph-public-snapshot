@@ -350,7 +350,7 @@ declare namespace GQL {
 		branches: Array<string>;
 		tags: Array<string>;
 		expirationDate: number | null;
-		listTotalRefs: Array<IRepository>;
+		listTotalRefs: ITotalRefList;
 		gitCmdRaw: string;
 	}
 
@@ -438,6 +438,15 @@ declare namespace GQL {
 		path: string;
 		line: number;
 		character: number;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ITotalRefList {
+		__typename: string;
+		repositories: Array<IRepository>;
+		total: number;
 	}
 
 	/*

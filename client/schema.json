@@ -2886,17 +2886,9 @@
 							"kind": "NON_NULL",
 							"name": null,
 							"ofType": {
-								"kind": "LIST",
-								"name": null,
-								"ofType": {
-									"kind": "NON_NULL",
-									"name": null,
-									"ofType": {
-										"kind": "OBJECT",
-										"name": "Repository",
-										"ofType": null
-									}
-								}
+								"kind": "OBJECT",
+								"name": "TotalRefList",
+								"ofType": null
 							}
 						},
 						"isDeprecated": false,
@@ -3677,6 +3669,57 @@
 					},
 					{
 						"name": "character",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"enumValues": null,
+				"possibleTypes": null
+			},
+			{
+				"kind": "OBJECT",
+				"name": "TotalRefList",
+				"description": null,
+				"fields": [
+					{
+						"name": "repositories",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "Repository",
+										"ofType": null
+									}
+								}
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "total",
 						"description": null,
 						"args": [],
 						"type": {
