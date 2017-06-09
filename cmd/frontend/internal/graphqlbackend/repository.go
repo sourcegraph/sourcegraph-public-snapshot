@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"sync"
 
 	graphql "github.com/neelance/graphql-go"
@@ -219,6 +220,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 
 	// Limit total references to 250 to prevent the many localstore.Repos.Get
 	// operations from taking too long.
+	sort.Sort(sortByRepoSpecID(totalRefs))
 	if limit := 250; len(totalRefs) > limit {
 		totalRefs = totalRefs[:limit]
 	}
@@ -231,9 +233,8 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 		run         = parallel.NewRun(par)
 	)
 	for _, repoSpec := range totalRefs {
-		repoSpec := repoSpec
 		run.Acquire()
-		go func() {
+		go func(repoSpec sourcegraph.RepoSpec) {
 			defer func() {
 				if r := recover(); r != nil {
 					run.Error(fmt.Errorf("recover: %v", r))
@@ -248,7 +249,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 			resolversMu.Lock()
 			resolvers = append(resolvers, resolver)
 			resolversMu.Unlock()
-		}()
+		}(repoSpec)
 	}
 	if err := run.Wait(); err != nil {
 		// Log the error if we still have good results; otherwise return just
@@ -276,4 +277,12 @@ func (t *totalRefListResolver) Repositories() []*repositoryResolver {
 
 func (t *totalRefListResolver) Total() int32 {
 	return t.total
+}
+
+type sortByRepoSpecID []sourcegraph.RepoSpec
+
+func (s sortByRepoSpecID) Len() int      { return len(s) }
+func (s sortByRepoSpecID) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortByRepoSpecID) Less(i, j int) bool {
+	return s[i].ID < s[j].ID
 }
