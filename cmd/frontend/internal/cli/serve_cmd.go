@@ -168,7 +168,7 @@ func Main() error {
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
 	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New())))
-	sm.Handle("/main/", http.StripPrefix("/main", bundle.Handler())) // vscode assets
+	sm.Handle("/.app/", http.StripPrefix("/.app", bundle.Handler())) // vscode assets
 	assets.Mount(sm)
 
 	if biLoggerAddr != "" {
@@ -225,7 +225,7 @@ func Main() error {
 			w.Header().Set("X-XSS-Protection", "1; mode=block")
 			// Open up X-Frame-Options for the chrome extension when running on github.com
 			url, _ := url.Parse(r.Referer())
-			if !(url != nil && url.Scheme == "https" && url.Host == "github.com") {
+			if !strings.HasPrefix(r.URL.Path, "/.app/") && !(url != nil && url.Scheme == "https" && url.Host == "github.com") {
 				w.Header().Set("X-Frame-Options", "DENY")
 			}
 			if v, _ := strconv.ParseBool(enableHSTS); v {

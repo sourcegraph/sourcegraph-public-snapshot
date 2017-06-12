@@ -1,70 +1,67 @@
-//go:generate go run generate.go
-
-// Package bundle contains the bundled assets for the vscode
-// application.
-//
-// To fetch the prebuilt vscode package, run:
-//
-//   cmd/frontend/internal/app/bundle/fetch-and-generate.bash
-//
-// To publish a vscode package, follow the steps in vscode-private/SOURCEGRAPH.md
 package bundle
 
 import (
-	"errors"
-	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
-	"net/url"
-	"path"
-	"strings"
+	"sync"
 
-	"github.com/shurcooL/httpgzip"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-var (
-	cacheKey     string
-	cacheControl string
+var mu sync.Mutex
+var cache = make(map[string]*asset)
 
-	errNoApp = errors.New("vscode app is not enabled on this server")
-)
+type asset struct {
+	status      int
+	contentType string
+	body        []byte
+}
 
-// Handler handles HTTP requests for files in the bundle.
+var browserPkg = env.Get("VSCODE_BROWSER_PKG", "", "load vscode assets from disk")
+
 func Handler() http.Handler {
-	if Data == nil {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintln(w, errNoApp.Error())
-		})
+	if browserPkg != "" {
+		Version = "dev"
+		return http.StripPrefix("/"+Version, http.FileServer(http.Dir(browserPkg)))
 	}
 
-	fs := httpgzip.FileServer(Data, httpgzip.FileServerOptions{})
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// If a cache key is specified for the bundle, then require it as a prefix on all
-		// URL paths.
-		if cacheKey != "" {
-			prefix := "/" + cacheKey
-			if p := strings.TrimPrefix(r.URL.Path, prefix); len(p) < len(r.URL.Path) {
-				r.URL.Path = p
-			} else {
-				http.NotFound(w, r)
-				return
-			}
+		a, err := fetch(r.URL.Path)
+		if err != nil {
+			log.Print(err)
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
 		}
-
-		if cacheControl != "" {
-			w.Header().Set("Cache-Control", cacheControl)
+		if a.status == 200 {
+			w.Header().Set("Content-Type", a.contentType)
+			w.Header().Set("Cache-Control", "max-age=31536000, public")
 		}
-		w.Header().Set("Vary", "Accept-Encoding")
-
-		url, _ := url.Parse(r.Referer())
-		// Open up X-Frame-Options for the chrome extension when running on github.com.
-		if url != nil && url.Scheme == "https" && url.Host == "github.com" {
-			w.Header().Del("X-Frame-Options")
-		} else if name := path.Base(r.URL.Path); name == "index.html" || name == "webview.html" {
-			// The UI uses iframes, so we need to allow iframes.
-			w.Header().Set("X-Frame-Options", "SAMEORIGIN")
-		}
-
-		fs.ServeHTTP(w, r)
+		w.WriteHeader(a.status)
+		w.Write(a.body)
 	})
+}
+
+func fetch(path string) (*asset, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	a, ok := cache[path]
+	if !ok {
+		resp, err := http.Get("https://app.sourcegraph.com" + path)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		a = &asset{resp.StatusCode, resp.Header.Get("Content-Type"), body}
+		cache[path] = a
+	}
+
+	return a, nil
 }

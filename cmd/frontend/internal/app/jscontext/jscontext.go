@@ -87,7 +87,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	return JSContext{
-		AppRoot:           "/main",
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
 		CSRFToken:         csrfToken,

@@ -3,7 +3,6 @@ package bundle
 import (
 	"bytes"
 	htmltemplate "html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,19 +16,15 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 
-// LauncherEntrypoint is the HTML template that launches the app.
-var LauncherEntrypoint *htmltemplate.Template
+// launcherEntrypoint is the HTML template that launches the app.
+var launcherEntrypoint = createEntrypointTemplate("out/vs/launcher/browser/bootstrap/index.html")
 
-// WorkbenchEntrypoint is the HTML template that launches the standalone workbench. This is used when something (such as the browser extension) wants to embed only the workbench in an iframe, for example.
-var WorkbenchEntrypoint *htmltemplate.Template
+// workbenchEntrypoint is the HTML template that launches the standalone workbench. This is used when something (such as the browser extension) wants to embed only the workbench in an iframe, for example.
+var workbenchEntrypoint = createEntrypointTemplate("out/vs/workbench/browser/bootstrap/index.html")
 
 // RenderEntrypoint renders the entrypoint template to the HTTP
 // response.
 func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, header http.Header, data interface{}, standaloneWorkbench bool) error {
-	if Data == nil || WorkbenchEntrypoint == nil || LauncherEntrypoint == nil {
-		return errNoApp
-	}
-
 	if data != nil {
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(tmpl.Common)
@@ -43,9 +38,7 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 		}
 		jsctx.XHRHeaders = nil
 
-		if cacheKey != "" {
-			jsctx.AppRoot += "/" + cacheKey
-		}
+		jsctx.AppRoot = "/.app/" + Version
 
 		field.Set(reflect.ValueOf(tmpl.Common{
 			AuthInfo: actor.FromContext(r.Context()).AuthInfo(),
@@ -103,9 +96,9 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 
 	var template *htmltemplate.Template
 	if standaloneWorkbench {
-		template = WorkbenchEntrypoint
+		template = workbenchEntrypoint
 	} else {
-		template = LauncherEntrypoint
+		template = launcherEntrypoint
 	}
 	if err := template.Execute(&bw, data); err != nil {
 		return err
@@ -114,29 +107,13 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 	return bw.WriteTo(w)
 }
 
-const (
-	launcherEntrypointPath  = "/out/vs/launcher/browser/bootstrap/index.html"
-	workbenchEntrypointPath = "/out/vs/workbench/browser/bootstrap/index.html"
-)
-
-func init() {
-	if Data != nil {
-		LauncherEntrypoint = createEntrypointTemplate(launcherEntrypointPath)
-		WorkbenchEntrypoint = createEntrypointTemplate(workbenchEntrypointPath)
-	}
-}
-
 func createEntrypointTemplate(entrypoint string) *htmltemplate.Template {
-	f, err := Data.Open(entrypoint)
+	a, err := fetch("/" + Version + "/" + entrypoint)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
-	data, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	data = bytes.Replace(data, []byte("<!-- INSERT SOURCEGRAPH CONTEXT -->"), []byte(insertHead), 1)
+
+	data := bytes.Replace(a.body, []byte("<!-- INSERT SOURCEGRAPH CONTEXT -->"), []byte(insertHead), 1)
 
 	template := htmltemplate.New("entrypoint")
 	template.Funcs(tmpl.FuncMap)
