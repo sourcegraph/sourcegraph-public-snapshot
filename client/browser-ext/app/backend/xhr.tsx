@@ -7,10 +7,13 @@ export function useAccessToken(tok: string): void {
 	token = tok;
 }
 
-type FetchOptions = { headers: Headers, credentials: string };
+interface FetchOptions {
+	headers: Headers;
+	credentials: string;
+}
 
 export function combineHeaders(a: Headers, b: Headers): Headers {
-	let headers = new Headers(a);
+	const headers = new Headers(a);
 	b.forEach((val: string, name: any) => { headers.append(name, val); });
 	return headers;
 }
@@ -36,14 +39,15 @@ function defaultOptions(): FetchOptions | undefined {
 }
 
 function getExtensionVersion(): string {
-	if (chrome && chrome.app && chrome.app.getDetails) {
-		const details = chrome.app.getDetails();
+	const c = chrome as any;
+	if (c && c.app && c.app.getDetails) {
+		const details = c.app.getDetails();
 		if (details && details.version) {
 			return details.version;
 		}
 	}
-	if (chrome && chrome.runtime && chrome.runtime.getManifest) {
-		const manifest = chrome.runtime.getManifest();
+	if (c && c.runtime && c.runtime.getManifest) {
+		const manifest = c.runtime.getManifest();
 		if (manifest && manifest.version) {
 			return manifest.version;
 		}
@@ -52,7 +56,7 @@ function getExtensionVersion(): string {
 }
 
 export function doFetch(url: string, opt?: any): Promise<Response> {
-	let defaults = defaultOptions();
+	const defaults = defaultOptions();
 	const fetchOptions = Object.assign({}, defaults, opt);
 	if (opt.headers && defaults) {
 		// the above object merge might override the auth headers. add those back in.

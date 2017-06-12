@@ -35,7 +35,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
 		method: "POST",
 		body: JSON.stringify(body),
-	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
+	}).then((resp) => resp.json()).then((json: any) => {
 		// Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
 		promiseCache.delete(key);
 		if (!json.data) {

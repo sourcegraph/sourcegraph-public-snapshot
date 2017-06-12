@@ -21,7 +21,7 @@ export function getBitbucketState(location: Location): BitbucketBrowseUrl | Bitb
 			repo: match.repo,
 			path: match.path,
 			rev: "master",
-		} as BitbucketBrowseUrl;
+		};
 	}
 	return null;
 }

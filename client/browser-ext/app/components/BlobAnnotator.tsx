@@ -50,7 +50,8 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 		this.fileExtension = utils.getPathExtension(props.headPath);
 
-		let { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
+		const { isDelta, isPullRequest, isCommit } = utils.parseURL(window.location);
+		let { rev } = utils.parseURL(window.location);
 		const gitHubState = github.getGitHubState(window.location.href);
 		// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a
 		// slash in it to fix that bug
@@ -195,7 +196,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		}
 	}
 
-	getEventLoggerProps(): Object {
+	getEventLoggerProps(): any {
 		return {
 			repo: this.props.repoURI,
 			path: this.props.headPath,

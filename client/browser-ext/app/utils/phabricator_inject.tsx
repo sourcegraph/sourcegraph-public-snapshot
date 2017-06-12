@@ -5,7 +5,6 @@ import { PhabDiffusionBlobAnnotator } from "../../app/components/PhabDiffusionBl
 import { getFilepathFromFile, getPhabricatorState, tryGetBlobElement } from "../../app/utils/phabricator";
 import { CodeCell, PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorMode, PhabUrl } from "../../app/utils/types";
 
-
 /**
  * injectPhabricatorBlobAnnotators finds file blocks on the dom that sould be annotated, and adds blob annotators to them.
  */

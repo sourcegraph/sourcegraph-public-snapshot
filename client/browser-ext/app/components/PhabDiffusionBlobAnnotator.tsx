@@ -14,7 +14,7 @@ export class PhabDiffusionBlobAnnotator extends PhabBlobAnnotator<DiffusionProps
 		this.applyAnnotationsIfResolvedRev(this.props.repoURI, false, this.props.rev);
 	}
 
-	getEventLoggerProps(): Object {
+	getEventLoggerProps(): any {
 		return {
 			repo: this.props.repoURI,
 			path: this.props.path,

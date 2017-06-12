@@ -35,7 +35,7 @@ function getDifferentialCommitFromPage(): string | null {
 		if (!(revElement && revElement.children && revElement.children[0])) {
 			continue;
 		}
-		const linkHref =  revElement.children[0].getAttribute("href");;
+		const linkHref = revElement.children[0].getAttribute("href");
 		if (!linkHref) {
 			continue;
 		}
@@ -49,7 +49,7 @@ function getDifferentialCommitFromPage(): string | null {
 }
 
 const DIFF_LINK = /D[0-9]+\?id=([0-9]+)/i;
-function getMaxDiffFromTabView(): {diffId: number, revDescription: string} | null {
+function getMaxDiffFromTabView(): { diffId: number, revDescription: string } | null {
 	// first, find Revision contents table box
 	const headerShells = document.getElementsByClassName("phui-header-header");
 	let revisionContents: Element | null = null;
@@ -71,7 +71,7 @@ function getMaxDiffFromTabView(): {diffId: number, revDescription: string} | nul
 			continue;
 		}
 		const links = table.getElementsByTagName("a");
-		let max: {diffId: number, revDescription: string} | null = null;
+		let max: { diffId: number, revDescription: string } | null = null;
 		for (const link of Array.from(links)) {
 			const linkHref = link.getAttribute("href");
 			if (!linkHref) {
@@ -81,12 +81,12 @@ function getMaxDiffFromTabView(): {diffId: number, revDescription: string} | nul
 			if (!matches) {
 				continue;
 			}
-			let revDescription = link.parentNode!.parentNode!.childNodes[3].textContent;
+			const revDescription = link.parentNode!.parentNode!.childNodes[3].textContent;
 			const shaMatch = REV_SHA_PATTERN.exec(revDescription!);
 			if (!shaMatch) {
 				continue;
 			}
-			max = max && max.diffId > parseInt(matches[1], 10) ? max : { diffId: parseInt(matches[1], 10), revDescription: shaMatch[2]};
+			max = max && max.diffId > parseInt(matches[1], 10) ? max : { diffId: parseInt(matches[1], 10), revDescription: shaMatch[2] };
 		}
 		return max;
 	}
@@ -149,7 +149,7 @@ function getDiffIdFromDifferentialPage(): string | null {
 
 function getParentFromRevisionPage(): string | null {
 	const keyElements = document.getElementsByClassName("phui-property-list-key");
-	for (let keyElement of Array.from(keyElements)) {
+	for (const keyElement of Array.from(keyElements)) {
 		if (keyElement.textContent === "Parents ") {
 			const parentUrl = ((keyElement.nextSibling as HTMLElement).children[0].children[0] as HTMLLinkElement).href;
 			const revisionMatch = PHAB_REVISION_REGEX.exec(parentUrl);
@@ -169,7 +169,7 @@ const PHAB_CHANGE_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})
 
 const COMPARISON_REGEX = /^vs=((?:[0-9]+|on))&id=([0-9]+)/i;
 
-export function getPhabricatorState(loc: Location): PhabUrl | null {
+export function getPhabricatorState(loc: Location): PhabDiffusionUrl | PhabDifferentialUrl | PhabRevisionUrl | PhabChangeUrl | null {
 	const diffusionMatches = PHAB_DIFFUSION_REGEX.exec(loc.href);
 	if (diffusionMatches) {
 		const match = {
@@ -207,7 +207,7 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			path: match.path,
 			mode: phabricatorMode,
 			rev: rev,
-		} as PhabDiffusionUrl;
+		};
 	}
 	const differentialMatches = PHAB_DIFFERENTIAL_REGEX.exec(loc.href);
 	if (differentialMatches) {
@@ -279,7 +279,7 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			headBranch: headBranch, // This will be blank on GitHub, but on a manually staged instance should exist
 			differentialId: differentialId,
 			mode: PhabricatorMode.Differential,
-		} as PhabDifferentialUrl;
+		};
 	}
 	const revisionMatch = PHAB_REVISION_REGEX.exec(loc.href);
 	if (revisionMatch) {
@@ -307,7 +307,7 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			parentRev: parentRev,
 			childRev: childRev,
 			mode: PhabricatorMode.Revision,
-		} as PhabRevisionUrl;
+		};
 	}
 	const changeMatch = PHAB_CHANGE_REGEX.exec(loc.href);
 	if (changeMatch) {
@@ -344,7 +344,7 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			mode: phabricatorMode,
 			rev: rev,
 			prevRev: rev.concat("~1"),
-		} as PhabChangeUrl;
+		};
 	}
 	return null;
 }
@@ -367,8 +367,6 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
 	for (const row of Array.from(table.rows)) {
 		let line: number; // line number of the current line
 		let codeCell: HTMLTableDataCellElement; // the actual cell that has code inside; each row contains multiple columns
-		let isAddition: boolean | undefined;
-		let isDeletion: boolean | undefined;
 		let isBlameEnabled = false;
 		if (row.cells[0].classList.contains("diffusion-blame-link")) {
 			isBlameEnabled = true;
@@ -381,10 +379,9 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
 
 		const innerCode = codeCell.querySelector(".blob-code-inner"); // ignore extraneous inner elements, like "comment" button on diff views
 		cells.push({
+			eventHandler: codeCell, // TODO(john): fix
 			cell: (innerCode || codeCell) as HTMLElement,
 			line,
-			isAddition,
-			isDeletion,
 		});
 	}
 	return cells;
@@ -409,6 +406,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 			if (isBase && baseLine && baseCodeCell) {
 				cells.push({
 					cell: baseCodeCell,
+					eventHandler: baseCodeCell, // TODO(john): fix
 					line: baseLine,
 					isAddition: false,
 					isDeletion: false,
@@ -419,6 +417,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 			if (!isBase && headLine && headCodeCell) {
 				cells.push({
 					cell: headCodeCell,
+					eventHandler: headCodeCell, // TODO(john): fix
 					line: headLine,
 					isAddition: false,
 					isDeletion: false,
@@ -433,6 +432,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 			if (isBase && baseLine && codeCell) {
 				cells.push({
 					cell: codeCell,
+					eventHandler: codeCell, // TODO(john): fix
 					line: baseLine,
 					isAddition: false,
 					isDeletion: false,
@@ -446,6 +446,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 				}
 				cells.push({
 					cell: codeCell,
+					eventHandler: codeCell, // TODO(john): fix
 					line: headLine,
 					isAddition: false,
 					isDeletion: false,
@@ -491,7 +492,6 @@ export function setupPageLoadListener(): void {
 export function expanderListen(): void {
 	const JX = (window as any).JX;
 	if (JX.Stratcom._dispatchProxyPreExpander) {
-		console.error("Error setting up expander listener - _dispatchProxyPreExpander already defined.");
 		return;
 	}
 	JX.Stratcom._dispatchProxyPreExpander = JX.Stratcom._dispatchProxy;
@@ -510,7 +510,6 @@ export function expanderListen(): void {
 export function metaClickOverride(): void {
 	const JX = (window as any).JX;
 	if (JX.Stratcom._dispatchProxyPreMeta) {
-		console.error("Error setting up expander listener - _dispatchProxyPreMeta already defined.");
 		return;
 	}
 	JX.Stratcom._dispatchProxyPreMeta = JX.Stratcom._dispatchProxy;

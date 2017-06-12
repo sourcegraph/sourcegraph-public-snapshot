@@ -15,7 +15,6 @@ export class TelligentWrapper {
 
 		this.t = (window as any).telligent;
 
-
 		let telligentUrl = "sourcegraph-logging.telligentdata.com";
 		if (url) {
 			telligentUrl = url;

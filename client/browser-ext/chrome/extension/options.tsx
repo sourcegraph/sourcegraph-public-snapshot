@@ -13,7 +13,7 @@ function getSaveButton(): HTMLInputElement {
 	return getSourcegraphURLForm().querySelector('input[type="submit"]') as HTMLInputElement;
 }
 
-function syncUIToModel() {
+function syncUIToModel(): void {
 	chrome.storage.sync.get((items) => {
 		getSourcegraphURLInput().value = items.sourcegraphURL;
 	});
@@ -45,7 +45,7 @@ getSourcegraphURLForm().addEventListener("submit", (evt) => {
 
 	const val = getSourcegraphURLInput().value;
 	chrome.permissions.request({
-		origins: [val + "/*"]
+		origins: [val + "/*"],
 	}, (granted) => {
 		if (granted) {
 			chrome.storage.sync.set({ sourcegraphURL: val });

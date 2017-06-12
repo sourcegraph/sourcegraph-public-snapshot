@@ -8,7 +8,7 @@ function promisifier(method: any): (...args: any[]) => Promise<any> {
 	});
 }
 
-function promisifyAll(obj: Object, list: string[]): void {
+function promisifyAll(obj: any, list: string[]): void {
 	list.forEach(api => bluebird.promisifyAll(obj[api], { promisifier }));
 }
 

@@ -1,9 +1,9 @@
 import * as React from "react";
 import { render } from "react-dom";
 import { BitbucketBlobAnnotator } from "../../app/components/BitbucketBlobAnnotator";
+import * as bitbucket from "../../app/utils/bitbucket";
 import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
 import { BitbucketBrowseUrl, BitbucketMode, BitbucketUrl } from "../../app/utils/types";
-import * as bitbucket from "../../app/utils/bitbucket";
 
 export function injectBitbucketApplication(): void {
 	window.addEventListener("load", () => {

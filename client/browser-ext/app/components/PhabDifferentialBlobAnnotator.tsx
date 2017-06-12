@@ -56,7 +56,7 @@ export class PhabDifferentialBlobAnnotator extends PhabBlobAnnotator<Differentia
 		this.applyAnnotationsIfResolvedRev(this.props.baseRepoURI, true, this.props.baseBranch);
 	}
 
-	getEventLoggerProps(): Object {
+	getEventLoggerProps(): any {
 		return {
 			repo: this.props.headRepoURI,
 			path: this.props.path,

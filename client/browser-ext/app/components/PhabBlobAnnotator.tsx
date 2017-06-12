@@ -141,7 +141,7 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 	abstract addAnnotations(): void;
 	abstract getCodeCells(isBase: boolean): CodeCell[];
 	abstract callResolveRevs(): void;
-	abstract getEventLoggerProps(): Object;
+	abstract getEventLoggerProps(): any;
 }
 
 const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px", height: ".8em", width: ".8em" };

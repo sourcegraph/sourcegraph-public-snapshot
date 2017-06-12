@@ -194,7 +194,7 @@ export function getDeltaRevs(): DeltaRevs | null {
 				invariant(urlSplit.length === 2);
 				const query = urlSplit[1];
 				const querySplit = query.split("&");
-				for (let kv of querySplit) {
+				for (const kv of querySplit) {
 					const kvSplit = kv.split("=");
 					const k = kvSplit[0];
 					const v = kvSplit[1];
@@ -401,7 +401,7 @@ export function getGitHubState(url: string): GitHubBlobUrl | GitHubPullUrl | nul
 			revAndPath: blobMatch[5],
 			lineNumber: blobMatch[6],
 		};
-		let rev = getRevOrBranch(match.revAndPath);
+		const rev = getRevOrBranch(match.revAndPath);
 		if (!rev) {
 			return null;
 		}

@@ -7,7 +7,7 @@
     "insertSpaceAfterSemicolonInForStatements": true,
     "insertSpaceBeforeAndAfterBinaryOperators": true,
     "insertSpaceAfterKeywordsInControlFlowStatements": true,
-    "insertSpaceAfterFunctionKeywordForAnonymousFunctions": true,
+    "insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
     "insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": false,
     "insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": false,
     "insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces": false,

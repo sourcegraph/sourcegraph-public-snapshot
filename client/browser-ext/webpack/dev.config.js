@@ -35,7 +35,7 @@ module.exports = {
 	module: {
 		loaders: [{
 			test: /\.tsx?$/,
-			loader: 'ts?'+JSON.stringify({
+			loader: 'ts?' + JSON.stringify({
 				compilerOptions: {
 					noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
 				},

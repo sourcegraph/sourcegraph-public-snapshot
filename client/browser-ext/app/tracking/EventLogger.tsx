@@ -4,36 +4,35 @@ import { Features } from "../utils/Features";
 
 export abstract class EventLogger {
 
-
-	logHover(eventProperties: Object = {}): void {
+	logHover(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Hover", "SymbolHovered", eventProperties);
 	}
 
-	logClick(eventProperties: Object = {}): void {
+	logClick(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "TooltipDocked", eventProperties);
 	}
 
-	logSelectText(eventProperties: Object = {}): void {
+	logSelectText(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Select", "TextSelected", eventProperties);
 	}
 
-	logJumpToDef(eventProperties: Object = {}): void {
+	logJumpToDef(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "GoToDefClicked", eventProperties);
 	}
 
-	logFindRefs(eventProperties: Object = {}): void {
+	logFindRefs(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "FindRefsClicked", eventProperties);
 	}
 
-	logSearch(eventProperties: Object = {}): void {
+	logSearch(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "SearchClicked", eventProperties);
 	}
 
-	logOpenFile(eventProperties: Object = {}): void {
+	logOpenFile(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "FileOpened", eventProperties);
 	}
 
-	logAuthClicked(eventProperties: Object = {}): void {
+	logAuthClicked(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "AuthRedirected", eventProperties);
 	}
 
@@ -41,23 +40,16 @@ export abstract class EventLogger {
 
 	private logToConsole(eventAction: string, object: any): void {
 		return;
-
-		// TODO(john): unbreak below...
-		// if (!Features.eventLogDebug.isEnabled()) {
-		// 	return;
-		// }
-		// tslint:disable-next-line
-		console.debug("%cEVENT %s", "color: #aaa", eventAction, object);
 	}
 
-	private defaultProperties(): Object {
+	private defaultProperties(): any {
 		return {
 			path_name: window.location.pathname,
 			Platform: getPlatformName(),
 		};
 	}
 
-	private logEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties: Object = {}): void {
+	private logEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties: any = {}): void {
 		if (isE2ETest()) {
 			return;
 		}

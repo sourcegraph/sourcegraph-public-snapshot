@@ -180,7 +180,7 @@ export class ProjectsOverview extends React.Component<{}, State> {
 
 	fetchData(setLoading: boolean): void {
 		if (setLoading) {
-			this.setState({ fetching: true } as State);
+			this.setState({ ...this.state, fetching: true });
 		}
 		fetch("https://issues.sgdev.org/extension")
 			.then((resp) => resp.json().then((data) => {
@@ -208,6 +208,7 @@ export class ProjectsOverview extends React.Component<{}, State> {
 				}
 
 				this.setState({
+					...this.state,
 					fetching: false,
 					loaded: true,
 					triageBugs: _.compact(triage),
@@ -217,7 +218,7 @@ export class ProjectsOverview extends React.Component<{}, State> {
 					verifyBugs: _.compact(verify),
 					closedBugs: _.compact(closed),
 					projects: d.Projects,
-				} as State);
+				});
 			}));
 	}
 
@@ -338,7 +339,7 @@ export class ProjectsOverview extends React.Component<{}, State> {
 	handleFilterChange(e: any, group: string): void {
 		if (e && e.target) {
 			const value = e.target.value;
-			this.setState({ filters: update(this.state.filters, { $merge: { [group]: value } }) } as State);
+			this.setState({ ...this.state, filters: update(this.state.filters, { $merge: { [group]: value } }) });
 		}
 	}
 
@@ -389,8 +390,8 @@ export class ProjectsOverview extends React.Component<{}, State> {
 				if (!this.state.loaded) {
 					return;
 				}
-				this.setState({ showOverview: !this.state.showOverview } as State);
-			} }>{this.state.loaded ? `${this.state.showOverview ? "Hide" : "Show"} Issue Overview` : "Loading issue stats"}</strong>
+				this.setState({ ...this.state, showOverview: !this.state.showOverview });
+			}}>{this.state.loaded ? `${this.state.showOverview ? "Hide" : "Show"} Issue Overview` : "Loading issue stats"}</strong>
 			<span style={{ fontSize: "11px", marginLeft: "15px", cursor: !this.state.fetching ? "pointer" : "normal", fontWeight: "bold", float: "right" }}
 				onClick={() => this.fetchData(true)}>
 				{this.state.fetching ? "..." : "Refresh Data"}

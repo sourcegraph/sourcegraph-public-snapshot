@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import * as React from "react";
 import * as backend from "../backend";
 import * as utils from "../utils";
@@ -5,7 +6,6 @@ import { addAnnotations } from "../utils/annotations";
 import { eventLogger } from "../utils/context";
 import { CodeCell } from "../utils/types";
 import { SourcegraphIcon } from "./Icons";
-import * as _ from "lodash";
 
 interface Props {
 	blobElement: HTMLElement;
@@ -132,7 +132,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		this.addAnnotationsIfResolvedRev(this.props.repo, false, this.props.rev);
 	}
 
-	getEventLoggerProps(): Object {
+	getEventLoggerProps(): any {
 		return {
 			repo: this.props.repo,
 			path: this.props.path,
@@ -164,18 +164,19 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
 
 	const children = Array.from(code.children);
 	if (children && children.length > 0 && children[0].getElementsByClassName("line-number")[0]) {
-		count = parseInt(children[0].getElementsByClassName("line-number")[0].innerText, 10);
+		count = parseInt((children[0].getElementsByClassName("line-number")[0] as HTMLElement).innerText, 10);
 	}
 
 	for (const row of children) {
 		const element = row.getElementsByClassName("CodeMirror-line")[0];
 		cells.push({
 			cell: element as HTMLElement,
+			eventHandler: element as HTMLElement,
 			line: count,
 			isAddition: false,
 			isDeletion: false,
 		});
-		count++
+		count++;
 	}
 	return cells;
 }

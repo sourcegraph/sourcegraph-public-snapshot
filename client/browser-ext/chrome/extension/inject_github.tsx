@@ -69,10 +69,11 @@ function injectModules(): void {
 		injectBlobAnnotators();
 		injectSourcegraphInternalTools();
 	});
-};
+}
 
 function injectBlobAnnotators(): void {
-	let { repoURI, path, isDelta } = parseURL(window.location);
+	const { repoURI, isDelta } = parseURL(window.location);
+	let { path } = parseURL(window.location);
 	const gitHubState: GitHubUrl | null = github.getGitHubState(window.location.href);
 	// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a
 	// slash in it to fix that bug
@@ -137,7 +138,7 @@ function injectSourcegraphInternalTools(): void {
 
 	if (window.location.href === "https://github.com/orgs/sourcegraph/projects") {
 		const container = document.querySelector("#projects-results")!.parentElement!.children[0];
-		let mount = document.createElement("span");
+		const mount = document.createElement("span");
 		mount.id = "sourcegraph-projet-overview";
 		(container as Element).insertBefore(mount, (container as Element).firstChild);
 		render(<ProjectsOverview />, mount);
