@@ -254,6 +254,12 @@ func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
 	if feature.Features.GitHubApps {
+		// Attempt directly accessing the repo first. If it is a public repo this will
+		// succeed, otherwise attempt fetching it from the private endpoints below.
+		ghrepo, _, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
+		if err == nil {
+			return ToRepo(ghrepo), nil
+		}
 		// The current GitHub App API only allows users to access their repos by
 		// listing them via their installations. Check each installation and find the
 		// repo we're looking for.
