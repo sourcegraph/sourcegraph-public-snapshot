@@ -196,8 +196,7 @@ func main() {
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
-			Cmd("./dev/ci/deploy-prod.sh"),
-			Cmd("echo $VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build"))
+			Cmd("./dev/ci/deploy-prod.sh"))
 
 	case strings.HasPrefix(branch, "staging/"):
 		cmds, err := ioutil.ReadDir("./cmd")
