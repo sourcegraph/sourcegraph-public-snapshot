@@ -361,17 +361,16 @@ func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions)
 	//
 	// TODO: remove unused "opt" agrument when removing this feature flag.
 	if feature.Features.GitHubApps {
-		var repos []*sourcegraph.Repo
 		installs, err := ListAllAccessibleInstallations(ctx)
 		if err != nil {
 			return nil, err
 		}
+		repos := []*sourcegraph.Repo{}
 		for _, ins := range installs {
 			ghRepos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
 			if err != nil {
 				return nil, err
 			}
-			repos = make([]*sourcegraph.Repo, 0, len(ghRepos))
 			for _, r := range ghRepos {
 				repos = append(repos, ToRepo(r))
 			}
