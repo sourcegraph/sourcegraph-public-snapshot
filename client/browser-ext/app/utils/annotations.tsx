@@ -19,9 +19,9 @@ export interface RepoRevSpec { // TODO(john): move to types.
 let activeTarget: HTMLElement | null;
 
 interface DOMObservables {
-	click: Rx.Observable<MouseEvent>;
 	mouseover: Rx.Observable<MouseEvent>;
 	mouseout: Rx.Observable<MouseEvent>;
+	mouseup: Rx.Observable<MouseEvent>;
 }
 
 /**
@@ -37,10 +37,10 @@ function addEventListeners(el: HTMLElement, hoverCb: () => void): DOMObservables
 	}
 	el.className = `${el.className} sg-annotated`;
 
-	const click = Rx.Observable.fromEvent<MouseEvent>(el, "click");
 	const mouseover = Rx.Observable.fromEvent<MouseEvent>(el, "mouseover").do(hoverCb);
 	const mouseout = Rx.Observable.fromEvent<MouseEvent>(el, "mouseout");
-	return { click, mouseout, mouseover };
+	const mouseup = Rx.Observable.fromEvent<MouseEvent>(el, "mouseup");
+	return { mouseout, mouseover, mouseup };
 }
 
 /**
@@ -327,7 +327,14 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 
 	let lastSelectedText: string = "";
 
-	domObservables.forEach(observable => observable.click.subscribe((e => {
+	domObservables.forEach(observable => observable.mouseout.subscribe((e => {
+		if (!store.getValue().docked) {
+			activeTarget = null;
+			clearTooltip();
+		}
+	})));
+
+	domObservables.forEach(observable => observable.mouseup.subscribe((e => {
 		const t = e.target as HTMLElement;
 		const clickedActiveTarget = t === activeTarget;
 		activeTarget = t;
@@ -348,6 +355,8 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 				const context = { path, repoRevSpec, selectedText };
 				tooltipEvent({ target, data: { title: selectedText } }, context, TooltipEventType.SELECT_TEXT);
 				return;
+			} else {
+				lastSelectedText = "";
 			}
 		} else {
 			lastSelectedText = "";
@@ -378,13 +387,6 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 				tooltipEvent(ev[0], context, TooltipEventType.CLICK, false);
 			}
 		});
-	})));
-
-	domObservables.forEach(observable => observable.mouseout.subscribe((e => {
-		if (!store.getValue().docked) {
-			activeTarget = null;
-			clearTooltip();
-		}
 	})));
 }
 
