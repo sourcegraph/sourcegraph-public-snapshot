@@ -15,7 +15,7 @@ const tooltipClassName = style({
 	backgroundColor: "#fafbfc",
 	maxWidth: "500px",
 	maxHeight: "250px",
-	border: "solid 1px #e1e4e8",
+	border: "solid 1px #afb2b7",
 	fontFamily: `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
 	color: "rgb(36, 41, 69)",
 	fontSize: "12px",
@@ -23,7 +23,9 @@ const tooltipClassName = style({
 	position: "absolute",
 	overflow: "auto",
 	padding: "5px 5px",
-	borderRadius: "2px",
+	borderRadius: "3px",
+	boxShadow: "0 3px 12px rgba(27,31,35,0.15)",
+	// boxShadow: "1px 2px 3px rgba(0, 0, 0, 0.21)",
 });
 
 const tooltipTitleStyle = style({
