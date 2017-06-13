@@ -1,27 +1,23 @@
 const path = require('path');
 const webpack = require('webpack');
 
-const host = 'localhost';
-const port = 3000;
-
 module.exports = {
-	devtool: 'eval-cheap-module-source-map',
-	devServer: { host, port, https: true },
 	entry: {
 		background: path.join(__dirname, '../chrome/extension/background.tsx'),
-		inject: path.join(__dirname, '../chrome/extension/inject.tsx'),
 		options: path.join(__dirname, '../chrome/extension/options.tsx'),
+		inject: path.join(__dirname, '../chrome/extension/inject.tsx'),
 		sgdev: path.join(__dirname, '../phabricator/sgdev/sgdev.tsx'),
 		umami: path.join(__dirname, '../phabricator/umami/umami.tsx')
 	},
 	output: {
 		path: path.join(__dirname, '../dev/js'),
 		filename: '[name].bundle.js',
-		chunkFilename: '[id].chunk.js',
-		publicPath: `https://${host}:${port}/js/`
+		chunkFilename: '[id].chunk.js'
 	},
+	devtool: "eval-cheap-module-source-map",
 	plugins: [
 		new webpack.NoErrorsPlugin(),
+		new webpack.optimize.OccurenceOrderPlugin(),
 		new webpack.IgnorePlugin(/[^/]+\/[\S]+.prod$/),
 		new webpack.DefinePlugin({
 			'process.env': {

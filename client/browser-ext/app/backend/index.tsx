@@ -63,3 +63,72 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 	promiseCache.set(key, p);
 	return p;
 }
+
+export interface ResolvedSearchTextResp {
+	results: [{ [key: string]: any }];
+}
+
+const searchPromiseCache = new Map<string, Promise<ResolvedSearchTextResp>>();
+
+export function searchText(uri: string, query: string): Promise<ResolvedSearchTextResp> {
+	const key = cacheKey(uri, query);
+	const promiseHit = searchPromiseCache.get(key);
+	if (promiseHit) {
+		return promiseHit;
+	}
+	const variables = {
+		pattern: query,
+		isRegExp: false,
+		isCaseSensitive: false,
+		isWordMatch: false,
+		wordSeparators: "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?",
+		revision: "",
+		uri: uri,
+		fileMatchLimit: 10000,
+		includePattern: "",
+		excludePattern: "{.git,**/.git,.svn,**/.svn,.hg,**/.hg,CVS,**/CVS,.DS_Store,**/.DS_Store,node_modules,bower_components,vendor,dist,out,Godeps,third_party}",
+	};
+
+	const body = {
+		query: `query SearchText($uri: String!, $pattern: String!, $revision: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!, $fileMatchLimit: Int!, $includePattern: String!, $excludePattern: String!) {
+			root {
+				repository(uri: $uri) {
+					commit(rev: $revision) {
+						commit {
+							textSearch(query: { pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, fileMatchLimit: $fileMatchLimit, includePattern: $includePattern, excludePattern: $excludePattern }) {
+								results {
+									resource
+									lineMatches {
+										preview
+										lineNumber
+										offsetAndLengths
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			}`,
+		variables: variables,
+	};
+
+	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
+		method: "POST",
+		body: JSON.stringify(body),
+	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
+		searchPromiseCache.delete(key);
+		const repo = json.data && json.data.root!.repository;
+		if (!repo || !repo.commit.commit || !repo.commit.commit.textSearch) {
+			const error = new Error("invalid response received from search graphql endpoint");
+			searchPromiseCache.set(key, Promise.reject(error));
+			throw error;
+		}
+		const found = repo.commit.commit.textSearch;
+		searchPromiseCache.set(key, Promise.resolve(found));
+		return found;
+	});
+
+	searchPromiseCache.set(key, p);
+	return p;
+}

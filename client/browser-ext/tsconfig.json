@@ -5,11 +5,20 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-        "app/*": ["app/*"],
-        "chrome/*": ["chrome/*"]
+      "app/*": [
+        "app/*"
+      ],
+      "chrome/*": [
+        "chrome/*"
+      ]
     },
-    "lib": ["es2016", "dom"],
-    "types": ["mocha"],
+    "lib": [
+      "es2016",
+      "dom"
+    ],
+    "types": [
+      "mocha"
+    ],
     "jsx": "react",
     "allowJs": true,
     "sourceMap": true,

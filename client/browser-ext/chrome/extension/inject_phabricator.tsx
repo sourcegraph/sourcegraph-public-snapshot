@@ -1,4 +1,3 @@
-import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
 import * as phabricator from "../../app/utils/phabricator";
 import { injectPhabricatorBlobAnnotators } from "../../app/utils/phabricator_inject";
 
@@ -14,6 +13,5 @@ export function injectPhabricatorApplication(): void {
 }
 
 function injectModules(): void {
-	injectBackgroundApp(null);
 	injectPhabricatorBlobAnnotators();
 }

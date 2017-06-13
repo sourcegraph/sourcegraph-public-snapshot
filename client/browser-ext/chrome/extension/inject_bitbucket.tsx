@@ -2,7 +2,6 @@ import * as React from "react";
 import { render } from "react-dom";
 import { BitbucketBlobAnnotator } from "../../app/components/BitbucketBlobAnnotator";
 import * as bitbucket from "../../app/utils/bitbucket";
-import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
 import { BitbucketBrowseUrl, BitbucketMode, BitbucketUrl } from "../../app/utils/types";
 
 export function injectBitbucketApplication(): void {
@@ -12,7 +11,6 @@ export function injectBitbucketApplication(): void {
 }
 
 function injectModules(): void {
-	injectBackgroundApp(null);
 	injectBitbucketBlobAnnotators();
 }
 

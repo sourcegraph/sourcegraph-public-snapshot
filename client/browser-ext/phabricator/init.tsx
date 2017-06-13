@@ -1,7 +1,6 @@
 import { InPageEventLogger } from "../app/tracking/InPageEventLogger";
 import { getDomainUsername } from "../app/utils";
 import { eventLogger, phabricatorInstance } from "../app/utils/context";
-import { injectBackgroundApp } from "../app/utils/injectBackgroundApp";
 import { expanderListen, getPhabricatorUsername, metaClickOverride, setupPageLoadListener } from "../app/utils/phabricator";
 import { injectPhabricatorBlobAnnotators } from "../app/utils/phabricator_inject";
 
@@ -12,9 +11,9 @@ export function init(): void {
 		(eventLogger as InPageEventLogger).setUserId(getDomainUsername(phabricatorInstance.usernameTrackingPrefix, phabricatorUsername));
 	}
 
-    /**
-     * This is the main entry point for the phabricator in-page JavaScript plugin.
-     */
+	/**
+	 * This is the main entry point for the phabricator in-page JavaScript plugin.
+	 */
 	if (global && global.window && global.window.localStorage && !(global.window.localStorage.SOURCEGRAPH_DISABLED === "true")) {
 		document.addEventListener("phabPageLoaded", ev => {
 			expanderListen();
@@ -31,8 +30,6 @@ export function init(): void {
 
 	// NOTE: injectModules is idempotent, so safe to call multiple times on the same page.
 	function injectModules(): void {
-		// TODO(uforic): We probably don't need to do this for Phabricator, since we don't make use of it.
-		injectBackgroundApp(null);
 		injectPhabricatorBlobAnnotators();
 	}
 }

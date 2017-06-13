@@ -54,8 +54,7 @@ export function createBlobAnnotatorMount(fileContainer: HTMLElement): HTMLElemen
 
 	const existingMount = fileContainer.querySelector(".sourcegraph-app-annotator");
 	if (existingMount) {
-		// Make this function idempotent; no need to create a mount twice.
-		return existingMount as HTMLElement;
+		existingMount.remove();
 	}
 
 	const mountEl = document.createElement("div");

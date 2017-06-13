@@ -33,6 +33,7 @@
 		],
 		"switch-default": false,
 		"no-unused-expression": false,
+		"no-unused-variable": true,
 		"typedef": [
 			true,
 			"call-signature",

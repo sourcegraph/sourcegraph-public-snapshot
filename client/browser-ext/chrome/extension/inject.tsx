@@ -1,16 +1,19 @@
 /**
  * set the event logger before anything else proceeds, to avoid logging events before we have it set.
  */
+import { useAccessToken } from "../../app/backend/xhr";
 import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
 import { eventLogger, setEventLogger, setPhabricatorInstance, setSourcegraphUrl } from "../../app/utils/context";
+
 setEventLogger(new ExtensionEventLogger());
 
 import { getDomain } from "../../app/utils";
-import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
 import { Domain } from "../../app/utils/types";
 import { injectBitbucketApplication } from "./inject_bitbucket";
 import { injectGitHubApplication } from "./inject_github";
 import { injectPhabricatorApplication } from "./inject_phabricator";
+
+import { injectCodeSearch, isCodeSearchURL } from "./inject_code_search";
 
 import { SGDEV_SOURCEGRAPH_URL, sgDevPhabricatorInstance } from "../../phabricator/sgdev/constants";
 
@@ -22,12 +25,16 @@ const SGDEV_SOURCEGRAPH_URL_BITBUCKET = "http://localhost:3080";
  * Depending on the domain, we load one of three different applications.
  */
 function injectApplication(loc: Location): void {
+	const extensionMarker = document.createElement("div");
+	extensionMarker.id = "sourcegraph-app-background";
+	extensionMarker.style.display = "none";
+
 	switch (getDomain(loc)) {
 		case Domain.GITHUB:
 			chrome.storage.sync.get(items => {
 				const sgurl = items.sourcegraphURL ? items.sourcegraphURL : "https://sourcegraph.com";
 				setSourcegraphUrl(sgurl);
-				injectGitHubApplication();
+				injectGitHubApplication(extensionMarker);
 			});
 			break;
 		case Domain.SGDEV_PHABRICATOR:
@@ -49,7 +56,6 @@ function injectApplication(loc: Location): void {
 }
 
 function injectSourcergaphCloudApplication(): void {
-	injectBackgroundApp(null);
 	document.addEventListener("sourcegraph:identify", (ev: CustomEvent) => {
 		if (ev && ev.detail) {
 			(eventLogger as ExtensionEventLogger).updatePropsForUser(ev.detail);

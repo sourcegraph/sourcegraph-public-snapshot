@@ -8,27 +8,19 @@ import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
 import { eventLogger } from "../../app/utils/context";
 import * as github from "../../app/utils/github";
 import { getDomain, getGitHubRoute, parseURL } from "../../app/utils/index";
-import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
+import * as tooltips from "../../app/utils/tooltips";
 import { Domain, GitHubBlobUrl, GitHubMode, GitHubUrl } from "../../app/utils/types";
+import { injectCodeSearch } from "./inject_code_search";
 
-function ejectComponent(mount: HTMLElement): void {
-	try {
-		unmountComponentAtNode(mount);
-		mount.remove();
-	} catch (e) {
-		console.error(e);
-	}
-}
-
-export function injectGitHubApplication(): void {
+export function injectGitHubApplication(marker: HTMLElement): void {
 	window.addEventListener("load", () => {
+		document.body.appendChild(marker);
 		injectModules();
 		chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
 			if (identity) {
 				(eventLogger as ExtensionEventLogger).updatePropsForUser(identity);
 			}
 		});
-		setTimeout(injectModules, 5000); // extra data may be loaded asynchronously; reapply after timeout
 	});
 	document.addEventListener("keydown", (e: KeyboardEvent) => {
 		if (getGitHubRoute(window.location) !== "blob") {
@@ -54,9 +46,17 @@ export function injectGitHubApplication(): void {
 	document.addEventListener("pjax:end", () => {
 		// Unmount and remount react components because pjax breaks
 		// dynamically registered event handlers like mouseover/click etc..
-		ejectModules();
+		// ejectModules();
+		(eventLogger as ExtensionEventLogger).updateIdentity();
+
+		// Remove all ".sg-annotated"; this allows tooltip event handlers to be re-registered.
+		Array.from(document.querySelectorAll(".sg-annotated")).forEach((item: any) => {
+			if (item && item.classList) {
+				item.classList.remove("sg-annotated");
+			}
+		});
+		tooltips.hideTooltip();
 		injectModules();
-		setTimeout(injectModules, 5000); // extra data may be loaded asynchronously; reapply after timeout
 	});
 }
 
@@ -65,9 +65,9 @@ function injectModules(): void {
 		if (token) {
 			useAccessToken(token);
 		}
-		injectBackgroundApp(<GitHubBackground />);
 		injectBlobAnnotators();
 		injectSourcegraphInternalTools();
+		injectCodeSearch();
 	});
 }
 
@@ -94,11 +94,11 @@ function injectBlobAnnotators(): void {
 			return;
 		}
 
-		if (file.className.includes("sg-blob-annotated")) {
-			// make this function idempotent
-			return;
-		}
-		file.className = `${file.className} sg-blob-annotated`;
+		// if (file.className.includes("sg-blob-annotated")) {
+		// 	// make this function idempotent
+		// 	return;
+		// }
+		// file.className = `${file.className} sg-blob-annotated`;
 		render(<BlobAnnotator headPath={headFilePath} repoURI={uri} fileElement={file} basePath={baseFilePath} />, mount);
 	}
 
@@ -112,24 +112,6 @@ function injectBlobAnnotators(): void {
 	}
 }
 
-function ejectModules(): void {
-	const annotators = document.getElementsByClassName("sourcegraph-app-annotator") as HTMLCollectionOf<HTMLElement>;
-	const background = document.getElementById("sourcegraph-app-background");
-
-	for (let idx = annotators.length - 1; idx >= 0; idx--) {
-		ejectComponent(annotators.item(idx));
-	}
-
-	if (background) {
-		ejectComponent(background);
-	}
-
-	const annotated = document.getElementsByClassName("sg-blob-annotated") as HTMLCollectionOf<HTMLElement>;
-	for (let idx = annotated.length - 1; idx >= 0; idx--) {
-		// Remove class name; allows re-applying annotations.
-		annotated.item(idx).className = annotated.item(idx).className.replace("sg-blob-annotated", "");
-	}
-}
 
 function injectSourcegraphInternalTools(): void {
 	if (document.getElementById("sourcegraph-projet-overview")) {

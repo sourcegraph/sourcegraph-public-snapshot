@@ -22,7 +22,7 @@
         "https://github.com/*",
         "https://sourcegraph.com/*"
       ],
-      "run_at": "document_end",
+      "run_at": "document_start",
       "js": [
         "js/inject.bundle.js"
       ],

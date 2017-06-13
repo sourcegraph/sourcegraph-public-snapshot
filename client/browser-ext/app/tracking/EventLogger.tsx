@@ -36,6 +36,14 @@ export abstract class EventLogger {
 		this.logEventForCategory("BrowserExtension", "Click", "AuthRedirected", eventProperties);
 	}
 
+	logSourcegraphSearch(eventProperties: Object = {}): void {
+		this.logEventForCategory("BrowserExtension", "Click", "SourcegraphSearchClicked", eventProperties);
+	}
+
+	logSourcegraphSearchTabClicked(eventProperties: Object = {}): void {
+		this.logEventForCategory("BrowserExtension", "Click", "SourcegraphSearchTabClicked", eventProperties);
+	}
+
 	protected abstract sendEvent(eventAction: string, eventProps: any): void;
 
 	private logToConsole(eventAction: string, object: any): void {
