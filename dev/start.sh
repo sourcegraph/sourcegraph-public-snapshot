@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Runs a Sourcegraph server locally for development. This should still
-# be run via `make serve-dev` in the parent directory so that the
-# credential env vars get set.
-
 set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir

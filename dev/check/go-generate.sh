@@ -2,12 +2,12 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-# Runs go-generate-all and ensures no files changed. This relies on the go
+# Runs generate.sh and ensures no files changed. This relies on the go
 # generation that ran are idempotent.
 
 working_copy_hash=$((git diff; git status) | (md5sum || md5) 2> /dev/null)
 
-go list ./... | grep -v /vendor/ | grep -v app/assets | grep -v app/bundle | xargs go generate
+./dev/generate.sh
 
 new_working_copy_hash=$((git diff; git status) | (md5sum || md5) 2> /dev/null)
 

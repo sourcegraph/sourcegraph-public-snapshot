@@ -46,7 +46,7 @@ export LANGSERVER_TYPESCRIPT=tcp://localhost:2089
 export LANGSERVER_TYPESCRIPT_BG=tcp://localhost:2089
 export LANGSERVER_JAVASCRIPT=tcp://localhost:2089
 export LANGSERVER_JAVASCRIPT_BG=tcp://localhost:2089
-make serve-dev
+./dev/start.sh
 ```
 
 ## Developing on the language server

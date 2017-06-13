@@ -22,7 +22,7 @@ Try it out:
 1. Go to http://localhost:3080/github.com/golang/go@6129f37367686edf7c2732fbb5300d5f28203743/-/blob/src/strings/strings.go#L250 in your browser and mouse over some symbols. The full source build and analysis of the Go stdlib takes ~3.5s.
 1. Go to http://localhost:3080/github.com/coreos/fuze@7df4f06041d9daba45e4c68221b9b04203dff1d8/-/blob/config/convert.go#L48 in your browser. Mouse around.
 1. OK, well those don't have external deps...so let's try one that does: http://localhost:3080/github.com/fsouza/go-dockerclient@1123a1e9fcff4684f9ec2f488a430f8fefe5fab1/-/blob/container.go#L143.
-1. If you want to start from scratch, `rm -rf /tmp/xlang-git-clone-cache /tmp/github-cache` and restart the `make serve-dev` process. No state is retained when you start up again.
+1. If you want to start from scratch, `rm -rf /tmp/xlang-git-clone-cache /tmp/github-cache` and restart the `./dev/start.sh` process. No state is retained when you start up again.
 
 Note: Go-to-def and hover are implemented for Go only right now. Find Local References is not implemented.
 
@@ -215,13 +215,13 @@ Otherwise, just speak LSP and it'll work with both Sourcegraph and VS Code!
 1. Figure out the mode ID of your language. Consult [the language ID table](https://code.visualstudio.com/docs/languages/overview#_language-id), or figure out what existing VSCode extensions are using. If you can't figure it out, just make something up and be consistent.
 1. Make sure our temporarily hacky `getModeByFilename` func in `EditorService.tsx` includes a branch for the language/mode with the proper file extensions.
 1. In the `sourcegraph/editor/Editor.tsx` file's `Editor` constructor, add an if-condition branch for the mode ID of the language so that the hover/def/ref providers are registered.
-1. Run Sourcegraph (`make serve-dev` or `src`) with environment variables of the form `LANGSERVER_xyz=addr-or-program`, where `xyz` is the mode (e.g., `typescript`) and `addr-or-program` is either `tcp://addr:port`, `unix:///path/to/socket`, or `/path/to/my/executable/program/that/speaks/over/stdio`.
+1. Run Sourcegraph (`./dev/start.sh` or `src`) with environment variables of the form `LANGSERVER_xyz=addr-or-program`, where `xyz` is the mode (e.g., `typescript`) and `addr-or-program` is either `tcp://addr:port`, `unix:///path/to/socket`, or `/path/to/my/executable/program/that/speaks/over/stdio`.
 1. Open up Sourcegraph to a file in the language, and it will work. Check the JavaScript console for the LSP requests and responses.
 
 Here's what I am running with:
 
 ```
-LANGSERVER_JAVASCRIPT=tcp://localhost:2089 LANGSERVER_TYPESCRIPT=tcp://localhost:2089 SG_UNIVERSE_REPO=all SG_FEATURE_NOSRCLIB=t SG_FEATURE_UNIVERSE=t make serve-dev
+LANGSERVER_JAVASCRIPT=tcp://localhost:2089 LANGSERVER_TYPESCRIPT=tcp://localhost:2089 SG_UNIVERSE_REPO=all SG_FEATURE_NOSRCLIB=t SG_FEATURE_UNIVERSE=t ./dev/start.sh
 ```
 
 Notes:

@@ -115,14 +115,14 @@ eval $(docker-machine env)
 Then run the following commands (**NOTE: Node.js and [Yarn](https://yarnpkg.com/en/docs/install) must be installed for the this step**):
 
 ```
-make serve-dev
+./dev/start.sh
 ```
 
 This will continuously compile your code and live reload your locally running
 instance of Sourcegraph. Navigate your browser to http://localhost:3080 to
 see if everything worked.
 
-`make serve-dev` may ask you to run ulimit to increase the maximum number
+`./dev/start.sh` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
 permanent for every shell session by adding the following line to your
 `.*rc` file (usually bash or zsh):
@@ -185,7 +185,7 @@ generate`. Code generation is used for a variety of tasks:
 Then run:
 
 ```
-make generate
+./dev/generate.sh
 ```
 
 Also, sometimes there are erroneous diffs. This occurs for a few
