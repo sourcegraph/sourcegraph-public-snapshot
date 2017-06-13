@@ -81,6 +81,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/list", s.handleList)
+	mux.HandleFunc("/repo-from-remote-url", s.handleRepoFromRemoteURL)
 	return mux
 }
 
@@ -99,6 +100,20 @@ func (s *Server) releaseCloneLock(dir string) {
 	s.cloningMu.Lock()
 	delete(s.cloning, dir)
 	s.cloningMu.Unlock()
+}
+
+func (s *Server) handleRepoFromRemoteURL(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoFromRemoteURLRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	repo := reverse(req.RemoteURL)
+	if err := json.NewEncoder(w).Encode(repo); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {

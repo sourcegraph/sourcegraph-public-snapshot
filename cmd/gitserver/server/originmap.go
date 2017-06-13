@@ -40,8 +40,19 @@ func init() {
 	for _, entry := range gitoliteHostMap {
 		originMap = append(originMap, prefixAndOrgin{Prefix: entry.Prefix, Origin: entry.Origin + ":%"})
 	}
+	addGitHubDefaults()
+}
 
+func addGitHubDefaults() {
+	// Note: We add several variants here specifically for reverse, so that if
+	// a user-provided clone URL is passed to reverse, it still functions as
+	// expected. For the case of OriginMap, the first one is returned (i.e. the
+	// order below matters).
+	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "http://github.com/%.git"})
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "https://github.com/%.git"})
+	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "ssh://git@github.com:%.git"})
+	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "git://git@github.com:%.git"})
+	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "git@github.com:%.git"})
 }
 
 // Map maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
@@ -54,10 +65,27 @@ func OriginMap(repoURI string) string {
 	return ""
 }
 
+// reverse maps the repository origin (clone URL) to the repo URI. Returns empty string of no mapping was found.
+func reverse(cloneURL string) string {
+	for _, entry := range originMap {
+		s := strings.Split(entry.Origin, "%")
+		originPrefix := s[0]
+		if strings.HasPrefix(cloneURL, originPrefix) {
+			originSuffix := s[1]
+			repo := strings.TrimSuffix(strings.TrimPrefix(cloneURL, originPrefix), originSuffix)
+			return entry.Prefix + repo
+		}
+	}
+	return ""
+}
+
 func parse(raw string) (originMap []prefixAndOrgin, err error) {
 	for _, e := range strings.Fields(raw) {
 		p := strings.Split(e, "!")
 		if len(p) != 2 {
+			return nil, fmt.Errorf("invalid entry: %s", e)
+		}
+		if len(strings.Split(p[1], "%")) != 2 {
 			return nil, fmt.Errorf("invalid entry: %s", e)
 		}
 		originMap = append(originMap, prefixAndOrgin{Prefix: p[0], Origin: p[1]})
