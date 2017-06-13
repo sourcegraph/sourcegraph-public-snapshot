@@ -17,15 +17,11 @@ export interface RepoRevSpec { // TODO(john): move to types.
 
 // activeTarget tracks the element which is currently hovered over / clicked
 let activeTarget: HTMLElement | null;
-let mousedownRow: HTMLElement;
-let mouseupRow: HTMLElement;
 
 interface DOMObservables {
 	click: Rx.Observable<MouseEvent>;
 	mouseover: Rx.Observable<MouseEvent>;
 	mouseout: Rx.Observable<MouseEvent>;
-	mouseup: Rx.Observable<MouseEvent>;
-	mousedown: Rx.Observable<MouseEvent>;
 }
 
 /**
@@ -43,11 +39,8 @@ function addEventListeners(el: HTMLElement, hoverCb: () => void): DOMObservables
 
 	const click = Rx.Observable.fromEvent<MouseEvent>(el, "click");
 	const mouseover = Rx.Observable.fromEvent<MouseEvent>(el, "mouseover").do(hoverCb);
-	const mouseenter = Rx.Observable.fromEvent<MouseEvent>(el, "mouseenter");
 	const mouseout = Rx.Observable.fromEvent<MouseEvent>(el, "mouseout");
-	const mouseup = Rx.Observable.fromEvent<MouseEvent>(el, "mouseup");
-	const mousedown = Rx.Observable.fromEvent<MouseEvent>(el, "mousedown");
-	return { click, mouseout, mouseover, mouseup, mousedown };
+	return { click, mouseout, mouseover };
 }
 
 /**
@@ -332,23 +325,32 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		loadingTooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.HOVER));
 	}));
 
+	let lastSelectedText: string = "";
+
 	domObservables.forEach(observable => observable.click.subscribe((e => {
 		const t = e.target as HTMLElement;
 		const clickedActiveTarget = t === activeTarget;
 		activeTarget = t;
 
+		if (lastSelectedText !== "") {
+			clearTooltip(t);
+		}
+
 		const selectedText = getSelectedText();
 		if (selectedText !== "") {
-			// if (store.getValue().docked) {
-			// 	return;
-			// }
+			const shortCircuitTooltip = lastSelectedText === selectedText;
+			lastSelectedText = selectedText;
 
-			const target = getSelectedTextTarget();
-			activeTarget = target;
+			if (!shortCircuitTooltip) {
+				const target = getSelectedTextTarget();
+				activeTarget = target;
 
-			const context = { path, repoRevSpec, selectedText };
-			tooltipEvent({ target, data: { title: selectedText } }, context, TooltipEventType.SELECT_TEXT);
-			return;
+				const context = { path, repoRevSpec, selectedText };
+				tooltipEvent({ target, data: { title: selectedText } }, context, TooltipEventType.SELECT_TEXT);
+				return;
+			}
+		} else {
+			lastSelectedText = "";
 		}
 
 		const coords = getTargetLineAndOffset(e.target as HTMLElement, ignoreFirstChar);
@@ -382,26 +384,6 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		if (!store.getValue().docked) {
 			activeTarget = null;
 			clearTooltip();
-		}
-	})));
-
-	domObservables.forEach(observable => observable.mousedown.subscribe((e => {
-		mousedownRow = e.target as HTMLElement;
-	})));
-
-	domObservables.forEach(observable => observable.mouseup.subscribe((e => {
-		mouseupRow = e.target as HTMLElement;
-		if (mousedownRow !== mouseupRow) {
-
-			const selectedText = getSelectedText();
-			if (selectedText !== "") {
-				const target = getSelectedTextTarget();
-				activeTarget = target;
-
-				const context = { path, repoRevSpec, selectedText };
-				tooltipEvent({ target, data: { title: selectedText } }, context, TooltipEventType.SELECT_TEXT);
-				return;
-			}
 		}
 	})));
 }
