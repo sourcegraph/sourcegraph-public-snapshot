@@ -252,8 +252,17 @@ type Plan {
 	organization: Organization
 }
 
+type Installation {
+	login: String!
+	githubId: Int!
+	installId: Int!
+	type: String!
+	avatarURL: String!
+}
+
 type User {
 	githubOrgs: [Organization!]!
+	githubInstallations: [Installation!]!
 	paymentPlan: Plan!
 }
 
