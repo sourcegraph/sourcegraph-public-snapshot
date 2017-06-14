@@ -240,3 +240,24 @@ func (c *Client) List() ([]string, error) {
 	err = json.NewDecoder(resp.Body).Decode(&list)
 	return list, err
 }
+
+func (c *Client) RepoFromRemoteURL(remoteURL string) (string, error) {
+	req := &protocol.RepoFromRemoteURLRequest{
+		RemoteURL: remoteURL,
+	}
+	reqJSON, err := json.Marshal(req)
+	if err != nil {
+		panic(err) // should never fail to encode
+	}
+
+	resp, err := http.Post("http://"+c.Addrs[0]+"/repo-from-remote-url", "application/json", bytes.NewReader(reqJSON))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var repo string
+	err = json.NewDecoder(resp.Body).Decode(&repo)
+	return repo, err
+
+}
