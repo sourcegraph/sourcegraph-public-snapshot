@@ -31,6 +31,7 @@ var (
 		"show":   []string{},
 		"remote": []string{"-v"},
 		"diff":   []string{"--name-status", "-C"},
+		"blame":  []string{"--root", "--incremental", "--"},
 	}
 )
 
