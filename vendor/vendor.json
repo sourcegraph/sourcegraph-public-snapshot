@@ -2243,10 +2243,10 @@
 			"revisionTime": "2015-08-28T08:55:01Z"
 		},
 		{
-			"checksumSHA1": "isIOkjAlG6NK3lSgsV8+lyvg0aE=",
+			"checksumSHA1": "x7qM+8UIB4Z/pYYqHIFN/BJ975c=",
 			"path": "sourcegraph.com/sqs/rego",
-			"revision": "b92b6c8b5fb8de564d5bdf5a8a61d06116971fd6",
-			"revisionTime": "2016-10-16T07:24:54Z"
+			"revision": "999ca1088d6f22bbb55f853b786a0ed70a666c5b",
+			"revisionTime": "2017-06-14T17:27:50Z"
 		}
 	],
 	"rootPath": "sourcegraph.com/sourcegraph/sourcegraph"

@@ -7,8 +7,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -104,17 +106,19 @@ func main() {
 		}
 	}
 
-	restart := make(chan struct{})
+	restart := make(chan bool)
 	go func() {
 		var proc *os.Process
-		for v := range restart {
-			_ = v
+		for alive := range restart {
 			if proc != nil {
 				if err := proc.Signal(os.Interrupt); err != nil {
 					log.Println(err)
 					proc.Kill()
 				}
 				proc.Wait()
+			}
+			if !alive {
+				os.Exit(0)
 			}
 			cmd := exec.Command(filepath.Join(pkg.BinDir, filepath.Base(pkg.ImportPath)), cmdArgs...)
 			cmd.Stdout = os.Stdout
@@ -127,6 +131,15 @@ func main() {
 			}
 			proc = cmd.Process
 		}
+	}()
+
+	go func() {
+		go func() {
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+			<-c
+			restart <- false
+		}()
 	}()
 
 	nrestarts := 0
@@ -163,7 +176,7 @@ func main() {
 			if *timings {
 				log.Println("compilation took", time.Since(start))
 			}
-			restart <- struct{}{}
+			restart <- true
 		} else {
 			log.Println("\x1b[37;1m\x1b[41m!!!!\x1b[0m", "compilation failed")
 		}
