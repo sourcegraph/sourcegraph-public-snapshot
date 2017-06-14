@@ -44,9 +44,8 @@ func Handler() http.Handler {
 
 func fetch(path string) (*asset, error) {
 	mu.Lock()
-	defer mu.Unlock()
-
 	a, ok := cache[path]
+	mu.Unlock()
 	if !ok {
 		resp, err := http.Get("https://app.sourcegraph.com" + path)
 		if err != nil {
@@ -59,8 +58,10 @@ func fetch(path string) (*asset, error) {
 			return nil, err
 		}
 
+		mu.Lock()
 		a = &asset{resp.StatusCode, resp.Header.Get("Content-Type"), body}
 		cache[path] = a
+		mu.Unlock()
 	}
 
 	return a, nil
