@@ -6,7 +6,7 @@ import { CodeCell } from "../utils/types";
 import { DifferentialProps, PhabBlobAnnotator, SourcegraphButton } from "./PhabBlobAnnotator";
 
 export class PhabDifferentialBlobAnnotator extends PhabBlobAnnotator<DifferentialProps> {
-	private viewChangedChecker: NodeJS.Timer;
+	private viewChangedChecker: number;
 
 	constructor(props: DifferentialProps) {
 		super(props);
@@ -86,7 +86,6 @@ export class PhabDifferentialBlobAnnotator extends PhabBlobAnnotator<Differentia
 		}
 		return SourcegraphButton(
 			utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.headRepoURI, this.props.path, this.props.headBranch),
-			this.props.headRepoURI,
 			DIFFERENTIAL_CLASSES,
 			this.getFileOpenCallback,
 		);

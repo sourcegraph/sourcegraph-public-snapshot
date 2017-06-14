@@ -1,4 +1,3 @@
-
 /**
  * Inserts an element after the reference node.
  * @param el The element to be rendered.

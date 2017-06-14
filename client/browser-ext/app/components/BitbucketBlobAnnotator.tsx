@@ -3,9 +3,7 @@ import * as React from "react";
 import * as backend from "../backend";
 import * as utils from "../utils";
 import { addAnnotations } from "../utils/annotations";
-import { eventLogger } from "../utils/context";
 import { CodeCell } from "../utils/types";
-import { SourcegraphIcon } from "./Icons";
 
 interface Props {
 	blobElement: HTMLElement;
@@ -29,7 +27,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 	/**
 	 * revisionChecker is a timer used to sync the current repo/revision to this component
 	 */
-	revisionChecker: NodeJS.Timer;
+	revisionChecker: number;
 
 	scrollCallback?: () => void;
 
@@ -72,7 +70,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		}
 	}
 
-	componentDidUpdate(prevProps: Props, prevState: State): void {
+	componentDidUpdate(): void {
 		// if the state changes, it means we resolved a rev. the loading button will change, and we need to add annotations.
 		this.addAnnotations();
 	}
@@ -116,11 +114,9 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		// switching file views blows away the table, and on differential views we take advantage of this by noticing the dropped class
 		table.classList.add("sg-table-annotated");
 		const resolvedRev = this.state.resolvedRevs[backend.cacheKey(uri, rev)];
-		const ext = utils.getPathExtension(this.props.path);
-		const spacesToTab = Boolean(ext) && ext === "go" ? 4 : 0;
 		if (resolvedRev && resolvedRev.commitID) {
-			const cells = this.getCodeCells(isBase);
-			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: false, isBase: isBase }, table, this.getEventLoggerProps(), cells, spacesToTab);
+			const cells = this.getCodeCells();
+			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: false, isBase: isBase }, cells);
 		}
 	}
 
@@ -140,7 +136,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		};
 	}
 
-	getCodeCells(isBase: boolean): CodeCell[] {
+	getCodeCells(): CodeCell[] {
 		const table = this.getTable();
 		if (!table) {
 			return [];

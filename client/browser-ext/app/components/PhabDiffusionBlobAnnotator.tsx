@@ -26,7 +26,7 @@ export class PhabDiffusionBlobAnnotator extends PhabBlobAnnotator<DiffusionProps
 		this.resolveRevs(this.props.repoURI, this.props.rev);
 	}
 
-	getCodeCells(isBase: boolean): CodeCell[] {
+	getCodeCells(_: boolean): CodeCell[] {
 		const table = this.getTable();
 		if (!table) {
 			return [];
@@ -41,7 +41,6 @@ export class PhabDiffusionBlobAnnotator extends PhabBlobAnnotator<DiffusionProps
 		}
 		return SourcegraphButton(
 			utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.repoURI, this.props.path, this.props.rev),
-			this.props.repoURI,
 			DIFFUSION_CLASSES,
 			this.getFileOpenCallback,
 		);

@@ -3,7 +3,6 @@ import * as backend from "../backend";
 import * as utils from "../utils";
 import { addAnnotations } from "../utils/annotations";
 import { eventLogger } from "../utils/context";
-import * as phabricator from "../utils/phabricator";
 import { CodeCell } from "../utils/types";
 import { SourcegraphIcon } from "./Icons";
 
@@ -30,7 +29,7 @@ interface State {
 }
 
 export abstract class PhabBlobAnnotator<P extends Props> extends React.Component<P, State> {
-	revisionChecker: NodeJS.Timer;
+	revisionChecker: number;
 	fileExtension: string;
 	expandListenerAdded: boolean = false;
 
@@ -68,7 +67,7 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 			return;
 		}
 		this.expandListenerAdded = true;
-		table.addEventListener("expandClicked", ev => {
+		table.addEventListener("expandClicked", () => {
 			this.addAnnotations();
 			setTimeout(() => this.addAnnotations(), 2000);
 		});
@@ -84,7 +83,7 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 		}
 	}
 
-	componentDidUpdate(prevProps: Props, prevState: State): void {
+	componentDidUpdate(): void {
 		// if the state changes, it means we resolved a rev. the loading button will change, and we need to add annotations.
 		this.addAnnotations();
 	}
@@ -106,7 +105,7 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 				repoStat = { [repo]: resp };
 			}
 			this.setState({ resolvedRevs: Object.assign({}, this.state.resolvedRevs, { [key]: resp }, repoStat) });
-		}).catch((error) => {
+		}).catch(() => {
 			// no-op. we only want to print errors once, they are printed during promise creations
 		});
 	}
@@ -122,11 +121,9 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 		// switching file views blows away the table, and on differential views we take advantage of this by noticing the dropped class
 		table.classList.add("sg-table-annotated");
 		const resolvedRev = this.state.resolvedRevs[backend.cacheKey(uri, rev)];
-		const ext = utils.getPathExtension(this.props.path);
-		const spacesToTab = Boolean(ext) && ext === "go" ? 2 : 0;
 		if (resolvedRev && resolvedRev.commitID) {
 			const cells = this.getCodeCells(isBase);
-			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: true, isBase: isBase }, table, this.getEventLoggerProps(), cells, spacesToTab);
+			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: true, isBase: isBase }, cells);
 		}
 	}
 
@@ -145,8 +142,7 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 }
 
 const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px", height: ".8em", width: ".8em" };
-const disabledStyle = { cursor: "default", opacity: 0.6 };
-export function SourcegraphButton(blobUrl: string, repoName: string, classNames: string, eventHandler: () => void): JSX.Element {
+export function SourcegraphButton(blobUrl: string, classNames: string, eventHandler: () => void): JSX.Element {
 	// TODO(john): consolidate w/ other blob annotators (and bring back auth-required grayscale)
 	return (
 		<a title="View in Sourcegraph" className={classNames} href={blobUrl} onClick={() => eventHandler()}><SourcegraphIcon style={iconStyle} />

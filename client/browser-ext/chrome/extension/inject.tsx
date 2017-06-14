@@ -1,7 +1,6 @@
 /**
  * set the event logger before anything else proceeds, to avoid logging events before we have it set.
  */
-import { useAccessToken } from "../../app/backend/xhr";
 import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
 import { eventLogger, setEventLogger, setPhabricatorInstance, setSourcegraphUrl } from "../../app/utils/context";
 
@@ -12,8 +11,6 @@ import { Domain } from "../../app/utils/types";
 import { injectBitbucketApplication } from "./inject_bitbucket";
 import { injectGitHubApplication } from "./inject_github";
 import { injectPhabricatorApplication } from "./inject_phabricator";
-
-import { injectCodeSearch, isCodeSearchURL } from "./inject_code_search";
 
 import { SGDEV_SOURCEGRAPH_URL, sgDevPhabricatorInstance } from "../../phabricator/sgdev/constants";
 

@@ -1,8 +1,10 @@
+/// <reference path="../../globals.d.ts" />
+
 import * as React from "react";
 import { render } from "react-dom";
 import { BitbucketBlobAnnotator } from "../../app/components/BitbucketBlobAnnotator";
 import * as bitbucket from "../../app/utils/bitbucket";
-import { BitbucketBrowseUrl, BitbucketMode, BitbucketUrl } from "../../app/utils/types";
+import { BitbucketBrowseUrl, BitbucketMode } from "../../app/utils/types";
 
 export function injectBitbucketApplication(): void {
 	window.addEventListener("load", () => {

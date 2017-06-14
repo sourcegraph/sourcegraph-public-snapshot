@@ -1,5 +1,4 @@
-import { PhabricatorInstance } from "../../app/utils/classes";
-import { CodeCell, PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorCodeCell, PhabricatorMode, PhabUrl } from "../../app/utils/types";
+import { CodeCell, PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorCodeCell, PhabricatorMode } from "../../app/utils/types";
 import { phabricatorInstance } from "./context";
 
 const REV_SHA_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/;
@@ -22,30 +21,6 @@ function isDifferentialLanded(): boolean {
 		return false;
 	}
 	return true;
-}
-
-/**
- * DEPRECATED: there can be more than one commit here, to different branches
- * 	prefer to get the commit ID to master from the revision contents table,
- *  in the description of the last diff.
- */
-function getDifferentialCommitFromPage(): string | null {
-	const possibleRevElements = document.getElementsByClassName("phui-property-list-value");
-	for (const revElement of Array.from(possibleRevElements)) {
-		if (!(revElement && revElement.children && revElement.children[0])) {
-			continue;
-		}
-		const linkHref = revElement.children[0].getAttribute("href");
-		if (!linkHref) {
-			continue;
-		}
-		const shaMatch = REV_SHA_PATTERN.exec(linkHref);
-		if (!shaMatch) {
-			continue;
-		}
-		return shaMatch[2];
-	}
-	return null;
 }
 
 const DIFF_LINK = /D[0-9]+\?id=([0-9]+)/i;

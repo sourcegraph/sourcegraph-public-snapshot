@@ -1,3 +1,5 @@
+/// <reference path="../../../globals.d.ts" />
+
 import { sourcegraphUrl } from "../../../app/utils/context";
 
 /**
@@ -10,7 +12,7 @@ import { sourcegraphUrl } from "../../../app/utils/context";
  * getSessionToken gets any logged in token from the sourcegraph.com cookie, so that we can
  * include it with XHR requests, and is sent when first injecting the extension on GitHub.
  */
-chrome.runtime.onMessage.addListener((message, sender, cb) => {
+chrome.runtime.onMessage.addListener((message, _, cb) => {
 	if (message.type === "setIdentity") {
 		chrome.storage.local.set({ identity: message.identity });
 	} else if (message.type === "getIdentity") {

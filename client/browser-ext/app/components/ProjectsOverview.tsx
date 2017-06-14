@@ -1,5 +1,4 @@
 import * as autobind from "autobind-decorator";
-import * as bluebird from "bluebird";
 import * as update from "immutability-helper";
 import * as _ from "lodash";
 import * as React from "react";
@@ -51,17 +50,6 @@ function getPriority(issue: Issue): string | null {
 	if (issue.labels) {
 		for (const label of issue.labels) {
 			if (label.name === "P1" || label.name === "P2" || label.name === "P3" || label.name === "P4" || label.name === "P5") {
-				return label.name;
-			}
-		}
-	}
-	return null;
-}
-
-function getType(issue: Issue, type: string): string | null {
-	if (issue.labels) {
-		for (const label of issue.labels) {
-			if (label.name.startsWith("Type: ")) {
 				return label.name;
 			}
 		}

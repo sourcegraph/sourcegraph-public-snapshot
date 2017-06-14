@@ -4,7 +4,7 @@ import * as utils from "../utils";
 import { addAnnotations, RepoRevSpec } from "../utils/annotations";
 import { eventLogger, sourcegraphUrl } from "../utils/context";
 import * as github from "../utils/github";
-import { CodeCell, GitHubBlobUrl, GitHubMode, GitHubUrl } from "../utils/types";
+import { CodeCell, GitHubBlobUrl, GitHubMode } from "../utils/types";
 import { SourcegraphIcon } from "./Icons";
 
 const className = "btn btn-sm tooltipped tooltipped-n";
@@ -23,7 +23,7 @@ interface State {
 }
 
 export class BlobAnnotator extends React.Component<Props, State> {
-	revisionChecker: NodeJS.Timer;
+	revisionChecker: number;
 
 	// language is determined by the path extension
 	fileExtension: string;
@@ -129,7 +129,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 				repoStat = { [repo]: resp };
 			}
 			this.setState({ resolvedRevs: Object.assign({}, this.state.resolvedRevs, { [key]: resp }, repoStat) });
-		}).catch(error => {
+		}).catch(() => {
 			// NO-OP
 		});
 	}
@@ -180,7 +180,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			if (resolvedRev && resolvedRev.commitID) {
 				const repoRevSpec = { repoURI: uri, rev: resolvedRev.commitID, isDelta: this.isDelta || false, isBase: Boolean(isBase) };
 				const cells = this.getCodeCells(this.isSplitDiff || false, repoRevSpec, blobElement);
-				addAnnotations(path, repoRevSpec, blobElement, this.getEventLoggerProps(), cells, 0);
+				addAnnotations(path, repoRevSpec, cells);
 			}
 		};
 
@@ -217,7 +217,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		// this is crappy, and only works because we stick in the cache both the repoURI as key as well as the repoURI@revision
 		const resolvedRevs = this.state.resolvedRevs[this.props.repoURI] as backend.ResolvedRevResp;
 		return getSourcegraphButton(github.isPrivateRepo() && resolvedRevs.notFound as boolean,
-			this.props.repoURI.split("github.com/")[1],
 			this.isDelta ? utils.getSourcegraphBlobUrl(sourcegraphUrl, this.headRepoURI as string, this.props.headPath, this.headCommitID) : utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.repoURI, this.props.headPath, this.rev),
 			this.getFileOpenCallback,
 			this.getAuthFileCallback);
@@ -232,7 +231,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 }
 
-function getSourcegraphButton(cantFindPrivateRepo: boolean, repoName: string, blobUrl: string, fileCallack: () => void, authCallback: () => void): JSX.Element {
+function getSourcegraphButton(cantFindPrivateRepo: boolean, blobUrl: string, fileCallack: () => void, authCallback: () => void): JSX.Element {
 	if (cantFindPrivateRepo) {
 		// Not signed in or not auth'd for private repos
 		return (<a href={`${sourcegraphUrl}/login?private=true&utm_source=${utils.getPlatformName()}`}

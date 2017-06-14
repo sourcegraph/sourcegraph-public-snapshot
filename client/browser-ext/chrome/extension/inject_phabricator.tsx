@@ -3,7 +3,7 @@ import { injectPhabricatorBlobAnnotators } from "../../app/utils/phabricator_inj
 
 export function injectPhabricatorApplication(): void {
 	// make sure this is called before javelinPierce
-	document.addEventListener(phabricator.PHAB_PAGE_LOAD_EVENT_NAME, ev => {
+	document.addEventListener(phabricator.PHAB_PAGE_LOAD_EVENT_NAME, () => {
 		injectModules();
 		setTimeout(injectModules, 5000); // extra data may be loaded asynchronously; reapply after timeout
 	});

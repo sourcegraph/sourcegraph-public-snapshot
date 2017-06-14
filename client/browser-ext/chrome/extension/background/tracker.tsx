@@ -1,6 +1,6 @@
+/// <reference path="../../../globals.d.ts" />
+
 import { TelligentWrapper } from "../../../app/tracking/TelligentWrapper";
-import { getDomain } from "../../../app/utils";
-import { Domain } from "../../../app/utils/types";
 
 let telligentWrapper: TelligentWrapper | null = null;
 
@@ -11,7 +11,7 @@ telligentWrapper = new TelligentWrapper("SourcegraphExtension", "BrowserExtensio
  * because it requires access to cookies, and the foreground of Chrome extensions
  * don't have access to that.
  */
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request) => {
 	if (!telligentWrapper) {
 		return;
 	}

@@ -1,13 +1,9 @@
-import * as _ from "lodash";
 import * as marked from "marked";
-import * as Rx from "rxjs";
 import { style } from "typestyle";
-import { parseURL } from ".";
 import { getModeFromExtension, getPlatformName } from "../utils";
 import { eventLogger, sourcegraphUrl } from "../utils/context";
 import { fetchJumpURL } from "./lsp";
 import { getTooltipEventProperties, store, TooltipState } from "./store";
-import { TooltipData } from "./types";
 
 import { highlightBlock } from "highlight.js";
 

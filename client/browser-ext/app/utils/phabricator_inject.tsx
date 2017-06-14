@@ -3,7 +3,7 @@ import { render } from "react-dom";
 import { PhabDifferentialBlobAnnotator } from "../../app/components/PhabDifferentialBlobAnnotator";
 import { PhabDiffusionBlobAnnotator } from "../../app/components/PhabDiffusionBlobAnnotator";
 import { getFilepathFromFile, getPhabricatorState, tryGetBlobElement } from "../../app/utils/phabricator";
-import { CodeCell, PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorMode, PhabUrl } from "../../app/utils/types";
+import { PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorMode } from "../../app/utils/types";
 
 /**
  * injectPhabricatorBlobAnnotators finds file blocks on the dom that sould be annotated, and adds blob annotators to them.

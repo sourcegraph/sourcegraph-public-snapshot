@@ -1,4 +1,3 @@
-import { doFetch } from "../backend/xhr";
 import { sourcegraphUrl } from "../utils/context";
 import { EventLogger } from "./EventLogger";
 import { TelligentWrapper } from "./TelligentWrapper";

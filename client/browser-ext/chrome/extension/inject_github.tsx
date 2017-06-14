@@ -1,15 +1,16 @@
+/// <reference path="../../globals.d.ts" />
+
 import * as React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
+import { render } from "react-dom";
 import { useAccessToken } from "../../app/backend/xhr";
 import { BlobAnnotator } from "../../app/components/BlobAnnotator";
-import { GitHubBackground } from "../../app/components/GitHubBackground";
 import { ProjectsOverview } from "../../app/components/ProjectsOverview";
 import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
 import { eventLogger } from "../../app/utils/context";
 import * as github from "../../app/utils/github";
-import { getDomain, getGitHubRoute, parseURL } from "../../app/utils/index";
+import { getGitHubRoute, parseURL } from "../../app/utils/index";
 import * as tooltips from "../../app/utils/tooltips";
-import { Domain, GitHubBlobUrl, GitHubMode, GitHubUrl } from "../../app/utils/types";
+import { GitHubBlobUrl, GitHubMode, GitHubUrl } from "../../app/utils/types";
 import { injectCodeSearch } from "./inject_code_search";
 
 export function injectGitHubApplication(marker: HTMLElement): void {
@@ -44,9 +45,6 @@ export function injectGitHubApplication(marker: HTMLElement): void {
 	});
 
 	document.addEventListener("pjax:end", () => {
-		// Unmount and remount react components because pjax breaks
-		// dynamically registered event handlers like mouseover/click etc..
-		// ejectModules();
 		(eventLogger as ExtensionEventLogger).updateIdentity();
 
 		// Remove all ".sg-annotated"; this allows tooltip event handlers to be re-registered.
@@ -75,8 +73,6 @@ function injectBlobAnnotators(): void {
 	const { repoURI, isDelta } = parseURL(window.location);
 	let { path } = parseURL(window.location);
 	const gitHubState: GitHubUrl | null = github.getGitHubState(window.location.href);
-	// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a
-	// slash in it to fix that bug
 	if (gitHubState && gitHubState.mode === GitHubMode.Blob && (gitHubState as GitHubBlobUrl).rev.indexOf("/") > 0) {
 		// correct in case branch has slash in it
 		path = (gitHubState as GitHubBlobUrl).path;
@@ -94,11 +90,6 @@ function injectBlobAnnotators(): void {
 			return;
 		}
 
-		// if (file.className.includes("sg-blob-annotated")) {
-		// 	// make this function idempotent
-		// 	return;
-		// }
-		// file.className = `${file.className} sg-blob-annotated`;
 		render(<BlobAnnotator headPath={headFilePath} repoURI={uri} fileElement={file} basePath={baseFilePath} />, mount);
 	}
 
@@ -111,7 +102,6 @@ function injectBlobAnnotators(): void {
 		addBlobAnnotator(file, mount);
 	}
 }
-
 
 function injectSourcegraphInternalTools(): void {
 	if (document.getElementById("sourcegraph-projet-overview")) {

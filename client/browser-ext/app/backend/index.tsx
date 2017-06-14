@@ -116,7 +116,7 @@ export function searchText(uri: string, query: string): Promise<ResolvedSearchTe
 	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
 		method: "POST",
 		body: JSON.stringify(body),
-	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
+	}).then((resp) => resp.json()).then((json: any) => {
 		searchPromiseCache.delete(key);
 		const repo = json.data && json.data.root!.repository;
 		if (!repo || !repo.commit.commit || !repo.commit.commit.textSearch) {

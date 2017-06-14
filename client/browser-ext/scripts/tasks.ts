@@ -10,7 +10,7 @@ export function replaceWebpack(): void {
 	}];
 
 	replaceTasks.forEach((task) => shelljs.cp(task.from, task.to));
-};
+}
 
 export function copyAssets(type: string): void {
 	const env = type === "build" ? "prod" : type;
@@ -19,4 +19,4 @@ export function copyAssets(type: string): void {
 	shelljs.cp(`chrome/manifest.${env}.json`, `${type}/manifest.json`);
 	shelljs.cp("-R", "chrome/assets/", type);
 	shelljs.exec(`jade -O "{ env: '${env}' }" -o ${type} chrome/views/`);
-};
+}

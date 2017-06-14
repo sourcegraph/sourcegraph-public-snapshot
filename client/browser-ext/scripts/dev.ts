@@ -1,13 +1,11 @@
-// tslint:disable
-
-import * as tasks from "./tasks";
 import * as shelljs from "shelljs";
+import * as tasks from "./tasks";
 
 tasks.replaceWebpack();
-console.log("[Copy assets]");
-console.log("--------------------------------");
+console.info("[Copy assets]");
+console.info("--------------------------------");
 tasks.copyAssets("dev");
 
-console.log("[Webpack Dev]");
-console.log("--------------------------------");
+console.info("[Webpack Dev]");
+console.info("--------------------------------");
 shelljs.exec("webpack --config webpack/dev.config.js --progress --profile --colors --watch");

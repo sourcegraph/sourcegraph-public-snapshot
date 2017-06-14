@@ -1,9 +1,7 @@
 import * as backend from "../../app/backend";
 import { eventLogger, sourcegraphUrl } from "../../app/utils/context";
 import { insertAfter } from "../../app/utils/dom";
-import * as github from "../../app/utils/github";
-import { getDomain, getGitHubRoute, parseURL } from "../../app/utils/index";
-import { Domain, GitHubBlobUrl, GitHubMode, GitHubUrl } from "../../app/utils/types";
+import { parseURL } from "../../app/utils/index";
 import { GITHUB_LIGHT_THEME } from "../assets/themes/github_theme";
 
 import * as querystring from "query-string";
@@ -20,9 +18,6 @@ const GITHUB_HEADER_HEIGHT = 117;
 const GITHUB_FOOTER_SELECTOR = ".site-footer";
 const GITHUB_FOOTER_HEIGHT = 139;
 
-const CODE_SEARCH_FEATURE_FLAG_KEY = "sourcegraph-code-search";
-const DEFAULT_CODE_SEARCH = "default-github-code-search";
-
 const SOURCEGRAPH_CODE_TOGGLE = "sourcegraph-code-toggle";
 
 /**
@@ -34,7 +29,7 @@ export function injectCodeSearch(): void {
 	}
 
 	// Skip rendering all together if this is not a code search URL.
-	const { repoURI, path } = parseURL(window.location);
+	const { repoURI } = parseURL(window.location);
 	if (!repoURI) {
 		return;
 	}
@@ -44,7 +39,7 @@ export function injectCodeSearch(): void {
 	if (!repoContent) {
 		return;
 	}
-	const searchFrame = createCodeSearchFrame(repoURI, repoContent as HTMLIFrameElement);
+	const searchFrame = createCodeSearchFrame(repoContent as HTMLIFrameElement);
 	hideCodeSearchFrame(searchFrame);
 	const searchQuery = getSearchQuery();
 	const frameLocation = searchQuery ?
@@ -55,7 +50,7 @@ export function injectCodeSearch(): void {
 
 	if (isSourcegraphSearchQuery() && searchQuery) {
 		removeGitHubCodeSearchElements();
-		showCodeSearchFrameForSearch(searchFrame, repoURI!, searchQuery);
+		showCodeSearchFrameForSearch(searchFrame);
 	}
 }
 
@@ -66,7 +61,7 @@ window.addEventListener("popstate", (e: any) => {
 	if (isCodeSearchURL()) {
 		renderSourcegraphSearchTab();
 	}
-	const { repoURI, path } = parseURL(window.location);
+	const { repoURI } = parseURL(window.location);
 	if (!repoURI) {
 		return;
 	}
@@ -76,7 +71,7 @@ window.addEventListener("popstate", (e: any) => {
 	if (!repoContent) {
 		return;
 	}
-	const searchFrame = createCodeSearchFrame(repoURI, repoContent as HTMLIFrameElement);
+	const searchFrame = createCodeSearchFrame(repoContent as HTMLIFrameElement);
 	const searchQuery = getSearchQuery();
 	if (!searchQuery) {
 		return;
@@ -88,7 +83,7 @@ window.addEventListener("popstate", (e: any) => {
 	}
 	if (isCodeSearchURL(e.target.location) && isSourcegraphSearchQuery(e.target.location)) {
 		removeGitHubCodeSearchElements();
-		showCodeSearchFrameForSearch(searchFrame, repoURI!, searchQuery);
+		showCodeSearchFrameForSearch(searchFrame);
 	}
 });
 
@@ -118,7 +113,7 @@ function getSearchNavBar(): Element | null {
  * Returns the Sourcegraph code toggle part.
  * @param navPart The GitHub navigation bar element.
  */
-function createSourcegraphTogglePart(navPart: HTMLElement): HTMLDivElement {
+function createSourcegraphTogglePart(): HTMLDivElement {
 	const toggle = document.createElement("div");
 	toggle.id = SOURCEGRAPH_CODE_TOGGLE;
 	toggle.style.cursor = "pointer";
@@ -147,9 +142,9 @@ function createSourcegraphTogglePart(navPart: HTMLElement): HTMLDivElement {
 		window.location.hash = "#sourcegraph";
 		renderSourcegraphSearchTab();
 
-		const searchFrame = createCodeSearchFrame(repoURI, repoContent as HTMLIFrameElement);
+		const searchFrame = createCodeSearchFrame(repoContent as HTMLIFrameElement);
 		if (removeGitHubCodeSearchElements()) {
-			showCodeSearchFrameForSearch(searchFrame!, repoURI!, decodedSearch);
+			showCodeSearchFrameForSearch(searchFrame!);
 		}
 	};
 	toggle.innerText = "Code (Sourcegraph)";
@@ -183,7 +178,7 @@ function renderSourcegraphSearchTab(): void {
 			const textNode = firstChild.childNodes[0];
 			textNode.textContent = "Code (GitHub)";
 		}
-		insertAfter(createSourcegraphTogglePart(navbar as HTMLElement), navbar.firstChild!.nextSibling!);
+		insertAfter(createSourcegraphTogglePart(), navbar.firstChild!.nextSibling!);
 	}
 }
 
@@ -199,11 +194,9 @@ function getSourcegraphCodeTogglePart(): HTMLAnchorElement | null {
  * @param searchFrame The iFrame to be set visible.
  * @param repoURI The URI of the repository being searched.
  */
-function showCodeSearchFrameForSearch(searchFrame: HTMLIFrameElement, repoURI: string, search: string): void {
+function showCodeSearchFrameForSearch(searchFrame: HTMLIFrameElement): void {
 	searchFrame.style.visibility = "visible";
 	searchFrame.style.position = "";
-	const searchEncoded = searchURLConfig(repoURI, search);
-	const searchURL = `${sourcegraphUrl}/${repoURI}/-/search?config=${searchEncoded}`;
 	eventLogger.logSourcegraphSearch({ query: getSearchQuery() });
 }
 
@@ -227,7 +220,7 @@ function isSourcegraphSearchQuery(location: any = window.location): boolean {
  * @param repoURI The URI of the current repository.
  * @return {HTMLElement} The code search iFrame.
  */
-function createCodeSearchFrame(repoURI: string = "", parent: HTMLElement): HTMLIFrameElement {
+function createCodeSearchFrame(parent: HTMLElement): HTMLIFrameElement {
 	if (renderedSearchFrame()) {
 		return renderedSearchFrame()!;
 	}
@@ -249,9 +242,6 @@ function createCodeSearchFrame(repoURI: string = "", parent: HTMLElement): HTMLI
 	parent.appendChild(searchFrame);
 	const iframeWindow = searchFrame.contentWindow || (searchFrame.contentDocument as any).parentWindow;
 	iframeWindow.document.domain = "github.com";
-
-	const searchQuery = getSearchQuery();
-	const searchEncoded = searchURLConfig(repoURI, searchQuery, true);
 	return searchFrame;
 }
 

@@ -1,12 +1,10 @@
 import * as _ from "lodash";
 import * as Rx from "rxjs";
-import { getPathExtension } from "../utils";
-import { eventLogger, isBrowserExtension } from "../utils/context";
-import * as github from "./github";
+import { eventLogger } from "../utils/context";
 import { fetchJumpURL, getTooltip } from "./lsp";
 import { clearTooltip, getTooltipEventProperties, setTooltip, store, TooltipContext } from "./store";
 import * as tooltips from "./tooltips";
-import { CodeCell, PhabricatorCodeCell, TooltipData } from "./types";
+import { CodeCell, TooltipData } from "./types";
 
 export interface RepoRevSpec { // TODO(john): move to types.
 	repoURI: string;
@@ -120,7 +118,6 @@ function convertNode(parentNode: HTMLElement): void {
 const VARIABLE_TOKENIZER = /(^\w+)/;
 const ASCII_CHARACTER_TOKENIZER = /(^[\x21-\x2F|\x3A-\x40|\x5B-\x60|\x7B-\x7E])/;
 const NONVARIABLE_TOKENIZER = /(^[^\x21-\x7E]+)/;
-const SPACES = /(^[\x20]*$)/;
 
 /**
  * consumeNextToken parses the text content of a text node and returns the next "distinct"
@@ -203,7 +200,7 @@ function getJ2DObservable(context: TooltipContext): Rx.Observable<string | null>
  */
 function getLoadingTooltipObservable(target: HTMLElement, tooltipObservable: Rx.Observable<any>): Rx.Observable<{ target: HTMLElement, data: TooltipData }> {
 	// Show a loading tooltip after .5 seconds, ONLY if we haven't already gotten real tooltip data
-	return Rx.Observable.fromPromise<TooltipData>(new Promise((resolve, reject) => {
+	return Rx.Observable.fromPromise<TooltipData>(new Promise((resolve) => {
 		setTimeout(() => resolve({ loading: true }), 500);
 	}))
 		.takeUntil(tooltipObservable) // short-circuit once actual tooltip is fetched
@@ -216,26 +213,28 @@ function getLoadingTooltipObservable(target: HTMLElement, tooltipObservable: Rx.
  * @param context Parameters used to fetch the tooltip data.
  * @param type Which type of user interaction caused the event.
  */
-function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: TooltipContext, type: TooltipEventType, logEvent: boolean = true): void {
+function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: TooltipContext, type: TooltipEventType): void {
 	if (store.getValue().docked && type === TooltipEventType.HOVER) {
 		// While a tooltip is docked, hovers should not update the active tooltip.
 		return;
 	}
 	if (ev.target === activeTarget) {
 		const eventProperties = getTooltipEventProperties(ev.data, context);
-		switch (type) { // TODO(john): fix event logger API
-			case TooltipEventType.HOVER:
-				eventLogger.logHover(eventProperties);
-				break;
+		if (ev.data.title || ev.data.j2dUrl) {
+			switch (type) {
+				case TooltipEventType.HOVER:
+					eventLogger.logHover(eventProperties);
+					break;
 
-			case TooltipEventType.CLICK:
-				eventLogger.logClick(eventProperties);
-				break;
+				case TooltipEventType.CLICK:
+					eventLogger.logClick(eventProperties);
+					break;
 
-			case TooltipEventType.SELECT_TEXT:
-				eventLogger.logSelectText(eventProperties);
-				break;
+				case TooltipEventType.SELECT_TEXT:
+					eventLogger.logSelectText(eventProperties);
+					break;
 
+			}
 		}
 		setTooltip({
 			target: ev.target,
@@ -281,7 +280,7 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
  * mechanism would be to take use the `cm-tab` DOM attribute. For Phabricator, no
  * better mechanism is known at this time (see https://secure.phabricator.com/T2495).
  */
-export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: any, cells: CodeCell[], spacesToTab: number): void {
+export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: CodeCell[]): void {
 	tooltips.createTooltips(); // TODO(john): can we just do this once in the module)?
 	const ignoreFirstChar = repoRevSpec.isDelta;
 
@@ -319,7 +318,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		tooltipObservable.zip(getJ2DObservable(context)).subscribe((ev) => {
 			if (ev[1]) {
 				ev[0].data.j2dUrl = ev[1]!;
-				tooltipEvent(ev[0], context, TooltipEventType.HOVER, false);
+				tooltipEvent(ev[0], context, TooltipEventType.HOVER);
 			}
 		});
 		loadingTooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.HOVER));
@@ -327,14 +326,14 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 
 	let lastSelectedText: string = "";
 
-	domObservables.forEach(observable => observable.mouseout.subscribe((e => {
+	domObservables.forEach(observable => observable.mouseout.subscribe((() => {
 		if (!store.getValue().docked) {
 			activeTarget = null;
 			clearTooltip();
 		}
 	})));
 
-	domObservables.forEach(observable => observable.mouseup.subscribe((e => {
+	domObservables.forEach(observable => observable.mouseup.subscribe((e) => {
 		const t = e.target as HTMLElement;
 		const clickedActiveTarget = t === activeTarget;
 		activeTarget = t;
@@ -384,10 +383,11 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		tooltipObservable.zip(getJ2DObservable(context)).subscribe((ev) => {
 			if (ev[1]) {
 				ev[0].data.j2dUrl = ev[1]!;
-				tooltipEvent(ev[0], context, TooltipEventType.CLICK, false);
+				tooltipEvent(ev[0], context, TooltipEventType.CLICK);
 			}
 		});
-	})));
+		loadingTooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.CLICK));
+	}));
 }
 
 /**

@@ -15,7 +15,7 @@ export function init(): void {
 	 * This is the main entry point for the phabricator in-page JavaScript plugin.
 	 */
 	if (global && global.window && global.window.localStorage && !(global.window.localStorage.SOURCEGRAPH_DISABLED === "true")) {
-		document.addEventListener("phabPageLoaded", ev => {
+		document.addEventListener("phabPageLoaded", () => {
 			expanderListen();
 			metaClickOverride();
 			injectModules();

@@ -1,4 +1,3 @@
-// tslint:disable-next-line
 const telligent = require("telligent-tracker");
 const telligentFunctionName = "telligent";
 

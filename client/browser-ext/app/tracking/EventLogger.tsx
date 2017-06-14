@@ -1,6 +1,5 @@
 import { isE2ETest } from "../utils";
 import { getPlatformName } from "../utils";
-import { Features } from "../utils/Features";
 
 export abstract class EventLogger {
 
@@ -36,19 +35,15 @@ export abstract class EventLogger {
 		this.logEventForCategory("BrowserExtension", "Click", "AuthRedirected", eventProperties);
 	}
 
-	logSourcegraphSearch(eventProperties: Object = {}): void {
+	logSourcegraphSearch(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "SourcegraphSearchClicked", eventProperties);
 	}
 
-	logSourcegraphSearchTabClicked(eventProperties: Object = {}): void {
+	logSourcegraphSearchTabClicked(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "SourcegraphSearchTabClicked", eventProperties);
 	}
 
 	protected abstract sendEvent(eventAction: string, eventProps: any): void;
-
-	private logToConsole(eventAction: string, object: any): void {
-		return;
-	}
 
 	private defaultProperties(): any {
 		return {
@@ -70,8 +65,6 @@ export abstract class EventLogger {
 			},
 		);
 
-		this.logToConsole(eventAction, decoratedEventProps);
 		this.sendEvent(eventAction, decoratedEventProps);
 	}
-
 }

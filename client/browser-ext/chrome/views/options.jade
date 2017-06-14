@@ -8,8 +8,6 @@ html
     p Warning: changing these options may break your Chrome extension.
     form#sourcegraph_url_form
       label Sourcegraph URL:
-      &nbsp;
       input#sourcegraph_url
-      &nbsp;
       input(type="submit", value="Save")
     script(src=env == 'prod' ? '/js/options.bundle.js' : 'https://localhost:3000/js/options.bundle.js')

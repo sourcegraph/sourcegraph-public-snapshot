@@ -1,12 +1,10 @@
-// tslint:disable
-
-import * as tasks from "./tasks";
 import * as fs from "fs";
 import * as shelljs from "shelljs";
+import * as tasks from "./tasks";
 
-console.log("[Compute checksum]");
-console.log("--------------------------------");
-require("hash-files")({files: ["./app/**", "./chrome/**", "./phabricator/**", "./scripts/**", "./webpack/**"]}, (error, hash) => {
+console.info("[Compute checksum]");
+console.info("--------------------------------");
+require("hash-files")({ files: ["./app/**", "./chrome/**", "./phabricator/**", "./scripts/**", "./webpack/**"] }, (error, hash) => {
 	if (error) {
 		console.error(error);
 		return;
@@ -15,20 +13,21 @@ require("hash-files")({files: ["./app/**", "./chrome/**", "./phabricator/**", ".
 	try {
 		const savedHash = fs.readFileSync(".checksum", "utf8");
 		if (savedHash === hash) {
-			console.log("Match checksum, skipping build...");
+			console.info("Match checksum, skipping build...");
 			return;
 		}
-	} catch (e) {}
+	} catch (e) {
+		// ignore
+	}
 
-	fs.writeFileSync(".checksum", hash)
+	fs.writeFileSync(".checksum", hash);
 
 	tasks.replaceWebpack();
-	console.log("[Copy assets]");
-	console.log("--------------------------------");
+	console.info("[Copy assets]");
+	console.info("--------------------------------");
 	tasks.copyAssets("build");
 
-	console.log("[Webpack Build]");
-	console.log("--------------------------------");
+	console.info("[Webpack Build]");
+	console.info("--------------------------------");
 	shelljs.exec("webpack --config webpack/prod.config.js --progress --profile --colors");
 });
-

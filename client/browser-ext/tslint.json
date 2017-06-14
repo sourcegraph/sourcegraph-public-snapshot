@@ -53,7 +53,9 @@
 			"log"
 		],
 		"prefer-for-of": false,
-		"space-before-function-paren": false
+		"space-before-function-paren": false,
+		"no-var-requires": false,
+		"no-reference": false
 	},
 	"rulesDirectory": []
 }
