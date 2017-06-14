@@ -15,6 +15,7 @@ export GITHUB_CLIENT_SECRET=c5ff37d80e3736924cbbdf2922a50cac31963e43
 export LIGHTSTEP_PROJECT=sourcegraph-dev
 export LIGHTSTEP_ACCESS_TOKEN=d60b0b2477a7ccb05d7783917f648816
 export LIGHTSTEP_INCLUDE_SENSITIVE=true
+export PGSSLMODE=disable
 export SRC_GITHUB_APP_ID=2534
 export SRC_GITHUB_APP_PRIVATE_KEY=$PWD/dev/github/sourcegraph-dev.private-key.pem
 
