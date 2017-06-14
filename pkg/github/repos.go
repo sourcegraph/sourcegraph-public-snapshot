@@ -2,7 +2,6 @@ package github
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -256,7 +255,7 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	if feature.Features.GitHubApps {
 		// Attempt directly accessing the repo first. If it is a public repo this will
 		// succeed, otherwise attempt fetching it from the private endpoints below.
-		ghrepo, _, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
+		ghrepo, _, err := gogithub.NewClient(nil).Repositories.Get(ctx, owner, repoName)
 		if err == nil {
 			return ToRepo(ghrepo), nil
 		}
@@ -278,7 +277,7 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 				}
 			}
 		}
-		return nil, errors.New("repo not found")
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
 	} else {
 		ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
 		if err != nil {
