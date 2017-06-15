@@ -14,7 +14,7 @@
     "commander": "^2.9.0",
     "fast-json-patch": "^1.2.2",
     "iterare": "^0.0.7",
-    "javascript-typescript-langserver": "^2.0.0-pre.34",
+    "javascript-typescript-langserver": "2.0.0",
     "lightstep-tracer": "^0.20.3",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
