@@ -293,6 +293,12 @@
 			"revisionTime": "2017-03-18T14:10:32Z"
 		},
 		{
+			"checksumSHA1": "U5tK4cmCTiqcLbCFD1xypdh3v8k=",
+			"path": "github.com/fogleman/gg",
+			"revision": "ee8994ff90057955c428a5a949da5d064bf3ce6b",
+			"revisionTime": "2017-05-04T01:14:43Z"
+		},
+		{
 			"checksumSHA1": "nmc2qcdbg17Ny8tHeEDQuphV6jA=",
 			"path": "github.com/fsnotify/fsnotify",
 			"revision": "bd2828f9f176e52d7222e565abb2d338d3f3c103",
@@ -428,6 +434,18 @@
 			"revision": "4f262e4b0f3a6cea646e15798109335551e21756",
 			"revisionTime": "2016-04-13T13:07:56Z",
 			"tree": true
+		},
+		{
+			"checksumSHA1": "aJ/kX/eCUlrCJBZ26Hwh/RXzAIw=",
+			"path": "github.com/golang/freetype/raster",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"revisionTime": "2017-06-09T00:35:04Z"
+		},
+		{
+			"checksumSHA1": "I3u9Uh9thka1gsgch6QEiPkaAr0=",
+			"path": "github.com/golang/freetype/truetype",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"revisionTime": "2017-06-09T00:35:04Z"
 		},
 		{
 			"checksumSHA1": "URsJa4y/sUUw/STmbeYx9EKqaYE=",
@@ -721,6 +739,240 @@
 			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"revision": "d0c3fe89de86839aecf2e0579c40ba3bb336a453",
 			"revisionTime": "2015-10-11T12:25:29+02:00"
+		},
+		{
+			"checksumSHA1": "krRdA5DGBcrIOIjotdFjB/YKuHk=",
+			"path": "github.com/neelance/cdp-go",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "hI2P9j/VdxiXrlSfD+0O4gpbFbA=",
+			"path": "github.com/neelance/cdp-go/protocol/accessibility",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "/HR5EpuXLAyyloJlyb+deGXNGD8=",
+			"path": "github.com/neelance/cdp-go/protocol/animation",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "sDhJMDKy+ppdClae3W02gn5RGu0=",
+			"path": "github.com/neelance/cdp-go/protocol/applicationcache",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "Opsz1srudqxlkNidzUWYziVHu5U=",
+			"path": "github.com/neelance/cdp-go/protocol/browser",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "aoLzmA3Fv1X93/eXqkqxnwtGVm0=",
+			"path": "github.com/neelance/cdp-go/protocol/cachestorage",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "Wv5bk9vqNPB5fceXJFTn+tJ0oak=",
+			"path": "github.com/neelance/cdp-go/protocol/console",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "SRF7it9cm6ApSePdg1FDddy3MCY=",
+			"path": "github.com/neelance/cdp-go/protocol/css",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "ynVCQ7Kk4CrYWr2WSCt+SQqZp1I=",
+			"path": "github.com/neelance/cdp-go/protocol/database",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "uYfzg4LMxbf+ZCk6ifnEX6SKSq8=",
+			"path": "github.com/neelance/cdp-go/protocol/debugger",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "gf/e0hCMXve8/ZsgHgxN2BhOxAY=",
+			"path": "github.com/neelance/cdp-go/protocol/deviceorientation",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "s0MjAYAgDlRz709QlCX9flJL1vk=",
+			"path": "github.com/neelance/cdp-go/protocol/dom",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "WPqVkNokcFWeURgILGwOQp8gkQA=",
+			"path": "github.com/neelance/cdp-go/protocol/domdebugger",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "dUDWR3WCfl3WApzqRf6TXo7plhE=",
+			"path": "github.com/neelance/cdp-go/protocol/domsnapshot",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "+b07X+YVIJZZaO5EgADpVywLAc8=",
+			"path": "github.com/neelance/cdp-go/protocol/domstorage",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "ZAJNgPXITc1PydP/D5lsQoEA7Nc=",
+			"path": "github.com/neelance/cdp-go/protocol/emulation",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "VneqrFdsKscer8KfxSViELa+uzM=",
+			"path": "github.com/neelance/cdp-go/protocol/heapprofiler",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "BsY4NTvSL4vN11cjw/I5ZiKh+To=",
+			"path": "github.com/neelance/cdp-go/protocol/indexeddb",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "MZiTXpkqu+o5p6C+CzYEmsMTCIg=",
+			"path": "github.com/neelance/cdp-go/protocol/input",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "9bbxHq5L5occpRtN1Sw6aeBpkpM=",
+			"path": "github.com/neelance/cdp-go/protocol/inspector",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "sin7tDohKc/I9huzl2ZRtkNjbxI=",
+			"path": "github.com/neelance/cdp-go/protocol/io",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "AUf97/GeEvqNZOshlRznzXqgIHU=",
+			"path": "github.com/neelance/cdp-go/protocol/layertree",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "0jbSvopY2NbH8PAQtS1+FnZVZww=",
+			"path": "github.com/neelance/cdp-go/protocol/log",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "yeR2qE7tNSjqYbj5MwqSMGPFhDQ=",
+			"path": "github.com/neelance/cdp-go/protocol/memory",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "mMKI0Mc/9V/VxDy2okh4v122ipI=",
+			"path": "github.com/neelance/cdp-go/protocol/network",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "2FCjxRyTU7RpYXOC2szTFvDy4gs=",
+			"path": "github.com/neelance/cdp-go/protocol/overlay",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "dAjPkunUGOXFk1pYTaWt+TxiR3s=",
+			"path": "github.com/neelance/cdp-go/protocol/page",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "dsgJY39q/Oo3h6wV5T2GtB1Rhx0=",
+			"path": "github.com/neelance/cdp-go/protocol/profiler",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "SfCyAfxxZpgN5tViXvr8+ZbgmXg=",
+			"path": "github.com/neelance/cdp-go/protocol/runtime",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "+yx7wKK6/30Dh2Uy4LnUtWkTT/Y=",
+			"path": "github.com/neelance/cdp-go/protocol/schema",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "KTflTVMnUWQQB7dkgBALcOXbqjA=",
+			"path": "github.com/neelance/cdp-go/protocol/security",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "GOeFd3tn6Stn7n/AcWaBwQqOlkM=",
+			"path": "github.com/neelance/cdp-go/protocol/serviceworker",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "lCeEle2S5spo1zBZb5m7TZsDe44=",
+			"path": "github.com/neelance/cdp-go/protocol/storage",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "4gGZPLofzPl2yXgJUx4415CMC+g=",
+			"path": "github.com/neelance/cdp-go/protocol/systeminfo",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "pTAq2xqeBecZo107Z7cV1ycLGJ0=",
+			"path": "github.com/neelance/cdp-go/protocol/target",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "f1BKulnymc7ZEoqeqkyc5fApzZs=",
+			"path": "github.com/neelance/cdp-go/protocol/tethering",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "SkI4URsmuX12TM0N2JRGpFi3s9w=",
+			"path": "github.com/neelance/cdp-go/protocol/tracing",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "ovYG2uH6XDPJtP7PzVikeVC1qi8=",
+			"path": "github.com/neelance/cdp-go/rpc",
+			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",
+			"revisionTime": "2017-06-13T23:15:09Z"
+		},
+		{
+			"checksumSHA1": "MWGic87ysi5Ai6FlELR5FplE/8w=",
+			"path": "github.com/neelance/chromebot",
+			"revision": "99b7f0cbb59fa45b503d950af726a47d3445fe8c",
+			"revisionTime": "2017-06-19T13:24:50Z"
 		},
 		{
 			"checksumSHA1": "dOZUSF5us7fCNH1a82DkyzCFsGA=",
@@ -1121,6 +1373,36 @@
 			"revisionTime": "2016-05-16T23:05:56Z"
 		},
 		{
+			"checksumSHA1": "WZqFyWo6r8KZodsU0doRvel37F0=",
+			"path": "golang.org/x/image/draw",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "+U1IB5N4LDS74y4fXjARb4/S4IE=",
+			"path": "golang.org/x/image/font",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "KsSSl5U1ZkRocio4flF+3PlJUBM=",
+			"path": "golang.org/x/image/font/basicfont",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "o7VkCGBiKM5HXzVzrIci1YDlpvc=",
+			"path": "golang.org/x/image/math/f64",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "euzvwlMLxyD0hwc+raoVsDLv6j4=",
+			"path": "golang.org/x/image/math/fixed",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
 			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
 			"path": "golang.org/x/net/context",
 			"revision": "07b51741c1d6423d4a6abab1c49940ec09cb1aaf",
@@ -1167,6 +1449,12 @@
 			"path": "golang.org/x/net/trace",
 			"revision": "236b8f043b920452504e263bc21d354427127473",
 			"revisionTime": "2017-02-06T03:21:01Z"
+		},
+		{
+			"checksumSHA1": "7EZyXN0EmZLgGxZxK01IJua4c8o=",
+			"path": "golang.org/x/net/websocket",
+			"revision": "1a68b1313cf4ad7778376e82641197b60c02f65c",
+			"revisionTime": "2017-06-09T23:57:59Z"
 		},
 		{
 			"checksumSHA1": "nJGYSAwWAjkslNuv7w6yvmjf2K8=",
