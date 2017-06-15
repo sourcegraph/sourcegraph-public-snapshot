@@ -1,7 +1,7 @@
 import * as backend from "../../app/backend";
 import { eventLogger, sourcegraphUrl } from "../../app/utils/context";
 import { insertAfter } from "../../app/utils/dom";
-import { parseURL } from "../../app/utils/index";
+import { getPlatformName, parseURL } from "../../app/utils/index";
 import { GITHUB_LIGHT_THEME } from "../assets/themes/github_theme";
 
 import * as querystring from "query-string";
@@ -15,15 +15,20 @@ const GITHUB_RESULTS_CONTAINER_SELECTOR = ".clearfix.gut-sm";
 const GITHUB_HEADER_SELECTOR = ".border-bottom";
 const GITHUB_HEADER_HEIGHT = 117;
 
-const GITHUB_FOOTER_SELECTOR = ".site-footer";
-const GITHUB_FOOTER_HEIGHT = 139;
+const GITHUB_FOOTER_SELECTOR = ".site-footer-container";
 
 const SOURCEGRAPH_CODE_TOGGLE = "sourcegraph-code-toggle";
+const SOURCEGRAPH_AUTH_PAGE = "sourcegraph-auth-page";
 
 /**
  * injectCodeSearch is responsible for injecting our Sourcegraph Code Search into GitHub's DOM.
  */
 export function injectCodeSearch(): void {
+	// Temp feature flag.
+	if (window.localStorage["searchEnabled"] !== "true") {
+		return;
+	}
+
 	if (isCodeSearchURL()) {
 		renderSourcegraphSearchTab();
 	}
@@ -40,10 +45,10 @@ export function injectCodeSearch(): void {
 		return;
 	}
 	const searchFrame = createCodeSearchFrame(repoContent as HTMLIFrameElement);
-	hideCodeSearchFrame(searchFrame);
+	hideCodeSearchFrame();
 	const searchQuery = getSearchQuery();
 	const frameLocation = searchQuery ?
-		`${sourcegraphUrl}/${repoURI}/-/search?config=${searchURLConfig(repoURI, searchQuery)}` :
+		`${sourcegraphUrl}/${repoURI}?config=${searchURLConfig(repoURI, searchQuery)}&q=${searchQuery}` :
 		`${sourcegraphUrl}/${repoURI}?config=${searchURLConfig(repoURI)}`;
 
 	searchFrame.contentWindow.location.href = frameLocation;
@@ -77,8 +82,10 @@ window.addEventListener("popstate", (e: any) => {
 		return;
 	}
 
+	const authPage = createAuthPage(repoContent as HTMLElement);
 	if (isCodeSearchURL(e.target.location) && !isSourcegraphSearchQuery(e.target.location)) {
-		hideCodeSearchFrame(searchFrame);
+		hideAuthPage(authPage);
+		hideCodeSearchFrame();
 		addGitHubCodeSearchElements();
 	}
 	if (isCodeSearchURL(e.target.location) && isSourcegraphSearchQuery(e.target.location)) {
@@ -149,6 +156,18 @@ function createSourcegraphTogglePart(): HTMLDivElement {
 	};
 	toggle.innerText = "Code (Sourcegraph)";
 	backend.searchText(repoURI!, decodedSearch).then((textSearch: backend.ResolvedSearchTextResp) => {
+		if (textSearch.notFound) {
+			hideCodeSearchFrame();
+			if (isSourcegraphSearchQuery()) {
+				const repoContent = document.querySelector(GITHUB_REPOSITORY_CONTENT_CONTAINER);
+				if (repoContent) {
+					const authPage = createAuthPage(repoContent as HTMLElement);
+					showAuthPage(authPage);
+				}
+			}
+			return;
+		}
+
 		if (textSearch.results) {
 			let totalResults = 0;
 			textSearch.results.forEach(file => {
@@ -160,6 +179,7 @@ function createSourcegraphTogglePart(): HTMLDivElement {
 			toggle.appendChild(resultsBubble);
 		}
 	});
+
 	return toggle;
 }
 
@@ -197,6 +217,7 @@ function getSourcegraphCodeTogglePart(): HTMLAnchorElement | null {
 function showCodeSearchFrameForSearch(searchFrame: HTMLIFrameElement): void {
 	searchFrame.style.visibility = "visible";
 	searchFrame.style.position = "";
+	searchFrame.style.height = `calc(100vh - ${GITHUB_HEADER_HEIGHT}px)`;
 	eventLogger.logSourcegraphSearch({ query: getSearchQuery() });
 }
 
@@ -204,8 +225,32 @@ function showCodeSearchFrameForSearch(searchFrame: HTMLIFrameElement): void {
  * Update's the iframe's visibility to hidden.
  * @param searchFrame The search frame to set hidden.
  */
-function hideCodeSearchFrame(searchFrame: HTMLIFrameElement): void {
+function hideCodeSearchFrame(): void {
+	const searchFrame = renderedSearchFrame();
+	if (!searchFrame) {
+		return;
+	}
 	searchFrame.style.visibility = "hidden";
+	searchFrame.style.height = "0px";
+}
+
+/**
+ * Updates the auth page's visibility to visible.
+ * @param authPage The auth page container element to show.
+ */
+function showAuthPage(authPage: HTMLElement): void {
+	authPage.style.visibility = "visible";
+	authPage.style.display = "block";
+	authPage.style.position = "absolute";
+}
+
+/**
+ * Updates the auth page's visibility to hidden.
+ * @param authPage The auth page container element to hide.
+ */
+function hideAuthPage(authPage: HTMLElement): void {
+	authPage.style.visibility = "hidden";
+	authPage.style.display = "none";
 }
 
 /**
@@ -213,6 +258,62 @@ function hideCodeSearchFrame(searchFrame: HTMLIFrameElement): void {
  */
 function isSourcegraphSearchQuery(location: any = window.location): boolean {
 	return location.hash === "#sourcegraph";
+}
+
+/**
+ * Creates the auth page to be rendered in place of the iframe when a user is viewing a private repository, but not
+ * authed with the chrome ext
+ */
+function createAuthPage(parent: HTMLElement): HTMLElement {
+	const authPage = document.getElementById(SOURCEGRAPH_AUTH_PAGE);
+	if (authPage) {
+		return authPage;
+	}
+
+	const container = document.createElement("div");
+	container.id = SOURCEGRAPH_AUTH_PAGE;
+	container.style.height = `calc(100vh - ${GITHUB_HEADER_HEIGHT}px)`;
+	container.style.width = "100%";
+	container.style.display = "none";
+	container.style.visibility = "hidden";
+	container.style.textAlign = "center";
+	container.style.top = `${GITHUB_HEADER_HEIGHT}px`;
+
+	const icon = document.createElement("img");
+	icon.src = (window as any).chrome.extension.getURL("img/sourcegraph-mark.svg");
+	icon.style.display = "block";
+	icon.style.margin = "auto";
+	icon.style.width = "125px";
+	icon.style.height = "125px";
+	icon.style.position = "relative";
+	icon.style.top = "50px";
+	icon.style.paddingBottom = "25px";
+
+	const header = document.createElement("div");
+	header.style.display = "block";
+	header.style.margin = "auto";
+	header.style.paddingBottom = "15px";
+	header.style.paddingTop = "40px";
+
+	const headerText = document.createElement("h2");
+	headerText.innerHTML = "Sign in to view search results";
+	header.appendChild(headerText);
+
+	const authButton = document.createElement("button") as HTMLElement;
+	authButton.style.width = "200px";
+	authButton.style.height = "35px";
+	authButton.style.position = "relative";
+	authButton.innerHTML = "Sign in";
+	authButton.className = "btn btn-sm btn-primary";
+	authButton.onclick = () => {
+		window.location.href = `${sourcegraphUrl}/login?private=true&utm_source=${getPlatformName()}`;
+	};
+
+	container.appendChild(icon);
+	container.appendChild(header);
+	container.appendChild(authButton);
+	parent.appendChild(container);
+	return container;
 }
 
 /**
@@ -226,7 +327,7 @@ function createCodeSearchFrame(parent: HTMLElement): HTMLIFrameElement {
 	}
 	const searchFrame = document.createElement("iframe") as HTMLIFrameElement;
 	searchFrame.id = CODE_SEARCH_ELEMENT_ID;
-	searchFrame.style.height = `calc(100vh - ${GITHUB_FOOTER_HEIGHT + GITHUB_HEADER_HEIGHT}px)`;
+	searchFrame.style.height = `calc(100vh - ${GITHUB_HEADER_HEIGHT}px)`;
 	searchFrame.style.display = "block";
 	searchFrame.style.visibility = "visible";
 	searchFrame.style.zIndex = "-500";
@@ -252,7 +353,7 @@ function createCodeSearchFrame(parent: HTMLElement): HTMLIFrameElement {
  * @param initialStartup The boolean flag to tell the workbench how to load contents.
  */
 function searchURLConfig(repo: string, query?: string, initialStartup?: boolean): string {
-	const url = query ? `${sourcegraphUrl}/${repo}/-/search?q=${query}&repos=${repo}` : `${sourcegraphUrl}/${repo}`;
+	const url = query ? `${sourcegraphUrl}/${repo}?q=${query}` : `${sourcegraphUrl}/${repo}`;
 	query = decodeURIComponent((query || "" + "").replace(/\+/g, "%20"));
 	const queryParams = {
 		_: [],
@@ -295,6 +396,9 @@ function removeGitHubCodeSearchElements(): boolean {
 	}
 
 	// Update styles.
+	footer.style.visibility = "hidden";
+	footer.style.display = "none";
+
 	container.style.marginTop = "0px";
 	if (header.classList) { // kludge
 		header.classList.remove("mb-4");
@@ -326,6 +430,9 @@ function addGitHubCodeSearchElements(): boolean {
 	}
 
 	// Update styles.
+	footer.style.display = "block";
+	footer.style.visibility = "visible";
+
 	footer.style.marginTop = "40px";
 	header.style.marginBottom = "24px";
 	container.style.width = "980px";

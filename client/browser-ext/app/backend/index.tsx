@@ -65,7 +65,8 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 }
 
 export interface ResolvedSearchTextResp {
-	results: [{ [key: string]: any }];
+	results?: [{ [key: string]: any }];
+	notFound?: boolean;
 }
 
 const searchPromiseCache = new Map<string, Promise<ResolvedSearchTextResp>>();
@@ -119,7 +120,13 @@ export function searchText(uri: string, query: string): Promise<ResolvedSearchTe
 	}).then((resp) => resp.json()).then((json: any) => {
 		searchPromiseCache.delete(key);
 		const repo = json.data && json.data.root!.repository;
-		if (!repo || !repo.commit.commit || !repo.commit.commit.textSearch) {
+		if (!repo) {
+			const notFound = { notFound: true };
+			promiseCache.set(key, Promise.resolve(notFound));
+			return notFound;
+		}
+
+		if (!repo.commit.commit || !repo.commit.commit.textSearch) {
 			const error = new Error("invalid response received from search graphql endpoint");
 			searchPromiseCache.set(key, Promise.reject(error));
 			throw error;
