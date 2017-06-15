@@ -107,7 +107,9 @@ func ListAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourceg
 			return nil, err
 		}
 		for _, ins := range installs {
-			orgs = append(orgs, toOrgFromAccount(ins.Account))
+			if *ins.Account.Type == "Organization" {
+				orgs = append(orgs, toOrgFromAccount(ins.Account))
+			}
 		}
 		return &sourcegraph.OrgsList{Orgs: orgs}, nil
 	}

@@ -180,6 +180,18 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IInstallation {
+		__typename: string;
+		login: string;
+		githubId: number;
+		installId: number;
+		type: string;
+		avatarURL: string;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IInvite {
 		__typename: string;
 		userLogin: string;
@@ -476,6 +488,7 @@ declare namespace GQL {
 	interface IUser {
 		__typename: string;
 		githubOrgs: Array<IOrganization>;
+		githubInstallations: Array<IInstallation>;
 		paymentPlan: IPlan;
 	}
 }
