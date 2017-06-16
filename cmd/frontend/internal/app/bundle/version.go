@@ -1,3 +1,3 @@
 package bundle
 
-var Version = "2017-06-16-04:46:54-sqs-9a4c13c"
+var Version = "2017-06-16-05:12:15-sqs-8b61ec8"
