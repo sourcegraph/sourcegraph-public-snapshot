@@ -2,7 +2,7 @@
  * set the event logger before anything else proceeds, to avoid logging events before we have it set.
  */
 import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
-import { eventLogger, setEventLogger, setPhabricatorInstance, setSourcegraphUrl } from "../../app/utils/context";
+import { eventLogger, setEventLogger, setPhabricatorInstance, setSearchEnabled, setSourcegraphUrl } from "../../app/utils/context";
 
 setEventLogger(new ExtensionEventLogger());
 
@@ -31,6 +31,7 @@ function injectApplication(loc: Location): void {
 			chrome.storage.sync.get(items => {
 				const sgurl = items.sourcegraphURL ? items.sourcegraphURL : "https://sourcegraph.com";
 				setSourcegraphUrl(sgurl);
+				setSearchEnabled(items.searchEnabled);
 				injectGitHubApplication(extensionMarker);
 			});
 			break;

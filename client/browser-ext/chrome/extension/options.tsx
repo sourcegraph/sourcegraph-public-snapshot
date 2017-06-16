@@ -7,6 +7,10 @@ function getSourcegraphURLInput(): HTMLInputElement {
 	return document.getElementById("sourcegraph_url") as HTMLInputElement;
 }
 
+function getSourcegraphEnableSearchCheckbox(): HTMLInputElement {
+	return document.getElementById("sourcegraph-enable-search") as HTMLInputElement;
+}
+
 function getSourcegraphURLForm(): HTMLFormElement {
 	return document.getElementById("sourcegraph_url_form") as HTMLFormElement;
 }
@@ -18,6 +22,7 @@ function getSaveButton(): HTMLInputElement {
 function syncUIToModel(): void {
 	chrome.storage.sync.get((items) => {
 		getSourcegraphURLInput().value = items.sourcegraphURL;
+		getSourcegraphEnableSearchCheckbox().checked = items.searchEnabled;
 	});
 }
 
@@ -27,9 +32,12 @@ function syncUIToModel(): void {
 chrome.storage.sync.get((items) => {
 	if (!items.sourcegraphURL) {
 		chrome.storage.sync.set({ sourcegraphURL: "https://sourcegraph.com" });
-	} else {
-		syncUIToModel();
 	}
+	if (!items.searchEnabled) {
+		chrome.storage.sync.set({ searchEnabled: false });
+	}
+
+	syncUIToModel();
 });
 getSourcegraphURLInput().focus();
 
@@ -63,4 +71,9 @@ getSourcegraphURLInput().addEventListener("keydown", (evt) => {
 		evt.preventDefault();
 		getSaveButton().click();
 	}
+});
+
+getSourcegraphEnableSearchCheckbox().addEventListener("click", () => {
+	const checkbox = getSourcegraphEnableSearchCheckbox();
+	chrome.storage.sync.set({ searchEnabled: checkbox.checked });
 });

@@ -1,5 +1,5 @@
 import * as backend from "../../app/backend";
-import { eventLogger, sourcegraphUrl } from "../../app/utils/context";
+import { eventLogger, searchEnabled, sourcegraphUrl } from "../../app/utils/context";
 import { insertAfter } from "../../app/utils/dom";
 import { getPlatformName, parseURL } from "../../app/utils/index";
 import { GITHUB_LIGHT_THEME } from "../assets/themes/github_theme";
@@ -10,7 +10,7 @@ const CODE_SEARCH_ELEMENT_ID = "sourcegraph-search-frame";
 
 const GITHUB_REPOSITORY_CONTENT_CONTAINER = ".repository-content";
 const GITHUB_CODE_SEARCH_CONTAINER_SELECTOR = ".container.new-discussion-timeline";
-const GITHUB_RESULTS_CONTAINER_SELECTOR = ".clearfix.gut-sm";
+const GITHUB_RESULTS_CONTAINER_SELECTOR = ".clearfix.gutter-condensed";
 
 const GITHUB_HEADER_SELECTOR = ".border-bottom";
 const GITHUB_HEADER_HEIGHT = 117;
@@ -24,8 +24,7 @@ const SOURCEGRAPH_AUTH_PAGE = "sourcegraph-auth-page";
  * injectCodeSearch is responsible for injecting our Sourcegraph Code Search into GitHub's DOM.
  */
 export function injectCodeSearch(): void {
-	// Temp feature flag.
-	if (window.localStorage["searchEnabled"] !== "true") {
+	if (!searchEnabled) {
 		return;
 	}
 

@@ -14,6 +14,8 @@ export function setEventLogger(logger: EventLogger): void {
 // because the Sourcegraph url is undefined).
 export let sourcegraphUrl: string = "https://sourcegraph.com";
 
+export let searchEnabled: boolean = false;
+
 export function setSourcegraphUrl(url: string): void {
 	sourcegraphUrl = url;
 }
@@ -26,4 +28,8 @@ export function setPhabricatorInstance(instance: PhabricatorInstance): void {
 
 export function isBrowserExtension(): boolean {
 	return !phabricatorInstance;
+}
+
+export function setSearchEnabled(enabled: boolean): void {
+	searchEnabled = enabled;
 }
