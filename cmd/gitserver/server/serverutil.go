@@ -16,7 +16,21 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
+// runWithRemoteOpts runs the command after applying the remote options.
 func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) ([]byte, error) {
+	cmd, err := s.cmdWithRemoteOpts(cmd, opt)
+	if err != nil {
+		return nil, err
+	}
+	var b bytes.Buffer
+	cmd.Stdout = &b
+	cmd.Stderr = &b
+	err, _ = runCommand(cmd)
+	return b.Bytes(), err
+}
+
+// cmdWithRemoteOpts applies the remote options to the provided command.
+func (s *Server) cmdWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) (*exec.Cmd, error) {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 
 	if opt != nil && opt.SSH != nil {
@@ -53,12 +67,7 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) ([]byte, 
 	} else {
 		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 	}
-
-	var b bytes.Buffer
-	cmd.Stdout = &b
-	cmd.Stderr = &b
-	err, _ := runCommand(cmd)
-	return b.Bytes(), err
+	return cmd, nil
 }
 
 // makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the
@@ -158,8 +167,8 @@ func makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
 	return tempDir, nil
 }
 
-// repoExists checks if dir is a valid GIT_DIR.
-var repoExists = func(dir string) bool {
+// repoCloned checks if dir is a valid GIT_DIR.
+var repoCloned = func(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, "HEAD"))
 	return !os.IsNotExist(err)
 }
