@@ -193,13 +193,14 @@ function renderSourcegraphSearchTab(): void {
 	const navbar = getSearchNavBar();
 	if (navbar) {
 		const firstChild = navbar.firstElementChild! as HTMLElement;
-		const query = querystring.parse(window.location.search);
-		if (!query["type"] || query["type"] === "Code") {
+		if (isGitHubCodeSearch()) {
 			firstChild.className = "underline-nav-item selected";
 		}
 		firstChild.onclick = function(e: MouseEvent): void {
 			window.location.hash = "";
-			e.preventDefault();
+			if (isGitHubCodeSearch()) {
+				e.preventDefault();
+			}
 		};
 		if (firstChild.hasChildNodes) {
 			const textNode = firstChild.childNodes[0];
@@ -265,6 +266,14 @@ function hideAuthPage(authPage: HTMLElement): void {
  */
 function isSourcegraphSearchQuery(location: any = window.location): boolean {
 	return location.hash === "#sourcegraph";
+}
+
+/**
+ * Returns true if the current search query type is GitHub code search.
+ */
+function isGitHubCodeSearch(): boolean {
+	const query = querystring.parse(window.location.search);
+	return !query["type"] || query["type"] === "Code";
 }
 
 /**
