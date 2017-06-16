@@ -192,7 +192,15 @@ function renderSourcegraphSearchTab(): void {
 	}
 	const navbar = getSearchNavBar();
 	if (navbar) {
-		const firstChild = navbar.firstElementChild!;
+		const firstChild = navbar.firstElementChild! as HTMLElement;
+		const query = querystring.parse(window.location.search);
+		if (!query["type"] || query["type"] === "Code") {
+			firstChild.className = "underline-nav-item selected";
+		}
+		firstChild.onclick = function(e: MouseEvent): void {
+			window.location.hash = "";
+			e.preventDefault();
+		};
 		if (firstChild.hasChildNodes) {
 			const textNode = firstChild.childNodes[0];
 			textNode.textContent = "Code (GitHub)";
