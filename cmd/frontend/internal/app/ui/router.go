@@ -67,6 +67,8 @@ func newRouter() *mux.Router {
 	// This is just so we don't return a 404 status.
 	appPaths := []string{
 		"login",
+		"help",
+		"help/.*",
 	}
 	m.Path("/sitemap").Methods("GET").Name(routeLangsIndex)
 	m.Path("/sitemap/{Lang:.*}").Methods("GET").Name(routeReposIndex)
