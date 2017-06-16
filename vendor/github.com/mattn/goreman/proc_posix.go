@@ -13,12 +13,13 @@ import (
 func spawnProc(proc string) bool {
 	logger := createLogger(proc)
 
-	cs := []string{"/bin/sh", "-c", procs[proc].cmdline}
+	cs := []string{"/bin/sh", "-c", "exec " + procs[proc].cmdline}
 	cmd := exec.Command(cs[0], cs[1:]...)
 	cmd.Stdin = nil
 	cmd.Stdout = logger
 	cmd.Stderr = logger
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", procs[proc].port))
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	fmt.Fprintf(logger, "Starting %s on port %d\n", proc, procs[proc].port)
 	err := cmd.Start()

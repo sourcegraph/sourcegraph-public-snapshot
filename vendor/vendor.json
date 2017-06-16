@@ -712,10 +712,10 @@
 			"revisionTime": "2017-03-07T19:28:53Z"
 		},
 		{
-			"checksumSHA1": "vasCAI7NJuwAgnM1qGNebsswvTo=",
+			"checksumSHA1": "fM2JkN8TbY5HQI5O4JBANszLGA4=",
 			"path": "github.com/mattn/goreman",
-			"revision": "3a84a95fe47b27112d9bece50e3b4fd17a1dd5bb",
-			"revisionTime": "2017-02-14T23:50:58Z"
+			"revision": "d0ee41b21be92ce6fd3e55ad11c5e5c9452fe822",
+			"revisionTime": "2017-06-16T00:56:59Z"
 		},
 		{
 			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
