@@ -23,8 +23,7 @@ const (
 	routeAboutSubdomain = "about.sourcegraph.com" // top level redirects to about.sourcegraph.com
 	routeAppPaths       = "app.paths"             // paths that are handled by our javascript app and should not 404
 
-	routeDefRedirectToDefLanding     = "page.def.redirect"
-	routeDefInfoRedirectToDefLanding = "page.def.info.redirect"
+	routeDefRedirectToDefLanding = "page.def.redirect"
 )
 
 var router = newRouter()
