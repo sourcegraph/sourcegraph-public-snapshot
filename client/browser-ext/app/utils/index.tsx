@@ -110,7 +110,11 @@ export function getPlatformName(): string {
 	if (!isBrowserExtension()) {
 		return "phabricator-integration";
 	}
-	return window.navigator.userAgent.indexOf("Firefox") !== -1 ? "firefox-extension" : "chrome-extension";
+	return isFirefoxExtension() ? "firefox-extension" : "chrome-extension";
+}
+
+export function isFirefoxExtension(): boolean {
+	return window.navigator.userAgent.indexOf("Firefox") !== -1;
 }
 
 export function isE2ETest(): boolean {

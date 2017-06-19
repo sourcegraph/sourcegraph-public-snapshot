@@ -27,6 +27,10 @@ export abstract class EventLogger {
 		this.logEventForCategory("BrowserExtension", "Click", "SearchClicked", eventProperties);
 	}
 
+	logSearchView(eventProperties: any = {}): void {
+		this.logEventForCategory("BrowserExtension", "View", "SearchViewed", eventProperties);
+	}
+
 	logOpenFile(eventProperties: any = {}): void {
 		this.logEventForCategory("BrowserExtension", "Click", "FileOpened", eventProperties);
 	}

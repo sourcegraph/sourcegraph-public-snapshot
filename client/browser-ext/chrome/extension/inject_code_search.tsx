@@ -341,6 +341,7 @@ function createCodeSearchFrame(parent: HTMLElement): HTMLIFrameElement {
 	if (renderedSearchFrame()) {
 		return renderedSearchFrame()!;
 	}
+	eventLogger.logSearchView({query: getSearchQuery()});
 	const searchFrame = document.createElement("iframe") as HTMLIFrameElement;
 	searchFrame.id = CODE_SEARCH_ELEMENT_ID;
 	searchFrame.style.height = `calc(100vh - ${GITHUB_HEADER_HEIGHT}px)`;

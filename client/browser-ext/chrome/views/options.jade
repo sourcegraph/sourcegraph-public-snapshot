@@ -10,6 +10,7 @@ html
       label Sourcegraph URL:
       input#sourcegraph_url
       input(type="submit", value="Save")
-    label Enable Search:
-    input(type="checkbox", id="sourcegraph-enable-search")
-    script('/js/options.bundle.js')
+    div(id="sourcegraph-enable-search-container")
+      label Enable Search:
+      input(type="checkbox", id="sourcegraph-enable-search")
+    script(src='/js/options.bundle.js')

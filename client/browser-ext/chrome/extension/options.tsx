@@ -1,5 +1,7 @@
 /// <reference path="../../globals.d.ts" />
 
+import { isFirefoxExtension } from "../../app/utils";
+
 /**
  * Helpers
  */
@@ -19,6 +21,10 @@ function getSaveButton(): HTMLInputElement {
 	return getSourcegraphURLForm().querySelector('input[type="submit"]') as HTMLInputElement;
 }
 
+function getSourcegraphSearchContainer(): HTMLElement {
+	return document.getElementById("sourcegraph-enable-search-container") as HTMLElement;
+}
+
 function syncUIToModel(): void {
 	chrome.storage.sync.get((items) => {
 		getSourcegraphURLInput().value = items.sourcegraphURL;
@@ -30,6 +36,10 @@ function syncUIToModel(): void {
  * Initialization
  */
 chrome.storage.sync.get((items) => {
+	if (isFirefoxExtension() && getSourcegraphSearchContainer()) {
+		getSourcegraphSearchContainer().style.display = "none";
+	}
+
 	if (!items.sourcegraphURL) {
 		chrome.storage.sync.set({ sourcegraphURL: "https://sourcegraph.com" });
 	}
