@@ -2,6 +2,12 @@
 # yarn lockfile v1
 
 
+"@sourcegraph/rxjs@^5.4.0":
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/rxjs/-/rxjs-5.4.0.tgz#2f839fb9aa2ac8a7bab5c5daebc06681bfcc9f5e"
+  dependencies:
+    symbol-observable "^1.0.1"
+
 "@types/bluebird":
   version "3.0.35"
   resolved "https://registry.yarnpkg.com/@types/bluebird/-/bluebird-3.0.35.tgz#e6e2d375a7b7a0a22f155ce74eb28d0da303740c"
@@ -2175,12 +2181,6 @@ rimraf@2, rimraf@~2.5.0, rimraf@~2.5.1:
 ripemd160@0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/ripemd160/-/ripemd160-0.2.0.tgz#2bf198bde167cacfa51c0a928e84b68bbe171fce"
-
-rxjs@^5.4.0:
-  version "5.4.0"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.4.0.tgz#a7db14ab157f9d7aac6a56e655e7a3860d39bf26"
-  dependencies:
-    symbol-observable "^1.0.1"
 
 sax@^1.1.4:
   version "1.2.1"

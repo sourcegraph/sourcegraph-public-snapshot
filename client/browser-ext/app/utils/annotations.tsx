@@ -1,5 +1,5 @@
+import * as Rx from "@sourcegraph/rxjs";
 import * as _ from "lodash";
-import * as Rx from "rxjs";
 import { eventLogger } from "../utils/context";
 import { fetchJumpURL, getTooltip } from "./lsp";
 import { clearTooltip, getTooltipEventProperties, setTooltip, store, TooltipContext } from "./store";
