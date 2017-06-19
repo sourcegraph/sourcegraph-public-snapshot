@@ -33,19 +33,25 @@ func editorBranch(ctx context.Context, repoURI, branchName string) (string, erro
 }
 
 func serveEditor(w http.ResponseWriter, r *http.Request) error {
+	// Required query parameters:
 	q := r.URL.Query()
-	editor := q.Get("editor")                      // Editor name: "Atom", "Sublime", etc.
-	version := q.Get("version")                    // Editor extension version.
-	utmProductName := q.Get("utm_product_name")    // Editor product name, for JetBrains (e.g. "IntelliJ", "Gogland").
-	utmProductVersion := q.Get("utm_product_name") // Editor product version, for JetBrains.
+	editor := q.Get("editor")   // Editor name: "Atom", "Sublime", etc.
+	version := q.Get("version") // Editor extension version.
+
+	// JetBrains-specific query parameters:
+	utmProductName := q.Get("utm_product_name")    // Editor product name, for JetBrains only (e.g. "IntelliJ", "Gogland").
+	utmProductVersion := q.Get("utm_product_name") // Editor product version, for JetBrains only.
+
+	// Repo query parameters (required for open-file requests, but optional for
+	// search requests):
+	remoteURL := q.Get("remote_url") // Git repository remote URL.
+	branch := q.Get("branch")        // Git branch name.
+	file := q.Get("file")            // File relative to repository root.
 
 	// search query parameters. Only present if it is a search request.
 	search := q.Get("search")
 
 	// open-file parameters. Only present if it is a open-file request.
-	remoteURL := q.Get("remote_url")                // Git repository remote URL.
-	branch := q.Get("branch")                       // Git branch name.
-	file := q.Get("file")                           // File relative to repository root.
 	startRow, _ := strconv.Atoi(q.Get("start_row")) // zero-based
 	startCol, _ := strconv.Atoi(q.Get("start_col")) // zero-based
 	endRow, _ := strconv.Atoi(q.Get("end_row"))     // zero-based
