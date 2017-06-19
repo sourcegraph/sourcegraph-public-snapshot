@@ -137,6 +137,9 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 			}
 			return fmt.Errorf("ResolveRevision failed: %s", err)
 		}
+		if len(headCommit) != 40 {
+			log15.Error("ResolveRevision returned bad commit", "commit", headCommit)
+		}
 	}
 
 	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
