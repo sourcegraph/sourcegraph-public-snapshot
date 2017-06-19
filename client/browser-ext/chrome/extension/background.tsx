@@ -20,4 +20,3 @@ promisifyAll(chrome.storage, ["local"]);
 // These must be required after promisification completes.
 require("./background/storage");
 require("./background/tracker");
-require("./background/inject");
