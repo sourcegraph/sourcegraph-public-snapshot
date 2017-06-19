@@ -14,7 +14,7 @@ module.exports = {
 		filename: '[name].bundle.js',
 		chunkFilename: '[id].chunk.js'
 	},
-	devtool: "eval-cheap-module-source-map",
+	devtool: "cheap-module-source-map",
 	plugins: [
 		new webpack.NoErrorsPlugin(),
 		new webpack.optimize.OccurenceOrderPlugin(),
