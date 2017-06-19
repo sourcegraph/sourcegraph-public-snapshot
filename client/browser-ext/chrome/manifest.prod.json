@@ -43,6 +43,7 @@
   "permissions": [
     "cookies",
     "storage",
+    "tabs",
     "https://github.com/*",
     "https://sourcegraph.com/*"
   ],
@@ -51,5 +52,7 @@
     "https://*/"
   ],
   "content_security_policy": "default-src 'self'; script-src 'self'; connect-src 'self' https://sourcegraph-logging.telligentdata.com; img-src 'self' data:;",
-  "web_accessible_resources": ["img/sourcegraph-mark.svg"]
+  "web_accessible_resources": [
+    "img/sourcegraph-mark.svg"
+  ]
 }

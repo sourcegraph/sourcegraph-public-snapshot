@@ -52,9 +52,12 @@ export function createTooltips(): void {
 			fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevSpec)
 				.then((defUrl) => {
 					eventLogger.logJumpToDef({ ...getTooltipEventProperties(data, context), hasResolvedJ2D: Boolean(defUrl) });
-
 					if (defUrl) {
-						window.open(defUrl, "_blank");
+						chrome.runtime.sendMessage({ type: "openSourcegraphTab", url: defUrl }, (opened) => {
+							if (!opened) {
+								window.open(defUrl, "_blank");
+							}
+						});
 					}
 				});
 		}
@@ -68,7 +71,11 @@ export function createTooltips(): void {
 		const { data, context } = store.getValue();
 		if (data && context && context.coords && context.path && context.repoRevSpec) {
 			const url = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`;
-			window.open(url, "_blank");
+			chrome.runtime.sendMessage({ type: "openSourcegraphTab", url: url }, (opened) => {
+				if (!opened) {
+					window.open(url, "_blank");
+				}
+			});
 		}
 	};
 
