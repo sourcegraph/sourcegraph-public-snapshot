@@ -71,6 +71,12 @@
 			"revisionTime": "2017-05-28T22:39:02Z"
 		},
 		{
+			"checksumSHA1": "0hWqEc//bdHUtnxlAo/UPkHSIS0=",
+			"path": "github.com/certifi/gocertifi",
+			"revision": "a9c833d2837d3b16888d55d5aafa9ffe9afb22b0",
+			"revisionTime": "2017-04-17T19:39:30Z"
+		},
+		{
 			"checksumSHA1": "bbunmFhXYSV2Z6BUmOL5zjpNK/Y=",
 			"path": "github.com/clearbit/clearbit-go/clearbit",
 			"revision": "20ed0925e10da443d180f7b2d5acb275c9c999cc",
@@ -317,10 +323,10 @@
 			"revisionTime": "2016-05-25T16:57:06Z"
 		},
 		{
-			"checksumSHA1": "mA1jCzbc+bGPzRPXXGdeTsRYs8U=",
+			"checksumSHA1": "v80i7OW4AhVGbebGd7oTyfpV/Oc=",
 			"path": "github.com/getsentry/raven-go",
-			"revision": "dffeb57df75d6a911f00232155194e43d79d38d7",
-			"revisionTime": "2016-05-18T20:47:10Z"
+			"revision": "d175f85701dfbf44cb0510114c9943e665e60907",
+			"revisionTime": "2017-03-30T19:40:04Z"
 		},
 		{
 			"checksumSHA1": "muGVyM8mY3/gcap6kr4Ib3F5Xn4=",

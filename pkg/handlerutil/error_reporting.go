@@ -10,6 +10,7 @@ import (
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -49,26 +50,31 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 		}
 	}()
 
-	var errIface raven.Interface
+	var stacktrace *raven.Stacktrace
 	if panicked {
-		errIface = raven.NewException(err, raven.NewStacktrace(4, 2, []string{"sourcegraph.com/sourcegraph/"}))
-	} else {
-		errIface = raven.NewException(err, nil)
+		stacktrace = raven.NewStacktrace(4, 2, []string{"sourcegraph.com/sourcegraph/"})
 	}
+	exception := raven.NewException(err, stacktrace)
+
+	// The type of err can quite often be a wrapped type. We want the root
+	// cause as the type.
+	exception.Type = reflect.TypeOf(errors.Cause(err)).String()
 
 	h := raven.NewHttp(r)
 	h.Cookies = "" // Don't send session cookies (which have auth secrets).
 	delete(h.Headers, "Cookie")
 	delete(h.Headers, "Authorization")
 
-	pkt := raven.NewPacket(err.Error(), errIface, h)
+	pkt := raven.NewPacket(err.Error(), exception, h)
 
 	addTag := func(key, val string) {
 		pkt.Tags = append(pkt.Tags, raven.Tag{Key: key, Value: val})
 	}
 
 	// Add appdash span ID.
-	addTag("trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+	if span := opentracing.SpanFromContext(r.Context()); span != nil {
+		pkt.Extra["trace"] = traceutil.SpanURL(span)
+	}
 
 	// Add request context tags.
 	if actor := actor.FromContext(r.Context()); actor.UID != "" {
@@ -98,12 +104,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	}
 
 	// Add error information.
-	if panicked {
-		addTag("Error type", "panic")
-	} else {
-		addTag("Error type", reflect.TypeOf(err).String())
-		pkt.Extra["Error value"] = fmt.Sprintf("%#v", err)
-	}
+	pkt.Extra["Error value"] = fmt.Sprintf("%+v", err)
 
 	ravenClient.Capture(pkt, nil)
 }
