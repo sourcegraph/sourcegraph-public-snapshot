@@ -65,6 +65,12 @@ func run() error {
 
 	gobuildserver.Debug = true
 
+	// If xlang-go crashes, all the archives it has cached are not
+	// evicted. Over time this leads to us filling up the disk. This is a
+	// simple fix were we do a best-effort purge of the cache.
+	// https://github.com/sourcegraph/sourcegraph/issues/6090
+	_ = os.RemoveAll(vfsutil.ArchiveCacheDir)
+
 	// PERF: Hide latency of fetching golang/go from the first typecheck
 	go gobuildserver.FetchCommonDeps()
 
