@@ -130,6 +130,8 @@ const insertHead = `
 
 <title>{{with .Meta.Title}}{{.}} - {{end}}Sourcegraph</title>
 
+<link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
+
 {{/* Common to all pages */}}
 <meta name="twitter:site" content="@srcgraph">
 <meta name="twitter:image" content="{{assetURL "/img/sourcegraph-mark.png"}}">
