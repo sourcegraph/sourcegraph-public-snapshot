@@ -44,12 +44,8 @@ public class Open extends AnAction {
         SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
-        RepoInfo repoInfo;
-        try{
-            repoInfo = Util.repoInfo(currentFile.getPath());
-        } catch (Exception err) {
-            logger.info(err);
-            err.printStackTrace();
+        RepoInfo repoInfo = Util.repoInfo(currentFile.getPath());
+        if (repoInfo.remoteURL == "") {
             return;
         }
 

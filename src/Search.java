@@ -43,6 +43,9 @@ public class Search extends AnAction {
         }
         SelectionModel sel = editor.getSelectionModel();
 
+        // Get repo information.
+        RepoInfo repoInfo = Util.repoInfo(currentFile.getPath());
+
         String q = sel.getSelectedText();
         if (q.equals("")) {
             return; // nothing to query
@@ -54,11 +57,14 @@ public class Search extends AnAction {
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
         try {
             uri = Util.sourcegraphURL()+"-/editor"
-                    + "?search=" + URLEncoder.encode(q, "UTF-8")
+                    + "?remote_url=" + URLEncoder.encode(repoInfo.remoteURL, "UTF-8")
+                    + "&branch=" + URLEncoder.encode(repoInfo.branch, "UTF-8")
+                    + "&file=" + URLEncoder.encode(repoInfo.fileRel, "UTF-8")
                     + "&editor=" + URLEncoder.encode("JetBrains", "UTF-8")
                     + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
                     + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
-                    + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8");
+                    + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8")
+                    + "&search=" + URLEncoder.encode(q, "UTF-8");
         } catch (UnsupportedEncodingException err) {
             logger.debug("failed to build URL");
             err.printStackTrace();

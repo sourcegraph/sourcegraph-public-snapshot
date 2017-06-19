@@ -10,7 +10,7 @@ import java.net.URL;
 import java.util.Properties;
 
 public class Util {
-    public static String VERSION = "v1.1.0";
+    public static String VERSION = "v1.1.1";
 
     // gitRemotes returns the names of all git remotes, e.g. ["origin", "foobar"]
     public static String[] gitRemotes(String repoDir) throws IOException {
@@ -82,16 +82,24 @@ public class Util {
 
     // repoInfo returns the Sourcegraph repository URI, and the file path
     // relative to the repository root. If the repository URI cannot be
-    // determined, an exception is thrown.
-    public static RepoInfo repoInfo(String fileName) throws IOException, Exception, MalformedURLException {
-        // Determine repository root directory.
-        String fileDir = fileName.substring(0, fileName.lastIndexOf("/"));
-        String repoRoot = gitRootDir(fileDir);
+    // determined, a RepoInfo with empty strings is returned.
+    public static RepoInfo repoInfo(String fileName) {
+        String fileRel = "";
+        String remoteURL = "";
+        String branch = "";
+        try{
+            // Determine repository root directory.
+            String fileDir = fileName.substring(0, fileName.lastIndexOf("/"));
+            String repoRoot = gitRootDir(fileDir);
 
-        // Determine file path, relative to repository root.
-        String fileRel = fileName.substring(repoRoot.length()+1);
-        String remoteURL = gitDefaultRemoteURL(repoRoot);
-        String branch = gitBranch(repoRoot);
+            // Determine file path, relative to repository root.
+            fileRel = fileName.substring(repoRoot.length()+1);
+            remoteURL = gitDefaultRemoteURL(repoRoot);
+            branch = gitBranch(repoRoot);
+        } catch (Exception err) {
+            Logger.getInstance(Util.class).info(err);
+            err.printStackTrace();
+        }
         return new RepoInfo(fileRel, remoteURL, branch);
     }
 
