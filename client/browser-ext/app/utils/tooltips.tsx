@@ -1,62 +1,12 @@
 import * as marked from "marked";
 import { style } from "typestyle";
+import * as styles from "../github/styles";
 import { getModeFromExtension, getPlatformName } from "../utils";
 import { eventLogger, sourcegraphUrl } from "../utils/context";
 import { fetchJumpURL } from "./lsp";
 import { getTooltipEventProperties, store, TooltipState } from "./store";
 
 import { highlightBlock } from "highlight.js";
-
-const tooltipClassName = style({
-	backgroundColor: "#fafbfc",
-	maxWidth: "500px",
-	maxHeight: "250px",
-	border: "solid 1px #afb2b7",
-	fontFamily: `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
-	color: "rgb(36, 41, 69)",
-	fontSize: "12px",
-	zIndex: 100,
-	position: "absolute",
-	overflow: "auto",
-	padding: "5px 5px",
-	borderRadius: "3px",
-	boxShadow: "0 3px 12px rgba(27,31,35,0.15)",
-	// boxShadow: "1px 2px 3px rgba(0, 0, 0, 0.21)",
-});
-
-const tooltipTitleStyle = style({
-	fontFamily: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
-	wordWrap: "break-word",
-	paddingBottom: "5px",
-	borderBottom: "solid 1px #e1e4e8",
-});
-
-// TODO(john): set max height on tooltip, maybe allow expanding.
-const tooltipDocStyle = style({
-	paddingTop: "10px",
-	maxHeight: "150px",
-	overflow: "auto",
-	fontFamily: `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
-	borderBottom: "1px solid #e1e4e8",
-});
-
-const tooltipActionsStyle = style({
-	display: "flex",
-	textAlign: "center",
-	paddingTop: "5px",
-});
-
-const moreContextStyle = style({
-	fontStyle: "italic",
-	fontWeight: "bold",
-	color: "#666",
-	paddingTop: "5px",
-});
-
-const tooltipAction = style({
-	flex: 1,
-	cursor: "pointer",
-});
 
 let tooltip: HTMLElement;
 let loadingTooltip: HTMLElement;
@@ -72,12 +22,12 @@ let moreContext: HTMLElement;
  * to the DOM (but hidden). It is idempotent.
  */
 export function createTooltips(): void {
-	if (tooltip || loadingTooltip) {
+	if (tooltip) {
 		return; // idempotence
 	}
 
 	tooltip = document.createElement("DIV");
-	tooltip.className = tooltipClassName;
+	tooltip.className = style(styles.tooltip as any);
 	tooltip.classList.add("sg-tooltip");
 	tooltip.style.visibility = "hidden";
 	document.body.appendChild(tooltip);
@@ -86,15 +36,15 @@ export function createTooltips(): void {
 	loadingTooltip.appendChild(document.createTextNode("Loading..."));
 
 	tooltipActions = document.createElement("DIV");
-	tooltipActions.className = tooltipActionsStyle;
+	tooltipActions.className = style(styles.tooltipActions as any);
 
 	moreContext = document.createElement("DIV");
-	moreContext.className = moreContextStyle;
+	moreContext.className = style(styles.tooltipMoreActions as any);
 	moreContext.appendChild(document.createTextNode("Click for more actions"));
 
 	j2dAction = document.createElement("A") as HTMLAnchorElement;
 	j2dAction.appendChild(document.createTextNode("Go to Def"));
-	j2dAction.className = `${tooltipAction} btn btn-sm BtnGroup-item`;
+	j2dAction.className = `${style(styles.tooltipAction as any)} btn btn-sm BtnGroup-item`;
 	j2dAction.onclick = (e) => {
 		e.preventDefault();
 		const { data, context } = store.getValue();
@@ -102,6 +52,7 @@ export function createTooltips(): void {
 			fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevSpec)
 				.then((defUrl) => {
 					eventLogger.logJumpToDef({ ...getTooltipEventProperties(data, context), hasResolvedJ2D: Boolean(defUrl) });
+
 					if (defUrl) {
 						window.open(defUrl, "_blank");
 					}
@@ -111,18 +62,19 @@ export function createTooltips(): void {
 
 	findRefsAction = document.createElement("A") as HTMLAnchorElement;
 	findRefsAction.appendChild(document.createTextNode("Find Refs"));
-	findRefsAction.className = `${tooltipAction} btn btn-sm BtnGroup-item`;
+	findRefsAction.className = `${style(styles.tooltipAction as any)} btn btn-sm BtnGroup-item`;
 	findRefsAction.onclick = (e) => {
 		e.preventDefault();
 		const { data, context } = store.getValue();
 		if (data && context && context.coords && context.path && context.repoRevSpec) {
-			window.open(`${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`, "_blank");
+			const url = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`;
+			window.open(url, "_blank");
 		}
 	};
 
 	searchAction = document.createElement("A") as HTMLAnchorElement;
 	searchAction.appendChild(document.createTextNode("Search"));
-	searchAction.className = `${tooltipAction} btn btn-sm BtnGroup-item`;
+	searchAction.className = `${style(styles.tooltipAction as any)} btn btn-sm BtnGroup-item`;
 	searchAction.onclick = (e) => {
 		e.preventDefault();
 
@@ -203,11 +155,7 @@ function updateTooltip(state: TooltipState): void {
 		findRefsAction.style.display = "block";
 	}
 
-	if (data.j2dUrl) {
-		j2dAction.href = data.j2dUrl;
-	} else {
-		j2dAction.href = "";
-	}
+	j2dAction.href = data.j2dUrl ? data.j2dUrl : "";
 
 	if (data && context && context.coords && context.path && context.repoRevSpec) {
 		findRefsAction.href = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`;
@@ -231,14 +179,14 @@ function updateTooltip(state: TooltipState): void {
 		}
 
 		const tooltipText = document.createElement("DIV");
-		tooltipText.className = `${tooltipTitleStyle} ${getModeFromExtension(context.path)}`;
+		tooltipText.className = `${style(styles.tooltipTitle as any)} ${getModeFromExtension(context.path)}`;
 		tooltipText.appendChild(document.createTextNode(data.title));
 		tooltip.insertBefore(tooltipText, moreContext);
 		highlightBlock(tooltipText);
 
 		if (data.doc) {
 			const tooltipDoc = document.createElement("DIV");
-			tooltipDoc.className = tooltipDocStyle;
+			tooltipDoc.className = style(styles.tooltipDoc as any);
 			tooltipDoc.innerHTML = marked(data.doc, { gfm: true, breaks: true, sanitize: true });
 			tooltip.insertBefore(tooltipDoc, moreContext);
 		}
