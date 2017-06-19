@@ -14,6 +14,7 @@
   "content_scripts": [
     {
       "matches": [
+        "https://localhost:3443/*",
         "https://github.com/*",
         "https://sourcegraph.com/*"
       ],
@@ -38,13 +39,17 @@
   "permissions": [
     "cookies",
     "storage",
+    "tabs",
     "https://github.com/*",
+    "https://localhost:3443/*",
     "https://sourcegraph.com/*"
   ],
   "optional_permissions": [
     "http://*/",
     "https://*/"
   ],
-  "content_security_policy": "default-src 'self'; script-src 'self'; connect-src 'self' https://sourcegraph-logging.telligentdata.com; img-src 'self' data:;",
-  "web_accessible_resources": ["img/sourcegraph-mark.svg"]
+  "content_security_policy": "default-src 'self'; script-src 'self'; connect-src 'self' https://sourcegraph-logging.telligentdata.com https://localhost:3443; img-src 'self' data:;",
+  "web_accessible_resources": [
+    "img/sourcegraph-mark.svg"
+  ]
 }

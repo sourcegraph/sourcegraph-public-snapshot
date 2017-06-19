@@ -1,5 +1,4 @@
-/// <reference path="../../../globals.d.ts" />
-
+import { fetchNotes } from "../../../app/backend";
 import { sourcegraphUrl } from "../../../app/utils/context";
 
 /**
@@ -13,18 +12,36 @@ import { sourcegraphUrl } from "../../../app/utils/context";
  * include it with XHR requests, and is sent when first injecting the extension on GitHub.
  */
 chrome.runtime.onMessage.addListener((message, _, cb) => {
-	if (message.type === "setIdentity") {
-		chrome.storage.local.set({ identity: message.identity });
-	} else if (message.type === "getIdentity") {
-		chrome.storage.local.get("identity", (obj) => {
-			const { identity } = obj;
-			cb(identity);
-		});
-		return true;
-	} else if (message.type === "getSessionToken") {
-		chrome.cookies.get({ url: sourcegraphUrl, name: "sg-session" }, (sessionToken) => {
-			cb(sessionToken ? sessionToken.value : null);
-		});
-		return true;
+	switch (message.type) {
+		case "setIdentity":
+			chrome.storage.local.set({ identity: message.identity });
+			return;
+
+		case "getIdentity":
+			chrome.storage.local.get("identity", (obj) => {
+				const { identity } = obj;
+				cb(identity);
+			});
+			return true;
+
+		case "getSessionToken":
+			chrome.cookies.get({ url: sourcegraphUrl, name: "sg-session" }, (sessionToken) => {
+				cb(sessionToken ? sessionToken.value : null);
+			});
+			return true;
+
+		case "openSourcegraphTab":
+			chrome.tabs.query({ url: "https://sourcegraph.com/*" }, (tabs) => {
+				if (tabs.length > 0) {
+					const tab = tabs[0];
+					chrome.tabs.update(tab.id, { active: true }, () => {
+						chrome.tabs.executeScript(tab.id, { code: `window.dispatchEvent(new CustomEvent("browser-ext-navigate", {detail: {url: "${message.url}"}}))` });
+					});
+					cb(true);
+				} else {
+					cb(false);
+				}
+			});
+			return true;
 	}
 });
