@@ -24,7 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
-var cloneFromGitserver, _ = strconv.ParseBool(env.Get("CLONE_FROM_GITSERVER", "false", "SECURITY: Clone dependencies from gitserver. Skips auth checks!! Only use on private deployments"))
+var cloneFromGitserver, _ = strconv.ParseBool(env.Get("CLONE_FROM_GITSERVER", "false", "log HTTP requests"))
 
 type keyMutex struct {
 	mu  sync.Mutex
