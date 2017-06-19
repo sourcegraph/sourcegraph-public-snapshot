@@ -19,7 +19,7 @@ import (
 )
 
 var ghAppID, _ = strconv.Atoi(env.Get("SRC_GITHUB_APP_ID", "", "Integration ID for the Sourcegraph GitHub app."))
-var ghAppKey = env.Get("SRC_GITHUB_APP_PRIVATE_KEY", "", "Path to .pem file containing private key for the Sourcegraph GitHub app.")
+var ghAppKey = env.Get("SRC_GITHUB_APP_PRIVATE_KEY", "", "The private key for the Sourcegraph GitHub app.")
 
 var (
 	abuseDetectionMechanismCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -57,7 +57,7 @@ func Client(ctx context.Context) *github.Client {
 
 func InstallationClient(ctx context.Context, installationID int) (*github.Client, error) {
 	tr := http.DefaultTransport
-	itr, err := ghinstallation.NewKeyFromFile(tr, ghAppID, installationID, ghAppKey)
+	itr, err := ghinstallation.New(tr, ghAppID, installationID, []byte(ghAppKey))
 	if err != nil {
 		return nil, err
 	}
