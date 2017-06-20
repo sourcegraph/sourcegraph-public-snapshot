@@ -17,6 +17,7 @@ export LIGHTSTEP_ACCESS_TOKEN=d60b0b2477a7ccb05d7783917f648816
 export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 export SRC_GITHUB_APP_ID=2534
+export SRC_GITHUB_APP_URL=https://github.com/apps/sourcegraph-dev
 export SRC_GITHUB_APP_PRIVATE_KEY="$(cat $PWD/dev/github/sourcegraph-dev.private-key.pem)"
 
 export GITHUB_BASE_URL=http://127.0.0.1:3180

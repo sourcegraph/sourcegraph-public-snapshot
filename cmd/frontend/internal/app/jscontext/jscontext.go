@@ -28,6 +28,8 @@ var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex 
 // TrackingAppID is used by the Telligent data pipeline
 var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
 
+var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
@@ -42,6 +44,7 @@ type JSContext struct {
 	User                *sourcegraph.User          `json:"user"`
 	Emails              *sourcegraph.EmailAddrList `json:"emails"`
 	GitHubToken         *sourcegraph.ExternalToken `json:"gitHubToken"`
+	GitHubAppURL        string                     `json:"gitHubAppURL"`
 	SentryDSN           string                     `json:"sentryDSN"`
 	IntercomHash        string                     `json:"intercomHash"`
 	TrackingAppID       string                     `json:"trackingAppID"`
@@ -99,6 +102,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
 		GitHubToken:         gitHubToken,
+		GitHubAppURL:        gitHubAppURL,
 		SentryDSN:           sentryDSNFrontend,
 		IntercomHash:        intercomHMAC(actor.UID),
 		OnPrem:              envvar.DeploymentOnPrem(),
