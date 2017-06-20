@@ -2,7 +2,7 @@ import * as marked from "marked";
 import { style } from "typestyle";
 import * as styles from "../github/styles";
 import { getModeFromExtension, getPlatformName } from "../utils";
-import { eventLogger, sourcegraphUrl } from "../utils/context";
+import { eventLogger, searchEnabled, sourcegraphUrl } from "../utils/context";
 import { fetchJumpURL } from "./lsp";
 import { getTooltipEventProperties, store, TooltipState } from "./store";
 
@@ -84,6 +84,21 @@ export function createTooltips(): void {
 	searchAction.className = `${style(styles.tooltipAction as any)} btn btn-sm BtnGroup-item`;
 	searchAction.onclick = (e) => {
 		e.preventDefault();
+		const searchText = store.getValue().context && store.getValue().context!.selectedText ?
+			store.getValue().context!.selectedText! :
+			store.getValue().target!.textContent!;
+		if (!searchEnabled) {
+			const { data, context } = store.getValue();
+			if (data && context && context.repoRevSpec) {
+				const url = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}?q=${encodeURIComponent(searchText)}&utm_source=${getPlatformName()}`;
+				chrome.runtime.sendMessage({ type: "openSourcegraphTab", url: url }, (opened) => {
+					if (!opened) {
+						window.open(url, "_blank");
+					}
+				});
+				return;
+			}
+		}
 
 		const searchForm = document.querySelector(".js-site-search-form") as HTMLFormElement;
 		const searchInput = document.querySelector(".js-site-search-field") as HTMLInputElement;
@@ -91,9 +106,6 @@ export function createTooltips(): void {
 		searchInput.value = ""; // just in case
 		searchInput.style.color = "black";
 		searchInput.style.backgroundColor = "rgba(239, 232, 147, 0.84)";
-		const searchText = store.getValue().context && store.getValue().context!.selectedText ?
-			store.getValue().context!.selectedText! :
-			store.getValue().target!.textContent!;
 		const { data, context } = store.getValue();
 		if (data && context) {
 			eventLogger.logSearch(getTooltipEventProperties(data, context));

@@ -42,7 +42,7 @@ function injectApplication(loc: Location): void {
 			break;
 		case Domain.SOURCEGRAPH:
 			setSourcegraphUrl("https://sourcegraph.com");
-			injectSourcergaphCloudApplication();
+			injectSourcergaphCloudApplication(extensionMarker);
 			break;
 		case Domain.SGDEV_BITBUCKET:
 			setSourcegraphUrl(SGDEV_SOURCEGRAPH_URL_BITBUCKET);
@@ -53,7 +53,11 @@ function injectApplication(loc: Location): void {
 	}
 }
 
-function injectSourcergaphCloudApplication(): void {
+function injectSourcergaphCloudApplication(marker: HTMLElement): void {
+	window.addEventListener("load", () => {
+		document.body.appendChild(marker);
+	});
+
 	document.addEventListener("sourcegraph:identify", (ev: CustomEvent) => {
 		if (ev && ev.detail) {
 			(eventLogger as ExtensionEventLogger).updatePropsForUser(ev.detail);
