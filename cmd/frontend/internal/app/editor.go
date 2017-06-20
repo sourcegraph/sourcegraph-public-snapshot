@@ -59,9 +59,40 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 
 	if search != "" {
 		// Search request.
-		u := &url.URL{Path: "/"}
+
+		// For now, require that searching be done inside a repository (we
+		// don't have any non-repo-specific search yet).
+		if remoteURL == "" {
+			// Don't return an error here, as we want the user to see the error
+			// and all errors returned from HTTP handlers are hidden to normal
+			// users.
+			msg := fmt.Sprintf("Searching in file outside of a Git repository is not yet supported")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, html.EscapeString(msg))
+			return nil
+		}
+
+		// Determine the repo URI and branch.
+		repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(remoteURL)
+		if err != nil {
+			return err
+		}
+		if repoURI == "" {
+			// Any error here is a problem with the user's configured git remote
+			// URL. We want them to actually read this error message.
+			msg := fmt.Sprintf("Git remote URL %q not supported", remoteURL)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, html.EscapeString(msg))
+			return nil
+		}
+		branch, err = editorBranch(r.Context(), repoURI, branch)
+		if err != nil {
+			return err
+		}
+
+		u := &url.URL{Path: path.Join("/", repoURI+branch)}
 		q := u.Query()
-		q.Add("search", search)
+		q.Add("q", search)
 		q.Add("utm_source", editor+"-"+version)
 		if utmProductName != "" {
 			q.Add("utm_product_name", utmProductName)
@@ -75,6 +106,8 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Open-file request.
+
+	// Determine the repo URI and branch.
 	repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(remoteURL)
 	if err != nil {
 		return err
@@ -91,6 +124,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
 	u := &url.URL{Path: path.Join("/", repoURI+branch, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
