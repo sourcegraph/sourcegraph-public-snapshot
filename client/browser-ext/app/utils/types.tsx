@@ -77,20 +77,22 @@ export interface PhabricatorCodeCell extends CodeCell {
 	isUnified: boolean;
 }
 
-export interface GitHubURLData {
-	user?: string;
-	repo?: string;
-	repoURI?: string;
+export interface ParsedURL {
+	uri?: string;
 	rev?: string;
 	path?: string;
+}
+
+export interface GitHubURL extends ParsedURL {
+	user?: string;
+	repo?: string;
+	repoURI?: string; // deprecated; use URI
 	isDelta?: boolean;
 	isPullRequest?: boolean;
 	isCommit?: boolean;
 }
 
-export interface GitHubUrl {
-	mode: GitHubMode;
-}
+export interface SourcegraphURL extends ParsedURL { }
 
 export interface GitHubBlobUrl {
 	mode: GitHubMode;

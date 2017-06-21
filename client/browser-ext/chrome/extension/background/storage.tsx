@@ -1,5 +1,16 @@
-import { fetchNotes } from "../../../app/backend";
 import { sourcegraphUrl } from "../../../app/utils/context";
+
+const application = "com.sourcegraph.browser_ext_host";
+let port = null;
+
+port = chrome.runtime.connectNative(application);
+
+port.onMessage.addListener((e) => console.log("port connected", e));
+
+port.onDisconnect.addListener((e) => {
+	console.log('unexpected disconnect', e);
+	port = null;
+});
 
 /**
  * The chrome.cookies and chrome.storage APIs may not be directly accessible
@@ -42,6 +53,15 @@ chrome.runtime.onMessage.addListener((message, _, cb) => {
 					cb(false);
 				}
 			});
+			return true;
+
+		case "openEditor":
+			const msg = { cmd: message.cmd };
+			if (port) {
+				port.postMessage(msg);
+			} else {
+				chrome.runtime.sendNativeMessage(application, msg, cb);
+			}
 			return true;
 	}
 });

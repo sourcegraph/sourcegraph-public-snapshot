@@ -1,5 +1,7 @@
 import { isBrowserExtension } from "./context";
-import { Domain, GitHubURLData } from "./types";
+import { Domain, GitHubURL } from "./types";
+import { parseURL as parseGitHubURL } from "../github/utils";
+import { parseURL as parseSourcegraphURL } from "../sourcegraph/utils";
 
 /**
  * supportedExtensions are the file extensions
@@ -56,7 +58,7 @@ export function getPathExtension(path: string): string {
 	return pathSplit[pathSplit.length - 1].toLowerCase();
 }
 
-export function parseURL(loc: Location): GitHubURLData {
+export function parseURL(loc: Location = window.location): GitHubURL {
 	// TODO(john): this method has problems handling branch revisions with "/" character.
 	// TODO(john): this all needs unit testing!
 
@@ -121,7 +123,7 @@ export function isE2ETest(): boolean {
 	return process.env.NODE_ENV === "test";
 }
 
-export function getDomain(loc: Location): Domain {
+export function getDomain(loc: Location = window.location): Domain {
 	if (/^https?:\/\/phabricator.aws.sgdev.org/.test(loc.href)) {
 		return Domain.SGDEV_PHABRICATOR;
 	}

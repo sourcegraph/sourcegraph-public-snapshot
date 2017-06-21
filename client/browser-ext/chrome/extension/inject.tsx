@@ -6,6 +6,7 @@ import { eventLogger, setEventLogger, setPhabricatorInstance, setSearchEnabled, 
 
 setEventLogger(new ExtensionEventLogger());
 
+import { injectSourcegraph as injectSourcegraphEditor } from "../../app/editor/inject";
 import { getDomain } from "../../app/utils";
 import { Domain } from "../../app/utils/types";
 import { injectBitbucketApplication } from "./inject_bitbucket";
@@ -58,6 +59,7 @@ function injectSourcergaphCloudApplication(marker: HTMLElement): void {
 		document.body.appendChild(marker);
 	});
 
+	injectSourcegraphEditor();
 	document.addEventListener("sourcegraph:identify", (ev: CustomEvent) => {
 		if (ev && ev.detail) {
 			(eventLogger as ExtensionEventLogger).updatePropsForUser(ev.detail);
