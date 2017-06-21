@@ -3,14 +3,16 @@ import { sourcegraphUrl } from "../../../app/utils/context";
 const application = "com.sourcegraph.browser_ext_host";
 let port = null;
 
-port = chrome.runtime.connectNative(application);
+if (process.env.NODE_ENV === "development") {
+	port = chrome.runtime.connectNative(application);
 
-port.onMessage.addListener((e) => console.log("port connected", e));
+	port.onMessage.addListener((e) => console.log("port connected", e));
 
-port.onDisconnect.addListener((e) => {
-	console.log('unexpected disconnect', e);
-	port = null;
-});
+	port.onDisconnect.addListener((e) => {
+		console.log('unexpected disconnect', e);
+		port = null;
+	});
+}
 
 /**
  * The chrome.cookies and chrome.storage APIs may not be directly accessible
