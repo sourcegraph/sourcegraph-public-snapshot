@@ -31,6 +31,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.RobotsTxt).Handler(traceutil.TraceRoute(http.HandlerFunc(robotsTxt)))
 	r.Get(router.Favicon).Handler(traceutil.TraceRoute(http.HandlerFunc(favicon)))
+	r.Get(router.OpenSearch).Handler(traceutil.TraceRoute(http.HandlerFunc(openSearch)))
 
 	r.Get(router.SitemapIndex).Handler(traceutil.TraceRoute(errorutil.Handler(serveSitemapIndex)))
 	r.Get(router.RepoSitemap).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoSitemap)))

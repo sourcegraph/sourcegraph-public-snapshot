@@ -132,6 +132,8 @@ const insertHead = `
 
 <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 
+<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
+
 {{/* Common to all pages */}}
 <meta name="twitter:site" content="@srcgraph">
 <meta name="twitter:image" content="{{assetURL "/img/sourcegraph-mark.png"}}">

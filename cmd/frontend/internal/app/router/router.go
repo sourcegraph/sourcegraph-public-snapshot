@@ -13,6 +13,8 @@ const (
 	RobotsTxt = "robots-txt"
 	Favicon   = "favicon"
 
+	OpenSearch = "opensearch"
+
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
 	RepoBadge    = "repo.badge"
@@ -53,6 +55,7 @@ func New() *Router {
 
 	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
+	base.Path("/opensearch.xml").Methods("GET").Name(OpenSearch)
 
 	base.Path("/sitemap.xml").Methods("GET").Name(SitemapIndex)
 
