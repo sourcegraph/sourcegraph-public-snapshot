@@ -55,7 +55,7 @@ func addGitHubDefaults() {
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "git@github.com:%.git"})
 }
 
-// OriginMap maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
+// Map maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
 func OriginMap(repoURI string) string {
 	for _, entry := range originMap {
 		if strings.HasPrefix(repoURI, entry.Prefix) {

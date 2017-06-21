@@ -31,7 +31,7 @@ var runCommand = func(cmd *exec.Cmd) (error, int) { // mocked by tests
 	}
 	return err, exitStatus
 }
-var skipCloneForTests = false // set by tests
+var noUpdates = false // set by tests
 
 // Server is a gitserver server.
 type Server struct {
@@ -72,7 +72,7 @@ var shortGitCommandTimeout = time.Minute
 // be run in the background.
 var longGitCommandTimeout = time.Hour
 
-// Handler returns the http.Handler that should be used to serve requests.
+// Serve serves incoming http requests on listener l.
 func (s *Server) Handler() http.Handler {
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
@@ -85,7 +85,8 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
-func cloneCmd(ctx context.Context, origin, dir string) *exec.Cmd {
+func cloneCmd(ctx context.Context, repo string, dir string) *exec.Cmd {
+	origin := OriginMap(repo)
 	return exec.CommandContext(ctx, "git", "clone", "--mirror", origin, dir)
 }
 
@@ -173,8 +174,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
 		return
 	}
-	if !repoCloned(dir) {
-		if origin := OriginMap(req.Repo); origin != "" && !req.NoAutoUpdate && s.repoExists(ctx, origin, req.Opt) {
+	if !repoExists(dir) {
+		if origin := OriginMap(req.Repo); origin != "" && !req.NoAutoUpdate && !noUpdates {
 			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
 			s.cloningMu.Unlock()
 
@@ -186,11 +187,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 					s.releaseCloneLock(dir)
 				}()
 
-				if skipCloneForTests {
-					return
-				}
-
-				cmd := cloneCmd(ctx, origin, dir)
+				cmd := cloneCmd(ctx, req.Repo, dir)
 				if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
 					log15.Error("clone failed", "error", err, "output", string(output))
 					return
@@ -252,28 +249,9 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", string(stderr))
 
-	if !req.NoAutoUpdate && !skipCloneForTests {
+	if !req.NoAutoUpdate && !noUpdates {
 		s.updateRepo <- updateRepoRequest{req.Repo, req.Opt}
 	}
-}
-
-// testRepoExists is a test fixture that overrides the return value
-// for repoExists when it is set.
-var testRepoExists func(ctx context.Context, origin string, opt *vcs.RemoteOpts) bool
-
-// repoExists returns true if the repo is cloneable.
-func (s *Server) repoExists(ctx context.Context, origin string, opt *vcs.RemoteOpts) bool {
-	if testRepoExists != nil {
-		return testRepoExists(ctx, origin, opt)
-	}
-	cmd := exec.CommandContext(ctx, "git", "ls-remote", origin, "HEAD")
-	cmd, err := s.cmdWithRemoteOpts(cmd, opt)
-	if err != nil {
-		log15.Error("cmdWithRemoteOpts failed", "error", err, "origin", origin)
-		return false
-	}
-	err, _ = runCommand(cmd)
-	return err == nil
 }
 
 var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{

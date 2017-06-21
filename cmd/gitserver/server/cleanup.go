@@ -106,7 +106,7 @@ func (s *Server) CleanupRepos() {
 			// access.
 			ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 			defer cancel()
-			cmd := cloneCmd(ctx, OriginMap(uri), tmpCloneRoot)
+			cmd := cloneCmd(ctx, uri, tmpCloneRoot)
 			if output, err := cmd.CombinedOutput(); err != nil {
 				log15.Error("reclone failed", "error", err, "repo", uri, "output", string(output))
 				// Update the access time for the repo in the event of a clone failure.
