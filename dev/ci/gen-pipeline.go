@@ -114,11 +114,6 @@ func main() {
 		Cmd("./dev/e2e/run-tests.sh"),
 		ArtifactPaths("dev/e2e/log.html"))
 
-	pipeline.AddStep(":chrome:",
-		Cmd("cd client/browser-ext"),
-		Cmd("yarn install"),
-		Cmd("yarn run build"))
-
 	pipeline.AddStep(":php:",
 		Cmd("./xlang/php/test.sh"))
 
