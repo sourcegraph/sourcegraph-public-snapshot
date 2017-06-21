@@ -158,31 +158,21 @@ func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]
 	}
 
 	if feature.Features.GitHubApps {
-		installs, err := ListAllAccessibleInstallations(ctx)
+		res, _, err := UnauthedClient().Search.Repositories(ctx, query, op)
 		if err != nil {
 			return nil, err
 		}
-		for _, ins := range installs {
-			cl, err := InstallationClient(ctx, *ins.ID)
-			if err != nil {
-				return nil, err
+		repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
+		for _, ghrepo := range res.Repositories {
+			// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
+			// have access to within one of their installations. Filter out all private
+			// repos (private repos can be obtained with ListAllGitHubRepos)
+			if *ghrepo.Private {
+				continue
 			}
-			res, _, err := cl.Search.Repositories(ctx, query, op)
-			if err != nil {
-				return nil, err
-			}
-			repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
-			for _, ghrepo := range res.Repositories {
-				// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
-				// have access to within one of their installations. Filter out all private
-				// repos (private repos can be obtained with ListAllGitHubRepos)
-				if *ghrepo.Private {
-					continue
-				}
-				repos = append(repos, ToRepo(&ghrepo))
-			}
-			return repos, nil
+			repos = append(repos, ToRepo(&ghrepo))
 		}
+		return repos, nil
 	}
 	res, _, err := Client(ctx).Search.Repositories(ctx, query, op)
 	if err != nil {
@@ -255,7 +245,7 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	if feature.Features.GitHubApps {
 		// Attempt directly accessing the repo first. If it is a public repo this will
 		// succeed, otherwise attempt fetching it from the private endpoints below.
-		ghrepo, _, err := gogithub.NewClient(nil).Repositories.Get(ctx, owner, repoName)
+		ghrepo, _, err := UnauthedClient().Repositories.Get(ctx, owner, repoName)
 		if err == nil {
 			return ToRepo(ghrepo), nil
 		}
@@ -398,7 +388,7 @@ func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOpti
 	var err error
 	if feature.Features.GitHubApps {
 		// We can't get access to private starred repo's with the API. This only returns public starred repos.
-		ghRepos, resp, err = gogithub.NewClient(nil).Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
+		ghRepos, resp, err = UnauthedClient().Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
 		if err != nil {
 			return nil, err
 		}
