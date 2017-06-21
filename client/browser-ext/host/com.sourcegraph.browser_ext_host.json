@@ -1,9 +1,0 @@
-{
-    "name": "com.sourcegraph.browser_ext_host",
-    "description": "My Application",
-    "path": "/Users/rothfels/go/src/sourcegraph.com/sourcegraph/sourcegraph/client/browser-ext/host/host.js",
-    "type": "stdio",
-    "allowed_origins": [
-        "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha/"
-    ]
-}
