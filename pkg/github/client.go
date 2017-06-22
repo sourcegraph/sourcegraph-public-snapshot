@@ -20,8 +20,6 @@ import (
 
 var ghAppID, _ = strconv.Atoi(env.Get("SRC_GITHUB_APP_ID", "", "Integration ID for the Sourcegraph GitHub app."))
 var ghAppKey = env.Get("SRC_GITHUB_APP_PRIVATE_KEY", "", "The private key for the Sourcegraph GitHub app.")
-var ghClientID = env.Get("GITHUB_CLIENT_ID", "", "OAuth client ID for GitHub")
-var ghClientSecret = env.Get("GITHUB_CLIENT_SECRET", "", "OAuth client secret for GitHub")
 
 var (
 	abuseDetectionMechanismCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -38,6 +36,12 @@ func init() {
 
 var MockRoundTripper http.RoundTripper
 
+func githubConf(ctx context.Context) githubutil.Config {
+	conf := *githubutil.Default
+	conf.Context = ctx
+	return conf
+}
+
 // Client returns the context's GitHub API client.
 func Client(ctx context.Context) *github.Client {
 	if MockRoundTripper != nil {
@@ -46,10 +50,8 @@ func Client(ctx context.Context) *github.Client {
 		})
 	}
 
-	ghConf := *githubutil.Default
-	ghConf.Context = ctx
-
 	a := actor.FromContext(ctx)
+	ghConf := githubConf(ctx)
 	if a.GitHubToken != "" {
 		return ghConf.AuthedClient(a.GitHubToken)
 	}
@@ -67,14 +69,10 @@ func InstallationClient(ctx context.Context, installationID int) (*github.Client
 	return github.NewClient(&http.Client{Transport: itr}), nil
 }
 
-// UnauthedClient returns a github.Client that is rate limited according to the
-// limits set on the integration's client ID / secret.
-func UnauthedClient() *github.Client {
-	tp := &github.UnauthenticatedRateLimitedTransport{
-		ClientID:     ghClientID,
-		ClientSecret: ghClientSecret,
-	}
-	return github.NewClient(tp.Client())
+// UnauthedClient returns a github.Client that is unauthenticated
+func UnauthedClient(ctx context.Context) *github.Client {
+	conf := githubConf(ctx)
+	return conf.UnauthedClient()
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {

@@ -111,7 +111,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			if err != nil {
 				return nil, err
 			}
-			ghRepos, _, err := github.UnauthedClient().Repositories.List(ctx, actor.FromContext(ctx).Login, nil)
+			ghRepos, _, err := github.UnauthedClient(ctx).Repositories.List(ctx, actor.FromContext(ctx).Login, nil)
 			if err != nil {
 				return nil, err
 			}

@@ -158,7 +158,7 @@ func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]
 	}
 
 	if feature.Features.GitHubApps {
-		res, _, err := UnauthedClient().Search.Repositories(ctx, query, op)
+		res, _, err := UnauthedClient(ctx).Search.Repositories(ctx, query, op)
 		if err != nil {
 			return nil, err
 		}
@@ -245,7 +245,7 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	if feature.Features.GitHubApps {
 		// Attempt directly accessing the repo first. If it is a public repo this will
 		// succeed, otherwise attempt fetching it from the private endpoints below.
-		ghrepo, _, err := UnauthedClient().Repositories.Get(ctx, owner, repoName)
+		ghrepo, _, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
 		if err == nil {
 			return ToRepo(ghrepo), nil
 		}
@@ -388,7 +388,7 @@ func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOpti
 	var err error
 	if feature.Features.GitHubApps {
 		// We can't get access to private starred repo's with the API. This only returns public starred repos.
-		ghRepos, resp, err = UnauthedClient().Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
+		ghRepos, resp, err = UnauthedClient(ctx).Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
 		if err != nil {
 			return nil, err
 		}
