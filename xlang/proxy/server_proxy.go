@@ -482,25 +482,19 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			}
 			if clientCtx, err := opentracing.GlobalTracer().Extract(opentracing.TextMap, carrier); err == nil {
 				span = opentracing.StartSpan(op, ext.RPCServerOption(clientCtx))
+				span.SetTag("method", req.Method)
+				defer func() {
+					if err != nil {
+						ext.Error.Set(span, true)
+						span.LogEvent(fmt.Sprintf("error: %v", err))
+					}
+					span.Finish()
+				}()
 				ctx = opentracing.ContextWithSpan(ctx, span)
 			} else if err != opentracing.ErrSpanContextNotFound {
 				return nil, err
 			}
 		}
-
-		// Otherwise derive the span from our own context.
-		if span == nil {
-			span, ctx = opentracing.StartSpanFromContext(ctx, op)
-		}
-
-		span.SetTag("method", req.Method)
-		defer func() {
-			if err != nil {
-				ext.Error.Set(span, true)
-				span.LogEvent(fmt.Sprintf("error: %v", err))
-			}
-			span.Finish()
-		}()
 	}
 
 	switch req.Method {
