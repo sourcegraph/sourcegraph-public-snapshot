@@ -8,11 +8,13 @@
     "type": "project",
     "bin": ["bin/php-build-server.php"],
     "scripts": {
-        "parse-stubs": "LanguageServer\\ComposerScripts::parseStubs"
+        "parse-stubs": "LanguageServer\\ComposerScripts::parseStubs",
+        "post-update-cmd": "@parse-stubs",
+        "post-install-cmd": "@parse-stubs"
     },
     "require": {
         "php": ">=7.0",
-        "felixfbecker/language-server": "^4.2.3",
+        "felixfbecker/language-server": "^4.5.3",
         "composer/composer": "^1.3.1",
         "sabre/event": "^5.0",
         "hirak/prestissimo": "^0.3.5"
