@@ -28,12 +28,12 @@ var gitoliteHostMap []prefixAndOrgin
 
 func init() {
 	var err error
-	originMap, err = parse(originMapEnv)
+	originMap, err = parse(originMapEnv, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	gitoliteHostMap, err = parse(gitoliteHostsEnv)
+	gitoliteHostMap, err = parse(gitoliteHostsEnv, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,13 +79,13 @@ func reverse(cloneURL string) string {
 	return ""
 }
 
-func parse(raw string) (originMap []prefixAndOrgin, err error) {
+func parse(raw string, placeholderCount int) (originMap []prefixAndOrgin, err error) {
 	for _, e := range strings.Fields(raw) {
 		p := strings.Split(e, "!")
 		if len(p) != 2 {
 			return nil, fmt.Errorf("invalid entry: %s", e)
 		}
-		if len(strings.Split(p[1], "%")) != 2 {
+		if strings.Count(p[1], "%") != placeholderCount {
 			return nil, fmt.Errorf("invalid entry: %s", e)
 		}
 		originMap = append(originMap, prefixAndOrgin{Prefix: p[0], Origin: p[1]})

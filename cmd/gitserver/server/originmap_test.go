@@ -50,7 +50,7 @@ func TestMap(t *testing.T) {
 	}}
 
 	for _, test := range tests {
-		actual, err := parse(test.in)
+		actual, err := parse(test.in, 1)
 		if err != nil {
 			t.Errorf("on input %q, unexpected err: %v", test.in, err)
 			continue
@@ -154,7 +154,7 @@ func TestReverse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var err error
-			originMap, err = parse(test.in)
+			originMap, err = parse(test.in, 1)
 			if err != nil {
 				t.Fatalf("on input %q, unexpected err: %v", test.in, err)
 			}
