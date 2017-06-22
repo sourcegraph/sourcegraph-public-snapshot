@@ -16,7 +16,7 @@ var openSearchDescription = template.Must(template.New("").Parse(`
   <Description>Search {{.SiteName}}</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Image width="16" height="16" type="image/png">{{.BaseURL}}/.assets/img/favicon.png</Image>
-  <Url type="text/html" method="GET" template="{{.BaseURL}}/-/search?q={searchTerms}&profile=last" />
+  <Url type="text/html" method="GET" template="{{.BaseURL}}/-/search?q={searchTerms}&amp;profile=last" />
   <SearchForm>{{.BaseURL}}/-/search</SearchForm>
 </OpenSearchDescription>
 `))
