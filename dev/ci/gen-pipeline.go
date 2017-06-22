@@ -110,9 +110,9 @@ func main() {
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
 
-	// pipeline.AddStep(":robot_face:",
-	// 	Cmd("./dev/e2e/run-tests.sh"),
-	// 	ArtifactPaths("dev/e2e/log.html"))
+	pipeline.AddStep(":robot_face:",
+		Cmd("./dev/e2e/run-tests.sh"),
+		ArtifactPaths("dev/e2e/log.html"))
 
 	pipeline.AddStep(":php:",
 		Cmd("./xlang/php/test.sh"))
