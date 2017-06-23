@@ -58,6 +58,9 @@ func Init(serviceName string) {
 		var rec basictracer.SpanRecorder = lightstep.NewRecorder(lightstep.Options{
 			AccessToken: lightstepAccessToken,
 			UseGRPC:     true,
+			Tags: opentracing.Tags{
+				lightstep.ComponentNameKey: serviceName,
+			},
 		})
 		if !lightstepIncludeSensitive {
 			rec = &tagsAndLogsFilter{rec}
