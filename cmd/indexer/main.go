@@ -40,7 +40,7 @@ func init() {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	tracer.Init()
+	tracer.Init("indexer")
 	gitserver.DefaultClient.NoCreds = true
 	if err := idx.Google.SetAPIKey(googleAPIKey); err != nil {
 		fmt.Fprintf(os.Stderr, "Could not initialize Google API client: %s\n", err)

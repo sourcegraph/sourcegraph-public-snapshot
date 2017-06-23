@@ -35,7 +35,7 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)
-	tracer.Init()
+	tracer.Init("searcher")
 	gitserver.DefaultClient.NoCreds = true
 
 	if profBindAddr != "" {

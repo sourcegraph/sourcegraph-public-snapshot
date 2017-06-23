@@ -145,7 +145,7 @@ func Main() error {
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
 
-	tracer.Init()
+	tracer.Init("frontend")
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.

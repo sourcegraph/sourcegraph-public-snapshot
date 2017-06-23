@@ -259,7 +259,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			if e, ok := err.(*jsonrpc2.Error); ok {
 				// We do not mark the handler as failed, but
 				// we want to record that it failed in
-				// lightstep.
+				// the trace.
 				ext.Error.Set(span, true)
 				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
 				ev.AddField("lsp_error", e.Message)

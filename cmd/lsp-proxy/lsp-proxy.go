@@ -45,7 +45,7 @@ func main() {
 }
 
 func run() error {
-	tracer.Init()
+	tracer.Init("lsp-proxy")
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()

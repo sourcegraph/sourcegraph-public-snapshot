@@ -43,7 +43,7 @@ func init() {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	tracer.Init()
+	tracer.Init("github-proxy")
 
 	go func() {
 		c := make(chan os.Signal, 1)

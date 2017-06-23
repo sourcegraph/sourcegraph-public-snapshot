@@ -54,7 +54,7 @@ func main() {
 }
 
 func run() error {
-	tracer.Init()
+	tracer.Init("xlang-go")
 
 	if *profbind != "" {
 		go debugserver.Start(*profbind)
