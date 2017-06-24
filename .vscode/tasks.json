@@ -1,37 +1,13 @@
 {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
-    "version": "0.1.0",
-    "command": "yarn",
+    "version": "2.0.0",
     "isShellCommand": true,
-    "args": ["run"],
-    "showOutput": "never",
-    "options": {
-        "cwd": "${workspaceRoot}/ui",
-        "env": {
-            "WEBPACK_SOURCEMAPS": "t"
-        }
-    },
-    "tasks": [
-        {
-            "taskName": "start",
-            "isWatching": true,
-            "problemMatcher": {
-                "base": "$tsc-watch",
-                "watchedTaskBeginsRegExp": "yarn run|webpack: bundle is now INVALID.",
-                "watchedTaskEndsRegExp": "webpack: bundle is now VALID."
-            }
-        },
-        {
-            "taskName": "build",
-            "isBuildCommand": true
-        },
-        {
-            "taskName": "lint"
-        },
-        {
-            "taskName": "test",
-            "isTestCommand": true
-        }
-    ]
+	"tasks": [
+		{
+			"taskName": "start",
+			"command": "${workspaceRoot}/dev/start.sh",
+			"isBackground": true
+		}
+	]
 }
