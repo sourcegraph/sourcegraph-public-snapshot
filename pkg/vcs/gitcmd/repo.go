@@ -421,8 +421,8 @@ func parseUint(s string) (uint, error) {
 }
 
 func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
-	ensureAbsCommit(base)
-	ensureAbsCommit(head)
+	r.ensureAbsCommit(base)
+	r.ensureAbsCommit(head)
 	if opt == nil {
 		opt = &vcs.DiffOptions{}
 	}
@@ -767,7 +767,7 @@ func (r *Repository) ReadFile(ctx context.Context, commit vcs.CommitID, name str
 }
 
 func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, name string) ([]byte, error) {
-	ensureAbsCommit(commit)
+	r.ensureAbsCommit(commit)
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = r.Repo
@@ -874,7 +874,7 @@ func (r *Repository) ReadDir(ctx context.Context, commit vcs.CommitID, path stri
 
 // lsTree returns ls of tree at path.
 func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
-	ensureAbsCommit(commit)
+	r.ensureAbsCommit(commit)
 
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
@@ -986,11 +986,11 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	return fis, nil
 }
 
-func ensureAbsCommit(commitID vcs.CommitID) {
+func (r *Repository) ensureAbsCommit(commitID vcs.CommitID) {
 	// We don't want to even be running commands on non-absolute
 	// commit IDs if we can avoid it, because we can't cache the
 	// expensive part of those computations.
 	if len(commitID) != 40 {
-		panic(fmt.Errorf("non-absolute commit ID: %q", commitID))
+		panic(fmt.Errorf("non-absolute commit ID: %q on %s", commitID, r.String()))
 	}
 }
