@@ -88,7 +88,11 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 		}
 		return "", fmt.Errorf("exec `git rev-parse` failed: %s. Stderr was:\n\n%s", err, stderr)
 	}
-	return vcs.CommitID(bytes.TrimSpace(stdout)), nil
+	commit := vcs.CommitID(bytes.TrimSpace(stdout))
+	if len(commit) != 40 {
+		return "", fmt.Errorf("ResolveRevision: got bad commit %q for repo %q at revision %q", commit, r.Repo.URI, spec)
+	}
+	return commit, nil
 }
 
 // branchFilter is a filter for branch names.
