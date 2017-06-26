@@ -11,15 +11,15 @@
 - Run tests: `vendor/bin/phpunit`
 - Lint: `vendor/bin/phpcs`
 - Start over STDIO: `php bin/php-build-server.php`
-- Start over TCP: `php bin/php-build-server.php --tcp=127.0.0.1:2088`
+- Start as a TCP server: `php bin/php-build-server.php --tcp-server=127.0.0.1:2088`
 
 ## Wiring it up to a local Sourcegraph instance
 
-Start the LS in TCP mode in a terminal with `node lib/language-server --port 2088` or through VS Code, then in a different terminal run
+Start the LS in TCP mode in a terminal with `php bin/php-build-server.php --tcp-server=127.0.0.1:2088` or through VS Code, then in a different terminal run
 
 ```bash
 export LANGSERVER_PHP=tcp://localhost:2088
-export LANGSERVER_PHP_BG=tcp://localhost:2089
+export LANGSERVER_PHP_BG=tcp://localhost:2088
 ./dev/start.sh
 ```
 
