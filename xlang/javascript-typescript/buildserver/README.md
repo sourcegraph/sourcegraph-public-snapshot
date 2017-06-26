@@ -64,11 +64,8 @@ To run with a debugger, use the "Single worker" configuration.
 
 ## Deploying a new version
 
-To release a new version of the language server:
-- Install dependencies and build
-- Bump the version in the language server repo with `npm version (major|minor|patch|prerelease)`
-- Push with `git push; git push --tags`
-- Publish to npm with `npm publish`
+To release a new version of the language server:  
+Releases happen automatically on every commit. Make sure to follow the [AngularJS commit message conventions](https://docs.google.com/document/d/1QrDFcIiPjSLDn3EL15IJygNPiHORgU1_OOAqWjiDU5Y/edit#).
 
 To update the language server here:
 - update the version in package.json to the new version
