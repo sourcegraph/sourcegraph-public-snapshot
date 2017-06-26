@@ -5,6 +5,7 @@ import (
 	htmltemplate "html/template"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"path"
 	"reflect"
@@ -17,10 +18,10 @@ import (
 )
 
 // launcherEntrypoint is the HTML template that launches the app.
-var launcherEntrypoint = createEntrypointTemplate("out/vs/launcher/browser/bootstrap/index.html")
+var launcherEntrypoint = createEntrypointTemplate("out/vs/launcher/browser/bootstrap/")
 
 // workbenchEntrypoint is the HTML template that launches the standalone workbench. This is used when something (such as the browser extension) wants to embed only the workbench in an iframe, for example.
-var workbenchEntrypoint = createEntrypointTemplate("out/vs/workbench/browser/bootstrap/index.html")
+var workbenchEntrypoint = createEntrypointTemplate("out/vs/workbench/browser/bootstrap/")
 
 // RenderEntrypoint renders the entrypoint template to the HTTP
 // response.
@@ -108,12 +109,16 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 }
 
 func createEntrypointTemplate(entrypoint string) *htmltemplate.Template {
-	a, err := fetch("/" + Version + "/" + entrypoint)
-	if err != nil {
-		log.Fatal(err)
+	h := Handler()
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, &http.Request{
+		URL: &url.URL{Path: "/" + Version + "/" + entrypoint},
+	})
+	if w.Code != http.StatusOK {
+		log.Fatalf("fetching entrypoint template got status %d", w.Code)
 	}
 
-	data := bytes.Replace(a.body, []byte("<!-- INSERT SOURCEGRAPH CONTEXT -->"), []byte(insertHead), 1)
+	data := bytes.Replace(w.Body.Bytes(), []byte("<!-- INSERT SOURCEGRAPH CONTEXT -->"), []byte(insertHead), 1)
 
 	template := htmltemplate.New("entrypoint")
 	template.Funcs(tmpl.FuncMap)
