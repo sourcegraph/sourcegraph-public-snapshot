@@ -371,7 +371,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
-	rows, err := appDBH(ctx).Db.Query(`SELECT COUNT(repo_id)
+	rows, err := appDBH(ctx).Db.Query(`SELECT COUNT(DISTINCT repo_id)
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
