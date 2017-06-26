@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
+// runWithRemoteOpts runs the command after applying the remote options.
 func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) ([]byte, error) {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 
@@ -158,8 +159,8 @@ func makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
 	return tempDir, nil
 }
 
-// repoExists checks if dir is a valid GIT_DIR.
-var repoExists = func(dir string) bool {
+// repoCloned checks if dir is a valid GIT_DIR.
+var repoCloned = func(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, "HEAD"))
 	return !os.IsNotExist(err)
 }

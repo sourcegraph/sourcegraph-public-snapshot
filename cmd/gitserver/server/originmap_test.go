@@ -49,6 +49,11 @@ func TestMap(t *testing.T) {
 		},
 	}}
 
+	restoreOriginMap := originMap[:]
+	defer func() {
+		originMap = restoreOriginMap
+	}()
+
 	for _, test := range tests {
 		actual, err := parse(test.in, 1)
 		if err != nil {
@@ -151,6 +156,12 @@ func TestReverse(t *testing.T) {
 			},
 		},
 	}
+
+	restoreOriginMap := originMap[:]
+	defer func() {
+		originMap = restoreOriginMap
+	}()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var err error

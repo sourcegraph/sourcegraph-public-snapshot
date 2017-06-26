@@ -82,6 +82,10 @@ func TestCleanupExpired(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
+	restoreOriginMap := originMap[:]
+	defer func() {
+		originMap = restoreOriginMap
+	}()
 	originMap = append(originMap, prefixAndOrgin{Prefix: testRepoB, Origin: remote})
 
 	atime, err := os.Stat(repoA)

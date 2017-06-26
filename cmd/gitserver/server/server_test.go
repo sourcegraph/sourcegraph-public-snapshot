@@ -2,12 +2,15 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os/exec"
 	"strings"
 	"testing"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type Test struct {
@@ -39,6 +42,12 @@ func TestRequest(t *testing.T) {
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
+			Name:         "UnclonedRepo",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"cloneInProgress":true}`,
+		},
+		{
 			Name:         "Error",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
 			ExpectedCode: http.StatusOK,
@@ -66,9 +75,17 @@ func TestRequest(t *testing.T) {
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
 
-	repoExists = func(dir string) bool {
+	repoCloned = func(dir string) bool {
 		return dir == "/testroot/github.com/gorilla/mux"
 	}
+
+	testRepoExists = func(ctx context.Context, origin string, opt *vcs.RemoteOpts) bool {
+		return origin == "http://github.com/nicksnyder/go-i18n.git"
+	}
+	defer func() {
+		testRepoExists = nil
+	}()
+
 	runCommand = func(cmd *exec.Cmd) (error, int) {
 		switch cmd.Args[1] {
 		case "testcommand":
@@ -80,7 +97,10 @@ func TestRequest(t *testing.T) {
 		}
 		return nil, 0
 	}
-	noUpdates = true
+	skipCloneForTests = true
+	defer func() {
+		skipCloneForTests = false
+	}()
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
