@@ -53,8 +53,6 @@ func init() {
 		http.Redirect(w, r, infoURL.String(), http.StatusMovedPermanently)
 	}))
 
-	router.Get(routeReposIndex).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoIndex)))
-	router.Get(routeLangsIndex).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoIndex)))
 	router.Get(routeBlob).Handler(traceutil.TraceRoute(handler(serveBlob)))
 	router.Get(routeDefRedirectToDefLanding).Handler(traceutil.TraceRoute(http.HandlerFunc(serveDefRedirectToDefLanding)))
 	router.Get(routeDefLanding).Handler(traceutil.TraceRoute(errorutil.Handler(serveDefLanding)))

@@ -1,10 +1,8 @@
 package ui
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -13,8 +11,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tmpl"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/toprepos"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
@@ -35,49 +31,6 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	}
 	http.Redirect(w, r, approuter.Rel.URLToRepoRev(repo.URI, rev.CommitID).String(), http.StatusMovedPermanently)
 	return nil
-}
-
-func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
-	lang := mux.Vars(r)["Lang"]
-	var langDispName string
-	var repos []toprepos.Repo
-	switch strings.ToLower(lang) {
-	case "go":
-		repos = toprepos.GoRepos
-		langDispName = "Go"
-	case "java":
-		repos = toprepos.JavaRepos
-		langDispName = "Java"
-	case "":
-	default:
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("language %q is not supported", lang)}
-	}
-
-	m := &meta{
-		Title:       "Repositories",
-		ShortTitle:  "Indexed repositories",
-		Description: fmt.Sprintf("%s repositories indexed by Sourcegraph", langDispName),
-		SEO:         true,
-		Index:       true,
-		Follow:      true,
-	}
-
-	return tmpl.Exec(r, w, "repoindex.html", http.StatusOK, nil, &struct {
-		tmpl.Common
-		Meta meta
-
-		Lang         string
-		LangDispName string
-		Langs        []string
-		Repos        []toprepos.Repo
-	}{
-		Meta: *m,
-
-		Lang:         lang,
-		LangDispName: langDispName,
-		Langs:        []string{"Go"},
-		Repos:        repos,
-	})
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
