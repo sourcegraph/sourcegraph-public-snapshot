@@ -19,7 +19,7 @@ in Sourcegraph!
 In addition to this forum, you can reach us at the following coordinates:
 
 * [Twitter](https://twitter.com/srcgraph)
-* [Email](support@sourcegraph.com)
+* [Email](mailto:support@sourcegraph.com)
 
 
 ## [FAQ](https://sourcegraph.com/help/faq)
