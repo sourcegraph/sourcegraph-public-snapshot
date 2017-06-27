@@ -24,6 +24,8 @@ var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
 // serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
 // URLs directly to the repo itself (sourcegraph.com/<repo>).
 func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
+	legacyRepoLandingCounter.Inc()
+
 	repo, rev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
