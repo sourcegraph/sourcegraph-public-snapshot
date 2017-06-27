@@ -97,7 +97,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 	if match == nil {
 		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
 	}
-	http.Redirect(w, r, "/go/"+match[1], http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/go/"+match[1], http.StatusMovedPermanently)
 	return nil
 }
 
