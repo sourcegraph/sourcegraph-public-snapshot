@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -18,8 +17,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/jsonrpc2"
 
 	htmpl "html/template"
 
@@ -28,35 +25,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/toprepos"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
-
-// curlRepro returns curl reproduction instructions for an xlang request.
-func curlRepro(mode, rootPath, method string, params interface{}) string {
-	init := jsonrpc2.Request{
-		ID:     jsonrpc2.ID{Num: 0},
-		Method: "initialize",
-	}
-	init.SetParams(lspext.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{
-			RootPath: rootPath,
-		},
-		InitializationOptions: lspext.ClientProxyInitializationOptions{
-			Mode: mode,
-		},
-	})
-	req := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 1}, Method: method}
-	req.SetParams(params)
-	shutdown := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 2}, Method: "shutdown"}
-	exit := jsonrpc2.Request{Method: "exit"}
-	data, err := json.Marshal([]interface{}{init, req, shutdown, exit})
-	if err != nil {
-		log15.Crit("landing: curlRepro:", "error", err)
-	}
-	return fmt.Sprintf(`Reproduce with: curl --data '%s' https://sourcegraph.com/.api/xlang/%s -i`, data, method)
-}
 
 func shouldShadow(page string) bool {
 	e := os.Getenv(page + "_LANDING_SHADOW_PERCENT")
