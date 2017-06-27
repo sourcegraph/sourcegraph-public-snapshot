@@ -127,6 +127,10 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 	} else {
 		headCommit, err = ResolveRevision(ctx, repo, rev)
 		if err != nil {
+			if repo.URI == "github.com/sourcegraphtest/alwayscloningtest" {
+				// Avoid infinite loop for always cloning test.
+				return nil
+			}
 			// If clone is in progress, re-enqueue after 5 seconds
 			if _, ok := err.(vcs.RepoNotExistError); ok && err.(vcs.RepoNotExistError).CloneInProgress {
 				go func() {
