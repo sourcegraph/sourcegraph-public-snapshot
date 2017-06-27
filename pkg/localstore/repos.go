@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
@@ -182,17 +183,12 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 // documentation for repos.Get for the contract on the freshness of
 // the data returned.
 //
-// If the requested repository does not exist, this method will
-// attempt to clone it and add it to the DB. In the interim, it will
-// return an error that says something like "Not found (clone in
-// progress)". Callers can poll until the returned error is nil. If
-// the new candidate repository could not be cloned, no repository is
-// added to the DB.
+// If the repository doesn't already exist in the db, this method will
+// add it to the db if the repo exists and start cloning, but will
+// not wait for cloning to finish before returning.
 //
-// Note that if this method returns a repository and non-nil error, it
-// does not necessarily mean the repository has been cloned, as the
-// repository in the DB could have been added by other means (e.g.,
-// manually).
+// If the repository already exists in the db, that information is returned
+// and no effort is made to detect if the repo is cloned or cloning.
 func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
@@ -244,13 +240,21 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				CreatedAt: &ts,
 			}
 		}
-		// If gitserver has not yet cloned it, don't add it to the DB
-		if _, err := gitcmd.Open(newRepo).ResolveRevision(ctx, "HEAD"); err != nil {
+		// Don't add the repo to the DB unless we are sure it exists.
+		// Clone in progress indicates existance.
+		if _, err := gitcmd.Open(newRepo).ResolveRevision(ctx, "HEAD"); err != nil && !cloneInProgress(err) {
 			return nil, err
 		}
 		return s.TryInsertNew(ctx, newRepo)
 	}
 	return repo, nil
+}
+
+func cloneInProgress(err error) bool {
+	if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+		return true
+	}
+	return false
 }
 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {

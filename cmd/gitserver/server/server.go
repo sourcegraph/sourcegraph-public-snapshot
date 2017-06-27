@@ -166,7 +166,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	dir := path.Join(s.ReposDir, req.Repo)
 	s.cloningMu.Lock()
 	_, cloneInProgress := s.cloning[dir]
-	if cloneInProgress || req.Repo == "github.com/sourcegraphtest/alwayscloningtest" {
+	if cloneInProgress || strings.ToLower(req.Repo) == "github.com/sourcegraphtest/alwayscloningtest" {
 		s.cloningMu.Unlock()
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)

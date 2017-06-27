@@ -127,7 +127,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 	} else {
 		headCommit, err = ResolveRevision(ctx, repo, rev)
 		if err != nil {
-			if repo.URI == "github.com/sourcegraphtest/alwayscloningtest" {
+			if repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
 				// Avoid infinite loop for always cloning test.
 				return nil
 			}
