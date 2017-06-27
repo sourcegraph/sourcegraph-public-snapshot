@@ -29,7 +29,7 @@ func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a, err := fetch(r.URL.Path)
 		if err != nil {
-			log.Print(err)
+			log.Printf("app bundle fetch failed for %s: %s", r.URL.Path, err)
 			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
