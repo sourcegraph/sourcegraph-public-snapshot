@@ -2,23 +2,15 @@ package ui
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
-	"os"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-
-	htmpl "html/template"
 
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tmpl"
@@ -28,34 +20,6 @@ import (
 )
 
 var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
-
-func shouldShadow(page string) bool {
-	e := os.Getenv(page + "_LANDING_SHADOW_PERCENT")
-	if e == "" {
-		return false
-	}
-	p, err := strconv.Atoi(e)
-	if err != nil {
-		log15.Crit("landing: shouldShadow parsing "+page+"_LANDING_SHADOW_PERCENT", "error", err)
-		return false
-	}
-	return rand.Uint32()%100 < uint32(p)
-}
-
-func shouldUseXlang(page string) bool {
-	e := os.Getenv(page + "_LANDING_XLANG_PERCENT")
-	if e == "" {
-		return false
-	}
-	p, err := strconv.Atoi(e)
-	if err != nil {
-		log15.Crit("landing: shouldUseXlang parsing "+page+"_LANDING_XLANG_PERCENT", "error", err)
-		return false
-	}
-	return rand.Uint32()%100 < uint32(p)
-}
-
-func init() { rand.Seed(time.Now().UnixNano()) }
 
 // serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
 // URLs directly to the repo itself (sourcegraph.com/<repo>).
@@ -112,11 +76,6 @@ func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 		Langs:        []string{"Go"},
 		Repos:        repos,
 	})
-}
-
-type snippet struct {
-	Code      htmpl.HTML
-	SourceURL string
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
