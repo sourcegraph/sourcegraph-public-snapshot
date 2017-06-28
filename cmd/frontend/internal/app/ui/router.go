@@ -8,9 +8,6 @@ import (
 )
 
 const (
-	routeLangsIndex = "page.index.langs"
-	routeReposIndex = "page.index.repos"
-
 	routeBlob          = "page.blob"
 	routeDefLanding    = "page.def.landing"
 	oldRouteDefLanding = "page.def.landing.old"
@@ -70,8 +67,6 @@ func newRouter() *mux.Router {
 		"help",
 		"help/.*",
 	}
-	m.Path("/sitemap").Methods("GET").Name(routeLangsIndex)
-	m.Path("/sitemap/{Lang:.*}").Methods("GET").Name(routeReposIndex)
 	m.Path("/{Path:(?:jobs|careers)}").Methods("GET").Name(routeJobs)
 	m.Path("/{Path:(?:" + strings.Join(aboutPaths, "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 	m.Path("/{Path:(?:" + strings.Join(appPaths, "|") + ")}").Methods("GET").Name(routeAppPaths)

@@ -55,10 +55,7 @@ func Load() {
 	if err := commonTemplates(); err != nil {
 		log.Fatal(err)
 	}
-	if err := parseHTMLTemplates([][]string{
-		{"deflanding.html", "head_from_meta.html", "layout.html", "scripts.html", "styles.css"},
-		{"repoindex.html", "head_from_meta.html", "layout.html", "scripts.html", "styles.css"},
-	}, nil); err != nil {
+	if err := parseHTMLTemplates([][]string{}, nil); err != nil {
 		log.Fatal(err)
 	}
 }
