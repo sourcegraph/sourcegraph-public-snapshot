@@ -56,7 +56,7 @@ func cachedFetch(ctx context.Context, component, key string, fetcher func(contex
 	// path uses a sha256 hash of the key since we want to use it for the
 	// disk name.
 	h := sha256.Sum256([]byte(key))
-	path := filepath.Join(ArchiveCacheDir, component, hex.EncodeToString(h[:]))
+	path := filepath.Join(ArchiveCacheDir, component, hex.EncodeToString(h[:])) + ".zip"
 	span.LogKV("key", key, "path", path)
 
 	// First do a fast-path, assume already on disk

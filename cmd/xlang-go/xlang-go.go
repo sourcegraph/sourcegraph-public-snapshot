@@ -96,12 +96,6 @@ func run() error {
 			}()
 		}
 
-	case "stdio":
-		log.Println("xlang-go: reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler())).DisconnectNotify()
-		log.Println("connection closed")
-		return nil
-
 	default:
 		return fmt.Errorf("invalid mode %q", *mode)
 	}
