@@ -3,7 +3,7 @@ set +e
 
 IP=$(ipconfig getifaddr en0)
 
-docker run -i --rm -p=0.0.0.0:9222:9222 --name=chrome-headless alpeware/chrome-headless-trunk python <<END
+docker run -i --rm -p=0.0.0.0:9222:9222 --name=chrome-headless alpeware/chrome-headless-trunk:rev-479575 python <<END
 
 import socket
 import subprocess

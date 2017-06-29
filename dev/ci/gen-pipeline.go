@@ -110,9 +110,15 @@ func main() {
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
 
-	pipeline.AddStep(":robot_face:",
-		Cmd("./dev/e2e/run-tests.sh"),
-		ArtifactPaths("dev/e2e/log.html"))
+	testFiles, err := filepath.Glob("./dev/e2e/*.test.js")
+	if err != nil {
+		panic(err)
+	}
+	for _, f := range testFiles {
+		pipeline.AddStep(":robot_face:",
+			Cmd("./dev/e2e/run-test.sh "+filepath.Base(f)),
+			ArtifactPaths("dev/e2e/log.html"))
+	}
 
 	pipeline.AddStep(":php:",
 		Cmd("./xlang/php/test.sh"))

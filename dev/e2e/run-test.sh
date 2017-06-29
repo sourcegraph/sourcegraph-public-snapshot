@@ -3,6 +3,11 @@ set -e
 
 cd $(dirname "${BASH_SOURCE[0]}")
 
+if [ ! -f "./$1" ]; then
+	echo "usage: run-test.sh [.test.js file]"
+	exit 1
+fi
+
 GOBIN="$PWD"/../../vendor/.bin
 env GOBIN=$GOBIN go install -v sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/chromebot
 
@@ -18,4 +23,4 @@ until curl http://localhost:3080/__version; do
 	sleep 1
 done
 
-node login-test.js | $GOBIN/chromebot
+node $1 | $GOBIN/chromebot
