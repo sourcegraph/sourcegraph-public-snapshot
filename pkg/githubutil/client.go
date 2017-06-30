@@ -98,11 +98,10 @@ func (c *Config) UnauthedClient() *github.Client {
 func (c *Config) AuthedClient(token string) *github.Client {
 	var t http.RoundTripper = baseTransport(c.Transport)
 
-	tokHash := sha256.Sum256([]byte(token))
 	if c.Cache != nil {
 		t = &httpcache.Transport{
 			Cache: namespacedCache{
-				namespace: base64.URLEncoding.EncodeToString(tokHash[:]),
+				namespace: cacheNamespaceForToken(token),
 				Cache:     c.Cache,
 			},
 			Transport:           t,
@@ -120,11 +119,15 @@ func ClearCacheForCurrentUser(ctx context.Context) {
 		return
 	}
 
-	tokHash := sha256.Sum256([]byte(a.GitHubToken))
-	namespace := base64.URLEncoding.EncodeToString(tokHash[:])
+	namespace := cacheNamespaceForToken(a.GitHubToken)
 	for _, key := range httputil.Cache.Keys(namespace + ":*") {
 		httputil.Cache.Delete(key)
 	}
+}
+
+func cacheNamespaceForToken(token string) string {
+	tokHash := sha256.Sum256([]byte(token))
+	return base64.URLEncoding.EncodeToString(tokHash[:])
 }
 
 // client creates a new GitHub API client from the transport.
