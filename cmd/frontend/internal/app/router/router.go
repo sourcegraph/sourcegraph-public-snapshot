@@ -23,6 +23,7 @@ const (
 
 	GitHubOAuth2Initiate = "github-oauth2.initiate"
 	GitHubOAuth2Receive  = "github-oauth2.receive"
+	GitHubAppInstalled   = "github.app-installed"
 
 	GoogleOAuth2Initiate = "google-oauth2.initiate"
 	GoogleOAuth2Receive  = "google-oauth2.receive"
@@ -63,6 +64,7 @@ func New() *Router {
 
 	base.Path("/-/github-oauth/initiate").Methods("POST").Name(GitHubOAuth2Initiate)
 	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
+	base.Path("/-/github-app-installed").Methods("GET").Name(GitHubAppInstalled)
 
 	base.Path("/-/google-oauth/initiate").Methods("POST").Name(GoogleOAuth2Initiate)
 	base.Path("/-/google-oauth/receive").Methods("GET", "POST").Name(GoogleOAuth2Receive)

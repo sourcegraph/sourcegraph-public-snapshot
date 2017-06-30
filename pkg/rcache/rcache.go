@@ -49,7 +49,7 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 	c := pool.Get()
 	defer c.Close()
 
-	b, err := redis.Bytes(c.Do("GET", r.rkey(key)))
+	b, err := redis.Bytes(c.Do("GET", r.rkeyPrefix()+key))
 	if err != nil && err != redis.ErrNil {
 		log15.Warn("failed to execute redis command", "cmd", "GET", "error", err)
 	}
@@ -63,12 +63,12 @@ func (r *Cache) Set(key string, b []byte) {
 	defer c.Close()
 
 	if r.ttlSeconds == 0 {
-		_, err := c.Do("SET", r.rkey(key), b)
+		_, err := c.Do("SET", r.rkeyPrefix()+key, b)
 		if err != nil {
 			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
 		}
 	} else {
-		_, err := c.Do("SETEX", r.rkey(key), r.ttlSeconds, b)
+		_, err := c.Do("SETEX", r.rkeyPrefix()+key, r.ttlSeconds, b)
 		if err != nil {
 			log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
 		}
@@ -80,15 +80,30 @@ func (r *Cache) Delete(key string) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("DEL", r.rkey(key))
+	_, err := c.Do("DEL", r.rkeyPrefix()+key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
 	}
 }
 
-// rkey generates the actual key we use on redis.
-func (r *Cache) rkey(key string) string {
-	return fmt.Sprintf("%s:%s:%s", globalPrefix, r.keyPrefix, key)
+func (r *Cache) Keys(pattern string) []string {
+	c := pool.Get()
+	defer c.Close()
+
+	prefix := r.rkeyPrefix()
+	keys, err := redis.Strings(c.Do("KEYS", prefix+pattern))
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "KEYS", "error", err)
+	}
+	for i := range keys {
+		keys[i] = keys[i][len(prefix):]
+	}
+	return keys
+}
+
+// rkeyPrefix generates the actual key prefix we use on redis.
+func (r *Cache) rkeyPrefix() string {
+	return fmt.Sprintf("%s:%s:", globalPrefix, r.keyPrefix)
 }
 
 // SetupForTest adjusts the globalPrefix and clears it out. You will have

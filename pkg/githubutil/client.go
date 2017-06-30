@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 
@@ -111,6 +112,19 @@ func (c *Config) AuthedClient(token string) *github.Client {
 
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: t})
 	return c.client(oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})))
+}
+
+func ClearCacheForCurrentUser(ctx context.Context) {
+	a := actor.FromContext(ctx)
+	if a.GitHubToken == "" {
+		return
+	}
+
+	tokHash := sha256.Sum256([]byte(a.GitHubToken))
+	namespace := base64.URLEncoding.EncodeToString(tokHash[:])
+	for _, key := range httputil.Cache.Keys(namespace + ":*") {
+		httputil.Cache.Delete(key)
+	}
 }
 
 // client creates a new GitHub API client from the transport.
