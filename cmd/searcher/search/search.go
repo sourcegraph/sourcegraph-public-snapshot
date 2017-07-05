@@ -133,7 +133,8 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	matches, limitHit, err := s.search(r.Context(), &p)
 	if err != nil {
 		code := http.StatusBadRequest
-		if !isBadRequest(err) {
+		// Log errors not caused by the client.
+		if !isBadRequest(err) && r.Context().Err() != context.Canceled {
 			log.Printf("internal error serving %#+v: %s", p, err)
 			code = http.StatusInternalServerError
 		}
@@ -170,7 +171,12 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, l
 	span.SetTag("fileMatchLimit", p.FileMatchLimit)
 	defer func(start time.Time) {
 		code := "200"
-		if err != nil {
+		// We often have canceled requests. We do not want to
+		// record them as errors to avoid noise
+		if ctx.Err() == context.Canceled {
+			code = "canceled"
+			span.SetTag("err", err)
+		} else if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 			if isBadRequest(err) {
