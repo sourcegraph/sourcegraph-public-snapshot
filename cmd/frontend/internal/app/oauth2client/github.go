@@ -158,6 +158,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		AppMetadata struct {
 			GitHubScope               []string `json:"github_scope"`
 			GitHubAccessTokenOverride string   `json:"github_access_token_override"`
+			DidLoginBefore            bool     `json:"did_login_before"`
 		} `json:"app_metadata"`
 		Identities []struct {
 			Connection string          `json:"connection"`
@@ -177,7 +178,15 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 	}
 
-	firstTime := len(info.AppMetadata.GitHubScope) == 0
+	// If AppMetadata.GitHubScope metadata is set, this user signed up prior to the GitHub
+	// app auth changeover in June '17, and may not yet have a DidLoginBefore metadata prop set.
+	// TODO(Dan): at some point in the future, we can remove this check
+	if len(info.AppMetadata.GitHubScope) > 0 {
+		info.AppMetadata.DidLoginBefore = true
+		if err := auth0.SetAppMetadata(r.Context(), info.UID, "did_login_before", true); err != nil {
+			return err
+		}
+	}
 
 	actor := &actor.Actor{
 		UID:             info.UID,
@@ -198,7 +207,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		if !feature.Features.GitHubApps {
 			mergedScope = mergeScopes(scopeOfToken, info.AppMetadata.GitHubScope)
 		}
-		if firstTime {
+		if !info.AppMetadata.DidLoginBefore {
 			// try copying legacy scope
 			for _, identity := range info.Identities {
 				if identity.Connection == "github" {
@@ -238,7 +247,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	eventLabel := "CompletedGitHubOAuth2Flow"
-	if firstTime {
+	if !info.AppMetadata.DidLoginBefore {
 		eventLabel = "SignupCompleted"
 	}
 
@@ -247,7 +256,10 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		go tracking.TrackUserGitHubData(actor, eventLabel, info.Name, info.Company, info.Location, cookie.WebSessionID)
 	}
 
-	if firstTime {
+	if !info.AppMetadata.DidLoginBefore {
+		if err := auth0.SetAppMetadata(r.Context(), info.UID, "did_login_before", true); err != nil {
+			return err
+		}
 		returnToNewURL, err := url.Parse(cookie.ReturnToNew)
 		if err != nil {
 			return err
