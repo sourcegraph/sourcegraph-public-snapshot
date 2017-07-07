@@ -53,6 +53,9 @@ func addGitHubDefaults() {
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "ssh://git@github.com:%.git"})
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "git://git@github.com:%.git"})
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "git@github.com:%.git"})
+
+	originMap = append(originMap, prefixAndOrgin{Prefix: "bitbucket.org/", Origin: "https://bitbucket.org/%.git"})
+	originMap = append(originMap, prefixAndOrgin{Prefix: "bitbucket.org/", Origin: "git@bitbucket.org:%.git"})
 }
 
 // OriginMap maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
