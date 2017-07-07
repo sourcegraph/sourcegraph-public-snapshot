@@ -218,10 +218,6 @@ declare namespace GQL {
 	*/
 	interface IMutation {
 		__typename: string;
-		cancelSubscription: boolean;
-		updatePaymentSource: boolean;
-		subscribeOrg: boolean;
-		startOrgTrial: boolean;
 		inviteOrgMemberToSourcegraph: boolean;
 	}
 
@@ -275,18 +271,6 @@ declare namespace GQL {
 		name: string;
 		email: string;
 		gravatarHash: string;
-	}
-
-	/*
-	  description: null
-	*/
-	interface IPlan {
-		__typename: string;
-		name: string;
-		cost: number;
-		seats: number | null;
-		renewalDate: number | null;
-		organization: IOrganization | null;
 	}
 
 	/*
@@ -361,7 +345,6 @@ declare namespace GQL {
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;
-		expirationDate: number | null;
 		listTotalRefs: ITotalRefList;
 		gitCmdRaw: string;
 	}
@@ -489,7 +472,6 @@ declare namespace GQL {
 		__typename: string;
 		githubOrgs: Array<IOrganization>;
 		githubInstallations: Array<IInstallation>;
-		paymentPlan: IPlan;
 	}
 }
 

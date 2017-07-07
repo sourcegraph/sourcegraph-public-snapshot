@@ -62,7 +62,6 @@ type Repository implements Node {
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
-	expirationDate: Int
 	listTotalRefs: TotalRefList!
 	gitCmdRaw(params: [String!]!): String!
 }
@@ -244,14 +243,6 @@ type Invite {
 	uri: String!
 }
 
-type Plan {
-	name: String!
-	cost: Int!
-	seats: Int
-	renewalDate: Int
-	organization: Organization
-}
-
 type Installation {
 	login: String!
 	githubId: Int!
@@ -263,14 +254,9 @@ type Installation {
 type User {
 	githubOrgs: [Organization!]!
 	githubInstallations: [Installation!]!
-	paymentPlan: Plan!
 }
 
 type Mutation {
-	cancelSubscription(): Boolean!
-	updatePaymentSource(tokenID: String!): Boolean!
-	subscribeOrg(tokenID: String!, GitHubOrg: String!, seats: Int!): Boolean!
-	startOrgTrial(GitHubOrg: String!): Boolean!
 	inviteOrgMemberToSourcegraph(orgLogin: String!, orgGithubId: Int!, userLogin: String!, userEmail: String = ""): Boolean!
 }
 

@@ -31,12 +31,10 @@ var (
 			`CREATE EXTENSION IF NOT EXISTS pg_trgm;`,
 			new(globalDeps).CreateTable(),
 			new(pkgs).CreateTable(),
-			new(payments).CreateTable(),
 		},
 		DropSQL: []string{
 			new(globalDeps).DropTable(),
 			new(pkgs).DropTable(),
-			new(payments).DropTable(),
 		},
 		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
 	}

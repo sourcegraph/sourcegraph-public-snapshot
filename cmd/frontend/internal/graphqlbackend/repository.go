@@ -195,22 +195,6 @@ func (r *repositoryResolver) CreatedAt() string {
 	return ""
 }
 
-// TrialExpiration is the Unix timestamp that the repo trial will expire, or
-// nil if this repo is not on a trial.
-func (r *repositoryResolver) ExpirationDate(ctx context.Context) (*int32, error) {
-	t, err := localstore.Payments.TrialExpirationDate(ctx, *r.repo)
-	if err != nil {
-		return nil, err
-	}
-
-	if t == nil {
-		return nil, nil
-	}
-
-	n := int32(t.Unix())
-	return &n, nil
-}
-
 func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListResolver, error) {
 	totalRefs, err := backend.Defs.ListTotalRefs(ctx, r.repo.URI)
 	if err != nil {
