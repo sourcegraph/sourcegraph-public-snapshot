@@ -232,8 +232,6 @@ func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	defaultBranch := m[1]
 	return &sourcegraph.Repo{
 		URI:           fmt.Sprintf("github.com/%s/%s", owner, repoName),
-		Owner:         owner,
-		Name:          repoName,
 		DefaultBranch: defaultBranch,
 		Private:       false,
 	}, nil
@@ -300,15 +298,11 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	}
 	repo := sourcegraph.Repo{
 		URI:           "github.com/" + *ghrepo.FullName,
-		Name:          *ghrepo.Name,
 		DefaultBranch: strv(ghrepo.DefaultBranch),
 		Description:   strv(ghrepo.Description),
 		Language:      strv(ghrepo.Language),
 		Private:       boolv(ghrepo.Private),
 		Fork:          boolv(ghrepo.Fork),
-	}
-	if ghrepo.Owner != nil {
-		repo.Owner = strv(ghrepo.Owner.Login)
 	}
 	if ghrepo.CreatedAt != nil {
 		repo.CreatedAt = &ghrepo.CreatedAt.Time

@@ -75,13 +75,6 @@ type Repo struct {
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	URI string `json:"URI,omitempty"`
-	// Owner is the repository owner (user or organizatin) of the repository. (For
-	// example, for "github.com/user/repo", the owner is "user".)
-	Owner string `json:"Owner,omitempty"`
-	// Name is the base name (the final path component) of the repository, typically
-	// the name of the directory that the repository would be cloned into. (For
-	// example, for git://example.com/foo.git, the name is "foo".)
-	Name string `json:"Name,omitempty"`
 	// Description is a brief description of the repository.
 	Description string `json:"Description,omitempty"`
 	// HomepageURL is the URL to the repository's homepage, if any.
@@ -131,8 +124,6 @@ type Repo struct {
 // These types are used for data logging/capturing when a GitHub user signs in to Sourcegraph
 type GitHubRepoWithDetails struct {
 	URI         string                `json:"URI,omitempty"`
-	Owner       string                `json:"Owner,omitempty"`
-	Name        string                `json:"Name,omitempty"`
 	Fork        bool                  `json:"Fork,omitempty"`
 	Private     bool                  `json:"Private,omitempty"`
 	CreatedAt   *time.Time            `json:"CreatedAt,omitempty"`
@@ -244,10 +235,6 @@ type ReposUpdateOp struct {
 	Repo int32 `json:"Repo,omitempty"`
 	// URI, if non-empty, is the updated value of the URI
 	URI string `json:"URI,omitempty"`
-	// Owner, if non-empty, is the updated value of the owner.
-	Owner string `json:"Owner,omitempty"`
-	// Name, if non-empty, is the updated value of the name.
-	Name string `json:"Name,omitempty"`
 	// Description, if non-empty, is the updated value of the description.
 	Description string `json:"Description,omitempty"`
 	// HomepageURL, if non-empty, is the updated value of the homepage URL.

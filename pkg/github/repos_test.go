@@ -284,8 +284,6 @@ func Test_getFromGit(t *testing.T) {
 		repoName: "mux",
 		expRepo: &sourcegraph.Repo{
 			URI:           "github.com/gorilla/mux",
-			Owner:         "gorilla",
-			Name:          "mux",
 			DefaultBranch: "master",
 			Private:       false,
 		},
@@ -294,8 +292,6 @@ func Test_getFromGit(t *testing.T) {
 		repoName: "log4j",
 		expRepo: &sourcegraph.Repo{
 			URI:           "github.com/apache/log4j",
-			Owner:         "apache",
-			Name:          "log4j",
 			DefaultBranch: "trunk",
 			Private:       false,
 		},

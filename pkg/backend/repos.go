@@ -231,16 +231,6 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 		updateOp.URI = ghrepo.URI
 		updated = true
 	}
-	if ghrepo.Owner != repo.Owner {
-		repo.Owner = ghrepo.Owner
-		updateOp.Owner = ghrepo.Owner
-		updated = true
-	}
-	if ghrepo.Name != repo.Name {
-		repo.Name = ghrepo.Name
-		updateOp.Name = ghrepo.Name
-		updated = true
-	}
 	if ghrepo.Description != repo.Description {
 		repo.Description = ghrepo.Description
 		updateOp.Description = ghrepo.Description

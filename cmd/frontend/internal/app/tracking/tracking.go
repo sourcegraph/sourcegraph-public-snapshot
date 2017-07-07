@@ -261,8 +261,6 @@ func toGitHubRepoWithDetails(ghrepo *github.Repository) *sourcegraph.GitHubRepoW
 	repo := extgithub.ToRepo(ghrepo)
 	return &sourcegraph.GitHubRepoWithDetails{
 		URI:         repo.URI,
-		Owner:       repo.Owner,
-		Name:        repo.Name,
 		Fork:        repo.Fork,
 		Private:     repo.Private,
 		CreatedAt:   repo.CreatedAt,

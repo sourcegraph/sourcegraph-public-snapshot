@@ -15,7 +15,6 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -96,8 +95,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
 		ID:              r.ID,
 		URI:             r.URI,
-		Owner:           r.Owner,
-		Name:            r.Name,
 		Description:     r.Description,
 		HomepageURL:     r.HomepageURL,
 		DefaultBranch:   r.DefaultBranch,
@@ -124,8 +121,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.ID = r2.ID
 	r.URI = r2.URI
-	r.Owner = r2.Owner
-	r.Name = r2.Name
 	r.Description = r2.Description
 	r.HomepageURL = r2.HomepageURL
 	r.DefaultBranch = r2.DefaultBranch
@@ -204,11 +199,10 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			if err != nil {
 				return nil, err
 			}
-			ghRepoURI := githubutil.RepoURI(ghRepo.Owner, ghRepo.Name)
-			if ghRepoURI != uri {
+			if ghRepo.URI != uri {
 				// not canonical name (the GitHub api will redirect from the old name to
 				// the results for the new name if the repo got renamed on GitHub)
-				if repo, err := s.getByURI(ctx, uri); err == nil {
+				if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
 					return repo, nil
 				}
 			}
@@ -218,9 +212,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			// GitHub is quite easy and (with HTTP caching) performant.
 			ts := time.Now()
 			newRepo = &sourcegraph.Repo{
-				Owner:       ghRepo.Owner,
-				Name:        ghRepo.Name,
-				URI:         ghRepoURI,
+				URI:         ghRepo.URI,
 				Description: ghRepo.Description,
 				Fork:        ghRepo.Fork,
 				Private:     ghRepo.Private,
@@ -228,14 +220,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			}
 		} else {
 			ts := time.Now()
-			cmps := strings.Split(uri, "/")
-			var owner string
-			if len(cmps) >= 2 {
-				owner = cmps[len(cmps)-2]
-			}
 			newRepo = &sourcegraph.Repo{
-				Name:      cmps[len(cmps)-1],
-				Owner:     owner,
 				URI:       uri,
 				CreatedAt: &ts,
 			}
@@ -417,12 +402,6 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	var updates []string
 	if op.URI != "" {
 		updates = append(updates, `"uri"=`+arg(op.URI))
-	}
-	if op.Owner != "" {
-		updates = append(updates, `"owner"=`+arg(op.Owner))
-	}
-	if op.Name != "" {
-		updates = append(updates, `"name"=`+arg(op.Name))
 	}
 	if op.Description != "" {
 		updates = append(updates, `"description"=`+arg(op.Description))

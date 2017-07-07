@@ -147,8 +147,6 @@ func (tos *TrackedObjects) AddReposWithDetailsObjects(rl *sourcegraph.GitHubRepo
 	for _, repo := range rl.ReposWithDetails {
 		newRepo := &RepoWithDetailsContext{
 			URI:                  repo.URI,
-			Owner:                repo.Owner,
-			Name:                 repo.Name,
 			IsFork:               repo.Fork,
 			IsPrivate:            repo.Private,
 			Languages:            make([]*RepoLanguage, len(repo.Languages)),
