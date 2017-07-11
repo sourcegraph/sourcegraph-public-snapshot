@@ -4,7 +4,6 @@ services:
     image: "docker.sourcegraph.com/frontend:latest"
     environment:
       DEPLOYMENT_ON_PREM: ${DEPLOYMENT_ON_PREM:-true}
-      NO_GITHUB_API: "true"
       GITHUB_BASE_URL: http://github-proxy:3180
       LSP_PROXY: lsp-proxy:4388
       PGHOST: postgres
@@ -59,7 +58,6 @@ services:
       - ${SSH_KEYPAIR_FOLDER:-~/.ssh}:/root/.ssh_init
     environment:
       DEBUG: ${DEBUG}
-      NO_GITHUB_API: "true"
       SRC_ADDR: 3178
       ORIGIN_MAP: ${ORIGIN_MAP}
       SRC_REPOS_DIR: /data/repos

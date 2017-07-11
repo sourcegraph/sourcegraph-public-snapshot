@@ -3,12 +3,8 @@ package github
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
-	"strings"
 
 	"context"
 
@@ -43,20 +39,11 @@ var (
 		Name:      "github_unauthed_api_requests",
 		Help:      "Counts uncached requests to the GitHub API, and information on their origin if available.",
 	}, []string{"source"})
-
-	// DangerouslySkipAPIPermissionCheck, if true, eliminates most (but not necessarily all) calls to the GitHub API.
-	// WARNING: this will also disable permissions checks that depend on the GitHub API.
-	// This should only be set to true in the local installer case.
-	DangerouslySkipAPIPermissionCheck bool
 )
 
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
 	prometheus.MustRegister(reposGitHubRequestsCounter)
-	if noGitHubAPI, err := strconv.ParseBool(os.Getenv("NO_GITHUB_API")); err == nil {
-		log.Printf("detected NO_GITHUB_API=%v", noGitHubAPI)
-		DangerouslySkipAPIPermissionCheck = noGitHubAPI
-	}
 }
 
 type cachedRepo struct {
@@ -401,10 +388,4 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 		}
 	}
 	return allRepos, nil
-}
-
-// IsRepoAndShouldCheckPermissions returns true if we can infer from the repository URI that the
-// repository is hosted on github.com (and DangerouslySkipAPIPermissionCheck is false).
-func IsRepoAndShouldCheckPermissions(uri string) bool {
-	return strings.HasPrefix(strings.ToLower(uri), "github.com/") && !DangerouslySkipAPIPermissionCheck
 }

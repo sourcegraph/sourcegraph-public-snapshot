@@ -192,7 +192,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
 		var newRepo *sourcegraph.Repo
-		if github.IsRepoAndShouldCheckPermissions(uri) {
+		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
 			// Repo does not exist in DB, create new entry.
 			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
 			ghRepo, err := github.GetRepo(ctx, uri)

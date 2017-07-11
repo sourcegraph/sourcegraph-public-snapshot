@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -173,7 +174,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 // setRepoFieldsFromRemote sets the fields of the repository from the
 // remote (e.g., GitHub) and updates the repository in the store layer.
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
-	if github.IsRepoAndShouldCheckPermissions(repo.URI) {
+	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		// Fetch latest metadata from GitHub
 		ghrepo, err := github.GetRepo(ctx, repo.URI)
 		if err != nil {

@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"context"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -22,7 +23,7 @@ func verifyUserHasRepoURIAccess(ctx context.Context, repoURI string) bool {
 	}
 
 	switch {
-	case github.IsRepoAndShouldCheckPermissions(repoURI):
+	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
 		if _, err := github.GetRepo(ctx, repoURI); err == nil {
 			return true
