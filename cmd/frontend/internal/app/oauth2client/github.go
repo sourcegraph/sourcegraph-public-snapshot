@@ -23,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
@@ -109,9 +108,6 @@ func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 
 	var opts []oauth2.AuthCodeOption
 	opts = append(opts, oauth2.SetAuthURLParam("connection", "github"))
-	if !feature.Features.GitHubApps {
-		opts = append(opts, oauth2.SetAuthURLParam("connection_scope", strings.Join(scopes, ",")))
-	}
 	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL(redirectURL).AuthCodeURL(nonce, opts...), http.StatusSeeOther)
 	return nil
 }
@@ -203,10 +199,6 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 
 		scopeOfToken := strings.Split(githubToken.Scope, ",")
-		var mergedScope []string
-		if !feature.Features.GitHubApps {
-			mergedScope = mergeScopes(scopeOfToken, info.AppMetadata.GitHubScope)
-		}
 		if !info.AppMetadata.DidLoginBefore {
 			// try copying legacy scope
 			for _, identity := range info.Identities {
@@ -217,19 +209,6 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 						log15.Warn(`Connection is "github", but UserID type isn't int; ignoring.`, "UserID", identity.UserID, "err", err)
 						continue
 					}
-				}
-			}
-		}
-		if !feature.Features.GitHubApps {
-			if len(scopeOfToken) < len(mergedScope) {
-				// The user has once granted us more permissions than we got with this token. Run oauth flow
-				// again to fetch token with all permissions. This should be non-interactive.
-				return GitHubOAuth2Initiate(w, r, mergedScope, cookie.RedirectURL, cookie.ReturnTo, cookie.ReturnToNew, cookie.WebSessionID)
-			}
-			if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
-				// Wohoo, we got more permissions. Remember in user database.
-				if err := auth0.SetAppMetadata(r.Context(), info.UID, "github_scope", scopeOfToken); err != nil {
-					return err
 				}
 			}
 		}

@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/go-github/github"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
@@ -97,45 +96,20 @@ func listOrgsPage(ctx context.Context, opt *sourcegraph.ListOptions) (res *sourc
 //
 // This method may return an error and a partial list of organizations
 func ListAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourcegraph.OrgsList, err error) {
-	if feature.Features.GitHubApps {
-		var orgs []*sourcegraph.Org
-		if !extgithub.HasAuthedUser(ctx) {
-			return &sourcegraph.OrgsList{}, nil
-		}
-		installs, err := extgithub.ListAllAccessibleInstallations(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, ins := range installs {
-			if *ins.Account.Type == "Organization" {
-				orgs = append(orgs, toOrgFromAccount(ins.Account))
-			}
-		}
-		return &sourcegraph.OrgsList{Orgs: orgs}, nil
+	var orgs []*sourcegraph.Org
+	if !extgithub.HasAuthedUser(ctx) {
+		return &sourcegraph.OrgsList{}, nil
 	}
-
-	// Get a maximum of 1000 organizations per user
-	const perPage = 100
-	const maxPage = 10
-	opts := *op
-	opts.PerPage = perPage
-
-	var allOrgs []*sourcegraph.Org
-	for page := 1; page <= maxPage; page++ {
-		opts.Page = int32(page)
-		orgsPage, err := listOrgsPage(ctx, &opts)
-		if err != nil {
-			// If an error occurs, return that error, as well as a list of all organizations
-			// collected so far
-			return &sourcegraph.OrgsList{
-				Orgs: allOrgs}, err
-		}
-		allOrgs = append(allOrgs, orgsPage.Orgs...)
-		if len(orgsPage.Orgs) < perPage {
-			break
+	installs, err := extgithub.ListAllAccessibleInstallations(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, ins := range installs {
+		if *ins.Account.Type == "Organization" {
+			orgs = append(orgs, toOrgFromAccount(ins.Account))
 		}
 	}
-	return &sourcegraph.OrgsList{Orgs: allOrgs}, nil
+	return &sourcegraph.OrgsList{Orgs: orgs}, nil
 }
 
 func OrganizationRepos(ctx context.Context, org string, opt *github.RepositoryListByOrgOptions) ([]*github.Repository, error) {

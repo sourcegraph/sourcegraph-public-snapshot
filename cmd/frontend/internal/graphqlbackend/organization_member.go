@@ -10,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -63,37 +62,25 @@ func listOrgMembersPage(ctx context.Context, orgLogin string, opt *sourcegraph.L
 		},
 	}
 
-	if feature.Features.GitHubApps {
-		cl := extgithub.Client(ctx)
-		installs, _, err := cl.Users.ListInstallations(ctx, nil)
-		if err != nil {
-			return nil, err
-		}
-		for _, ins := range installs {
-			if *ins.Account.Login == orgLogin {
-				insClient, err := extgithub.InstallationClient(ctx, *ins.ID)
-				if err != nil {
-					return nil, err
-				}
-				members, _, err := insClient.Organizations.ListMembers(ctx, orgLogin, optGh)
-				if err != nil {
-					return nil, err
-				}
-				return members, nil
-			}
-		}
-		return nil, fmt.Errorf("github org %s not found for current user", orgLogin)
-	} else {
-		client := extgithub.Client(ctx)
-
-		// Fetch members of the organization.
-		members, _, err := client.Organizations.ListMembers(ctx, orgLogin, optGh)
-		if err != nil {
-			return nil, err
-		}
-
-		return members, nil
+	cl := extgithub.Client(ctx)
+	installs, _, err := cl.Users.ListInstallations(ctx, nil)
+	if err != nil {
+		return nil, err
 	}
+	for _, ins := range installs {
+		if *ins.Account.Login == orgLogin {
+			insClient, err := extgithub.InstallationClient(ctx, *ins.ID)
+			if err != nil {
+				return nil, err
+			}
+			members, _, err := insClient.Organizations.ListMembers(ctx, orgLogin, optGh)
+			if err != nil {
+				return nil, err
+			}
+			return members, nil
+		}
+	}
+	return nil, fmt.Errorf("github org %s not found for current user", orgLogin)
 }
 
 // ListAllOrgMembers is a convenience wrapper around listOrgMembersPage (since GitHub's API is paginated), returning

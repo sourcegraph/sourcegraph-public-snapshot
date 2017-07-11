@@ -18,7 +18,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -157,29 +156,18 @@ func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]
 		return SearchRepoMock(ctx, query, op)
 	}
 
-	if feature.Features.GitHubApps {
-		res, _, err := UnauthedClient(ctx).Search.Repositories(ctx, query, op)
-		if err != nil {
-			return nil, err
-		}
-		repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
-		for _, ghrepo := range res.Repositories {
-			// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
-			// have access to within one of their installations. Filter out all private
-			// repos (private repos can be obtained with ListAllGitHubRepos)
-			if *ghrepo.Private {
-				continue
-			}
-			repos = append(repos, ToRepo(&ghrepo))
-		}
-		return repos, nil
-	}
-	res, _, err := Client(ctx).Search.Repositories(ctx, query, op)
+	res, _, err := UnauthedClient(ctx).Search.Repositories(ctx, query, op)
 	if err != nil {
 		return nil, err
 	}
 	repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
 	for _, ghrepo := range res.Repositories {
+		// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
+		// have access to within one of their installations. Filter out all private
+		// repos (private repos can be obtained with ListAllGitHubRepos)
+		if *ghrepo.Private {
+			continue
+		}
 		repos = append(repos, ToRepo(&ghrepo))
 	}
 	return repos, nil
@@ -240,47 +228,31 @@ func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	if feature.Features.GitHubApps {
-		// Attempt directly accessing the repo first. If it is a public repo this will
-		// succeed, otherwise attempt fetching it from the private endpoints below.
-		ghrepo, _, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
-		if err == nil {
-			return ToRepo(ghrepo), nil
-		}
-		// The current GitHub App API only allows users to access their repos by
-		// listing them via their installations. Check each installation and find the
-		// repo we're looking for.
-		installs, err := ListAllAccessibleInstallations(ctx)
+	// Attempt directly accessing the repo first. If it is a public repo this will
+	// succeed, otherwise attempt fetching it from the private endpoints below.
+	ghrepo, _, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
+	if err == nil {
+		return ToRepo(ghrepo), nil
+	}
+	// The current GitHub App API only allows users to access their repos by
+	// listing them via their installations. Check each installation and find the
+	// repo we're looking for.
+	installs, err := ListAllAccessibleInstallations(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, ins := range installs {
+		repos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
 		if err != nil {
 			return nil, err
 		}
-		for _, ins := range installs {
-			repos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
-			if err != nil {
-				return nil, err
-			}
-			for _, r := range repos {
-				if *r.Name == repoName && *r.Owner.Login == owner {
-					return ToRepo(r), nil
-				}
+		for _, r := range repos {
+			if *r.Name == repoName && *r.Owner.Login == owner {
+				return ToRepo(r), nil
 			}
 		}
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
-	} else {
-		ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
-		if err != nil {
-			return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
-		}
-		// Temporary: Track where anonymous requests are coming from that don't hit the cache.
-		if _, ok := resp.Header["X-From-Cache"]; !HasAuthedUser(ctx) && !ok {
-			src, ok := ctx.Value(GitHubTrackingContextKey).(string)
-			if !ok {
-				src = "unknown"
-			}
-			reposGitHubRequestsCounter.WithLabelValues(src).Inc()
-		}
-		return ToRepo(ghrepo), nil
 	}
+	return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
 }
 
 func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
@@ -316,17 +288,12 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	return &repo
 }
 
-var ListAccessibleReposMock func(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
+var ListAccessibleReposMock func(ctx context.Context) ([]*sourcegraph.Repo, error)
 
 func MockListAccessibleRepos_Return(returns []*sourcegraph.Repo) (called *bool) {
 	called = new(bool)
-	ListAccessibleReposMock = func(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+	ListAccessibleReposMock = func(ctx context.Context) ([]*sourcegraph.Repo, error) {
 		*called = true
-
-		if opt != nil && opt.Page > 1 {
-			return nil, nil
-		}
-
 		return returns, nil
 	}
 	return
@@ -337,41 +304,26 @@ func MockListAccessibleRepos_Return(returns []*sourcegraph.Repo) (called *bool) 
 //
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
-func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+func ListAccessibleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
+	if ListAccessibleReposMock != nil {
+		return ListAccessibleReposMock(ctx)
+	}
 	// Note: When GitHubApps is enabled a list of all repositories that are
 	// accessible to a user via their installations are returned. This API does not
 	// support RepositoryListOptions.
-	//
-	// TODO: remove unused "opt" agrument when removing this feature flag.
-	if feature.Features.GitHubApps {
-		installs, err := ListAllAccessibleInstallations(ctx)
+	installs, err := ListAllAccessibleInstallations(ctx)
+	if err != nil {
+		return nil, err
+	}
+	repos := []*sourcegraph.Repo{}
+	for _, ins := range installs {
+		ghRepos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
 		if err != nil {
 			return nil, err
 		}
-		repos := []*sourcegraph.Repo{}
-		for _, ins := range installs {
-			ghRepos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
-			if err != nil {
-				return nil, err
-			}
-			for _, r := range ghRepos {
-				repos = append(repos, ToRepo(r))
-			}
+		for _, r := range ghRepos {
+			repos = append(repos, ToRepo(r))
 		}
-		return repos, nil
-	}
-	if ListAccessibleReposMock != nil {
-		return ListAccessibleReposMock(ctx, opt)
-	}
-
-	ghRepos, resp, err := Client(ctx).Repositories.List(ctx, "", opt)
-	if err != nil {
-		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
-	}
-
-	var repos []*sourcegraph.Repo
-	for _, ghRepo := range ghRepos {
-		repos = append(repos, ToRepo(ghRepo))
 	}
 	return repos, nil
 }
@@ -380,14 +332,10 @@ func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOpti
 	var ghRepos []*gogithub.StarredRepository
 	var resp *gogithub.Response
 	var err error
-	if feature.Features.GitHubApps {
-		// We can't get access to private starred repo's with the API. This only returns public starred repos.
-		ghRepos, resp, err = UnauthedClient(ctx).Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		ghRepos, resp, err = Client(ctx).Activity.ListStarred(ctx, "", opt)
+	// We can't get access to private starred repo's with the API. This only returns public starred repos.
+	ghRepos, resp, err = UnauthedClient(ctx).Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
+	if err != nil {
+		return nil, err
 	}
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
@@ -397,6 +345,33 @@ func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOpti
 		repos = append(repos, ToRepo(ghRepo.Repository))
 	}
 	return repos, nil
+}
+
+func ListPublicReposForUser(ctx context.Context, login string) ([]*sourcegraph.Repo, error) {
+	if ListPublicReposMock != nil {
+		return ListPublicReposMock(ctx, login)
+	}
+
+	ghRepos, _, err := UnauthedClient(ctx).Repositories.List(ctx, login, nil)
+	if err != nil {
+		return nil, err
+	}
+	repos := []*sourcegraph.Repo{}
+	for _, r := range ghRepos {
+		repos = append(repos, ToRepo(r))
+	}
+	return repos, nil
+}
+
+var ListPublicReposMock func(ctx context.Context, login string) ([]*sourcegraph.Repo, error)
+
+func MockListPublicRepos_Return(returns []*sourcegraph.Repo) (called *bool) {
+	called = new(bool)
+	ListPublicReposMock = func(ctx context.Context, login string) ([]*sourcegraph.Repo, error) {
+		*called = true
+		return returns, nil
+	}
+	return
 }
 
 // ListAllGitHubRepos lists all GitHub repositories that fit the
@@ -416,7 +391,7 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 	var allRepos []*sourcegraph.Repo
 	for page := 1; page <= maxPage; page++ {
 		op.Page = page
-		repos, err := ListAccessibleRepos(ctx, &op)
+		repos, err := ListAccessibleRepos(ctx)
 		if err != nil {
 			return nil, err
 		}

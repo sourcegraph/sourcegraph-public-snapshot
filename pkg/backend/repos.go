@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -103,29 +102,19 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	if opt.RemoteOnly {
-		if feature.Features.GitHubApps {
-			// List all of the repos we can access that are associated with the current
-			// user. This includes that user's public repos and all the repos accessible
-			// via their installations.
-			repos, err := github.ListAccessibleRepos(ctx, nil)
-			if err != nil {
-				return nil, err
-			}
-			ghRepos, _, err := github.UnauthedClient(ctx).Repositories.List(ctx, actor.FromContext(ctx).Login, nil)
-			if err != nil {
-				return nil, err
-			}
-			for _, r := range ghRepos {
-				repos = append(repos, github.ToRepo(r))
-			}
-			return &sourcegraph.RepoList{Repos: repos}, nil
-		}
-		ghRepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{})
+		// List all of the repos we can access that are associated with the current
+		// user. This includes that user's public repos and all the repos accessible
+		// via their installations.
+		repos, err := github.ListAccessibleRepos(ctx)
 		if err != nil {
-			log15.Warn("failed to fetch some remote repositories", "source", "GitHub", "error", err)
-			ghRepos = nil
+			return nil, err
 		}
-		return &sourcegraph.RepoList{Repos: ghRepos}, nil
+		public, err := github.ListPublicReposForUser(ctx, actor.FromContext(ctx).Login)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, public...)
+		return &sourcegraph.RepoList{Repos: repos}, nil
 	}
 
 	repos, err := localstore.Repos.List(ctx, &localstore.RepoListOp{

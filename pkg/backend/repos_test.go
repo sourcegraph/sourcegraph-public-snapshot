@@ -190,6 +190,7 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 	calledListAccessible := github.MockListAccessibleRepos_Return([]*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/is/accessible"},
 	})
+	github.MockListPublicRepos_Return([]*sourcegraph.Repo{{URI: "github.com/is/accessible2"}})
 	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
@@ -198,7 +199,7 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "github.com/is/accessible"}}}
+	want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "github.com/is/accessible"}, {URI: "github.com/is/accessible2"}}}
 	if !reflect.DeepEqual(repoList, want) {
 		t.Fatalf("got repos %v, want %v", repoList, want)
 	}
@@ -216,7 +217,9 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 
 	{
 		testcase := "auth'd user (common case)"
-		calledGHSearch := github.MockSearch_Return([]*sourcegraph.Repo{{URI: "remote1"}})
+
+		github.MockListPublicRepos_Return([]*sourcegraph.Repo{{URI: "local1"}})
+		github.MockSearch_Return([]*sourcegraph.Repo{{URI: "remote1"}})
 		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "local1"}, {URI: "remote1"}}}
@@ -225,9 +228,6 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !*calledGHSearch {
-			t.Errorf("in test case %q, !calledGHSearch", testcase)
-		}
 		if !*calledReposList {
 			t.Errorf("in test case %q, !calledReposList", testcase)
 		}

@@ -9,6 +9,10 @@ import (
 // ListAllAccessibleInstallations lists all GitHub app installations that are
 // accessible via the currently authed user.
 func ListAllAccessibleInstallations(ctx context.Context) ([]*gogithub.Installation, error) {
+	if ListAllAccessibleInstallationsMock != nil {
+		return ListAllAccessibleInstallationsMock(ctx)
+	}
+
 	if !HasAuthedUser(ctx) {
 		return nil, nil
 	}
@@ -33,9 +37,24 @@ func ListAllAccessibleInstallations(ctx context.Context) ([]*gogithub.Installati
 	return allInstalls, nil
 }
 
+var ListAllAccessibleInstallationsMock func(ctx context.Context) ([]*gogithub.Installation, error)
+
+func ListAllAccessibleInstallationsMock_Return(returns []*gogithub.Installation) (called *bool) {
+	called = new(bool)
+	ListAllAccessibleInstallationsMock = func(ctx context.Context) ([]*gogithub.Installation, error) {
+		*called = true
+		return returns, nil
+	}
+	return
+}
+
 // ListAllAccessibleReposForInstallation lists all GitHub repos for the given
 // installation that are accessible via the currently authed user.
 func ListAllAccessibleReposForInstallation(ctx context.Context, installID int) ([]*gogithub.Repository, error) {
+	if ListAllAccessibleReposForInstallationMock != nil {
+		return ListAllAccessibleReposForInstallationMock(ctx, installID)
+	}
+
 	if !HasAuthedUser(ctx) {
 		return nil, nil
 	}
@@ -58,4 +77,15 @@ func ListAllAccessibleReposForInstallation(ctx context.Context, installID int) (
 		}
 	}
 	return allRepos, nil
+}
+
+var ListAllAccessibleReposForInstallationMock func(ctx context.Context, installID int) ([]*gogithub.Repository, error)
+
+func ListAllAccessibleReposForInstallationMock_Return(returns []*gogithub.Repository) (called *bool) {
+	called = new(bool)
+	ListAllAccessibleReposForInstallationMock = func(ctx context.Context, installID int) ([]*gogithub.Repository, error) {
+		*called = true
+		return returns, nil
+	}
+	return
 }

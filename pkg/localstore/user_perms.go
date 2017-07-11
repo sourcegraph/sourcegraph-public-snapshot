@@ -2,13 +2,10 @@ package localstore
 
 import (
 	"context"
-	"fmt"
 
-	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
@@ -71,18 +68,11 @@ func verifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sou
 	}
 
 	privateGHRepoURIs := map[string]struct{}{}
-	if hasPrivate {
+	if hasPrivate && github.HasAuthedUser(ctx) {
 		var ghrepos []*sourcegraph.Repo
-		if feature.Features.GitHubApps {
-			ghrepos, err = github.ListAccessibleRepos(ctx, nil)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: "private"})
-			if err != nil {
-				return nil, fmt.Errorf("could not list all accessible GitHub repositories: %s", err)
-			}
+		ghrepos, err = github.ListAccessibleRepos(ctx)
+		if err != nil {
+			return nil, err
 		}
 		for _, ghrepo := range ghrepos {
 			privateGHRepoURIs[ghrepo.URI] = struct{}{}

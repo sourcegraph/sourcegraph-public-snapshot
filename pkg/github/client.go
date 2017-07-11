@@ -60,6 +60,12 @@ func Client(ctx context.Context) *github.Client {
 }
 
 func InstallationClient(ctx context.Context, installationID int) (*github.Client, error) {
+	if MockRoundTripper != nil {
+		return github.NewClient(&http.Client{
+			Transport: MockRoundTripper,
+		}), nil
+	}
+
 	tr := http.DefaultTransport
 	itr, err := ghinstallation.New(tr, ghAppID, installationID, []byte(ghAppKey))
 	if err != nil {
@@ -71,6 +77,12 @@ func InstallationClient(ctx context.Context, installationID int) (*github.Client
 
 // UnauthedClient returns a github.Client that is unauthenticated
 func UnauthedClient(ctx context.Context) *github.Client {
+	if MockRoundTripper != nil {
+		return github.NewClient(&http.Client{
+			Transport: MockRoundTripper,
+		})
+	}
+
 	conf := githubConf(ctx)
 	return conf.UnauthedClient()
 }
