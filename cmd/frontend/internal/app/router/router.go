@@ -35,6 +35,8 @@ const (
 	GDDORefs = "gddo.refs"
 	Editor   = "editor"
 
+	GopherconLiveBlog = "gophercon.live.blog"
+
 	GoSymbolURL = "go-symbol-url"
 
 	UI = "ui"
@@ -71,6 +73,8 @@ func New() *Router {
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)
+
+	base.Path("/gophercon").Methods("GET").Name(GopherconLiveBlog)
 
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)

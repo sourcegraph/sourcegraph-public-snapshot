@@ -45,6 +45,10 @@ func NewHandler(r *router.Router) http.Handler {
 		http.Redirect(w, r, "/beta", 301)
 	})))
 
+	r.Get(router.GopherconLiveBlog).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://about.sourcegraph.com/go", 302)
+	})))
+
 	r.Get(router.GoSymbolURL).Handler(traceutil.TraceRoute(errorutil.Handler(serveGoSymbolURL)))
 
 	r.Get(router.UI).Handler(ui.Router())
