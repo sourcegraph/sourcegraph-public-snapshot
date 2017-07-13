@@ -34,15 +34,13 @@ func serveSubmitForm(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Use the registered GitHub user's email address and user ID, if available
-	// If not, try the email address provided in the submitted form (i.e., signup_email)
+	// If not, try the email address provided in the submitted form (i.e., signupEmail)
 	actor := actor.FromContext(r.Context())
 	if len(actor.Email) > 0 {
 		form["email"] = actor.Email
 		form["user_id"] = actor.Login
-	} else if signupEmail := form["signup_email"]; signupEmail != "" {
+	} else if signupEmail := form["signupEmail"]; signupEmail != "" {
 		form["email"] = signupEmail
-	} else if betaEmail := form["beta_email"]; betaEmail != "" {
-		form["email"] = betaEmail
 	} else {
 		return errors.New("httpapi.serveSubmitForm: must provide an email address")
 	}
