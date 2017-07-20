@@ -1,17 +1,26 @@
-{{define "Title"}}{{.StatusCode}} {{.StatusText}}{{end}}
-
-{{define "Body"}}
-<div class="error-page">
-	<h1>
-		<span class="status-code">{{.StatusCode}}</span>
-		<span class="status-text">{{.StatusText}}</span>
-	</h1>
-	{{if .Error}}
-		<pre class="error">{{.Error}}</pre>
-	{{end}}
-	<hr />
-	<p>Sorry, there's been a problem. Please <a href="mailto:support@sourcegraph.com">contact us</a> and include the error ID: <strong>{{.ErrorID}}</strong></p>
-</div>
-{{end}}
-
-{{template "base.html" .}}
+{{/*
+	This template does not use base.html since it relies on common data (the
+	repo, asset root, etc.) and we do not want our error template to rely on
+	various random things from Common in the future. It should be minimal so
+	that it renders properly even when the system is severely broken.
+*/}}
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>{{.StatusCode}} {{.StatusText}} - Sourcegraph</title>
+</head>
+<body>
+	<div class="error-page">
+		<h1>
+			<span class="status-code">{{.StatusCode}}</span>
+			<span class="status-text">{{.StatusText}}</span>
+		</h1>
+		{{if .Error}}
+			<pre class="error">{{.Error}}</pre>
+		{{end}}
+		<hr />
+		<p>Sorry, there's been a problem. Please <a href="mailto:support@sourcegraph.com">contact us</a> and include the error ID: <strong>{{.ErrorID}}</strong></p>
+	</div>
+</body>
+</html>
