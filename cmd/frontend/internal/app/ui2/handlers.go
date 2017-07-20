@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -53,12 +54,14 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return renderTemplate(w, "repo.html", &struct {
+		AssetURL string
 		Repo     *sourcegraph.Repo
 		RevSpec  sourcegraph.RepoRevSpec
 		TreeView *treeView
 	}{
-		Repo:    repo,
-		RevSpec: revSpec,
+		AssetURL: assets.URL("/").String(),
+		Repo:     repo,
+		RevSpec:  revSpec,
 		TreeView: &treeView{
 			RepoURI: repo.URI,
 			Dir:     dir,
@@ -86,12 +89,14 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return renderTemplate(w, "tree.html", &struct {
+		AssetURL string
 		Repo     *sourcegraph.Repo
 		RevSpec  sourcegraph.RepoRevSpec
 		TreeView *treeView
 	}{
-		Repo:    repo,
-		RevSpec: revSpec,
+		AssetURL: assets.URL("/").String(),
+		Repo:     repo,
+		RevSpec:  revSpec,
 		TreeView: &treeView{
 			RepoURI: repo.URI,
 			Dir:     dir,
@@ -119,10 +124,12 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return renderTemplate(w, "blob.html", &struct {
+		AssetURL       string
 		Repo           *sourcegraph.Repo
 		RevSpec        sourcegraph.RepoRevSpec
 		Path, Contents string
 	}{
+		AssetURL: assets.URL("/").String(),
 		Repo:     repo,
 		RevSpec:  revSpec,
 		Path:     path,
