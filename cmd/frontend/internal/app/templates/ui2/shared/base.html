@@ -5,6 +5,7 @@
 	<meta charset="utf-8">
 	<title>{{template "Title" .}} - Sourcegraph</title>
 	<script src="{{.AssetURL}}/scripts/app.bundle.js"></script>
+	<script>window.context = {{.Context}}</script>
 </head>
 
 <body>{{template "Body" .}}</body>
