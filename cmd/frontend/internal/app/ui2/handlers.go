@@ -3,6 +3,8 @@ package ui2
 import (
 	"net/http"
 	"os"
+	"path"
+	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -117,6 +119,12 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
+// blobView is the data structure shared/blobview.html expects.
+type blobView struct {
+	Path, Name string
+	Lines      []string
+}
+
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	common, err := newCommon(r)
 	if err != nil {
@@ -128,18 +136,21 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	path := mux.Vars(r)["Path"]
-	file, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), path)
+	fp := mux.Vars(r)["Path"]
+	file, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), fp)
 	if err != nil {
 		return err
 	}
 
 	return renderTemplate(w, "blob.html", &struct {
 		*Common
-		Path, Contents string
+		BlobView *blobView
 	}{
-		Common:   common,
-		Path:     path,
-		Contents: string(file),
+		Common: common,
+		BlobView: &blobView{
+			Path:  fp,
+			Name:  path.Base(fp),
+			Lines: strings.Split(string(file), "\n"),
+		},
 	})
 }

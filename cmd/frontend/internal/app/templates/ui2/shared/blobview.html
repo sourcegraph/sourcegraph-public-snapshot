@@ -1,0 +1,11 @@
+<hr />
+<h2>{{.Name}}</h2>
+<table style="width: 100%; border-collapse: collapse">
+	{{range $lineNumber, $line := .Lines}}
+		<tr>
+			<td>{{add $lineNumber 1}}</td>
+			<td><pre style="margin: 2px">{{$line}}</pre></td> 
+		</tr>
+	{{end}}
+</table>
+<hr />
