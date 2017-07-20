@@ -22,6 +22,9 @@ var funcMap = template.FuncMap{
 	"url": func(v ...string) string {
 		return urlTo(v[0], v[1:]...).String()
 	},
+	"add": func(a, b int) int {
+		return a + b
+	},
 }
 
 var (
