@@ -1,0 +1,13 @@
+{{define "Title"}}Blob{{end}}
+
+{{define "Body"}}
+<div class="home-page">
+	<h1>Blob: {{.Path}}</h1>
+	<hr />
+	<pre>{{.Contents}}</pre>
+	<hr />
+	<p>Nothing to see here, <a href="/">go home</a></p>
+</div>
+{{end}}
+
+{{template "base.html" .}}

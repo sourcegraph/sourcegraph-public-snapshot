@@ -1,0 +1,14 @@
+{{define "Title"}}Home{{end}}
+
+{{define "Body"}}
+<div class="home-page">
+	<h1>WIP</h1>
+	<p>Please ignore this page for now and manually hack the repo into the URL :)</p>
+	<p>repo view: <a href="/github.com/gorilla/mux">/github.com/gorilla/mux</a></p>
+	<p>tree view: <a href="/github.com/gorilla/mux/-/tree">/github.com/gorilla/mux/-/tree</a></p>
+	<p>blob view: <a href="/github.com/gorilla/mux/-/blob/mux.go">/github.com/gorilla/mux/-/blob/mux.go</a></p>
+	<p>error view: <a href="/__errorTest?nodebug=true&error=theerror&status=500">/__errorTest?nodebug=true&error=theerror&status=500</a></p>
+</div>
+{{end}}
+
+{{template "base.html" .}}
