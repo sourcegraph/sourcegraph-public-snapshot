@@ -1,0 +1,39 @@
+{
+    "name": "sourcegraph",
+    "version": "0.0.1",
+    "description": "Sourcegraph",
+    "scripts": {
+        "dev": "NODE_ENV=development webpack --config webpack.config.js --progress --profile --colors --watch",
+        "build": "NODE_ENV=production webpack --config webpack.config.js --progress --profile --colors",
+        "fmt": "./node_modules/.bin/tsfmt -r",
+        "fmt-check": "./node_modules/.bin/tsfmt --verify"
+    },
+    "author": "John Rothfels <john@sourcegraph.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/deep-equal": "^1.0.0",
+        "@types/lodash": "^4.14.38",
+        "@types/marked": "^0.0.28",
+        "@types/react": "^0.14.47",
+        "@types/react-dom": "^0.14.18",
+        "@types/urijs": "^1.15.33",
+        "ts-loader": "^2.1.0",
+        "tslint": "^5.5.0",
+        "typescript": "^2.3.3",
+        "typescript-formatter": "^4.0.1",
+        "webpack": "^3.0.0"
+    },
+    "dependencies": {
+        "@sourcegraph/rxjs": "^5.4.0",
+        "deep-equal": "^1.0.1",
+        "highlight.js": "^9.12.0",
+        "immutability-helper": "^2.1.1",
+        "lodash": "^4.11.2",
+        "marked": "^0.3.6",
+        "react": "^0.14.7",
+        "react-dom": "^0.14.7",
+        "react-icon-base": "^2.0.0",
+        "urijs": "^1.18.10",
+        "whatwg-fetch": "^2.0.3"
+    }
+}
