@@ -7,7 +7,7 @@ const tooltipCache: { [key: string]: TooltipData } = {};
 const j2dCache = {};
 const referencesCache = {};
 
-const sourcegraphUrl = "https://sourcegraph.com";
+const sourcegraphUrl = "http://localhost:3080";
 
 interface LSPRequest {
 	method: string;
@@ -152,8 +152,8 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
 			},
 			position: {
-				character: col - 1,
-				line: line - 1,
+				character: col,
+				line: line,
 			},
 		},
 		context: {

@@ -1,5 +1,4 @@
 import { fetchReferences } from "app/backend/lsp";
-import { CloseIcon } from "app/components/Icons";
 import { ReferencesState, setReferences, store } from "app/references/store";
 import { Reference } from "app/util/types";
 import * as React from "react";
@@ -55,7 +54,7 @@ export class ReferencesWidget extends React.Component<{}, ReferencesState> {
 				<div style={{ flex: 1 }}>
 					{this.state.context.coords.word}
 				</div>
-				<CloseIcon onClick={() => setReferences({ ...store.getValue, docked: false })} />
+				<div onClick={() => setReferences({ ...store.getValue, docked: false })}>X</div>
 			</div>
 			{
 				this.state.data && this.state.data.references &&

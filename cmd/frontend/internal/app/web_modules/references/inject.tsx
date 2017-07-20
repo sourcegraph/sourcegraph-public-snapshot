@@ -14,7 +14,7 @@ function createAppContainerIfNotExists(tag: string): HTMLElement | undefined {
 	return el;
 }
 
-export function injectGitHub(): void {
+export function injectReferencesWidget(): void {
 	const widgetContainer = createAppContainerIfNotExists("div") as HTMLElement;
 	if (widgetContainer) {
 		widgetContainer.style.position = "fixed";

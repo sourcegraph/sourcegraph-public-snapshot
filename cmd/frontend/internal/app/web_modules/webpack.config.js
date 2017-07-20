@@ -9,18 +9,13 @@ if (process.env.NODE_ENV === 'production') {
             compressor: {
                 warnings: false
             }
-        })
+        }),
     ];
 } else {
-    plugins = [new webpack.NoErrorsPlugin()]
+    plugins = [
+        new webpack.NoEmitOnErrorsPlugin(),
+    ]
 }
-
-// define process.env.NODE_ENV in JS bundle
-plugins.push(new webpack.DefinePlugin({
-    'process.env': {
-        NODE_ENV: process.env.NODE_ENV,
-    }
-}))
 
 var devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-source-map';
 
@@ -38,7 +33,7 @@ module.exports = {
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
         alias: {
-            sourcegraph: path.resolve(__dirname),
+            app: path.resolve(__dirname),
         }
     },
     module: {

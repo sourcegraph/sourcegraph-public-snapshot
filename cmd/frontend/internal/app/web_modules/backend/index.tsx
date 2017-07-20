@@ -1,7 +1,7 @@
 import { doFetch as fetch } from "app/backend/xhr";
 import * as util from "app/util";
 
-const sourcegraphUrl = "https://sourcegraph.com";
+const sourcegraphUrl = "http://localhost:3080";
 
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
 
