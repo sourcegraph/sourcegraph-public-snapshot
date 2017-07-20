@@ -24,7 +24,7 @@ import (
 
 const (
 	routeHome       = "home"
-	routeRepoOrRoot = "repo-or-root"
+	routeRepoOrMain = "repo-or-main" // see newRouter comment for details
 	routeTree       = "tree"
 	routeBlob       = "blob"
 
@@ -48,9 +48,14 @@ func newRouter() *mux.Router {
 	// home
 	r.Path("/").Methods("GET").Name(routeHome)
 
-	// repo-or-root
+	// repo-or-main
+	//
+	// This handles either a repo like 'sourcegraph.com/github.com/foo/bar' OR
+	// a main page if the path is not a repo. For example, 'sourcegraph.com/about'
+	// will be picked up by this handler. Repositories always get priority and,
+	// if the repository doesn't exist, the request is directed to about.sourcegraph.com.
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepoOrRoot)
+	r.Path(repoRevPath).Methods("GET").Name(routeRepoOrMain)
 
 	// tree
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
@@ -65,7 +70,7 @@ func init() {
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
 	serveRepoHandler := handler(serveRepo)
-	router.Get(routeRepoOrRoot).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router.Get(routeRepoOrMain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if handlerutil.DebugMode && r.URL.Path == "/__errorTest" {
 			handler(serveErrorTest).ServeHTTP(w, r)
