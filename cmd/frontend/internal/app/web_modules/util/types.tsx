@@ -30,3 +30,19 @@ export interface RepoRevSpec {
 	isDelta: boolean;
 	isBase: boolean;
 }
+
+export interface CodeCell {
+	cell: HTMLElement;
+	eventHandler: HTMLElement;
+	line: number;
+	isAddition?: boolean; // for diff views
+	isDeletion?: boolean; // for diff views
+}
+
+export interface ParsedURL {
+	uri?: string;
+	rev?: string;
+	path?: string;
+}
+
+export interface SourcegraphURL extends ParsedURL { }

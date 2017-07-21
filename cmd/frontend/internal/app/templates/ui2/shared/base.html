@@ -4,10 +4,28 @@
 <head>
 	<meta charset="utf-8">
 	<title>{{template "Title" .}} - Sourcegraph</title>
+	<link rel="stylesheet" href="{{.AssetURL}}/scripts/highlight.css">
 	<script src="{{.AssetURL}}/scripts/app.bundle.js"></script>
-	<script>window.context = {{.Context}}</script>
+	<script>
+		window.context = {{.Context }}
+	</script>
 </head>
 
-<body>{{template "Body" .}}</body>
+<body>
+	{{template "Body" .}}
+	<script>
+		addEventListener("DOMContentLoaded", function () {
+			var codeCells = document.querySelectorAll(".code-cell");
+			var worker = new Worker("{{.AssetURL}}/scripts/highlighter.bundle.js");
+			worker.onmessage = function (event) {
+				codeCells[event.data.index].innerHTML = event.data.innerHtml;
+			}
+			for (var i = 0; i < codeCells.length; ++i) {
+				worker.postMessage({ textContent: codeCells[i].textContent, index: i });
+			}
+		})
+	</script>
+
+</body>
 
 </html>

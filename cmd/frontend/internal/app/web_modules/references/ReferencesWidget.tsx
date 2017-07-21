@@ -1,3 +1,4 @@
+import { fetchDependencyReferences } from "app/backend";
 import { fetchReferences } from "app/backend/lsp";
 import { ReferencesState, setReferences, store } from "app/references/store";
 import { Reference } from "app/util/types";
@@ -39,10 +40,18 @@ export class ReferencesWidget extends React.Component<{}, ReferencesState> {
 				this.setState({ ...store.getValue(), data: { references: res } });
 			}
 		});
+		// fetchDependencyReferences(context.repoRevSpec.repoURI, context.repoRevSpec.rev, context.path, context.coords.line, context.coords.char).then((res) => {
+		// 	console.log("got xdendency references", res);
+		// });
 	}
 
 	getRangeString(ref: Reference): string {
 		return `${ref.range.start.line}:${ref.range.start.character}-${ref.range.end.line}:${ref.range.end.character}`;
+	}
+
+	getRefURL(ref: Reference): string {
+		const uri = URI.parse(ref.uri);
+		return `http://localhost:3080/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line}`;
 	}
 
 	render(): JSX.Element | null {
@@ -59,7 +68,7 @@ export class ReferencesWidget extends React.Component<{}, ReferencesState> {
 			{
 				this.state.data && this.state.data.references &&
 				this.state.data.references.map((ref, i) => <div key={i} style={{ padding: "5px", borderBottom: "1px solid #e1e4e8" }}>
-					{`${URI.parse(ref.uri).fragment} @ ${this.getRangeString(ref)}`}
+					<a href={this.getRefURL(ref)}>{`${URI.parse(ref.uri).fragment} @ ${this.getRangeString(ref)}`}</a>
 				</div>)
 			}
 		</div>;

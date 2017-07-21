@@ -22,6 +22,7 @@ var devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-
 module.exports = {
     entry: {
         app: path.join(__dirname, 'app.tsx'),
+        highlighter: path.join(__dirname, 'highlighter.tsx'),
     },
     output: {
         path: path.join(__dirname, '../../../../../ui/assets/scripts'),
