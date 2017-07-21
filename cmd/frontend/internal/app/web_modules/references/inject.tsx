@@ -18,14 +18,14 @@ export function injectReferencesWidget(): void {
 	const widgetContainer = createAppContainerIfNotExists("div") as HTMLElement;
 	if (widgetContainer) {
 		widgetContainer.style.position = "fixed";
-		widgetContainer.style.backgroundColor = "#fafbfc";
+		widgetContainer.style.backgroundColor = "#070A0D";
 		widgetContainer.style.width = "100%";
 		widgetContainer.style.height = "350px";
 		widgetContainer.style.left = "0px";
 		widgetContainer.style.top = `calc(100vh - 350px)`;
 		widgetContainer.style.visibility = "hidden";
 		widgetContainer.style.overflow = "auto";
-		widgetContainer.style.borderTop = "1px solid #e1e4e8";
+		widgetContainer.style.borderTop = "1px solid #2A3A51";
 		document.body.appendChild(widgetContainer);
 
 		store.subscribe((state) => {

@@ -19,6 +19,12 @@ let moreContext: HTMLElement;
 
 const sourcegraphUrl = "http://localhost:3080";
 
+const searchIconSVG = '<svg width="12px" height="12px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path13_fill" d="M 4.75021 4.65905e-06C 7.36999 -0.00361534 9.49667 2.1172 9.50027 4.73698C 9.50167 5.7595 9.17264 6.7551 8.5622 7.5754L 11.1265 9.74432C 11.5382 10.0957 11.5872 10.7144 11.2358 11.1261C 10.8844 11.5379 10.2657 11.5868 9.85399 11.2355C 9.81473 11.202 9.77819 11.1654 9.74467 11.1261L 7.5752 8.56228C 5.46856 10.1236 2.49507 9.68156 0.933725 7.5749C -0.627615 5.46824 -0.185555 2.49476 1.92111 0.933425C 2.73957 0.326825 3.73145 -0.000435341 4.75021 4.65905e-06ZM 4.75021 8.5C 6.82127 8.5 8.50021 6.82106 8.50021 4.75C 8.50021 2.67894 6.82127 1 4.75021 1C 2.67915 1 1.00021 2.67894 1.00021 4.75C 1.00023 6.82106 2.67915 8.49998 4.75021 8.49998L 4.75021 8.5Z"/></svg>';
+
+const referencesIconSVG = '<svg width="12px" height="8px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path15_fill" d="M 6.00625 8C 2.33125 8 0.50625 5.075 0.05625 4.225C -0.01875 4.075 -0.01875 3.9 0.05625 3.775C 0.50625 2.925 2.33125 0 6.00625 0C 9.68125 0 11.5063 2.925 11.9563 3.775C 12.0312 3.925 12.0312 4.1 11.9563 4.225C 11.5063 5.075 9.68125 8 6.00625 8ZM 6.00625 1.25C 4.48125 1.25 3.25625 2.475 3.25625 4C 3.25625 5.525 4.48125 6.75 6.00625 6.75C 7.53125 6.75 8.75625 5.525 8.75625 4C 8.75625 2.475 7.53125 1.25 6.00625 1.25ZM 6.00625 5.75C 5.03125 5.75 4.25625 4.975 4.25625 4C 4.25625 3.025 5.03125 2.25 6.00625 2.25C 6.98125 2.25 7.75625 3.025 7.75625 4C 7.75625 4.975 6.98125 5.75 6.00625 5.75Z"/></svg>';
+
+const definitionIconSVG = '<svg width="11px" height="9px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path10_fill" d="M 6.325 8.4C 6.125 8.575 5.8 8.55 5.625 8.325C 5.55 8.25 5.5 8.125 5.5 8L 5.5 6C 2.95 6 1.4 6.875 0.825 8.7C 0.775 8.875 0.6 9 0.425 9C 0.2 9 -4.44089e-16 8.8 -4.44089e-16 8.575C -4.44089e-16 8.575 -4.44089e-16 8.575 -4.44089e-16 8.55C 0.125 4.825 1.925 2.675 5.5 2.5L 5.5 0.5C 5.5 0.225 5.725 8.88178e-16 6 8.88178e-16C 6.125 8.88178e-16 6.225 0.05 6.325 0.125L 10.825 3.875C 11.025 4.05 11.075 4.375 10.9 4.575C 10.875 4.6 10.85 4.625 10.825 4.65L 6.325 8.4Z"/></svg>';
+
 /**
  * createTooltips initializes the DOM elements used for the hover
  * tooltip and "Loading..." text indicator, adding the former
@@ -46,10 +52,16 @@ export function createTooltips(): void {
 	Object.assign(moreContext.style, styles.tooltipMoreActions);
 	moreContext.appendChild(document.createTextNode("Click for more actions"));
 
+	let definitionIcon = document.createElement("svg");
+	definitionIcon.innerHTML = definitionIconSVG;
+	Object.assign(definitionIcon.style, styles.definitionIcon);
+
 	j2dAction = document.createElement("A") as HTMLAnchorElement;
+	j2dAction.appendChild(definitionIcon);
 	j2dAction.appendChild(document.createTextNode("Go to definition"));
 	j2dAction.className = `btn btn-sm BtnGroup-item`;
 	Object.assign(j2dAction.style, styles.tooltipAction);
+	Object.assign(j2dAction.style, styles.tooltipActionNotLast);
 	j2dAction.onclick = (e) => {
 		e.preventDefault();
 		const { data, context } = store.getValue();
@@ -67,9 +79,15 @@ export function createTooltips(): void {
 		}
 	};
 
+	let referencesIcon = document.createElement("svg");
+	referencesIcon.innerHTML = referencesIconSVG;
+	Object.assign(referencesIcon.style, styles.referencesIcon);
+
 	findRefsAction = document.createElement("A") as HTMLAnchorElement;
+	findRefsAction.appendChild(referencesIcon);
 	findRefsAction.appendChild(document.createTextNode("Find all references"));
 	Object.assign(findRefsAction.style, styles.tooltipAction);
+	Object.assign(findRefsAction.style, styles.tooltipActionNotLast);
 	findRefsAction.className = `btn btn-sm BtnGroup-item`;
 	findRefsAction.onclick = (e) => {
 		e.preventDefault();
@@ -91,7 +109,12 @@ export function createTooltips(): void {
 		}
 	};
 
+	let searchIcon = document.createElement("svg");
+	searchIcon.innerHTML = searchIconSVG;
+	Object.assign(searchIcon.style, styles.searchIcon);
+
 	searchAction = document.createElement("A") as HTMLAnchorElement;
+	searchAction.appendChild(searchIcon);
 	searchAction.appendChild(document.createTextNode("Search..."));
 	Object.assign(searchAction.style, styles.tooltipAction);
 	searchAction.className = `btn btn-sm BtnGroup-item`;
