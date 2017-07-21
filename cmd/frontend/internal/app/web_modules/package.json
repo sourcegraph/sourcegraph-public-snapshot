@@ -33,6 +33,7 @@
     "lodash": "^4.11.2",
     "marked": "^0.3.6",
     "node-sass": "^4.5.3",
+    "postcss-loader": "^2.0.6",
     "prop-types": "^15.5.10",
     "react": "^0.14.7",
     "react-dom": "^0.14.7",

@@ -57,7 +57,7 @@ module.exports = {
         },{
             // sass / scss loader for webpack
             test: /\.(css|sass|scss)$/,
-            loader: ExtractTextPlugin.extract(['css-loader', 'sass-loader'])
+            loader: ExtractTextPlugin.extract(['css-loader', 'sass-loader', 'postcss-loader'])
         }]
     }
 };
