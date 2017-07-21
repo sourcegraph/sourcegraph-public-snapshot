@@ -1,11 +1,9 @@
 {{define "Title"}}Tree{{end}}
 
 {{define "Body"}}
-<div class="home-page">
-	<h1>Files for {{.Repo.URI}} @ {{.RevSpec.CommitID}}</h1>
-	<p>{{.Repo.Description}}</p>
+<div class="tree">
+	{{template "navbar.html"}}
 	{{template "treeview.html" .TreeView}}
-	<p><a href="/">go home</a></p>
 </div>
 {{end}}
 

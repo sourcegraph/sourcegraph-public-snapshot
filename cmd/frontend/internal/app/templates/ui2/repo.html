@@ -1,11 +1,10 @@
 {{define "Title"}}{{.Repo.URI}}{{end}}
 
 {{define "Body"}}
-<div class="home-page">
-	<h1>{{.Repo.URI}} @ {{.RevSpec.CommitID}}</h1>
-	<p>{{.Repo.Description}}</p>
+<div class="repo">
+	{{template "navbar.html"}}
+	<h3>{{.RepoShortName}} - <em>"{{.Repo.Description}}"</em></h3>
 	{{template "treeview.html" .TreeView}}
-	<p><a href="/">go home</a></p>
 </div>
 {{end}}
 

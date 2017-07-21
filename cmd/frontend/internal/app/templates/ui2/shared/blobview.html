@@ -1,11 +1,10 @@
-<hr />
-<h2>{{.Name}}</h2>
-<table style="width: 100%; border-collapse: collapse">
-	{{range $lineNumber, $line := .Lines}}
-	<tr>
-		<td>{{add $lineNumber 1}}</td>
-		<td class="code-cell" style="font-family: monospace; white-space: pre;">{{$line}}</td>
-	</tr>
-	{{end}}
-</table>
-<hr />
+<div class="blobview">
+	<table>
+		{{range $lineNumber, $line := .Lines}}
+			<tr>
+				<td class="linenumber">{{add $lineNumber 1}}</td>
+				<td class="code-cell" style="font-family: monospace; white-space: pre;">{{$line}}</td> 
+			</tr>
+		{{end}}
+	</table>
+</div>

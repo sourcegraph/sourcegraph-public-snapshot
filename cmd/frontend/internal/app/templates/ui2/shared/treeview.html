@@ -1,5 +1,5 @@
-<hr />
-{{range .Files}}
-	<p><a href="{{$.URL .}}">{{.Name}}</a></p>
-{{end}}
-<hr />
+<div class="treeview">
+	{{range .Files}}
+		<a href="{{$.URL .}}"><span>{{.Name}}</span></a>
+	{{end}}
+</div>

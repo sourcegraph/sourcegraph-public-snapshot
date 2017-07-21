@@ -19,10 +19,11 @@ import (
 // TODO(slimsag): tests for everything in this file.
 
 type Common struct {
-	Context  jscontext.JSContext
-	AssetURL string
-	Repo     *sourcegraph.Repo
-	RevSpec  sourcegraph.RepoRevSpec
+	Context       jscontext.JSContext
+	AssetURL      string
+	RepoShortName string
+	Repo          *sourcegraph.Repo
+	RevSpec       sourcegraph.RepoRevSpec
 }
 
 func newCommon(r *http.Request) (*Common, error) {
@@ -33,11 +34,13 @@ func newCommon(r *http.Request) (*Common, error) {
 	if err != nil {
 		return nil, err
 	}
+	shortName := strings.TrimPrefix(repo.URI, "github.com/")
 	return &Common{
-		Context:  jscontext.NewJSContextFromRequest(r),
-		AssetURL: assets.URL("/").String(),
-		Repo:     repo,
-		RevSpec:  revSpec,
+		Context:       jscontext.NewJSContextFromRequest(r),
+		AssetURL:      assets.URL("/").String(),
+		RepoShortName: shortName,
+		Repo:          repo,
+		RevSpec:       revSpec,
 	}, nil
 }
 
