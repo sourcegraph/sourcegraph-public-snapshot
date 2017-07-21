@@ -56,7 +56,7 @@ module.exports = {
             }),
         },{
             // sass / scss loader for webpack
-            test: /\.(sass|scss)$/,
+            test: /\.(css|sass|scss)$/,
             loader: ExtractTextPlugin.extract(['css-loader', 'sass-loader'])
         }]
     }
