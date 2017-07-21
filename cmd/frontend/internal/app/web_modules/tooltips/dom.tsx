@@ -47,7 +47,7 @@ export function createTooltips(): void {
 	moreContext.appendChild(document.createTextNode("Click for more actions"));
 
 	j2dAction = document.createElement("A") as HTMLAnchorElement;
-	j2dAction.appendChild(document.createTextNode("Go to Definition"));
+	j2dAction.appendChild(document.createTextNode("Go to definition"));
 	j2dAction.className = `btn btn-sm BtnGroup-item`;
 	Object.assign(j2dAction.style, styles.tooltipAction);
 	j2dAction.onclick = (e) => {
@@ -68,7 +68,7 @@ export function createTooltips(): void {
 	};
 
 	findRefsAction = document.createElement("A") as HTMLAnchorElement;
-	findRefsAction.appendChild(document.createTextNode("Find References"));
+	findRefsAction.appendChild(document.createTextNode("Find all references"));
 	Object.assign(findRefsAction.style, styles.tooltipAction);
 	findRefsAction.className = `btn btn-sm BtnGroup-item`;
 	findRefsAction.onclick = (e) => {
@@ -92,7 +92,7 @@ export function createTooltips(): void {
 	};
 
 	searchAction = document.createElement("A") as HTMLAnchorElement;
-	searchAction.appendChild(document.createTextNode("Search"));
+	searchAction.appendChild(document.createTextNode("Search..."));
 	Object.assign(searchAction.style, styles.tooltipAction);
 	searchAction.className = `btn btn-sm BtnGroup-item`;
 	searchAction.onclick = () => {
