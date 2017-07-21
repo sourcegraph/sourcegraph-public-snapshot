@@ -2,3 +2,6 @@ coverage:
   status:
     project: off
     patch: off
+comment:
+  require_changes: yes
+  layout: files
