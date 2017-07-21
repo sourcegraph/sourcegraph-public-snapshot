@@ -26,6 +26,16 @@ type Common struct {
 	RevSpec       sourcegraph.RepoRevSpec
 }
 
+// repoShortName trims the first path element of the given repo uri if it has
+// at least two path components.
+func repoShortName(uri string) string {
+	split := strings.Split(uri, "/")
+	if len(split) < 2 {
+		return uri
+	}
+	return strings.Join(split[1:], "/")
+}
+
 func newCommon(r *http.Request) (*Common, error) {
 	// TODO(slimsag): handle auto cloning repositories here?
 	//
@@ -34,11 +44,10 @@ func newCommon(r *http.Request) (*Common, error) {
 	if err != nil {
 		return nil, err
 	}
-	shortName := strings.TrimPrefix(repo.URI, "github.com/")
 	return &Common{
 		Context:       jscontext.NewJSContextFromRequest(r),
 		AssetURL:      assets.URL("/").String(),
-		RepoShortName: shortName,
+		RepoShortName: repoShortName(repo.URI),
 		Repo:          repo,
 		RevSpec:       revSpec,
 	}, nil
