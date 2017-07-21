@@ -19,10 +19,21 @@ import (
 // TODO(slimsag): tests for everything in this file.
 
 type Common struct {
-	Context  jscontext.JSContext
-	AssetURL string
-	Repo     *sourcegraph.Repo
-	RevSpec  sourcegraph.RepoRevSpec
+	Context       jscontext.JSContext
+	AssetURL      string
+	RepoShortName string
+	Repo          *sourcegraph.Repo
+	RevSpec       sourcegraph.RepoRevSpec
+}
+
+// repoShortName trims the first path element of the given repo uri if it has
+// at least two path components.
+func repoShortName(uri string) string {
+	split := strings.Split(uri, "/")
+	if len(split) < 2 {
+		return uri
+	}
+	return strings.Join(split[1:], "/")
 }
 
 func newCommon(r *http.Request) (*Common, error) {
@@ -34,10 +45,11 @@ func newCommon(r *http.Request) (*Common, error) {
 		return nil, err
 	}
 	return &Common{
-		Context:  jscontext.NewJSContextFromRequest(r),
-		AssetURL: assets.URL("/").String(),
-		Repo:     repo,
-		RevSpec:  revSpec,
+		Context:       jscontext.NewJSContextFromRequest(r),
+		AssetURL:      assets.URL("/").String(),
+		RepoShortName: repoShortName(repo.URI),
+		Repo:          repo,
+		RevSpec:       revSpec,
 	}, nil
 }
 

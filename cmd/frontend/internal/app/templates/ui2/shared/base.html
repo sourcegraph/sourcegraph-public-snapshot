@@ -1,17 +1,31 @@
 <!doctype html>
-<html lang="en">
-
+<html lang="en" class="base">
 <head>
 	<meta charset="utf-8">
 	<title>{{template "Title" .}} - Sourcegraph</title>
-	<link rel="stylesheet" href="{{.AssetURL}}/scripts/highlight.css">
 	<script src="{{.AssetURL}}/scripts/app.bundle.js"></script>
 	<script>
 		window.context = {{.Context }}
 	</script>
+	<link rel="stylesheet" href="{{.AssetURL}}/scripts/ui/assets/dist/style.bundle.css">
+	<script>window.context = {{.Context}}</script>
 </head>
-
 <body>
+	<div class="header">
+		<!-- Logo -->
+		<a href="/"><span class="logo"></span></a>
+
+		<!-- Search -->
+		<span class="search">
+			<span class="icon">
+				<svg height="12" width="12">
+				<path fill="#93A9C8" xmlns="http://www.w3.org/2000/svg" id="path6_fill" d="M 4.75021 4.65905e-06C 7.36999 -0.00361534 9.49666 2.1172 9.50026 4.73698C 9.50166 5.7595 9.17264 6.7551 8.5622 7.5754L 11.1265 9.74432C 11.5382 10.0957 11.5872 10.7144 11.2358 11.1261C 10.8844 11.5379 10.2657 11.5868 9.85399 11.2355C 9.81473 11.202 9.77819 11.1654 9.74467 11.1261L 7.5752 8.56228C 5.46856 10.1236 2.49507 9.68156 0.933725 7.5749C -0.627615 5.46824 -0.185555 2.49476 1.92111 0.933425C 2.73957 0.326825 3.73145 -0.000435341 4.75021 4.65905e-06ZM 4.75021 8.5C 6.82127 8.5 8.5002 6.82106 8.5002 4.75C 8.5002 2.67894 6.82127 1 4.75021 1C 2.67915 1 1.00021 2.67894 1.00021 4.75C 1.00023 6.82106 2.67915 8.49998 4.75021 8.49998L 4.75021 8.5Z"/>
+				</svg>
+			</span>
+			<input type="text" placeholder="Search...">
+		</span>
+	</div>
+	<script src="{{.AssetURL}}/scripts/app.bundle.js"></script>
 	{{template "Body" .}}
 	<script>
 		addEventListener("DOMContentLoaded", function () {
@@ -25,7 +39,5 @@
 			}
 		})
 	</script>
-
 </body>
-
 </html>

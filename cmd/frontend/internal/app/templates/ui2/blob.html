@@ -1,10 +1,9 @@
 {{define "Title"}}Blob{{end}}
 
 {{define "Body"}}
-<div class="home-page">
-	<h1>Blob: {{.Repo.URI}} - {{.BlobView.Path}}</h1>
+<div class="blob">
+	{{template "navbar.html"}}
 	{{template "blobview.html" .BlobView}}
-	<p><a href="/">go home</a></p>
 </div>
 {{end}}
 

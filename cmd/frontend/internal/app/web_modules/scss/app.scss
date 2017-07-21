@@ -1,0 +1,218 @@
+@import "libs/highlight";
+/*
+	Styles for Go HTML template files only; all React code should use inline
+	style tags.
+
+	Every style here should be under a selector with the class name being the
+	file name, e.g. ".blobview" for the "shared/blobview.html" template.
+*/
+
+.base {
+	// reset
+	* { margin:0; padding:0; box-sizing:border-box; }
+
+	font-family: "system";
+
+	>body {
+		background-color: #151D28;
+		color: #31445E;
+		a {
+			outline: 0;
+			@extend .font-normal-grey;
+		}
+	}
+
+	.header {
+		background-color: rgb(35, 48, 67);
+		height: 48px;
+
+		>a {
+			outline: 0;
+		}
+		.logo {
+			display: inline-block;
+			float: left;
+			width: 24px;
+			height: 24px;
+			margin-left: 12px;
+			margin-top: 12px;
+
+			background-origin: content-box;
+			background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 124 127'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cpath fill='%23F96316' d='M35.942 16.276L63.528 117.12c1.854 6.777 8.85 10.768 15.623 8.912 6.778-1.856 10.765-8.854 8.91-15.63L60.47 9.555C58.615 2.78 51.62-1.212 44.847.645c-6.772 1.853-10.76 8.853-8.905 15.63z'/%3E%3Cpath fill='%23B200F8' d='M87.024 15.894L17.944 93.9c-4.66 5.26-4.173 13.303 1.082 17.964 5.255 4.66 13.29 4.174 17.95-1.084l69.08-78.005c4.66-5.26 4.173-13.3-1.082-17.962-5.257-4.664-13.294-4.177-17.95 1.08z'/%3E%3Cpath fill='%2300B4F2' d='M8.75 59.12l98.516 32.595c6.667 2.205 13.86-1.414 16.065-8.087 2.21-6.672-1.41-13.868-8.08-16.076L16.738 34.96c-6.67-2.207-13.86 1.412-16.066 8.085-2.204 6.672 1.416 13.87 8.08 16.075z'/%3E%3C/g%3E%3C/svg%3E") 50% no-repeat;		
+		}
+
+		.search {
+			display: inline-block;
+			float: left;
+			width: 248px;
+			height: 32px;
+			margin-top: 8px;
+			margin-left: 15px;
+
+			background-color: #151D28;
+
+			border-radius: 2px 2px 2px 2px;
+			border: 0px solid #000000;
+
+			>input {
+				display: inline-block;
+				float: left;
+				height: 32px;
+
+				color: #93A9C8;
+				background: none;
+				border: 0;
+				outline: none;
+			}
+			>input::placeholder, input:focus {
+				color: #93A9C8;
+			}
+
+			.icon {
+				display: inline-block;
+				float: left;
+				margin-left: 10px;
+				margin-right: 10px;
+				margin-top: 6.5px;
+				color: #93A9C8;
+			}
+		}
+	}
+}
+
+// Define the "system" font family
+//
+// See https://css-tricks.com/snippets/css/system-font-stack/
+@font-face {
+  font-family: system;
+  font-style: normal;
+  font-weight: 300;
+  src: local(".SFNSText-Light"), local(".HelveticaNeueDeskInterface-Light"), local(".LucidaGrandeUI"), local("Ubuntu Light"), local("Segoe UI Light"), local("Roboto-Light"), local("DroidSans"), local("Tahoma");
+}
+
+// usage: '@extend .font-capital-white;'
+.font-capital-white {
+	font-family: system;
+	font-weight: 600;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+	color: #FFFFFF;
+}
+
+// usage: '@extend .font-normal-grey'
+.font-normal-grey {
+	font-family: system;
+	font-weight: normal;
+	color: #93A9C8;
+}
+
+// usage: '@extend .font-white'
+.font-white {
+	font-family: system;
+	font-style: normal;
+	color: #FFFFFF;
+}
+
+// usage: '@extend .font-heavy-white'
+.font-heavy-white {
+	@extend .font-white;
+	font-weight: 600;
+}
+
+.blobview {
+	>table {
+		width: 100%;
+		border-collapse: collapse;
+		>tr>td {
+			padding: 0;
+			padding-top: .3em;
+
+			pre {
+				margin: 2px;
+			}
+		}
+		>tr>td:nth-child(1) { /* column of line number */
+			text-align: right;
+		}
+		>tr>td:nth-child(2) { /* column of code/text */
+			padding-left: 1em;
+		}
+	}
+}
+
+.treeview {
+	>a {
+		display: block;
+		padding: 1em;
+		text-decoration: none;
+	}
+	>a:hover {
+		background-color: #1862ab;
+	}
+}
+
+.navbar {
+	@extend .font-white;
+	font-size: .75em;
+	height: 48px;
+	border-bottom: 1px solid #233043;
+
+	.navigation {
+		.group-icon {
+			margin-top: 19.5px;
+			margin-left: 19.5px;
+			margin-right: 9px;
+			width: 9px;
+			height: 9px;
+		}
+
+		margin-right: 15px;
+		position: relative;
+		top: -2px;
+	}
+	.path {
+		.book-icon {
+			width: 10px;
+			height: 12px;
+			margin-right: 5px;
+		}
+
+		>span {
+			position: relative;
+			top: -2px;
+			>a {
+				text-decoration: none;
+				@extend .font-white;
+			}
+			>a:last-child {
+				@extend .font-heavy-white;
+			}
+		}
+	}
+}
+
+.blob {
+	
+}
+
+.error {
+	
+}
+
+.home {
+	
+}
+
+.repo {
+	>h3 {
+		@extend .font-normal-grey;
+		padding: 1em;
+		border-bottom: 1px solid #233043;
+		font-weight: bold;
+
+		>em {
+			font-weight: normal;
+			font-size: .8em;
+		}
+	}
+}
