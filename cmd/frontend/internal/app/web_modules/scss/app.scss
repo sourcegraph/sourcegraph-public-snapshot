@@ -121,20 +121,23 @@
 
 .blobview {
 	>table {
+		margin-top: 1.3em;
+		margin-bottom: 1.3em;
 		width: 100%;
 		border-collapse: collapse;
-		>tr>td {
+		.line-number, .code-cell {
 			padding: 0;
-			padding-top: .3em;
+			padding-top: .6em;
 
 			pre {
 				margin: 2px;
 			}
 		}
-		>tr>td:nth-child(1) { /* column of line number */
+		.line-number {
 			text-align: right;
+			font-size: .75em;
 		}
-		>tr>td:nth-child(2) { /* column of code/text */
+		.code-cell {
 			padding-left: 1em;
 		}
 	}
