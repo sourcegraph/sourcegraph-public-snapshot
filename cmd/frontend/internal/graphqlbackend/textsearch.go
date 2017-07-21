@@ -224,6 +224,10 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 				rev = *repoRev.Rev
 			}
 			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.Repo, rev, args.Query)
+			if ctx.Err() != nil {
+				// Our request has been canceled, we can just ignore searchRepo for this repo.
+				return
+			}
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit = limitHit || repoLimitHit
@@ -239,6 +243,10 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			}
 			if len(matches) > 0 {
 				flattened = append(flattened, matches...)
+			}
+			if len(flattened) > int(args.Query.FileMatchLimit) {
+				// We can stop collecting more results.
+				cancel()
 			}
 		}(*repoRev)
 	}
