@@ -160,6 +160,11 @@
 	height: 48px;
 	border-bottom: 1px solid #233043;
 
+	a, a.navigation, .path a {
+		text-decoration: none;
+		@extend .font-white;
+	}
+
 	.navigation {
 		.group-icon {
 			margin-top: 19.5px;
@@ -183,13 +188,45 @@
 		>span {
 			position: relative;
 			top: -2px;
-			>a {
-				text-decoration: none;
-				@extend .font-white;
-			}
 			>a:last-child {
 				@extend .font-heavy-white;
 			}
+		}
+	}
+
+	.right-pane {
+		display: inline-block;
+		height: 100%;
+		float: right;
+		margin-top: 13px;
+		.share {
+			.share-icon {
+				width: 9px;
+				height: 13px;
+				margin-left: 8px;
+				position: relative;
+				top: 2px;
+			}
+		}
+		.authorship {
+			.authorship-icon {
+				width: 14px;
+				height: 9px;
+				margin-left: 6px;
+			}
+			margin-left: 18px;
+		}
+		.github {
+			.github-icon {
+				width: 13px;
+				height: 14px;
+				margin-left: 6px;
+				position: relative;
+				top: 4px;
+			}
+
+			margin-right: 18px;
+			margin-left: 14px;
 		}
 	}
 }
