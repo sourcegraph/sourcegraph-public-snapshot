@@ -225,6 +225,14 @@ function updateTooltip(state: TooltipState): void {
 			Object.assign(tooltipDoc.style, styles.tooltipDoc);
 			tooltipDoc.innerHTML = marked(data.doc, { gfm: true, breaks: true, sanitize: true });
 			tooltip.insertBefore(tooltipDoc, moreContext);
+
+			// Handle scrolling ourselves so that scrolling to the bottom of
+			// the tooltip documentation does not cause the page to start
+			// scrolling (which is a very jarring experience).
+			tooltip.addEventListener("wheel", (e: WheelEvent) => {
+				e.preventDefault();
+				tooltipDoc.scrollTop += e.deltaY;
+			});
 		}
 	} else {
 		loadingTooltip.style.visibility = "visible";
