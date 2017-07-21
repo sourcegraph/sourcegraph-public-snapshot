@@ -120,6 +120,7 @@
 }
 
 .blobview {
+	font-family: MenloRegular;
 	>table {
 		margin-top: 1.3em;
 		margin-bottom: 1.3em;
@@ -139,6 +140,8 @@
 		}
 		.code-cell {
 			padding-left: 1em;
+			white-space: pre;
+			font-size: .75em;
 		}
 	}
 }
