@@ -2,8 +2,8 @@
 	<table>
 		{{range $lineNumber, $line := .Lines}}
 			<tr>
-				<td class="linenumber">{{add $lineNumber 1}}</td>
-				<td class="code-cell" style="font-family: monospace; white-space: pre;">{{$line}}</td> 
+				<td class="line-number">{{add $lineNumber 1}}</td>
+				<td class="code-cell">{{$line}}</td> 
 			</tr>
 		{{end}}
 	</table>

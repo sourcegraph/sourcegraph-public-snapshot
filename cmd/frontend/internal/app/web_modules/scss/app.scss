@@ -120,22 +120,28 @@
 }
 
 .blobview {
+	font-family: MenloRegular;
 	>table {
+		margin-top: 1.3em;
+		margin-bottom: 1.3em;
 		width: 100%;
 		border-collapse: collapse;
-		>tr>td {
+		.line-number, .code-cell {
 			padding: 0;
-			padding-top: .3em;
+			padding-top: .6em;
 
 			pre {
 				margin: 2px;
 			}
 		}
-		>tr>td:nth-child(1) { /* column of line number */
+		.line-number {
 			text-align: right;
+			font-size: .75em;
 		}
-		>tr>td:nth-child(2) { /* column of code/text */
+		.code-cell {
 			padding-left: 1em;
+			white-space: pre;
+			font-size: .75em;
 		}
 	}
 }
@@ -156,6 +162,11 @@
 	font-size: .75em;
 	height: 48px;
 	border-bottom: 1px solid #233043;
+
+	a, a.navigation, .path a {
+		text-decoration: none;
+		@extend .font-white;
+	}
 
 	.navigation {
 		.group-icon {
@@ -180,13 +191,45 @@
 		>span {
 			position: relative;
 			top: -2px;
-			>a {
-				text-decoration: none;
-				@extend .font-white;
-			}
 			>a:last-child {
 				@extend .font-heavy-white;
 			}
+		}
+	}
+
+	.right-pane {
+		display: inline-block;
+		height: 100%;
+		float: right;
+		margin-top: 13px;
+		.share {
+			.share-icon {
+				width: 9px;
+				height: 13px;
+				margin-left: 8px;
+				position: relative;
+				top: 2px;
+			}
+		}
+		.authorship {
+			.authorship-icon {
+				width: 14px;
+				height: 9px;
+				margin-left: 6px;
+			}
+			margin-left: 18px;
+		}
+		.github {
+			.github-icon {
+				width: 13px;
+				height: 14px;
+				margin-left: 6px;
+				position: relative;
+				top: 4px;
+			}
+
+			margin-right: 18px;
+			margin-left: 14px;
 		}
 	}
 }

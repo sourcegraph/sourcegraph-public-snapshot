@@ -1,93 +1,83 @@
 /*
-
-github.com style (c) Vasily Polovnyov <vast@whiteants.net>
-
-*/
+ * Visual Studio 2015 dark style
+ * Author: Nicolas LLOBERA <nllobera@gmail.com>
+ */
 
 .hljs {
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  color: #333;
-  background: #fafbfc;
+  color: #DCDCDC;
+}
+
+.hljs-keyword,
+.hljs-literal,
+.hljs-symbol,
+.hljs-name {
+  color: #569CD6;
+}
+.hljs-link {
+  color: #569CD6;
+  text-decoration: underline;
+}
+
+.hljs-built_in,
+.hljs-type {
+  color: #4EC9B0;
+}
+
+.hljs-number,
+.hljs-class {
+  color: #B8D7A3;
+}
+
+.hljs-string,
+.hljs-meta-string {
+  color: #D69D85;
+}
+
+.hljs-regexp,
+.hljs-template-tag {
+  color: #9A5334;
+}
+
+.hljs-subst,
+.hljs-function,
+.hljs-title,
+.hljs-params,
+.hljs-formula {
+  color: #DCDCDC;
 }
 
 .hljs-comment,
 .hljs-quote {
-  color: rgb(106, 115, 125);
+  color: #57A64A;
   font-style: italic;
 }
 
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-subst {
-  color: #333;
-  font-weight: bold;
-}
-
-.hljs-number,
-.hljs-literal,
-.hljs-variable,
-.hljs-template-variable,
-.hljs-tag .hljs-attr {
-  color: #008080;
-}
-
-.hljs-string,
 .hljs-doctag {
-  color: #d14;
+  color: #608B4E;
 }
 
-.hljs-title,
-.hljs-section,
-.hljs-selector-id {
-  color: rgb(215, 58, 73);
-  font-weight: bold;
+.hljs-meta,
+.hljs-meta-keyword,
+.hljs-tag {
+  color: #9B9B9B;
 }
 
-.hljs-subst {
-  font-weight: normal;
+.hljs-variable,
+.hljs-template-variable {
+  color: #BD63C5;
 }
 
-.hljs-type,
-.hljs-class .hljs-title {
-  color: rgb(111, 66, 193);
-  font-weight: bold;
-}
-
-.hljs-tag,
-.hljs-name,
-.hljs-attribute {
-  color: #000080;
-  font-weight: normal;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #009926;
-}
-
-.hljs-symbol,
-.hljs-bullet {
-  color: #990073;
-}
-
-.hljs-built_in,
+.hljs-attr,
+.hljs-attribute,
 .hljs-builtin-name {
-  color: rgb(0, 92, 197);
+  color: #9CDCFE;
 }
 
-.hljs-meta {
-  color: #333;
-  font-weight: bold;
-}
-
-.hljs-deletion {
-  background: #fdd;
-}
-
-.hljs-addition {
-  background: #dfd;
+.hljs-section {
+  color: gold;
 }
 
 .hljs-emphasis {
@@ -96,4 +86,29 @@ github.com style (c) Vasily Polovnyov <vast@whiteants.net>
 
 .hljs-strong {
   font-weight: bold;
+}
+
+/*.hljs-code {
+  font-family:'Monospace';
+}*/
+
+.hljs-bullet,
+.hljs-selector-tag,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #D7BA7D;
+}
+
+.hljs-addition {
+  background-color: #144212;
+  display: inline-block;
+  width: 100%;
+}
+
+.hljs-deletion {
+  background-color: #600;
+  display: inline-block;
+  width: 100%;
 }
