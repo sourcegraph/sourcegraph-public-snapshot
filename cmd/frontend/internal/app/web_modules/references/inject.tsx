@@ -29,6 +29,14 @@ export function injectReferencesWidget(): void {
 		widgetContainer.style.borderTop = `1px solid ${colors.borderColor}`;
 		document.body.appendChild(widgetContainer);
 
+		// Handle scrolling ourselves so that scrolling inside the widget does
+		// not cause the page to start scrolling (which is a very jarring
+		// experience).
+		widgetContainer.addEventListener("wheel", (e: WheelEvent) => {
+			e.preventDefault();
+			widgetContainer.scrollTop += e.deltaY;
+		});
+
 		store.subscribe((state) => {
 			widgetContainer.style.visibility = state.docked ? "visible" : "hidden";
 		});
