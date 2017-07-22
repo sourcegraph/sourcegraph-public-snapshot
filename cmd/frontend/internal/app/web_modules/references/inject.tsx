@@ -27,6 +27,7 @@ export function injectReferencesWidget(): void {
 		widgetContainer.style.visibility = "hidden";
 		widgetContainer.style.overflow = "auto";
 		widgetContainer.style.borderTop = `1px solid ${colors.borderColor}`;
+		widgetContainer.style.zIndex = "1000";
 		document.body.appendChild(widgetContainer);
 
 		// Handle scrolling ourselves so that scrolling inside the widget does
