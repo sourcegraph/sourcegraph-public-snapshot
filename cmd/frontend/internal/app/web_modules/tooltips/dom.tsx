@@ -59,6 +59,7 @@ export function createTooltips(): void {
 					// eventLogger.logJumpToDef({ ...getTooltipEventProperties(data, context), hasResolvedJ2D: Boolean(defUrl) });
 					if (defUrl) {
 						window.location.href = defUrl;
+						clearTooltip();
 						// const withModifierKey = isMouseEventWithModifierKey(e);
 						// openSourcegraphTab(defUrl, withModifierKey);
 					}

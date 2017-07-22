@@ -1,38 +1,55 @@
 import { injectReferencesWidget } from "app/references/inject";
-import { setReferences } from "app/references/store";
 import { addAnnotations } from "app/tooltips";
 import { parseURL } from "app/util";
 import { CodeCell } from "app/util/types";
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", () => {
 	injectReferencesWidget();
-	//do work
-	// setReferences({
-	// 	docked: true,
-	// 	context: {
-	// 		path: "mux.go",
-	// 		repoRevSpec: {
-	// 			repoURI: "github.com/gorilla/mux",
-	// 			rev: "ac112f7d75a0714af1bd86ab17749b31f7809640",
-	// 			isDelta: false,
-	// 			isBase: false,
-	// 		},
-	// 		coords: {
-	// 			line: 40,
-	// 			char: 26,
-	// 			word: "Handler",
-	// 		},
-	// 	},
-	// });
-
-	const cells = getCodeCellsForAnnotation();
 	const url = parseURL();
+	const hash = window.location.hash;
+	let line;
+	if (hash) {
+		const split = hash.split("#L");
+		if (split[1]) {
+			line = parseInt(split[1].split(":")[0], 10)
+		}
+	}
 	if (url.uri && url.rev && url.path) {
 		// blob view, add tooltips
 		// TODO(john): this won't work for empty (e.g. default branch) rev
+		const cells = getCodeCellsForAnnotation();
 		addAnnotations(url.path, { repoURI: url.uri, rev: url.rev, isBase: false, isDelta: false }, cells);
+		if (line) {
+			highlightAndScrollToLine(line, cells);
+		}
 	}
 });
+
+export function highlightAndScrollToLine(line: number, cells: CodeCell[]): void {
+	const currentlyHighlighted = document.querySelectorAll(".sg-highlighted");
+	Array.from(currentlyHighlighted).forEach((cell: HTMLElement) => {
+		cell.classList.remove("sg-highlighted");
+		cell.style.backgroundColor = "inherit";
+	});
+
+	const cell = cells[line - 1];
+	cell.cell.style.backgroundColor = "rgba(255,255,0,.25)";
+	cell.cell.classList.add("sg-highlighted");
+	const element = cell.cell;
+	const elementRect = element.getBoundingClientRect();
+	const absoluteElementTop = elementRect.top + window.pageYOffset;
+	const middle = absoluteElementTop - (window.innerHeight / 2);
+	window.scrollTo(0, middle);
+}
+
+window.onhashchange = (hash) => {
+	const split = hash.newURL!.split("#L");
+	if (split[1]) {
+		const line = parseInt(split[1].split(":")[0], 10)
+		const cells = getCodeCellsForAnnotation();
+		highlightAndScrollToLine(line, cells);
+	}
+}
 
 export function getCodeCellsForAnnotation(): CodeCell[] {
 	const table = document.querySelector("table") as HTMLTableElement;
