@@ -2,19 +2,14 @@ const boxShadow = "0 3px 12px rgba(27,31,35,0.15)";
 const borderRadius = "3px";
 const normalFontFamily = `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`;
 const codeFontFamily = `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`;
-const normalFontColor = "#93A9C8";
-const actionFontColor = "#FFFFFF";
-const emphasisFontColor = "#666";
-const modalBorderColor = "#2A3A51";
-const dividerColor = "#2A3A51";
-const backgroundColor = "#1C2736";
+import * as colors from "app/util/colors";
 
 export const tooltip = {
-	backgroundColor: backgroundColor,
+	backgroundColor: colors.backgroundColor,
 	maxWidth: "500px",
-	border: `solid 1px ${modalBorderColor}`,
+	border: `solid 1px ${colors.borderColor}`,
 	fontFamily: normalFontFamily,
-	color: normalFontColor,
+	color: colors.normalFontColor,
 	fontSize: "12px",
 	zIndex: 100,
 	position: "absolute",
@@ -32,7 +27,7 @@ export const tooltipTitle = {
 };
 
 export const divider = {
-	borderBottom: `1px solid ${dividerColor}`,
+	borderBottom: `1px solid ${colors.borderColor}`,
 	paddingLeft: "8px",
 	paddingRight: "8px",
 	paddingBottom: "16px",
@@ -49,7 +44,7 @@ export const tooltipDoc = {
 	overflow: "auto",
 	marginBottom: "0px",
 	fontFamily: normalFontFamily,
-	borderBottom: `1px solid ${dividerColor}`,
+	borderBottom: `1px solid ${colors.borderColor}`,
 };
 
 export const tooltipActions = {
@@ -65,17 +60,17 @@ export const tooltipAction = {
 	paddingBottom: "8px",
 	paddingLeft: "16px",
 	paddingRight: "16px",
-	color: actionFontColor,
+	color: colors.actionFontColor,
 };
 
 export const tooltipActionNotLast = {
-	borderRight: `1px solid ${dividerColor}`,
+	borderRight: `1px solid ${colors.borderColor}`,
 }
 
 export const tooltipMoreActions = {
 	fontStyle: "italic",
 	fontWeight: "bold",
-	color: emphasisFontColor,
+	color: colors.emphasisFontColor,
 	paddingTop: "8px",
 	paddingBottom: "8px",
 	paddingLeft: "16px",

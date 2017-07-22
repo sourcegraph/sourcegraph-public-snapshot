@@ -4,6 +4,7 @@ import { ReferencesState, setReferences, store } from "app/references/store";
 import { Reference } from "app/util/types";
 import * as React from "react";
 import * as URI from "urijs";
+import * as colors from "app/util/colors";
 
 const deepEqual = require("deep-equal");
 
@@ -59,7 +60,7 @@ export class ReferencesWidget extends React.Component<{}, ReferencesState> {
 			return null;
 		}
 		return <div>
-			<div style={{ display: "flex", alignItems: "center", borderBottom: "1px solid #2A3A51", padding: "10px" }}>
+			<div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${colors.borderColor}`, padding: "10px" }}>
 				<div style={{ flex: 1 }}>
 					{this.state.context.coords.word}
 				</div>
@@ -67,7 +68,7 @@ export class ReferencesWidget extends React.Component<{}, ReferencesState> {
 			</div>
 			{
 				this.state.data && this.state.data.references &&
-				this.state.data.references.map((ref, i) => <div key={i} style={{ padding: "5px", borderBottom: "1px solid #2A3A51" }}>
+				this.state.data.references.map((ref, i) => <div key={i} style={{ padding: "5px", borderBottom: `1px solid ${colors.borderColor}` }}>
 					<a href={this.getRefURL(ref)}>{`${URI.parse(ref.uri).fragment} @ ${this.getRangeString(ref)}`}</a>
 				</div>)
 			}

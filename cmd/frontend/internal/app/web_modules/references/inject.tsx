@@ -2,6 +2,7 @@ import { ReferencesWidget } from "app/references/ReferencesWidget";
 import { store } from "app/references/store";
 import * as React from "react";
 import { render } from "react-dom";
+import * as colors from "app/util/colors";
 
 const APP_ID = "sourcegraph-references-widget";
 
@@ -18,14 +19,14 @@ export function injectReferencesWidget(): void {
 	const widgetContainer = createAppContainerIfNotExists("div") as HTMLElement;
 	if (widgetContainer) {
 		widgetContainer.style.position = "fixed";
-		widgetContainer.style.backgroundColor = "#070A0D";
+		widgetContainer.style.backgroundColor = colors.referencesBackgroundColor;
 		widgetContainer.style.width = "100%";
 		widgetContainer.style.height = "350px";
 		widgetContainer.style.left = "0px";
 		widgetContainer.style.top = `calc(100vh - 350px)`;
 		widgetContainer.style.visibility = "hidden";
 		widgetContainer.style.overflow = "auto";
-		widgetContainer.style.borderTop = "1px solid #2A3A51";
+		widgetContainer.style.borderTop = `1px solid ${colors.borderColor}`;
 		document.body.appendChild(widgetContainer);
 
 		store.subscribe((state) => {
