@@ -97,14 +97,6 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
-func (r *commitResolver) TextSearch(ctx context.Context, args *struct{ Query *patternInfo }) (*searchResults, error) {
-	results, limitHit, err := textSearch(ctx, r.repo.URI, r.commit.CommitID, args.Query)
-	if err != nil {
-		return nil, err
-	}
-	return &searchResults{results, limitHit}, nil
-}
-
 func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")

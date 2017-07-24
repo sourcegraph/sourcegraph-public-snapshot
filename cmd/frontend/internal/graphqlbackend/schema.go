@@ -117,7 +117,6 @@ type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
-	textSearch(query: SearchQuery): SearchResults!
 	file(path: String!): File
 	languages: [String!]!
 }

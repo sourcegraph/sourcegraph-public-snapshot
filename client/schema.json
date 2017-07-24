@@ -89,33 +89,6 @@
 						"deprecationReason": null
 					},
 					{
-						"name": "textSearch",
-						"description": null,
-						"args": [
-							{
-								"name": "query",
-								"description": null,
-								"type": {
-									"kind": "INPUT_OBJECT",
-									"name": "SearchQuery",
-									"ofType": null
-								},
-								"defaultValue": null
-							}
-						],
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "OBJECT",
-								"name": "SearchResults",
-								"ofType": null
-							}
-						},
-						"isDeprecated": false,
-						"deprecationReason": null
-					},
-					{
 						"name": "file",
 						"description": null,
 						"args": [

@@ -26,7 +26,6 @@ declare namespace GQL {
 		id: string;
 		sha1: string;
 		tree: ITree | null;
-		textSearch: ISearchResults;
 		file: IFile | null;
 		languages: Array<string>;
 	}
