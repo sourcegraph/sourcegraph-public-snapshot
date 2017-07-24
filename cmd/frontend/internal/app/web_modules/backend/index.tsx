@@ -1,8 +1,6 @@
 import { doFetch as fetch } from "app/backend/xhr";
 import * as util from "app/util";
 
-const sourcegraphUrl = "http://localhost:3080";
-
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
 
 export interface ResolvedRevResp {
@@ -34,7 +32,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 				}`,
 		variables: { repo, rev },
 	};
-	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
+	const p = fetch(`/.api/graphql`, {
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
@@ -109,7 +107,7 @@ query DependencyReferences($repo: String, $rev: String, $mode: String, $line: In
 }`,
 		variables: { repo, rev, mode, path, line, character },
 	};
-	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
+	const p = fetch(`/.api/graphql`, {
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
@@ -182,7 +180,7 @@ export function searchText(uri: string, query: string): Promise<ResolvedSearchTe
 		variables: variables,
 	};
 
-	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
+	const p = fetch(`/.api/graphql`, {
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {

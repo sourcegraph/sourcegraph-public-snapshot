@@ -5,7 +5,7 @@ import { clearTooltip, store, TooltipState } from "app/tooltips/store";
 import * as styles from "app/tooltips/styles";
 import { getModeFromExtension } from "app/util";
 // import { getAssetURL } from "app/util/assets";
-// import { eventLogger, searchEnabled, sourcegraphUrl } from "app/util/context";
+// import { eventLogger, searchEnabled } from "app/util/context";
 import { highlightBlock } from "highlight.js";
 import * as marked from "marked";
 
@@ -16,8 +16,6 @@ let j2dAction: HTMLAnchorElement;
 let findRefsAction: HTMLAnchorElement;
 let searchAction: HTMLAnchorElement;
 let moreContext: HTMLElement;
-
-const sourcegraphUrl = "http://localhost:3080";
 
 const searchIconSVG = '<svg width="12px" height="12px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path13_fill" d="M 4.75021 4.65905e-06C 7.36999 -0.00361534 9.49667 2.1172 9.50027 4.73698C 9.50167 5.7595 9.17264 6.7551 8.5622 7.5754L 11.1265 9.74432C 11.5382 10.0957 11.5872 10.7144 11.2358 11.1261C 10.8844 11.5379 10.2657 11.5868 9.85399 11.2355C 9.81473 11.202 9.77819 11.1654 9.74467 11.1261L 7.5752 8.56228C 5.46856 10.1236 2.49507 9.68156 0.933725 7.5749C -0.627615 5.46824 -0.185555 2.49476 1.92111 0.933425C 2.73957 0.326825 3.73145 -0.000435341 4.75021 4.65905e-06ZM 4.75021 8.5C 6.82127 8.5 8.50021 6.82106 8.50021 4.75C 8.50021 2.67894 6.82127 1 4.75021 1C 2.67915 1 1.00021 2.67894 1.00021 4.75C 1.00023 6.82106 2.67915 8.49998 4.75021 8.49998L 4.75021 8.5Z"/></svg>';
 
@@ -103,7 +101,7 @@ export function createTooltips(): void {
 			// 	.then((references) => {
 			// 		console.log("GOT REFERENCES", references);
 			// 	});
-			// const url = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`;
+			// const url = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`;
 			// const withModifierKey = isMouseEventWithModifierKey(e);
 			// openSourcegraphTab(url, withModifierKey);
 		}
@@ -125,7 +123,7 @@ export function createTooltips(): void {
 		// 	store.getValue().target!.textContent!;
 		// const { data, context } = store.getValue();
 		// if (data && context && context.repoRevSpec) {
-		// 	// const url = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}?q=${encodeURIComponent(searchText)}`;
+		// 	// const url = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}?q=${encodeURIComponent(searchText)}`;
 		// 	// const withModifierKey = isMouseEventWithModifierKey(e);
 		// 	// return;
 		// }
@@ -194,14 +192,14 @@ function updateTooltip(state: TooltipState): void {
 	j2dAction.href = data.j2dUrl ? data.j2dUrl : "";
 
 	if (data && context && context.coords && context.path && context.repoRevSpec) {
-		findRefsAction.href = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}#L${context.coords.line}:${context.coords.char}$references`;
+		findRefsAction.href = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}#L${context.coords.line}:${context.coords.char}$references`;
 	} else {
 		findRefsAction.href = "";
 	}
 
 	const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
 	if (searchText) {
-		searchAction.href = `${sourcegraphUrl}/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}&q=${searchText}`;
+		searchAction.href = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}&q=${searchText}`;
 	} else {
 		searchAction.href = "";
 	}

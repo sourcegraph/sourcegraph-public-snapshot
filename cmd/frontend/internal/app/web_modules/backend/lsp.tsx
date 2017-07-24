@@ -7,8 +7,6 @@ const tooltipCache: { [key: string]: TooltipData } = {};
 const j2dCache = {};
 const referencesCache = {};
 
-const sourcegraphUrl = "http://localhost:3080";
-
 interface LSPRequest {
 	method: string;
 	params: any;
@@ -64,7 +62,7 @@ export function getTooltip(path: string, line: number, char: number, repoRevSpec
 		},
 	}, repoRevSpec, path);
 
-	return fetch(`${sourcegraphUrl}/.api/xlang/textDocument/hover`, { method: "POST", body: JSON.stringify(body) })
+	return fetch(`/.api/xlang/textDocument/hover`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
 			if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
 				const title = json[1].result.contents[0].value;
@@ -107,7 +105,7 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevSpe
 		},
 	}, repoRevSpec, path);
 
-	return fetch(`${sourcegraphUrl}/.api/xlang/textDocument/definition`, { method: "POST", body: JSON.stringify(body) })
+	return fetch(`/.api/xlang/textDocument/definition`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
 			if (!json || !json[1] || !json[1].result || !json[1].result[0] || !json[1].result[0].uri) {
 				// TODO(john): better error handling.
@@ -130,7 +128,7 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevSpe
 				lineAndCharEnding = `#L${startLine}`;
 			}
 
-			j2dCache[cacheKey] = `${sourcegraphUrl}/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
+			j2dCache[cacheKey] = `/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
 			return j2dCache[cacheKey];
 		});
 }
@@ -161,7 +159,7 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 		},
 	} as any, repoRevSpec, path);
 
-	return fetch(`${sourcegraphUrl}/.api/xlang/textDocument/references`, { method: "POST", body: JSON.stringify(body) })
+	return fetch(`/.api/xlang/textDocument/references`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
 			if (!json || !json[1] || !json[1].result) {
 				// TODO(john): better error handling.
@@ -192,7 +190,7 @@ export function fetchXreferences(col: number, path: string, line: number, repoRe
 		},
 	}, repoRevSpec, path);
 
-	return fetch(`${sourcegraphUrl}/.api/xlang/textDocument/xreferences`, { method: "POST", body: JSON.stringify(body) })
+	return fetch(`/.api/xlang/textDocument/xreferences`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
 			if (!json || !json[1] || !json[1].result) {
 				// TODO(john): better error handling.

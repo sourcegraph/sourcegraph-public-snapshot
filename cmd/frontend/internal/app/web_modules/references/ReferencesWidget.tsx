@@ -52,7 +52,7 @@ export class ReferencesWidget extends React.Component<{}, ReferencesState> {
 
 	getRefURL(ref: Reference): string {
 		const uri = URI.parse(ref.uri);
-		return `http://localhost:3080/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line}`;
+		return `/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line}`;
 	}
 
 	render(): JSX.Element | null {
