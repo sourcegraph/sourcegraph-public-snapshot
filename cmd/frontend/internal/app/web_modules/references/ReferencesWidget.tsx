@@ -1,13 +1,13 @@
 import { triggerReferences } from "app/references";
 import { locKey, ReferencesState, store } from "app/references/store";
-import * as colors from "app/util/colors";
 import { parseURL, urlToBlob } from "app/util";
+import * as colors from "app/util/colors";
 import { normalFontColor } from "app/util/colors";
 import { Reference } from "app/util/types";
+import * as csstips from "csstips";
 import * as _ from "lodash";
 import * as React from "react";
 import { classes, style } from "typestyle";
-import * as csstips from "csstips";
 import * as URI from "urijs";
 
 namespace Styles {
@@ -68,11 +68,10 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		}
 		this.hashWatcher = window.addEventListener("hashchange", (e) => {
 			const shouldShow = e!.newURL!.indexOf("$references") !== -1;
-			console.log("GROUP IS", this.getRefsGroupFromUrl(e!.newURL!));
 			if (shouldShow) {
 				this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true });
 			}
-		})
+		});
 	}
 
 	getRefsGroupFromUrl(urlStr: string): "all" | "local" | "external" {
@@ -94,6 +93,9 @@ export class ReferencesWidget extends React.Component<Props, State> {
 	componentWillUnmount(): void {
 		if (this.subscription) {
 			this.subscription.unsubscribe();
+		}
+		if (this.hashWatcher) {
+			window.removeEventListener("hashchange", this.hashWatcher);
 		}
 	}
 
@@ -129,18 +131,16 @@ export class ReferencesWidget extends React.Component<Props, State> {
 			<div>
 				{
 					(this.state.group === "all" || this.state.group === "local") && localRefs.sort().map((uri, i) => {
-						const refs = refsByUri[uri];
 						const parsed = URI.parse(uri);
-						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refs} />
+						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refsByUri[uri]} />;
 					})
 				}
 			</div>
 			<div>
 				{
 					(this.state.group === "all" || this.state.group === "external") && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
-						const refs = refsByUri[uri];
 						const parsed = URI.parse(uri);
-						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refs} />
+						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refsByUri[uri]} />;
 					})
 				}
 			</div>
@@ -157,7 +157,6 @@ function getRefURL(ref: Reference): string {
 	const uri = URI.parse(ref.uri);
 	return `http://localhost:3080/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
 }
-
 
 class ReferencesGroup extends React.Component<{ uri: string, path: string, refs: Reference[], isLocal: boolean }, {}> {
 	render(): JSX.Element | null {
