@@ -62,7 +62,7 @@
         ],
         "prefer-conditional-expression": false,
         "no-namespace": [
-            false,
+            false
         ]
     },
     "rulesDirectory": []
