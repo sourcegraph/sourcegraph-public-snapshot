@@ -14,18 +14,19 @@ import * as URI from "urijs";
 namespace Styles {
 	const border = `1px solid ${colors.borderColor}`;
 
-	export const titleBar = style({ display: "flex", alignItems: "center", borderBottom: border, padding: "10px" });
-	export const titleBarSpacing = style({ marginRight: "20px" });
-	export const titleBarTitle = classes(style({ maxWidth: "calc(50vw)" }), titleBarSpacing);
-	export const titleBarGroup = classes(style({
+	export const titleBar = style(csstips.horizontal, csstips.center, { borderBottom: border, padding: "10px", fontSize: "14px" });
+	export const titleBarTitle = style(csstips.content, { maxWidth: "calc(50vw)", marginRight: "25px" });
+	export const titleBarGroup = style(csstips.content, {
 		textTransform: "uppercase",
+		letterSpacing: "1px",
+		textDecoration: "none",
 		$nest: {
-			"&:hover": { color: "blue" },
+			"&:hover": { color: "white" },
 		},
-	}), titleBarSpacing);
-	export const titleBarGroupActive = classes(style({ fontWeight: "bold" }), titleBarGroup);
+	});
+	export const titleBarGroupActive = classes(style({ fontWeight: "bold !important", color: "white !important" }), titleBarGroup);
 
-	export const badge = style({ backgroundColor: "#233043 !important", borderRadius: "100%", color: normalFontColor });
+	export const badge = style(csstips.content, { backgroundColor: "#233043 !important", borderRadius: "20px", color: normalFontColor, marginLeft: "10px", marginRight: "25px", fontSize: "11px", padding: "3px 6px" });
 
 	export const uriPathPart = style({ fontWeight: "bold", paddingRight: "15px" });
 	export const pathPart = style({ paddingRight: "15px" });
@@ -121,12 +122,16 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				<a className={this.state.group === "all" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={urlToBlob({ ...this.state.context.loc, refs: "all" })}>
 					All References
 				</a>
+				<div className={Styles.badge}>{localRefs.length + externalRefs.length}</div>
 				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={urlToBlob({ ...this.state.context.loc, refs: "local" })}>
 					Local
 				</a>
+				<div className={Styles.badge}>{localRefs.length}</div>
 				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={urlToBlob({ ...this.state.context.loc, refs: "external" })}>
 					Global
 				</a>
+				<div className={Styles.badge}>{externalRefs.length}</div>
+				<div className={style(csstips.flex)} />
 				<div style={{ float: "right" }} onClick={() => this.props.onDismiss()}>X</div>
 			</div>
 			<div>
