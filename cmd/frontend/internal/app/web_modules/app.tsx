@@ -14,11 +14,14 @@ window.addEventListener("DOMContentLoaded", () => {
 			line = parseInt(split[1].split(":")[0], 10)
 		}
 	}
-	if (url.uri && url.rev && url.path) {
+	if (url.uri && url.path) {
 		// blob view, add tooltips
-		// TODO(john): this won't work for empty (e.g. default branch) rev
+		if (!window.pageVars || !(window.pageVars as any).ResolvedRev) {
+			throw new TypeError("expected window.pageVars to exist, but it does not");
+		}
+		const rev = (window.pageVars as any).ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
-		addAnnotations(url.path, { repoURI: url.uri, rev: url.rev, isBase: false, isDelta: false }, cells);
+		addAnnotations(url.path, { repoURI: url.uri, rev: rev, isBase: false, isDelta: false }, cells);
 		if (line) {
 			highlightAndScrollToLine(line, cells);
 		}

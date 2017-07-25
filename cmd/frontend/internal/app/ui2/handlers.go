@@ -18,8 +18,18 @@ import (
 
 // TODO(slimsag): tests for everything in this file.
 
+// pageVars are passed to JS via window.pageVars; this is distinct from
+// window.context (JSContext) in the fact that this data is shared between
+// template handlers and the JS code (where performing a round-trip would be
+// silly). It can also only be present for some pages, whereas window.context
+// is for all pages.
+type pageVars struct {
+	ResolvedRev string // absolute revision of current page (on any repo page).
+}
+
 type Common struct {
 	Context       jscontext.JSContext
+	PageVars      *pageVars
 	AssetURL      string
 	RepoShortName string
 	Repo          *sourcegraph.Repo
@@ -46,7 +56,10 @@ func newCommon(r *http.Request) (*Common, error) {
 		return nil, err
 	}
 	return &Common{
-		Context:       jscontext.NewJSContextFromRequest(r),
+		Context: jscontext.NewJSContextFromRequest(r),
+		PageVars: &pageVars{
+			ResolvedRev: revSpec.CommitID,
+		},
 		AssetURL:      assets.URL("/").String(),
 		RepoShortName: repoShortName(repo.URI),
 		Repo:          repo,
