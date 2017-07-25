@@ -1,6 +1,7 @@
 package ui2
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -37,27 +38,35 @@ func repoShortName(uri string) string {
 	return strings.Join(split[1:], "/")
 }
 
-// newCommon returns nil, nil if there was an error and the request was
-// handled, so basic usage looks like:
+// newCommon builds a *Common data structure, returning an error if one occurs.
+//
+// In the event of the repository being cloned, or having been renamed, the
+// request is handled by newCommon and nil, nil is returned. Basic usage looks
+// like:
 //
 // 	common, err := newCommon(w, r)
-//  if err != nil {
+// 	if err != nil {
 // 		return err
 // 	}
-//  if common == nil {
+// 	if common == nil {
 // 		return nil // request was handled
 // 	}
 //
 func newCommon(w http.ResponseWriter, r *http.Request) (*Common, error) {
-	// TODO(slimsag): handle auto cloning repositories here?
-	//
-	// TODO: handle http://localhost:3080/github.com/docker/docker redirect to moby/moby
 	repo, revSpec, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
-		if e, ok := err.(handlerutil.URLMovedError); ok {
+		if e, ok := err.(*handlerutil.URLMovedError); ok {
 			// The repository has been renamed, e.g. "github.com/docker/docker"
 			// was renamed to "github.com/moby/moby" -> redirect the user now.
 			http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+			return nil, nil
+		}
+		if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
+			// Repo is cloning.
+			//
+			// TODO(slimsag): Move to template, auto-refresh page upon
+			// completion, etc.
+			fmt.Fprintf(w, "<html><h3>Repository is cloning...<h3/><p>(please refresh in a few seconds)</p></html>")
 			return nil, nil
 		}
 		return nil, err
