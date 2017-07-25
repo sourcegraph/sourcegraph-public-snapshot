@@ -16,6 +16,9 @@ window.addEventListener("DOMContentLoaded", () => {
 	}
 	if (url.uri && url.path) {
 		// blob view, add tooltips
+		if (!window.pageVars || !(window.pageVars as any).ResolvedRev) {
+			throw new TypeError("expected window.pageVars to exist, but it does not");
+		}
 		const rev = (window.pageVars as any).ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
 		addAnnotations(url.path, { repoURI: url.uri, rev: rev, isBase: false, isDelta: false }, cells);
