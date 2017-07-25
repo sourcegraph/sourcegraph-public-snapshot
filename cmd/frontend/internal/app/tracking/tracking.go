@@ -53,8 +53,8 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 	contactParams := &hubspot.ContactProperties{
 		UserID:            a.Login,
 		UID:               a.UID,
-		GitHubLink:        "https://github.com/" + a.Login,
-		LookerLink:        "https://sourcegraph.looker.com/dashboards/9?User%20ID=" + a.Login,
+		GitHubLink:        gitHubLink(a.Login),
+		LookerLink:        lookerUserLink(a.Login),
 		GitHubName:        name,
 		GitHubCompany:     company,
 		GitHubLocation:    location,
@@ -308,4 +308,67 @@ func trackHubSpotContact(email string, eventLabel string, params *hubspot.Contac
 	}
 
 	return hsResponse, nil
+}
+
+// TrackGitHubWebhook handles webhooks received from GitHub.com regarding Sourcegraph
+// installations on GitHub orgs
+func TrackGitHubWebhook(actor *actor.Actor, eventType string, event interface{}) error {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("panic in tracking.TrackGitHubWebhook: %s", err)
+		}
+	}()
+
+	switch event := event.(type) {
+	case *github.InstallationEvent:
+		return trackInstallationEvent(actor, event)
+	case *github.InstallationRepositoriesEvent:
+		return trackInstallationRepositoriesEvent(actor, event)
+	}
+
+	log15.Warn("Unhandled GitHub webhook received", "type", eventType)
+	return nil
+}
+
+func trackInstallationEvent(actor *actor.Actor, event *github.InstallationEvent) error {
+	gcsClient, err := gcstracker.New(actor, "")
+	if err != nil {
+		return errors.Wrap(err, "Error creating a new GCS client")
+	}
+	tos := gcsClient.NewTrackedObjects("GitHubAppInstallationCompleted")
+	tos.AddGitHubInstallationEvent(event)
+	err = gcsClient.Write(tos)
+	if err != nil {
+		return errors.Wrap(err, "Error writing to GCS")
+	}
+
+	err = notifySlackOnAppInstall(actor, gitHubLink(actor.Login), lookerUserLink(actor.Login), event.Installation.Account, gitHubLink(*event.Installation.Account.Login))
+	if err != nil {
+		return errors.Wrap(err, "Error sending new app install details to Slack")
+	}
+	return nil
+}
+
+func trackInstallationRepositoriesEvent(actor *actor.Actor, event *github.InstallationRepositoriesEvent) error {
+	gcsClient, err := gcstracker.New(actor, "")
+	if err != nil {
+		return errors.Wrap(err, "Error creating a new GCS client")
+	}
+
+	tos := gcsClient.NewTrackedObjects("GitHubAppRepositoriesUpdated")
+	tos.AddGitHubRepositoriesEvent(event)
+	err = gcsClient.Write(tos)
+	if err != nil {
+		return errors.Wrap(err, "Error writing to GCS")
+	}
+
+	return nil
+}
+
+func gitHubLink(login string) string {
+	return "https://github.com/" + login
+}
+
+func lookerUserLink(login string) string {
+	return "https://sourcegraph.looker.com/dashboards/9?User%20ID=" + login
 }

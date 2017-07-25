@@ -73,3 +73,42 @@ type OrgWithDetailsContext struct {
 type OrgMember struct {
 	MemberUserID string `json:"user_id,omitempty"`
 }
+
+// GitHubInstallationEvent is metadata associated with a GitHub app
+// installation event received by a webhook
+type GitHubInstallationEvent struct {
+	Action       string              `json:"action"`
+	Installation *GitHubInstallation `json:"installation"`
+	Sender       *GitHubAccount      `json:"sender"`
+}
+
+// GitHubRepositoriesEvent is metadata associated with a GitHub app
+// installation repository selection event received by a webhook
+type GitHubRepositoriesEvent struct {
+	Action              string              `json:"action"`
+	Installation        *GitHubInstallation `json:"installation"`
+	RepositorySelection string              `json:"repository_selection"`
+	Sender              *GitHubAccount      `json:"sender"`
+}
+
+type GitHubInstallation struct {
+	ID      int            `json:"id"`
+	Account *GitHubAccount `json:"account"`
+}
+
+// GitHubInstalledRepository contains details about a repository
+// associated with a GitHub InstallationRepositoriesEvent
+type GitHubInstalledRepository struct {
+	Action   string `json:"action"` // "added" or "removed"
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	FullName string `json:"full_name"`
+}
+
+type GitHubAccount struct {
+	Login     string `json:"login"`
+	ID        string `json:"id"`
+	AvatarURL string `json:"avatar_url"`
+	Email     string `json:"email"`
+	Type      string `json:"type"`
+}

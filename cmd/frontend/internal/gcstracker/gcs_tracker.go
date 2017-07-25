@@ -191,3 +191,83 @@ func (tos *TrackedObjects) AddOrgsWithDetailsObjects(ml map[string]([]*github.Us
 		tos.AddTrackedObject("OrgDetails", newOrg)
 	}
 }
+
+// AddGitHubInstallationEvent adds a GitHub installation object to a TrackedObjects struct
+func (tos *TrackedObjects) AddGitHubInstallationEvent(ghi *github.InstallationEvent) {
+	var senderEmail string
+	if ghi.Sender.Email != nil {
+		senderEmail = *ghi.Sender.Email
+	}
+
+	install := GitHubInstallationEvent{
+		Action: *ghi.Action,
+		Sender: &GitHubAccount{
+			Login:     *ghi.Sender.Login,
+			ID:        fmt.Sprintf("github|%d", *ghi.Sender.ID),
+			AvatarURL: *ghi.Sender.AvatarURL,
+			Email:     senderEmail,
+			Type:      *ghi.Sender.Type,
+		},
+		Installation: &GitHubInstallation{
+			ID: *ghi.Installation.ID,
+			Account: &GitHubAccount{
+				Login:     *ghi.Installation.Account.Login,
+				ID:        fmt.Sprintf("github|%d", *ghi.Installation.Account.ID),
+				AvatarURL: *ghi.Installation.Account.AvatarURL,
+				Type:      *ghi.Installation.Account.Type,
+			},
+		},
+	}
+
+	tos.AddTrackedObject("GitHubAppInstallationEvent", install)
+}
+
+// AddGitHubRepositoriesEvent adds a GitHub installation object to a TrackedObjects struct
+func (tos *TrackedObjects) AddGitHubRepositoriesEvent(ghr *github.InstallationRepositoriesEvent) {
+	var senderEmail string
+	if ghr.Sender.Email != nil {
+		senderEmail = *ghr.Sender.Email
+	}
+
+	event := GitHubRepositoriesEvent{
+		Action: *ghr.Action,
+		Sender: &GitHubAccount{
+			Login:     *ghr.Sender.Login,
+			ID:        fmt.Sprintf("github|%d", *ghr.Sender.ID),
+			AvatarURL: *ghr.Sender.AvatarURL,
+			Email:     senderEmail,
+			Type:      *ghr.Sender.Type,
+		},
+		Installation: &GitHubInstallation{
+			ID: *ghr.Installation.ID,
+			Account: &GitHubAccount{
+				Login:     *ghr.Installation.Account.Login,
+				ID:        fmt.Sprintf("github|%d", *ghr.Installation.Account.ID),
+				AvatarURL: *ghr.Installation.Account.AvatarURL,
+				Type:      *ghr.Installation.Account.Type,
+			},
+		},
+		RepositorySelection: *ghr.RepositorySelection,
+	}
+
+	tos.AddTrackedObject("GitHubAppRepositoriesEvent", event)
+
+	for _, ghRepo := range ghr.RepositoriesAdded {
+		repo := GitHubInstalledRepository{
+			Action:   "added",
+			ID:       *ghRepo.ID,
+			Name:     *ghRepo.Name,
+			FullName: *ghRepo.FullName,
+		}
+		tos.AddTrackedObject("GitHubAppRepository", repo)
+	}
+	for _, ghRepo := range ghr.RepositoriesRemoved {
+		repo := GitHubInstalledRepository{
+			Action:   "removed",
+			ID:       *ghRepo.ID,
+			Name:     *ghRepo.Name,
+			FullName: *ghRepo.FullName,
+		}
+		tos.AddTrackedObject("GitHubAppRepository", repo)
+	}
+}

@@ -38,6 +38,8 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.SubmitForm).Handler(traceutil.TraceRoute(handler(serveSubmitForm)))
 
+	m.Get(apirouter.GitHubWebhooks).Handler(traceutil.TraceRoute(handler(serveReceiveGitHubWebhooks)))
+
 	m.Get(apirouter.XLang).Handler(traceutil.TraceRoute(handler(serveXLang)))
 
 	// 🚨 SECURITY: The LSP endpoints specifically allows cookie authorization 🚨

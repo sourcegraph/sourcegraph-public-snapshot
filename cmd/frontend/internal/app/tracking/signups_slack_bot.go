@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-github/github"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -117,6 +118,44 @@ func notifySlackOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProper
 			Value: strings.Join(orgsList, ", "),
 			Short: false,
 		})
+	}
+
+	return postToSlack(payload)
+}
+
+func notifySlackOnAppInstall(actor *actor.Actor, actorGitHubLink string, actorLookerLink string, org *github.User, orgGitHubLink string) error {
+	if SlackWebhookURL == "" {
+		return errors.New("Slack Webhook URL not defined")
+	}
+	color := "good"
+	links := fmt.Sprintf("<%s|View user on GitHub>, <%s|View user on Looker>, <%s|View org on GitHub>", actorGitHubLink, actorLookerLink, orgGitHubLink)
+
+	payload := &slackPayload{
+		Attachments: []*slackAttachment{
+			&slackAttachment{
+				Fallback: fmt.Sprintf("%s just installed Sourcegraph on their org %s!", actor.Login, *org.Login),
+				Title:    fmt.Sprintf("%s just installed Sourcegraph on their org %s!", actor.Login, *org.Login),
+				Color:    color,
+				ThumbURL: *org.AvatarURL,
+				Fields: []*slackField{
+					&slackField{
+						Title: "User login",
+						Value: actor.Login,
+						Short: true,
+					},
+					&slackField{
+						Title: "Org name",
+						Value: *org.Login,
+						Short: true,
+					},
+					&slackField{
+						Title: "Links",
+						Value: links,
+						Short: false,
+					},
+				},
+			},
+		},
 	}
 
 	return postToSlack(payload)
