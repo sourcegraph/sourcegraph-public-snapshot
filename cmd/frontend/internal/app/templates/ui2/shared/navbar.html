@@ -6,13 +6,18 @@
 		Navigation
 	</a>
 	<span class="path">
-		<a href="#" class="book-link">
+		<a href="{{.RepoURL}}" class="book-link">
 			<svg class="book-icon">
 				<path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path94_fill" d="M 9.5 11.5L 2.125 11.5C 1.725 11.5 1.35 11.35 1.075 11.05L 0.3 10.275C 0.0999999 10.075 -4.44089e-16 9.825 -4.44089e-16 9.575L -4.44089e-16 0.5C -4.44089e-16 0.225 0.225 0 0.5 0L 8 0C 8.275 0 8.5 0.225 8.5 0.5L 8.5 9.5C 8.5 9.775 8.275 10 8 10L 1.7 10C 1.625 10 1.575 10.05 1.575 10.125C 1.575 10.15 1.6 10.2 1.6 10.225L 1.75 10.375C 1.85 10.475 1.975 10.525 2.1 10.525L 8.85 10.525C 8.925 10.525 8.975 10.475 8.975 10.4L 8.975 1.65C 8.975 1.575 9.025 1.525 9.1 1.525L 9.5 1.525C 9.775 1.525 10 1.75 10 2.025L 10 11.025C 10 11.275 9.775 11.5 9.5 11.5Z"/>
 			</svg>
 		</a>
 		<span>
-			<a href="#">sourcegraph</a> / <a href="#">sourcegraph</a> / <a href="#">cmd</a> / <a href="#">frontend</a> / <a href="#">main.go</a>
+			<a href="{{.RepoURL}}">{{.RepoName}}</a>
+			{{range .PathComponents}}
+				{{$url := index . 0}}
+				{{$path := index . 1}}
+				 / <a href="{{$url}}">{{$path}}</a>
+			{{end}}
 		</span>
 	</span>
 	<span class="right-pane">

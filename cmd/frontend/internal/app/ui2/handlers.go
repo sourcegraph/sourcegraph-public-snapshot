@@ -23,7 +23,8 @@ type Common struct {
 	AssetURL      string
 	RepoShortName string
 	Repo          *sourcegraph.Repo
-	RevSpec       sourcegraph.RepoRevSpec
+	Rev           string                  // unresolved / user-specified revision (e.x.: "master")
+	RevSpec       sourcegraph.RepoRevSpec // resolved SHA1 revision
 }
 
 // repoShortName trims the first path element of the given repo uri if it has
@@ -49,6 +50,7 @@ func newCommon(r *http.Request) (*Common, error) {
 		AssetURL:      assets.URL("/").String(),
 		RepoShortName: repoShortName(repo.URI),
 		Repo:          repo,
+		Rev:           mux.Vars(r)["Rev"],
 		RevSpec:       revSpec,
 	}, nil
 }
@@ -68,7 +70,39 @@ func (t *treeView) URL(i os.FileInfo) string {
 	if i.IsDir() {
 		routeName = routeTree
 	}
-	return urlTo(routeName, "Repo", t.RepoURI, "Rev", t.Rev, "Path", t.Dir+"/"+i.Name()).String()
+	return urlTo(routeName, "Repo", t.RepoURI, "Rev", t.Rev, "Path", path.Join(t.Dir, i.Name())).String()
+}
+
+// navbar is the data structure shared/navbar.html expects.
+type navbar struct {
+	RepoURL        string
+	RepoName       string      // e.x. "gorilla / mux"
+	PathComponents [][2]string // [URL, path component]
+}
+
+func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
+	n := &navbar{
+		RepoURL:  urlTo(routeRepoOrMain, "Repo", repoURI, "Rev", rev).String(),
+		RepoName: strings.Replace(repoShortName(repoURI), "/", " / ", -1),
+	}
+	split := strings.Split(fpath, "/")
+	for i, p := range split {
+		if p == "" {
+			continue
+		}
+
+		// Only the last path component can be a file.
+		routeName := routeTree
+		if i == len(split)-1 && !isDir {
+			routeName = routeBlob
+		}
+
+		// Construct a URL to this path.
+		fpath := path.Join("/", path.Join(split[:i+1]...))
+		u := urlTo(routeName, "Repo", repoURI, "Rev", rev, "Path", fpath).String()
+		n.PathComponents = append(n.PathComponents, [2]string{u, p})
+	}
+	return n
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
@@ -91,13 +125,16 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 	return renderTemplate(w, "repo.html", &struct {
 		*Common
 		TreeView *treeView
+		Navbar   *navbar
 	}{
 		Common: common,
 		TreeView: &treeView{
 			RepoURI: common.Repo.URI,
+			Rev:     common.Rev,
 			Dir:     dir,
 			Files:   files,
 		},
+		Navbar: newNavbar(common.Repo.URI, common.Rev, dir, true),
 	})
 }
 
@@ -121,13 +158,16 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 	return renderTemplate(w, "tree.html", &struct {
 		*Common
 		TreeView *treeView
+		Navbar   *navbar
 	}{
 		Common: common,
 		TreeView: &treeView{
 			RepoURI: common.Repo.URI,
+			Rev:     common.Rev,
 			Dir:     dir,
 			Files:   files,
 		},
+		Navbar: newNavbar(common.Repo.URI, common.Rev, dir, true),
 	})
 }
 
@@ -157,6 +197,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	return renderTemplate(w, "blob.html", &struct {
 		*Common
 		BlobView *blobView
+		Navbar   *navbar
 	}{
 		Common: common,
 		BlobView: &blobView{
@@ -164,5 +205,6 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 			Name:  path.Base(fp),
 			Lines: strings.Split(string(file), "\n"),
 		},
+		Navbar: newNavbar(common.Repo.URI, common.Rev, fp, false),
 	})
 }
