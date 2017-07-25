@@ -37,12 +37,29 @@ func repoShortName(uri string) string {
 	return strings.Join(split[1:], "/")
 }
 
-func newCommon(r *http.Request) (*Common, error) {
+// newCommon returns nil, nil if there was an error and the request was
+// handled, so basic usage looks like:
+//
+// 	common, err := newCommon(w, r)
+//  if err != nil {
+// 		return err
+// 	}
+//  if common == nil {
+// 		return nil // request was handled
+// 	}
+//
+func newCommon(w http.ResponseWriter, r *http.Request) (*Common, error) {
 	// TODO(slimsag): handle auto cloning repositories here?
 	//
 	// TODO: handle http://localhost:3080/github.com/docker/docker redirect to moby/moby
 	repo, revSpec, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
+		if e, ok := err.(handlerutil.URLMovedError); ok {
+			// The repository has been renamed, e.g. "github.com/docker/docker"
+			// was renamed to "github.com/moby/moby" -> redirect the user now.
+			http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &Common{
@@ -106,9 +123,12 @@ func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(r)
+	common, err := newCommon(w, r)
 	if err != nil {
 		return err
+	}
+	if common == nil {
+		return nil // request was handled
 	}
 
 	vcsrepo, err := localstore.RepoVCS.Open(r.Context(), common.Repo.ID)
@@ -139,9 +159,12 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTree(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(r)
+	common, err := newCommon(w, r)
 	if err != nil {
 		return err
+	}
+	if common == nil {
+		return nil // request was handled
 	}
 
 	vcsrepo, err := localstore.RepoVCS.Open(r.Context(), common.Repo.ID)
@@ -178,9 +201,12 @@ type blobView struct {
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(r)
+	common, err := newCommon(w, r)
 	if err != nil {
 		return err
+	}
+	if common == nil {
+		return nil // request was handled
 	}
 
 	vcsrepo, err := localstore.RepoVCS.Open(r.Context(), common.Repo.ID)
