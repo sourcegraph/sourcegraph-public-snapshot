@@ -37,7 +37,7 @@ export function highlightAndScrollToLine(line: number, cells: CodeCell[]): void 
 	});
 
 	const cell = cells[line - 1];
-	cell.cell.style.backgroundColor = "rgba(255,255,0,.25)";
+	cell.cell.style.backgroundColor = "#1c2736";
 	cell.cell.classList.add("sg-highlighted");
 	const element = cell.cell;
 	const elementRect = element.getBoundingClientRect();

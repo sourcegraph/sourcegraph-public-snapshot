@@ -142,7 +142,8 @@ $nav-height: 48px;
 		border-collapse: collapse;
 		.line-number, .code-cell {
 			padding: 0;
-			padding-top: .6em;
+			padding-top: .3em;
+			padding-bottom: .3em;
 
 			pre {
 				margin: 2px;
@@ -151,9 +152,9 @@ $nav-height: 48px;
 		.line-number {
 			text-align: right;
 			font-size: .75em;
+			padding-right: 1em;
 		}
 		.code-cell {
-			padding-left: 1em;
 			white-space: pre;
 			font-size: .75em;
 		}
