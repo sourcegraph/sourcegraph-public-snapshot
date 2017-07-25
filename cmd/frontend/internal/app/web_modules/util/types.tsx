@@ -3,6 +3,15 @@ export interface Workspace {
 	rev: string;
 }
 
+export interface Blob extends Workspace {
+	path: string;
+}
+
+export interface BlobPosition extends Blob {
+	line: number;
+	char?: number;
+}
+
 export interface TooltipData {
 	loading?: boolean;
 	title?: string;

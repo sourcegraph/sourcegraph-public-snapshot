@@ -18,7 +18,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 		return promiseHit;
 	}
 	const body = {
-		query: `query Content($repo: String, $rev: String) {
+		query: `query ResolveRev($repo: String, $rev: String) {
 					root {
 						repository(uri: $repo) {
 							commit(rev: $rev) {
@@ -32,7 +32,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 				}`,
 		variables: { repo, rev },
 	};
-	const p = fetch(`/.api/graphql`, {
+	const p = fetch(`/.api/graphql?ResolveRev`, {
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
@@ -59,6 +59,44 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 		const found = { commitID: json.data.root.repository.commit.commit.sha1 };
 		promiseCache.set(key, Promise.resolve(found));
 		return found;
+	});
+	promiseCache.set(key, p);
+	return p;
+}
+
+export const blobKey = (repoURI: string, rev: string, path: string) => `${repoURI}@${rev}#${path}`;
+const blobCache = new Map<string, Promise<string>>();
+
+export function fetchBlobContent(repoURI: string, rev: string, path: string): Promise<string> {
+	const key = blobKey(repoURI, rev, path);
+	const promiseHit = blobCache.get(key);
+	if (promiseHit) {
+		return promiseHit;
+	}
+	const body = {
+		query: `query BlobContent($repo: String, $rev: String, $path: String) {
+					root {
+						repository(uri: $repo) {
+							commit(rev: $rev) {
+								commit {
+									file(path: $path) {
+										content
+									}
+								}
+							}
+						}
+					}
+				}`,
+		variables: { repo: repoURI, rev, path },
+	};
+	const p = fetch(`/.api/graphql?BlobContent`, {
+		method: "POST",
+		body: JSON.stringify(body),
+	}).then((resp) => resp.json()).then((json: any) => {
+		if (!json.data || !json.data.root || !json.data.root.repository || !json.data.root.repository.commit || !json.data.root.repository.commit.commit || !json.data.root.repository.commit.commit.file) {
+			throw new Error(`cannot locate blob content: ${key}`);
+		}
+		return json.data.root.repository.commit.commit.file.content;
 	});
 	promiseCache.set(key, p);
 	return p;
@@ -107,7 +145,7 @@ query DependencyReferences($repo: String, $rev: String, $mode: String, $line: In
 }`,
 		variables: { repo, rev, mode, path, line, character },
 	};
-	const p = fetch(`/.api/graphql`, {
+	const p = fetch(`/.api/graphql?DependencyReferences`, {
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {

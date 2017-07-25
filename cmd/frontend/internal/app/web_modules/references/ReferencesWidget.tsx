@@ -1,3 +1,4 @@
+import { CodeExcerpt } from "app/components/CodeExcerpt";
 import { triggerReferences } from "app/references";
 import { locKey, ReferencesState, store } from "app/references/store";
 import { parseURL, urlToBlob } from "app/util";
@@ -174,9 +175,14 @@ class ReferencesGroup extends React.Component<{ uri: string, path: string, refs:
 						if (a.uri < b.uri) { return -1; }
 						if (a.uri === b.uri) { return 0; }
 						return 1;
-					}).map((ref, i) => <div key={i} className={Styles.ref}>
-						<a href={getRefURL(ref)}>{`@ ${getRangeString(ref)}`}</a>
-					</div>)
+					}).map((ref, i) => {
+						const uri = URI.parse(ref.uri);
+						return <div key={i} className={Styles.ref}>
+							<a href={getRefURL(ref)}>
+								<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} />
+							</a>
+						</div>;
+					})
 				}
 			</div>
 		</div>;
