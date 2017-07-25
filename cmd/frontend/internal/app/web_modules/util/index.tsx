@@ -61,11 +61,6 @@ export function getPathExtension(path: string): string {
 	return pathSplit[pathSplit.length - 1].toLowerCase();
 }
 
-export function getSourcegraphBlobUrl(sourcegraphUrl: string, repoUri: string, path: string, commitId?: string): string {
-	const commitString = commitId ? `@${commitId}` : "";
-	return `${sourcegraphUrl}/${repoUri}${commitString}/-/blob/${path}}`;
-}
-
 export function parseURL(loc: Location = window.location): SourcegraphURL {
 
 	const urlsplit = loc.pathname.slice(1).split("/");
@@ -87,4 +82,24 @@ export function parseURL(loc: Location = window.location): SourcegraphURL {
 	}
 
 	return { uri, rev, path };
+}
+
+export function urlToBlob(loc: { uri: string, rev?: string, path: string, line?: number, char?: number, refs?: "all" | "local" | "external" }): string {
+	let url = `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/blob/${loc.path}`;
+	if (loc.line) { // construct hash w/ format #L[line][:char][$references[:local|external]]
+		url += "#L" + loc.line;
+		if (loc.char) {
+			url += ":" + loc.char;
+			if (loc.refs) {
+				url += "$references";
+				if (loc.refs === "local") {
+					url += ":local";
+				}
+				if (loc.refs === "external") {
+					url += ":external";
+				}
+			}
+		}
+	}
+	return url;
 }

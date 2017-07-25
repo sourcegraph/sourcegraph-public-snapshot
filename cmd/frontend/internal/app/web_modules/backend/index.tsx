@@ -112,7 +112,19 @@ query DependencyReferences($repo: String, $rev: String, $mode: String, $line: In
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
 		// Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
-		console.log("got dependency references", json);
+		const root = json.data.root;
+		if (!root.repository ||
+			!root.repository.commit ||
+			!root.repository.commit.commit ||
+			!root.repository.commit.commit.file ||
+			!root.repository.commit.commit.file.dependencyReferences ||
+			!root.repository.commit.commit.file.dependencyReferences.repoData ||
+			!root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData ||
+			!root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData.references.length) {
+			return null;
+		}
+
+		return root.repository.commit.commit.file.dependencyReferences;
 	});
 	return p;
 }

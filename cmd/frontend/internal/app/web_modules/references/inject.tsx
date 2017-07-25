@@ -20,12 +20,13 @@ export function injectReferencesWidget(): void {
 	if (widgetContainer) {
 		widgetContainer.style.position = "fixed";
 		widgetContainer.style.backgroundColor = colors.referencesBackgroundColor;
+		widgetContainer.style.color = colors.normalFontColor;
 		widgetContainer.style.width = "100%";
 		widgetContainer.style.height = "350px";
 		widgetContainer.style.left = "0px";
-		widgetContainer.style.top = `calc(100vh - 350px)`;
-		widgetContainer.style.visibility = "hidden";
 		widgetContainer.style.overflow = "auto";
+		widgetContainer.style.top = `calc(100vh - 350px)`;
+		widgetContainer.style.visibility = window.location.hash.indexOf("$references") === -1 ? "hidden" : "visible";
 		widgetContainer.style.borderTop = `1px solid ${colors.borderColor}`;
 		widgetContainer.style.zIndex = "1000";
 		document.body.appendChild(widgetContainer);
@@ -38,10 +39,16 @@ export function injectReferencesWidget(): void {
 			widgetContainer.scrollTop += e.deltaY;
 		});
 
-		store.subscribe((state) => {
-			widgetContainer.style.visibility = state.docked ? "visible" : "hidden";
-		});
+		// store.subscribe((state) => {
+		// 	widgetContainer.style.visibility = state.docked ? "visible" : "hidden";
+		// });
 
-		render(<ReferencesWidget />, widgetContainer);
+		window.addEventListener("hashchange", (e) => {
+			if (e && e.newURL!.indexOf("$references") !== -1) {
+				widgetContainer.style.visibility = "visible";
+			}
+		})
+
+		render(<ReferencesWidget onDismiss={() => widgetContainer.style.visibility = "hidden"} />, widgetContainer);
 	}
 }

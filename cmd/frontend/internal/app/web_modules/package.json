@@ -26,10 +26,13 @@
   "dependencies": {
     "@sourcegraph/rxjs": "^5.4.0",
     "css-loader": "^0.28.4",
+    "csstips": "^0.2.2",
+    "csx": "^8.2.1",
     "deep-equal": "^1.0.1",
     "extract-text-webpack-plugin": "^3.0.0",
     "highlight.js": "^9.12.0",
     "immutability-helper": "^2.1.1",
+    "immutable": "^3.8.1",
     "lodash": "^4.11.2",
     "marked": "^0.3.6",
     "node-sass": "^4.5.3",
@@ -38,7 +41,9 @@
     "react": "^0.14.7",
     "react-dom": "^0.14.7",
     "react-icon-base": "^2.0.0",
+    "react-icons": "^2.2.5",
     "sass-loader": "^6.0.6",
+    "typestyle": "^1.3.7",
     "urijs": "^1.18.10",
     "whatwg-fetch": "^2.0.3"
   }

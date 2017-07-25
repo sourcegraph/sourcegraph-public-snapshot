@@ -60,7 +60,10 @@
         "max-classes-per-file": [
             false
         ],
-        "prefer-conditional-expression": false
+        "prefer-conditional-expression": false,
+        "no-namespace": [
+            false,
+        ]
     },
     "rulesDirectory": []
 }

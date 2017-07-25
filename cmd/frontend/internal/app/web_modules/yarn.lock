@@ -748,6 +748,14 @@ csso@~2.3.1:
     clap "^1.0.9"
     source-map "^0.5.3"
 
+csstips@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/csstips/-/csstips-0.2.2.tgz#b8e0a5194aa43abe160ae66ecb291362838df683"
+
+csx@^8.2.1:
+  version "8.2.1"
+  resolved "https://registry.yarnpkg.com/csx/-/csx-8.2.1.tgz#a2eadd886fd51c8eeaaac3dc2a6e8f0e49ecc5e2"
+
 currently-unhandled@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/currently-unhandled/-/currently-unhandled-0.4.1.tgz#988df33feab191ef799a61369dd76c17adf957ea"
@@ -1134,6 +1142,10 @@ form-data@~2.1.1:
     combined-stream "^1.0.5"
     mime-types "^2.1.12"
 
+free-style@2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/free-style/-/free-style-2.3.1.tgz#ae256f7e78926bf034d2a51f4ba45715b4e6a709"
+
 fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
@@ -1377,6 +1389,10 @@ immutability-helper@^2.1.1:
   resolved "https://registry.yarnpkg.com/immutability-helper/-/immutability-helper-2.3.0.tgz#e897741c1da29541a861ea16bdbf909265e2eb55"
   dependencies:
     invariant "^2.2.0"
+
+immutable@^3.8.1:
+  version "3.8.1"
+  resolved "https://registry.yarnpkg.com/immutable/-/immutable-3.8.1.tgz#200807f11ab0f72710ea485542de088075f68cd2"
 
 in-publish@^2.0.0:
   version "2.0.0"
@@ -2480,6 +2496,12 @@ promise@^7.0.3, promise@^7.1.1:
   dependencies:
     asap "~2.0.3"
 
+prop-types@15.5.8:
+  version "15.5.8"
+  resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.5.8.tgz#6b7b2e141083be38c8595aa51fc55775c7199394"
+  dependencies:
+    fbjs "^0.8.9"
+
 prop-types@^15.5.10:
   version "15.5.10"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.5.10.tgz#2797dfc3126182e3a95e3dfbb2e893ddd7456154"
@@ -2562,9 +2584,21 @@ react-dom@^0.14.7:
   version "0.14.9"
   resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-0.14.9.tgz#05064a3dcf0fb1880a3b2bfc9d58c55d8d9f6293"
 
+react-icon-base@2.0.7:
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/react-icon-base/-/react-icon-base-2.0.7.tgz#0bd18736bd6ce79ca6d69ce8387a07fb8d4ceffe"
+  dependencies:
+    prop-types "15.5.8"
+
 react-icon-base@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/react-icon-base/-/react-icon-base-2.1.0.tgz#a196e33fdf1e7aaa1fda3aefbb68bdad9e82a79d"
+
+react-icons@^2.2.5:
+  version "2.2.5"
+  resolved "https://registry.yarnpkg.com/react-icons/-/react-icons-2.2.5.tgz#f942501c21a4cc0456ce2bbee5032c93f6051dcf"
+  dependencies:
+    react-icon-base "2.0.7"
 
 react@^0.14.7:
   version "0.14.9"
@@ -3102,6 +3136,12 @@ typescript-formatter@^4.0.1:
 typescript@^2.3.3:
   version "2.4.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.2.tgz#f8395f85d459276067c988aa41837a8f82870844"
+
+typestyle@^1.3.7:
+  version "1.3.7"
+  resolved "https://registry.yarnpkg.com/typestyle/-/typestyle-1.3.7.tgz#7db8d4c2087c3dcac901704f7d5c12b9fe08440f"
+  dependencies:
+    free-style "2.3.1"
 
 ua-parser-js@^0.7.9:
   version "0.7.14"

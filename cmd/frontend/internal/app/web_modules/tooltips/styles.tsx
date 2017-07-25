@@ -7,6 +7,7 @@ import * as colors from "app/util/colors";
 export const tooltip = {
 	backgroundColor: colors.backgroundColor,
 	maxWidth: "500px",
+	minWidth: "500px",
 	border: `solid 1px ${colors.borderColor}`,
 	fontFamily: normalFontFamily,
 	color: colors.normalFontColor,

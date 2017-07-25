@@ -1,6 +1,5 @@
-import { fetchDependencyReferences } from "app/backend";
 import { fetchJumpURL } from "app/backend/lsp";
-import { setReferences, store as referencesStore } from "app/references/store";
+import { triggerReferences } from "app/references";
 import { clearTooltip, store, TooltipState } from "app/tooltips/store";
 import * as styles from "app/tooltips/styles";
 import { getModeFromExtension } from "app/util";
@@ -50,7 +49,7 @@ export function createTooltips(): void {
 	Object.assign(moreContext.style, styles.tooltipMoreActions);
 	moreContext.appendChild(document.createTextNode("Click for more actions"));
 
-	let definitionIcon = document.createElement("svg");
+	const definitionIcon = document.createElement("svg");
 	definitionIcon.innerHTML = definitionIconSVG;
 	Object.assign(definitionIcon.style, styles.definitionIcon);
 
@@ -77,7 +76,7 @@ export function createTooltips(): void {
 		}
 	};
 
-	let referencesIcon = document.createElement("svg");
+	const referencesIcon = document.createElement("svg");
 	referencesIcon.innerHTML = referencesIconSVG;
 	Object.assign(referencesIcon.style, styles.referencesIcon);
 
@@ -89,25 +88,21 @@ export function createTooltips(): void {
 	findRefsAction.className = `btn btn-sm BtnGroup-item`;
 	findRefsAction.onclick = (e) => {
 		e.preventDefault();
-		const { data, context } = store.getValue();
-		console.log("setting references to be", { ...referencesStore.getValue(), docked: true });
-		if (data && context && context.coords && context.path && context.repoRevSpec) {
-			setReferences({ ...referencesStore.getValue(), docked: true, context: context as any });
-			// eventLogger.logFindRefs({ ...getTooltipEventProperties(data, context) });
-			fetchDependencyReferences(context.repoRevSpec.repoURI, context.repoRevSpec.rev, context.path, 40, 25).then(() => {
-				console.log("HELLO SENOR!!");
-			});
-			// fetchReferences(context.coords.char, context.path, context.coords.line, context.repoRevSpec)
-			// 	.then((references) => {
-			// 		console.log("GOT REFERENCES", references);
-			// 	});
-			// const url = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}?utm_source=${getPlatformName()}#L${context.coords.line}:${context.coords.char}$references`;
-			// const withModifierKey = isMouseEventWithModifierKey(e);
-			// openSourcegraphTab(url, withModifierKey);
+		const { context } = store.getValue();
+		if (!context || !context.coords) {
+			return;
 		}
+		const loc = {
+			uri: context.repoRevSpec.repoURI,
+			rev: context.repoRevSpec.rev,
+			path: context.path,
+			line: context.coords.line,
+			char: context.coords.char,
+		};
+		triggerReferences({ loc, word: context.coords.word }, true);
 	};
 
-	let searchIcon = document.createElement("svg");
+	const searchIcon = document.createElement("svg");
 	searchIcon.innerHTML = searchIconSVG;
 	Object.assign(searchIcon.style, styles.searchIcon);
 

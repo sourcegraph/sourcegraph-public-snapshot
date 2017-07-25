@@ -43,11 +43,19 @@ export function highlightAndScrollToLine(line: number, cells: CodeCell[]): void 
 }
 
 window.onhashchange = (hash) => {
-	const split = hash.newURL!.split("#L");
-	if (split[1]) {
-		const line = parseInt(split[1].split(":")[0], 10)
-		const cells = getCodeCellsForAnnotation();
-		highlightAndScrollToLine(line, cells);
+	const oldSplit = hash.oldURL!.split("#L");
+	let lastLine;
+	if (oldSplit[1]) {
+		lastLine = parseInt(oldSplit[1].split(":")[0], 10);
+	}
+	const newSplit = hash.newURL!.split("#L");
+	if (newSplit[1]) {
+		const line = parseInt(newSplit[1].split(":")[0], 10);
+		if (lastLine !== line) {
+			// prevent e.g. re-scrolling to same line on toggling refs group
+			const cells = getCodeCellsForAnnotation();
+			highlightAndScrollToLine(line, cells);
+		}
 	}
 }
 

@@ -1,13 +1,13 @@
+export interface Workspace {
+	uri: string;
+	rev: string;
+}
+
 export interface TooltipData {
 	loading?: boolean;
 	title?: string;
 	doc?: string;
 	j2dUrl?: string;
-}
-
-export interface ReferencesData {
-	loading?: boolean;
-	references?: Reference[];
 }
 
 export interface Reference {
@@ -22,6 +22,7 @@ export interface Reference {
 		};
 	};
 	uri: string;
+	repoURI: string;
 }
 
 export interface RepoRevSpec {

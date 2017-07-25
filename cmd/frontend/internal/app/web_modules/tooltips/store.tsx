@@ -10,6 +10,7 @@ export interface TooltipContext {
 	coords?: {
 		line: number;
 		char: number;
+		word?: string;
 	};
 	selectedText?: string;
 }

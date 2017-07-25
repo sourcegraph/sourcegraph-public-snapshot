@@ -1,7 +1,8 @@
 import { doFetch as fetch } from "app/backend/xhr";
 import { getModeFromExtension, getPathExtension, supportedExtensions } from "app/util";
 import { RepoRevSpec } from "app/util/types";
-import { Reference, TooltipData } from "app/util/types";
+import { Reference, TooltipData, Workspace } from "app/util/types";
+import * as URI from "urijs";
 
 const tooltipCache: { [key: string]: TooltipData } = {};
 const j2dCache = {};
@@ -133,6 +134,30 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevSpe
 		});
 }
 
+export function fetchXdefinition(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<{ location: any, symbol: any } | null> {
+	const body = wrapLSP({
+		method: "textDocument/xdefinition",
+		params: {
+			textDocument: {
+				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+			},
+			position: {
+				character: col,
+				line: line,
+			},
+		},
+	}, repoRevSpec, path);
+
+	return fetch(`/.api/xlang/textDocument/xdefinition`, { method: "POST", body: JSON.stringify(body) })
+		.then((resp) => resp.json()).then((json) => {
+			if (!json || !json[1] || !json[1].result || !json[1].result[0]) {
+				return null;
+			}
+
+			return json[1].result[0];
+		});
+}
+
 export function fetchReferences(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<Reference[] | null> {
 	const ext = getPathExtension(path);
 	if (!supportedExtensions.has(ext)) {
@@ -167,37 +192,36 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 			}
 
 			referencesCache[cacheKey] = json[1].result;
+			referencesCache[cacheKey].forEach((ref) => {
+				const parsed = URI.parse(ref.uri)
+				ref.repoURI = `${parsed.hostname}/${parsed.path}`;
+			});
 			return referencesCache[cacheKey];
 		});
 }
 
-export function fetchXreferences(col: number, path: string, line: number, repoRevSpec: RepoRevSpec, hints: any, limit: number, query: number): Promise<Reference[] | null> {
-	const ext = getPathExtension(path);
-	if (!supportedExtensions.has(ext)) {
-		return Promise.resolve(null);
-	}
-	const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
-	// if (referencesCache[cacheKey]) {
-	// 	return Promise.resolve(referencesCache[cacheKey]);
-	// }
+export function fetchXreferences(workspace: Workspace, path: string, query: any, hints: any, limit: any): Promise<Reference[] | null> {
 
 	const body = wrapLSP({
-		method: "textDocument/xreferences",
+		method: "workspace/xreferences",
 		params: {
 			hints,
 			query,
 			limit,
 		},
-	}, repoRevSpec, path);
+	}, { repoURI: workspace.uri, rev: workspace.rev, isBase: false, isDelta: false }, path);
 
-	return fetch(`/.api/xlang/textDocument/xreferences`, { method: "POST", body: JSON.stringify(body) })
+	return fetch(`/.api/xlang/workspace/xreferences`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
 			if (!json || !json[1] || !json[1].result) {
-				// TODO(john): better error handling.
 				return null;
 			}
 
-			referencesCache[cacheKey] = json[1].result;
-			return referencesCache[cacheKey];
+			return json[1].result.map((res) => {
+				const ref = res.reference;
+				const parsed = URI.parse(ref.uri)
+				ref.repoURI = `${parsed.hostname}/${parsed.path}`;
+				return ref;
+			});
 		});
 }
