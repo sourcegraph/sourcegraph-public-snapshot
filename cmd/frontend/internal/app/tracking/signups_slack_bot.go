@@ -123,7 +123,7 @@ func notifySlackOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProper
 	return postToSlack(payload)
 }
 
-func notifySlackOnAppInstall(actor *actor.Actor, actorGitHubLink string, actorLookerLink string, org *github.User, orgGitHubLink string) error {
+func notifySlackOnAppInstall(senderLogin string, actorGitHubLink string, actorLookerLink string, org *github.User, orgGitHubLink string) error {
 	if SlackWebhookURL == "" {
 		return errors.New("Slack Webhook URL not defined")
 	}
@@ -133,14 +133,14 @@ func notifySlackOnAppInstall(actor *actor.Actor, actorGitHubLink string, actorLo
 	payload := &slackPayload{
 		Attachments: []*slackAttachment{
 			&slackAttachment{
-				Fallback: fmt.Sprintf("%s just installed Sourcegraph on their org %s!", actor.Login, *org.Login),
-				Title:    fmt.Sprintf("%s just installed Sourcegraph on their org %s!", actor.Login, *org.Login),
+				Fallback: fmt.Sprintf("%s just installed Sourcegraph on their org %s!", senderLogin, *org.Login),
+				Title:    fmt.Sprintf("%s just installed Sourcegraph on their org %s!", senderLogin, *org.Login),
 				Color:    color,
 				ThumbURL: *org.AvatarURL,
 				Fields: []*slackField{
 					&slackField{
 						Title: "User login",
-						Value: actor.Login,
+						Value: senderLogin,
 						Short: true,
 					},
 					&slackField{

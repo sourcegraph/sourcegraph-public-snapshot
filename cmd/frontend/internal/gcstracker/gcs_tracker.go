@@ -38,11 +38,20 @@ type Client struct {
 // New returns a new GCS Tracker client using the given API key
 // based on a provided actor.Actor
 func New(user *actor.Actor, webSessionID string) (*Client, error) {
-	return NewFromUserInfo(generateUserInfo(user), webSessionID)
+	return newFromUserInfo(generateUserInfo(user), webSessionID)
 }
 
-// NewFromUserInfo returns a new GCS Tracker client using the given API key
-func NewFromUserInfo(info *UserInfo, webSessionID string) (*Client, error) {
+// NewFromUserProperties returns a new GCS Tracker client using
+// the given API key based on provided user properties
+func NewFromUserProperties(login string, email string, webSessionID string) (*Client, error) {
+	return newFromUserInfo(&UserInfo{
+		BusinessUserID: login,
+		Email:          email,
+	}, webSessionID)
+}
+
+// newFromUserInfo returns a new GCS Tracker client using the given API key
+func newFromUserInfo(info *UserInfo, webSessionID string) (*Client, error) {
 	ctx := context.Background()
 
 	gcsClient, err := storage.NewClient(ctx)

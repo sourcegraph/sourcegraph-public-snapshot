@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -26,8 +25,7 @@ func serveReceiveGitHubWebhooks(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	actor := actor.FromContext(r.Context())
-	err = tracking.TrackGitHubWebhook(actor, eventType, event)
+	err = tracking.TrackGitHubWebhook(eventType, event)
 	if err != nil {
 		log15.Error("httpapi.serveReceiveGitHubWebhooks: error logging webhook", "error", err)
 		return err
