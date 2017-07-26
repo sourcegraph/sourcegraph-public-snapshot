@@ -92,16 +92,18 @@ function blameLine(repoURI: string, rev: string, path: string, line: number, cel
 
 function setLineBlameContent(line: number, blameContent: string, cells: CodeCell[]): void {
 	// Remove blame class from all other lines.
-	const currentlyBlamed = document.querySelectorAll(".code-cell.blame");
-	currentlyBlamed.forEach((cell: HTMLElement) => {
-		cell.classList.remove("blame");
+	const currentlyBlamed = document.querySelectorAll(".code-cell>.blame");
+	currentlyBlamed.forEach((blame: HTMLElement) => {
+		blame.parentNode.removeChild(blame);
 	});
 
 	if (line > 0) {
 		// Add blame class to the target line.
 		const cell = cells[line - 1];
-		cell.cell.classList.add("blame");
-		cell.cell.setAttribute("blame-content", blameContent);
+		const blame = document.createElement("span");
+		blame.classList.add("blame");
+		blame.appendChild(document.createTextNode(blameContent));
+		cell.cell.appendChild(blame);
 	}
 }
 
