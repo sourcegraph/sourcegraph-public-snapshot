@@ -83,7 +83,7 @@ function blameLine(repoURI: string, rev: string, path: string, line: number, cel
 		if (!hunks) {
 			return;
 		}
-		const timeSince = moment(Date.parse("2013-06-05 23:07:27 +0000 UTC")).fromNow();
+		const timeSince = moment(Date.parse(hunks[0].author.date)).fromNow();
 		const blameContent = `${hunks[0].author.person.name}, ${timeSince} • ${limitString(hunks[0].message, 80, true)} ${limitString(hunks[0].rev, 6, false)}`;
 
 		setLineBlameContent(line, blameContent, cells);
