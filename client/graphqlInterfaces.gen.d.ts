@@ -401,6 +401,8 @@ declare namespace GQL {
 		__typename: string;
 		results: Array<IFileMatch>;
 		limitHit: boolean;
+		cloning: Array<string>;
+		missing: Array<string>;
 	}
 
 	/*

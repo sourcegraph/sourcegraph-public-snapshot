@@ -161,6 +161,8 @@ type File {
 type SearchResults {
 	results: [FileMatch!]!
 	limitHit: Boolean!
+	cloning: [String!]!
+	missing: [String!]!
 }
 
 type FileMatch {

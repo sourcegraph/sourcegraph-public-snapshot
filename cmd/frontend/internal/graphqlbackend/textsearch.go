@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -44,6 +45,8 @@ type patternInfo struct {
 type searchResults struct {
 	results  []*fileMatch
 	limitHit bool
+	cloning  []string
+	missing  []string
 }
 
 func (sr *searchResults) Results() []*fileMatch {
@@ -52,6 +55,20 @@ func (sr *searchResults) Results() []*fileMatch {
 
 func (sr *searchResults) LimitHit() bool {
 	return sr.limitHit
+}
+
+func (sr *searchResults) Cloning() []string {
+	if sr.cloning == nil {
+		return []string{}
+	}
+	return sr.cloning
+}
+
+func (sr *searchResults) Missing() []string {
+	if sr.missing == nil {
+		return []string{}
+	}
+	return sr.missing
 }
 
 type fileMatch struct {
@@ -204,6 +221,8 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		wg        sync.WaitGroup
 		mu        sync.Mutex
 		err       error
+		cloning   []string
+		missing   []string
 		flattened []*fileMatch
 		limitHit  bool
 	)
@@ -223,13 +242,11 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit = limitHit || repoLimitHit
-			if err, ok := searchErr.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-				searchErr = fmt.Errorf("%s is cloning, please try again soon.", repoRev.Repo)
-			}
-			if err, ok := searchErr.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
-				searchErr = fmt.Errorf("%s does not exist.", repoRev.Repo)
-			}
-			if searchErr != nil && err == nil {
+			if e, ok := searchErr.(vcs.RepoNotExistError); ok && e.CloneInProgress {
+				cloning = append(cloning, repoRev.Repo)
+			} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
+				missing = append(missing, repoRev.Repo)
+			} else if searchErr != nil && err == nil {
 				err = searchErr
 				cancel()
 			}
@@ -246,6 +263,9 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	if err != nil {
 		return nil, err
 	}
+	if len(cloning)+len(missing) == len(args.Repositories) {
+		return nil, errors.Errorf("failed to search all repositories (%d cloning, %d missing)", len(cloning), len(missing))
+	}
 	sort.Slice(flattened, func(i, j int) bool {
 		a, b := len(flattened[i].JLineMatches), len(flattened[j].JLineMatches)
 		if a != b {
@@ -259,7 +279,12 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	if len(flattened) > int(args.Query.FileMatchLimit) {
 		flattened = flattened[:args.Query.FileMatchLimit]
 	}
-	return &searchResults{flattened, limitHit}, nil
+	return &searchResults{
+		results:  flattened,
+		limitHit: limitHit,
+		cloning:  cloning,
+		missing:  missing,
+	}, nil
 }
 
 var searcherURLs *endpoint.Map
