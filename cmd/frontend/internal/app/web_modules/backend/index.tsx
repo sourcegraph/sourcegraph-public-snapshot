@@ -102,6 +102,90 @@ export function fetchBlobContent(repoURI: string, rev: string, path: string): Pr
 	return p;
 }
 
+export const blameFileCacheKey = (repo: string, rev?: string, path: string, startLine: number, endLine: number) => `${repo}@${rev || null}/${path}#${startLine}-${endLine}`;
+const blameFilePromiseCache = new Map<string, Promise<Hunk[]>>();
+
+export interface Signature {
+	person: Person;
+	date: string;
+}
+
+export interface Person {
+	name: string;
+	email: string;
+	gravatarHash: string;
+}
+
+export interface Hunk {
+	startLine: number;
+	endLine: number;
+	startByte: number;
+	endByte: number;
+	rev: string;
+	author: Signature;
+	message: string;
+}
+
+export function blameFile(repo: string, rev?: string, path: string, startLine: number, endLine: number): Promise<Hunk[]> {
+	const key = blameFileCacheKey(repo, rev, path, startLine, endLine);
+	const promiseHit = blameFilePromiseCache.get(key);
+	if (promiseHit) {
+		return promiseHit;
+	}
+	const body = {
+		query: `query BlameFile($repo: String, $rev: String, $path: String, $startLine: Int, $endLine: Int) {
+  root {
+    repository(uri: $repo) {
+      commit(rev: $rev) {
+        commit {
+          file(path: $path) {
+            blame(startLine: $startLine, endLine: $endLine) {
+              startLine
+              endLine
+              startByte
+              endByte
+              rev
+              author {
+              	person {
+              		name
+              		email
+              		gravatarHash
+              	}
+              	date
+              }
+              message
+            }
+          }
+        }
+      }
+    }
+  }
+}`,
+		variables: { repo, rev, path, startLine, endLine },
+	};
+	const p = fetch(`/.api/graphql?BlameFile`, {
+		method: "POST",
+		body: JSON.stringify(body),
+	}).then((resp) => resp.json()).then((json: any) => {
+		blameFilePromiseCache.delete(key);
+		if (!json.data ||
+			!json.data.root ||
+			!json.data.root.repository ||
+			!json.data.root.repository.commit ||
+			!json.data.root.repository.commit.commit ||
+			!json.data.root.repository.commit.commit.file ||
+			!json.data.root.repository.commit.commit.file.blame) {
+			console.error("unexpected BlameFile response:", json);
+			return null;
+		}
+		const found = json.data.root.repository.commit.commit.file.blame
+		blameFilePromiseCache.set(key, Promise.resolve(found));
+		return found;
+	});
+	blameFilePromiseCache.set(key, p);
+	return p;
+}
+
 export function fetchDependencyReferences(repo: string, rev: string, path: string, line: number, character: number): Promise<any> {
 	const mode = util.getModeFromExtension(util.getPathExtension(path));
 	const body = {

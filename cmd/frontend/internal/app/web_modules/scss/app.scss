@@ -140,7 +140,7 @@ $nav-height: 48px;
 	#blob-table>table {
 		margin-bottom: 1.3em;
 		border-collapse: collapse;
-		.line-number, .code-cell {
+		.line-number, .code-cell, .blame {
 			padding: 0;
 			padding-top: .3em;
 			padding-bottom: .3em;
@@ -157,6 +157,14 @@ $nav-height: 48px;
 		.code-cell {
 			white-space: pre;
 			font-size: .75em;
+			height: 1.7em;
+		}
+		.code-cell.blame:after {
+			content: attr(blame-content);
+			color: #464d57;
+			padding-left: 4em;
+			display: inline-block;
+			width: 0;
 		}
 	}
 
