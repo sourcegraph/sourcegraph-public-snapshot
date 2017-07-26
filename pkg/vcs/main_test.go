@@ -24,7 +24,6 @@ func TestMain(m *testing.M) {
 	go srv.Serve(l)
 
 	gitserver.DefaultClient = &gitserver.Client{Addrs: []string{l.Addr().String()}}
-	gitserver.MetaClient = &gitserver.Client{Addrs: []string{l.Addr().String()}}
 
 	os.Exit(m.Run())
 }

@@ -26,13 +26,9 @@ import (
 )
 
 var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
-var gitMetaServers = env.Get("SRC_GIT_METADATA_SERVERS", gitservers, "addresses of the remote gitservers used to execute git metadata commands (blame, log, etc.)")
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = &Client{Addrs: strings.Fields(gitservers)}
-
-// MetaClient is the Client used for executing git metadata commands (blame, log, etc.). Unless overwritten it is connected to servers specified by SRC_GIT_METADATA_SERVERS.
-var MetaClient = &Client{Addrs: strings.Fields(gitMetaServers)}
 
 // Client is a gitserver client.
 type Client struct {

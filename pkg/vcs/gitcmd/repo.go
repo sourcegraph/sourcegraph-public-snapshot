@@ -347,7 +347,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 		args = append(args, "--", opt.Path)
 	}
 
-	cmd := gitserver.MetaClient.Command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -556,7 +556,7 @@ func (r *Repository) BlameFileRaw(ctx context.Context, path string, opt *vcs.Bla
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
 
-	cmd := gitserver.MetaClient.Command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -593,7 +593,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
 
-	cmd := gitserver.MetaClient.Command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -714,7 +714,7 @@ func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) 
 		opt.Rev = "HEAD"
 	}
 
-	cmd := gitserver.MetaClient.Command("git", "shortlog", "-sne", opt.Rev)
+	cmd := gitserver.DefaultClient.Command("git", "shortlog", "-sne", opt.Rev)
 	cmd.Repo = r.Repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
