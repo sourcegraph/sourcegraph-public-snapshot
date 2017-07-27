@@ -1,43 +1,19 @@
 import { ReferencesWidget } from "app/references/ReferencesWidget";
-import { store } from "app/references/store";
+import * as colors from "app/util/colors";
 import * as React from "react";
 import { render } from "react-dom";
-import * as colors from "app/util/colors";
 
-const APP_ID = "sourcegraph-references-widget";
-
-function createAppContainerIfNotExists(tag: string): HTMLElement | undefined {
-	if (document.getElementById(APP_ID)) {
-		return;
-	}
-	const el = document.createElement(tag);
-	el.id = APP_ID;
-	return el;
-}
+const APP_ID = "ref-widget";
 
 export function injectReferencesWidget(): void {
-	const widgetContainer = createAppContainerIfNotExists("div") as HTMLElement;
+	const widgetContainer = document.getElementById(APP_ID) as HTMLElement;
 	if (widgetContainer) {
-		widgetContainer.style.position = "fixed";
 		widgetContainer.style.backgroundColor = colors.referencesBackgroundColor;
 		widgetContainer.style.color = colors.normalFontColor;
-		widgetContainer.style.width = "100%";
-		widgetContainer.style.height = "350px";
-		widgetContainer.style.left = "0px";
 		widgetContainer.style.overflow = "auto";
-		widgetContainer.style.top = `calc(100vh - 350px)`;
-		widgetContainer.style.visibility = window.location.hash.indexOf("$references") === -1 ? "hidden" : "visible";
+		widgetContainer.style.display = window.location.hash.indexOf("$references") === -1 ? "none" : "block";
 		widgetContainer.style.borderTop = `1px solid ${colors.borderColor}`;
 		widgetContainer.style.zIndex = "1000";
-		document.body.appendChild(widgetContainer);
-
-		// Handle scrolling ourselves so that scrolling inside the widget does
-		// not cause the page to start scrolling (which is a very jarring
-		// experience).
-		widgetContainer.addEventListener("wheel", (e: WheelEvent) => {
-			e.preventDefault();
-			widgetContainer.scrollTop += e.deltaY;
-		});
 
 		// store.subscribe((state) => {
 		// 	widgetContainer.style.visibility = state.docked ? "visible" : "hidden";
@@ -45,10 +21,10 @@ export function injectReferencesWidget(): void {
 
 		window.addEventListener("hashchange", (e) => {
 			if (e && e.newURL!.indexOf("$references") !== -1) {
-				widgetContainer.style.visibility = "visible";
+				widgetContainer.style.display = "block";
 			}
-		})
+		});
 
-		render(<ReferencesWidget onDismiss={() => widgetContainer.style.visibility = "hidden"} />, widgetContainer);
+		render(<ReferencesWidget onDismiss={() => widgetContainer.style.display = "none"} />, widgetContainer);
 	}
 }

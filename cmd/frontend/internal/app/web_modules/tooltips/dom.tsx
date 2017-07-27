@@ -36,7 +36,8 @@ export function createTooltips(): void {
 	Object.assign(tooltip.style, styles.tooltip);
 	tooltip.classList.add("sg-tooltip");
 	tooltip.style.visibility = "hidden";
-	document.body.appendChild(tooltip);
+
+	document.querySelector("#blob-table")!.appendChild(tooltip);
 
 	loadingTooltip = document.createElement("DIV");
 	loadingTooltip.appendChild(document.createTextNode("Loading..."));
@@ -254,14 +255,21 @@ function updateTooltip(state: TooltipState): void {
 		loadingTooltip.style.visibility = "visible";
 	}
 
+	const blobScroll = document.querySelector("#blob-table")!; // the scroll view
+	const blobTable = blobScroll.querySelector("table")!; // the overflowing content (can have negative positions)
+	const tableBound = blobTable.getBoundingClientRect();
+
+
 	// Anchor it horizontally, prior to rendering to account for wrapping
 	// changes to vertical height if the tooltip is at the edge of the viewport.
 	const targetBound = target.getBoundingClientRect();
-	tooltip.style.left = (targetBound.left + window.scrollX) + "px";
+	const relLeft = targetBound.left - tableBound.left;
+	tooltip.style.left = relLeft + "px";
 
 	// Anchor the tooltip vertically.
 	const tooltipBound = tooltip.getBoundingClientRect();
-	tooltip.style.top = (targetBound.top - (tooltipBound.height + 5) + window.scrollY) + "px";
+	const relTop = targetBound.top - tableBound.top;
+	tooltip.style.top = (relTop - (tooltipBound.height + 5)) + "px";
 
 	// Make it all visible to the user.
 	tooltip.style.visibility = "visible";
