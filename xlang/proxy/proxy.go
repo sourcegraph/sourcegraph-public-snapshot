@@ -172,3 +172,30 @@ func (p *Proxy) getSavedDiagnostics(id serverID, documentURI lsp.DocumentURI) []
 	defer c.mu.Unlock()
 	return c.diagnostics[diagnosticsKey{serverID: c.id, documentURI: documentURI}]
 }
+
+// getSavedMessages returns the saved messages for the specified
+// server proxy. The slice returned is a copy.
+func (p *Proxy) getSavedMessages(id serverID) []lsp.ShowMessageParams {
+	var c *serverProxyConn
+	p.mu.Lock()
+	for cc := range p.servers {
+		if cc.id == id {
+			c = cc
+			break
+		}
+	}
+	p.mu.Unlock()
+	if c == nil {
+		return nil
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if len(c.messages) == 0 {
+		return nil
+	}
+	// return a copy as the slice may be mutated by other goroutines
+	msgs := make([]lsp.ShowMessageParams, len(c.messages[c.id]))
+	copy(msgs, c.messages[c.id])
+	return msgs
+}
