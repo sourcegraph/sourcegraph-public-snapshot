@@ -15,16 +15,14 @@ export function injectReferencesWidget(): void {
 		widgetContainer.style.borderTop = `1px solid ${colors.borderColor}`;
 		widgetContainer.style.zIndex = "1000";
 
-		// store.subscribe((state) => {
-		// 	widgetContainer.style.visibility = state.docked ? "visible" : "hidden";
-		// });
-
 		window.addEventListener("hashchange", (e) => {
 			if (e && e.newURL!.indexOf("$references") !== -1) {
 				widgetContainer.style.display = "block";
 			}
 		});
 
-		render(<ReferencesWidget onDismiss={() => widgetContainer.style.display = "none"} />, widgetContainer);
+		render(<ReferencesWidget onDismiss={() => {
+			widgetContainer.style.display = "none";
+		}} />, widgetContainer);
 	}
 }

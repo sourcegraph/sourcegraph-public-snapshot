@@ -14,7 +14,7 @@ import * as URI from "urijs";
 namespace Styles {
 	const border = `1px solid ${colors.borderColor}`;
 
-	export const titleBar = style(csstips.horizontal, csstips.center, { borderBottom: border, padding: "10px", fontSize: "14px" });
+	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "10px", fontSize: "14px", height: "32px", width: "100vw", position: "sticky", top: "0px" });
 	export const titleBarTitle = style(csstips.content, { maxWidth: "calc(50vw)", marginRight: "25px" });
 	export const titleBarGroup = style(csstips.content, {
 		textTransform: "uppercase",
@@ -26,15 +26,16 @@ namespace Styles {
 	});
 	export const titleBarGroupActive = classes(style({ fontWeight: "bold !important", color: "white !important" } as any), titleBarGroup);
 
-	export const badge = style(csstips.content, { backgroundColor: "#233043 !important", borderRadius: "20px", color: normalFontColor, marginLeft: "10px", marginRight: "25px", fontSize: "11px", padding: "3px 6px" });
+	export const badge = style(csstips.content, { backgroundColor: "#233043 !important", borderRadius: "20px", color: normalFontColor, marginLeft: "10px", marginRight: "25px", fontSize: "11px", padding: "3px 6px", fontFamily: "system" });
 
-	export const uriPathPart = style({ fontWeight: "bold", paddingRight: "15px" });
-	export const pathPart = style({ paddingRight: "15px" });
+	export const uriPathPart = style({ paddingLeft: "25px", paddingRight: "15px" });
+	export const pathPart = style({});
 	export const filePathPart = style({ color: "white", fontWeight: "bold", paddingRight: "15px" });
 
-	export const refsGroup = style(csstips.horizontal, csstips.center, { borderBottom: border });
-	export const refsList = style(csstips.horizontal, csstips.wrap, { borderLeft: border });
-	export const ref = style(csstips.content, { borderRight: border, borderBottom: border, marginBottom: "-1px" /* prevent "double border" */, padding: "10px" });
+	export const refsGroup = style({ fontSize: "12px", fontFamily: "system" });
+	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
+	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
+	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px" });
 }
 
 interface Props {
@@ -166,21 +167,31 @@ class ReferencesGroup extends React.Component<{ uri: string, path: string, refs:
 		const pathSplit = this.props.path.split("/");
 		const filePart = pathSplit.pop();
 		return <div className={Styles.refsGroup}>
-			<div className={Styles.uriPathPart}>{uriStr}</div>
-			<div className={Styles.pathPart}>{pathSplit.join("/")}</div>
-			<div className={Styles.filePathPart}>{filePart}</div>
+			<div className={Styles.refsGroupTitle}>
+				<div className={Styles.uriPathPart}>{uriStr}</div>
+				<div className={Styles.pathPart}>{pathSplit.join("/")}{pathSplit.length > 0 ? "/" : ""}</div>
+				<div className={Styles.filePathPart}>{filePart}</div>
+			</div>
 			<div className={Styles.refsList}>
 				{
 					this.props.refs.sort((a, b) => {
-						if (a.uri < b.uri) { return -1; }
-						if (a.uri === b.uri) { return 0; }
+						if (a.range.start.line < b.range.start.line) { return -1; }
+						if (a.range.start.line === b.range.start.line) {
+							if (a.range.start.character < b.range.start.character) {
+								return -1;
+							}
+							if (a.range.start.character === b.range.start.character) {
+								return 0;
+							}
+							return 1;
+						}
 						return 1;
 					}).map((ref, i) => {
 						const uri = URI.parse(ref.uri);
 						return <div key={i} className={Styles.ref}>
-							<a href={getRefURL(ref)}>
-								<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} />
-							</a>
+							<div onClick={() => window.location.href = getRefURL(ref)}>
+								<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
+							</div>
 						</div>;
 					})
 				}
