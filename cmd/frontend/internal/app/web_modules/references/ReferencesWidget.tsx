@@ -133,7 +133,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				</a>
 				<div className={Styles.badge}>{externalRefs.length}</div>
 				<div className={style(csstips.flex)} />
-				<div style={{ float: "right" }} onClick={() => this.props.onDismiss()}>X</div>
+				<div style={{ float: "right", marginRight: "20px" }} onClick={() => this.props.onDismiss()}>X</div>
 			</div>
 			<div>
 				{

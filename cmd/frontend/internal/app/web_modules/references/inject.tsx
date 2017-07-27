@@ -10,7 +10,8 @@ export function injectReferencesWidget(): void {
 	if (widgetContainer) {
 		widgetContainer.style.backgroundColor = colors.referencesBackgroundColor;
 		widgetContainer.style.color = colors.normalFontColor;
-		widgetContainer.style.overflow = "auto";
+		widgetContainer.style.overflowY = "scroll";
+		widgetContainer.style.overflowX = "hidden";
 		widgetContainer.style.display = window.location.hash.indexOf("$references") === -1 ? "none" : "block";
 		widgetContainer.style.borderTop = `1px solid ${colors.borderColor}`;
 		widgetContainer.style.zIndex = "1000";
