@@ -12,6 +12,27 @@ export interface BlobPosition extends Blob {
 	char?: number;
 }
 
+export interface Signature {
+	person: Person;
+	date: string;
+}
+
+export interface Person {
+	name: string;
+	email: string;
+	gravatarHash: string;
+}
+
+export interface Hunk {
+	startLine: number;
+	endLine: number;
+	startByte: number;
+	endByte: number;
+	rev: string;
+	author: Signature;
+	message: string;
+}
+
 export interface TooltipData {
 	loading?: boolean;
 	title?: string;

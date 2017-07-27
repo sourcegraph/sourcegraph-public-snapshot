@@ -1,5 +1,6 @@
 import { doFetch as fetch } from "app/backend/xhr";
 import * as util from "app/util";
+import * as types from "app/util/types";
 
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
 
@@ -102,36 +103,7 @@ export function fetchBlobContent(repoURI: string, rev: string, path: string): Pr
 	return p;
 }
 
-export const blameFileCacheKey = (repo: string, rev?: string, path: string, startLine: number, endLine: number) => `${repo}@${rev || null}/${path}#${startLine}-${endLine}`;
-const blameFilePromiseCache = new Map<string, Promise<Hunk[]>>();
-
-export interface Signature {
-	person: Person;
-	date: string;
-}
-
-export interface Person {
-	name: string;
-	email: string;
-	gravatarHash: string;
-}
-
-export interface Hunk {
-	startLine: number;
-	endLine: number;
-	startByte: number;
-	endByte: number;
-	rev: string;
-	author: Signature;
-	message: string;
-}
-
-export function blameFile(repo: string, rev?: string, path: string, startLine: number, endLine: number): Promise<Hunk[]> {
-	const key = blameFileCacheKey(repo, rev, path, startLine, endLine);
-	const promiseHit = blameFilePromiseCache.get(key);
-	if (promiseHit) {
-		return promiseHit;
-	}
+export function fetchBlameFile(repo: string, rev: string, path: string, startLine: number, endLine: number): Promise<types.Hunk[]> {
 	const body = {
 		query: `query BlameFile($repo: String, $rev: String, $path: String, $startLine: Int, $endLine: Int) {
   root {
@@ -167,7 +139,6 @@ export function blameFile(repo: string, rev?: string, path: string, startLine: n
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
-		blameFilePromiseCache.delete(key);
 		if (!json.data ||
 			!json.data.root ||
 			!json.data.root.repository ||
@@ -178,11 +149,8 @@ export function blameFile(repo: string, rev?: string, path: string, startLine: n
 			console.error("unexpected BlameFile response:", json);
 			return null;
 		}
-		const found = json.data.root.repository.commit.commit.file.blame
-		blameFilePromiseCache.set(key, Promise.resolve(found));
-		return found;
+		return json.data.root.repository.commit.commit.file.blame;
 	});
-	blameFilePromiseCache.set(key, p);
 	return p;
 }
 
