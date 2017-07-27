@@ -60,8 +60,8 @@ type serverProxyConn struct {
 	mu          sync.Mutex
 	rootFS      FileSystem // the workspace's file system
 	stats       serverProxyConnStats
-	diagnostics map[diagnosticsKey][]lsp.Diagnostic  // saved diagnostics
-	messages    map[serverID][]lsp.ShowMessageParams // saved messages
+	diagnostics map[diagnosticsKey][]lsp.Diagnostic // saved diagnostics
+	messages    []lsp.ShowMessageParams             // saved messages
 }
 
 // serverProxyConnStats contains statistics for a proxied connection to a server.
@@ -773,8 +773,5 @@ func (c *serverProxyConn) saveDiagnostics(diagnostics lsp.PublishDiagnosticsPara
 func (c *serverProxyConn) saveMessage(message lsp.ShowMessageParams) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.messages == nil {
-		c.messages = map[serverID][]lsp.ShowMessageParams{}
-	}
-	c.messages[c.id] = append(c.messages[c.id], message)
+	c.messages = append(c.messages, message)
 }

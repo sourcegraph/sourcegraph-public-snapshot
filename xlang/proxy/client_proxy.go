@@ -410,6 +410,19 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.session = c.init.InitializationOptions.Session
 		c.mu.Unlock()
 
+		// Send saved messages on init. (We do this outside of the
+		// goroutine and before initializing the server to avoid a
+		// race condition where the message is sent twice to the
+		// client.)
+		savedMsgs := c.proxy.getSavedMessages(serverID{contextID: c.context, pathPrefix: ""})
+		go func() {
+			for _, msg := range savedMsgs {
+				if err := conn.Notify(ctx, "window/showMessage", msg); err != nil {
+					log15.Error("LSP client proxy: error sending saved messages", "context", c.context, "err", err)
+				}
+			}
+		}()
+
 		// PERF: Initialize the server as soon as possible, so that it
 		// can start indexing before a user does an explicit request.
 		err = c.proxy.initializeServer(ctx, serverID{contextID: c.context})
@@ -434,16 +447,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 				},
 			}, nil
 		}
-
-		// Send saved messages on init
-		savedMsgs := c.proxy.getSavedMessages(serverID{contextID: c.context, pathPrefix: ""})
-		go func() {
-			for _, msg := range savedMsgs {
-				if err := conn.Notify(ctx, "window/showMessage", msg); err != nil {
-					log15.Error("LSP client proxy: error sending saved messages", "context", ctx, "err", err)
-				}
-			}
-		}()
 
 		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
@@ -708,12 +711,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		return nil, nil
 
 	case "window/showMessage":
-		var paramsObj lsp.ShowMessageParams
-		if err := json.Unmarshal(*req.Params, &paramsObj); err != nil {
-			return nil, err
-		}
-
-		if err := conn.Notify(ctx, req.Method, paramsObj); err != nil {
+		if err := conn.Notify(ctx, req.Method, req.Params); err != nil {
 			if err == jsonrpc2.ErrClosed || strings.Contains(err.Error(), "use of closed network connection") {
 				err = nil // suppress worthless "notification handling error" log messages when the client has hung up
 			}
