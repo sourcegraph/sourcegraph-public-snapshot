@@ -24,7 +24,7 @@ namespace Styles {
 			"&:hover": { color: "white" },
 		},
 	});
-	export const titleBarGroupActive = classes(style({ fontWeight: "bold !important", color: "white !important" }), titleBarGroup);
+	export const titleBarGroupActive = classes(style({ fontWeight: "bold !important", color: "white !important" } as any), titleBarGroup);
 
 	export const badge = style(csstips.content, { backgroundColor: "#233043 !important", borderRadius: "20px", color: normalFontColor, marginLeft: "10px", marginRight: "25px", fontSize: "11px", padding: "3px 6px" });
 
@@ -152,11 +152,6 @@ export class ReferencesWidget extends React.Component<Props, State> {
 			</div>
 		</div>;
 	}
-}
-
-function getRangeString(ref: Reference): string {
-	// return `${ref.range.start.line + 1}:${ref.range.start.character + 1}-${ref.range.end.line + 1}:${ref.range.end.character + 1}`;
-	return `${ref.range.start.line + 1}:${ref.range.start.character + 1}`;
 }
 
 function getRefURL(ref: Reference): string {

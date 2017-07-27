@@ -1,4 +1,4 @@
-import * as Rx from "@sourcegraph/rxjs";
+import * as Rx from "rxjs";
 import { getPathExtension } from "app/util";
 import * as types from "app/util/types";
 

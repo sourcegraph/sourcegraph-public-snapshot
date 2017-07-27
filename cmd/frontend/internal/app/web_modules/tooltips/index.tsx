@@ -1,7 +1,7 @@
-import * as Rx from "@sourcegraph/rxjs";
+import * as Rx from "rxjs";
 import { fetchJumpURL, getTooltip } from "app/backend/lsp";
 import * as tooltips from "app/tooltips/dom";
-import { clearTooltip, getTooltipEventProperties, setTooltip, store, TooltipContext } from "app/tooltips/store";
+import { clearTooltip, setTooltip, store, TooltipContext } from "app/tooltips/store";
 import { CodeCell, TooltipData } from "app/util/types";
 import * as _ from "lodash";
 
@@ -218,7 +218,7 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
 		return;
 	}
 	if (ev.target === activeTarget && logEvent) {
-		const eventProperties = getTooltipEventProperties(ev.data, context);
+		// const eventProperties = getTooltipEventProperties(ev.data, context);
 		if (ev.data.title || ev.data.j2dUrl) {
 			switch (type) {
 				case TooltipEventType.HOVER:

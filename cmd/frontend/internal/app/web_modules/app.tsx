@@ -15,11 +15,12 @@ window.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 	if (url.uri && url.path) {
+		const pageVars = (window as any).pageVars;
 		// blob view, add tooltips
-		if (!window.pageVars || !(window.pageVars as any).ResolvedRev) {
+		if (!pageVars || !pageVars.ResolvedRev) {
 			throw new TypeError("expected window.pageVars to exist, but it does not");
 		}
-		const rev = (window.pageVars as any).ResolvedRev;
+		const rev = pageVars.ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
 		addAnnotations(url.path, { repoURI: url.uri, rev: rev, isBase: false, isDelta: false }, cells);
 		if (line) {

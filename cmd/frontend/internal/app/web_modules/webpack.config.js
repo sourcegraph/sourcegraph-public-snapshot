@@ -52,9 +52,8 @@ module.exports = {
                 compilerOptions: {
                     noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
                 },
-                transpileOnly: true, // type checking is only done as part of linting or testing
             }),
-        },{
+        }, {
             // sass / scss loader for webpack
             test: /\.(css|sass|scss)$/,
             loader: ExtractTextPlugin.extract(['css-loader', 'sass-loader', 'postcss-loader'])
