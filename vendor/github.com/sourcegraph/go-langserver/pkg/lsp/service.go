@@ -431,11 +431,6 @@ const (
 type ShowMessageParams struct {
 	Type    MessageType `json:"type"`
 	Message string      `json:"message"`
-
-	// Save is a Sourcegraph-specific parameter that informs the LSP
-	// proxy that a message should be saved to display to all newly
-	// connecting clients on initialization
-	Save bool `json:"save"`
 }
 
 type MessageActionItem struct {

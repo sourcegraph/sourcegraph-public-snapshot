@@ -547,10 +547,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
-		if params.Save {
-			c.saveMessage(params)
-		}
-
+		c.saveMessage(params)
 		c.clientBroadcast(ctx, req)
 		return nil, nil
 
