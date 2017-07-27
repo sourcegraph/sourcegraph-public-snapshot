@@ -98,7 +98,7 @@ export function fetchBlobContent(repoURI: string, rev: string, path: string): Pr
 		}
 		return json.data.root.repository.commit.commit.file.content;
 	});
-	promiseCache.set(key, p);
+	blobCache.set(key, p);
 	return p;
 }
 
