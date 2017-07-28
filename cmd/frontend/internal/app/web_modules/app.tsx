@@ -1,7 +1,7 @@
 import { injectReferencesWidget } from "app/references/inject";
 import { injectSearchForm, injectSearchResults } from "app/search/inject";
 import { addAnnotations } from "app/tooltips";
-import { parseURL } from "app/util";
+import * as url from "app/util/url";
 import { CodeCell } from "app/util/types";
 import { triggerBlame } from "app/blame";
 import * as moment from 'moment';
@@ -17,7 +17,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	injectReferencesWidget();
 	injectShareWidget();
-	const url = parseURL();
+	const u = url.parse();
 	const hash = window.location.hash;
 	let line;
 	if (hash) {
@@ -26,7 +26,7 @@ window.addEventListener("DOMContentLoaded", () => {
 			line = parseInt(split[1].split(":")[0], 10)
 		}
 	}
-	if (url.uri && url.path) {
+	if (u.uri && u.path) {
 		// blob view, add tooltips
 		const pageVars = (window as any).pageVars;
 		if (!pageVars || !pageVars.ResolvedRev) {
@@ -35,18 +35,18 @@ window.addEventListener("DOMContentLoaded", () => {
 		const rev = pageVars.ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
 		window.addEventListener("syntaxHighlightingFinished", () => {
-			addAnnotations(url.path!, { repoURI: url.uri!, rev: rev, isBase: false, isDelta: false }, cells);
+			addAnnotations(u.path, { repoURI: u.uri, rev: rev, isBase: false, isDelta: false }, cells);
 		});
 		if (line) {
-			highlightAndScrollToLine(url.uri, rev, url.path, line, cells);
+			highlightAndScrollToLine(u.uri, rev, u.path, line, cells);
 		}
 
 		// Add click handlers to all lines of code, which highlight and add
 		// blame information to the line.
 		Array.from(document.querySelectorAll(".blobview tr")).forEach((tr: HTMLElement, index: number) => {
 			tr.addEventListener("click", () => {
-				if (url.uri && url.path) {
-					highlightLine(url.uri, rev, url.path, index + 1, cells);
+				if (u.uri && u.path) {
+					highlightLine(u.uri, rev, u.path, index + 1, cells);
 				}
 			});
 		});
@@ -101,10 +101,10 @@ window.onhashchange = (hash) => {
 				throw new TypeError("expected window.pageVars to exist, but it does not");
 			}
 			const rev = pageVars.ResolvedRev;
-			const url = parseURL();
+			const u = url.parse();
 			const cells = getCodeCellsForAnnotation();
-			if (url.uri && url.path) {
-				highlightAndScrollToLine(url.uri, rev, url.path, line, cells);
+			if (u.uri && u.path) {
+				highlightAndScrollToLine(u.uri, rev, u.path, line, cells);
 			}
 		}
 	}

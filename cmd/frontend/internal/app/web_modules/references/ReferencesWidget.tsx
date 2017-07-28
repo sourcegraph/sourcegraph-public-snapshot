@@ -1,7 +1,7 @@
 import { CodeExcerpt } from "app/components/CodeExcerpt";
 import { triggerReferences } from "app/references";
 import { locKey, ReferencesState, store } from "app/references/store";
-import { parseURL, urlToBlob } from "app/util";
+import * as url from "app/util/url";
 import * as colors from "app/util/colors";
 import { normalFontColor } from "app/util/colors";
 import { Reference } from "app/util/types";
@@ -65,13 +65,13 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				throw new TypeError("expected window.pageVars to exist, but it does not");
 			}
 			const rev = pageVars.ResolvedRev;
-			const url = parseURL();
+			const u = url.parse();
 			const coords = window.location.hash.split("$references")[0].split("#L")[1].split(":");
 			triggerReferences({
 				loc: {
-					uri: url.uri!,
+					uri: u.uri!,
 					rev: rev,
-					path: url.path!,
+					path: u.path!,
 					line: parseInt(coords[0], 10),
 					char: parseInt(coords[1], 10),
 				},
@@ -129,15 +129,15 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				<div className={Styles.titleBarTitle}>
 					{this.state.context.word}
 				</div>
-				<a className={this.state.group === "all" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={urlToBlob({ ...this.state.context.loc, refs: "all" })}>
+				<a className={this.state.group === "all" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, refs: "all" })}>
 					All References
 				</a>
 				<div className={Styles.badge}>{localRefs.length + externalRefs.length}</div>
-				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={urlToBlob({ ...this.state.context.loc, refs: "local" })}>
+				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, refs: "local" })}>
 					Local
 				</a>
 				<div className={Styles.badge}>{localRefs.length}</div>
-				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={urlToBlob({ ...this.state.context.loc, refs: "external" })}>
+				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, refs: "external" })}>
 					Global
 				</a>
 				<div className={Styles.badge}>{externalRefs.length}</div>
