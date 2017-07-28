@@ -18,7 +18,7 @@ $nav-height: 48px;
 
 	>body {
 		background-color: #151D28;
-		color: #31445E;
+		color: #FFFFFF;
 		a {
 			outline: 0;
 			@extend .font-normal-grey;
@@ -130,6 +130,10 @@ $nav-height: 48px;
 	flex-direction: column;
 	height: $blob-height;
 	width: 100%;
+
+	.line-number {
+		color: #31445E;
+	}
 
 	#blob-table {
 		position: relative;
