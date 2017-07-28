@@ -56,12 +56,17 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		const onRefs = window.location.hash.indexOf("$references") !== -1;
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
+		const pageVars = (window as any).pageVars;
+			if (!pageVars || !pageVars.ResolvedRev) {
+				throw new TypeError("expected window.pageVars to exist, but it does not");
+			}
+			const rev = pageVars.ResolvedRev;
 			const url = parseURL();
 			const coords = window.location.hash.split("$references")[0].split("#L")[1].split(":");
 			triggerReferences({
 				loc: {
 					uri: url.uri!,
-					rev: url.rev!,
+					rev: rev,
 					path: url.path!,
 					line: parseInt(coords[0], 10),
 					char: parseInt(coords[1], 10),
