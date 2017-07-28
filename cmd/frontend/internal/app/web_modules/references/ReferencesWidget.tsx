@@ -56,7 +56,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		const onRefs = window.location.hash.indexOf("$references") !== -1;
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
-		const pageVars = (window as any).pageVars;
+			const pageVars = (window as any).pageVars;
 			if (!pageVars || !pageVars.ResolvedRev) {
 				throw new TypeError("expected window.pageVars to exist, but it does not");
 			}
