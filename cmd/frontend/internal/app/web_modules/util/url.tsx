@@ -1,4 +1,4 @@
-import { SourcegraphURL } from "util/types";
+import { SourcegraphURL, BlobURL } from "util/types";
 
 export function parse(loc: Location = window.location): SourcegraphURL {
 
@@ -23,20 +23,17 @@ export function parse(loc: Location = window.location): SourcegraphURL {
 	return { uri, rev, path };
 }
 
-export function toBlob(loc: { uri: string, rev?: string, path: string, line?: number, char?: number, refs?: "all" | "local" | "external" }): string {
+export function toBlob(loc: BlobURL): string {
 	let url = `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/blob/${loc.path}`;
-	if (loc.line) { // construct hash w/ format #L[line][:char][$references[:local|external]]
+	if (loc.line) { // construct hash w/ format #L[line][:char][$modal[:mode]]
 		url += "#L" + loc.line;
 		if (loc.char) {
 			url += ":" + loc.char;
-			if (loc.refs) {
-				url += "$references";
-				if (loc.refs === "local") {
-					url += ":local";
-				}
-				if (loc.refs === "external") {
-					url += ":external";
-				}
+		}
+		if (loc.modal) {
+			url += `$${loc.modal}`;
+			if (loc.modalMode) {
+				url += `:${loc.modalMode}`;
 			}
 		}
 	}
