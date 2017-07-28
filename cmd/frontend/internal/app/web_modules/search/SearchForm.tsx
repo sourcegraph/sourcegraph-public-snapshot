@@ -57,13 +57,15 @@ interface RepoResult {
 	uri: string;
 }
 
+const storageKey = "searchRepoScope";
+
 export class SearchForm extends React.Component<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
 		this.state = {
 			query: "",
-			repos: "active",
+			repos: window.localStorage.getItem(storageKey) || "active",
 			files: "",
 			showAutocomplete: false,
 		}
@@ -89,7 +91,13 @@ export class SearchForm extends React.Component<Props, State> {
 				break;
 			}
 		}
+		window.localStorage.setItem(storageKey, this.state.repos + addition);
 		this.setState({ showAutocomplete: false, repos: this.state.repos + addition });
+	}
+
+	onUpdateRepos(value: string): void {
+		window.localStorage.setItem(storageKey, value);
+		this.setState({ ...this.state, repos: value });
 	}
 
 	getHref(): string {
@@ -110,7 +118,7 @@ export class SearchForm extends React.Component<Props, State> {
 			<div className={Styles.reposSection}>
 				<div>Repositories</div>
 				<textarea className={Styles.reposInput} value={this.state.repos} onChange={(e) => {
-					this.setState({ ...this.state, repos: e.target.value });
+					this.onUpdateRepos(e.target.value);
 				}} />
 				{
 					!this.state.showAutocomplete &&
