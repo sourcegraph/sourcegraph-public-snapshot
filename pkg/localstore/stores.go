@@ -6,4 +6,7 @@ var (
 	RepoVCS     = &repoVCS{}
 	Repos       = &repos{}
 	UserInvites = &userInvites{}
+	LocalRepos  = &localRepos{}
+	Threads     = &threads{}
+	Comments    = &comments{}
 )

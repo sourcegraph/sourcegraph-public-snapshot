@@ -14,6 +14,12 @@ type Query {
 	node(id: ID!): Node
 }
 
+type Mutation {
+	inviteOrgMemberToSourcegraph(orgLogin: String!, orgGithubId: Int!, userLogin: String!, userEmail: String = ""): Boolean!
+	createThread(remoteURI: String!, accessToken: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!, authorName: String!, authorEmail: String!): Thread!
+	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
+}
+
 type Root {
 	organization(login: String!): Organization
 	repository(uri: String!): Repository
@@ -24,6 +30,7 @@ type Root {
 	currentUser: User
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	revealCustomerCompany(ip: String!): CompanyProfile
+	threads(remoteURI: String!, accessToken: String!, file: String!): [Thread!]!
 }
 
 type RefFields {
@@ -257,10 +264,6 @@ type User {
 	githubInstallations: [Installation!]!
 }
 
-type Mutation {
-	inviteOrgMemberToSourcegraph(orgLogin: String!, orgGithubId: Int!, userLogin: String!, userEmail: String = ""): Boolean!
-}
-
 type CompanyProfile {
 	ip: String!
 	domain: String!
@@ -297,5 +300,26 @@ type CompanyCategory {
 	industryGroup: String!
 	industry: String!
 	subIndustry: String!
+}
+
+type Thread {
+	id: Int!
+	file: String!
+	revision: String!
+	startLine: Int!
+	endLine: Int!
+	startCharacter: Int!
+	endCharacter: Int!
+	createdAt: String!
+	comments: [Comment!]!
+}
+
+type Comment {
+	id: Int!
+	contents: String!
+	createdAt: String!
+	updatedAt: String!
+	authorName: String!
+	authorEmail: String!
 }
 `

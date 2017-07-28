@@ -521,3 +521,37 @@ const (
 	InviteMissingEmail
 	InviteError
 )
+
+// LocalRepo represents a repo that exists on a native client's filesystem, but
+// does not necessarily have its contents cloned to a remote Sourcegraph server.
+type LocalRepo struct {
+	ID          int32
+	RemoteURI   string
+	AccessToken string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type Thread struct {
+	ID             int32     `json:"ID,omitempty"`
+	LocalRepoID    int32     `json:"LocalRepoID,omitempty"`
+	File           string    `json:"File,omitempty"`
+	Revision       string    `json:"Revision,omitempty"`
+	StartLine      int32     `json:"StartLine,omitempty"`
+	EndLine        int32     `json:"EndLine,omitempty"`
+	StartCharacter int32     `json:"StartCharacter,omitempty"`
+	EndCharacter   int32     `json:"EndCharacter,omitempty"`
+	CreatedAt      time.Time `json:"CreatedAt,omitempty"`
+}
+
+type Comment struct {
+	ID        int32     `json:"ID,omitempty"`
+	ThreadID  int32     `json:"ThreadID,omitempty"`
+	Contents  string    `json:"Contents,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+	// Author fields are temporary, will be replaced with author id once we have
+	// accounts.
+	AuthorName  string `json:"AuthorName,omitempty"`
+	AuthorEmail string `json:"AuthorEmail,omitempty"`
+}

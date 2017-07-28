@@ -21,6 +21,19 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IComment {
+		__typename: string;
+		id: number;
+		contents: string;
+		createdAt: string;
+		updatedAt: string;
+		authorName: string;
+		authorEmail: string;
+	}
+
+	/*
+	  description: null
+	*/
 	interface ICommit {
 		__typename: string;
 		id: string;
@@ -218,6 +231,8 @@ declare namespace GQL {
 	interface IMutation {
 		__typename: string;
 		inviteOrgMemberToSourcegraph: boolean;
+		createThread: IThread;
+		addCommentToThread: IThread;
 	}
 
 	/*
@@ -379,6 +394,7 @@ declare namespace GQL {
 		currentUser: IUser | null;
 		searchRepos: ISearchResults;
 		revealCustomerCompany: ICompanyProfile | null;
+		threads: Array<IThread>;
 	}
 
 	/*
@@ -434,6 +450,22 @@ declare namespace GQL {
 		path: string;
 		line: number;
 		character: number;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IThread {
+		__typename: string;
+		id: number;
+		file: string;
+		revision: string;
+		startLine: number;
+		endLine: number;
+		startCharacter: number;
+		endCharacter: number;
+		createdAt: string;
+		comments: Array<IComment>;
 	}
 
 	/*

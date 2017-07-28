@@ -86,7 +86,7 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (sourcegraph.U
 		return sourcegraph.InviteError, errors.New("Inviting user is not signed in")
 	}
 
-	// Confirm inviting usre is a member of the GitHub organization
+	// Confirm inviting user is a member of the GitHub organization
 	if isMember, err := IsOrgMember(ctx, opt.OrgLogin, user.Login); err != nil {
 		return sourcegraph.InviteError, err
 	} else if isMember == false {

@@ -20,6 +20,113 @@
 			},
 			{
 				"kind": "OBJECT",
+				"name": "Comment",
+				"description": null,
+				"fields": [
+					{
+						"name": "id",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "contents",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "createdAt",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "updatedAt",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "authorName",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "authorEmail",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"enumValues": null,
+				"possibleTypes": null
+			},
+			{
+				"kind": "OBJECT",
 				"name": "Commit",
 				"description": null,
 				"fields": [
@@ -1707,6 +1814,278 @@
 						},
 						"isDeprecated": false,
 						"deprecationReason": null
+					},
+					{
+						"name": "createThread",
+						"description": null,
+						"args": [
+							{
+								"name": "remoteURI",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "accessToken",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "file",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "revision",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "startLine",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "endLine",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "startCharacter",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "endCharacter",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "contents",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "authorName",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "authorEmail",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							}
+						],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "Thread",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "addCommentToThread",
+						"description": null,
+						"args": [
+							{
+								"name": "threadID",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "remoteURI",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "accessToken",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "contents",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "authorName",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "authorEmail",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							}
+						],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "Thread",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
 					}
 				],
 				"inputFields": null,
@@ -3151,6 +3530,73 @@
 						},
 						"isDeprecated": false,
 						"deprecationReason": null
+					},
+					{
+						"name": "threads",
+						"description": null,
+						"args": [
+							{
+								"name": "remoteURI",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "accessToken",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							},
+							{
+								"name": "file",
+								"description": null,
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								},
+								"defaultValue": null
+							}
+						],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "Thread",
+										"ofType": null
+									}
+								}
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
 					}
 				],
 				"inputFields": null,
@@ -3562,6 +4008,169 @@
 								"kind": "SCALAR",
 								"name": "Int",
 								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"enumValues": null,
+				"possibleTypes": null
+			},
+			{
+				"kind": "OBJECT",
+				"name": "Thread",
+				"description": null,
+				"fields": [
+					{
+						"name": "id",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "file",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "revision",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "startLine",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "endLine",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "startCharacter",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "endCharacter",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "createdAt",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						},
+						"isDeprecated": false,
+						"deprecationReason": null
+					},
+					{
+						"name": "comments",
+						"description": null,
+						"args": [],
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "Comment",
+										"ofType": null
+									}
+								}
 							}
 						},
 						"isDeprecated": false,
