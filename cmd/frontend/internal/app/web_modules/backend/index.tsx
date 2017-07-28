@@ -154,6 +154,36 @@ export function fetchBlameFile(repo: string, rev: string, path: string, startLin
 	return p;
 }
 
+export function fetchRepos(query: string): Promise<any[]> {
+	const body = {
+		query: `
+query SearchRepos($query: String, $fast: Boolean) {
+	root {
+		repositories(query: $query, fast: $fast) {
+			uri
+			description
+			private
+			fork
+			pushedAt
+		}
+	}
+}`,
+		variables: { query, fast: true },
+	};
+	const p = fetch(`/.api/graphql?SearchRepos`, {
+		method: "POST",
+		body: JSON.stringify(body),
+	}).then((resp) => resp.json()).then((json: any) => {
+		const root = json.data.root;
+		if (!root.repositories) {
+			return [];
+		}
+
+		return root.repositories;
+	});
+	return p;
+}
+
 export function fetchDependencyReferences(repo: string, rev: string, path: string, line: number, character: number): Promise<any> {
 	const mode = util.getModeFromExtension(util.getPathExtension(path));
 	const body = {
@@ -219,25 +249,30 @@ query DependencyReferences($repo: String, $rev: String, $mode: String, $line: In
 	return p;
 }
 
+export interface SearchResult {
+	limitHit: boolean;
+	lineMatches: LineMatch[];
+	resource: string; // a URI like git://github.com/gorilla/mux
+}
+
+export interface LineMatch {
+	lineNumber: number;
+	offsetAndLengths: number[][]; // e.g. [[4, 3]]
+	preview: string;
+}
+
 export interface ResolvedSearchTextResp {
-	results?: [{ [key: string]: any }];
+	results?: SearchResult[];
 	notFound?: boolean;
 }
 
-const searchPromiseCache = new Map<string, Promise<ResolvedSearchTextResp>>();
-
-export function searchText(uri: string, query: string): Promise<ResolvedSearchTextResp> {
-	const key = cacheKey(uri, query);
-	const promiseHit = searchPromiseCache.get(key);
-	if (promiseHit) {
-		return promiseHit;
-	}
+export function searchText(query: string, repositories: { repo: string, rev: string }[]): Promise<ResolvedSearchTextResp> {
 	const variables = {
 		pattern: query,
 		fileMatchLimit: 10000,
 		isRegExp: false,
 		isWordMatch: false,
-		repositories: [{ repo: uri, rev: "" }],
+		repositories,
 		isCaseSensitive: false,
 		includePattern: "",
 		excludePattern: "{.git,**/.git,.svn,**/.svn,.hg,**/.hg,CVS,**/CVS,.DS_Store,**/.DS_Store,node_modules,bower_components,vendor,dist,out,Godeps,third_party}",
@@ -286,18 +321,14 @@ export function searchText(uri: string, query: string): Promise<ResolvedSearchTe
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
-		searchPromiseCache.delete(key);
 		const results = json.data && json.data.root!.searchRepos;
 		if (!results) {
 			const notFound = { notFound: true };
-			promiseCache.set(key, Promise.resolve(notFound));
 			return notFound;
 		}
 
-		searchPromiseCache.set(key, Promise.resolve(results));
 		return results;
 	});
 
-	searchPromiseCache.set(key, p);
 	return p;
 }

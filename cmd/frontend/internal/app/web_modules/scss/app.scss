@@ -277,7 +277,32 @@ $nav-height: 48px;
 }
 
 .home {
+	$home-height: unquote("calc(100vh - #{$nav-height})");
 
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: $home-height;
+	width: 100%;
+
+	.header {
+		flex: 2;
+		display: flex;
+		align-items: center;
+		background-color: initial;
+	}
+
+	#search-widget {
+		flex: 10;
+		width: 512px;
+		font-size: 14px;
+		color: #93A9C8;
+	}
+
+	.footer {
+		flex: 1;
+	}
 }
 
 .repo {

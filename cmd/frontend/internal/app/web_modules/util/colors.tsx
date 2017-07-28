@@ -6,3 +6,9 @@ export const backgroundColor = "#1C2736";
 export const referencesBackgroundColor = "#070A0D";
 export const baseColor = "#31445E";
 export const selectionHighlight = "rgba(217, 72, 15, 0.5)";
+
+export const inputBackgroundColor = "#151D28";
+export const primaryBlue = "#1C7CD6";
+export const searchFrameBackgroundColor = "#1C2736";
+
+export const white = "#FFFFFF";

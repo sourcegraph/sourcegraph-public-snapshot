@@ -10,9 +10,13 @@ import * as _ from "lodash";
 import * as React from "react";
 import { classes, style } from "typestyle";
 import * as URI from "urijs";
+import * as GlobeIcon from "react-icons/lib/md/language";
+import * as RepoIcon from "react-icons/lib/go/repo";
 
 namespace Styles {
 	const border = `1px solid ${colors.borderColor}`;
+
+	export const icon = style({ fontSize: "18px", marginLeft: "15px" });
 
 	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "10px", fontSize: "14px", height: "32px", width: "100vw", position: "sticky", top: "0px" });
 	export const titleBarTitle = style(csstips.content, { maxWidth: "calc(50vw)", marginRight: "25px" });
@@ -32,7 +36,7 @@ namespace Styles {
 	export const pathPart = style({});
 	export const filePathPart = style({ color: "white", fontWeight: "bold", paddingRight: "15px" });
 
-	export const refsGroup = style({ fontSize: "12px", fontFamily: "system" });
+	export const refsGroup = style({ fontSize: "12px", fontFamily: "system", color: normalFontColor });
 	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
 	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px" });
@@ -165,7 +169,7 @@ function getRefURL(ref: Reference): string {
 	return `http://localhost:3080/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
 }
 
-class ReferencesGroup extends React.Component<{ uri: string, path: string, refs: Reference[], isLocal: boolean }, {}> {
+export class ReferencesGroup extends React.Component<{ uri: string, path: string, refs: Reference[], isLocal: boolean }, {}> {
 	render(): JSX.Element | null {
 		const uriSplit = this.props.uri.split("/");
 		const uriStr = uriSplit.length > 1 ? uriSplit.slice(1).join("/") : this.props.uri;
@@ -173,6 +177,7 @@ class ReferencesGroup extends React.Component<{ uri: string, path: string, refs:
 		const filePart = pathSplit.pop();
 		return <div className={Styles.refsGroup}>
 			<div className={Styles.refsGroupTitle}>
+				{this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
 				<div className={Styles.uriPathPart}>{uriStr}</div>
 				<div className={Styles.pathPart}>{pathSplit.join("/")}{pathSplit.length > 0 ? "/" : ""}</div>
 				<div className={Styles.filePathPart}>{filePart}</div>

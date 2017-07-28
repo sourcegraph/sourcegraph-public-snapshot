@@ -95,7 +95,25 @@ func newCommon(w http.ResponseWriter, r *http.Request) (*Common, error) {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
-	return renderTemplate(w, "home.html", nil)
+	return renderTemplate(w, "home.html", &struct {
+		*Common
+	}{
+		Common: &Common{
+			Context:  jscontext.NewJSContextFromRequest(r),
+			AssetURL: assets.URL("/").String(),
+		},
+	})
+}
+
+func serveSearch(w http.ResponseWriter, r *http.Request) error {
+	return renderTemplate(w, "search.html", &struct {
+		*Common
+	}{
+		Common: &Common{
+			Context:  jscontext.NewJSContextFromRequest(r),
+			AssetURL: assets.URL("/").String(),
+		},
+	})
 }
 
 // treeView is the data structure shared/treeview.html expects.

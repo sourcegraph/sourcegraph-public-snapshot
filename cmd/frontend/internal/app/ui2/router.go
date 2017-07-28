@@ -24,6 +24,7 @@ import (
 
 const (
 	routeHome       = "home"
+	routeSearch     = "search"
 	routeRepoOrMain = "repo-or-main" // see newRouter comment for details
 	routeTree       = "tree"
 	routeBlob       = "blob"
@@ -48,6 +49,9 @@ func newRouter() *mux.Router {
 	// home
 	r.Path("/").Methods("GET").Name(routeHome)
 
+	// search
+	r.Path("/search").Methods("GET").Name(routeSearch)
+
 	// repo-or-main
 	//
 	// This handles either a repo like 'sourcegraph.com/github.com/foo/bar' OR
@@ -69,6 +73,7 @@ func newRouter() *mux.Router {
 func init() {
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
+	router.Get(routeSearch).Handler(handler(serveSearch))
 	serveRepoHandler := handler(serveRepo)
 	router.Get(routeRepoOrMain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.

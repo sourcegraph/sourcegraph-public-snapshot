@@ -2,12 +2,13 @@
 
 {{define "Body"}}
 <div class="home">
-	<h1>WIP</h1>
-	<p>Please ignore this page for now and manually hack the repo into the URL :)</p>
-	<p>repo view: <a href="/github.com/gorilla/mux">/github.com/gorilla/mux</a></p>
-	<p>tree view: <a href="/github.com/gorilla/mux/-/tree">/github.com/gorilla/mux/-/tree</a></p>
-	<p>blob view: <a href="/github.com/gorilla/mux/-/blob/mux.go">/github.com/gorilla/mux/-/blob/mux.go</a></p>
-	<p>error view: <a href="/__errorTest?nodebug=true&error=theerror&status=500">/__errorTest?nodebug=true&error=theerror&status=500</a></p>
+	<div class="header">
+		<img src="{{.AssetURL}}/img/ui2/sourcegraph-head-logo.svg" />
+	</div>
+	<div id="search-widget">
+	</div>
+	<div class="footer">
+	</div>
 </div>
 {{end}}
 

@@ -1,4 +1,5 @@
 import { injectReferencesWidget } from "app/references/inject";
+import { injectSearchForm, injectSearchResults } from "app/search/inject";
 import { addAnnotations } from "app/tooltips";
 import { parseURL } from "app/util";
 import { CodeCell } from "app/util/types";
@@ -7,6 +8,13 @@ import * as moment from 'moment';
 import { injectShareWidget } from "app/share";
 
 window.addEventListener("DOMContentLoaded", () => {
+	if (window.location.pathname === "/") {
+		injectSearchForm();
+	}
+	if (window.location.pathname === "/search") {
+		injectSearchResults();
+	}
+
 	injectReferencesWidget();
 	injectShareWidget();
 	const url = parseURL();
