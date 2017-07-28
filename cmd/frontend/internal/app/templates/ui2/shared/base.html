@@ -30,10 +30,20 @@
 	<script src="{{.AssetURL}}/scripts/app.bundle.js"></script>
 	{{template "Body" .}}
 	<script>
+		// Create an event (works with modern IE) that we will use to signal
+		// syntax highlighting being finished.
+		var finishEvent = document.createEvent('Event');
+		finishEvent.initEvent('syntaxHighlightingFinished', true, true);
+
 		addEventListener("DOMContentLoaded", function () {
 			var codeCells = document.querySelectorAll(".code-cell");
 			var worker = new Worker("{{.AssetURL}}/scripts/highlighter.bundle.js");
+			var finished = 0;
 			worker.onmessage = function (event) {
+				finished++;
+				if (finished == codeCells.length-1) {
+					window.dispatchEvent(finishEvent);
+				}
 				codeCells[event.data.index].innerHTML = event.data.innerHtml;
 			}
 			for (var i = 0; i < codeCells.length; ++i) {

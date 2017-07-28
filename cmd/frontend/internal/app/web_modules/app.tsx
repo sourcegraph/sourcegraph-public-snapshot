@@ -2,6 +2,8 @@ import { injectReferencesWidget } from "app/references/inject";
 import { addAnnotations } from "app/tooltips";
 import { parseURL } from "app/util";
 import { CodeCell } from "app/util/types";
+import { triggerBlame } from "app/blame";
+import * as moment from 'moment';
 
 window.addEventListener("DOMContentLoaded", () => {
 	injectReferencesWidget();
@@ -15,8 +17,8 @@ window.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 	if (url.uri && url.path) {
-		const pageVars = (window as any).pageVars;
 		// blob view, add tooltips
+		const pageVars = (window as any).pageVars;
 		if (!pageVars || !pageVars.ResolvedRev) {
 			throw new TypeError("expected window.pageVars to exist, but it does not");
 		}
@@ -24,12 +26,30 @@ window.addEventListener("DOMContentLoaded", () => {
 		const cells = getCodeCellsForAnnotation();
 		addAnnotations(url.path, { repoURI: url.uri, rev: rev, isBase: false, isDelta: false }, cells);
 		if (line) {
-			highlightAndScrollToLine(line, cells);
+			highlightAndScrollToLine(url.uri, rev, url.path, line, cells);
 		}
+
+		// Add click handlers to all lines of code, which highlight and add
+		// blame information to the line.
+		Array.from(document.querySelectorAll(".blobview tr")).forEach((tr: HTMLElement, index: number) => {
+			tr.addEventListener("click", () => {
+				if (url.uri && url.path) {
+					highlightLine(url.uri, rev, url.path, index + 1, cells);
+				}
+			});
+		});
 	}
 });
 
-export function highlightAndScrollToLine(line: number, cells: CodeCell[]): void {
+function highlightLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
+	triggerBlame({
+		time: moment(),
+		repoURI: repoURI,
+		rev: rev,
+		path: path,
+		line: line,
+	});
+
 	const currentlyHighlighted = document.querySelectorAll(".sg-highlighted");
 	Array.from(currentlyHighlighted).forEach((cell: HTMLElement) => {
 		cell.classList.remove("sg-highlighted");
@@ -37,8 +57,13 @@ export function highlightAndScrollToLine(line: number, cells: CodeCell[]): void 
 	});
 
 	const cell = cells[line - 1];
-	cell.cell.style.backgroundColor = "rgba(255,255,0,.25)";
+	cell.cell.style.backgroundColor = "#1c2736";
 	cell.cell.classList.add("sg-highlighted");
+}
+
+export function highlightAndScrollToLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
+	highlightLine(repoURI, rev, path, line, cells);
+	const cell = cells[line - 1];
 	const element = cell.cell;
 	const elementRect = element.getBoundingClientRect();
 	const absoluteElementTop = elementRect.top + window.pageYOffset;
@@ -57,8 +82,16 @@ window.onhashchange = (hash) => {
 		const line = parseInt(newSplit[1].split(":")[0], 10);
 		if (lastLine !== line) {
 			// prevent e.g. re-scrolling to same line on toggling refs group
+			const pageVars = (window as any).pageVars;
+			if (!pageVars || !pageVars.ResolvedRev) {
+				throw new TypeError("expected window.pageVars to exist, but it does not");
+			}
+			const rev = pageVars.ResolvedRev;
+			const url = parseURL();
 			const cells = getCodeCellsForAnnotation();
-			highlightAndScrollToLine(line, cells);
+			if (url.uri && url.path) {
+				highlightAndScrollToLine(url.uri, rev, url.path, line, cells);
+			}
 		}
 	}
 }

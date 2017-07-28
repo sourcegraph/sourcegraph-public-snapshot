@@ -1,5 +1,6 @@
 import { doFetch as fetch } from "app/backend/xhr";
 import * as util from "app/util";
+import * as types from "app/util/types";
 
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
 
@@ -99,6 +100,57 @@ export function fetchBlobContent(repoURI: string, rev: string, path: string): Pr
 		return json.data.root.repository.commit.commit.file.content;
 	});
 	blobCache.set(key, p);
+	return p;
+}
+
+export function fetchBlameFile(repo: string, rev: string, path: string, startLine: number, endLine: number): Promise<types.Hunk[]> {
+	const body = {
+		query: `query BlameFile($repo: String, $rev: String, $path: String, $startLine: Int, $endLine: Int) {
+  root {
+    repository(uri: $repo) {
+      commit(rev: $rev) {
+        commit {
+          file(path: $path) {
+            blame(startLine: $startLine, endLine: $endLine) {
+              startLine
+              endLine
+              startByte
+              endByte
+              rev
+              author {
+              	person {
+              		name
+              		email
+              		gravatarHash
+              	}
+              	date
+              }
+              message
+            }
+          }
+        }
+      }
+    }
+  }
+}`,
+		variables: { repo, rev, path, startLine, endLine },
+	};
+	const p = fetch(`/.api/graphql?BlameFile`, {
+		method: "POST",
+		body: JSON.stringify(body),
+	}).then((resp) => resp.json()).then((json: any) => {
+		if (!json.data ||
+			!json.data.root ||
+			!json.data.root.repository ||
+			!json.data.root.repository.commit ||
+			!json.data.root.repository.commit.commit ||
+			!json.data.root.repository.commit.commit.file ||
+			!json.data.root.repository.commit.commit.file.blame) {
+			console.error("unexpected BlameFile response:", json);
+			return null;
+		}
+		return json.data.root.repository.commit.commit.file.blame;
+	});
 	return p;
 }
 
