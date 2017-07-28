@@ -65,12 +65,14 @@ function highlightLine(repoURI: string, rev: string, path: string, line: number,
 
 export function highlightAndScrollToLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
 	highlightLine(repoURI, rev, path, line, cells);
+
+	// Scroll to the line.
+	const scrollable = document.querySelector("#blob-table")!;
+	const scrollableRect = scrollable.getBoundingClientRect(); // e.x. the navbar height
+
 	const cell = cells[line - 1];
-	const element = cell.cell;
-	const elementRect = element.getBoundingClientRect();
-	const absoluteElementTop = elementRect.top + window.pageYOffset;
-	const middle = absoluteElementTop - (window.innerHeight / 2);
-	window.scrollTo(0, middle);
+	const cellRect = cell.cell.getBoundingClientRect(); // e.x. distance from top of code cell to top of table
+	scrollable.scrollTop = (cellRect.top + (cellRect.height / 2)) - (scrollableRect.top + (scrollableRect.height / 2));
 }
 
 window.onhashchange = (hash) => {
