@@ -66,7 +66,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 					line: parseInt(coords[0], 10),
 					char: parseInt(coords[1], 10),
 				},
-				word: "TBD",
+				word: "", // TODO: derive the correct word from somewhere
 			});
 		}
 		this.hashWatcher = window.addEventListener("hashchange", (e) => {
