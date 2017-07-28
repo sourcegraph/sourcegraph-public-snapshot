@@ -18,14 +18,6 @@ window.addEventListener("DOMContentLoaded", () => {
 	injectReferencesWidget();
 	injectShareWidget();
 	const u = url.parseBlob();
-	const hash = window.location.hash;
-	let line;
-	if (hash) {
-		const split = hash.split("#L");
-		if (split[1]) {
-			line = parseInt(split[1].split(":")[0], 10)
-		}
-	}
 	if (u.uri && u.path) {
 		// blob view, add tooltips
 		const pageVars = (window as any).pageVars;
@@ -37,8 +29,8 @@ window.addEventListener("DOMContentLoaded", () => {
 		window.addEventListener("syntaxHighlightingFinished", () => {
 			addAnnotations(u.path, { repoURI: u.uri, rev: rev, isBase: false, isDelta: false }, cells);
 		});
-		if (line) {
-			highlightAndScrollToLine(u.uri, rev, u.path, line, cells);
+		if (u.line) {
+			highlightAndScrollToLine(u.uri, rev, u.path, u.line, cells);
 		}
 
 		// Add click handlers to all lines of code, which highlight and add
@@ -86,28 +78,22 @@ export function highlightAndScrollToLine(repoURI: string, rev: string, path: str
 }
 
 window.onhashchange = (hash) => {
-	const oldSplit = hash.oldURL!.split("#L");
-	let lastLine;
-	if (oldSplit[1]) {
-		lastLine = parseInt(oldSplit[1].split(":")[0], 10);
+	const oldURL = url.parseBlob(hash.oldURL!);
+	const newURL = url.parseBlob(hash.newURL!);
+	if (!newURL.path || !newURL.line) {
+		return;
 	}
-	const newSplit = hash.newURL!.split("#L");
-	if (newSplit[1]) {
-		const line = parseInt(newSplit[1].split(":")[0], 10);
-		if (lastLine !== line) {
-			// prevent e.g. re-scrolling to same line on toggling refs group
-			const pageVars = (window as any).pageVars;
-			if (!pageVars || !pageVars.ResolvedRev) {
-				throw new TypeError("expected window.pageVars to exist, but it does not");
-			}
-			const rev = pageVars.ResolvedRev;
-			const u = url.parseBlob();
-			const cells = getCodeCellsForAnnotation();
-			if (u.uri && u.path) {
-				highlightAndScrollToLine(u.uri, rev, u.path, line, cells);
-			}
-		}
+	if (oldURL.line == newURL.line) {
+		// prevent e.g. re-scrolling to same line on toggling refs group
+		return;
 	}
+	const pageVars = (window as any).pageVars;
+	if (!pageVars || !pageVars.ResolvedRev) {
+		throw new TypeError("expected window.pageVars to exist, but it does not");
+	}
+	const rev = pageVars.ResolvedRev;
+	const cells = getCodeCellsForAnnotation();
+	highlightAndScrollToLine(newURL.uri!, rev, newURL.path, newURL.line, cells);
 }
 
 export function getCodeCellsForAnnotation(): CodeCell[] {

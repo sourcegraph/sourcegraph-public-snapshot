@@ -1,8 +1,10 @@
 import { SourcegraphURL, BlobURL } from "util/types";
+import * as urlparse from "url-parse";
 
 // parse parses a generic Sourcegraph URL, where most components are shared
 // across all routes, e.g. repo URI and rev.
-export function parse(loc: Location = window.location): SourcegraphURL {
+export function parse(_loc: String = window.location.href): SourcegraphURL {
+	const loc = urlparse(_loc);
 	const urlsplit = loc.pathname.slice(1).split("/");
 	if (urlsplit.length < 3 && urlsplit[0] !== "github.com") {
 		return {};
@@ -19,7 +21,8 @@ export function parse(loc: Location = window.location): SourcegraphURL {
 }
 
 // parseBlob parses a blob page URL.
-export function parseBlob(loc: Location = window.location): BlobURL {
+export function parseBlob(_loc: String = window.location.href): BlobURL {
+	const loc = urlparse(_loc);
 	// Parse the generic Sourcegraph URL
 	const u = parse(loc);
 
@@ -32,7 +35,20 @@ export function parseBlob(loc: Location = window.location): BlobURL {
 	if (loc.pathname.indexOf("/-/blob/") !== -1) {
 		path = urlsplit.slice(5).join("/");
 	}
-	return { ...u, path }
+	let v: BlobURL = { ...u, path };
+
+	const lineCharModalInfo = loc.hash.split("$"); // e.g. "#L17:19$references:external"
+	if (lineCharModalInfo[0]) {
+		const coords = lineCharModalInfo[0].split("#L")[1].split(":");
+		v.line = parseInt(coords[0], 10); // 17
+		v.char = parseInt(coords[1], 10); // 19
+	}
+	if (lineCharModalInfo[1]) {
+		const modalInfo = lineCharModalInfo[1].split(":");
+		v.modal = modalInfo[0]; // "references"
+		v.modalMode = modalInfo[1]; // "external"
+	}
+	return v;
 }
 
 export function toBlob(loc: BlobURL): string {

@@ -57,7 +57,8 @@ export class ReferencesWidget extends React.Component<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
-		const onRefs = window.location.hash.indexOf("$references") !== -1;
+		const u = url.parseBlob()
+		const onRefs = !(!u.path && !u.modal && u.modal != "references");
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
 			const pageVars = (window as any).pageVars;
@@ -65,21 +66,20 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				throw new TypeError("expected window.pageVars to exist, but it does not");
 			}
 			const rev = pageVars.ResolvedRev;
-			const u = url.parseBlob();
-			const coords = window.location.hash.split("$references")[0].split("#L")[1].split(":");
 			triggerReferences({
 				loc: {
 					uri: u.uri!,
 					rev: rev,
 					path: u.path!,
-					line: parseInt(coords[0], 10),
-					char: parseInt(coords[1], 10),
+					line: u.line!,
+					char: u.char!,
 				},
 				word: "", // TODO: derive the correct word from somewhere
 			});
 		}
 		this.hashWatcher = window.addEventListener("hashchange", (e) => {
-			const shouldShow = e!.newURL!.indexOf("$references") !== -1;
+			const u = url.parseBlob(e!.newURL!);
+			const shouldShow = !(!u.path && !u.modal && u.modal != "references");
 			if (shouldShow) {
 				this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true });
 			}
