@@ -4,9 +4,11 @@ import { parseURL } from "app/util";
 import { CodeCell } from "app/util/types";
 import { triggerBlame } from "app/blame";
 import * as moment from 'moment';
+import { injectShareWidget } from "app/share";
 
 window.addEventListener("DOMContentLoaded", () => {
 	injectReferencesWidget();
+	injectShareWidget();
 	const url = parseURL();
 	const hash = window.location.hash;
 	let line;

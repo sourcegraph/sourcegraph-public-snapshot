@@ -27,6 +27,7 @@
     "webpack": "^3.0.0"
   },
   "dependencies": {
+    "copy-to-clipboard": "^3.0.7",
     "csstips": "^0.2.2",
     "csx": "^8.2.1",
     "highlight.js": "^9.12.0",
