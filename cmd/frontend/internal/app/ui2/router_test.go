@@ -29,6 +29,13 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
+		// search
+		{
+			path:      "/search",
+			wantRoute: routeSearch,
+			wantVars:  map[string]string{},
+		},
+
 		// repo-or-main
 		{
 			path:      "/r",
