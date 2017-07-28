@@ -73,13 +73,13 @@ export interface CodeCell {
 export interface ParsedURL {
 	uri?: string;
 	rev?: string;
-	path?: string;
 }
 
 export interface SourcegraphURL extends ParsedURL { }
 
 // BlobURL is the URL format for blob pages.
 export interface BlobURL extends SourcegraphURL {
+	path?: string;
 	line?: number;
 	char?: number;
 	modal?: string; // e.g. "references"

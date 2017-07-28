@@ -17,7 +17,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	injectReferencesWidget();
 	injectShareWidget();
-	const u = url.parse();
+	const u = url.parseBlob();
 	const hash = window.location.hash;
 	let line;
 	if (hash) {
@@ -101,7 +101,7 @@ window.onhashchange = (hash) => {
 				throw new TypeError("expected window.pageVars to exist, but it does not");
 			}
 			const rev = pageVars.ResolvedRev;
-			const u = url.parse();
+			const u = url.parseBlob();
 			const cells = getCodeCellsForAnnotation();
 			if (u.uri && u.path) {
 				highlightAndScrollToLine(u.uri, rev, u.path, line, cells);

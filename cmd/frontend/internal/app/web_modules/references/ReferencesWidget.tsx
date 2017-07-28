@@ -65,7 +65,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				throw new TypeError("expected window.pageVars to exist, but it does not");
 			}
 			const rev = pageVars.ResolvedRev;
-			const u = url.parse();
+			const u = url.parseBlob();
 			const coords = window.location.hash.split("$references")[0].split("#L")[1].split(":");
 			triggerReferences({
 				loc: {
