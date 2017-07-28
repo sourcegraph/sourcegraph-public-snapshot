@@ -58,7 +58,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 	constructor(props: Props) {
 		super(props);
 		const u = url.parseBlob()
-		const onRefs = !(!u.path && !u.modal && u.modal != "references");
+		const onRefs = Boolean(u.path && u.modal && u.modal === "references");
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
 			const pageVars = (window as any).pageVars;
@@ -79,7 +79,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		}
 		this.hashWatcher = window.addEventListener("hashchange", (e) => {
 			const u = url.parseBlob(e!.newURL!);
-			const shouldShow = !(!u.path && !u.modal && u.modal != "references");
+			const shouldShow = Boolean(u.path && u.modal && u.modal === "references");
 			if (shouldShow) {
 				this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true });
 			}
