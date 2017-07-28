@@ -49,6 +49,6 @@ export function contextKey(ctx: BlameContext): string {
 
 export function addHunks(ctx: BlameContext, hunks: types.Hunk[]): void {
 	const next = { ...store.getValue() };
-	next.hunksByLoc = next.hunksByLoc.update(contextKey(ctx), (_hunks) => (_hunks || []).concat(hunks));
+	next.hunksByLoc = next.hunksByLoc.set(contextKey(ctx), hunks);
 	setBlame(next);
 }
