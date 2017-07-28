@@ -18,7 +18,7 @@ $nav-height: 48px;
 
 	>body {
 		background-color: #151D28;
-		color: #FFFFFF;
+		color: #C9D4E3;
 		a {
 			outline: 0;
 			@extend .font-normal-grey;
@@ -154,6 +154,7 @@ $nav-height: 48px;
 			}
 		}
 		.line-number {
+			color: #31445E;
 			text-align: right;
 			font-size: .75em;
 			padding-right: 1em;
