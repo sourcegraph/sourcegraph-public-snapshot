@@ -63,6 +63,11 @@ function highlightLine(repoURI: string, rev: string, path: string, line: number,
 	const cell = cells[line - 1];
 	cell.cell.style.backgroundColor = "#1c2736";
 	cell.cell.classList.add("sg-highlighted");
+
+	// Update the URL.
+	const u = url.parseBlob();
+	u.line = line;
+	window.history.pushState(null, '', url.toBlobHash(u));
 }
 
 export function highlightAndScrollToLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
@@ -85,6 +90,9 @@ window.onhashchange = (hash) => {
 	}
 	if (oldURL.line == newURL.line) {
 		// prevent e.g. re-scrolling to same line on toggling refs group
+		//
+		// also prevent highlightLine from retriggering onhashchange
+		// recursively.
 		return;
 	}
 	const pageVars = (window as any).pageVars;

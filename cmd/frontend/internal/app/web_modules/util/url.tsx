@@ -52,18 +52,22 @@ export function parseBlob(_loc: String = window.location.href): BlobURL {
 }
 
 export function toBlob(loc: BlobURL): string {
-	let url = `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/blob/${loc.path}`;
+	return `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/blob/${loc.path}$(toBlobHash(loc))`;
+}
+
+export function toBlobHash(loc: BlobURL): string {
+	let hash = "";
 	if (loc.line) { // construct hash w/ format #L[line][:char][$modal[:mode]]
-		url += "#L" + loc.line;
+		hash += "#L" + loc.line;
 		if (loc.char) {
-			url += ":" + loc.char;
+			hash += ":" + loc.char;
 		}
 		if (loc.modal) {
-			url += `$${loc.modal}`;
+			hash += `$${loc.modal}`;
 			if (loc.modalMode) {
-				url += `:${loc.modalMode}`;
+				hash += `:${loc.modalMode}`;
 			}
 		}
 	}
-	return url;
+	return hash;
 }
