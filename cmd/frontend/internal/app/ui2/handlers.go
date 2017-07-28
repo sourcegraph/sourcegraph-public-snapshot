@@ -117,12 +117,16 @@ type navbar struct {
 	RepoURL        string
 	RepoName       string      // e.x. "gorilla / mux"
 	PathComponents [][2]string // [URL, path component]
+	ViewOnGitHub   string      // link to view on GitHub, optional
 }
 
 func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
 	n := &navbar{
 		RepoURL:  urlTo(routeRepoOrMain, "Repo", repoURI, "Rev", rev).String(),
 		RepoName: strings.Replace(repoShortName(repoURI), "/", " / ", -1),
+	}
+	if strings.HasPrefix(repoURI, "github.com/") {
+		n.ViewOnGitHub = "https://" + repoURI
 	}
 	split := strings.Split(fpath, "/")
 	for i, p := range split {

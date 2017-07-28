@@ -269,7 +269,15 @@ function updateTooltip(state: TooltipState): void {
 	// Anchor the tooltip vertically.
 	const tooltipBound = tooltip.getBoundingClientRect();
 	const relTop = targetBound.top - tableBound.top;
-	tooltip.style.top = (relTop - (tooltipBound.height + 5)) + "px";
+	const margin = 5;
+	let tooltipTop = relTop - (tooltipBound.height + margin);
+	if (tooltipTop < 0) {
+		// Tooltip wouldn't be visible from the top, so display it at the
+		// bottom.
+		const relBottom = targetBound.bottom - tableBound.top;
+		tooltipTop = relBottom - margin;
+	}
+	tooltip.style.top = tooltipTop + "px";
 
 	// Make it all visible to the user.
 	tooltip.style.visibility = "visible";
