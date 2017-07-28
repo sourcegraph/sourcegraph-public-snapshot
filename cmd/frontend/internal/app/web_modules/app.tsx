@@ -34,7 +34,9 @@ window.addEventListener("DOMContentLoaded", () => {
 		}
 		const rev = pageVars.ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
-		addAnnotations(url.path, { repoURI: url.uri, rev: rev, isBase: false, isDelta: false }, cells);
+		window.addEventListener("syntaxHighlightingFinished", () => {
+			addAnnotations(url.path!, { repoURI: url.uri!, rev: rev, isBase: false, isDelta: false }, cells);
+		});
 		if (line) {
 			highlightAndScrollToLine(url.uri, rev, url.path, line, cells);
 		}
