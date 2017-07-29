@@ -46,6 +46,9 @@ export function triggerReferences(context: ReferencesContext, refreshURL?: boole
 
 				return retVal;
 			}).then(dependents => {
+				if (!dependents) {
+					return; // no results, map below would fail.
+				}
 				return dependents.map(dependent => {
 					// const refs2Locations = (references: ReferenceInformation[]): vscode.Location[] => {
 					// 	return references.map(r => this.currentWorkspaceClient.protocol2CodeConverter.asLocation(r.reference));

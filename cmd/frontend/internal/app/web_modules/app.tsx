@@ -1,7 +1,7 @@
 import { injectReferencesWidget } from "app/references/inject";
 import { injectSearchForm, injectSearchResults } from "app/search/inject";
 import { addAnnotations } from "app/tooltips";
-import { parseURL } from "app/util";
+import * as url from "app/util/url";
 import { CodeCell } from "app/util/types";
 import { triggerBlame } from "app/blame";
 import * as moment from 'moment';
@@ -17,16 +17,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	injectReferencesWidget();
 	injectShareWidget();
-	const url = parseURL();
-	const hash = window.location.hash;
-	let line;
-	if (hash) {
-		const split = hash.split("#L");
-		if (split[1]) {
-			line = parseInt(split[1].split(":")[0], 10)
-		}
-	}
-	if (url.uri && url.path) {
+	const u = url.parseBlob();
+	if (u.uri && u.path) {
 		// blob view, add tooltips
 		const pageVars = (window as any).pageVars;
 		if (!pageVars || !pageVars.ResolvedRev) {
@@ -35,18 +27,18 @@ window.addEventListener("DOMContentLoaded", () => {
 		const rev = pageVars.ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
 		window.addEventListener("syntaxHighlightingFinished", () => {
-			addAnnotations(url.path!, { repoURI: url.uri!, rev: rev, isBase: false, isDelta: false }, cells);
+			addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, isBase: false, isDelta: false }, cells);
 		});
-		if (line) {
-			highlightAndScrollToLine(url.uri, rev, url.path, line, cells);
+		if (u.line) {
+			highlightAndScrollToLine(u.uri, rev, u.path, u.line, cells);
 		}
 
 		// Add click handlers to all lines of code, which highlight and add
 		// blame information to the line.
 		Array.from(document.querySelectorAll(".blobview tr")).forEach((tr: HTMLElement, index: number) => {
 			tr.addEventListener("click", () => {
-				if (url.uri && url.path) {
-					highlightLine(url.uri, rev, url.path, index + 1, cells);
+				if (u.uri && u.path) {
+					highlightLine(u.uri, rev, u.path, index + 1, cells);
 				}
 			});
 		});
@@ -71,6 +63,11 @@ function highlightLine(repoURI: string, rev: string, path: string, line: number,
 	const cell = cells[line - 1];
 	cell.cell.style.backgroundColor = "#1c2736";
 	cell.cell.classList.add("sg-highlighted");
+
+	// Update the URL.
+	const u = url.parseBlob();
+	u.line = line;
+	window.history.pushState(null, '', url.toBlobHash(u));
 }
 
 export function highlightAndScrollToLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
@@ -86,28 +83,25 @@ export function highlightAndScrollToLine(repoURI: string, rev: string, path: str
 }
 
 window.onhashchange = (hash) => {
-	const oldSplit = hash.oldURL!.split("#L");
-	let lastLine;
-	if (oldSplit[1]) {
-		lastLine = parseInt(oldSplit[1].split(":")[0], 10);
+	const oldURL = url.parseBlob(hash.oldURL!);
+	const newURL = url.parseBlob(hash.newURL!);
+	if (!newURL.path || !newURL.line) {
+		return;
 	}
-	const newSplit = hash.newURL!.split("#L");
-	if (newSplit[1]) {
-		const line = parseInt(newSplit[1].split(":")[0], 10);
-		if (lastLine !== line) {
-			// prevent e.g. re-scrolling to same line on toggling refs group
-			const pageVars = (window as any).pageVars;
-			if (!pageVars || !pageVars.ResolvedRev) {
-				throw new TypeError("expected window.pageVars to exist, but it does not");
-			}
-			const rev = pageVars.ResolvedRev;
-			const url = parseURL();
-			const cells = getCodeCellsForAnnotation();
-			if (url.uri && url.path) {
-				highlightAndScrollToLine(url.uri, rev, url.path, line, cells);
-			}
-		}
+	if (oldURL.line == newURL.line) {
+		// prevent e.g. re-scrolling to same line on toggling refs group
+		//
+		// also prevent highlightLine from retriggering onhashchange
+		// recursively.
+		return;
 	}
+	const pageVars = (window as any).pageVars;
+	if (!pageVars || !pageVars.ResolvedRev) {
+		throw new TypeError("expected window.pageVars to exist, but it does not");
+	}
+	const rev = pageVars.ResolvedRev;
+	const cells = getCodeCellsForAnnotation();
+	highlightAndScrollToLine(newURL.uri!, rev, newURL.path, newURL.line, cells);
 }
 
 export function getCodeCellsForAnnotation(): CodeCell[] {
