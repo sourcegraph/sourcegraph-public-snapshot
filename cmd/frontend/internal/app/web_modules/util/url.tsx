@@ -1,11 +1,11 @@
 import { SourcegraphURL, BlobURL } from "util/types";
-import * as urlparse from "url-parse";
+import * as URI from "urijs";
 
 // parse parses a generic Sourcegraph URL, where most components are shared
 // across all routes, e.g. repo URI and rev.
-export function parse(_loc: String = window.location.href): SourcegraphURL {
-	const loc = urlparse(_loc);
-	const urlsplit = loc.pathname.slice(1).split("/");
+export function parse(_loc: string = window.location.href): SourcegraphURL {
+	const loc = URI.parse(_loc);
+	const urlsplit = loc.path.slice(1).split("/");
 	if (urlsplit.length < 3 && urlsplit[0] !== "github.com") {
 		return {};
 	}
@@ -21,25 +21,25 @@ export function parse(_loc: String = window.location.href): SourcegraphURL {
 }
 
 // parseBlob parses a blob page URL.
-export function parseBlob(_loc: String = window.location.href): BlobURL {
-	const loc = urlparse(_loc);
+export function parseBlob(_loc: string = window.location.href): BlobURL {
+	const loc = URI.parse(_loc);
 	// Parse the generic Sourcegraph URL
-	const u = parse(loc);
+	const u = parse(_loc);
 
 	// Parse blob-specific URL components.
-	const urlsplit = loc.pathname.slice(1).split("/");
+	const urlsplit = loc.path.slice(1).split("/");
 	if (urlsplit.length < 3 && urlsplit[0] !== "github.com") {
 		return {};
 	}
 	let path: string | undefined;
-	if (loc.pathname.indexOf("/-/blob/") !== -1) {
+	if (loc.path.indexOf("/-/blob/") !== -1) {
 		path = urlsplit.slice(5).join("/");
 	}
 	let v: BlobURL = { ...u, path };
 
-	const lineCharModalInfo = loc.hash.split("$"); // e.g. "#L17:19$references:external"
+	const lineCharModalInfo = loc.fragment.split("$"); // e.g. "L17:19$references:external"
 	if (lineCharModalInfo[0]) {
-		const coords = lineCharModalInfo[0].split("#L")[1].split(":");
+		const coords = lineCharModalInfo[0].split("L")[1].split(":");
 		v.line = parseInt(coords[0], 10); // 17
 		v.char = parseInt(coords[1], 10); // 19
 	}
