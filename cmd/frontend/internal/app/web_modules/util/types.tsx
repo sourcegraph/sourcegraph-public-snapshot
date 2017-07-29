@@ -75,10 +75,8 @@ export interface ParsedURL {
 	rev?: string;
 }
 
-export interface SourcegraphURL extends ParsedURL { }
-
 // BlobURL is the URL format for blob pages.
-export interface BlobURL extends SourcegraphURL {
+export interface BlobURL extends ParsedURL {
 	path?: string;
 	line?: number;
 	char?: number;

@@ -1,9 +1,9 @@
-import { SourcegraphURL, BlobURL } from "util/types";
+import { ParsedURL, BlobURL } from "util/types";
 import * as URI from "urijs";
 
 // parse parses a generic Sourcegraph URL, where most components are shared
 // across all routes, e.g. repo URI and rev.
-export function parse(_loc: string = window.location.href): SourcegraphURL {
+export function parse(_loc: string = window.location.href): ParsedURL {
 	const loc = URI.parse(_loc);
 	const urlsplit = loc.path.slice(1).split("/");
 	if (urlsplit.length < 3 && urlsplit[0] !== "github.com") {
