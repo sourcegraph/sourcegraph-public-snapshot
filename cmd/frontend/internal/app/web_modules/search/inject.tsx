@@ -25,6 +25,6 @@ export function injectSearchInputHandler(): void {
 	const urlQuery = querystring.parse(URI.parse(window.location.href).query);
 	if (input) {
 		input.value = urlQuery["q"] || "";
-		input.addEventListener("keydown", (e) => handleSearchInput(e));
+		input.addEventListener("keydown", (e) => handleSearchInput(e, true));
 	}
 }

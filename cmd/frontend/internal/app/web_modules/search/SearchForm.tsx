@@ -1,12 +1,14 @@
 import { fetchRepos } from "app/backend";
-import { handleSearchInput } from "app/search";
+import { SearchParams, getSearchParamsFromLocalStorage, getSearchPath, handleSearchInput } from "app/search";
 import { Autocomplete } from "app/components/Autocomplete";
 import { inputBackgroundColor, normalFontColor, primaryBlue, searchFrameBackgroundColor, white } from "app/util/colors";
 import * as csstips from "csstips";
 import * as React from "react";
 import * as SearchIcon from "react-icons/lib/md/search";
 import * as AddIcon from "react-icons/lib/md/add";
-import { style } from "typestyle";
+import * as CheckboxOutline from "react-icons/lib/md/check-box-outline-blank";
+import * as CheckboxFilled from "react-icons/lib/md/check-box";
+import { style, classes } from "typestyle";
 
 // import * as scrollIntoView from "dom-scroll-into-view";
 import * as scrollIntoViewIfNeeded from "scroll-into-view-if-needed";
@@ -24,7 +26,7 @@ namespace Styles {
 	export const searchInput = style(input, csstips.flex, { borderRadius, height: rowHeight, marginRight: "15px" });
 	export const searchButton = style(csstips.horizontal, csstips.center, csstips.content, { backgroundColor: primaryBlue, height: rowHeight, padding, borderRadius, color: `${white} !important`, textDecoration: "none" })
 
-	export const icon = style({ fontSize: "18px", marginRight: "10px" })
+	export const icon = style({ fontSize: "18px", marginRight: "8px" })
 
 	export const reposSection = style({ marginTop: "16px" })
 	export const reposInput = style(input, { marginTop: "8px", borderRadius, minHeight: "64px", maxHeight: "250px", width: "100%", maxWidth: "100%" })
@@ -38,15 +40,16 @@ namespace Styles {
 
 	export const filesSection = style({ marginTop: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
+
+	export const filtersSection = style(csstips.horizontal, csstips.center, { marginTop: "16px" });
+	export const filterIcon = classes(icon, style({ cursor: "pointer" }));
+	export const filter = style(csstips.content, csstips.horizontal, csstips.center, { marginRight: "16px", userSelect: "none" });
 }
 
 interface Props {
 }
 
-interface State {
-	query: string;
-	repos: string;
-	files: string;
+interface State extends SearchParams {
 	showAutocomplete: boolean;
 }
 
@@ -58,16 +61,12 @@ interface RepoResult {
 	uri: string;
 }
 
-const storageKey = "searchRepoScope";
-
 export class SearchForm extends React.Component<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
 		this.state = {
-			query: "",
-			repos: window.localStorage.getItem(storageKey) || "active",
-			files: "",
+			...getSearchParamsFromLocalStorage(),
 			showAutocomplete: false,
 		}
 	}
@@ -92,26 +91,22 @@ export class SearchForm extends React.Component<Props, State> {
 				break;
 			}
 		}
-		window.localStorage.setItem(storageKey, this.state.repos + addition);
+		window.localStorage.setItem("searchRepoScope", this.state.repos + addition);
 		this.setState({ showAutocomplete: false, repos: this.state.repos + addition });
 	}
 
 	onUpdateRepos(value: string): void {
-		window.localStorage.setItem(storageKey, value);
+		window.localStorage.setItem("searchRepoScope", value);
 		this.setState({ ...this.state, repos: value });
-	}
-
-	getHref(): string {
-		return `/search?q=${encodeURIComponent(this.state.query)}&repos=${encodeURIComponent(this.state.repos)}${this.state.files ? `&files=${encodeURIComponent(this.state.files)}` : ""}`;
 	}
 
 	render(): JSX.Element | null {
 		return <div className={Styles.form}>
 			<div className={Styles.searchRow}>
-				<input className={Styles.searchInput} placeholder="Search..." value={this.state.query} onKeyDown={(e) => handleSearchInput(e)} onChange={(e) => {
+				<input className={Styles.searchInput} autoFocus placeholder="Search..." value={this.state.query} onKeyDown={(e) => handleSearchInput(e, false)} onChange={(e) => {
 					this.setState({ ...this.state, query: e.target.value });
 				}} />
-				<a className={Styles.searchButton} href={this.getHref()}>
+				<a className={Styles.searchButton} href={getSearchPath(this.state)}>
 					<SearchIcon className={Styles.icon} />
 					Search code
                 </a >
@@ -147,8 +142,26 @@ export class SearchForm extends React.Component<Props, State> {
 			<div className={Styles.filesSection}>
 				<div>Files to include</div>
 				<input className={Styles.filesInput} value={this.state.files} placeholder="example: *.go" onChange={(e) => {
+					window.localStorage.setItem("searchFileScope", e.target.value);
 					this.setState({ ...this.state, files: e.target.value });
 				}} />
+			</div>
+			<div className={Styles.filtersSection}>
+				{
+					[{ key: "matchCase", label: "Match case" }, { key: "matchWord", label: "Match whole word" }, { key: "matchRegex", label: "Regex" }]
+						.map((filter, i) => {
+							const iconClickHandler = () => {
+								const newValue: boolean = !this.state[filter.key];
+								window.localStorage.setItem("search" + filter.key[0].toUpperCase() + filter.key.substr(1), "" + newValue);
+								this.setState({ [filter.key]: !this.state[filter.key] } as any);
+							};
+							const iconProps = { className: Styles.filterIcon, onClick: iconClickHandler };
+							return <div key={i} className={Styles.filter}>
+								{this.state[filter.key] ? <CheckboxFilled {...iconProps} /> : <CheckboxOutline {...iconProps} />}
+								{filter.label}
+							</div>;
+						})
+				}
 			</div>
 		</div>;
 	}
