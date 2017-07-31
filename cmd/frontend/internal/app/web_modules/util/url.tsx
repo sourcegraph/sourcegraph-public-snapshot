@@ -44,9 +44,12 @@ export function parseBlob(_loc: string = window.location.href): BlobURL {
 	if (loc.fragment) {
 		const lineCharModalInfo = loc.fragment.split("$"); // e.g. "L17:19$references:external"
 		if (lineCharModalInfo[0]) {
-			const coords = lineCharModalInfo[0].split("L")[1].split(":");
-			v.line = parseInt(coords[0], 10); // 17
-			v.char = parseInt(coords[1], 10); // 19
+			const lineChar = lineCharModalInfo[0].split("L");
+			if (lineChar[1]) {
+				const coords = lineChar[1].split(":");
+				v.line = parseInt(coords[0], 10); // 17
+				v.char = parseInt(coords[1], 10); // 19
+			}
 		}
 		if (lineCharModalInfo[1]) {
 			const modalInfo = lineCharModalInfo[1].split(":");
