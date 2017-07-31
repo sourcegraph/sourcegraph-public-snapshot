@@ -1,5 +1,5 @@
 import { injectReferencesWidget } from "app/references/inject";
-import { injectSearchForm, injectSearchResults } from "app/search/inject";
+import { injectSearchForm, injectSearchResults, injectSearchInputHandler } from "app/search/inject";
 import { addAnnotations } from "app/tooltips";
 import * as url from "app/util/url";
 import { CodeCell } from "app/util/types";
@@ -10,6 +10,8 @@ import { injectShareWidget } from "app/share";
 window.addEventListener("DOMContentLoaded", () => {
 	if (window.location.pathname === "/") {
 		injectSearchForm();
+	} else {
+		injectSearchInputHandler();
 	}
 	if (window.location.pathname === "/search") {
 		injectSearchResults();

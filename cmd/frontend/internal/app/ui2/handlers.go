@@ -114,7 +114,7 @@ func serveSearch(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: &Common{
 			Context:  jscontext.NewJSContextFromRequest(r),
-			Route:    routeHome,
+			Route:    routeSearch,
 			AssetURL: assets.URL("/").String(),
 		},
 	})

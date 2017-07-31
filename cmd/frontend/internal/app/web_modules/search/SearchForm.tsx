@@ -1,4 +1,5 @@
 import { fetchRepos } from "app/backend";
+import { handleSearchInput } from "app/search";
 import { Autocomplete } from "app/components/Autocomplete";
 import { inputBackgroundColor, normalFontColor, primaryBlue, searchFrameBackgroundColor, white } from "app/util/colors";
 import * as csstips from "csstips";
@@ -107,7 +108,7 @@ export class SearchForm extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		return <div className={Styles.form}>
 			<div className={Styles.searchRow}>
-				<input className={Styles.searchInput} placeholder="Search..." value={this.state.query} onChange={(e) => {
+				<input className={Styles.searchInput} placeholder="Search..." value={this.state.query} onKeyDown={(e) => handleSearchInput(e)} onChange={(e) => {
 					this.setState({ ...this.state, query: e.target.value });
 				}} />
 				<a className={Styles.searchButton} href={this.getHref()}>
