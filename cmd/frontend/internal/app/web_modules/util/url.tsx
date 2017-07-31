@@ -37,16 +37,22 @@ export function parseBlob(_loc: string = window.location.href): BlobURL {
 	}
 	let v: BlobURL = { ...u, path };
 
-	const lineCharModalInfo = loc.fragment.split("$"); // e.g. "L17:19$references:external"
-	if (lineCharModalInfo[0]) {
-		const coords = lineCharModalInfo[0].split("L")[1].split(":");
-		v.line = parseInt(coords[0], 10); // 17
-		v.char = parseInt(coords[1], 10); // 19
-	}
-	if (lineCharModalInfo[1]) {
-		const modalInfo = lineCharModalInfo[1].split(":");
-		v.modal = modalInfo[0]; // "references"
-		v.modalMode = modalInfo[1]; // "external"
+	// TODO: The TypeScript annotations for urijs are incorrect.. fragment
+	// is undefined when when there is no fragment in the URI.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/6493
+	if (loc.fragment) {
+		const lineCharModalInfo = loc.fragment.split("$"); // e.g. "L17:19$references:external"
+		if (lineCharModalInfo[0]) {
+			const coords = lineCharModalInfo[0].split("L")[1].split(":");
+			v.line = parseInt(coords[0], 10); // 17
+			v.char = parseInt(coords[1], 10); // 19
+		}
+		if (lineCharModalInfo[1]) {
+			const modalInfo = lineCharModalInfo[1].split(":");
+			v.modal = modalInfo[0]; // "references"
+			v.modalMode = modalInfo[1]; // "external"
+		}
 	}
 	return v;
 }
