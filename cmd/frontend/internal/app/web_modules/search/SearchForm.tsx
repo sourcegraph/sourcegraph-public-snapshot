@@ -1,14 +1,14 @@
 import { fetchRepos } from "app/backend";
-import { SearchParams, getSearchParamsFromLocalStorage, getSearchPath, handleSearchInput } from "app/search";
 import { Autocomplete } from "app/components/Autocomplete";
+import { getSearchParamsFromLocalStorage, getSearchPath, handleSearchInput, SearchParams } from "app/search";
 import { inputBackgroundColor, normalFontColor, primaryBlue, searchFrameBackgroundColor, white } from "app/util/colors";
 import * as csstips from "csstips";
 import * as React from "react";
-import * as SearchIcon from "react-icons/lib/md/search";
 import * as AddIcon from "react-icons/lib/md/add";
-import * as CheckboxOutline from "react-icons/lib/md/check-box-outline-blank";
 import * as CheckboxFilled from "react-icons/lib/md/check-box";
-import { style, classes } from "typestyle";
+import * as CheckboxOutline from "react-icons/lib/md/check-box-outline-blank";
+import * as SearchIcon from "react-icons/lib/md/search";
+import { style } from "typestyle";
 
 // import * as scrollIntoView from "dom-scroll-into-view";
 import * as scrollIntoViewIfNeeded from "scroll-into-view-if-needed";
@@ -20,30 +20,29 @@ namespace Styles {
 
 	const input = { backgroundColor: inputBackgroundColor, padding, border: "none", color: white, fontSize: "14px", $nest: { "&::placeholder": { color: normalFontColor }, "&:focus": { outline: "none" } } };
 
-	export const form = style({ backgroundColor: searchFrameBackgroundColor, padding: "16px", borderRadius: "4px", })
+	export const form = style({ backgroundColor: searchFrameBackgroundColor, padding: "16px", borderRadius: "4px" });
 
-	export const searchRow = style(csstips.horizontal)
+	export const searchRow = style(csstips.horizontal);
 	export const searchInput = style(input, csstips.flex, { borderRadius, height: rowHeight, marginRight: "15px" });
-	export const searchButton = style(csstips.horizontal, csstips.center, csstips.content, { backgroundColor: primaryBlue, height: rowHeight, padding, borderRadius, color: `${white} !important`, textDecoration: "none" })
+	export const searchButton = style(csstips.horizontal, csstips.center, csstips.content, { backgroundColor: primaryBlue, height: rowHeight, padding, borderRadius, color: `${white} !important`, textDecoration: "none" });
 
-	export const icon = style({ fontSize: "18px", marginRight: "8px" })
+	export const icon = style({ fontSize: "18px", marginRight: "8px" });
 
-	export const reposSection = style({ marginTop: "16px" })
-	export const reposInput = style(input, { marginTop: "8px", borderRadius, minHeight: "64px", maxHeight: "250px", width: "100%", maxWidth: "100%" })
+	export const reposSection = style({ marginTop: "16px" });
+	export const reposInput = style(input, { marginTop: "8px", borderRadius, minHeight: "64px", maxHeight: "250px", width: "100%", maxWidth: "100%" });
 	export const addReposButton = style(csstips.flex, csstips.horizontal, csstips.center, { marginTop: "8px", backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
 
 	export const autocomplete = style({ marginTop: "8px", backgroundColor: inputBackgroundColor, cursor: "pointer", borderRadius: "4px", border: "1px solid #2A3A51" });
 	export const autocompleteResults = style({ maxHeight: "200px", overflow: "auto" });
 	export const addReposInput = style(input, { height: rowHeight, padding, borderRadius: "4px", width: "100%" });
-	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding })
-	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding })
+	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding });
+	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding });
 
 	export const filesSection = style({ marginTop: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
 
 	export const filtersSection = style(csstips.horizontal, csstips.center, { marginTop: "16px" });
-	export const filterIcon = classes(icon, style({ cursor: "pointer" }));
-	export const filter = style(csstips.content, csstips.horizontal, csstips.center, { marginRight: "16px", userSelect: "none" });
+	export const filter = style(csstips.content, csstips.horizontal, csstips.center, { cursor: "pointer", marginRight: "16px", userSelect: "none" });
 }
 
 interface Props {
@@ -68,7 +67,7 @@ export class SearchForm extends React.Component<Props, State> {
 		this.state = {
 			...getSearchParamsFromLocalStorage(),
 			showAutocomplete: false,
-		}
+		};
 	}
 
 	onChange(query: string): void {
@@ -79,7 +78,7 @@ export class SearchForm extends React.Component<Props, State> {
 		}
 		fetchRepos(query).then(repos => {
 			(this.refs.autocomplete as any).setItems(repos);
-		})
+		});
 	}
 
 	onSelect(item: RepoResult): void {
@@ -110,7 +109,7 @@ export class SearchForm extends React.Component<Props, State> {
 				<a className={Styles.searchButton} href={getSearchPath(this.state)}>
 					<SearchIcon className={Styles.icon} />
 					Search code
-                </a >
+				</a >
 			</div>
 			<div className={Styles.reposSection}>
 				<div>Repositories</div>
@@ -151,14 +150,13 @@ export class SearchForm extends React.Component<Props, State> {
 				{
 					[{ key: "matchCase", label: "Match case" }, { key: "matchWord", label: "Match whole word" }, { key: "matchRegex", label: "Regex" }]
 						.map((filter, i) => {
-							const iconClickHandler = () => {
+							const clickHandler = () => {
 								const newValue: boolean = !this.state[filter.key];
 								window.localStorage.setItem("search" + filter.key[0].toUpperCase() + filter.key.substr(1), "" + newValue);
 								this.setState({ [filter.key]: !this.state[filter.key] } as any);
 							};
-							const iconProps = { className: Styles.filterIcon, onClick: iconClickHandler };
-							return <div key={i} className={Styles.filter}>
-								{this.state[filter.key] ? <CheckboxFilled {...iconProps} /> : <CheckboxOutline {...iconProps} />}
+							return <div key={i} className={Styles.filter} onClick={clickHandler}>
+								{this.state[filter.key] ? <CheckboxFilled className={Styles.icon} /> : <CheckboxOutline className={Styles.icon} />}
 								{filter.label}
 							</div>;
 						})
