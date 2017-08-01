@@ -65,7 +65,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
 					{
 						this.getPreviewWindowLines().map(i =>
 							<tr key={i}>
-								<td className={Styles.lineNum}>{i}</td>
+								<td className={Styles.lineNum}>{i + 1}</td>
 								<td className={classes(getModeFromExtension(getPathExtension(this.props.path)), Styles.codeLine)}
 									ref={!this.state.blobLines ? undefined : (el) => {
 										if (el) {
