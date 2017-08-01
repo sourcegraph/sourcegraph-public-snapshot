@@ -109,11 +109,17 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 		if err != nil {
 			return nil, err
 		}
-		public, err := github.ListPublicReposForUser(ctx, actor.FromContext(ctx).Login)
-		if err != nil {
-			return nil, err
+
+		// If we didn't list any repos above (e.g. if they don't have the
+		// GitHub app installed), then list their public repos. Otherwise we
+		// would end up with their public repos being in the list twice.
+		if len(repos) == 0 {
+			public, err := github.ListPublicReposForUser(ctx, actor.FromContext(ctx).Login)
+			if err != nil {
+				return nil, err
+			}
+			repos = append(repos, public...)
 		}
-		repos = append(repos, public...)
 		return &sourcegraph.RepoList{Repos: repos}, nil
 	}
 
