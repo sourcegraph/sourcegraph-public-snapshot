@@ -15,8 +15,6 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
 func init() {
@@ -191,7 +189,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
-		var newRepo *sourcegraph.Repo
 		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
 			// Repo does not exist in DB, create new entry.
 			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
@@ -211,35 +208,20 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			// metadata, because it'll get stale, and fetching online from
 			// GitHub is quite easy and (with HTTP caching) performant.
 			ts := time.Now()
-			newRepo = &sourcegraph.Repo{
+			newRepo := &sourcegraph.Repo{
 				URI:         ghRepo.URI,
 				Description: ghRepo.Description,
 				Fork:        ghRepo.Fork,
 				Private:     ghRepo.Private,
 				CreatedAt:   &ts,
 			}
-		} else {
-			ts := time.Now()
-			newRepo = &sourcegraph.Repo{
-				URI:       uri,
-				CreatedAt: &ts,
-			}
+			return s.TryInsertNew(ctx, newRepo)
 		}
-		// Don't add the repo to the DB unless we are sure it exists.
-		// Clone in progress indicates existance.
-		if _, err := gitcmd.Open(newRepo).ResolveRevision(ctx, "HEAD"); err != nil && !cloneInProgress(err) {
-			return nil, err
-		}
-		return s.TryInsertNew(ctx, newRepo)
-	}
-	return repo, nil
-}
 
-func cloneInProgress(err error) bool {
-	if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-		return true
+		return nil, err
 	}
-	return false
+
+	return repo, nil
 }
 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
