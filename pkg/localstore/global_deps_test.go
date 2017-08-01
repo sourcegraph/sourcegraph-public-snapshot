@@ -10,6 +10,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -141,7 +143,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 		}
 	}
 
-	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
+	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/xdependencies":
 			res, ok := results.(*[]lspext.DependencyReference)

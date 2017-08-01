@@ -128,7 +128,7 @@ func BenchmarkStress(b *testing.B) {
 				// operation we do.
 				c := dialProxy(b, addr, nil)
 				if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-					InitializeParams:      lsp.InitializeParams{RootPath: root.String()},
+					InitializeParams:      lsp.InitializeParams{RootURI: lsp.DocumentURI(root.String())},
 					InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 				}, nil); err != nil {
 					b.Fatal(err)
@@ -165,7 +165,7 @@ func BenchmarkStress(b *testing.B) {
 
 func doStressTestOpForPosition(ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, path string, line, character int) error {
 	params := lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: root.WithFilePath(path).String()},
+		TextDocument: lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(root.WithFilePath(path).String())},
 		Position:     lsp.Position{Line: line, Character: character},
 	}
 	methods := []string{"textDocument/definition", "textDocument/hover", "textDocument/references"}

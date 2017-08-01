@@ -28,7 +28,7 @@ func DialProxy(dialCtx context.Context, addr string, h *ClientHandler, connOpt .
 // communicates with the LSP proxy.
 type ClientHandler struct {
 	// RecvDiagnostics is called when textDocument/publishDiagnostics is received
-	RecvDiagnostics func(uri string, diags []lsp.Diagnostic)
+	RecvDiagnostics func(uri lsp.DocumentURI, diags []lsp.Diagnostic)
 
 	// RecvPartialResult is called when $/partialResult is received
 	RecvPartialResult func(id lsp.ID, patch interface{})

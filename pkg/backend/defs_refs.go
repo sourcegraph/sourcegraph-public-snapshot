@@ -208,14 +208,14 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
 	span.SetTag("repo", repo.URI)
 
-	// Determine the rootPath.
-	rootPath := vcs + "://" + repo.URI + "?" + op.CommitID
+	// Determine the rootURI.
+	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + op.CommitID)
 
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.
 	var locations []lspext.SymbolLocationInformation
-	err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, "textDocument/xdefinition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: rootPath + "#" + op.File},
+	err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootURI, "textDocument/xdefinition", lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(string(rootURI) + "#" + op.File)},
 		Position:     lsp.Position{Line: op.Line, Character: op.Character},
 	}, &locations)
 	if err != nil {

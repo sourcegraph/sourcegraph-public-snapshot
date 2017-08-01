@@ -16,13 +16,13 @@ def main(lines):
 	i = line.find('>>> ')
 	if i < 0:
 	    continue
-	root_path, jsonrpc_id, method, params = line[i + 4:].split(' ', 3)
+	root_uri, jsonrpc_id, method, params = line[i + 4:].split(' ', 3)
 	if method in ('initialize', 'shutdown', 'exit'):
 	    continue
 	print(line[i + 4:])
 	data = [
-	    {"id":0,"method":"initialize","params":{"rootPath":root_path,"mode":"go"}},
-	    {"id":1,"method":method,"params":json.loads(params.replace("file:///", root_path + "#"))},
+	    {"id":0,"method":"initialize","params":{"rootUri":root_uri,"mode":"go"}},
+	    {"id":1,"method":method,"params":json.loads(params.replace("file:///", root_uri + "#"))},
 	    {"id":2,"method":"shutdown"},
 	    {"method":"exit"},
 	]
@@ -42,6 +42,6 @@ if run_tests:
 2017-01-19T20:53:55.470055820Z >>> git://github.com/captncraig/mux?acfc892941192f90aadd4f452a295bf39fc5f7ed 230 textDocument/definition {"position":{"character":5,"line":23},"textDocument":{"uri":"file:///mux.go"}}
 2017-01-19T20:53:55.472086920Z <<< git://github.com/captncraig/mux?acfc892941192f90aadd4f452a295bf39fc5f7ed 230 textDocument/definition 2ms
 2017-01-19T20:53:56.368889652Z <<< git://github.com/uber/tchannel-go?9a5445fa1ae4d24ce3407eaf7069d13a0a63deac 1 textDocument/hover 1081ms
-2017-01-19T20:54:18.271657581Z >>> git://github.com/openzipkin/zipkin-go-opentracing?594640b9ef7e5c994e8d9499359d693c032d738c 0 initialize {"rootPath":"file:///","capabilities":{"xfilesProvider":true,"xcontentProvider":true},"originalRootPath":"git://github.com/openzipkin/zipkin-go-opentracing?594640b9ef7e5c994e8d9499359d693c032d738c","mode":"go"}
+2017-01-19T20:54:18.271657581Z >>> git://github.com/openzipkin/zipkin-go-opentracing?594640b9ef7e5c994e8d9499359d693c032d738c 0 initialize {"rootPath":"file:///","rootUri":"file:///","capabilities":{"xfilesProvider":true,"xcontentProvider":true},"originalRootURI":"git://github.com/openzipkin/zipkin-go-opentracing?594640b9ef7e5c994e8d9499359d693c032d738c","mode":"go"}
 2017-01-19T20:54:18.399144361Z <<< git://github.com/openzipkin/zipkin-go-opentracing?594640b9ef7e5c994e8d9499359d693c032d738c 0 initialize 127ms
 2017-01-19T20:54:18.400137560Z >>> git://github.com/openzipkin/zipkin-go-opentracing?594640b9ef7e5c994e8d9499359d693c032d738c 1 textDocument/hover {"position":{"character":0,"line":0},"textDocument":{"uri":"file:///examples/middleware/http.go"}}'''.splitlines())

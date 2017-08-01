@@ -25,8 +25,8 @@ type Range struct {
 }
 
 type Location struct {
-	URI   string `json:"uri"`
-	Range Range  `json:"range"`
+	URI   DocumentURI `json:"uri"`
+	Range Range       `json:"range"`
 }
 
 type Diagnostic struct {
@@ -108,14 +108,14 @@ type TextDocumentIdentifier struct {
 	/**
 	 * The text document's URI.
 	 */
-	URI string `json:"uri"`
+	URI DocumentURI `json:"uri"`
 }
 
 type TextDocumentItem struct {
 	/**
 	 * The text document's URI.
 	 */
-	URI string `json:"uri"`
+	URI DocumentURI `json:"uri"`
 
 	/**
 	 * The text document's language identifier.

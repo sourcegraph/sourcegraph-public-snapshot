@@ -30,7 +30,7 @@ func (c *serverProxyConn) handleTextDocumentContentExt(ctx context.Context, req 
 
 	// Use package url not uri because this is a file:/// URI, not a
 	// special Sourcegraph git://repo?rev#file URI.
-	uri, err := url.Parse(params.TextDocument.URI)
+	uri, err := url.Parse(string(params.TextDocument.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (c *serverProxyConn) handleWorkspaceFilesExt(ctx context.Context, req *json
 			return nil, fmt.Errorf("workspace/xfiles got result %q outside of workspace path prefix %q", filename, prefix)
 		}
 		u.Path = "/" + strings.TrimPrefix(filename, prefix)
-		res = append(res, lsp.TextDocumentIdentifier{URI: u.String()})
+		res = append(res, lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(u.String())})
 	}
 
 	return res, nil

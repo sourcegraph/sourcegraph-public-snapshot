@@ -15,7 +15,11 @@ function wrapLSP(req: LSPRequest, repoRevSpec: RepoRevSpec, path: string): any[]
 			id: 0,
 			method: "initialize",
 			params: {
+				// TODO(sqs): rootPath is deprecated but xlang client proxy currently
+				// requires it. Pass rootUri as well (below) for forward compat.
 				rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
+
+				rootUri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
 				mode: `${getModeFromExtension(getPathExtension(path))}`,
 			},
 		},

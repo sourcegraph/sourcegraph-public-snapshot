@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
@@ -84,7 +85,7 @@ func newDepCache() *depCache {
 // It adds fetched dependencies to its own file system overlay, and
 // the returned depFiles should be passed onto the language server to
 // add to its overlay.
-func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI string, dc *depCache) (err error) {
+func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI lsp.DocumentURI, dc *depCache) (err error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
 	span := parentSpan.Tracer().StartSpan("xlang-go: fetch transitive dependencies",
 		opentracing.Tags{"fileURI": fileURI},

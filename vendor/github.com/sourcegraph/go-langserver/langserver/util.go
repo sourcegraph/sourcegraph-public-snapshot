@@ -6,6 +6,8 @@ import (
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 func PathHasPrefix(s, prefix string) bool {
@@ -36,22 +38,22 @@ func IsVendorDir(dir string) bool {
 }
 
 // isFileURI tells if s denotes an absolute file URI.
-func isFileURI(s string) bool {
-	return strings.HasPrefix(s, "file:///")
+func isFileURI(s lsp.DocumentURI) bool {
+	return strings.HasPrefix(string(s), "file:///")
 }
 
 // pathToURI converts given absolute path to file URI
-func pathToURI(path string) string {
-	return "file://" + path
+func pathToURI(path string) lsp.DocumentURI {
+	return lsp.DocumentURI("file://" + path)
 }
 
 // uriToFilePath converts given absolute file URI to path. It panics if
 // uri does not begin with "file:///".
-func uriToFilePath(uri string) string {
+func uriToFilePath(uri lsp.DocumentURI) string {
 	if !isFileURI(uri) {
 		panic("not an absolute file URI: " + uri)
 	}
-	return strings.TrimPrefix(uri, "file://")
+	return strings.TrimPrefix(string(uri), "file://")
 }
 
 // panicf takes the return value of recover() and outputs data to the log with

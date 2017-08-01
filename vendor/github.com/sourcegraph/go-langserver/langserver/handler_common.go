@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 // HandlerCommon contains functionality that both the build and lang
@@ -20,14 +21,14 @@ type HandlerCommon struct {
 	tracer     opentracing.Tracer
 }
 
-func (h *HandlerCommon) Reset(rootURI string) error {
+func (h *HandlerCommon) Reset(rootURI lsp.DocumentURI) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.shutdown {
 		return errors.New("unable to reset a server that is shutting down")
 	}
 	if !isFileURI(rootURI) {
-		return fmt.Errorf("invalid root path %q: must be file:/// URI", rootURI)
+		return fmt.Errorf("invalid root URI %q: must be file:/// URI", rootURI)
 	}
 	h.RootFSPath = uriToFilePath(rootURI) // retain leading slash
 	return nil

@@ -4,13 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 func TestDetermineEnvironment(t *testing.T) {
 	type tcase struct {
 		Name           string
-		RootPath       string
+		RootURI        lsp.DocumentURI
 		WantImportPath string
 		WantGoPath     string
 		FS             map[string]string
@@ -19,7 +21,7 @@ func TestDetermineEnvironment(t *testing.T) {
 	cases := []tcase{
 		{
 			Name:           "glide",
-			RootPath:       "git://github.com/alice/pkg",
+			RootURI:        "git://github.com/alice/pkg",
 			WantImportPath: "alice.org/pkg",
 			WantGoPath:     gopath,
 			FS: map[string]string{
@@ -28,7 +30,7 @@ func TestDetermineEnvironment(t *testing.T) {
 		},
 		{
 			Name:           "canonical",
-			RootPath:       "git://github.com/alice/pkg",
+			RootURI:        "git://github.com/alice/pkg",
 			WantImportPath: "alice.org/pkg",
 			WantGoPath:     gopath,
 			FS: map[string]string{
@@ -37,7 +39,7 @@ func TestDetermineEnvironment(t *testing.T) {
 		},
 		{
 			Name:           "nested-canonical",
-			RootPath:       "git://github.com/alice/pkg",
+			RootURI:        "git://github.com/alice/pkg",
 			WantImportPath: "alice.org/pkg",
 			WantGoPath:     gopath,
 			FS: map[string]string{
@@ -46,7 +48,7 @@ func TestDetermineEnvironment(t *testing.T) {
 		},
 		{
 			Name:           "fallback",
-			RootPath:       "git://github.com/alice/pkg",
+			RootURI:        "git://github.com/alice/pkg",
 			WantImportPath: "github.com/alice/pkg",
 			WantGoPath:     gopath,
 			FS: map[string]string{
@@ -56,7 +58,7 @@ func TestDetermineEnvironment(t *testing.T) {
 
 		{
 			Name:           "monorepo",
-			RootPath:       "git://github.com/alice/monorepo",
+			RootURI:        "git://github.com/alice/monorepo",
 			WantImportPath: "",
 			WantGoPath:     "/workspace/third_party:/workspace/code:/",
 			FS: map[string]string{
@@ -68,7 +70,7 @@ func TestDetermineEnvironment(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			params := lspext.InitializeParams{
-				OriginalRootPath: tc.RootPath,
+				OriginalRootURI: tc.RootURI,
 			}
 			got, err := determineEnvironment(context.Background(), mapFS(tc.FS), params)
 			if err != nil {

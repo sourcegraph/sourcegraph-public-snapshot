@@ -84,14 +84,14 @@ func (c *xclient) Close() error {
 	return c.Client.Close()
 }
 
-func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInformation, includeHover bool) (map[string][]lsp.SymbolInformation, error) {
+func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInformation, includeHover bool) (map[lsp.DocumentURI][]lsp.SymbolInformation, error) {
 	span := opentracing.SpanFromContext(ctx)
 
-	symInfos := make(map[string][]lsp.SymbolInformation)
+	symInfos := make(map[lsp.DocumentURI][]lsp.SymbolInformation)
 	// For each symbol in the xdefinition-result-derived query, compute the symbol information for that symbol
 	for _, sym := range syms {
 
-		var rootPaths []string
+		var rootURIs []lsp.DocumentURI
 		// If we can extract the repository URL from the symbol metadata, do so
 		if repoURL := xlang.SymbolRepoURL(sym.Symbol); repoURL != "" {
 			span.LogEvent("extracted repo directly from symbol metadata")
@@ -111,7 +111,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			rootPaths = append(rootPaths, string(repoInfo.VCS)+"://"+repoURI+"?"+rev.CommitID)
+			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+repoURI+"?"+rev.CommitID))
 		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
 			pkgDescriptor, ok := xlang.SymbolPackageDescriptor(sym.Symbol, c.mode)
 			if !ok {
@@ -140,19 +140,19 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 					commit = rev.CommitID
 				}
 				// TODO: store VCS type in *sourcegraph.Repo object.
-				rootPaths = append(rootPaths, "git://"+repo.URI+"?"+commit)
+				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+commit))
 			}
-			span.LogEvent("resolved rootPaths")
+			span.LogEvent("resolved rootURIs")
 		}
 
 		// Issue a workspace/symbol for each repository that provides a definition for the symbol
-		for _, rootPath := range rootPaths {
+		for _, rootURI := range rootURIs {
 			params := &lspext.WorkspaceSymbolParams{Symbol: sym.Symbol, Limit: 10}
 			var repoSymInfos []lsp.SymbolInformation
-			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, "workspace/symbol", params, &repoSymInfos); err != nil {
+			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootURI, "workspace/symbol", params, &repoSymInfos); err != nil {
 				return nil, errors.Wrap(err, "resolving symbol to location")
 			}
-			symInfos[rootPath] = repoSymInfos
+			symInfos[rootURI] = repoSymInfos
 		}
 		span.LogEvent("done issuing workspace/symbol requests")
 	}
@@ -232,7 +232,7 @@ func (c *xclient) hoverCrossRepo(ctx context.Context, params, result interface{}
 	var crossHov lsp.Hover
 	crossHov.Range = hover.Range
 Outer: // display first hover found
-	for rootPath, repoSymInfos := range symInfos {
+	for rootURI, repoSymInfos := range symInfos {
 		for _, symInfo := range repoSymInfos {
 			pos := symInfo.Location.Range.Start
 			pos.Character++
@@ -241,7 +241,7 @@ Outer: // display first hover found
 				Position:     pos,
 			}
 			var xhov lsp.Hover
-			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, "textDocument/hover", p, &xhov); err != nil {
+			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootURI, "textDocument/hover", p, &xhov); err != nil {
 				return errors.Wrap(err, "hoverCrossRepo: external textDocument/hover error")
 			}
 			if len(xhov.Contents) > 0 {

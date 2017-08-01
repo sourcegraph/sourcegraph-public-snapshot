@@ -10,7 +10,7 @@ import "github.com/sourcegraph/go-langserver/pkg/lsp"
 type RewriteURIer interface {
 	// RewriteURI will update all URIs in the type using the rewrite
 	// function.
-	RewriteURI(rewrite func(string) string)
+	RewriteURI(rewrite func(lsp.DocumentURI) lsp.DocumentURI)
 }
 
 // referenceAddOp is a JSON Patch operation used by
@@ -25,7 +25,7 @@ type referenceAddOp struct {
 
 type referencePatch []referenceAddOp
 
-func (p referencePatch) RewriteURI(rewrite func(string) string) {
+func (p referencePatch) RewriteURI(rewrite func(lsp.DocumentURI) lsp.DocumentURI) {
 	for i := range p {
 		p[i].Value.URI = rewrite(p[i].Value.URI)
 	}
@@ -43,7 +43,7 @@ type xreferenceAddOp struct {
 
 type xreferencePatch []xreferenceAddOp
 
-func (p xreferencePatch) RewriteURI(rewrite func(string) string) {
+func (p xreferencePatch) RewriteURI(rewrite func(lsp.DocumentURI) lsp.DocumentURI) {
 	for i := range p {
 		p[i].Value.Reference.URI = rewrite(p[i].Value.Reference.URI)
 	}

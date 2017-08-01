@@ -164,15 +164,16 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			initParams.Mode = initParams.InitializationOptions.Mode
 		}
 	}
-	if initParams.RootPath == "" {
-		return errors.New("invalid empty LSP root path in initialize request")
+	if initParams.RootURI == "" {
+		return errors.New("invalid empty LSP root URI in initialize request")
 	}
-	span.SetTag("RootPath", initParams.RootPath)
-	rootPathURI, err := uri.Parse(initParams.RootPath)
+	span.SetTag("RootPath", initParams.RootPath) // TODO(sqs): deprecated rootPath in LSP
+	span.SetTag("RootURI", initParams.RootURI)
+	rootURI, err := uri.Parse(string(initParams.RootURI))
 	if err != nil {
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
 	}
-	addRootPathFields(ev, rootPathURI)
+	addRootURIFields(ev, rootURI)
 	if initParams.InitializationOptions.Mode != "" {
 		mode = initParams.InitializationOptions.Mode
 
@@ -199,7 +200,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// SECURITY NOTE: Do not delete this block. If you delete this
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
-		if _, err := backend.Repos.GetByURI(ctx, rootPathURI.Repo()); err != nil {
+		if _, err := backend.Repos.GetByURI(ctx, rootURI.Repo()); err != nil {
 			return err
 		}
 		checkedUserHasReadAccessToRepo = true
@@ -304,7 +305,7 @@ func isEmpty(v interface{}) bool {
 	}
 }
 
-func addRootPathFields(ev *libhoney.Event, u *uri.URI) {
+func addRootURIFields(ev *libhoney.Event, u *uri.URI) {
 	// u usually looks something like git://github.com/foo/bar?commithash
 	ev.AddField("repo", u.Host+u.Path)
 	ev.AddField("commit", u.RawQuery)

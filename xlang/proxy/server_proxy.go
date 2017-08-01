@@ -281,7 +281,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 
 		mode := id.mode
 		if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode {
-			repo := id.rootPath.Repo()
+			repo := id.rootURI.Repo()
 			for _, p := range repoLargeSubstr {
 				if strings.Contains(repo, p) {
 					mode = mode + "_large"
@@ -306,7 +306,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// proxy has already checked the user's permissions to read
 		// this repo, so we don't need to check permissions again
 		// here.
-		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootPath.CloneURL(), id.rootPath.Rev())
+		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootURI.CloneURL(), id.rootURI.Rev())
 		if err != nil {
 			_ = c.conn.Close()
 			_ = rwc.Close()
@@ -381,7 +381,7 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 
 func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
-		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootPath.String()},
+		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootURI.String(), "rootURI": c.id.rootURI.String()},
 	)
 	defer span.Finish()
 	timeout := 30 * time.Second
@@ -390,24 +390,30 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	// TODO(sqs): rootPath is deprecated but these workarounds are still necessary until
+	// all lang servers are upgraded.
 	rootPath := "/"
-	// TODO(keegancsmith) Make more servers follow rootPath spec
 	if c.id.mode != "php" && c.id.mode != "php_bg" {
 		// Only our PHP server follows the spec for rootPath, other
 		// servers take a URI.
 		rootPath = "file:///"
 	}
+
 	return c.conn.Call(ctx, "initialize", lspext.InitializeParams{
 		InitializeParams: lsp.InitializeParams{
+			// TODO(sqs): rootPath is deprecated but some lang servers may still need it
 			RootPath: rootPath,
+
+			RootURI: "file:///",
 			Capabilities: lsp.ClientCapabilities{
 				XFilesProvider:   true,
 				XContentProvider: true,
 				XCacheProvider:   true,
 			},
 		},
-		OriginalRootPath: c.id.rootPath.String(),
-		Mode:             c.id.mode,
+		OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
+		Mode:            c.id.mode,
 	}, nil, addTraceMeta(ctx))
 }
 
@@ -417,7 +423,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 	var c *serverProxyConn
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
-		opentracing.Tags{"mode": sid.mode, "rootPath": sid.rootPath.String(), "method": method, "params": params},
+		opentracing.Tags{"mode": sid.mode, "rootPath": sid.rootURI.String(), "rootURI": sid.rootURI.String(), "method": method, "params": params},
 	)
 	defer func() {
 		if c != nil {
@@ -719,7 +725,7 @@ var proxySaveDiagnostics, _ = strconv.ParseBool(env.Get("LSP_PROXY_SAVE_DIAGNOST
 
 type diagnosticsKey struct {
 	serverID
-	documentURI string
+	documentURI lsp.DocumentURI
 }
 
 // saveDiagnostics saves diagnostics to publish to clients that

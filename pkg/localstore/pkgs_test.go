@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
@@ -57,7 +58,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		t.Skip()
 	}
 	ctx := testContext()
-	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
+	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/xpackages":
 			res, ok := results.(*[]lspext.PackageInformation)
