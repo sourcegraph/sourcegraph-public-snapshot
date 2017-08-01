@@ -267,10 +267,10 @@ export interface ResolvedSearchTextResp {
 	notFound?: boolean;
 }
 
-export function searchText(query: string, repositories: { repo: string, rev: string }[], params: SearchParams): Promise<ResolvedSearchTextResp> {
+export function searchText(query: string, repositories: Array<{ repo: string, rev: string }>, params: SearchParams): Promise<ResolvedSearchTextResp> {
 	const variables = {
 		pattern: query,
-		fileMatchLimit: 10000,
+		fileMatchLimit: 500,
 		isRegExp: params.matchRegex,
 		isWordMatch: params.matchWord,
 		repositories,

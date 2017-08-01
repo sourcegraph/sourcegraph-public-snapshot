@@ -42,6 +42,7 @@
     "react": "^15.6.1",
     "react-dom": "^15.6.1",
     "react-icons": "^2.2.5",
+    "react-visibility-sensor": "^3.10.1",
     "rxjs": "^5.4.2",
     "sass-loader": "^6.0.6",
     "scroll-into-view-if-needed": "^1.1.0",
