@@ -1,5 +1,6 @@
-import { fetchJumpURL } from "app/backend/lsp";
+// import { fetchJumpURL } from "app/backend/lsp";
 import { triggerReferences } from "app/references";
+import { getSearchParamsFromLocalStorage, getSearchPath } from "app/search";
 import { clearTooltip, store, TooltipState } from "app/tooltips/store";
 import * as styles from "app/tooltips/styles";
 import { getModeFromExtension } from "app/util";
@@ -60,22 +61,6 @@ export function createTooltips(): void {
 	j2dAction.className = `btn btn-sm BtnGroup-item`;
 	Object.assign(j2dAction.style, styles.tooltipAction);
 	Object.assign(j2dAction.style, styles.tooltipActionNotLast);
-	j2dAction.onclick = (e) => {
-		e.preventDefault();
-		const { data, context } = store.getValue();
-		if (data && context && context.coords && context.path && context.repoRevSpec) {
-			fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevSpec)
-				.then((defUrl) => {
-					// eventLogger.logJumpToDef({ ...getTooltipEventProperties(data, context), hasResolvedJ2D: Boolean(defUrl) });
-					if (defUrl) {
-						window.location.href = defUrl;
-						clearTooltip();
-						// const withModifierKey = isMouseEventWithModifierKey(e);
-						// openSourcegraphTab(defUrl, withModifierKey);
-					}
-				});
-		}
-	};
 
 	const referencesIcon = document.createElement("svg");
 	referencesIcon.innerHTML = referencesIconSVG;
@@ -87,8 +72,7 @@ export function createTooltips(): void {
 	Object.assign(findRefsAction.style, styles.tooltipAction);
 	Object.assign(findRefsAction.style, styles.tooltipActionNotLast);
 	findRefsAction.className = `btn btn-sm BtnGroup-item`;
-	findRefsAction.onclick = (e) => {
-		e.preventDefault();
+	findRefsAction.onclick = () => {
 		const { context } = store.getValue();
 		if (!context || !context.coords) {
 			return;
@@ -100,7 +84,7 @@ export function createTooltips(): void {
 			line: context.coords.line,
 			char: context.coords.char,
 		};
-		triggerReferences({ loc, word: context.coords.word }, true);
+		triggerReferences({ loc, word: context.coords.word });
 	};
 
 	const searchIcon = document.createElement("svg");
@@ -112,18 +96,6 @@ export function createTooltips(): void {
 	searchAction.appendChild(document.createTextNode("Search..."));
 	Object.assign(searchAction.style, styles.tooltipAction);
 	searchAction.className = `btn btn-sm BtnGroup-item`;
-	searchAction.onclick = () => {
-		// e.preventDefault();
-		// const searchText = store.getValue().context && store.getValue().context!.selectedText ?
-		// 	store.getValue().context!.selectedText! :
-		// 	store.getValue().target!.textContent!;
-		// const { data, context } = store.getValue();
-		// if (data && context && context.repoRevSpec) {
-		// 	// const url = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}?q=${encodeURIComponent(searchText)}`;
-		// 	// const withModifierKey = isMouseEventWithModifierKey(e);
-		// 	// return;
-		// }
-	};
 
 	tooltipActions.appendChild(j2dAction);
 	tooltipActions.appendChild(findRefsAction);
@@ -195,7 +167,7 @@ function updateTooltip(state: TooltipState): void {
 
 	const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
 	if (searchText) {
-		searchAction.href = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}&q=${searchText}`;
+		searchAction.href = getSearchPath({ ...getSearchParamsFromLocalStorage(), query: searchText });
 	} else {
 		searchAction.href = "";
 	}
@@ -258,7 +230,6 @@ function updateTooltip(state: TooltipState): void {
 	const blobScroll = document.querySelector("#blob-table")!; // the scroll view
 	const blobTable = blobScroll.querySelector("table")!; // the overflowing content (can have negative positions)
 	const tableBound = blobTable.getBoundingClientRect();
-
 
 	// Anchor it horizontally, prior to rendering to account for wrapping
 	// changes to vertical height if the tooltip is at the edge of the viewport.

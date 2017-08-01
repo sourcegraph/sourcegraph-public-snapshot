@@ -1,12 +1,12 @@
 import { fetchDependencyReferences } from "app/backend";
 import { fetchReferences, fetchXdefinition, fetchXreferences } from "app/backend/lsp";
-import { addReferences, setReferences, store as referencesStore, ReferencesContext } from "app/references/store";
+import { addReferences, ReferencesContext, setReferences, store as referencesStore } from "app/references/store";
 
-export function triggerReferences(context: ReferencesContext, refreshURL?: boolean): void {
+export function triggerReferences(context: ReferencesContext): void {
 	// TODO(john): make this caller's responsibility.
-	if (refreshURL) {
-		window.location.href = `${window.location.href.split("#")[0]}#L${context.loc.line}:${context.loc.char}$references`;
-	}
+	// if (refreshURL) {
+	// 	window.location.href = `${window.location.href.split("#")[0]}#L${context.loc.line}:${context.loc.char}$references`;
+	// }
 
 	const repoRevSpec = {
 		repoURI: context.loc.uri,
