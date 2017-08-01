@@ -412,8 +412,9 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 				XCacheProvider:   true,
 			},
 		},
-		OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
-		Mode:            c.id.mode,
+		OriginalRootURI:  lsp.DocumentURI(c.id.rootURI.String()),
+		OriginalRootPath: c.id.rootURI.String(), // TODO(sqs): this is deprecated, can be removed (see field docstring)
+		Mode:             c.id.mode,
 	}, nil, addTraceMeta(ctx))
 }
 

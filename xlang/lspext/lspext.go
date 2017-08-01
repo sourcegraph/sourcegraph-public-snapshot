@@ -82,6 +82,12 @@ type InitializeParams struct {
 	// root (and directory structure) to use for a workspace.
 	OriginalRootURI lsp.DocumentURI `json:"originalRootUri"`
 
+	// OriginalRootPath is DEPRECATED but should always be set to the same value as
+	// OriginalRootURI. When the Python language server is updated per
+	// https://github.com/sourcegraph/sourcegraph/pull/6500, this field can be removed and
+	// it is safe to no longer send it to language servers.
+	OriginalRootPath string `json:"originalRootPath"`
+
 	// Mode is the name of the language. It is used to determine the correct
 	// language server to route a request to, and to inform a language server
 	// what languages it should contribute.
