@@ -24,6 +24,7 @@ RUN apt-get -qy install unzip git maven
 # ENV ANDROID_JAR_PATH /android/platforms/android-25/android.jar
 COPY ./java-language-server.jar /usr/bin
 
-RUN apt-get -qy remove git maven
+## Leave maven in the image so that we can test in the prod env
+# RUN apt-get -qy remove git maven
 
 CMD java $JVM_OPT -jar /usr/bin/java-language-server.jar
