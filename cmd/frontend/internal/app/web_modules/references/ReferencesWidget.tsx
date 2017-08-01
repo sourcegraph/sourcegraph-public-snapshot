@@ -1,6 +1,6 @@
 import { CodeExcerpt } from "app/components/CodeExcerpt";
 import { triggerReferences } from "app/references";
-import { locKey, ReferencesState, store } from "app/references/store";
+import { locKey, ReferencesState, refsFetchKey, store } from "app/references/store";
 import * as colors from "app/util/colors";
 import { normalFontColor, white } from "app/util/colors";
 import { Reference } from "app/util/types";
@@ -32,6 +32,8 @@ namespace Styles {
 	export const titleBarGroupActive = classes(style({ fontWeight: "bold !important", color: "white !important" } as any), titleBarGroup);
 
 	export const badge = style(csstips.content, { backgroundColor: "#233043 !important", borderRadius: "20px", color: normalFontColor, marginLeft: "10px", marginRight: "25px", fontSize: "11px", padding: "3px 6px", fontFamily: "system" });
+
+	export const emptyState = style({ padding: "10px 16px", fontFamily: "system", fontSize: "14px" });
 
 	export const uriPathPart = style({ paddingLeft: "25px", paddingRight: "15px" });
 	export const pathPart = style({});
@@ -113,6 +115,27 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		}
 	}
 
+	isLoading(group: "all" | "local" | "external"): boolean {
+		if (!this.state.context) {
+			return false;
+		}
+
+		const state = store.getValue();
+		const loadingRefs = state.fetches.get(refsFetchKey(this.state.context.loc, true)) === "pending";
+		const loadingXRefs = state.fetches.get(refsFetchKey(this.state.context.loc, false)) === "pending";
+
+		switch (group) {
+			case "all":
+				return loadingRefs || loadingXRefs;
+			case "local":
+				return loadingRefs;
+			case "external":
+				return loadingXRefs;
+		}
+
+		return false;
+	}
+
 	render(): JSX.Element | null {
 		if (!this.state.context) {
 			return null;
@@ -125,6 +148,18 @@ export class ReferencesWidget extends React.Component<Props, State> {
 
 		const localPrefix = "git://" + this.state.context.loc.uri;
 		const [localRefs, externalRefs] = _(refsByUri).keys().partition((uri) => uri.startsWith(localPrefix)).value();
+
+		const isEmptyGroup = () => {
+			switch (this.state.group) {
+				case "all":
+					return localRefs.length === 0 && externalRefs.length === 0;
+				case "local":
+					return localRefs.length === 0;
+				case "external":
+					return externalRefs.length === 0;
+			}
+			return false;
+		};
 
 		return <div>
 			<div className={Styles.titleBar}>
@@ -146,6 +181,11 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				<div className={style(csstips.flex)} />
 				<CloseIcon className={Styles.closeIcon} onClick={() => this.props.onDismiss()} />
 			</div>
+			{
+				isEmptyGroup() && <div className={Styles.emptyState}>
+					{this.isLoading(this.state.group) ? "Working..." : "No results"}
+				</div>
+			}
 			<div>
 				{
 					(this.state.group === "all" || this.state.group === "local") && localRefs.sort().map((uri, i) => {
