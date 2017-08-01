@@ -250,7 +250,8 @@ func (r *repoSearchArgs) expandRepos(ctx context.Context) ([]*repositoryRevision
 	activeAndInactive, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 		RemoteOnly: remoteOnly,
 		ListOptions: sourcegraph.ListOptions{
-			PerPage: 10000, // we want every repo.
+			PerPage: 100, // we want every repo.
+			// TODO(stephen): uncommemnt if safe PerPage: 10000, // we want every repo.
 		},
 	})
 	if err != nil {
