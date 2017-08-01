@@ -4,10 +4,6 @@ import { RepoRevSpec } from "app/util/types";
 import { Reference, TooltipData, Workspace } from "app/util/types";
 import * as URI from "urijs";
 
-const tooltipCache: { [key: string]: TooltipData } = {};
-const j2dCache = {};
-const referencesCache = {};
-
 interface LSPRequest {
 	method: string;
 	params: any;
@@ -38,6 +34,7 @@ function wrapLSP(req: LSPRequest, repoRevSpec: RepoRevSpec, path: string): any[]
 	];
 }
 
+const tooltipCache: { [key: string]: TooltipData } = {};
 export function getTooltip(path: string, line: number, char: number, repoRevSpec: RepoRevSpec): Promise<TooltipData> {
 	const ext = getPathExtension(path);
 	if (!supportedExtensions.has(ext)) {
@@ -83,6 +80,7 @@ export function getTooltip(path: string, line: number, char: number, repoRevSpec
 		});
 }
 
+const j2dCache = {};
 export function fetchJumpURL(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<string | null> {
 	const ext = getPathExtension(path);
 	if (!supportedExtensions.has(ext)) {
@@ -158,6 +156,7 @@ export function fetchXdefinition(col: number, path: string, line: number, repoRe
 		});
 }
 
+const referencesCache = {};
 export function fetchReferences(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<Reference[] | null> {
 	const ext = getPathExtension(path);
 	if (!supportedExtensions.has(ext)) {
@@ -193,7 +192,7 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 
 			referencesCache[cacheKey] = json[1].result;
 			referencesCache[cacheKey].forEach((ref) => {
-				const parsed = URI.parse(ref.uri)
+				const parsed = URI.parse(ref.uri);
 				ref.repoURI = `${parsed.hostname}/${parsed.path}`;
 			});
 			return referencesCache[cacheKey];
@@ -201,7 +200,6 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 }
 
 export function fetchXreferences(workspace: Workspace, path: string, query: any, hints: any, limit: any): Promise<Reference[] | null> {
-
 	const body = wrapLSP({
 		method: "workspace/xreferences",
 		params: {
@@ -219,7 +217,7 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
 
 			return json[1].result.map((res) => {
 				const ref = res.reference;
-				const parsed = URI.parse(ref.uri)
+				const parsed = URI.parse(ref.uri);
 				ref.repoURI = `${parsed.hostname}/${parsed.path}`;
 				return ref;
 			});
