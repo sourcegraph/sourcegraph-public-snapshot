@@ -103,7 +103,7 @@ func hoverTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.UR
 	if err != nil {
 		t.Fatal(err)
 	}
-	hover, err := callHover(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
+	hover, err := callHover(ctx, c, lsp.DocumentURI(root.WithFilePath(filepath.Join(root.FilePath(), file)).String()), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func definitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	if err != nil {
 		t.Fatal(err)
 	}
-	definition, err := callDefinition(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
+	definition, err := callDefinition(ctx, c, lsp.DocumentURI(root.WithFilePath(filepath.Join(root.FilePath(), file)).String()), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func xdefinitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *
 	if err != nil {
 		t.Fatal(err)
 	}
-	xdefinition, err := callXDefinition(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
+	xdefinition, err := callXDefinition(ctx, c, lsp.DocumentURI(root.WithFilePath(filepath.Join(root.FilePath(), file)).String()), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func referencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	if err != nil {
 		t.Fatal(err)
 	}
-	references, err := callReferences(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
+	references, err := callReferences(ctx, c, lsp.DocumentURI(root.WithFilePath(filepath.Join(root.FilePath(), file)).String()), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,10 +244,10 @@ func callWorkspaceReferences(ctx context.Context, c *jsonrpc2.Conn, params lsext
 	}
 	refs := make([]string, len(references))
 	for i, r := range references {
-		locationURI := strings.TrimPrefix(r.Reference.URI, "file://")
+		locationPath := strings.TrimPrefix(string(r.Reference.URI), "file://")
 		start := r.Reference.Range.Start
 		end := r.Reference.Range.End
-		refs[i] = fmt.Sprintf("%s:%d:%d-%d:%d -> %v", locationURI, start.Line+1, start.Character+1, end.Line+1, end.Character+1, r.Symbol)
+		refs[i] = fmt.Sprintf("%s:%d:%d-%d:%d -> %v", locationPath, start.Line+1, start.Character+1, end.Line+1, end.Character+1, r.Symbol)
 	}
 	return refs, nil
 }
@@ -272,7 +272,7 @@ func parsePos(s string) (file string, line, char int, err error) {
 	return file, line - 1, char - 1, nil // LSP is 0-indexed
 }
 
-func callHover(ctx context.Context, c *jsonrpc2.Conn, uri string, line, char int) (string, error) {
+func callHover(ctx context.Context, c *jsonrpc2.Conn, uri lsp.DocumentURI, line, char int) (string, error) {
 	var res struct {
 		Contents markedStrings `json:"contents"`
 		lsp.Hover
@@ -294,7 +294,7 @@ func callHover(ctx context.Context, c *jsonrpc2.Conn, uri string, line, char int
 	return str, nil
 }
 
-func callDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, char int) (string, error) {
+func callDefinition(ctx context.Context, c *jsonrpc2.Conn, uri lsp.DocumentURI, line, char int) (string, error) {
 	var res locations
 	err := c.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: uri},
@@ -316,7 +316,7 @@ func callDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, cha
 	return str, nil
 }
 
-func callXDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, char int) (string, error) {
+func callXDefinition(ctx context.Context, c *jsonrpc2.Conn, uri lsp.DocumentURI, line, char int) (string, error) {
 	var res []lsext.SymbolLocationInformation
 	err := c.Call(ctx, "textDocument/xdefinition", lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: uri},
@@ -338,7 +338,7 @@ func callXDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, ch
 	return str, nil
 }
 
-func callReferences(ctx context.Context, c *jsonrpc2.Conn, uri string, line, char int) ([]string, error) {
+func callReferences(ctx context.Context, c *jsonrpc2.Conn, uri lsp.DocumentURI, line, char int) ([]string, error) {
 	var res locations
 	err := c.Call(ctx, "textDocument/references", lsp.ReferenceParams{
 		Context: lsp.ReferenceContext{IncludeDeclaration: true},

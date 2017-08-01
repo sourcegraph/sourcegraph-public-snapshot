@@ -17,7 +17,7 @@ import (
 // jsonrpc2ConnImpl implements langserver.JSONRPC2Conn. See
 // langserver.JSONRPC2Conn for more information.
 type jsonrpc2ConnImpl struct {
-	rewriteURI func(string) (string, error)
+	rewriteURI func(lsp.DocumentURI) (lsp.DocumentURI, error)
 	conn       *jsonrpc2.Conn
 }
 
@@ -59,7 +59,7 @@ func (c *jsonrpc2ConnImpl) Notify(ctx context.Context, method string, params int
 		}
 
 		var rewriteErr error
-		rewriter.RewriteURI(func(u string) string {
+		rewriter.RewriteURI(func(u lsp.DocumentURI) lsp.DocumentURI {
 			u, err := c.rewriteURI(u)
 			if err != nil {
 				rewriteErr = errors.Wrap(err, "buildserver failde to rewrite partialResult")

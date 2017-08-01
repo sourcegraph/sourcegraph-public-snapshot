@@ -47,7 +47,7 @@ func BenchmarkIntegration(b *testing.B) {
 	cleanup := useGithubForVFS()
 	defer cleanup()
 
-	tests := map[string]struct { // map key is rootPath
+	tests := map[lsp.DocumentURI]struct { // map key is rootURI
 		mode string
 
 		definitionParams *lsp.TextDocumentPositionParams
@@ -104,8 +104,8 @@ func BenchmarkIntegration(b *testing.B) {
 			},
 		},
 	}
-	for rootPath, test := range tests {
-		root, err := uri.Parse(rootPath)
+	for rootURI, test := range tests {
+		root, err := uri.Parse(string(rootURI))
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -119,7 +119,7 @@ func BenchmarkIntegration(b *testing.B) {
 			fs.Stat(context.Background(), ".") // ensure repo archive has been fetched and read before starting timer
 
 			if test.definitionParams != nil {
-				test.definitionParams.TextDocument.URI = rootPath + "#" + test.definitionParams.TextDocument.URI
+				test.definitionParams.TextDocument.URI = rootURI + "#" + test.definitionParams.TextDocument.URI
 				b.Run("definition", func(b *testing.B) {
 					ctx := context.Background()
 					proxy := proxy.New()
@@ -133,7 +133,7 @@ func BenchmarkIntegration(b *testing.B) {
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-							InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+							InitializeParams:      lsp.InitializeParams{RootURI: rootURI},
 							InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 						}, nil); err != nil {
 							b.Fatal(err)
@@ -175,7 +175,7 @@ func BenchmarkIntegration(b *testing.B) {
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-							InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+							InitializeParams:      lsp.InitializeParams{RootURI: rootURI},
 							InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 						}, nil); err != nil {
 							b.Fatal(err)
@@ -221,10 +221,10 @@ func BenchmarkIntegrationShared(b *testing.B) {
 	defer cleanup()
 
 	tests := map[string]struct {
-		// oldRootPath will be run outside of the benchmark timers. It is where the reused artifacts will come from
-		oldRootPath string
+		// oldRootURI will be run outside of the benchmark timers. It is where the reused artifacts will come from
+		oldRootURI string
 
-		rootPath string
+		rootURI string
 
 		// Only a TextDocument is specified since we do the same
 		// prepare hover as in production.
@@ -232,25 +232,25 @@ func BenchmarkIntegrationShared(b *testing.B) {
 	}{
 		// noop tests the case where no go files have changed between commits
 		"noop": {
-			oldRootPath: "git://github.com/kubernetes/kubernetes?ae03433a70ddb01b9c2be052a9ea0810395ff368",
-			rootPath:    "git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33",
-			path:        "pkg/ssh/ssh.go",
+			oldRootURI: "git://github.com/kubernetes/kubernetes?ae03433a70ddb01b9c2be052a9ea0810395ff368",
+			rootURI:    "git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33",
+			path:       "pkg/ssh/ssh.go",
 		},
 		// fast is a small change in one file
 		"fast": {
-			oldRootPath: "git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33",
-			rootPath:    "git://github.com/kubernetes/kubernetes?e105eec9c91afdd19e5245ddfadf2e2d2155eb6f",
-			path:        "pkg/ssh/ssh.go",
+			oldRootURI: "git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33",
+			rootURI:    "git://github.com/kubernetes/kubernetes?e105eec9c91afdd19e5245ddfadf2e2d2155eb6f",
+			path:       "pkg/ssh/ssh.go",
 		},
 	}
 	ctx := context.Background()
 	for label, test := range tests {
 		b.Run(label, func(b *testing.B) {
-			old, err := uri.Parse(test.oldRootPath)
+			old, err := uri.Parse(test.oldRootURI)
 			if err != nil {
 				b.Fatal(err)
 			}
-			root, err := uri.Parse(test.rootPath)
+			root, err := uri.Parse(test.rootURI)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -267,9 +267,9 @@ func BenchmarkIntegrationShared(b *testing.B) {
 			oldfs.Stat(ctx, ".")
 			fs.Stat(ctx, ".")
 
-			do := func(c *jsonrpc2.Conn, rootPath string) {
+			do := func(c *jsonrpc2.Conn, rootURI string) {
 				if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-					InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+					InitializeParams:      lsp.InitializeParams{RootURI: lsp.DocumentURI(rootURI)},
 					InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "go"},
 				}, nil); err != nil {
 					b.Fatal(err)
@@ -278,7 +278,7 @@ func BenchmarkIntegrationShared(b *testing.B) {
 				var hover lsp.Hover
 				if err := c.Call(ctx, "textDocument/hover", &lsp.TextDocumentPositionParams{
 					TextDocument: lsp.TextDocumentIdentifier{
-						URI: rootPath + "#" + test.path,
+						URI: lsp.DocumentURI(rootURI + "#" + test.path),
 					},
 				}, &hover); err != nil {
 					b.Fatal(err)
@@ -298,11 +298,11 @@ func BenchmarkIntegrationShared(b *testing.B) {
 				defer done() // TODO ensure we close between each loop
 
 				c := dialProxy(b, addr, nil)
-				do(c, test.oldRootPath)
+				do(c, test.oldRootURI)
 				c = dialProxy(b, addr, nil)
 
 				b.StartTimer()
-				do(c, test.rootPath)
+				do(c, test.rootURI)
 				b.StopTimer()
 
 				proxy.ShutdownServers(ctx)

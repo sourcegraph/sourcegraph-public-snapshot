@@ -73,14 +73,14 @@ type TelemetryEventParams struct {
 type InitializeParams struct {
 	lsp.InitializeParams
 
-	// OriginalRootPath is the original rootPath for this LSP session,
+	// OriginalRootURI is the original rootUri for this LSP session,
 	// before any path rewriting occurred. It is typically a Git clone
 	// URL of the form
 	// "git://github.com/facebook/react.git?rev=master#lib".
 	//
 	// The Go lang/build server uses this to infer the import path
 	// root (and directory structure) to use for a workspace.
-	OriginalRootPath string `json:"originalRootPath"`
+	OriginalRootURI lsp.DocumentURI `json:"originalRootUri"`
 
 	// Mode is the name of the language. It is used to determine the correct
 	// language server to route a request to, and to inform a language server
@@ -101,19 +101,25 @@ type InitializeParams struct {
 //
 // TODO(sqs): does not support WorkspaceEdit (with a field whose
 // TypeScript type is {[uri: string]: TextEdit[]}.
-func WalkURIFields(o interface{}, collect func(string), update func(string) string) {
+func WalkURIFields(o interface{}, collect func(lsp.DocumentURI), update func(lsp.DocumentURI) lsp.DocumentURI) {
 	var walk func(o interface{})
 	walk = func(o interface{}) {
 		switch o := o.(type) {
 		case map[string]interface{}:
 			for k, v := range o { // Location, TextDocumentIdentifier, TextDocumentItem, etc.
 				if k == "uri" {
-					if s, ok := v.(string); ok {
+					s, ok := v.(string)
+					if !ok {
+						s2, ok2 := v.(lsp.DocumentURI)
+						s = string(s2)
+						ok = ok2
+					}
+					if ok {
 						if collect != nil {
-							collect(s)
+							collect(lsp.DocumentURI(s))
 						}
 						if update != nil {
-							o[k] = update(s)
+							o[k] = update(lsp.DocumentURI(s))
 						}
 						continue
 					}
@@ -132,10 +138,10 @@ func WalkURIFields(o interface{}, collect func(string), update func(string) stri
 			if rv.Kind() == reflect.Struct {
 				if fv := rv.FieldByName("URI"); fv.Kind() == reflect.String {
 					if collect != nil {
-						collect(fv.String())
+						collect(lsp.DocumentURI(fv.String()))
 					}
 					if update != nil {
-						fv.SetString(update(fv.String()))
+						fv.SetString(string(update(lsp.DocumentURI(fv.String()))))
 					}
 				}
 				for i := 0; i < rv.NumField(); i++ {

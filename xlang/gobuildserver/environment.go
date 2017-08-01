@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -40,9 +41,9 @@ const (
 // It is expected that fs will be mounted at the returns
 // InitializeParams.RootPath.
 func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspext.InitializeParams) (*langserver.InitializeParams, error) {
-	rootImportPath, err := determineRootImportPath(ctx, params.OriginalRootPath, fs)
+	rootImportPath, err := determineRootImportPath(ctx, params.OriginalRootURI, fs)
 	if err != nil {
-		return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootPath)
+		return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootURI)
 	}
 	// Sanity-check the import path.
 	if rootImportPath == "" || rootImportPath != path.Clean(rootImportPath) || strings.Contains(rootImportPath, "..") || strings.HasPrefix(rootImportPath, string(os.PathSeparator)) || strings.HasPrefix(rootImportPath, "/") || strings.HasPrefix(rootImportPath, ".") {
@@ -99,7 +100,8 @@ func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspe
 		},
 	}
 
-	langInitParams.RootPath = "file://" + rootPath
+	langInitParams.RootPath = rootPath
+	langInitParams.RootURI = lsp.DocumentURI("file://" + rootPath)
 	langInitParams.RootImportPath = rootImportPath
 
 	return langInitParams, nil
@@ -140,11 +142,11 @@ func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
 // It's intended to handle cases like
 // github.com/kubernetes/kubernetes, which has doc.go files that
 // indicate its root import path is k8s.io/kubernetes.
-func determineRootImportPath(ctx context.Context, originalRootPath string, fs ctxvfs.FileSystem) (rootImportPath string, err error) {
-	if originalRootPath == "" {
+func determineRootImportPath(ctx context.Context, originalRootURI lsp.DocumentURI, fs ctxvfs.FileSystem) (rootImportPath string, err error) {
+	if originalRootURI == "" {
 		return "", errors.New("unable to determine Go workspace root import path without due to empty root path")
 	}
-	u, err := uri.Parse(originalRootPath)
+	u, err := uri.Parse(string(originalRootURI))
 	if err != nil {
 		return "", err
 	}
@@ -157,7 +159,7 @@ func determineRootImportPath(ctx context.Context, originalRootPath string, fs ct
 		if strings.HasSuffix(u.Path, ".git") {
 			pathHasGitSuffix.Inc()
 			defer func() {
-				log.Printf("WARN: determineRootImportPath has .git suffix. before=%q after=%q %s", originalRootPath, rootImportPath, err)
+				log.Printf("WARN: determineRootImportPath has .git suffix. before=%q after=%q %s", originalRootURI, rootImportPath, err)
 			}()
 		}
 		rootImportPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())

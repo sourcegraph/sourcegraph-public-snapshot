@@ -198,8 +198,8 @@ func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
 // anonymous clients are accessing the same repository at the same
 // commit.
 type contextID struct {
-	rootPath uri.URI // the rootPath in the initialize request (typically the repo clone URL + "?REV")
-	mode     string  // the mode (i.e., "go" or "typescript")
+	rootURI uri.URI // the rootPath in the initialize request (typically the repo clone URL + "?REV")
+	mode    string  // the mode (i.e., "go" or "typescript")
 
 	// session is the unique ID identifying this session, used when it
 	// shouldn't be shared by all users viewing the same rootPath and
@@ -218,7 +218,7 @@ type contextID struct {
 }
 
 func (id contextID) String() string {
-	return fmt.Sprintf("context(%s mode=%s session=%q)", id.rootPath.String(), id.mode, id.session)
+	return fmt.Sprintf("context(%s mode=%s session=%q)", id.rootURI.String(), id.mode, id.session)
 }
 
 // clientID is used to uniquely identify a client connection in this
@@ -365,10 +365,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params struct {
-			lspext.ClientProxyInitializeParams
-			RootURI string `json:"rootUri"`
-		}
+		var params lspext.ClientProxyInitializeParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
@@ -379,28 +376,24 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			params.Mode = ""
 		}
 
-		// 🚨 SECURITY: LSP introduced a rootUri field on 🚨
-		// InitializeParams and deprecated rootPath. Until we
-		// implement rootUri, ensure that it is not being sent to us,
-		// to avoid confusion. This also helps avoid an exploit where
-		// we check access to the rootPath but provide access to the
-		// rootUri, which would allow an attacker to bypass our access
-		// check.
-		if params.RootURI != "" {
-			return nil, fmt.Errorf("rootUri field is not yet supported (use rootPath only): got value %q", params.RootURI)
-		}
+		// 🚨 SECURITY: Clear out the rootPath field so we ensure we don't accidentally
+		// consult it (and potentially bypass rootUri permission checking). This is OK
+		// because it's deprecated
+		// (https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#initialize-request)
+		// and all of our clients have sent rootUri in addition to rootPath for many
+		// months.
 
-		rootPathURI, err := uri.Parse(params.RootPath)
+		rootURI, err := uri.Parse(string(params.RootURI))
 		if err != nil {
-			return nil, fmt.Errorf("invalid rootPath: %s", err)
+			return nil, fmt.Errorf("invalid rootUri %q: %s", params.RootURI, err)
 		}
 		if params.InitializationOptions.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
-		if len(rootPathURI.Rev()) != 40 {
-			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootPathURI)
+		if len(rootURI.Rev()) != 40 {
+			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootURI)
 		}
-		if repoBlacklist[rootPathURI.Repo()] {
+		if repoBlacklist[rootURI.Repo()] {
 			return nil, fmt.Errorf("repo is blacklisted")
 		}
 
@@ -411,8 +404,8 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			// it sends 2 "initialize" requests).
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler is already initialized")}
 		}
-		c.init = &params.ClientProxyInitializeParams
-		c.context.rootPath = *rootPathURI
+		c.init = &params
+		c.context.rootURI = *rootURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
 		c.mu.Unlock()
@@ -473,7 +466,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
 
-		if req.Method == "workspace/xreferences" && repoBlacklistXReferences[c.context.rootPath.Repo()] {
+		if req.Method == "workspace/xreferences" && repoBlacklistXReferences[c.context.rootURI.Repo()] {
 			return nil, fmt.Errorf("repo is blacklisted")
 		}
 
@@ -515,11 +508,11 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 			// When the client opens a document, send over any diagnostics
 			// we received in the past.
-			relURI, err := relWorkspaceURI(c.context.rootPath, params.TextDocument.URI)
+			relURI, err := relWorkspaceURI(c.context.rootURI, string(params.TextDocument.URI))
 			if err != nil {
 				return nil, err
 			}
-			if diags := c.proxy.getSavedDiagnostics(serverID{contextID: c.context, pathPrefix: ""}, relURI.String()); diags != nil {
+			if diags := c.proxy.getSavedDiagnostics(serverID{contextID: c.context, pathPrefix: ""}, lsp.DocumentURI(relURI.String())); diags != nil {
 				diagnosticsParams := lsp.PublishDiagnosticsParams{
 					URI:         params.TextDocument.URI,
 					Diagnostics: diags,
@@ -685,13 +678,13 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		// Rewrite paths from server->client and send rewritten
 		// notification to client.
 		var walkErr error
-		lspext.WalkURIFields(&paramsObj, nil, func(uriStr string) string {
-			newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
+		lspext.WalkURIFields(&paramsObj, nil, func(uriStr lsp.DocumentURI) lsp.DocumentURI {
+			newURI, err := absWorkspaceURI(c.context.rootURI, string(uriStr))
 			if err != nil {
 				walkErr = err
 				return ""
 			}
-			return newURI.String()
+			return lsp.DocumentURI(newURI.String())
 		})
 		if walkErr != nil {
 			return nil, walkErr
@@ -737,13 +730,13 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		// Rewrite paths from server->client and send rewritten
 		// notification to client.
 		var walkErr error
-		lspext.WalkURIFields(paramsObj.Patch, nil, func(uriStr string) string {
-			newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
+		lspext.WalkURIFields(paramsObj.Patch, nil, func(uriStr lsp.DocumentURI) lsp.DocumentURI {
+			newURI, err := absWorkspaceURI(c.context.rootURI, string(uriStr))
 			if err != nil {
 				walkErr = err
 				return ""
 			}
-			return newURI.String()
+			return lsp.DocumentURI(newURI.String())
 		})
 		if walkErr != nil {
 			return nil, walkErr
@@ -792,8 +785,8 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	if err := json.Unmarshal(pb, &params); err != nil {
 		return err
 	}
-	var uris []string
-	lspext.WalkURIFields(params, func(uri string) {
+	var uris []lsp.DocumentURI
+	lspext.WalkURIFields(params, func(uri lsp.DocumentURI) {
 		uris = append(uris, uri)
 	}, nil)
 	if len(uris) != 1 && strings.HasPrefix(method, "textDocument/") {
@@ -803,13 +796,13 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	// Now that we know the prefix of the workspace, rewrite the paths
 	// in the LSP params object.
 	var walkErr error
-	lspext.WalkURIFields(params, nil, func(uriStr string) string {
-		newURI, err := relWorkspaceURI(c.context.rootPath, uriStr)
+	lspext.WalkURIFields(params, nil, func(uriStr lsp.DocumentURI) lsp.DocumentURI {
+		newURI, err := relWorkspaceURI(c.context.rootURI, string(uriStr))
 		if err != nil {
 			walkErr = err
 			return ""
 		}
-		return newURI.String()
+		return lsp.DocumentURI(newURI.String())
 	})
 	if walkErr != nil {
 		return walkErr
@@ -850,13 +843,13 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 		if err := json.Unmarshal(result2, &resultObj); err != nil {
 			return err
 		}
-		lspext.WalkURIFields(resultObj, nil, func(uriStr string) string {
-			newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
+		lspext.WalkURIFields(resultObj, nil, func(uriStr lsp.DocumentURI) lsp.DocumentURI {
+			newURI, err := absWorkspaceURI(c.context.rootURI, string(uriStr))
 			if err != nil {
 				walkErr = err
 				return ""
 			}
-			return newURI.String()
+			return lsp.DocumentURI(newURI.String())
 		})
 		if walkErr != nil {
 			return walkErr

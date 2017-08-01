@@ -10,9 +10,9 @@ import (
 )
 
 func TestWalkURIFields(t *testing.T) {
-	tests := map[string][]string{
-		`{"textDocument":{"uri":"u1"}}`: []string{"u1"},
-		`{"uri":"u1"}`:                  []string{"u1"},
+	tests := map[string][]lsp.DocumentURI{
+		`{"textDocument":{"uri":"u1"}}`: []lsp.DocumentURI{"u1"},
+		`{"uri":"u1"}`:                  []lsp.DocumentURI{"u1"},
 	}
 	for objStr, wantURIs := range tests {
 		var obj interface{}
@@ -21,9 +21,9 @@ func TestWalkURIFields(t *testing.T) {
 			continue
 		}
 
-		var uris []string
-		collect := func(uri string) { uris = append(uris, uri) }
-		update := func(uri string) string { return "XXX" }
+		var uris []lsp.DocumentURI
+		collect := func(uri lsp.DocumentURI) { uris = append(uris, uri) }
+		update := func(uri lsp.DocumentURI) lsp.DocumentURI { return "XXX" }
 		WalkURIFields(obj, collect, update)
 
 		if !reflect.DeepEqual(uris, wantURIs) {
@@ -32,7 +32,7 @@ func TestWalkURIFields(t *testing.T) {
 
 		wantObj := objStr
 		for _, uri := range uris {
-			wantObj = strings.Replace(wantObj, uri, "XXX", -1)
+			wantObj = strings.Replace(wantObj, string(uri), "XXX", -1)
 		}
 		gotObj, err := json.Marshal(obj)
 		if err != nil {
@@ -48,16 +48,16 @@ func TestWalkURIFields(t *testing.T) {
 func TestWalkURIFields_struct(t *testing.T) {
 	v := lsp.PublishDiagnosticsParams{URI: "u1"}
 
-	var uris []string
-	collect := func(uri string) { uris = append(uris, uri) }
-	update := func(uri string) string { return "XXX" }
+	var uris []lsp.DocumentURI
+	collect := func(uri lsp.DocumentURI) { uris = append(uris, uri) }
+	update := func(uri lsp.DocumentURI) lsp.DocumentURI { return "XXX" }
 	WalkURIFields(&v, collect, update)
 
-	if want := []string{"u1"}; !reflect.DeepEqual(uris, want) {
+	if want := []lsp.DocumentURI{"u1"}; !reflect.DeepEqual(uris, want) {
 		t.Errorf("got %v, want %v", uris, want)
 	}
 
-	if want := "XXX"; v.URI != want {
+	if want := "XXX"; string(v.URI) != want {
 		t.Errorf("got %q, want %q", v.URI, want)
 	}
 }

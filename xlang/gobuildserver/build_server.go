@@ -55,7 +55,7 @@ type BuildHandler struct {
 	lang *langserver.LangHandler
 
 	mu                    sync.Mutex
-	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
+	fetchAndSendDepsOnces map[lsp.DocumentURI]*sync.Once // key is file URI
 	depURLMutex           *keyMutex
 	gopathDeps            []*directory
 	pinnedDepsOnce        sync.Once
@@ -68,11 +68,11 @@ type BuildHandler struct {
 	rootImportPath string                   // root import path of the workspace (e.g., "github.com/foo/bar")
 }
 
-func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
+func (h *BuildHandler) fetchAndSendDepsOnce(fileURI lsp.DocumentURI) *sync.Once {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.fetchAndSendDepsOnces == nil {
-		h.fetchAndSendDepsOnces = map[string]*sync.Once{}
+		h.fetchAndSendDepsOnces = map[lsp.DocumentURI]*sync.Once{}
 	}
 	once, ok := h.fetchAndSendDepsOnces[fileURI]
 	if !ok {
@@ -87,7 +87,7 @@ func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
 var RuntimeVersion = runtime.Version()
 
 // reset clears all internal state in h.
-func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) error {
+func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI lsp.DocumentURI) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.findPkgMu.Lock()
@@ -154,9 +154,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if req.Params != nil && !req.Notif {
 			b = []byte(*req.Params)
 		}
-		log.Printf(">>> %s %s %s %s", h.init.OriginalRootPath, req.ID, req.Method, string(b))
+		log.Printf(">>> %s %s %s %s", h.init.OriginalRootURI, req.ID, req.Method, string(b))
 		defer func(t time.Time) {
-			log.Printf("<<< %s %s %s %dms", h.init.OriginalRootPath, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
+			log.Printf("<<< %s %s %s %dms", h.init.OriginalRootURI, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
 		}(time.Now())
 	}
 
@@ -173,20 +173,26 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			return nil, err
 		}
 
+		// TODO(sqs): be backward-compatible with the pre-rootUri-migration xlang that
+		// sends rootPath==rootUri.
+		if params.RootPath != "" && params.RootPath == string(params.RootURI) {
+			params.RootPath = strings.TrimPrefix(params.RootPath, "file://")
+		}
+
 		if Debug {
 			var b []byte
 			if req.Params != nil {
 				b = []byte(*req.Params)
 			}
-			log.Printf(">>> %s %s %s %s", params.OriginalRootPath, req.ID, req.Method, string(b))
+			log.Printf(">>> %s %s %s %s", params.OriginalRootURI, req.ID, req.Method, string(b))
 			defer func(t time.Time) {
-				log.Printf("<<< %s %s %s %dms", params.OriginalRootPath, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
+				log.Printf("<<< %s %s %s %dms", params.OriginalRootURI, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
 			}(time.Now())
 		}
 
 		// Determine the root import path of this workspace (e.g., "github.com/user/repo").
-		span.SetTag("originalRootPath", params.OriginalRootPath)
-		fs, err := remoteFS(ctx, conn, params.OriginalRootPath)
+		span.SetTag("originalRootPath", params.OriginalRootURI)
+		fs, err := remoteFS(ctx, conn, params.OriginalRootURI)
 		if err != nil {
 			return nil, err
 		}
@@ -196,10 +202,10 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			return nil, err
 		}
 		h.rootImportPath = langInitParams.RootImportPath
-		if err := h.reset(&params, langInitParams.RootPath); err != nil {
+		if err := h.reset(&params, langInitParams.Root()); err != nil {
 			return nil, err
 		}
-		rootPath := strings.TrimPrefix(langInitParams.RootPath, "file://")
+		rootPath := strings.TrimPrefix(string(langInitParams.Root()), "file://")
 		h.FS.Bind(rootPath, fs, "/", ctxvfs.BindAfter)
 		var langInitResp lsp.InitializeResult
 		if err := h.callLangServer(ctx, conn, req.Method, req.ID, langInitParams, &langInitResp); err != nil {
@@ -253,7 +259,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				return
 			}
 
-			newURI, err := h.rewriteURIFromLangServer("file://" + path)
+			newURI, err := h.rewriteURIFromLangServer(lsp.DocumentURI("file://" + path))
 			if err != nil {
 				log.Printf("error rewriting URI from language server: %s", err)
 				return
@@ -268,7 +274,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				ref := &lspext.DependencyReference{
 					Attributes: r.attributes(),
 					Hints: map[string]interface{}{
-						"dirs": []string{newURI},
+						"dirs": []string{string(newURI)},
 					},
 				}
 				finalReferences = append(finalReferences, ref)
@@ -278,7 +284,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 
 			// Append to the existing dependency reference's dirs list.
 			dirs := existing.Hints["dirs"].([]string)
-			dirs = append(dirs, newURI)
+			dirs = append(dirs, string(newURI))
 			existing.Hints["dirs"] = dirs
 			return
 		}
@@ -294,7 +300,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			if path.Ext(w.Path()) == ".go" {
 				d := path.Dir(w.Path())
 				localFetchAndSendDepsOnce(d).Do(func() {
-					if err := h.fetchTransitiveDepsOfFile(ctx, "file://"+d, dc); err != nil {
+					if err := h.fetchTransitiveDepsOfFile(ctx, lsp.DocumentURI("file://"+d), dc); err != nil {
 						log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
 					}
 				})
@@ -310,23 +316,23 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// the GOPATH at the appropriate import path directory. E.g.:
 		//
 		//   file:///dir/file.go -> file:///src/github.com/user/repo/dir/file.go
-		var urisInRequest []string // rewritten
+		var urisInRequest []lsp.DocumentURI // rewritten
 		var params interface{}
 		if req.Params != nil {
 			if err := json.Unmarshal(*req.Params, &params); err != nil {
 				return nil, err
 			}
 		}
-		rewriteURIFromClient := func(uri string) string {
-			if !strings.HasPrefix(uri, "file:///") {
+		rewriteURIFromClient := func(uri lsp.DocumentURI) lsp.DocumentURI {
+			if !strings.HasPrefix(string(uri), "file:///") {
 				return uri // refers to a resource outside of this workspace
 			}
-			path := strings.TrimPrefix(uri, "file://")
+			path := strings.TrimPrefix(string(uri), "file://")
 			path = pathpkg.Join(h.RootFSPath, path)
 			if !langserver.PathHasPrefix(path, h.RootFSPath) {
 				panic(fmt.Sprintf("file path %q must have prefix %q (file URI is %q, root URI is %q)", path, h.RootFSPath, uri, h.init.RootPath))
 			}
-			newURI := "file://" + path
+			newURI := lsp.DocumentURI("file://" + path)
 			urisInRequest = append(urisInRequest, newURI) // collect
 			return newURI
 		}
@@ -356,7 +362,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// structure. e.g. `dir:src/net/http` should work, but the LS will
 		// expect `dir:net/http` as any real/valid Go project will have package
 		// paths align with the directory structure.
-		if req.Method == "workspace/symbol" && strings.HasPrefix(h.init.OriginalRootPath, "git://github.com/golang/go") {
+		if req.Method == "workspace/symbol" && strings.HasPrefix(string(h.init.OriginalRootURI), "git://github.com/golang/go") {
 			var wsparams lsext.WorkspaceSymbolParams
 			if err := json.Unmarshal(*req.Params, &wsparams); err != nil {
 				return nil, err
@@ -391,7 +397,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			if haveDirsHint {
 				dirs := dirsHint.([]interface{})
 				for i, dir := range dirs {
-					dirs[i] = rewriteURIFromClient(dir.(string))
+					dirs[i] = rewriteURIFromClient(lsp.DocumentURI(dir.(string)))
 				}
 
 				// Arbitrarily chosen limit on the number of directories that
@@ -421,7 +427,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		//
 		//   file:///src/github.com/user/repo/dir/file.go -> file:///dir/file.go
 		var walkErr error
-		lspext.WalkURIFields(result, nil, func(uri string) string {
+		lspext.WalkURIFields(result, nil, func(uri lsp.DocumentURI) lsp.DocumentURI {
 			newURI, err := h.rewriteURIFromLangServer(uri)
 			if err != nil {
 				walkErr = err
@@ -435,8 +441,8 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 	}
 }
 
-func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
-	u, err := url.Parse(uri)
+func (h *BuildHandler) rewriteURIFromLangServer(uri lsp.DocumentURI) (lsp.DocumentURI, error) {
+	u, err := url.Parse(string(uri))
 	if err != nil {
 		return "", err
 	}
@@ -460,15 +466,15 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 				// of using runtime.Version() (which is not
 				// necessarily the commit of the Go stdlib we're
 				// analyzing).
-				return "file:///" + fileInGoStdlib, nil
+				return lsp.DocumentURI("file:///" + fileInGoStdlib), nil
 			}
-			return "git://github.com/golang/go?" + RuntimeVersion + "#" + fileInGoStdlib, nil
+			return lsp.DocumentURI("git://github.com/golang/go?" + RuntimeVersion + "#" + fileInGoStdlib), nil
 		}
 
 		// Refers to a file in the same workspace?
 		if langserver.PathHasPrefix(u.Path, h.RootFSPath) {
 			pathInThisWorkspace := langserver.PathTrimPrefix(u.Path, h.RootFSPath)
-			return "file:///" + pathInThisWorkspace, nil
+			return lsp.DocumentURI("file:///" + pathInThisWorkspace), nil
 		}
 
 		// Refers to a file in the GOPATH (that's from another repo)?
@@ -499,12 +505,12 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 				if i >= 0 {
 					repo := d.cloneURL[i+len("://"):]
 					path := strings.TrimPrefix(strings.TrimPrefix(p, d.projectRoot), "/")
-					return fmt.Sprintf("%s://%s?%s#%s", d.vcs, repo, rev, path), nil
+					return lsp.DocumentURI(fmt.Sprintf("%s://%s?%s#%s", d.vcs, repo, rev, path)), nil
 				}
 			}
 		}
 
-		return "unresolved:" + u.Path, nil
+		return lsp.DocumentURI("unresolved:" + u.Path), nil
 	default:
 		return "", fmt.Errorf("invalid non-file URI %q", uri)
 	}

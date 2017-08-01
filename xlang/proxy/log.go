@@ -19,8 +19,8 @@ func metaToStr(id contextID, extraMeta ...interface{}) string {
 	meta := map[string]interface{}{
 		"mode":    id.mode,
 		"session": id.session,
-		"repo":    id.rootPath.Repo(),
-		"rev":     id.rootPath.Rev(),
+		"repo":    id.rootURI.Repo(),
+		"rev":     id.rootURI.Rev(),
 	}
 	if len(extraMeta)%2 != 0 {
 		return "[invalid meta]"

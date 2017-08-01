@@ -256,14 +256,14 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	var symbols []lsp.SymbolInformation
 	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
 
-	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, "git://"+repoURI+"?"+rev.CommitID, "workspace/symbol", params, &symbols)
+	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+repoURI+"?"+rev.CommitID), "workspace/symbol", params, &symbols)
 	if err != nil {
 		return nil, err
 	}
 
 	var resolvers []*symbolResolver
 	for _, symbol := range symbols {
-		uri, err := uri.Parse(symbol.Location.URI)
+		uri, err := uri.Parse(string(symbol.Location.URI))
 		if err != nil {
 			return nil, err
 		}

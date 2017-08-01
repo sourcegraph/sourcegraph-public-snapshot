@@ -155,7 +155,7 @@ func (p *Proxy) Close(ctx context.Context) error {
 	return par.Wait()
 }
 
-func (p *Proxy) getSavedDiagnostics(id serverID, documentURI string) []lsp.Diagnostic {
+func (p *Proxy) getSavedDiagnostics(id serverID, documentURI lsp.DocumentURI) []lsp.Diagnostic {
 	var c *serverProxyConn
 	p.mu.Lock()
 	for cc := range p.servers {

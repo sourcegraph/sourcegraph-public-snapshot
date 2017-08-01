@@ -27,7 +27,7 @@ func TestIntegration(t *testing.T) {
 		t.Skip("skip long integration test")
 	}
 
-	tests := map[string]struct { // map key is rootPath
+	tests := map[lsp.DocumentURI]struct { // map key is rootPath
 		mode              string
 		ciBlacklist       bool
 		pinDepReposToRev  map[string]string // so that file:line:col expectations are stable
@@ -188,15 +188,15 @@ func TestIntegration(t *testing.T) {
 			},
 		},
 	}
-	for rootPath, test := range tests {
-		root, err := uri.Parse(rootPath)
+	for rootURI, test := range tests {
+		root, err := uri.Parse(string(rootURI))
 		if err != nil {
 			t.Fatal(err)
 		}
 		label := strings.Replace(strings.TrimPrefix(root.Path, "/"), "/", "-", -1)
 		t.Run(label, func(t *testing.T) {
 			if os.Getenv("CI") != "" && test.ciBlacklist {
-				t.Skipf("Skipping the %s integration test in CI", rootPath)
+				t.Skipf("Skipping the %s integration test in CI", rootURI)
 			}
 
 			cleanup := useGithubForVFS()
@@ -235,13 +235,13 @@ func TestIntegration(t *testing.T) {
 
 			// Prepare the connection.
 			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-				InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+				InitializeParams:      lsp.InitializeParams{RootURI: rootURI},
 				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}
 
-			root, err := uri.Parse(rootPath)
+			root, err := uri.Parse(string(rootURI))
 			if err != nil {
 				t.Fatal(err)
 			}

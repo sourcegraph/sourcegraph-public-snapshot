@@ -108,7 +108,7 @@ func (fs *XRemoteFS) openSingleFile(ctx context.Context, path string) (string, e
 			Scheme: "file",
 			Path:   path,
 		}
-		params := lspext2.ContentParams{TextDocument: lsp.TextDocumentIdentifier{URI: u.String()}}
+		params := lspext2.ContentParams{TextDocument: lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(u.String())}}
 		var res lsp.TextDocumentItem
 		if err := fs.call(ctx, "textDocument/xcontent", path, params, &res); err != nil {
 			// TODO(sqs): cache error responses
@@ -134,7 +134,7 @@ func (fs *XRemoteFS) fetchPaths(ctx context.Context) error {
 		if fs.pathsErr == nil {
 			fs.paths = make(sortedPaths, len(res))
 			for i, res := range res {
-				u, err := url.Parse(res.URI)
+				u, err := url.Parse(string(res.URI))
 				if err != nil {
 					fs.pathsErr = err
 					break

@@ -16,6 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	gogithub "github.com/sourcegraph/go-github/github"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
@@ -443,9 +444,9 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 	// server explicitly for background tasks such as workspace/xdependencies.
 	// This makes it such that indexing repositories does not interfere in
 	// terms of resource usage with real user requests.
-	rootPath := vcs + "://" + repo.URI + "?" + commitID
+	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + commitID)
 	var deps []lspext.DependencyReference
-	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xdependencies", map[string]string{}, &deps)
+	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/xdependencies")
 	}

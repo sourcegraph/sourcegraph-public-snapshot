@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"github.com/lib/pq"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -96,9 +97,9 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		// perform.
 		return nil
 	}
-	rootPath := vcs + "://" + repo.URI + "?" + commitID
+	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + commitID)
 	var allPks []lspext.PackageInformation
-	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &allPks)
+	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/xpackages")
 	}
