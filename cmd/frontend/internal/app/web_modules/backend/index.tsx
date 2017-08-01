@@ -270,7 +270,7 @@ export interface ResolvedSearchTextResp {
 export function searchText(query: string, repositories: Array<{ repo: string, rev: string }>, params: SearchParams): Promise<ResolvedSearchTextResp> {
 	const variables = {
 		pattern: query,
-		fileMatchLimit: 500,
+		fileMatchLimit: 100,
 		isRegExp: params.matchRegex,
 		isWordMatch: params.matchWord,
 		repositories,
