@@ -6,8 +6,12 @@ import { CodeCell } from "app/util/types";
 import { triggerBlame } from "app/blame";
 import * as moment from 'moment';
 import { injectShareWidget } from "app/share";
+import * as xhr from "app/backend/xhr";
 
 window.addEventListener("DOMContentLoaded", () => {
+	const context = (window as any).context;
+	xhr.useAccessToken(context.accessToken);
+
 	if (window.location.pathname === "/") {
 		injectSearchForm();
 	} else {
