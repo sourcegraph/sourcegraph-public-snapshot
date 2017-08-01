@@ -28,6 +28,7 @@ type Root {
 	remoteStarredRepositories: [RemoteRepository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
+	activeRepos(): ActiveRepoResults!
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	revealCustomerCompany(ip: String!): CompanyProfile
 	threads(remoteURI: String!, accessToken: String!, file: String!): [Thread!]!
@@ -163,6 +164,11 @@ type File {
 	commits: [CommitInfo!]!
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
 	blameRaw(startLine: Int!, endLine: Int!): String!
+}
+
+type ActiveRepoResults {
+	active: [String!]!
+	inactive: [String!]!
 }
 
 type SearchResults {
