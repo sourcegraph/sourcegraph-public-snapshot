@@ -270,7 +270,7 @@ export interface ResolvedSearchTextResp {
 export function searchText(query: string, repositories: Array<{ repo: string, rev: string }>, params: SearchParams): Promise<ResolvedSearchTextResp> {
 	const variables = {
 		pattern: query,
-		fileMatchLimit: 100,
+		fileMatchLimit: 500,
 		isRegExp: params.matchRegex,
 		isWordMatch: params.matchWord,
 		repositories,
@@ -318,7 +318,7 @@ export function searchText(query: string, repositories: Array<{ repo: string, re
 		variables: variables,
 	};
 
-	const p = fetch(`/.api/graphql`, {
+	const p = fetch(`/.api/graphql?SearchText`, {
 		method: "POST",
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
