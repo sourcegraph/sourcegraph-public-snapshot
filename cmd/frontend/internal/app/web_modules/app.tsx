@@ -1,12 +1,12 @@
-import { injectReferencesWidget } from "app/references/inject";
-import { injectSearchForm, injectSearchResults, injectSearchInputHandler } from "app/search/inject";
-import { addAnnotations } from "app/tooltips";
-import * as url from "app/util/url";
-import { CodeCell } from "app/util/types";
-import { triggerBlame } from "app/blame";
-import * as moment from 'moment';
-import { injectShareWidget } from "app/share";
 import * as xhr from "app/backend/xhr";
+import { triggerBlame } from "app/blame";
+import { injectReferencesWidget } from "app/references/inject";
+import { injectSearchForm, injectSearchInputHandler, injectSearchResults } from "app/search/inject";
+import { injectShareWidget } from "app/share";
+import { addAnnotations } from "app/tooltips";
+import { CodeCell } from "app/util/types";
+import * as url from "app/util/url";
+import * as moment from "moment";
 
 window.addEventListener("DOMContentLoaded", () => {
 	const context = (window as any).context;
@@ -73,7 +73,11 @@ function highlightLine(repoURI: string, rev: string, path: string, line: number,
 	// Update the URL.
 	const u = url.parseBlob();
 	u.line = line;
-	window.history.pushState(null, '', url.toBlobHash(u));
+
+	if (url.toBlob(u) !== (window.location.pathname + window.location.hash)) {
+		// Prevent duplicating history state for the same line.
+		window.history.pushState(null, "", url.toBlobHash(u));
+	}
 }
 
 export function highlightAndScrollToLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
@@ -94,7 +98,7 @@ window.onhashchange = (hash) => {
 	if (!newURL.path || !newURL.line) {
 		return;
 	}
-	if (oldURL.line == newURL.line) {
+	if (oldURL.line === newURL.line) {
 		// prevent e.g. re-scrolling to same line on toggling refs group
 		//
 		// also prevent highlightLine from retriggering onhashchange
@@ -108,7 +112,7 @@ window.onhashchange = (hash) => {
 	const rev = pageVars.ResolvedRev;
 	const cells = getCodeCellsForAnnotation();
 	highlightAndScrollToLine(newURL.uri!, rev, newURL.path, newURL.line, cells);
-}
+};
 
 export function getCodeCellsForAnnotation(): CodeCell[] {
 	const table = document.querySelector("table") as HTMLTableElement;
