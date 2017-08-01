@@ -9,6 +9,27 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
+func TestComments_parseEmails(t *testing.T) {
+	tests := []struct {
+		Input  string
+		Output []string
+	}{
+		{Input: "+alice@gmail.com", Output: []string{"alice@gmail.com"}},
+		{Input: "Hello there +alice@gmail.com", Output: []string{"alice@gmail.com"}},
+		{Input: "+alice@gmail.com +alice@gmail.com", Output: []string{"alice@gmail.com"}},
+		{Input: "Hello alice@gmail.com", Output: []string{}},
+		{Input: "Hello alice@gmail.com", Output: []string{}},
+		{Input: "Hello +alice@gmail.com and +bob@acme.com", Output: []string{"alice@gmail.com", "bob@acme.com"}},
+	}
+
+	for _, test := range tests {
+		out := parseEmailsFromComment(test.Input)
+		if !reflect.DeepEqual(out, test.Output) {
+			t.Errorf("expected %s for input \"%s\", got: %v", test.Output, test.Input, out)
+		}
+	}
+}
+
 func TestComments_Create(t *testing.T) {
 	ctx := context.Background()
 
