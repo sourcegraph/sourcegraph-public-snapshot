@@ -783,6 +783,7 @@ func TestProxy_connections(t *testing.T) {
 		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///", RootURI: "file:///", Capabilities: caps},
 			OriginalRootURI:  "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			Mode:             "test",
 		}},
 	}
@@ -852,6 +853,7 @@ func TestProxy_connections(t *testing.T) {
 		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///", RootURI: "file:///", Capabilities: caps},
 			OriginalRootURI:  "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			Mode:             "test",
 		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
