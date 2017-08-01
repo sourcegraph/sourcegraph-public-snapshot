@@ -71,7 +71,6 @@ export function createTooltips(): void {
 	findRefsAction.appendChild(document.createTextNode("Find all references"));
 	Object.assign(findRefsAction.style, styles.tooltipAction);
 	Object.assign(findRefsAction.style, styles.tooltipActionNotLast);
-	findRefsAction.className = `btn btn-sm BtnGroup-item`;
 	findRefsAction.onclick = () => {
 		const { context } = store.getValue();
 		if (!context || !context.coords) {
@@ -95,7 +94,6 @@ export function createTooltips(): void {
 	searchAction.appendChild(searchIcon);
 	searchAction.appendChild(document.createTextNode("Search..."));
 	Object.assign(searchAction.style, styles.tooltipAction);
-	searchAction.className = `btn btn-sm BtnGroup-item`;
 
 	tooltipActions.appendChild(j2dAction);
 	tooltipActions.appendChild(findRefsAction);

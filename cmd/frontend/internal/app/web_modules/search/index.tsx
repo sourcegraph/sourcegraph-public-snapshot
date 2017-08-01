@@ -1,5 +1,5 @@
-import * as URI from "urijs";
 import * as querystring from "querystring";
+import * as URI from "urijs";
 
 export interface SearchParams {
 	query: string;

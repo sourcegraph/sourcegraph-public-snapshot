@@ -3,17 +3,12 @@ import { fetchReferences, fetchXdefinition, fetchXreferences } from "app/backend
 import { addReferences, ReferencesContext, setReferences, store as referencesStore } from "app/references/store";
 
 export function triggerReferences(context: ReferencesContext): void {
-	// TODO(john): make this caller's responsibility.
-	// if (refreshURL) {
-	// 	window.location.href = `${window.location.href.split("#")[0]}#L${context.loc.line}:${context.loc.char}$references`;
-	// }
-
 	const repoRevSpec = {
 		repoURI: context.loc.uri,
 		rev: context.loc.rev,
 		isBase: false,
 		isDelta: false,
-	}
+	};
 
 	setReferences({ ...referencesStore.getValue(), context });
 	fetchReferences(context.loc.char - 1, context.loc.path, context.loc.line - 1, repoRevSpec)
