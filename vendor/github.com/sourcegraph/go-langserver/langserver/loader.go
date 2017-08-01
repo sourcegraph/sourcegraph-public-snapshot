@@ -21,7 +21,7 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
-func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fileURI string, position lsp.Position) (*token.FileSet, *ast.Ident, []ast.Node, *loader.Program, *loader.PackageInfo, *token.Pos, error) {
+func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fileURI lsp.DocumentURI, position lsp.Position) (*token.FileSet, *ast.Ident, []ast.Node, *loader.Program, *loader.PackageInfo, *token.Pos, error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
 	span := parentSpan.Tracer().StartSpan("langserver-go: load program",
 		opentracing.Tags{"fileURI": fileURI},

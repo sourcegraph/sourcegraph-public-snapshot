@@ -125,11 +125,16 @@ func (c *boundedCache) Get(k interface{}, fill func() interface{}) interface{} {
 }
 
 func (c *boundedCache) Purge() {
-	// c.c is a process level cache. Since c.id is part of the cache keys,
-	// we can just change its values to make it seem like we have purged
-	// the cache.
+	// c.c is a process level cache. We could increment c.id to make it seem
+	// like we've purged the cache, but that would leave the objects in memory
+	// (and typechecking objects can be several hundreds of MB). So instead,
+	// we manually remove the objects from cache.
 	c.mu.Lock()
-	c.id = nextCacheID()
+	for _, key := range c.c.Keys() {
+		if k := key.(cacheKey); k.id == c.id {
+			c.c.Remove(key)
+		}
+	}
 	c.mu.Unlock()
 }
 

@@ -37,7 +37,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 	// See: https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#cancelRequest
 	ctx, cancel := context.WithTimeout(ctx, workspaceReferencesTimeout)
 	defer cancel()
-	rootPath := h.FilePath(h.init.RootPath)
+	rootPath := h.FilePath(h.init.Root())
 	bctx := h.BuildContext(ctx)
 
 	// Perform typechecking.
@@ -60,7 +60,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 		if ok {
 			found := false
 			for _, dir := range dirs.([]interface{}) {
-				if pathToURI(bpkg.Dir) == dir.(string) {
+				if pathToURI(bpkg.Dir) == lsp.DocumentURI(dir.(string)) {
 					found = true
 					break
 				}

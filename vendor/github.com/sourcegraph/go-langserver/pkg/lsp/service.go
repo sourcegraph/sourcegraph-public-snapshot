@@ -9,11 +9,25 @@ import (
 type None struct{}
 
 type InitializeParams struct {
-	ProcessID             int                `json:"processId,omitempty"`
-	RootPath              string             `json:"rootPath,omitempty"`
+	ProcessID int `json:"processId,omitempty"`
+
+	// RootPath is DEPRECATED in favor of the RootURI field.
+	RootPath string `json:"rootPath,omitempty"`
+
+	RootURI               DocumentURI        `json:"rootUri,omitempty"`
 	InitializationOptions interface{}        `json:"initializationOptions,omitempty"`
 	Capabilities          ClientCapabilities `json:"capabilities"`
 }
+
+// Root returns the RootURI if set, or otherwise the RootPath with 'file://' prepended.
+func (p *InitializeParams) Root() DocumentURI {
+	if p.RootURI != "" {
+		return p.RootURI
+	}
+	return DocumentURI("file://" + p.RootPath)
+}
+
+type DocumentURI string
 
 type ClientCapabilities struct {
 	// Below are Sourcegraph extensions. They do not live in lspext since
@@ -447,8 +461,8 @@ const (
 )
 
 type FileEvent struct {
-	URI  string `json:"uri"`
-	Type int    `json:"type"`
+	URI  DocumentURI `json:"uri"`
+	Type int         `json:"type"`
 }
 
 type DidChangeWatchedFilesParams struct {
@@ -456,7 +470,7 @@ type DidChangeWatchedFilesParams struct {
 }
 
 type PublishDiagnosticsParams struct {
-	URI         string       `json:"uri"`
+	URI         DocumentURI  `json:"uri"`
 	Diagnostics []Diagnostic `json:"diagnostics"`
 }
 

@@ -191,7 +191,7 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 		// import graph across commits. We want this behaviour since
 		// we assume that they don't change drastically across
 		// commits.
-		cacheKey := "importgraph:" + h.init.RootPath
+		cacheKey := "importgraph:" + string(h.init.Root())
 
 		h.mu.Lock()
 		tryCache := h.importGraph == nil
@@ -219,7 +219,7 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 			findPackage := func(bctx *build.Context, importPath, fromDir string, mode build.ImportMode) (*build.Package, error) {
 				return findPackageWithCtx(ctx, bctx, importPath, fromDir, mode)
 			}
-			g := tools.BuildReverseImportGraph(bctx, findPackage, h.FilePath(h.init.RootPath))
+			g := tools.BuildReverseImportGraph(bctx, findPackage, h.FilePath(h.init.Root()))
 			h.mu.Lock()
 			h.importGraph = g
 			h.mu.Unlock()

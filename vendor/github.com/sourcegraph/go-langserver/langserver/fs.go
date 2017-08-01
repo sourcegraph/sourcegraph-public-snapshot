@@ -27,15 +27,15 @@ func isFileSystemRequest(method string) bool {
 		method == "textDocument/didSave"
 }
 
-// handleFileSystemRequest handles textDocument/did* requests. The path the
+// handleFileSystemRequest handles textDocument/did* requests. The URI the
 // request is for is returned. true is returned if a file was modified.
-func (h *HandlerShared) handleFileSystemRequest(ctx context.Context, req *jsonrpc2.Request) (string, bool, error) {
+func (h *HandlerShared) handleFileSystemRequest(ctx context.Context, req *jsonrpc2.Request) (lsp.DocumentURI, bool, error) {
 	span := opentracing.SpanFromContext(ctx)
 	h.Mu.Lock()
 	overlay := h.overlay
 	h.Mu.Unlock()
 
-	do := func(uri string, op func() error) (string, bool, error) {
+	do := func(uri lsp.DocumentURI, op func() error) (lsp.DocumentURI, bool, error) {
 		span.SetTag("uri", uri)
 		before, beforeErr := h.readFile(ctx, uri)
 		if beforeErr != nil && !os.IsNotExist(beforeErr) {
@@ -166,14 +166,14 @@ func (h *overlay) didClose(params *lsp.DidCloseTextDocumentParams) {
 	h.del(params.TextDocument.URI)
 }
 
-func uriToOverlayPath(uri string) string {
+func uriToOverlayPath(uri lsp.DocumentURI) string {
 	if isFileURI(uri) {
 		return strings.TrimPrefix(uriToFilePath(uri), "/")
 	}
-	return uri
+	return string(uri)
 }
 
-func (h *overlay) get(uri string) (contents []byte, found bool) {
+func (h *overlay) get(uri lsp.DocumentURI) (contents []byte, found bool) {
 	path := uriToOverlayPath(uri)
 	h.mu.Lock()
 	contents, found = h.m[path]
@@ -181,7 +181,7 @@ func (h *overlay) get(uri string) (contents []byte, found bool) {
 	return
 }
 
-func (h *overlay) set(uri string, version int, contents []byte) {
+func (h *overlay) set(uri lsp.DocumentURI, version int, contents []byte) {
 	path := uriToOverlayPath(uri)
 	h.mu.Lock()
 	// Until we correctly synchronise TextDocumentSync notification, we
@@ -196,7 +196,7 @@ func (h *overlay) set(uri string, version int, contents []byte) {
 	h.mu.Unlock()
 }
 
-func (h *overlay) del(uri string) {
+func (h *overlay) del(uri lsp.DocumentURI) {
 	path := uriToOverlayPath(uri)
 	h.mu.Lock()
 	delete(h.m, path)
@@ -204,7 +204,7 @@ func (h *overlay) del(uri string) {
 	h.mu.Unlock()
 }
 
-func (h *HandlerShared) FilePath(uri string) string {
+func (h *HandlerShared) FilePath(uri lsp.DocumentURI) string {
 	path := uriToFilePath(uri)
 	if !strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("bad uri %q (path %q MUST have leading slash; it can't be relative)", uri, path))
@@ -212,9 +212,9 @@ func (h *HandlerShared) FilePath(uri string) string {
 	return path
 }
 
-func (h *HandlerShared) readFile(ctx context.Context, uri string) ([]byte, error) {
+func (h *HandlerShared) readFile(ctx context.Context, uri lsp.DocumentURI) ([]byte, error) {
 	if !isFileURI(uri) {
-		return nil, &os.PathError{Op: "Open", Path: uri, Err: errors.New("unable to read out-of-workspace resource from virtual file system")}
+		return nil, &os.PathError{Op: "Open", Path: string(uri), Err: errors.New("unable to read out-of-workspace resource from virtual file system")}
 	}
 	h.Mu.Lock()
 	fs := h.FS
