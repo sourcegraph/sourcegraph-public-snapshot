@@ -164,12 +164,17 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			initParams.Mode = initParams.InitializationOptions.Mode
 		}
 	}
-	if initParams.RootURI == "" {
+	rootURIString := string(initParams.RootURI)
+	if rootURIString == "" {
+		// TODO(sqs): deprecated rootPath in LSP
+		rootURIString = initParams.RootPath // we use a URI as the path, so no need to convert
+	}
+	if rootURIString == "" {
 		return errors.New("invalid empty LSP root URI in initialize request")
 	}
 	span.SetTag("RootPath", initParams.RootPath) // TODO(sqs): deprecated rootPath in LSP
 	span.SetTag("RootURI", initParams.RootURI)
-	rootURI, err := uri.Parse(string(initParams.RootURI))
+	rootURI, err := uri.Parse(rootURIString)
 	if err != nil {
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
 	}
