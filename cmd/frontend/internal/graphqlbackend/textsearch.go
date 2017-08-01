@@ -257,6 +257,12 @@ func (r *repoSearchArgs) expandRepos(ctx context.Context) ([]*repositoryRevision
 		return nil, err
 	}
 
+	// Build a map of repos added by the user.
+	addedByUser := make(map[string]struct{}, len(repos))
+	for _, r := range repos {
+		addedByUser[r.Repo] = struct{}{}
+	}
+
 	// Build a map of inactive repos.
 	inactiveSplit := strings.Split(searchInactiveRepos, ",")
 	inactive := make(map[string]struct{}, len(inactiveSplit))
@@ -269,6 +275,9 @@ func (r *repoSearchArgs) expandRepos(ctx context.Context) ([]*repositoryRevision
 
 	if addActive {
 		for _, r := range activeAndInactive.Repos {
+			if _, ok := addedByUser[r.URI]; ok {
+				continue // already added by user, avoid adding twice
+			}
 			if _, ok := inactive[r.URI]; ok {
 				continue // repo is inactive
 			}
@@ -279,6 +288,9 @@ func (r *repoSearchArgs) expandRepos(ctx context.Context) ([]*repositoryRevision
 	}
 	if addInactive {
 		for _, r := range activeAndInactive.Repos {
+			if _, ok := addedByUser[r.URI]; ok {
+				continue // already added by user, avoid adding twice
+			}
 			if _, ok := inactive[r.URI]; !ok {
 				continue // repo is active
 			}
