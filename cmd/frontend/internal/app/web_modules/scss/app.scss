@@ -142,10 +142,13 @@ $nav-height: 48px;
 		padding-left: 1em;
 		padding-right: 1em;
 		padding-top: 2em;
-		padding-bottom: 2em;
 
 		table {
 			width: 100%;
+
+			.code-cell {
+				width: 100%;
+			}
 		}
 	}
 
