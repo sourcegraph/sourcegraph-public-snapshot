@@ -2,6 +2,8 @@ package localstore
 
 import (
 	"database/sql"
+	"log"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -14,8 +16,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
+
+var autoRepoWhitelist []*regexp.Regexp
 
 func init() {
 	AppSchema.Map.AddTableWithName(dbRepoOrig{}, "repo").SetKeys(true, "ID")
@@ -38,6 +43,14 @@ func init() {
 
 		// migration 2016.9.30: `DROP INDEX repo_lower_uri_lower_name;`
 	)
+
+	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
+		expr, err := regexp.Compile("^" + pattern + "$")
+		if err != nil {
+			log.Fatalf("invalid regular expression %q in AUTO_REPO_WHITELIST: %s", pattern, err)
+		}
+		autoRepoWhitelist = append(autoRepoWhitelist, expr)
+	}
 }
 
 // dbRepo DB-maps a sourcegraph.Repo object. The reason for the split
@@ -189,6 +202,17 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
+		whitelisted := false
+		for _, expr := range autoRepoWhitelist {
+			if expr.MatchString(strings.ToLower(uri)) {
+				whitelisted = true
+				break
+			}
+		}
+		if !whitelisted {
+			return nil, err
+		}
+
 		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
 			// Repo does not exist in DB, create new entry.
 			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
