@@ -61,7 +61,7 @@ export function parseBlob(_loc: string = window.location.href): BlobURL {
 }
 
 export function toBlob(loc: BlobURL): string {
-	return `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/blob/${loc.path}$(toBlobHash(loc))`;
+	return `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/blob/${loc.path}${toBlobHash(loc)}`;
 }
 
 export function toBlobHash(loc: BlobURL): string {
