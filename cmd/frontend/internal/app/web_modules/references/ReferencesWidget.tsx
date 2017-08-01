@@ -208,7 +208,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 
 function getRefURL(ref: Reference): string {
 	const uri = URI.parse(ref.uri);
-	return `http://localhost:3080/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
+	return `/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
 }
 
 export class ReferencesGroup extends React.Component<{ uri: string, path: string, refs: Reference[], isLocal: boolean }, {}> {
