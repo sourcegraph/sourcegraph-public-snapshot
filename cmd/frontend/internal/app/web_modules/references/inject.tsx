@@ -1,5 +1,6 @@
 import { ReferencesWidget } from "app/references/ReferencesWidget";
 import * as colors from "app/util/colors";
+import { parseBlob, toBlob } from "app/util/url";
 import * as React from "react";
 import { render } from "react-dom";
 
@@ -24,6 +25,8 @@ export function injectReferencesWidget(): void {
 
 		render(<ReferencesWidget onDismiss={() => {
 			widgetContainer.style.display = "none";
+			const currURL = parseBlob();
+			window.location.href = toBlob({ ...currURL, modal: undefined, modalMode: undefined });
 		}} />, widgetContainer);
 	}
 }
