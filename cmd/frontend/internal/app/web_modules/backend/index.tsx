@@ -1,4 +1,5 @@
 import { doFetch as fetch } from "app/backend/xhr";
+import { SearchParams } from "app/search";
 import * as util from "app/util";
 import * as types from "app/util/types";
 
@@ -266,15 +267,15 @@ export interface ResolvedSearchTextResp {
 	notFound?: boolean;
 }
 
-export function searchText(query: string, repositories: { repo: string, rev: string }[]): Promise<ResolvedSearchTextResp> {
+export function searchText(query: string, repositories: { repo: string, rev: string }[], params: SearchParams): Promise<ResolvedSearchTextResp> {
 	const variables = {
 		pattern: query,
 		fileMatchLimit: 10000,
-		isRegExp: false,
-		isWordMatch: false,
+		isRegExp: params.matchRegex,
+		isWordMatch: params.matchWord,
 		repositories,
-		isCaseSensitive: false,
-		includePattern: "",
+		isCaseSensitive: params.matchCase,
+		includePattern: params.files !== "" ? "{" + params.files + "}" : "", // TODO(john)??: currently VS Code converts a string like "*.go" into "{*.go/**,*.go,**/*.go}" -- should we similarly add "**" glob patterns here?
 		excludePattern: "{.git,**/.git,.svn,**/.svn,.hg,**/.hg,CVS,**/CVS,.DS_Store,**/.DS_Store,node_modules,bower_components,vendor,dist,out,Godeps,third_party}",
 	};
 

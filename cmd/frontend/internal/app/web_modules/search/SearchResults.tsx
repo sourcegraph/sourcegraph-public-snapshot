@@ -1,11 +1,11 @@
 import { searchText, SearchResult } from "app/backend";
+import { getSearchParamsFromURL } from "app/search";
 import { ReferencesGroup } from "app/references/ReferencesWidget";
 // import { inputBackgroundColor, normalFontColor, primaryBlue, searchFrameBackgroundColor, white } from "app/util/colors";
 // import * as csstips from "csstips";
 import * as React from "react";
 // import { style } from "typestyle";
 import * as URI from "urijs";
-import * as querystring from "querystring";
 
 // import * as scrollIntoView from "dom-scroll-into-view";
 
@@ -50,9 +50,9 @@ export class SearchResults extends React.Component<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
-		const query = querystring.parse(URI.parse(window.location.href).query);
-		const repos = query["repos"] || "";
-		const q = query["q"] || "";
+		const params = getSearchParamsFromURL(window.location.href);
+		const repos = params.repos;
+		const q = params.query;
 		this.state = {
 			results: [],
 			// query: query["q"] || "",
@@ -62,8 +62,7 @@ export class SearchResults extends React.Component<Props, State> {
 		}
 
 		let split = repos.split(/,\s */);
-		searchText(q, split.filter(repo => !repo.startsWith("active")).map(repo => ({ repo, rev: "" }))).then(res => {
-			console.log("GOT RESULTS", res);
+		searchText(q, split.filter(repo => !repo.startsWith("active")).map(repo => ({ repo, rev: "" })), params).then(res => {
 			if (res.results) {
 				this.setState({ results: res.results })
 			}
@@ -74,7 +73,6 @@ export class SearchResults extends React.Component<Props, State> {
 		if (this.state.results.length === 0) {
 			return null;
 		}
-		console.log("SUPPOSED TO BE DRAWING...");
 		return <div>
 			{this.state.results.map((result, i) => {
 				const parsed = URI.parse(result.resource);

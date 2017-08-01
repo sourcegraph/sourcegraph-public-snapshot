@@ -30,6 +30,7 @@ type pageVars struct {
 
 type Common struct {
 	Context       jscontext.JSContext
+	Route         string
 	PageVars      *pageVars
 	AssetURL      string
 	RepoShortName string
@@ -62,7 +63,7 @@ func repoShortName(uri string) string {
 // 		return nil // request was handled
 // 	}
 //
-func newCommon(w http.ResponseWriter, r *http.Request) (*Common, error) {
+func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, error) {
 	repo, revSpec, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		if e, ok := err.(*handlerutil.URLMovedError); ok {
@@ -83,6 +84,7 @@ func newCommon(w http.ResponseWriter, r *http.Request) (*Common, error) {
 	}
 	return &Common{
 		Context: jscontext.NewJSContextFromRequest(r),
+		Route:   route,
 		PageVars: &pageVars{
 			ResolvedRev: revSpec.CommitID,
 		},
@@ -100,6 +102,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: &Common{
 			Context:  jscontext.NewJSContextFromRequest(r),
+			Route:    routeHome,
 			AssetURL: assets.URL("/").String(),
 		},
 	})
@@ -111,6 +114,7 @@ func serveSearch(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: &Common{
 			Context:  jscontext.NewJSContextFromRequest(r),
+			Route:    routeSearch,
 			AssetURL: assets.URL("/").String(),
 		},
 	})
@@ -167,7 +171,7 @@ func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r)
+	common, err := newCommon(w, r, routeRepoOrMain)
 	if err != nil {
 		return err
 	}
@@ -203,7 +207,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTree(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r)
+	common, err := newCommon(w, r, routeTree)
 	if err != nil {
 		return err
 	}
@@ -245,7 +249,7 @@ type blobView struct {
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r)
+	common, err := newCommon(w, r, routeBlob)
 	if err != nil {
 		return err
 	}
