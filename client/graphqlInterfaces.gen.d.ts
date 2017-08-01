@@ -21,6 +21,15 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IActiveRepoResults {
+		__typename: string;
+		active: Array<string>;
+		inactive: Array<string>;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IComment {
 		__typename: string;
 		id: number;
@@ -392,6 +401,7 @@ declare namespace GQL {
 		remoteStarredRepositories: Array<IRemoteRepository>;
 		symbols: Array<ISymbol>;
 		currentUser: IUser | null;
+		activeRepos: IActiveRepoResults;
 		searchRepos: ISearchResults;
 		revealCustomerCompany: ICompanyProfile | null;
 		threads: Array<IThread>;
