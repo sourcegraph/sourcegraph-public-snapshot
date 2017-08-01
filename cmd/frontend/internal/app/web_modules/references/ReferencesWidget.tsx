@@ -1,24 +1,25 @@
 import { CodeExcerpt } from "app/components/CodeExcerpt";
 import { triggerReferences } from "app/references";
 import { locKey, ReferencesState, store } from "app/references/store";
-import * as url from "app/util/url";
 import * as colors from "app/util/colors";
-import { normalFontColor } from "app/util/colors";
+import { normalFontColor, white } from "app/util/colors";
 import { Reference } from "app/util/types";
+import * as url from "app/util/url";
 import * as csstips from "csstips";
 import * as _ from "lodash";
 import * as React from "react";
+import * as RepoIcon from "react-icons/lib/go/repo";
+import * as CloseIcon from "react-icons/lib/md/close";
+import * as GlobeIcon from "react-icons/lib/md/language";
 import { classes, style } from "typestyle";
 import * as URI from "urijs";
-import * as GlobeIcon from "react-icons/lib/md/language";
-import * as RepoIcon from "react-icons/lib/go/repo";
 
 namespace Styles {
 	const border = `1px solid ${colors.borderColor}`;
 
 	export const icon = style({ fontSize: "18px", marginLeft: "15px" });
 
-	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "10px", fontSize: "14px", height: "32px", width: "100vw", position: "sticky", top: "0px" });
+	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "0px 16px", fontSize: "14px", height: "32px", width: "100vw", position: "sticky", top: "0px" });
 	export const titleBarTitle = style(csstips.content, { maxWidth: "calc(50vw)", marginRight: "25px" });
 	export const titleBarGroup = style(csstips.content, {
 		textTransform: "uppercase",
@@ -37,6 +38,7 @@ namespace Styles {
 	export const filePathPart = style({ color: "white", fontWeight: "bold", paddingRight: "15px" });
 
 	export const refsGroup = style({ fontSize: "12px", fontFamily: "system", color: normalFontColor });
+	export const closeIcon = style({ cursor: "pointer", fontSize: "18px", color: colors.normalFontColor, $nest: { "&:hover": { color: white } } });
 	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
 	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px" });
@@ -57,7 +59,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
-		const u = url.parseBlob()
+		const u = url.parseBlob();
 		const onRefs = Boolean(u.path && u.modal && u.modal === "references");
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
@@ -142,7 +144,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				</a>
 				<div className={Styles.badge}>{externalRefs.length}</div>
 				<div className={style(csstips.flex)} />
-				<div style={{ float: "right", marginRight: "20px" }} onClick={() => this.props.onDismiss()}>X</div>
+				<CloseIcon className={Styles.closeIcon} onClick={() => this.props.onDismiss()} />
 			</div>
 			<div>
 				{
