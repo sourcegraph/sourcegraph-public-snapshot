@@ -62,7 +62,7 @@ export class SearchResults extends React.Component<Props, State> {
 		}
 
 		let split = repos.split(/,\s */);
-		searchText(q, split.filter(repo => !repo.startsWith("active")).map(repo => ({ repo, rev: "" })), params).then(res => {
+		searchText(q, split.map(repo => ({ repo, rev: "" })), params).then(res => {
 			if (res.results) {
 				this.setState({ results: res.results })
 			}
