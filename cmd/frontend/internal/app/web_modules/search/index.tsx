@@ -45,7 +45,7 @@ export function getSearchParamsFromURL(url: string): SearchParams {
 
 export function getSearchParamsFromLocalStorage(): SearchParams {
 	return {
-		query: "",
+		query: window.localStorage.getItem("searchQuery") || "",
 		repos: window.localStorage.getItem("searchRepoScope") || "active",
 		files: window.localStorage.getItem("searchFileScope") || "",
 		matchCase: window.localStorage.getItem("searchMatchCase") === "true",
