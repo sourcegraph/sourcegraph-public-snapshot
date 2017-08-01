@@ -15,7 +15,7 @@ export function injectShareWidget() {
 		const textSpan = a.querySelector(".text");
 		const oldText = textSpan!.innerHTML;
 		a.removeAttribute("href"); // make it non-clickable
-		textSpan!.innerHTML = "Copied to clipboard";
+		textSpan!.innerHTML = "Copied link to clipboard!";
 		setTimeout(() => {
 			a.setAttribute("href", "#"); // make it clickable
 			textSpan!.innerHTML = oldText;

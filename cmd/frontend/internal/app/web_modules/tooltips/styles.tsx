@@ -66,12 +66,11 @@ export const tooltipAction = {
 
 export const tooltipActionNotLast = {
 	borderRight: `1px solid ${colors.borderColor}`,
-}
+};
 
 export const tooltipMoreActions = {
 	fontStyle: "italic",
-	fontWeight: "bold",
-	color: colors.emphasisFontColor,
+	color: colors.actionFontColor,
 	paddingTop: "8px",
 	paddingBottom: "8px",
 	paddingLeft: "16px",
