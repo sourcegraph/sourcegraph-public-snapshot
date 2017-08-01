@@ -33,6 +33,16 @@ export interface Hunk {
 	message: string;
 }
 
+export interface Error {
+	message: string;
+}
+
+export interface ActiveRepoResults {
+	error?: Error;
+	active?: string[];
+	inactive?: string[];
+}
+
 export interface TooltipData {
 	loading?: boolean;
 	title?: string;

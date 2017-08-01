@@ -333,3 +333,30 @@ export function searchText(query: string, repositories: Array<{ repo: string, re
 
 	return p;
 }
+
+export function fetchActiveRepos(): Promise<types.ActiveRepoResults> {
+	const body = {
+		query: `query ActiveRepos() {
+			root {
+				activeRepos() {
+					active
+					inactive
+				}
+			}
+		}`,
+		variables: {},
+	};
+
+	return fetch(`/.api/graphql?ActiveRepos`, {
+		method: "POST",
+		body: JSON.stringify(body),
+	}).then((resp) => resp.json()).then((json: any) => {
+		// TODO: All of our other graphql fetching functions in this file should
+		// start checking json.errors and returning it to the caller for proper
+		// handling.
+		if (json.errors) {
+			return {error: json.errors[0]}; // only one root query, so only one error
+		}
+		return json.data.root.activeRepos;
+	});
+}

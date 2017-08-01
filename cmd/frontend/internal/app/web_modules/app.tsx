@@ -7,6 +7,7 @@ import { addAnnotations } from "app/tooltips";
 import { CodeCell } from "app/util/types";
 import * as url from "app/util/url";
 import * as moment from "moment";
+import { fetchActiveRepos } from "app/backend";
 
 window.addEventListener("DOMContentLoaded", () => {
 	const context = (window as any).context;
@@ -24,6 +25,18 @@ window.addEventListener("DOMContentLoaded", () => {
 	injectReferencesWidget();
 	injectShareWidget();
 	const u = url.parseBlob();
+	if (window.location.hash == "#test") {
+		// TODO(john): wire this up to our app for real, remove this entire if block.
+		fetchActiveRepos().then((res) => {
+			console.log("got res", res);
+			if (res.error) {
+				console.error("failed to get active repos:", res.error.message);
+				return;
+			}
+			console.log("got res.active", res.active);
+			console.log("got res.inactive", res.inactive);
+		})
+	}
 	if (u.uri && u.path) {
 		// blob view, add tooltips
 		const pageVars = (window as any).pageVars;
