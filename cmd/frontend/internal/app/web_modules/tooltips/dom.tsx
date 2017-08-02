@@ -8,6 +8,7 @@ import { getModeFromExtension } from "app/util";
 // import { eventLogger, searchEnabled } from "app/util/context";
 import { highlightBlock } from "highlight.js";
 import * as marked from "marked";
+import { events } from "app/tracking/events";
 
 let tooltip: HTMLElement;
 let loadingTooltip: HTMLElement;
@@ -61,6 +62,9 @@ export function createTooltips(): void {
 	j2dAction.className = `btn btn-sm BtnGroup-item`;
 	Object.assign(j2dAction.style, styles.tooltipAction);
 	Object.assign(j2dAction.style, styles.tooltipActionNotLast);
+	j2dAction.addEventListener("click", () => {
+		events.GoToDefClicked.log();
+	});
 
 	const referencesIcon = document.createElement("svg");
 	referencesIcon.innerHTML = referencesIconSVG;
@@ -71,7 +75,7 @@ export function createTooltips(): void {
 	findRefsAction.appendChild(document.createTextNode("Find all references"));
 	Object.assign(findRefsAction.style, styles.tooltipAction);
 	Object.assign(findRefsAction.style, styles.tooltipActionNotLast);
-	findRefsAction.onclick = () => {
+	findRefsAction.addEventListener("click", () => {
 		const { context } = store.getValue();
 		if (!context || !context.coords) {
 			return;
@@ -83,8 +87,9 @@ export function createTooltips(): void {
 			line: context.coords.line,
 			char: context.coords.char,
 		};
+		events.FindRefsClicked.log();
 		triggerReferences({ loc, word: context.coords.word });
-	};
+	});
 
 	const searchIcon = document.createElement("svg");
 	searchIcon.innerHTML = searchIconSVG;
@@ -94,6 +99,9 @@ export function createTooltips(): void {
 	searchAction.appendChild(searchIcon);
 	searchAction.appendChild(document.createTextNode("Search..."));
 	Object.assign(searchAction.style, styles.tooltipAction);
+	searchAction.addEventListener("click", () => {
+		events.SearchClicked.log();
+	});
 
 	tooltipActions.appendChild(j2dAction);
 	tooltipActions.appendChild(findRefsAction);

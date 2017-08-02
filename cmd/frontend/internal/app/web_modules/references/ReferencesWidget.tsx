@@ -13,6 +13,8 @@ import * as CloseIcon from "react-icons/lib/md/close";
 import * as GlobeIcon from "react-icons/lib/md/language";
 import { classes, style } from "typestyle";
 import * as URI from "urijs";
+import { pageVars } from "app/util/pageVars";
+import { events } from "app/tracking/events";
 
 namespace Styles {
 	const border = `1px solid ${colors.borderColor}`;
@@ -65,10 +67,6 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		const onRefs = Boolean(u.path && u.modal && u.modal === "references");
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
-			const pageVars = (window as any).pageVars;
-			if (!pageVars || !pageVars.ResolvedRev) {
-				throw new TypeError("expected window.pageVars to exist, but it does not");
-			}
 			const rev = pageVars.ResolvedRev;
 			triggerReferences({
 				loc: {
@@ -166,15 +164,15 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				<div className={Styles.titleBarTitle}>
 					{this.state.context.word}
 				</div>
-				<a className={this.state.group === "all" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "", modal: "references" })}>
+				<a className={this.state.group === "all" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "", modal: "references" })} onClick={() => events.ShowAllRefsButtonClicked.log()}>
 					All References
 				</a>
 				<div className={Styles.badge}>{localRefs.length + externalRefs.length}</div>
-				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "local", modal: "references" })}>
+				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "local", modal: "references" })} onClick={() => events.ShowLocalRefsButtonClicked.log()}>
 					Local
 				</a>
 				<div className={Styles.badge}>{localRefs.length}</div>
-				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "external", modal: "references" })}>
+				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "external", modal: "references" })} onClick={() => events.ShowExternalRefsButtonClicked.log()}>
 					Global
 				</a>
 				<div className={Styles.badge}>{externalRefs.length}</div>
@@ -241,7 +239,14 @@ export class ReferencesGroup extends React.Component<{ uri: string, path: string
 					}).map((ref, i) => {
 						const uri = URI.parse(ref.uri);
 						return <div key={i} className={Styles.ref}>
-							<div onClick={() => window.location.href = getRefURL(ref)}>
+							<div onClick={() => {
+								if (this.props.isLocal) {
+									events.GoToLocalRefClicked.log();
+								} else {
+									events.GoToExternalRefClicked.log();
+								}
+								window.location.href = getRefURL(ref);
+							}}>
 								<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
 							</div>
 						</div>;

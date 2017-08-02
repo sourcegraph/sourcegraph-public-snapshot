@@ -1,4 +1,5 @@
 import * as copy from 'copy-to-clipboard';
+import { events } from 'app/tracking/events';
 
 export function injectShareWidget() {
 	const a = document.querySelector(".navbar .share") as HTMLAnchorElement;
@@ -6,6 +7,8 @@ export function injectShareWidget() {
 		return; // probably on some other page that doesn't have a share button.
 	}
 	a.addEventListener("click", (e) => {
+		events.ShareButtonClicked.log();
+
 		e.preventDefault();
 		if (!a.hasAttribute("href")) {
 			return;

@@ -6,25 +6,31 @@ import { injectShareWidget } from "app/share";
 import { addAnnotations } from "app/tooltips";
 import { getModeFromExtension, getPathExtension } from "app/util";
 import { CodeCell } from "app/util/types";
+import { sourcegraphContext } from "app/util/sourcegraphContext";
+import { pageVars } from "app/util/pageVars";
 import * as url from "app/util/url";
 import * as moment from "moment";
 import { highlightBlock } from "highlight.js";
 import * as activeRepos from "app/util/activeRepos";
+import { events, viewEvents } from "app/tracking/events";
+import { handleQueryEvents } from "app/tracking/analyticsUtils";
 
 window.addEventListener("DOMContentLoaded", () => {
-	const context = (window as any).context;
-	xhr.useAccessToken(context.accessToken);
+	registerListeners();
+	xhr.useAccessToken(sourcegraphContext.accessToken);
 
 	// Be a bit proactive and try to fetch/store active repos now. This helps
 	// on the first search query, and when the data in local storage is stale.
 	activeRepos.get();
 
 	if (window.location.pathname === "/") {
+		viewEvents.Home.log();
 		injectSearchForm();
 	} else {
 		injectSearchInputHandler();
 	}
 	if (window.location.pathname === "/search") {
+		viewEvents.SearchResults.log();
 		injectSearchResults();
 	}
 
@@ -134,18 +140,16 @@ window.addEventListener("DOMContentLoaded", () => {
 		finishEvent.initEvent('syntaxHighlightingFinished', true, true);
 		window.dispatchEvent(finishEvent);
 
-
 		// blob view, add tooltips
-		const pageVars = (window as any).pageVars;
-		if (!pageVars || !pageVars.ResolvedRev) {
-			throw new TypeError("expected window.pageVars to exist, but it does not");
-		}
 		const rev = pageVars.ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
 		addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, isBase: false, isDelta: false }, cells);
 		if (u.line) {
 			highlightAndScrollToLine(u.uri, rev, u.path, u.line, cells);
 		}
+
+		// Log blog view
+		viewEvents.Blob.log({ repo: u.uri!, rev, path: u.path!, language: getPathExtension(u.path)});
 
 		// Add click handlers to all lines of code, which highlight and add
 		// blame information to the line.
@@ -156,8 +160,27 @@ window.addEventListener("DOMContentLoaded", () => {
 				}
 			});
 		});
+	} else if (u.uri) {
+		// tree view
+		viewEvents.Tree.log();
 	}
+
+	// Log events, if necessary, based on URL querystring, and strip tracking-related parameters 
+	// from the URL and browser history
+	// Note that this is a destructive operation (it changes the page URL and replaces browser state)
+	handleQueryEvents(window.location.href);
 });
+
+function registerListeners(): void {
+	const openOnGitHub = document.querySelector(".github")!;
+	if (openOnGitHub) {
+		openOnGitHub.addEventListener("click", () => events.OpenInCodeHostClicked.log() );
+	}
+	const openOnDesktop = document.querySelector(".open-on-desktop")!;
+	if (openOnDesktop) {
+		openOnDesktop.addEventListener("click", () => events.OpenInNativeAppClicked.log() );
+	}
+}
 
 function highlightLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
 	triggerBlame({
@@ -212,10 +235,6 @@ window.onhashchange = (hash) => {
 		// also prevent highlightLine from retriggering onhashchange
 		// recursively.
 		return;
-	}
-	const pageVars = (window as any).pageVars;
-	if (!pageVars || !pageVars.ResolvedRev) {
-		throw new TypeError("expected window.pageVars to exist, but it does not");
 	}
 	const rev = pageVars.ResolvedRev;
 	const cells = getCodeCellsForAnnotation();
