@@ -61,7 +61,7 @@ function highlightNodeHelper(parentNode: HTMLElement, curr: number, start: numbe
 
 					return { done: true, consumed: nodeText.length };
 				} else {
-					console.log("we shouldn't be here...", nodeText);
+					console.error("we shouldn't be here...", nodeText);
 				}
 			}
 

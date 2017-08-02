@@ -298,9 +298,6 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
 				return;
 			}
 			hovered = true;
-			if (i === 60) {
-				console.log("CONTENT", cell.cell.textContent);
-			};
 			convertNode(cell.cell);
 		};
 		cell.cell.setAttribute("data-sg-line-number", `${cell.line}`);
@@ -309,12 +306,10 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
 
 	domObservables.forEach(observable => observable.mouseover.subscribe((e) => {
 		const t = e.target as HTMLElement;
-		console.log("MOUSEOVER", e, t);
 		if (!store.getValue().docked) {
 			activeTarget = t;
 		}
 		const coords = getTargetLineAndOffset(e.target as HTMLElement, ignoreFirstChar);
-		console.log("COORDS", coords);
 		if (!coords) {
 			return;
 		}
@@ -408,7 +403,6 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
  */
 function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar: boolean = false): { line: number, char: number, word: string } | undefined {
 	const origTarget = target;
-	console.log("ORIG TARGET IS", origTarget);
 	if (target.tagName === "TD") {
 		// Short-circuit; we are hovering over a line of code, but no token in particular.
 		return;
@@ -422,40 +416,29 @@ function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar: boolean = 
 		return;
 	}
 	const line = parseInt(target.getAttribute("data-sg-line-number")!, 10);
-	if (origTarget.textContent === "Router") {
-		console.log("HI!");
-	}
 
 	let char = 1;
 	// Iterate recursively over the current target's children until we find the original target;
 	// count characters along the way. Return true if the original target is found.
 	function findOrigTarget(root: HTMLElement): boolean {
-		console.log("FIND ORIG TARGET", root, root.childNodes.length);
 		// tslint:disable-next-line
 		for (let i = 0; i < root.childNodes.length; ++i) {
-			console.log("i", i);
 			const child = root.childNodes[i] as HTMLElement;
-			console.log("CHILD CONTENT", child.textContent);
 			if (child === origTarget) {
-				console.log("child is orig", origTarget);
 				return true;
 			}
 			if (child.children === undefined) {
-				console.log("CHILD HAS NO CHILDREN");
 				char += child.textContent!.length;
 				continue;
 			}
 			if (child.children.length > 0 && findOrigTarget(child)) {
 				// Walk over nested children, then short-circuit the loop to avoid double counting children.
-				console.log("child has the orig target!!");
 				return true;
 			}
 			if (child.children.length === 0) {
-				console.log("NO CHILDREN", child.textContent, ignoreFirstChar);
 				// Child is not the original target, but has no chidren to recurse on. Add to character offset.
 				char += (child.textContent as string).length; // TODO(john): I think this needs to be escaped before we add its length...
 				if (ignoreFirstChar) {
-					console.log("IGN");
 					char -= 1; // make sure not to count weird diff prefix
 					ignoreFirstChar = false;
 				}
