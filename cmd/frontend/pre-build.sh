@@ -6,6 +6,7 @@ cd $(dirname "${BASH_SOURCE[0]}")/../..
 pushd cmd/frontend/internal/app/web_modules
 yarn install
 yarn run fmt-check
+yarn run lint
 yarn run build
 popd
 
