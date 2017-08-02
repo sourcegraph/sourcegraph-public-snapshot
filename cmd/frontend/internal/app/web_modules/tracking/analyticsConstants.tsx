@@ -8,162 +8,161 @@ export const EventCategories = {
 	 * Note these are handled specially by the Sourcegraph event logger, and should not be assigned to
 	 * new events without review
 	 */
-	View: 'View',
+	View: "View",
 	/**
 	 * Action executed events
 	 * Note these are handled specially by the Sourcegraph event logger, and should not be assigned to
 	 * new events without review
 	 */
-	ActionExecuted: 'ActionExecuted',
+	ActionExecuted: "ActionExecuted",
 
 	/**
 	 * Events on cross-site navigation elements
 	 */
-	Nav: 'Nav',
+	Nav: "Nav",
 	/**
 	 * Events on static/specific HTML pages
 	 */
-	Pages: 'Pages',
-	/** 
+	Pages: "Pages",
+	/**
 	 * Events on user profile/settings/org pages
 	 */
-	Settings: 'Settings',
+	Settings: "Settings",
 
 	/**
 	 * Events related to the GitHub/etc authorization process
 	 */
-	Auth: 'Auth',
+	Auth: "Auth",
 	/**
 	 * Events related to the post-auth signup flow
 	 */
-	Onboarding: 'Onboarding',
+	Onboarding: "Onboarding",
 	/**
 	 * Events related to marketing, re-engagement or re-targeting, or growth initiatives
 	 */
-	Marketing: 'Marketing',
+	Marketing: "Marketing",
 	/**
 	 * Events related to sales or online billing
 	 */
-	Billing: 'Billing',
+	Billing: "Billing",
 
 	/**
 	 * Events related to user state
 	 */
-	UserState: 'UserState',
+	UserState: "UserState",
 
 	/**
 	 * Launcher events
 	 */
-	Launcher: 'Launcher',
+	Launcher: "Launcher",
 	/**
 	 * Events on repository pages
 	 */
-	Repository: 'Repository',
-	/** 
+	Repository: "Repository",
+	/**
 	 * Events in VSCode's core editor experience
 	 */
-	Editor: 'Editor',
+	Editor: "Editor",
 	/**
 	 * Events in VSCode's editor sidebar
 	 */
-	EditorSidebar: 'Editor.Sidebar',
+	EditorSidebar: "Editor.Sidebar",
 	/**
 	 * Events in (or related to) VSCode's extensions
 	 */
-	Extension: 'Extension',
+	Extension: "Extension",
 	/**
 	 * Events related to any form of search (quick opens, in-repo search, global search, etc)
 	 */
-	Search: 'Search',
+	Search: "Search",
 	/**
 	 * Events related to any form of sharing (links, invitations, etc)
 	 */
-	Sharing: 'Sharing',
+	Sharing: "Sharing",
 	/**
 	 * Events related to providing feedback
 	 */
-	Feedback: 'Feedback',
+	Feedback: "Feedback",
 
-	/** 
+	/**
 	 * Events related to VSCode internals
 	 */
-	VSCodeInternal: 'VSCodeInternal',
+	VSCodeInternal: "VSCodeInternal",
 	/**
 	 * Events related to VSCode keybindings
 	 */
-	Keys: 'Keys',
+	Keys: "Keys",
 	/**
 	 * Events related to VSCode performance timing/tracking
 	 */
-	Performance: 'Performance',
+	Performance: "Performance",
 
 	/**
 	 * Events from external applications or pages
 	 */
-	External: 'External',
+	External: "External",
 	/**
 	 * Other/misc
 	 */
-	Unknown: 'Unknown'
+	Unknown: "Unknown",
 };
-
 
 export const EventActions = {
 	/**
 	 * Select a result, choice, etc
 	 */
-	Select: 'Select',
+	Select: "Select",
 	/**
 	 * Click on a button, link, etc
 	 */
-	Click: 'Click',
+	Click: "Click",
 	/**
 	 * Hover over something
 	 */
-	Hover: 'Hover',
+	Hover: "Hover",
 	/**
 	 * Toggle an on/off switch
 	 */
-	Toggle: 'Toggle',
+	Toggle: "Toggle",
 
 	/**
 	 * Initiate an action, such as a search
 	 */
-	Initiate: 'Initiate',
+	Initiate: "Initiate",
 	/**
 	 * Open a window, modal, etc
 	 */
-	Open: 'Open',
+	Open: "Open",
 	/**
 	 * Close a window, modal, etc
 	 */
-	Close: 'Close',
+	Close: "Close",
 
 	/**
 	 * Submit a form
 	 */
-	Submit: 'Submit',
+	Submit: "Submit",
 	/**
 	 * Receive a successful response
 	 */
-	Success: 'Success',
+	Success: "Success",
 	/**
 	 * Receive an error response
 	 */
-	Error: 'Error',
+	Error: "Error",
 
-	Signup: 'Signup',
-	Login: 'Login',
-	Logout: 'Logout',
+	Signup: "Signup",
+	Login: "Login",
+	Logout: "Logout",
 
 	/**
 	 *  Get redirected from one page or location to another
 	 */
-	Redirect: 'Redirect',
+	Redirect: "Redirect",
 
 	/**
 	 * An event that occurs in the background, with no user input
 	 */
-	Passive: 'Passive',
-	Unknown: 'Unknown'
+	Passive: "Passive",
+	Unknown: "Unknown",
 };

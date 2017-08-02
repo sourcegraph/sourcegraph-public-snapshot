@@ -1,8 +1,10 @@
 import { CodeExcerpt } from "app/components/CodeExcerpt";
 import { triggerReferences } from "app/references";
 import { locKey, ReferencesState, refsFetchKey, store } from "app/references/store";
-import * as colors from "app/util/colors";
+import { events } from "app/tracking/events";
 import { normalFontColor, white } from "app/util/colors";
+import * as colors from "app/util/colors";
+import { pageVars } from "app/util/pageVars";
 import { Reference } from "app/util/types";
 import * as url from "app/util/url";
 import * as csstips from "csstips";
@@ -13,8 +15,6 @@ import * as CloseIcon from "react-icons/lib/md/close";
 import * as GlobeIcon from "react-icons/lib/md/language";
 import { classes, style } from "typestyle";
 import * as URI from "urijs";
-import { pageVars } from "app/util/pageVars";
-import { events } from "app/tracking/events";
 
 namespace Styles {
 	const border = `1px solid ${colors.borderColor}`;

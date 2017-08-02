@@ -1,7 +1,7 @@
-import { sourcegraphContext } from "app/util/sourcegraphContext";
-import { pageVars } from "app/util/pageVars";
 import { telligent } from "app/tracking/services/telligentWrapper";
 import { getPathExtension } from "app/util";
+import { pageVars } from "app/util/pageVars";
+import { sourcegraphContext } from "app/util/sourcegraphContext";
 import * as url from "app/util/url";
 
 class EventLogger {
@@ -12,7 +12,7 @@ class EventLogger {
 		this.updateTrackerWithIdentificationProps();
 
 		// TODO(Dan): validate that this communication is working and sufficient
-		// Because the new webapp isn't a single page app, we send a 2nd message after 1000ms, 
+		// Because the new webapp isn't a single page app, we send a 2nd message after 1000ms,
 		// in case the injected DOM element wasn't available in time for the first call
 		setTimeout(() => this.updateTrackerWithIdentificationProps(), 1000);
 	}
@@ -48,25 +48,25 @@ class EventLogger {
 
 	setUserId(UID: string, login: string): void {
 		telligent.setUserId(login);
-		telligent.setUserProperty('internal_user_id', UID);
+		telligent.setUserProperty("internal_user_id", UID);
 	}
 
 	setUserRegisteredAt(registeredAt: any): void {
-		telligent.setUserProperty('registered_at_timestamp', registeredAt);
-		telligent.setUserProperty('registered_at', new Date(registeredAt).toDateString());
+		telligent.setUserProperty("registered_at_timestamp", registeredAt);
+		telligent.setUserProperty("registered_at", new Date(registeredAt).toDateString());
 	}
 
 	setUserInstalledChromeExtension(installedChromeExtension: string): void {
-		telligent.setUserProperty('installed_chrome_extension', installedChromeExtension);
+		telligent.setUserProperty("installed_chrome_extension", installedChromeExtension);
 	}
 
 	setUserEmail(primaryEmail: string): void {
-		telligent.setUserProperty('email', primaryEmail);
+		telligent.setUserProperty("email", primaryEmail);
 	}
 
 	setUserInvited(invitingUserId: string, invitedToOrg: string): void {
-		telligent.setUserProperty('invited_by_user', invitingUserId);
-		telligent.setUserProperty('org_invite', invitedToOrg);
+		telligent.setUserProperty("invited_by_user", invitingUserId);
+		telligent.setUserProperty("org_invite", invitedToOrg);
 	}
 
 	/**
@@ -104,12 +104,12 @@ class EventLogger {
 	}
 
 	private decorateEventProperties(platformProperties: any): any {
-		let props = {
+		const props = {
 			...platformProperties,
 			platform: EventLogger.PLATFORM,
 			is_authed: sourcegraphContext.user ? "true" : "false",
-			path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : ""
-		}
+			path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : "",
+		};
 
 		const u = url.parseBlob();
 		if (u.uri) {

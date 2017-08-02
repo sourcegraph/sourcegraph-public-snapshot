@@ -3,12 +3,12 @@ import { triggerReferences } from "app/references";
 import { getSearchParamsFromLocalStorage, getSearchPath } from "app/search";
 import { clearTooltip, store, TooltipState } from "app/tooltips/store";
 import * as styles from "app/tooltips/styles";
+import { events } from "app/tracking/events";
 import { getModeFromExtension } from "app/util";
 // import { getAssetURL } from "app/util/assets";
 // import { eventLogger, searchEnabled } from "app/util/context";
 import { highlightBlock } from "highlight.js";
 import * as marked from "marked";
-import { events } from "app/tracking/events";
 
 let tooltip: HTMLElement;
 let loadingTooltip: HTMLElement;

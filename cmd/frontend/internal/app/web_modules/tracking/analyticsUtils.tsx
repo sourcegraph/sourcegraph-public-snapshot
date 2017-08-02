@@ -1,7 +1,7 @@
-import * as URI from "urijs";
+import { EventActions, EventCategories } from "app/tracking/analyticsConstants";
 import { eventLogger } from "app/tracking/eventLogger";
 import { events } from "app/tracking/events";
-import { EventCategories, EventActions } from "app/tracking/analyticsConstants";
+import * as URI from "urijs";
 
 /**
  * Get pageview-specific event properties from URL query string parameters
@@ -10,10 +10,10 @@ export function pageViewQueryParameters(url: string) {
 	const parsedUrl = URI.parse(url);
 	const query = URI.parseQuery(parsedUrl.query);
 	return {
-		utm_campaign: query['utm_campaign'],
-		utm_source: query['utm_source'],
-		utm_product_name: query['utm_product_name'],
-		utm_product_version: query['utm_product_version']
+		utm_campaign: query["utm_campaign"],
+		utm_source: query["utm_source"],
+		utm_product_name: query["utm_product_name"],
+		utm_product_version: query["utm_product_version"],
 	};
 }
 
@@ -30,8 +30,8 @@ export function handleQueryEvents(url: string) {
 			r[camelCaseToUnderscore(key)] = query[key];
 			return r;
 		}, {});
-	const eventName = query['_event'];
-	const isBadgeRedirect = query['badge'] !== undefined;
+	const eventName = query["_event"];
+	const isBadgeRedirect = query["badge"] !== undefined;
 
 	// TODO(Dan): add handling for new auth scheme
 	if (eventName || isBadgeRedirect) {
@@ -43,13 +43,13 @@ export function handleQueryEvents(url: string) {
 	}
 
 	stripURLParameters(url, [
-		'_event',
-		'_source',
-		'utm_campaign',
-		'utm_source',
-		'utm_product_name',
-		'utm_product_version',
-		'badge'
+		"_event",
+		"_source",
+		"utm_campaign",
+		"utm_source",
+		"utm_product_name",
+		"utm_product_version",
+		"badge",
 	]);
 }
 
@@ -60,7 +60,7 @@ function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
 	const parsedUrl = URI.parse(url);
 	const currentQuery = URI.parseQuery(parsedUrl.query);
 	const newQuery = Object.keys(currentQuery)
-		.filter(key => { return paramsToRemove.indexOf(key) === -1; })
+		.filter(key => paramsToRemove.indexOf(key) === -1)
 		.reduce((r, key) => {
 			r[key] = currentQuery[key];
 			return r;
@@ -70,7 +70,7 @@ function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
 }
 
 function camelCaseToUnderscore(input: string): string {
-	if (input.charAt(0) === '_') {
+	if (input.charAt(0) === "_") {
 		input = input.substring(1);
 	}
 	return input.replace(/([A-Z])/g, ($1) => `_${$1.toLowerCase()}`);

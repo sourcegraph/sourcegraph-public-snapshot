@@ -1,25 +1,25 @@
-import { EventCategories, EventActions } from "app/tracking/analyticsConstants";
-import { eventLogger } from "app/tracking/eventLogger";
+import { EventActions, EventCategories } from "app/tracking/analyticsConstants";
 import { pageViewQueryParameters } from "app/tracking/analyticsUtils";
+import { eventLogger } from "app/tracking/eventLogger";
 
 export class LoggableViewEvent {
 	constructor(private title: string) { }
 	log(props?: any) {
-		eventLogger.logViewEvent(this.title, { ...props, ...pageViewQueryParameters(window.location.href), });
+		eventLogger.logViewEvent(this.title, { ...props, ...pageViewQueryParameters(window.location.href) });
 	}
 }
 
 /**
  * Loggable pageview events to be used throughout the application
- * 
+ *
  * Note: all newly added events should follow the "View$Page" naming scheme
  */
 export const viewEvents = {
 	Home: new LoggableViewEvent("ViewHome"),
 	SearchResults: new LoggableViewEvent("ViewSearchResults"),
 	Tree: new LoggableViewEvent("ViewTree"),
-	Blob: new LoggableViewEvent("ViewBlob")
-}
+	Blob: new LoggableViewEvent("ViewBlob"),
+};
 
 export class LoggableEvent {
 	constructor(private eventLabel: string, private eventCategory: string, private eventAction: string) { }
@@ -30,7 +30,7 @@ export class LoggableEvent {
 
 /**
  * Loggable events to be used throughout the application
- * 
+ *
  * Note: all newly added events should follow the "$Noun$Verb" naming scheme
  */
 export const events = {
@@ -55,5 +55,5 @@ export const events = {
 	GoToExternalRefClicked: new LoggableEvent("GoToExternalRefClicked", EventCategories.Editor, EventActions.Click),
 
 	// External events
-	RepoBadgeRedirected: new LoggableEvent("RepoBadgeRedirected", EventCategories.External, EventActions.Redirect)
-}
+	RepoBadgeRedirected: new LoggableEvent("RepoBadgeRedirected", EventCategories.External, EventActions.Redirect),
+};

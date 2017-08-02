@@ -1,4 +1,4 @@
-import { User, EmailAddrList, ExternalToken } from "app/util/types";
+import { EmailAddrList, ExternalToken, User } from "app/util/types";
 
 // exported because webworkers need to be able to use it, and methods not transferred with context object
 export function isOnPremInstance(authEnabled: boolean): boolean {
@@ -58,9 +58,8 @@ export class SourcegraphContext {
 		if (this.emails && this.emails.EmailAddrs) {
 			return (this.emails.EmailAddrs.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 		}
-		return null
+		return null;
 	}
 }
 
 export const sourcegraphContext = new SourcegraphContext(window["context"]);
-
