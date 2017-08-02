@@ -152,6 +152,11 @@ $nav-height: 48px;
 		}
 	}
 
+	#blob {
+		white-space: pre;
+		display: none;
+	}
+
 	#blob-table>table {
 		margin-bottom: 1.3em;
 		border-collapse: collapse;

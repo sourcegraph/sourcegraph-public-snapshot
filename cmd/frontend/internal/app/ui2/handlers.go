@@ -245,7 +245,7 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 // blobView is the data structure shared/blobview.html expects.
 type blobView struct {
 	Path, Name string
-	Lines      []string
+	File       string
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
@@ -275,9 +275,9 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: common,
 		BlobView: &blobView{
-			Path:  fp,
-			Name:  path.Base(fp),
-			Lines: strings.Split(string(file), "\n"),
+			Path: fp,
+			Name: path.Base(fp),
+			File: string(file),
 		},
 		Navbar: newNavbar(common.Repo.URI, common.Rev, fp, false),
 	})

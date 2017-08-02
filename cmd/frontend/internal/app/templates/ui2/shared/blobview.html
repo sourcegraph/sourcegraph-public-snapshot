@@ -1,13 +1,5 @@
 <div class="blobview">
-	<div id="blob-table">
-		<table>
-			{{range $lineNumber, $line := .Lines}}
-			<tr>
-				<td class="line-number">{{add $lineNumber 1}}</td>
-				<td class="code-cell">{{$line}}</td>
-			</tr>
-			{{end}}
-		</table>
-	</div>
+	<div id="blob">{{.File}}</div>
+	<div id="blob-table"></div>
 	<div id="ref-widget" />
 </div>

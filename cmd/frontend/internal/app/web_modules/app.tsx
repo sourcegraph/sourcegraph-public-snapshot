@@ -4,9 +4,11 @@ import { injectReferencesWidget } from "app/references/inject";
 import { injectSearchForm, injectSearchInputHandler, injectSearchResults } from "app/search/inject";
 import { injectShareWidget } from "app/share";
 import { addAnnotations } from "app/tooltips";
+import { getModeFromExtension, getPathExtension } from "app/util";
 import { CodeCell } from "app/util/types";
 import * as url from "app/util/url";
 import * as moment from "moment";
+import { highlightBlock } from "highlight.js";
 
 window.addEventListener("DOMContentLoaded", () => {
 	const context = (window as any).context;
@@ -25,6 +27,110 @@ window.addEventListener("DOMContentLoaded", () => {
 	injectShareWidget();
 	const u = url.parseBlob();
 	if (u.uri && u.path) {
+
+		const blob = document.querySelector("#blob")!;
+		blob.className = getModeFromExtension(getPathExtension(u.path));
+		highlightBlock(document.querySelector("#blob"));
+
+		const lines: Array<Array<Node>> = [[]];
+
+		const nodeProcessor = (node: Node, wrapperClass?: string) => {
+			const wrap = (n: Node, className: string): any => {
+				const wrapper = document.createElement("span");
+				wrapper.className = className;
+				wrapper.appendChild(n);
+				return wrapper;
+			}
+
+			if (node.nodeType === Node.TEXT_NODE) {
+				const text = node.textContent!;
+				if (text.indexOf("\n") !== -1) {
+					const split = text.split("\n");
+					split.forEach((val, i) => {
+						if (i !== 0) {
+							lines.push([]);
+						}
+						let newNode = document.createTextNode(val);
+						if (wrapperClass) {
+							newNode = wrap(newNode, wrapperClass);
+						}
+						lines[lines.length - 1].push(newNode);
+					});
+				} else {
+					if (wrapperClass) {
+						node = wrap(node, wrapperClass);
+					}
+					lines[lines.length - 1].push(node);
+				}
+			} else {
+				if (node.childNodes.length === 1) {
+					const className = (node as HTMLElement).className;
+					const text = node.textContent!;
+					if (text.indexOf("\n") !== -1) {
+						const split = text.split("\n");
+						split.forEach((val, i) => {
+							if (i !== 0) {
+								lines.push([]);
+							}
+							let newNode = wrap(document.createTextNode(val), className);
+							if (wrapperClass) {
+								newNode = wrap(newNode, wrapperClass);
+							}
+							lines[lines.length - 1].push(newNode);
+						});
+					} else {
+						let newNode = wrap(document.createTextNode(text), className)
+						if (wrapperClass) {
+							newNode = wrap(newNode, wrapperClass);
+						}
+						lines[lines.length - 1].push(newNode);
+					}
+				} else {
+					if (node.textContent!.indexOf("\n") !== -1) {
+						const className = (node as HTMLElement).className;
+						console.log("SHIT!!!", node);
+						for (const n of Array.from(node.childNodes)) {
+							nodeProcessor(n, className);
+						}
+					} else {
+						lines[lines.length - 1].push(node);
+					}
+				}
+			}
+		}
+		for (const node of Array.from(document.querySelector("#blob")!.childNodes)) {
+			nodeProcessor(node);
+		}
+
+		const table = document.createElement("table");
+		const body = document.createElement("tbody");
+
+		lines.forEach((l, i) => {
+			const row = document.createElement("tr");
+			const line = document.createElement("td");
+			line.classList.add("line-number");
+			line.appendChild(document.createTextNode("" + (i + 1)));
+
+			const cell = document.createElement("td");
+			cell.classList.add("code-cell");
+			l.forEach(node => cell.appendChild(node));
+
+			row.appendChild(line);
+			row.appendChild(cell);
+
+			body.appendChild(row);
+		});
+
+		table.appendChild(body);
+
+		document.querySelector("#blob-table")!.appendChild(table);
+
+
+		var finishEvent = document.createEvent('Event');
+		finishEvent.initEvent('syntaxHighlightingFinished', true, true);
+		window.dispatchEvent(finishEvent);
+
+
 		// blob view, add tooltips
 		const pageVars = (window as any).pageVars;
 		if (!pageVars || !pageVars.ResolvedRev) {
@@ -32,9 +138,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		}
 		const rev = pageVars.ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
-		window.addEventListener("syntaxHighlightingFinished", () => {
-			addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, isBase: false, isDelta: false }, cells);
-		});
+		addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, isBase: false, isDelta: false }, cells);
 		if (u.line) {
 			highlightAndScrollToLine(u.uri, rev, u.path, u.line, cells);
 		}
