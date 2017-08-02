@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
@@ -93,7 +92,6 @@ func (*rootResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, error
 	for _, r := range all.Repos {
 		if _, ok := inactiveReposMap[r.URI]; ok {
 			// repo is inactive
-			fmt.Println("inactive->", r.URI)
 			res.inactive = append(res.inactive, r.URI)
 			continue
 		}
