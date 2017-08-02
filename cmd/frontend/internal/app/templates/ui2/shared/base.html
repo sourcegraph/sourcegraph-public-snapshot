@@ -5,7 +5,7 @@
 	<meta charset="utf-8">
 	<title>{{template "Title" .}} - Sourcegraph</title>
 	<link rel="stylesheet" href="{{.AssetURL}}/fonts/MenloRegular.css">
-	<link rel="stylesheet" href="{{.AssetURL}}/scripts/ui/assets/dist/style.bundle.css?v2">
+	<link rel="stylesheet" href="{{.AssetURL}}/scripts/ui/assets/dist/style.bundle.css?v3">
 	<script>
 		window.context = {{.Context}}
 		window.pageVars = {{.PageVars}}
@@ -38,7 +38,7 @@
 		</a>
 		{{end}}
 	</div>
-	<script src="{{.AssetURL}}/scripts/app.bundle.js?v7"></script>
+	<script src="{{.AssetURL}}/scripts/app.bundle.js?v8"></script>
 	{{template "Body" .}}
 
 </body>
