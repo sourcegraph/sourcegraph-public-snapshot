@@ -90,6 +90,13 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 	}
 	commit := vcs.CommitID(bytes.TrimSpace(stdout))
 	if len(commit) != 40 {
+		if commit == "HEAD" {
+			// We don't verify the existance of HEAD (see above comments), but
+			// if HEAD doesn't point to anything git just returns `HEAD` as the
+			// output of rev-parse. An example where this occurs is an empty
+			// repository.
+			return "", vcs.ErrRevisionNotFound
+		}
 		return "", fmt.Errorf("ResolveRevision: got bad commit %q for repo %q at revision %q", commit, r.Repo.URI, spec)
 	}
 	return commit, nil

@@ -213,6 +213,17 @@ type repositoryRevision struct {
 	Rev  *string
 }
 
+func (repoRev *repositoryRevision) String() string {
+	if repoRev.hasRev() {
+		return repoRev.Repo + "@" + *repoRev.Rev
+	}
+	return repoRev.Repo
+}
+
+func (repoRev *repositoryRevision) hasRev() bool {
+	return repoRev.Rev != nil && *repoRev.Rev != ""
+}
+
 // SearchRepos searches a set of repos for a pattern.
 func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults, error) {
 	ctx, cancel := context.WithCancel(ctx)
@@ -243,12 +254,18 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit = limitHit || repoLimitHit
-			if e, ok := searchErr.(vcs.RepoNotExistError); ok && e.CloneInProgress {
-				cloning = append(cloning, repoRev.Repo)
+			if e, ok := searchErr.(vcs.RepoNotExistError); ok {
+				if e.CloneInProgress {
+					cloning = append(cloning, repoRev.Repo)
+				} else {
+					missing = append(missing, repoRev.Repo)
+				}
 			} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
 				missing = append(missing, repoRev.Repo)
+			} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
+				// If we didn't specify an input revision, then the repo is empty and can be ignored.
 			} else if searchErr != nil && err == nil {
-				err = searchErr
+				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
 				cancel()
 			}
 			if len(matches) > 0 {
