@@ -10,6 +10,7 @@ import { getModeFromExtension, getPathExtension } from "app/util";
 import * as activeRepos from "app/util/activeRepos";
 import { pageVars } from "app/util/pageVars";
 import { sourcegraphContext } from "app/util/sourcegraphContext";
+import * as syntaxhighlight from "app/util/syntaxhighlight";
 import { CodeCell } from "app/util/types";
 import * as url from "app/util/url";
 import { highlightBlock } from "highlight.js";
@@ -135,9 +136,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 		document.querySelector("#blob-table")!.appendChild(table);
 
-		const finishEvent = document.createEvent("Event");
-		finishEvent.initEvent("syntaxHighlightingFinished", true, true);
-		window.dispatchEvent(finishEvent);
+		syntaxhighlight.done(); // mark syntax highlighting as finished
 
 		// blob view, add tooltips
 		const rev = pageVars.ResolvedRev;

@@ -1,4 +1,5 @@
 import { BlameState, contextKey, store } from "app/blame/store";
+import * as syntaxhighlight from "app/util/syntaxhighlight";
 import * as moment from "moment";
 
 function limitString(s: string, n: number, dotdotdot: boolean): string {
@@ -11,8 +12,7 @@ function limitString(s: string, n: number, dotdotdot: boolean): string {
 	return s;
 }
 
-// setLineBlameContent waits for syntax highlighting to have been finished, and
-// then sets the given line's blame content.
+// setLineBlameContent sets the given line's blame content.
 function setLineBlameContent(line: number, blameContent: string): void {
 	// Remove blame class from all other lines.
 	const currentlyBlamed = document.querySelectorAll(".code-cell>.blame");
@@ -31,16 +31,10 @@ function setLineBlameContent(line: number, blameContent: string): void {
 	}
 }
 
-let syntaxHighlightingFinished = false;
-
-window.addEventListener("syntaxHighlightingFinished", () => {
-	syntaxHighlightingFinished = true;
-}, false);
-
 store.subscribe((state: BlameState) => {
 	// We only render if syntax highlighting has finished (otherwise our work
 	// can conflict).
-	const f = function(): void {
+	syntaxhighlight.wait().then(() => {
 		state = store.getValue();
 
 		// Clear the blame content on whatever line it was already on.
@@ -61,12 +55,5 @@ store.subscribe((state: BlameState) => {
 		const blameContent = `${hunks[0].author.person.name}, ${timeSince} • ${limitString(hunks[0].message, 80, true)} ${limitString(hunks[0].rev, 6, false)}`;
 
 		setLineBlameContent(state.context.line, blameContent);
-	};
-	if (syntaxHighlightingFinished) {
-		f();
-		return;
-	}
-	window.addEventListener("syntaxHighlightingFinished", () => {
-		f();
-	}, false);
+	});
 });
