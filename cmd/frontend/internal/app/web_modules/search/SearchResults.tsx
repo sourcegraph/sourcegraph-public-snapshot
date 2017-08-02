@@ -39,19 +39,20 @@ export class SearchResults extends React.Component<Props, State> {
 		// Split the list of repos, and create "active" and "active-and-inactive"
 		// booleans + remove them from the list.
 		let repoList: string[] = [];
-		let addActive, addInactive = false;
-		repos.split(',').forEach((repo) => {
+		let addActive = false;
+		let addInactive = false;
+		for (let repo of repos.split(',')) {
 			if (repo === "active") {
 				addActive = true;
-				return;
+				continue;
 			}
-			if (repo == "active-and-inactive") {
+			if (repo === "active-and-inactive") {
 				addActive = true;
 				addInactive = true;
-				return;
+				continue;
 			}
 			repoList.push(repo)
-		})
+		}
 
 		const start = Date.now();
 		let search = (repoList) => {

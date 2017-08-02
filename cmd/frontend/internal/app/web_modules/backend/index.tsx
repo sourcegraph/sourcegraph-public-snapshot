@@ -356,7 +356,7 @@ export function fetchActiveRepos(): Promise<types.ActiveRepoResults> {
 		// proper error handling.
 		if (json.errors) {
 			// note: only one root query, so only one error
-			return Promise.reject(json.errors[0].message);
+			throw new Error(json.errors[0].message);
 		}
 		return json.data.root.activeRepos;
 	});
