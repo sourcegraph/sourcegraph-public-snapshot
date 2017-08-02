@@ -291,7 +291,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
 	// 	ignoreFirstTextChar = false;
 	// }
 
-	const domObservables = _.compact(cells.map((cell, i) => {
+	const domObservables = _.compact(cells.map((cell) => {
 		let hovered = false;
 		const hoverCb = () => {
 			if (hovered) {
