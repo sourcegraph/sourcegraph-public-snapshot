@@ -424,8 +424,10 @@ function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar: boolean = 
 			if (child === origTarget) {
 				return true;
 			}
-			if (!child.children) {
-				return false;
+			if (child.children === undefined) {
+				// Pure text node, count its content.
+				char += child.textContent!.length;
+				continue;
 			}
 			if (child.children.length > 0 && findOrigTarget(child)) {
 				// Walk over nested children, then short-circuit the loop to avoid double counting children.
