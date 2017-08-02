@@ -1,7 +1,7 @@
-import * as Rx from "rxjs";
 import * as types from "app/util/types";
 import * as immutable from "immutable";
-import * as moment from 'moment';
+import * as moment from "moment";
+import * as Rx from "rxjs";
 
 // reference implementation: http://rudiyardley.com/redux-single-line-of-code-rxjs/
 

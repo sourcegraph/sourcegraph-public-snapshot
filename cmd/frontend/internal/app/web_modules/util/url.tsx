@@ -1,5 +1,5 @@
-import { ParsedURL, BlobURL } from "util/types";
 import * as URI from "urijs";
+import { BlobURL, ParsedURL } from "util/types";
 
 // parse parses a generic Sourcegraph URL, where most components are shared
 // across all routes, e.g. repo URI and rev.
@@ -35,7 +35,7 @@ export function parseBlob(_loc: string = window.location.href): BlobURL {
 	if (loc.path.indexOf("/-/blob/") !== -1) {
 		path = urlsplit.slice(5).join("/");
 	}
-	let v: BlobURL = { ...u, path };
+	const v: BlobURL = { ...u, path };
 
 	// TODO: The TypeScript annotations for urijs are incorrect.. fragment
 	// is undefined when when there is no fragment in the URI.

@@ -6,7 +6,8 @@
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress --profile --colors --watch",
     "build": "NODE_ENV=production webpack --config webpack.config.js --progress --profile --colors",
     "fmt": "./node_modules/.bin/tsfmt -r",
-    "fmt-check": "./node_modules/.bin/tsfmt --verify"
+    "fmt-check": "./node_modules/.bin/tsfmt --verify",
+    "lint": "./node_modules/.bin/tslint -c tslint.json -e node_modules/** **/*.tsx"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
@@ -24,6 +25,7 @@
     "postcss-loader": "^2.0.6",
     "ts-loader": "^2.1.0",
     "tslint": "^5.5.0",
+    "tslint-webpack-plugin": "^0.5.0",
     "typescript": "^2.3.3",
     "typescript-formatter": "^4.0.1",
     "webpack": "^3.0.0"

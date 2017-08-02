@@ -21,8 +21,8 @@ export function highlightNode(parentNode: HTMLElement, start: number, end: numbe
 }
 
 function highlightNodeHelper(parentNode: HTMLElement, curr: number, start: number, length: number): { done: boolean, consumed: number } {
-	let origCurr = curr;
-	let numParentNodes = parentNode.childNodes.length;
+	const origCurr = curr;
+	const numParentNodes = parentNode.childNodes.length;
 	for (let i = 0; i < numParentNodes; ++i) {
 		if (curr >= start + length) {
 			return { done: true, consumed: 0 };
@@ -30,8 +30,7 @@ function highlightNodeHelper(parentNode: HTMLElement, curr: number, start: numbe
 		const isLastNode = i === parentNode.childNodes.length - 1;
 		const node = parentNode.childNodes[i];
 		if (node.nodeType === Node.TEXT_NODE) {
-			let nodeText = _.unescape(node.textContent || "");
-
+			const nodeText = _.unescape(node.textContent || "");
 
 			const containerNode = document.createElement("span");
 

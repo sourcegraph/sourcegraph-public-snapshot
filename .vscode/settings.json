@@ -1,4 +1,4 @@
 {
-	"typescript.tsdk": "./ui/node_modules/typescript/lib",
-	"tslint.nodePath": "./ui/node_modules"
+	"typescript.tsdk": "./cmd/frontend/internal/app/web_modules/node_modules/typescript/lib",
+	"tslint.nodePath": "./cmd/frontend/internal/app/web_modules/node_modules"
 }

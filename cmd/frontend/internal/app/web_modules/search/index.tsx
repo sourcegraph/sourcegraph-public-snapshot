@@ -40,7 +40,7 @@ export function getSearchParamsFromURL(url: string): SearchParams {
 		matchCase: query["matchCase"] === "true",
 		matchWord: query["matchWord"] === "true",
 		matchRegex: query["matchRegex"] === "true",
-	}
+	};
 }
 
 export function getSearchParamsFromLocalStorage(): SearchParams {
@@ -51,5 +51,5 @@ export function getSearchParamsFromLocalStorage(): SearchParams {
 		matchCase: window.localStorage.getItem("searchMatchCase") === "true",
 		matchWord: window.localStorage.getItem("searchMatchWord") === "true",
 		matchRegex: window.localStorage.getItem("searchMatchRegex") === "true",
-	}
+	};
 }

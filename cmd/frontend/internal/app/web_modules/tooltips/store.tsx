@@ -1,6 +1,6 @@
-import * as Rx from "rxjs";
 import { getPathExtension } from "app/util";
 import * as types from "app/util/types";
+import * as Rx from "rxjs";
 
 // reference implementation: http://rudiyardley.com/redux-single-line-of-code-rxjs/
 

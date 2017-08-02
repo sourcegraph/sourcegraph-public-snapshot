@@ -1,11 +1,11 @@
 import { SearchResult, searchText } from "app/backend";
 import { ReferencesGroup } from "app/references/ReferencesWidget";
 import { getSearchParamsFromURL } from "app/search";
+import * as activeRepos from "app/util/activeRepos";
 import { normalFontColor } from "app/util/colors";
 import * as React from "react";
 import { style } from "typestyle";
 import * as URI from "urijs";
-import * as activeRepos from "app/util/activeRepos";
 
 namespace Styles {
 	export const header = style({ padding: "10px 16px", color: normalFontColor, fontSize: "16px" });
@@ -33,15 +33,15 @@ export class SearchResults extends React.Component<Props, State> {
 		// Clean the comma delimited input (remove whitespace / duplicate commas).
 		//
 		// See https://stackoverflow.com/a/13306993
-		let repos = params.repos.replace(/^[,\s]+|[,\s]+$/g, '');
-		repos = repos.replace(/\s*,\s*/g, ',');
+		let repos = params.repos.replace(/^[,\s]+|[,\s]+$/g, "");
+		repos = repos.replace(/\s*,\s*/g, ",");
 
 		// Split the list of repos, and create "active" and "active-and-inactive"
 		// booleans + remove them from the list.
-		let repoList: string[] = [];
+		const repoList: string[] = [];
 		let addActive = false;
 		let addInactive = false;
-		for (let repo of repos.split(',')) {
+		for (const repo of repos.split(",")) {
 			if (repo === "active") {
 				addActive = true;
 				continue;
@@ -51,11 +51,11 @@ export class SearchResults extends React.Component<Props, State> {
 				addInactive = true;
 				continue;
 			}
-			repoList.push(repo)
+			repoList.push(repo);
 		}
 
 		const start = Date.now();
-		let search = (repoList) => {
+		const search = (repoList) => {
 			searchText(q, repoList.map(repo => ({ repo, rev: "" })), params).then(res => {
 				const searchDuration = Date.now() - start;
 				if (res.results) {
@@ -71,19 +71,19 @@ export class SearchResults extends React.Component<Props, State> {
 				if (addActive) {
 					activeRepos.active.forEach((active) => {
 						repoList.push(active);
-					})
+					});
 				}
 				if (addInactive) {
 					activeRepos.inactive.forEach((inactive) => {
 						repoList.push(inactive);
-					})
+					});
 				}
 				search(repoList);
 			}).catch((error) => {
 				// TODO: actually tell the user about the error.
 				console.error("failed to get active repos:", error);
 				this.setState({ loading: false });
-			})
+			});
 		} else {
 			// Don't need to add active or inactive repositories, so perform
 			// our search without waiting for the active repo list.

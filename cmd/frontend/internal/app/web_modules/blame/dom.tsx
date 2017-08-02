@@ -1,10 +1,10 @@
-import { store, BlameState, contextKey } from "app/blame/store";
-import * as moment from 'moment';
+import { BlameState, contextKey, store } from "app/blame/store";
+import * as moment from "moment";
 
 function limitString(s: string, n: number, dotdotdot: boolean): string {
 	if (s.length > n) {
 		if (dotdotdot) {
-			return s.substring(0, n - 1) + '…';
+			return s.substring(0, n - 1) + "…";
 		}
 		return s.substring(0, n);
 	}
@@ -49,7 +49,7 @@ store.subscribe((state: BlameState) => {
 		if (!state.context) {
 			return;
 		}
-		let hunks = state.hunksByLoc.get(contextKey(state.context));
+		const hunks = state.hunksByLoc.get(contextKey(state.context));
 		if (!hunks) {
 			if (state.displayLoading) {
 				setLineBlameContent(state.context.line, "loading ◌");
@@ -61,7 +61,7 @@ store.subscribe((state: BlameState) => {
 		const blameContent = `${hunks[0].author.person.name}, ${timeSince} • ${limitString(hunks[0].message, 80, true)} ${limitString(hunks[0].rev, 6, false)}`;
 
 		setLineBlameContent(state.context.line, blameContent);
-	}
+	};
 	if (syntaxHighlightingFinished) {
 		f();
 		return;

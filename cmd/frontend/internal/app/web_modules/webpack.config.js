@@ -1,6 +1,7 @@
 var path = require('path');
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var TSLintPlugin = require('tslint-webpack-plugin');
 
 var plugins;
 if (process.env.NODE_ENV === 'production') {
@@ -15,6 +16,10 @@ if (process.env.NODE_ENV === 'production') {
 } else {
     plugins = [
         new webpack.NoEmitOnErrorsPlugin(),
+        new TSLintPlugin({
+            files: ['**/*.tsx'],
+            exclude: ['node_modules/**']
+        })
     ]
 }
 

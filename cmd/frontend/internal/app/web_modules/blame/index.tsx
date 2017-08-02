@@ -1,7 +1,7 @@
 import { fetchBlameFile } from "app/backend";
-import { addHunks, setBlame, store, BlameContext } from "app/blame/store";
-import * as types from "app/util/types";
 import "app/blame/dom";
+import { addHunks, BlameContext, setBlame, store } from "app/blame/store";
+import * as types from "app/util/types";
 
 export function triggerBlame(ctx: BlameContext): void {
 	setBlame({ ...store.getValue(), context: ctx, displayLoading: false });

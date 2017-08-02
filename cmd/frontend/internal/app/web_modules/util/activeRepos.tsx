@@ -1,5 +1,5 @@
-import * as types from "app/util/types";
 import { fetchActiveRepos } from "app/backend";
+import * as types from "app/util/types";
 
 const localStorageKey = "activeRepos";
 
@@ -16,7 +16,7 @@ export function get(): Promise<types.ActiveRepoResults> {
 	//window.localStorage.setItem(localStorageKey, "");
 
 	let activeRepos: LocalStorage;
-	const data = window.localStorage.getItem(localStorageKey)
+	const data = window.localStorage.getItem(localStorageKey);
 	if (data) {
 		activeRepos = JSON.parse(data);
 		const halfHour = 30 * 60 * 1000; // 30m * 60s * 1000ms == 30m in milliseconds
@@ -32,7 +32,7 @@ export function get(): Promise<types.ActiveRepoResults> {
 			timestamp: Date.now(),
 			active: res.active,
 			inactive: res.inactive,
-		}
+		};
 		window.localStorage.setItem(localStorageKey, JSON.stringify(activeRepos));
 		return activeRepos;
 	});

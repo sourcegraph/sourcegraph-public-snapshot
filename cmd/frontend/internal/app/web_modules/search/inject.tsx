@@ -1,10 +1,10 @@
 import { handleSearchInput } from "app/search";
 import { SearchForm } from "app/search/SearchForm";
 import { SearchResults } from "app/search/SearchResults";
+import * as querystring from "querystring";
 import * as React from "react";
 import { render } from "react-dom";
 import * as URI from "urijs";
-import * as querystring from "querystring";
 
 export function injectSearchForm(): void {
 	const widget = document.getElementById("search-widget") as HTMLElement;

@@ -1,10 +1,10 @@
-import * as Rx from "rxjs";
 import { fetchJumpURL, getTooltip } from "app/backend/lsp";
 import * as tooltips from "app/tooltips/dom";
 import { clearTooltip, setTooltip, store, TooltipContext } from "app/tooltips/store";
+import { events } from "app/tracking/events";
 import { CodeCell, TooltipData } from "app/util/types";
 import * as _ from "lodash";
-import { events } from "app/tracking/events";
+import * as Rx from "rxjs";
 
 export interface RepoRevSpec { // TODO(john): move to types.
 	repoURI: string;

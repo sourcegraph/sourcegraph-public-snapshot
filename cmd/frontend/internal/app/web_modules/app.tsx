@@ -4,16 +4,16 @@ import { injectReferencesWidget } from "app/references/inject";
 import { injectSearchForm, injectSearchInputHandler, injectSearchResults } from "app/search/inject";
 import { injectShareWidget } from "app/share";
 import { addAnnotations } from "app/tooltips";
-import { getModeFromExtension, getPathExtension } from "app/util";
-import { CodeCell } from "app/util/types";
-import { sourcegraphContext } from "app/util/sourcegraphContext";
-import { pageVars } from "app/util/pageVars";
-import * as url from "app/util/url";
-import * as moment from "moment";
-import { highlightBlock } from "highlight.js";
-import * as activeRepos from "app/util/activeRepos";
-import { events, viewEvents } from "app/tracking/events";
 import { handleQueryEvents } from "app/tracking/analyticsUtils";
+import { events, viewEvents } from "app/tracking/events";
+import { getModeFromExtension, getPathExtension } from "app/util";
+import * as activeRepos from "app/util/activeRepos";
+import { pageVars } from "app/util/pageVars";
+import { sourcegraphContext } from "app/util/sourcegraphContext";
+import { CodeCell } from "app/util/types";
+import * as url from "app/util/url";
+import { highlightBlock } from "highlight.js";
+import * as moment from "moment";
 
 window.addEventListener("DOMContentLoaded", () => {
 	registerListeners();
@@ -43,7 +43,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		blob.className = getModeFromExtension(getPathExtension(u.path));
 		highlightBlock(document.querySelector("#blob"));
 
-		const lines: Array<Array<Node>> = [[]];
+		const lines: Node[][] = [[]];
 
 		const nodeProcessor = (node: Node, wrapperClass?: string) => {
 			const wrap = (n: Node, className: string): any => {
@@ -51,7 +51,7 @@ window.addEventListener("DOMContentLoaded", () => {
 				wrapper.className = className;
 				wrapper.appendChild(n);
 				return wrapper;
-			}
+			};
 
 			if (node.nodeType === Node.TEXT_NODE) {
 				const text = node.textContent!;
@@ -90,7 +90,7 @@ window.addEventListener("DOMContentLoaded", () => {
 							lines[lines.length - 1].push(newNode);
 						});
 					} else {
-						let newNode = wrap(document.createTextNode(text), className)
+						let newNode = wrap(document.createTextNode(text), className);
 						if (wrapperClass) {
 							newNode = wrap(newNode, wrapperClass);
 						}
@@ -107,7 +107,7 @@ window.addEventListener("DOMContentLoaded", () => {
 					}
 				}
 			}
-		}
+		};
 		for (const node of Array.from(document.querySelector("#blob")!.childNodes)) {
 			nodeProcessor(node);
 		}
@@ -135,9 +135,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 		document.querySelector("#blob-table")!.appendChild(table);
 
-
-		var finishEvent = document.createEvent('Event');
-		finishEvent.initEvent('syntaxHighlightingFinished', true, true);
+		let finishEvent = document.createEvent("Event");
+		finishEvent.initEvent("syntaxHighlightingFinished", true, true);
 		window.dispatchEvent(finishEvent);
 
 		// blob view, add tooltips
@@ -165,7 +164,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		viewEvents.Tree.log();
 	}
 
-	// Log events, if necessary, based on URL querystring, and strip tracking-related parameters 
+	// Log events, if necessary, based on URL querystring, and strip tracking-related parameters
 	// from the URL and browser history
 	// Note that this is a destructive operation (it changes the page URL and replaces browser state)
 	handleQueryEvents(window.location.href);

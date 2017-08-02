@@ -22,7 +22,7 @@ function defaultOptions(): FetchOptions | undefined {
 	const headers = new Headers();
 	headers.set("Authorization", `session ${token}`);
 	return {
-		headers
+		headers,
 	};
 }
 
