@@ -41,11 +41,11 @@ export class SearchResults extends React.Component<Props, State> {
 		let repoList: string[] = [];
 		let addActive, addInactive = false;
 		repos.split(',').forEach((repo) => {
-			if(repo === "active") {
+			if (repo === "active") {
 				addActive = true;
 				return;
 			}
-			if(repo == "active-and-inactive") {
+			if (repo == "active-and-inactive") {
 				addActive = true;
 				addInactive = true;
 				return;
@@ -81,7 +81,7 @@ export class SearchResults extends React.Component<Props, State> {
 			}).catch((error) => {
 				// TODO: actually tell the user about the error.
 				console.error("failed to get active repos:", error);
-				this.setState({loading: false});
+				this.setState({ loading: false });
 			})
 		} else {
 			// Don't need to add active or inactive repositories, so perform
