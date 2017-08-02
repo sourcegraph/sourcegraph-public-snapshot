@@ -2,6 +2,7 @@ var path = require('path');
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var TSLintPlugin = require('tslint-webpack-plugin');
+var WebpackShellPlugin = require('webpack-shell-plugin');
 
 var plugins;
 if (process.env.NODE_ENV === 'production') {
@@ -16,6 +17,10 @@ if (process.env.NODE_ENV === 'production') {
 } else {
     plugins = [
         new webpack.NoEmitOnErrorsPlugin(),
+        new WebpackShellPlugin({
+            onBuildStart: ['yarn run fmt'],
+            onBuildExit: ['yarn run fmt']
+        }),
         new TSLintPlugin({
             files: ['**/*.tsx'],
             exclude: ['node_modules/**']
