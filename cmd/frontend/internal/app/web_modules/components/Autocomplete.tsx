@@ -195,7 +195,7 @@ export class Autocomplete extends React.Component<Props, State> {
 		if (!items.length) {
 			index = -1;
 		} else {
-			let index = ((index || 0) + delta) % items.length;
+			index = ((index || 0) + delta) % items.length;
 			if (index < 0) {
 				index = 0;
 			}
