@@ -86,7 +86,11 @@ func TestThreads_Get_RepoNotFound(t *testing.T) {
 		File:        "foo.go",
 	})
 
-	if threads != nil || err == nil {
-		t.Error("did not return error for failed LocalRepos.Get")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(threads) != 0 {
+		t.Errorf("expected threads to have length 0; got %#v", threads)
 	}
 }

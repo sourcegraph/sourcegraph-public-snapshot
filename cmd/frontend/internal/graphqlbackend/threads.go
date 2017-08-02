@@ -49,7 +49,14 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	AccessToken string
 	File        string
 }) ([]*threadResolver, error) {
+	threads := []*threadResolver{}
+
 	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	if err == store.ErrRepoNotFound {
+		// Datastore is lazily populated when comments are created
+		// so it isn't an error for a repo to not exist yet.
+		return threads, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +66,6 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	threads := []*threadResolver{}
 	for _, t := range ts {
 		threads = append(threads, &threadResolver{thread: t})
 	}
