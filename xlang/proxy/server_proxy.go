@@ -61,6 +61,7 @@ type serverProxyConn struct {
 	rootFS      FileSystem // the workspace's file system
 	stats       serverProxyConnStats
 	diagnostics map[diagnosticsKey][]lsp.Diagnostic // saved diagnostics
+	messages    []lsp.ShowMessageParams             // saved messages
 }
 
 // serverProxyConnStats contains statistics for a proxied connection to a server.
@@ -533,6 +534,23 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		return c.handleFS(ctx, req.Method, path)
 
+	case "window/showMessage":
+		// We pass through messages from language servers to ALL clients. We assume that 99.9% of `window/showMessage`
+		// requests from the server will be applicable to all clients. Currently, this is true, because not that many
+		// language servers issue `window/showMessage` requests, but this assumption may need to change in the future.
+		//
+		// Messages with the `Save` field true are saved to be displayed to any new client that connects using the same
+		// server connection.
+
+		var params lsp.ShowMessageParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+
+		c.saveMessage(params)
+		c.clientBroadcast(ctx, req)
+		return nil, nil
+
 	case "window/logMessage":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
@@ -743,4 +761,14 @@ func (c *serverProxyConn) saveDiagnostics(diagnostics lsp.PublishDiagnosticsPara
 		c.diagnostics = map[diagnosticsKey][]lsp.Diagnostic{}
 	}
 	c.diagnostics[diagnosticsKey{serverID: c.id, documentURI: diagnostics.URI}] = diagnostics.Diagnostics
+}
+
+// saveMessage saves a message to publish to clients that connect after the message was sent. Certain messages (e.g.,
+// build errors) should be shown to all clients, but the language server does not have a way of sending these to newly
+// connected clients, because the LSP proxy abstracts client connections away from the language server. Unlike
+// saveDiagnostics, saveMessage appends to the existing array of messages.
+func (c *serverProxyConn) saveMessage(message lsp.ShowMessageParams) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.messages = append(c.messages, message)
 }
