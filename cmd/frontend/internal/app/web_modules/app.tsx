@@ -88,7 +88,6 @@ window.addEventListener("DOMContentLoaded", () => {
 				} else {
 					if (node.textContent!.indexOf("\n") !== -1) {
 						const className = (node as HTMLElement).className;
-						console.log("SHIT!!!", node);
 						for (const n of Array.from(node.childNodes)) {
 							nodeProcessor(n, className);
 						}
