@@ -76,7 +76,11 @@ func (*rootResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, error
 		all, err = backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			RemoteOnly: true, // user's repo list
 			ListOptions: sourcegraph.ListOptions{
-				PerPage: 1000, // we want every repo.
+				// we want every repo for the user here too, but we use one
+				// GitHub API request (which is bad because of rate limit) per
+				// repo here. So we limit to 100 (this response from this
+				// endpoint is cached on the browser client for 30m).
+				PerPage: 100,
 			},
 		})
 	}
