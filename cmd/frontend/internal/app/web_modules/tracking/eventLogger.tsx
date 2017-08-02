@@ -34,7 +34,7 @@ class EventLogger {
 
 	/**
 	 * Function to sync our key user identification props across Telligent and user Chrome extension installations
-	 */ 
+	 */
 	updateTrackerWithIdentificationProps(): any {
 		if (!telligent.isTelligentLoaded() || !sourcegraphContext.hasBrowserExtensionInstalled()) {
 			return null;
@@ -86,7 +86,7 @@ class EventLogger {
 	/**
 	 * Tracking call to analytics services on user action events
 	 * Note: should NEVER be called outside of events.tsx
-	 */ 
+	 */
 	logEvent(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
 		if (sourcegraphContext.userAgentIsBot || !eventLabel) {
 			return;

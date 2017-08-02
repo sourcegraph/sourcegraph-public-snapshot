@@ -6,7 +6,7 @@
  */
 export class PageVars {
 	ResolvedRev: string;
-	
+
 	constructor(vars: any) {
 		if (!vars) {
 			throw new TypeError("expected window.pageVars to exist, but it does not");

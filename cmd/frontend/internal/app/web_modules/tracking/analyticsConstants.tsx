@@ -13,16 +13,16 @@ export const EventCategories = {
 	 * Action executed events
 	 * Note these are handled specially by the Sourcegraph event logger, and should not be assigned to
 	 * new events without review
-	 */ 
+	 */
 	ActionExecuted: 'ActionExecuted',
 
 	/**
 	 * Events on cross-site navigation elements
-	 */ 
+	 */
 	Nav: 'Nav',
 	/**
 	 * Events on static/specific HTML pages
-	 */ 
+	 */
 	Pages: 'Pages',
 	/** 
 	 * Events on user profile/settings/org pages
@@ -48,16 +48,16 @@ export const EventCategories = {
 
 	/**
 	 * Events related to user state
-	 */ 
+	 */
 	UserState: 'UserState',
 
 	/**
 	 * Launcher events
-	 */ 
+	 */
 	Launcher: 'Launcher',
 	/**
 	 * Events on repository pages
-	 */ 
+	 */
 	Repository: 'Repository',
 	/** 
 	 * Events in VSCode's core editor experience
@@ -111,7 +111,7 @@ export const EventCategories = {
 export const EventActions = {
 	/**
 	 * Select a result, choice, etc
-	 */ 
+	 */
 	Select: 'Select',
 	/**
 	 * Click on a button, link, etc
@@ -163,7 +163,7 @@ export const EventActions = {
 
 	/**
 	 * An event that occurs in the background, with no user input
-	 */ 
+	 */
 	Passive: 'Passive',
 	Unknown: 'Unknown'
 };

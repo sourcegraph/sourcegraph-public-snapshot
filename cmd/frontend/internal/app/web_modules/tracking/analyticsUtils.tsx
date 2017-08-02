@@ -61,7 +61,7 @@ function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
 	const currentQuery = URI.parseQuery(parsedUrl.query);
 	const newQuery = Object.keys(currentQuery)
 		.filter(key => { return paramsToRemove.indexOf(key) === -1; })
-		.reduce((r, key) => { 
+		.reduce((r, key) => {
 			r[key] = currentQuery[key];
 			return r;
 		}, {});

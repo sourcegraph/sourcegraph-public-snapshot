@@ -148,7 +148,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		}
 
 		// Log blog view
-		viewEvents.Blob.log({ repo: u.uri!, rev, path: u.path!, language: getPathExtension(u.path)});
+		viewEvents.Blob.log({ repo: u.uri!, rev, path: u.path!, language: getPathExtension(u.path) });
 
 		// Add click handlers to all lines of code, which highlight and add
 		// blame information to the line.
@@ -173,11 +173,11 @@ window.addEventListener("DOMContentLoaded", () => {
 function registerListeners(): void {
 	const openOnGitHub = document.querySelector(".github")!;
 	if (openOnGitHub) {
-		openOnGitHub.addEventListener("click", () => events.OpenInCodeHostClicked.log() );
+		openOnGitHub.addEventListener("click", () => events.OpenInCodeHostClicked.log());
 	}
 	const openOnDesktop = document.querySelector(".open-on-desktop")!;
 	if (openOnDesktop) {
-		openOnDesktop.addEventListener("click", () => events.OpenInNativeAppClicked.log() );
+		openOnDesktop.addEventListener("click", () => events.OpenInNativeAppClicked.log());
 	}
 }
 
