@@ -9,10 +9,15 @@ import { CodeCell } from "app/util/types";
 import * as url from "app/util/url";
 import * as moment from "moment";
 import { highlightBlock } from "highlight.js";
+import * as activeRepos from "app/util/activeRepos";
 
 window.addEventListener("DOMContentLoaded", () => {
 	const context = (window as any).context;
 	xhr.useAccessToken(context.accessToken);
+
+	// Be a bit proactive and try to fetch/store active repos now. This helps
+	// on the first search query, and when the data in local storage is stale.
+	activeRepos.get();
 
 	if (window.location.pathname === "/") {
 		injectSearchForm();
