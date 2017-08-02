@@ -352,10 +352,11 @@ export function fetchActiveRepos(): Promise<types.ActiveRepoResults> {
 		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: any) => {
 		// TODO: All of our other graphql fetching functions in this file should
-		// start checking json.errors and returning it to the caller for proper
-		// handling.
+		// start checking json.errors and rejecting the promise like this for
+		// proper error handling.
 		if (json.errors) {
-			return {error: json.errors[0]}; // only one root query, so only one error
+			// note: only one root query, so only one error
+			return Promise.reject(json.errors[0].message);
 		}
 		return json.data.root.activeRepos;
 	});
