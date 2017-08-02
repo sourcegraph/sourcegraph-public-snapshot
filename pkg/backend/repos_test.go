@@ -183,15 +183,16 @@ func TestReposService_List(t *testing.T) {
 	}
 }
 
-func TestRepos_List_remoteOnly(t *testing.T) {
+func TestRepos_List_remoteOnly_appInstalled(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
 	calledListAccessible := github.MockListAccessibleRepos_Return([]*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/is/accessible"},
+		&sourcegraph.Repo{URI: "github.com/is/accessible-private"},
+		&sourcegraph.Repo{URI: "github.com/is/accessible-public"},
 	})
-	github.MockListPublicRepos_Return([]*sourcegraph.Repo{{URI: "github.com/is/accessible2"}})
-	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
+	calledListPublic := github.MockListPublicRepos_Return([]*sourcegraph.Repo{})
+	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible-private", "github.com/not/accessible")
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
 	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
@@ -199,18 +200,49 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "github.com/is/accessible"}, {URI: "github.com/is/accessible2"}}}
+	want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "github.com/is/accessible-private"}, {URI: "github.com/is/accessible-public"}}}
 	if !reflect.DeepEqual(repoList, want) {
 		t.Fatalf("got repos %v, want %v", repoList, want)
 	}
 	if !*calledListAccessible {
 		t.Error("!calledListAccessible")
 	}
+	if *calledListPublic {
+		t.Error("calledListPublic (should not call ListPublicRepos if RemoteOnly is true and app is installed, since ListAccessibleRepos includes public repos)")
+	}
 	if *calledReposStoreList {
 		t.Error("calledReposStoreList (should not hit the repos store if RemoteOnly is true)")
 	}
 }
 
+func TestRepos_List_remoteOnly_appNotInstalled(t *testing.T) {
+	var s repos
+	ctx := testContext()
+
+	calledListAccessible := github.MockListAccessibleRepos_Return([]*sourcegraph.Repo{})
+	calledListPublic := github.MockListPublicRepos_Return([]*sourcegraph.Repo{{URI: "github.com/is/accessible-public"}})
+	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible-public", "github.com/not/accessible")
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
+
+	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "github.com/is/accessible-public"}}}
+	if !reflect.DeepEqual(repoList, want) {
+		t.Fatalf("got repos %v, want %v", repoList, want)
+	}
+	if !*calledListAccessible {
+		t.Error("!calledListAccessible")
+	}
+	if !*calledListPublic {
+		t.Error("!calledListPublic (should be called when calledListAccessible returns no accessible repos")
+	}
+	if *calledReposStoreList {
+		t.Error("calledReposStoreList (should not hit the repos store if RemoteOnly is true)")
+	}
+}
 func TestRepos_List_remoteSearch(t *testing.T) {
 	var s repos
 	ctx := testContext()

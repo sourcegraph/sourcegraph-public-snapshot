@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -17,7 +16,6 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -29,8 +27,6 @@ import (
 
 // A light wrapper around the search service. We implement the service here so
 // that we can unmarshal the result directly into graphql resolvers.
-
-var searchInactiveRepos = env.Get("SEARCH_INACTIVE_REPOS", "", "comma-separated list of repos to consider 'inactive' while searching")
 
 // patternInfo is the struct used by vscode pass on search queries.
 type patternInfo struct {
@@ -210,99 +206,6 @@ type repoSearchArgs struct {
 	Repositories []*repositoryRevision
 }
 
-// expandRepos returns a copy of r.Repositories with "active" and "active-and-inactive"
-// repositories replaced by the correct list of repositories.
-//
-// In the case of on prem, "active" is all repositories known by Sourcegraph
-// except those specified in $SEARCH_INACTIVE_REPOS. "active-and-inactive" is
-// all repositories.
-//
-// What "active" and "active-and-inactive" mean for Sourcegraph.com is TBD; but
-// for now is all of our sourcegraph organization repositories.
-func (r *repoSearchArgs) expandRepos(ctx context.Context) ([]*repositoryRevision, error) {
-	// Create a copy of r without the phony repositories.
-	var (
-		repos                  = make([]*repositoryRevision, 0, len(r.Repositories))
-		addActive, addInactive bool
-	)
-	for _, repoRev := range r.Repositories {
-		switch repoRev.Repo {
-		case "active":
-			addActive = true
-		case "active-and-inactive":
-			addActive = true
-			addInactive = true
-		default:
-			repos = append(repos, repoRev)
-		}
-	}
-	if !addActive && !addInactive {
-		return repos, nil // nothing to do
-	}
-
-	// Determine the union of active + inactive repos.
-	var remoteOnly bool
-	if !envvar.DeploymentOnPrem() {
-		// sourcegraph.com: use all of user's remote repos, instead of *ALL*
-		// repos (the on prem case).
-		remoteOnly = true
-	}
-	activeAndInactive, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
-		RemoteOnly: remoteOnly,
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: 100, // we want every repo.
-			// TODO(stephen): uncommemnt if safe PerPage: 10000, // we want every repo.
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Build a map of repos added by the user.
-	addedByUser := make(map[string]struct{}, len(repos))
-	for _, r := range repos {
-		addedByUser[r.Repo] = struct{}{}
-	}
-
-	// Build a map of inactive repos.
-	inactiveSplit := strings.Split(searchInactiveRepos, ",")
-	inactive := make(map[string]struct{}, len(inactiveSplit))
-	for _, r := range inactiveSplit {
-		r = strings.TrimSpace(r)
-		if r != "" {
-			inactive[r] = struct{}{}
-		}
-	}
-
-	if addActive {
-		for _, r := range activeAndInactive.Repos {
-			if _, ok := addedByUser[r.URI]; ok {
-				continue // already added by user, avoid adding twice
-			}
-			if _, ok := inactive[r.URI]; ok {
-				continue // repo is inactive
-			}
-			repos = append(repos, &repositoryRevision{
-				Repo: r.URI,
-			})
-		}
-	}
-	if addInactive {
-		for _, r := range activeAndInactive.Repos {
-			if _, ok := addedByUser[r.URI]; ok {
-				continue // already added by user, avoid adding twice
-			}
-			if _, ok := inactive[r.URI]; !ok {
-				continue // repo is active
-			}
-			repos = append(repos, &repositoryRevision{
-				Repo: r.URI,
-			})
-		}
-	}
-	return repos, nil
-}
-
 // repositoryRevision specifies a repository at an (optional) revision. If no revision is
 // specified, then the repository's default branch is used.
 type repositoryRevision struct {
@@ -315,14 +218,8 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Expand the repository list.
-	var err error
-	args.Repositories, err = args.expandRepos(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var (
+		err       error
 		wg        sync.WaitGroup
 		mu        sync.Mutex
 		cloning   []string
