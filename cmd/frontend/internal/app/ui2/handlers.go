@@ -29,10 +29,12 @@ type pageVars struct {
 }
 
 type Common struct {
-	Context       jscontext.JSContext
-	Route         string
-	PageVars      *pageVars
-	AssetURL      string
+	Context  jscontext.JSContext
+	Route    string
+	PageVars *pageVars
+	AssetURL string
+
+	// The fields below have zero values when not on a repo page.
 	RepoShortName string
 	Repo          *sourcegraph.Repo
 	Rev           string                  // unresolved / user-specified revision (e.x.: "master")
@@ -64,59 +66,70 @@ func repoShortName(uri string) string {
 // 	}
 //
 func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, error) {
-	repo, revSpec, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-	if err != nil {
-		if e, ok := err.(*handlerutil.URLMovedError); ok {
-			// The repository has been renamed, e.g. "github.com/docker/docker"
-			// was renamed to "github.com/moby/moby" -> redirect the user now.
-			http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
-			return nil, nil
-		}
-		if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
-			// Repo is cloning.
-			//
-			// TODO(slimsag): Move to template, auto-refresh page upon
-			// completion, etc.
-			fmt.Fprintf(w, "<html><h3>Repository is cloning...<h3/><p>(please refresh in a few seconds)</p></html>")
-			return nil, nil
-		}
-		return nil, err
+	common := &Common{
+		Context:  jscontext.NewJSContextFromRequest(r),
+		Route:    route,
+		PageVars: &pageVars{},
+		AssetURL: assets.URL("/").String(),
 	}
-	return &Common{
-		Context: jscontext.NewJSContextFromRequest(r),
-		Route:   route,
-		PageVars: &pageVars{
-			ResolvedRev: revSpec.CommitID,
-		},
-		AssetURL:      assets.URL("/").String(),
-		RepoShortName: repoShortName(repo.URI),
-		Repo:          repo,
-		Rev:           mux.Vars(r)["Rev"],
-		RevSpec:       revSpec,
-	}, nil
+
+	if _, ok := mux.Vars(r)["Repo"]; ok {
+		// Common repo pages (blob, tree, etc).
+		common.Rev = mux.Vars(r)["Rev"]
+		var err error
+		common.Repo, common.RevSpec, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+		if err != nil {
+			if e, ok := err.(*handlerutil.URLMovedError); ok {
+				// The repository has been renamed, e.g. "github.com/docker/docker"
+				// was renamed to "github.com/moby/moby" -> redirect the user now.
+				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+				return nil, nil
+			}
+			if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
+				// Repo is cloning.
+				//
+				// TODO(slimsag): Move to template, auto-refresh page upon
+				// completion, etc.
+				fmt.Fprintf(w, "<html><h3>Repository is cloning...<h3/><p>(please refresh in a few seconds)</p></html>")
+				return nil, nil
+			}
+			return nil, err
+		}
+		common.PageVars.ResolvedRev = common.RevSpec.CommitID
+		common.RepoShortName = repoShortName(common.Repo.URI)
+	}
+	return common, nil
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
+	common, err := newCommon(w, r, routeHome)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
+
 	return renderTemplate(w, "home.html", &struct {
 		*Common
 	}{
-		Common: &Common{
-			Context:  jscontext.NewJSContextFromRequest(r),
-			Route:    routeHome,
-			AssetURL: assets.URL("/").String(),
-		},
+		Common: common,
 	})
 }
 
 func serveSearch(w http.ResponseWriter, r *http.Request) error {
+	common, err := newCommon(w, r, routeSearch)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
+
 	return renderTemplate(w, "search.html", &struct {
 		*Common
 	}{
-		Common: &Common{
-			Context:  jscontext.NewJSContextFromRequest(r),
-			Route:    routeSearch,
-			AssetURL: assets.URL("/").String(),
-		},
+		Common: common,
 	})
 }
 
