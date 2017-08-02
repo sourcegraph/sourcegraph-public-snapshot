@@ -225,13 +225,13 @@ function updateTooltip(state: TooltipState): void {
 		loadingTooltip.style.visibility = "visible";
 	}
 
-	const blobScroll = document.querySelector("#blob-table")!; // the scroll view
-	const blobTable = blobScroll.querySelector("table")!; // the overflowing content (can have negative positions)
-	const tableBound = blobTable.getBoundingClientRect();
+	const scrollingElement = document.querySelector("#blob-table")!;
+	const blobTable = document.querySelector("#blob-table>table")!; // table that we're positioning tooltips relative to.
+	const tableBound = blobTable.getBoundingClientRect(); // tables bounds
+	const targetBound = target.getBoundingClientRect(); // our target elements bounds
 
 	// Anchor it horizontally, prior to rendering to account for wrapping
 	// changes to vertical height if the tooltip is at the edge of the viewport.
-	const targetBound = target.getBoundingClientRect();
 	const relLeft = targetBound.left - tableBound.left;
 	tooltip.style.left = relLeft + "px";
 
@@ -240,11 +240,11 @@ function updateTooltip(state: TooltipState): void {
 	const relTop = targetBound.top - tableBound.top;
 	const margin = 5;
 	let tooltipTop = relTop - (tooltipBound.height + margin);
-	if (tooltipTop < 0) {
+	if ((tooltipTop - scrollingElement.scrollTop) < 0) {
 		// Tooltip wouldn't be visible from the top, so display it at the
 		// bottom.
 		const relBottom = targetBound.bottom - tableBound.top;
-		tooltipTop = relBottom - margin;
+		tooltipTop = relBottom + margin;
 	}
 	tooltip.style.top = tooltipTop + "px";
 

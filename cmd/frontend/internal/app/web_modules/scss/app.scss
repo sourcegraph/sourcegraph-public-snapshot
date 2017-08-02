@@ -155,11 +155,11 @@ $nav-height: 48px;
 		position: relative;
 		flex: 5;
 		overflow: auto;
-		padding-left: 1em;
-		padding-right: 1em;
-		padding-top: 2em;
 
 		table {
+			padding-left: 1em;
+			padding-right: 1em;
+			padding-top: 2em;
 			width: 100%;
 
 			.code-cell {
