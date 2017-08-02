@@ -47,7 +47,7 @@ export class Autocomplete extends React.Component<Props, State> {
 		// true if the user is scrolling with keys, to ignore mouse events until done
 		this.scrollingIntoView = false;
 		this.keyDownHandlers = {
-			ArrowDown() {
+			ArrowDown(): void {
 				if (!this.state.isOpen && this.state.items.length) {
 					this.setState({
 						isOpen: true,
@@ -57,38 +57,38 @@ export class Autocomplete extends React.Component<Props, State> {
 				}
 			},
 
-			ArrowUp() {
+			ArrowUp(): void {
 				this.moveSelectedOption(-1);
 			},
 
-			Enter() {
+			Enter(): void {
 				const { isOpen, index } = this.state;
 				if (isOpen && index > -1) {
 					this.onSelectIndex(index);
 				}
 			},
 
-			Escape() {
+			Escape(): void {
 				// this.hideItems();
 				this.props.onEscape();
 			},
 
-			PageUp() {
+			PageUp(): void {
 				this.state.isOpen && this.moveSelectedOption(-10);
 			},
 
-			PageDown() {
+			PageDown(): void {
 				this.state.isOpen && this.moveSelectedOption(10);
 			},
 
-			End() {
+			End(): void {
 				this.state.isOpen && this.setState({
 					index: (this.state.items.length || 0) - 1,
 					isOpen: true,
 				});
 			},
 
-			Home() {
+			Home(): void {
 				this.state.isOpen && this.setState({
 					index: 0,
 					isOpen: true,
@@ -97,7 +97,7 @@ export class Autocomplete extends React.Component<Props, State> {
 		};
 
 		_.bindAll(this, ["hideItems", "onSelectIndex", "onKeyDown", "onMouseOver", "onClickItem"]);
-		this.onChangeInput = _.throttle(function() {
+		this.onChangeInput = _.throttle(function(): void {
 			this.setState({
 				loading: true,
 			});
@@ -122,11 +122,11 @@ export class Autocomplete extends React.Component<Props, State> {
 		});
 	}
 
-	componentWillUpdate(_, { isOpen }): void {
+	componentWillUpdate(_nextProps: Props, nextState: State): void {
 		const prevIsOpen = this.state.isOpen;
-		if (prevIsOpen && !isOpen) {
+		if (prevIsOpen && !nextState.isOpen) {
 			// document.removeEventListener('click', this.hideItems);
-		} else if (!prevIsOpen && isOpen) {
+		} else if (!prevIsOpen && nextState.isOpen) {
 			// document.addEventListener("click", this.hideItems);
 		}
 	}
@@ -166,8 +166,8 @@ export class Autocomplete extends React.Component<Props, State> {
 		});
 	}
 
-	onClickItem(e) {
-		const _index = +e.currentTarget.getAttribute("data-index");
+	onClickItem(e: React.SyntheticEvent<HTMLDivElement>): void {
+		const _index = +e.currentTarget!.getAttribute("data-index")!;
 		this.onSelectIndex(_index);
 	}
 
@@ -180,7 +180,7 @@ export class Autocomplete extends React.Component<Props, State> {
 		newInputValue && $input.select();
 	}
 
-	onKeyDown(event) {
+	onKeyDown(event: KeyboardEvent): void {
 		const handler = this.keyDownHandlers[event.key];
 		if (handler) {
 			event.preventDefault();
@@ -190,8 +190,9 @@ export class Autocomplete extends React.Component<Props, State> {
 
 	// select the next or previous option
 	// @param delta +1 or -1 to move to the next or previous choice
-	moveSelectedOption(delta) {
-		let { index, items } = this.state;
+	moveSelectedOption(delta: number): void {
+		let index = this.state.index;
+		const items = this.state.items;
 		if (!items.length) {
 			index = -1;
 		} else {
@@ -204,24 +205,23 @@ export class Autocomplete extends React.Component<Props, State> {
 			index: index,
 			isOpen: true,
 		});
-
 	}
 
-	renderItems() {
+	renderItems(): JSX.Element | null {
 		const { items, index, isOpen } = this.state;
 		const $empty = items && items.length ? undefined :
 			<div className={this.props.emptyClassName}>{this.props.emptyMessage}</div>;
-		return !isOpen ? undefined : (
+		return !isOpen ? null : (
 			<div className={this.props.autocompleteResultsClassName} onMouseOver={this.onMouseOver}>
 				{$empty || items.map((item, _index) => {
 					return (
 						<div
-							className={"autocomplete-li" + (index == _index ? " selected" : "")}
+							className={"autocomplete-li" + (index === _index ? " selected" : "")}
 							key={_index}
 							onClick={this.onClickItem}
 							data-index={_index}
 						>
-							<this.props.ItemView item={item} highlighted={index == _index} />
+							<this.props.ItemView item={item} highlighted={index === _index} />
 						</div>
 					);
 				})}
@@ -229,7 +229,7 @@ export class Autocomplete extends React.Component<Props, State> {
 		);
 	}
 
-	render() {
+	render(): JSX.Element | null {
 		return (
 			<div className={this.props.className} id="autocomplete">
 				<input

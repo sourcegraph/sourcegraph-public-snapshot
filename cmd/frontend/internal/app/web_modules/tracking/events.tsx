@@ -4,7 +4,7 @@ import { eventLogger } from "app/tracking/eventLogger";
 
 export class LoggableViewEvent {
 	constructor(private title: string) { }
-	log(props?: any) {
+	log(props?: any): void {
 		eventLogger.logViewEvent(this.title, { ...props, ...pageViewQueryParameters(window.location.href) });
 	}
 }
@@ -23,7 +23,7 @@ export const viewEvents = {
 
 export class LoggableEvent {
 	constructor(private eventLabel: string, private eventCategory: string, private eventAction: string) { }
-	log(props?: any) {
+	log(props?: any): void {
 		eventLogger.logEvent(this.eventCategory, this.eventAction, this.eventLabel, props);
 	}
 }

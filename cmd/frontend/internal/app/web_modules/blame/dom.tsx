@@ -40,7 +40,7 @@ window.addEventListener("syntaxHighlightingFinished", () => {
 store.subscribe((state: BlameState) => {
 	// We only render if syntax highlighting has finished (otherwise our work
 	// can conflict).
-	const f = function() {
+	const f = function(): void {
 		state = store.getValue();
 
 		// Clear the blame content on whatever line it was already on.

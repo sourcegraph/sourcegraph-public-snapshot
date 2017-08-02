@@ -135,7 +135,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 		document.querySelector("#blob-table")!.appendChild(table);
 
-		let finishEvent = document.createEvent("Event");
+		const finishEvent = document.createEvent("Event");
 		finishEvent.initEvent("syntaxHighlightingFinished", true, true);
 		window.dispatchEvent(finishEvent);
 
@@ -191,9 +191,9 @@ function highlightLine(repoURI: string, rev: string, path: string, line: number,
 	});
 
 	const currentlyHighlighted = document.querySelectorAll(".sg-highlighted");
-	Array.from(currentlyHighlighted).forEach((cell: HTMLElement) => {
-		cell.classList.remove("sg-highlighted");
-		cell.style.backgroundColor = "inherit";
+	Array.from(currentlyHighlighted).forEach((cellElem: HTMLElement) => {
+		cellElem.classList.remove("sg-highlighted");
+		cellElem.style.backgroundColor = "inherit";
 	});
 
 	const cell = cells[line - 1];

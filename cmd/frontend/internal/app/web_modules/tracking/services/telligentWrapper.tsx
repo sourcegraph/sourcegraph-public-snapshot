@@ -1,4 +1,4 @@
-import { sourcegraphContext, isOnPremInstance } from "app/util/sourcegraphContext";
+import { isOnPremInstance, sourcegraphContext } from "app/util/sourcegraphContext";
 
 class TelligentWrapper {
 	private telligent: (...args: any[]) => void | null;
@@ -20,7 +20,7 @@ class TelligentWrapper {
 	}
 
 	isTelligentLoaded(): boolean {
-		return Boolean(this.telligent)
+		return Boolean(this.telligent);
 	}
 
 	setUserId(login: string): void {
@@ -69,7 +69,7 @@ class TelligentWrapper {
 			env: env,
 			configUseCookies: true,
 			useCookies: true,
-			cookieDomain: 'sourcegraph.com',
+			cookieDomain: "sourcegraph.com",
 			metadata: {
 				gaCookies: true,
 				performanceTiming: true,
@@ -84,7 +84,7 @@ class TelligentWrapper {
 	 * @return string or bool The ID string if the cookie exists or null if the cookie has not been set yet
 	 */
 	getTelligentDuid(): string | null {
-		let cookieProps = this.inspectTelligentCookie();
+		const cookieProps = this.inspectTelligentCookie();
 		return cookieProps ? cookieProps[0] : null;
 	}
 
@@ -93,16 +93,16 @@ class TelligentWrapper {
 	 * @return string or bool The session ID string if the cookie exists or null if the cookie has not been set yet
 	 */
 	getTelligentSessionId(): string | null {
-		let cookieProps = this.inspectTelligentCookie();
+		const cookieProps = this.inspectTelligentCookie();
 		return cookieProps ? cookieProps[5] : null;
 	}
 
 	private inspectTelligentCookie(): string[] | null {
-		let cookieName = '_te_';
-		let matcher = new RegExp(cookieName + 'id\\.[a-f0-9]+=([^;]+);?');
-		let match = window.document.cookie.match(matcher);
+		const cookieName = "_te_";
+		const matcher = new RegExp(cookieName + "id\\.[a-f0-9]+=([^;]+);?");
+		const match = window.document.cookie.match(matcher);
 		if (match && match[1]) {
-			return match[1].split('.');
+			return match[1].split(".");
 		} else {
 			return null;
 		}

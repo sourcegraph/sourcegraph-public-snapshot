@@ -3,10 +3,17 @@ import { eventLogger } from "app/tracking/eventLogger";
 import { events } from "app/tracking/events";
 import * as URI from "urijs";
 
+export interface EventQueryParameters {
+	utm_campaign: string;
+	utm_source: string;
+	utm_product_name: string;
+	utm_product_version: string;
+}
+
 /**
  * Get pageview-specific event properties from URL query string parameters
  */
-export function pageViewQueryParameters(url: string) {
+export function pageViewQueryParameters(url: string): EventQueryParameters {
 	const parsedUrl = URI.parse(url);
 	const query = URI.parseQuery(parsedUrl.query);
 	return {
@@ -22,7 +29,7 @@ export function pageViewQueryParameters(url: string) {
  * Note that this is a destructive operation (it changes the page URL and replaces browser state) by
  * calling stripURLParameters
  */
-export function handleQueryEvents(url: string) {
+export function handleQueryEvents(url: string): void {
 	const parsedUrl = URI.parse(url);
 	const query = URI.parseQuery(parsedUrl.query);
 	const eventParameters = Object.keys(query)

@@ -55,8 +55,8 @@ export class SearchResults extends React.Component<Props, State> {
 		}
 
 		const start = Date.now();
-		const search = (repoList) => {
-			searchText(q, repoList.map(repo => ({ repo, rev: "" })), params).then(res => {
+		const search = (searchReposList) => {
+			searchText(q, searchReposList.map(repo => ({ repo, rev: "" })), params).then(res => {
 				const searchDuration = Date.now() - start;
 				if (res.results) {
 					this.setState({ results: res.results, loading: false, searchDuration });
@@ -67,14 +67,14 @@ export class SearchResults extends React.Component<Props, State> {
 		// If we need to add active or inactive repositories to the list, do so
 		// inside the promise:
 		if (addActive || addInactive) {
-			activeRepos.get().then((activeRepos) => {
+			activeRepos.get().then((r) => {
 				if (addActive) {
-					activeRepos.active.forEach((active) => {
+					r.active.forEach((active) => {
 						repoList.push(active);
 					});
 				}
 				if (addInactive) {
-					activeRepos.inactive.forEach((inactive) => {
+					r.inactive.forEach((inactive) => {
 						repoList.push(inactive);
 					});
 				}

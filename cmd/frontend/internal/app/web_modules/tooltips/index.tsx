@@ -351,8 +351,8 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
 				const target = getSelectedTextTarget();
 				activeTarget = target;
 
-				const context = { path, repoRevSpec, selectedText };
-				tooltipEvent({ target, data: { title: selectedText } }, context, TooltipEventType.SELECT_TEXT);
+				const ctx = { path, repoRevSpec, selectedText };
+				tooltipEvent({ target, data: { title: selectedText } }, ctx, TooltipEventType.SELECT_TEXT);
 				return;
 			} else {
 				lastSelectedText = "";
