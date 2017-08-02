@@ -10,6 +10,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
+// ResolveRev will return the absolute commit for a commit-ish spec in a repo.
+// If no rev is specified, HEAD is used.
+// Error cases:
+// * Repo does not exist: vsc.RepoNotExistError
+// * Commit does not exist: vcs.ErrRevisionNotFound
+// * Empty repository: vcs.ErrRevisionNotFound
+// * The user does not have permission: localstore.ErrRepoNotFound
+// * Other unexpected errors.
 func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, op)

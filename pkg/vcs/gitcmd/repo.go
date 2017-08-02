@@ -56,6 +56,13 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
+// ResolveRevision will return the absolute commit for a commit-ish spec.
+// If spec is empty, HEAD is used.
+// Error cases:
+// * Repo does not exist: vsc.RepoNotExistError
+// * Commit does not exist: vcs.ErrRevisionNotFound
+// * Empty repository: vcs.ErrRevisionNotFound
+// * Other unexpected errors.
 func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.CommitID, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
