@@ -7,7 +7,8 @@
     "build": "NODE_ENV=production webpack --config webpack.config.js --progress --profile --colors",
     "fmt": "./node_modules/.bin/tsfmt -r",
     "fmt-check": "./node_modules/.bin/tsfmt --verify",
-    "lint": "./node_modules/.bin/tslint -c tslint.json -e node_modules/** **/*.tsx"
+    "lint": "./node_modules/.bin/tslint -c tslint.json -e node_modules/** **/*.tsx",
+    "lint-fix": "./node_modules/.bin/tslint -c tslint.json -e node_modules/** **/*.tsx --fix"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
