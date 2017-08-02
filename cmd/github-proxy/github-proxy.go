@@ -28,15 +28,16 @@ var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind addres
 var locks = make(map[string]*sync.Mutex)
 var locksMu sync.Mutex
 
-var rateLimitRemainingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+var rateLimitRemainingGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "github",
 	Name:      "rate_limit_remaining",
 	Help:      "Number of calls to GitHub's API remaining before hitting the rate limit.",
-})
+}, []string{"resource"})
 
 func init() {
-	rateLimitRemainingGauge.Set(5000)
+	rateLimitRemainingGauge.WithLabelValues("core").Set(5000)
+	rateLimitRemainingGauge.WithLabelValues("search").Set(30)
 	prometheus.MustRegister(rateLimitRemainingGauge)
 }
 
@@ -110,7 +111,11 @@ func main() {
 		if accessToken == "" { // do not track user rate limits
 			if limit := resp.Header.Get("X-Ratelimit-Remaining"); limit != "" {
 				limit, _ := strconv.Atoi(limit)
-				rateLimitRemainingGauge.Set(float64(limit))
+				resource := "core"
+				if strings.HasPrefix(r.URL.Path, "/search/") {
+					resource = "search"
+				}
+				rateLimitRemainingGauge.WithLabelValues(resource).Set(float64(limit))
 			}
 		}
 
