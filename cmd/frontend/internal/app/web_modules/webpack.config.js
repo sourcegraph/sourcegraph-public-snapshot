@@ -34,7 +34,7 @@ plugins.push(new ExtractTextPlugin({
 }));
 
 
-var devtool = process.env.NODE_ENV === 'production' ? undefined : 'source-map';
+var devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map';
 
 module.exports = {
     entry: {

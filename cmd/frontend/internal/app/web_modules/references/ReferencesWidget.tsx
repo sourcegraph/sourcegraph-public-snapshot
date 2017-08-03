@@ -54,7 +54,7 @@ interface Props {
 
 interface State extends ReferencesState {
 	docked: boolean;
-	group: "all" | "local" | "external";
+	group: "local" | "external";
 }
 
 export class ReferencesWidget extends React.Component<Props, State> {
@@ -88,14 +88,14 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		});
 	}
 
-	getRefsGroupFromUrl(urlStr: string): "all" | "local" | "external" {
+	getRefsGroupFromUrl(urlStr: string): "local" | "external" {
 		if (urlStr.indexOf("$references:local") !== -1) {
 			return "local";
 		}
 		if (urlStr.indexOf("$references:external") !== -1) {
 			return "external";
 		}
-		return "all";
+		return "local";
 	}
 
 	componentDidMount(): void {
@@ -113,7 +113,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		}
 	}
 
-	isLoading(group: "all" | "local" | "external"): boolean {
+	isLoading(group: "local" | "external"): boolean {
 		if (!this.state.context) {
 			return false;
 		}
@@ -123,8 +123,6 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		const loadingXRefs = state.fetches.get(refsFetchKey(this.state.context.loc, false)) === "pending";
 
 		switch (group) {
-			case "all":
-				return loadingRefs || loadingXRefs;
 			case "local":
 				return loadingRefs;
 			case "external":
@@ -149,8 +147,6 @@ export class ReferencesWidget extends React.Component<Props, State> {
 
 		const isEmptyGroup = () => {
 			switch (this.state.group) {
-				case "all":
-					return localRefs.length === 0 && externalRefs.length === 0;
 				case "local":
 					return localRefs.length === 0;
 				case "external":
@@ -164,16 +160,12 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				<div className={Styles.titleBarTitle}>
 					{this.state.context.word}
 				</div>
-				<a className={this.state.group === "all" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "", modal: "references" })} onClick={() => events.ShowAllRefsButtonClicked.log()}>
-					All References
-				</a>
-				<div className={Styles.badge}>{localRefs.length + externalRefs.length}</div>
 				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "local", modal: "references" })} onClick={() => events.ShowLocalRefsButtonClicked.log()}>
-					Local
+					This repository
 				</a>
 				<div className={Styles.badge}>{localRefs.length}</div>
 				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "external", modal: "references" })} onClick={() => events.ShowExternalRefsButtonClicked.log()}>
-					Global
+					Other repositories
 				</a>
 				<div className={Styles.badge}>{externalRefs.length}</div>
 				<div className={style(csstips.flex)} />
@@ -186,7 +178,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 			}
 			<div>
 				{
-					(this.state.group === "all" || this.state.group === "local") && localRefs.sort().map((uri, i) => {
+					this.state.group === "local" && localRefs.sort().map((uri, i) => {
 						const parsed = URI.parse(uri);
 						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refsByUri[uri]} />;
 					})
@@ -194,7 +186,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 			</div>
 			<div>
 				{
-					(this.state.group === "all" || this.state.group === "external") && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+					this.state.group === "external" && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
 						const parsed = URI.parse(uri);
 						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refsByUri[uri]} />;
 					})
