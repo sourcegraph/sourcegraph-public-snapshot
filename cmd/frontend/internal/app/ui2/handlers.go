@@ -41,7 +41,7 @@ type Common struct {
 	// The fields below have zero values when not on a repo page.
 	RepoShortName string
 	Repo          *sourcegraph.Repo
-	Rev           string                  // unresolved / user-specified revision (e.x.: "master")
+	Rev           string                  // unresolved / user-specified revision (e.x.: "@master")
 	RevSpec       sourcegraph.RepoRevSpec // resolved SHA1 revision
 }
 
@@ -99,7 +99,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, e
 			return nil, err
 		}
 		common.Rev = mux.Vars(r)["Rev"]
-		common.PageVars.Rev = common.Rev
+		common.PageVars.Rev = strings.TrimPrefix(common.Rev, "@")
 		common.PageVars.CommitID = common.RevSpec.CommitID
 		common.RepoShortName = repoShortName(common.Repo.URI)
 	}
