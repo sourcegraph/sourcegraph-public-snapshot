@@ -5,12 +5,6 @@ import { addReferences, ReferencesContext, setReferences, setReferencesLoad, set
 const contextFetches = new Set<string>();
 
 export function triggerReferences(context: ReferencesContext): void {
-	const repoRevCommit = {
-		repoURI: context.loc.uri,
-		rev: context.loc.rev,
-		commitID: context.loc.rev, // TODO: commitID != rev
-	};
-
 	setReferences({ ...referencesStore.getValue(), context });
 
 	// HACK(john): prevent double fetching (as this will add duplicate references to our store).
@@ -18,7 +12,7 @@ export function triggerReferences(context: ReferencesContext): void {
 	if (!contextFetches.has(fetchKey)) {
 		setReferencesLoad(context.loc, "pending");
 		setXReferencesLoad(context.loc, "pending");
-		fetchReferences(context.loc.char - 1, context.loc.path, context.loc.line - 1, repoRevCommit)
+		fetchReferences(context.loc.char - 1, context.loc.path, context.loc.line - 1, context.loc)
 			.then((references) => {
 				if (references) {
 					addReferences(context.loc, references);
@@ -28,11 +22,11 @@ export function triggerReferences(context: ReferencesContext): void {
 			.catch(() => {
 				setReferencesLoad(context.loc, "completed");
 			});
-		fetchXdefinition(context.loc.char - 1, context.loc.path, context.loc.line - 1, repoRevCommit)
+		fetchXdefinition(context.loc.char - 1, context.loc.path, context.loc.line - 1, context.loc)
 			.then(defInfo => {
 				if (!defInfo) { throw new Error("no xrefs"); }
 
-				fetchDependencyReferences(repoRevCommit.repoURI, repoRevCommit.rev, context.loc.path, 40, 25).then((data) => {
+				fetchDependencyReferences(context.loc.repoURI, context.loc.rev, context.loc.path, 40, 25).then((data) => {
 					if (!data || !data.repoData.repos) { throw new Error("no xrefs"); }
 					const idToRepo = (id: number): any => {
 						const i = data.repoData.repoIds.indexOf(id);

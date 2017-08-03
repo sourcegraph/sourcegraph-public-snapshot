@@ -81,8 +81,7 @@ export function createTooltips(): void {
 			return;
 		}
 		const loc = {
-			uri: context.repoRevCommit.repoURI,
-			rev: context.repoRevCommit.commitID, // TODO: rev != commitID
+			...context.repoRevCommit,
 			path: context.path,
 			line: context.coords.line,
 			char: context.coords.char,

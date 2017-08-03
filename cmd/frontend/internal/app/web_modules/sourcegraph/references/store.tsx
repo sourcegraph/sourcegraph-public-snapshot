@@ -1,12 +1,10 @@
 import * as immutable from "immutable";
 import * as Rx from "rxjs";
-import { Reference } from "sourcegraph/util/types";
+import { Reference, ResolvedRepoRevSpec } from "sourcegraph/util/types";
 
 // reference implementation: http://rudiyardley.com/redux-single-line-of-code-rxjs/
 
-export interface Location {
-	uri: string;
-	rev: string;
+export interface Location extends ResolvedRepoRevSpec {
 	path: string;
 	line: number;
 	char: number;
@@ -50,7 +48,7 @@ export const setReferences: (t: ReferencesState) => void = actionDispatcher((pay
 }));
 
 export function locKey(loc: Location): string {
-	return `${loc.uri}@${loc.rev}/${loc.path}#${loc.line}:${loc.char}`;
+	return `${loc.repoURI}@${loc.commitID}/${loc.path}#${loc.line}:${loc.char}`;
 }
 
 export function addReferences(loc: Location, refs: Reference[]): void {

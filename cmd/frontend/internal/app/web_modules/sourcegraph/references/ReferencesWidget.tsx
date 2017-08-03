@@ -67,11 +67,11 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		const onRefs = Boolean(u.path && u.modal && u.modal === "references");
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
-			const rev = pageVars.CommitID;
 			triggerReferences({
 				loc: {
-					uri: u.uri!,
-					rev: rev,
+					repoURI: u.uri!,
+					rev: pageVars.Rev,
+					commitID: pageVars.CommitID,
 					path: u.path!,
 					line: u.line!,
 					char: u.char!,
@@ -142,7 +142,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		// References by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
 		const refsByUri = _.groupBy(refs, (ref) => ref.uri);
 
-		const localPrefix = "git://" + this.state.context.loc.uri;
+		const localPrefix = "git://" + this.state.context.loc.repoURI;
 		const [localRefs, externalRefs] = _(refsByUri).keys().partition((uri) => uri.startsWith(localPrefix)).value();
 
 		const isEmptyGroup = () => {
@@ -155,16 +155,17 @@ export class ReferencesWidget extends React.Component<Props, State> {
 			return false;
 		};
 
+		const l = this.state.context.loc;
 		return <div>
 			<div className={Styles.titleBar}>
 				<div className={Styles.titleBarTitle}>
 					{this.state.context.word}
 				</div>
-				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "local", modal: "references" })} onClick={() => events.ShowLocalRefsButtonClicked.log()}>
+				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, modalMode: "local", modal: "references" })} onClick={() => events.ShowLocalRefsButtonClicked.log()}>
 					This repository
 				</a>
 				<div className={Styles.badge}>{localRefs.length}</div>
-				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ ...this.state.context.loc, modalMode: "external", modal: "references" })} onClick={() => events.ShowExternalRefsButtonClicked.log()}>
+				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, modalMode: "external", modal: "references" })} onClick={() => events.ShowExternalRefsButtonClicked.log()}>
 					Other repositories
 				</a>
 				<div className={Styles.badge}>{externalRefs.length}</div>
