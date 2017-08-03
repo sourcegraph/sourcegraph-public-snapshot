@@ -28,7 +28,8 @@ import (
 // silly). It can also only be present for some pages, whereas window.context
 // is for all pages.
 type pageVars struct {
-	ResolvedRev string // absolute revision of current page (on any repo page).
+	Rev      string // unresolved revision specifier of current page (on any repo page). e.g. A branch, empty string (default branch), commit hash, etc.
+	CommitID string // absolute revision of current page (on any repo page).
 }
 
 type Common struct {
@@ -78,7 +79,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, e
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
 		// Common repo pages (blob, tree, etc).
-		common.Rev = mux.Vars(r)["Rev"]
 		var err error
 		common.Repo, common.RevSpec, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 		if err != nil {
@@ -98,7 +98,9 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, e
 			}
 			return nil, err
 		}
-		common.PageVars.ResolvedRev = common.RevSpec.CommitID
+		common.Rev = mux.Vars(r)["Rev"]
+		common.PageVars.Rev = common.Rev
+		common.PageVars.CommitID = common.RevSpec.CommitID
 		common.RepoShortName = repoShortName(common.Repo.URI)
 	}
 	return common, nil

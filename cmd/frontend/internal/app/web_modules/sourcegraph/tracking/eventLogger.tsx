@@ -114,7 +114,7 @@ class EventLogger {
 		const u = url.parseBlob();
 		if (u.uri) {
 			props.repo = u.uri!;
-			props.rev = pageVars.ResolvedRev;
+			props.rev = pageVars.Rev;
 			if (u.path) {
 				props.path = u.path!;
 				props.language = getPathExtension(u.path);

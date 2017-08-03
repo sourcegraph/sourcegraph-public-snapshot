@@ -5,7 +5,8 @@
  * document them here.
  */
 export class PageVars {
-	ResolvedRev: string;
+	Rev: string;
+	CommitID: string;
 
 	constructor(vars: any) {
 		if (!vars) {

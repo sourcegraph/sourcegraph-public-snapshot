@@ -67,7 +67,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 		const onRefs = Boolean(u.path && u.modal && u.modal === "references");
 		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
 		if (onRefs) {
-			const rev = pageVars.ResolvedRev;
+			const rev = pageVars.CommitID;
 			triggerReferences({
 				loc: {
 					uri: u.uri!,

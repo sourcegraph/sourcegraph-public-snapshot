@@ -141,22 +141,22 @@ window.addEventListener("DOMContentLoaded", () => {
 		syntaxhighlight.done(); // mark syntax highlighting as finished
 
 		// blob view, add tooltips
-		const rev = pageVars.ResolvedRev;
+		const commitID = pageVars.CommitID;
 		const cells = getCodeCellsForAnnotation();
-		addAnnotations(u.path!, { repoURI: u.uri!, rev: rev }, cells);
+		addAnnotations(u.path!, { repoURI: u.uri!, rev: commitID }, cells);
 		if (u.line) {
-			highlightAndScrollToLine(u.uri, rev, u.path, u.line, cells);
+			highlightAndScrollToLine(u.uri, commitID, u.path, u.line, cells);
 		}
 
 		// Log blog view
-		viewEvents.Blob.log({ repo: u.uri!, rev, path: u.path!, language: getPathExtension(u.path) });
+		viewEvents.Blob.log({ repo: u.uri!, commitID, path: u.path!, language: getPathExtension(u.path) });
 
 		// Add click handlers to all lines of code, which highlight and add
 		// blame information to the line.
 		Array.from(document.querySelectorAll(".blobview tr")).forEach((tr: HTMLElement, index: number) => {
 			tr.addEventListener("click", () => {
 				if (u.uri && u.path) {
-					highlightLine(u.uri, rev, u.path, index + 1, cells);
+					highlightLine(u.uri, commitID, u.path, index + 1, cells);
 				}
 			});
 		});
@@ -238,7 +238,7 @@ window.onhashchange = (hash) => {
 		// recursively.
 		return;
 	}
-	const rev = pageVars.ResolvedRev;
+	const rev = pageVars.CommitID;
 	const cells = getCodeCellsForAnnotation();
 	highlightAndScrollToLine(newURL.uri!, rev, newURL.path, newURL.line, cells);
 };
