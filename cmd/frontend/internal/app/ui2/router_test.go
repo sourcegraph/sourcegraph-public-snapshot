@@ -126,11 +126,11 @@ func TestRouter_RootPath(t *testing.T) {
 		exists bool
 	}{
 		{
-			repo:   "foobar",
+			repo:   "about",
 			exists: false,
 		},
 		{
-			repo:   "foo/bar/baz",
+			repo:   "pricing",
 			exists: false,
 		},
 		{
