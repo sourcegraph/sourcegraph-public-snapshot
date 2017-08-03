@@ -22,15 +22,15 @@ namespace Styles {
 
 	export const icon = style({ fontSize: "18px", marginRight: "8px" });
 
-	export const container = style(csstips.horizontal, csstips.center, { height: "90px", backgroundColor: referencesBackgroundColor, color: normalFontColor, padding: "8px 12px", fontSize: "13px" });
+	export const container = style(csstips.horizontal, csstips.center, { height: "120px", backgroundColor: referencesBackgroundColor, color: normalFontColor, padding: "8px 12px", fontSize: "13px" });
 
-	export const repoArea = style(csstips.flex3, { marginLeft: "16px", maxWidth: "30%", height: "64px" });
+	export const repoArea = style(csstips.flex4, { marginLeft: "16px", maxWidth: "30%", height: "96px" });
 	export const reposInput = style(input, { borderRadius, minHeight: "100%", width: "100%", maxHeight: "100%", minWidth: "100%", maxWidth: "100%" });
 
-	export const addReposSection = style(csstips.flex2);
-	export const addReposButton = style(csstips.flex, csstips.horizontal, csstips.center, { backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
+	export const addReposSection = style(csstips.flex3);
+	export const addReposButton = style(csstips.horizontal, csstips.center, { backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
 	export const autocomplete = style({ backgroundColor: inputBackgroundColor, cursor: "pointer", borderRadius: "4px", border: "1px solid #2A3A51" });
-	export const autocompleteResults = style({ maxHeight: "40px", overflow: "auto" });
+	export const autocompleteResults = style({ maxHeight: "70px", overflow: "auto" });
 	export const addReposInput = style(input, { height: rowHeight, padding, borderRadius: "4px", width: "100%" });
 	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding });
 	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding });
@@ -38,7 +38,7 @@ namespace Styles {
 	export const filesSection = style(csstips.flex, { marginLeft: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
 
-	export const filtersSection = style(csstips.flex1, csstips.vertical, { marginLeft: "16px" });
+	export const filtersSection = style(csstips.flex, csstips.vertical, { marginLeft: "16px" });
 	export const filter = style(csstips.flex, csstips.horizontal, csstips.center, { cursor: "pointer", marginRight: "16px", userSelect: "none" });
 
 	export const searchButton = style(csstips.horizontal, csstips.center, csstips.content, { backgroundColor: primaryBlue, height: rowHeight, padding, borderRadius, color: `${white} !important`, textDecoration: "none" });
