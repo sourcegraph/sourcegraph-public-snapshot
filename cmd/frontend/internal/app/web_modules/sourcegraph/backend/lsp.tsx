@@ -211,7 +211,7 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
 			query,
 			limit,
 		},
-	}, { repoURI: workspace.uri, rev: workspace.rev, isBase: false, isDelta: false }, path);
+	}, { repoURI: workspace.uri, rev: workspace.rev }, path);
 
 	return fetch(`/.api/xlang/workspace/xreferences`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {

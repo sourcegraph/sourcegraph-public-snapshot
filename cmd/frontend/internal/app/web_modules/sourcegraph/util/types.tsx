@@ -63,8 +63,6 @@ export interface Reference {
 export interface RepoRevSpec {
 	repoURI: string;
 	rev: string;
-	isDelta: boolean;
-	isBase: boolean;
 }
 
 export interface CodeCell {
