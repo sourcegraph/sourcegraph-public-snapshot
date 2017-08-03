@@ -119,7 +119,10 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevCom
 			const prt1Uri = prt0Uri[1].split("#");
 
 			const repoUri = prt0Uri[0];
-			const frevUri = (repoUri === repoRevCommit.repoURI ? repoRevCommit.commitID : prt1Uri[0]) || "master"; // TODO(john): preserve rev branch
+			let frevUri = repoUri === repoRevCommit.repoURI ? repoRevCommit.rev : prt1Uri[0];
+			if (frevUri) {
+				frevUri = `@${frevUri}`;
+			}
 			const pathUri = prt1Uri[1];
 			const startLine = parseInt(json[1].result[0].range.start.line, 10) + 1;
 			const startChar = parseInt(json[1].result[0].range.start.character, 10) + 1;
@@ -131,7 +134,7 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevCom
 				lineAndCharEnding = `#L${startLine}`;
 			}
 
-			j2dCache[cacheKey] = `/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
+			j2dCache[cacheKey] = `/${repoUri}${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
 			return j2dCache[cacheKey];
 		});
 }
