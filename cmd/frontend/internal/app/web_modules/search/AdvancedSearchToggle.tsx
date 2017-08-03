@@ -33,6 +33,7 @@ export class AdvancedSearchToggle extends React.Component<{}, State> {
 		if (activeRepos) {
 			repoList = expandActiveInactive(repoList, activeRepos);
 		}
+
 		this.state = {
 			scope: isBlob(url) ? url.uri!.substr("github.com/".length) /* TODO(john): fix <-- that */ : `${repoList.length} repositor${repoList.length === 1 ? "y" : "ies"}`,
 			showAdvancedSearch: searchStore.getValue().showAdvancedSearch,
