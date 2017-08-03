@@ -1,7 +1,7 @@
 import * as xhr from "app/backend/xhr";
 import { triggerBlame } from "app/blame";
 import { injectReferencesWidget } from "app/references/inject";
-import { injectSearchForm, injectSearchInputHandler, injectSearchResults } from "app/search/inject";
+import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from "app/search/inject";
 import { injectShareWidget } from "app/share";
 import { addAnnotations } from "app/tooltips";
 import { handleQueryEvents } from "app/tracking/analyticsUtils";
@@ -29,6 +29,8 @@ window.addEventListener("DOMContentLoaded", () => {
 		injectSearchForm();
 	} else {
 		injectSearchInputHandler();
+		injectAdvancedSearchToggle();
+		injectAdvancedSearchDrawer();
 	}
 	if (window.location.pathname === "/search") {
 		viewEvents.SearchResults.log();
