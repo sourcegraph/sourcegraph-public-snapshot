@@ -1,6 +1,6 @@
 import { SearchResult, searchText } from "app/backend";
 import { ReferencesGroup } from "app/references/ReferencesWidget";
-import { getSearchParamsFromURL } from "app/search";
+import { getSearchParamsFromURL, parseRepoList } from "app/search";
 import * as activeRepos from "app/util/activeRepos";
 import { normalFontColor } from "app/util/colors";
 import * as React from "react";
@@ -36,17 +36,17 @@ export class SearchResults extends React.Component<Props, State> {
 		let repos = params.repos.replace(/^[,\s]+|[,\s]+$/g, "");
 		repos = repos.replace(/\s*,\s*/g, ",");
 
-		// Split the list of repos, and create "active" and "active-and-inactive"
+		// Split the list of repos, and create "active" and "inactive"
 		// booleans + remove them from the list.
 		const repoList: string[] = [];
 		let addActive = false;
 		let addInactive = false;
-		for (const repo of repos.split(",")) {
+		for (const repo of parseRepoList(repos)) {
 			if (repo === "active") {
 				addActive = true;
 				continue;
 			}
-			if (repo === "active-and-inactive") {
+			if (repo === "inactive") {
 				addActive = true;
 				addInactive = true;
 				continue;

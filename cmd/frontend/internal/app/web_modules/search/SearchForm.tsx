@@ -35,8 +35,8 @@ namespace Styles {
 	export const autocomplete = style({ marginTop: "8px", backgroundColor: inputBackgroundColor, cursor: "pointer", borderRadius: "4px", border: "1px solid #2A3A51" });
 	export const autocompleteResults = style({ maxHeight: "200px", overflow: "auto" });
 	export const addReposInput = style(input, { height: rowHeight, padding, borderRadius: "4px", width: "100%" });
-	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding });
-	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding });
+	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding: "4px 10px" });
+	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding: "4px 10px" });
 
 	export const filesSection = style({ marginTop: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
@@ -52,7 +52,7 @@ interface State extends SearchParams {
 	showAutocomplete: boolean;
 }
 
-interface RepoResult {
+export interface RepoResult {
 	description: string;
 	fork: boolean;
 	private: boolean;
@@ -73,7 +73,7 @@ export class SearchForm extends React.Component<Props, State> {
 	onChange(query: string): void {
 		query = query.toLowerCase();
 		if (query === "") {
-			(this.refs.autocomplete as any).setItems([{ uri: "active" }, { uri: "active-and-inactive" }]);
+			(this.refs.autocomplete as any).setItems([{ uri: "active" }, { uri: "inactive" }]);
 			return;
 		}
 		fetchRepos(query).then(repos => {

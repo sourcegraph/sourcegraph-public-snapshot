@@ -1,9 +1,13 @@
-import { getSearchPath, SearchParams } from "app/search";
-import { setState as setSearchState, store as searchStore } from "app/search/store";
+import { fetchRepos } from "app/backend";
+import { Autocomplete } from "app/components/Autocomplete";
+import { getSearchPath } from "app/search";
+import { RepoResult } from "app/search/SearchForm";
+import { setState as setSearchState, State as SearchState, store as searchStore } from "app/search/store";
 import { inputBackgroundColor, normalFontColor, primaryBlue, referencesBackgroundColor, white } from "app/util/colors";
 import { isBlobPage, parseBlob } from "app/util/url";
 import * as csstips from "csstips";
 import * as React from "react";
+import * as AddIcon from "react-icons/lib/md/add";
 import * as CheckboxFilled from "react-icons/lib/md/check-box";
 import * as CheckboxOutline from "react-icons/lib/md/check-box-outline-blank";
 import * as SearchIcon from "react-icons/lib/md/search";
@@ -18,12 +22,20 @@ namespace Styles {
 
 	export const icon = style({ fontSize: "18px", marginRight: "8px" });
 
-	export const container = style(csstips.horizontal, csstips.center, { backgroundColor: referencesBackgroundColor, color: normalFontColor, padding: "8px 12px", fontSize: "13px" });
+	export const container = style(csstips.horizontal, csstips.center, { height: "90px", backgroundColor: referencesBackgroundColor, color: normalFontColor, padding: "8px 12px", fontSize: "13px" });
 
-	export const repoArea = style(csstips.flex3, { maxWidth: "50%", height: "64px" });
+	export const repoArea = style(csstips.flex3, { marginLeft: "16px", maxWidth: "30%", height: "64px" });
 	export const reposInput = style(input, { borderRadius, minHeight: "100%", width: "100%", maxHeight: "100%", minWidth: "100%", maxWidth: "100%" });
 
-	export const filesSection = style(csstips.flex2, { marginLeft: "16px" });
+	export const addReposSection = style(csstips.flex2);
+	export const addReposButton = style(csstips.flex, csstips.horizontal, csstips.center, { backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
+	export const autocomplete = style({ backgroundColor: inputBackgroundColor, cursor: "pointer", borderRadius: "4px", border: "1px solid #2A3A51" });
+	export const autocompleteResults = style({ maxHeight: "40px", overflow: "auto" });
+	export const addReposInput = style(input, { height: rowHeight, padding, borderRadius: "4px", width: "100%" });
+	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding });
+	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding });
+
+	export const filesSection = style(csstips.flex, { marginLeft: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
 
 	export const filtersSection = style(csstips.flex1, csstips.vertical, { marginLeft: "16px" });
@@ -33,17 +45,18 @@ namespace Styles {
 
 }
 
-export class AdvancedSearchDrawer extends React.Component<{}, SearchParams> {
+export class AdvancedSearchDrawer extends React.Component<{}, SearchState> {
 	subscription: Rx.Subscription;
 
 	constructor(props: {}) {
 		super(props);
+		// this.state = { ...searchStore.getValue(), showAutocomplete: true };
 		this.state = searchStore.getValue();
 	}
 
 	componentDidMount(): void {
 		this.subscription = searchStore.subscribe((state) => {
-			this.setState(state);
+			this.setState(state as any);
 		});
 
 		if (isBlobPage()) {
@@ -57,8 +70,67 @@ export class AdvancedSearchDrawer extends React.Component<{}, SearchParams> {
 		}
 	}
 
+	componentDidUpdate(_: {}, prevState: SearchState): void {
+		if (prevState.showAdvancedSearch !== this.state.showAdvancedSearch) {
+			setSearchState({ ...searchStore.getValue(), showAutocomplete: Boolean(this.state.showAdvancedSearch) });
+		}
+	}
+
+	onChange(query: string): void {
+		query = query.toLowerCase();
+		if (query === "" && this.refs.autocomplete) {
+			(this.refs.autocomplete as any).setItems([{ uri: "active" }, { uri: "inactive" }]);
+			return;
+		}
+		fetchRepos(query).then(repos => {
+			if (this.refs.autocomplete) {
+				(this.refs.autocomplete as any).setItems(repos);
+			}
+		});
+	}
+
+	onSelect(item: RepoResult): void {
+		const current = this.state.repos.split(/,\s*/);
+		let addition = ", " + item.uri;
+		for (const uri of current) {
+			if (uri === item.uri) {
+				addition = "";
+				break;
+			}
+		}
+		setSearchState({ ...searchStore.getValue(), showAutocomplete: false, repos: this.state.repos + addition });
+	}
+
+	onUpdateRepos(value: string): void {
+		setSearchState({ ...searchStore.getValue(), repos: value });
+	}
+
 	render(): JSX.Element | null {
 		return <div className={Styles.container}>
+			<div className={Styles.addReposSection}>
+				{
+					!this.state.showAutocomplete &&
+					<div className={Styles.addReposButton} onClick={() => this.setState({ showAutocomplete: true })}>
+						<AddIcon className={Styles.icon} />
+						<span>Select repositories...</span>
+					</div>
+				}
+				{
+					this.state.showAutocomplete &&
+					<Autocomplete
+						ref="autocomplete"
+						ItemView={RepoResult}
+						onEscape={() => this.setState({ showAutocomplete: false })}
+						className={Styles.autocomplete}
+						inputClassName={Styles.addReposInput}
+						autocompleteResultsClassName={Styles.autocompleteResults}
+						emptyClassName={Styles.repoSelection}
+						onChange={(query) => this.onChange(query)}
+						onSelect={(item) => this.onSelect(item)}
+						onMount={() => setTimeout(() => this.onChange(""), 25)}
+						emptyMessage="No results" />
+				}
+			</div>
 			<div className={Styles.repoArea}>
 				<textarea className={Styles.reposInput} value={this.state.repos} onChange={(e) => {
 					setSearchState({ ...searchStore.getValue(), repos: e.target.value });

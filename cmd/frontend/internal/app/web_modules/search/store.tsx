@@ -3,6 +3,7 @@ import * as Rx from "rxjs";
 
 export interface State extends SearchParams {
 	showAdvancedSearch?: boolean;
+	showAutocomplete?: boolean;
 }
 
 const initState: State = getSearchParamsFromURL(window.location.href);
