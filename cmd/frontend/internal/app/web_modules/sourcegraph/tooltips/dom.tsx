@@ -165,7 +165,11 @@ function updateTooltip(state: TooltipState): void {
 	j2dAction.href = data.j2dUrl ? data.j2dUrl : "";
 
 	if (data && context && context.coords && context.path && context.repoRevCommit) {
-		findRefsAction.href = `/${context.repoRevCommit.repoURI}@${context.repoRevCommit.commitID}/-/blob/${context.path}#L${context.coords.line}:${context.coords.char}$references`;
+		let revString = "";
+		if (context.repoRevCommit.rev) {
+			revString = `@${context.repoRevCommit.rev}`;
+		}
+		findRefsAction.href = `/${context.repoRevCommit.repoURI}${revString}/-/blob/${context.path}#L${context.coords.line}:${context.coords.char}$references`;
 	} else {
 		findRefsAction.href = "";
 	}
