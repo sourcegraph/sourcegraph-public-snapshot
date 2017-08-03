@@ -52,7 +52,7 @@ module.exports = {
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
         alias: {
-            app: path.resolve(__dirname),
+            sourcegraph: path.resolve(__dirname, 'sourcegraph'),
         }
     },
     module: {

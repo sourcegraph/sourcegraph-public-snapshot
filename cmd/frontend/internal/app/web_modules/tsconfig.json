@@ -5,8 +5,8 @@
         "moduleResolution": "node",
         "baseUrl": ".",
         "paths": {
-            "app/*": [
-                "./*"
+            "sourcegraph/*": [
+                "./sourcegraph/*"
             ]
         },
         "lib": [

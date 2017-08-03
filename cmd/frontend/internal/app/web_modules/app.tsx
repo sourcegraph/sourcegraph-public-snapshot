@@ -1,20 +1,20 @@
-import * as xhr from "app/backend/xhr";
-import { triggerBlame } from "app/blame";
-import { injectReferencesWidget } from "app/references/inject";
-import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from "app/search/inject";
-import { injectShareWidget } from "app/share";
-import { addAnnotations } from "app/tooltips";
-import { handleQueryEvents } from "app/tracking/analyticsUtils";
-import { events, viewEvents } from "app/tracking/events";
-import { getModeFromExtension, getPathExtension } from "app/util";
-import * as activeRepos from "app/util/activeRepos";
-import { pageVars } from "app/util/pageVars";
-import { sourcegraphContext } from "app/util/sourcegraphContext";
-import * as syntaxhighlight from "app/util/syntaxhighlight";
-import { CodeCell } from "app/util/types";
-import * as url from "app/util/url";
 import { highlightBlock } from "highlight.js";
 import * as moment from "moment";
+import * as xhr from "sourcegraph/backend/xhr";
+import { triggerBlame } from "sourcegraph/blame";
+import { injectReferencesWidget } from "sourcegraph/references/inject";
+import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from "sourcegraph/search/inject";
+import { injectShareWidget } from "sourcegraph/share";
+import { addAnnotations } from "sourcegraph/tooltips";
+import { handleQueryEvents } from "sourcegraph/tracking/analyticsUtils";
+import { events, viewEvents } from "sourcegraph/tracking/events";
+import { getModeFromExtension, getPathExtension } from "sourcegraph/util";
+import * as activeRepos from "sourcegraph/util/activeRepos";
+import { pageVars } from "sourcegraph/util/pageVars";
+import { sourcegraphContext } from "sourcegraph/util/sourcegraphContext";
+import * as syntaxhighlight from "sourcegraph/util/syntaxhighlight";
+import { CodeCell } from "sourcegraph/util/types";
+import * as url from "sourcegraph/util/url";
 
 window.addEventListener("DOMContentLoaded", () => {
 	registerListeners();
