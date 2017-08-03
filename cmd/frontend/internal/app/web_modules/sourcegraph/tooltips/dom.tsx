@@ -81,8 +81,8 @@ export function createTooltips(): void {
 			return;
 		}
 		const loc = {
-			uri: context.repoRevSpec.repoURI,
-			rev: context.repoRevSpec.rev,
+			uri: context.repoRevCommit.repoURI,
+			rev: context.repoRevCommit.commitID, // TODO: rev != commitID
 			path: context.path,
 			line: context.coords.line,
 			char: context.coords.char,
@@ -165,8 +165,8 @@ function updateTooltip(state: TooltipState): void {
 
 	j2dAction.href = data.j2dUrl ? data.j2dUrl : "";
 
-	if (data && context && context.coords && context.path && context.repoRevSpec) {
-		findRefsAction.href = `/${context.repoRevSpec.repoURI}@${context.repoRevSpec.rev}/-/blob/${context.path}#L${context.coords.line}:${context.coords.char}$references`;
+	if (data && context && context.coords && context.path && context.repoRevCommit) {
+		findRefsAction.href = `/${context.repoRevCommit.repoURI}@${context.repoRevCommit.commitID}/-/blob/${context.path}#L${context.coords.line}:${context.coords.char}$references`;
 	} else {
 		findRefsAction.href = "";
 	}

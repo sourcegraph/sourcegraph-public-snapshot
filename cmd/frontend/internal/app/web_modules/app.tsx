@@ -141,9 +141,10 @@ window.addEventListener("DOMContentLoaded", () => {
 		syntaxhighlight.done(); // mark syntax highlighting as finished
 
 		// blob view, add tooltips
+		const rev = pageVars.Rev;
 		const commitID = pageVars.CommitID;
 		const cells = getCodeCellsForAnnotation();
-		addAnnotations(u.path!, { repoURI: u.uri!, rev: commitID }, cells);
+		addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, commitID: commitID }, cells);
 		if (u.line) {
 			highlightAndScrollToLine(u.uri, commitID, u.path, u.line, cells);
 		}

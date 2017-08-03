@@ -4,7 +4,7 @@ import { fetchJumpURL, getTooltip } from "sourcegraph/backend/lsp";
 import * as tooltips from "sourcegraph/tooltips/dom";
 import { clearTooltip, setTooltip, store, TooltipContext } from "sourcegraph/tooltips/store";
 import { events } from "sourcegraph/tracking/events";
-import { CodeCell, RepoRevSpec, TooltipData } from "sourcegraph/util/types";
+import { CodeCell, ResolvedRepoRevSpec, TooltipData } from "sourcegraph/util/types";
 
 // activeTarget tracks the element which is currently hovered over / clicked
 let activeTarget: HTMLElement | null;
@@ -163,7 +163,7 @@ function getTooltipObservable(target: HTMLElement, context: TooltipContext): Rx.
 	if (!context.coords) {
 		throw new Error("cannot get tooltip without line/char");
 	}
-	return Rx.Observable.fromPromise(getTooltip(context.path, context.coords.line, context.coords.char, { repoURI: context.repoRevSpec.repoURI, rev: context.repoRevSpec.rev, commitID: context.repoRevSpec.rev })) // TODO: commitID != rev
+	return Rx.Observable.fromPromise(getTooltip(context.path, context.coords.line, context.coords.char, context.repoRevCommit))
 		.do(data => {
 			if (data && data.title) {
 				// If non-empty tooltip data is returned, make the target "clickable" (via cursor pointer styling)
@@ -186,7 +186,7 @@ function getJ2DObservable(context: TooltipContext): Rx.Observable<string | null>
 	if (!context.coords) {
 		throw new Error("cannot get j2d without line/char");
 	}
-	return Rx.Observable.fromPromise(fetchJumpURL(context.coords.char, context.path, context.coords.line, { repoURI: context.repoRevSpec.repoURI, rev: context.repoRevSpec.rev, commitID: context.repoRevSpec.rev })); // TODO: commitID != rev
+	return Rx.Observable.fromPromise(fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevCommit));
 }
 
 /**
@@ -273,7 +273,7 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
  * mechanism would be to take use the `cm-tab` DOM attribute. For Phabricator, no
  * better mechanism is known at this time (see https://secure.phabricator.com/T2495).
  */
-export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: CodeCell[]): void {
+export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec, cells: CodeCell[]): void {
 	tooltips.createTooltips(); // TODO(john): can we just do this once in the module)?
 	const ignoreFirstChar = false;
 
@@ -304,7 +304,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
 		if (!coords) {
 			return;
 		}
-		const context = { path, repoRevSpec, coords: coords! };
+		const context = { path, repoRevCommit, coords: coords! };
 		const tooltipObservable = getTooltipObservable(t, context);
 		const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
 		tooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.HOVER));
@@ -344,7 +344,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
 				const target = getSelectedTextTarget();
 				activeTarget = target;
 
-				const ctx = { path, repoRevSpec, selectedText };
+				const ctx = { path, repoRevCommit, selectedText };
 				tooltipEvent({ target, data: { title: selectedText } }, ctx, TooltipEventType.SELECT_TEXT);
 				return;
 			} else {
@@ -363,7 +363,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: Co
 			setTooltip({ target: t, docked: false });
 			return;
 		}
-		const context = { path, repoRevSpec, coords: coords! };
+		const context = { path, repoRevCommit, coords: coords! };
 		const tooltipObservable = getTooltipObservable(t, context);
 		const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
 		tooltipObservable.subscribe((ev) => {

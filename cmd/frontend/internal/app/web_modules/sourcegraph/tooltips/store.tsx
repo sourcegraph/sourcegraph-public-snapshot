@@ -6,7 +6,7 @@ import * as types from "sourcegraph/util/types";
 
 export interface TooltipContext {
 	path: string;
-	repoRevSpec: types.RepoRevSpec;
+	repoRevCommit: types.ResolvedRepoRevSpec;
 	coords?: {
 		line: number;
 		char: number;
@@ -49,7 +49,7 @@ export const clearTooltip = (target?: HTMLElement) => setTooltip({ target });
 export function getTooltipEventProperties(data: types.TooltipData, context: TooltipContext): any {
 	// TODO: bring back isPullRequest, isCommit
 	return {
-		repo: context.repoRevSpec.repoURI,
+		repo: context.repoRevCommit.repoURI,
 		path: context.path,
 		language: getPathExtension(context.path),
 		isLoading: Boolean(data.loading),
