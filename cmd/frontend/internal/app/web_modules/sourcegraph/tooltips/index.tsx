@@ -4,14 +4,7 @@ import { fetchJumpURL, getTooltip } from "sourcegraph/backend/lsp";
 import * as tooltips from "sourcegraph/tooltips/dom";
 import { clearTooltip, setTooltip, store, TooltipContext } from "sourcegraph/tooltips/store";
 import { events } from "sourcegraph/tracking/events";
-import { CodeCell, TooltipData } from "sourcegraph/util/types";
-
-export interface RepoRevSpec { // TODO(john): move to types.
-	repoURI: string;
-	rev: string;
-	isDelta: boolean;
-	isBase: boolean;
-}
+import { CodeCell, RepoRevSpec, TooltipData } from "sourcegraph/util/types";
 
 // activeTarget tracks the element which is currently hovered over / clicked
 let activeTarget: HTMLElement | null;
@@ -282,7 +275,7 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
  */
 export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, cells: CodeCell[]): void {
 	tooltips.createTooltips(); // TODO(john): can we just do this once in the module)?
-	const ignoreFirstChar = repoRevSpec.isDelta;
+	const ignoreFirstChar = false;
 
 	// TODO(john): figure out how to do this without looking at the cell itself.
 	// if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {

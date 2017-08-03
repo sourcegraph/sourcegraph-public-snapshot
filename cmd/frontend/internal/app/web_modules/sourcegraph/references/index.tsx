@@ -8,8 +8,6 @@ export function triggerReferences(context: ReferencesContext): void {
 	const repoRevSpec = {
 		repoURI: context.loc.uri,
 		rev: context.loc.rev,
-		isBase: false,
-		isDelta: false,
 	};
 
 	setReferences({ ...referencesStore.getValue(), context });

@@ -143,7 +143,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		// blob view, add tooltips
 		const rev = pageVars.ResolvedRev;
 		const cells = getCodeCellsForAnnotation();
-		addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, isBase: false, isDelta: false }, cells);
+		addAnnotations(u.path!, { repoURI: u.uri!, rev: rev }, cells);
 		if (u.line) {
 			highlightAndScrollToLine(u.uri, rev, u.path, u.line, cells);
 		}
