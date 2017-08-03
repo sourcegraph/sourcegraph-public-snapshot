@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"runtime/debug"
 	"strconv"
+	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
@@ -29,8 +31,26 @@ const (
 	routeTree       = "tree"
 	routeBlob       = "blob"
 
-	aboutRedirectURL = "https://about.sourcegraph.com/" // must end with trailing slash
+	aboutRedirectScheme = "https"
+	aboutRedirectHost   = "about.sourcegraph.com"
 )
+
+// aboutPaths is a list of paths that should redirect from sourcegraph.com/$PATH
+// to about.sourcegraph.com/$PATH.
+//
+// They always take precedence last, so they cannot override e.g. user
+// repositories, handlers added here, etc.
+var aboutPaths = []string{
+	"about",
+	"plan",
+	"contact",
+	"docs",
+	"enterprise",
+	"pricing",
+	"privacy",
+	"security",
+	"terms",
+}
 
 // Router returns the router that serves pages for our web app.
 func Router() *mux.Router {
@@ -85,9 +105,23 @@ func init() {
 		_, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
 		if legacyerr.ErrCode(err) == legacyerr.NotFound {
 			// Repository not found, so redirect the request to about.sourcegraph.com
-			// instead. This case does NOT trigger for repos that are cloning.
-			http.Redirect(w, r, aboutRedirectURL+mux.Vars(r)["Repo"], http.StatusTemporaryRedirect)
-			return
+			// if it is an about path (unless we're on-prem). This case does
+			// NOT trigger for repos that are cloning.
+			if !envvar.DeploymentOnPrem() {
+				pathNoSlash := strings.Trim(r.URL.Path, "/")
+				for _, path := range aboutPaths {
+					if pathNoSlash == path {
+						r.URL.Scheme = aboutRedirectScheme
+						r.URL.User = nil
+						r.URL.Host = aboutRedirectHost
+						r.URL.Path = strings.TrimSuffix(r.URL.Path, "/") // redirect to canonical path
+						http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+						return
+					}
+				}
+			}
+
+			// ignore err here, let serveRepoHandler handle the request below.
 		}
 		if mockServeRepo != nil {
 			mockServeRepo(w, r)
