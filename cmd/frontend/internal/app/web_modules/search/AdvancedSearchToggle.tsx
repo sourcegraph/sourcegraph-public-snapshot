@@ -6,6 +6,8 @@ import { isBlob, isSearchResultsPage, parseBlob } from "app/util/url";
 import * as csstips from "csstips";
 import * as React from "react";
 import * as ChevronDown from "react-icons/lib/fa/chevron-down";
+import * as CloseIcon from "react-icons/lib/fa/close";
+import * as Rx from "rxjs";
 import { style } from "typestyle";
 
 namespace Styles {
@@ -13,7 +15,13 @@ namespace Styles {
 	export const chevron = style({ fontSize: "10px", marginLeft: "16px" });
 }
 
-export class AdvancedSearchToggle extends React.Component<{}, { scope: string }> {
+interface State {
+	scope: string;
+	showAdvancedSearch?: boolean;
+}
+
+export class AdvancedSearchToggle extends React.Component<{}, State> {
+	subscription: Rx.Subscription;
 
 	constructor(props: {}) {
 		super(props);
@@ -25,10 +33,22 @@ export class AdvancedSearchToggle extends React.Component<{}, { scope: string }>
 		if (activeRepos) {
 			repoList = expandActiveInactive(repoList, activeRepos);
 		}
-
 		this.state = {
 			scope: isBlob(url) ? url.uri!.substr("github.com/".length) /* TODO(john): fix <-- that */ : `${repoList.length} repositor${repoList.length === 1 ? "y" : "ies"}`,
+			showAdvancedSearch: searchStore.getValue().showAdvancedSearch,
 		};
+	}
+
+	componentDidMount(): void {
+		this.subscription = searchStore.subscribe((state) => {
+			this.setState({ ...state, scope: this.state.scope } as any);
+		});
+	}
+
+	componentWillUnmount(): void {
+		if (this.subscription) {
+			this.subscription.unsubscribe();
+		}
 	}
 
 	onClick(): void {
@@ -38,7 +58,7 @@ export class AdvancedSearchToggle extends React.Component<{}, { scope: string }>
 	render(): JSX.Element | null {
 		return <div className={Styles.container} onClick={() => this.onClick()}>
 			<span>Current scope: {this.state.scope}</span>
-			<ChevronDown className={Styles.chevron} />
+			{this.state.showAdvancedSearch ? <CloseIcon className={Styles.chevron} /> : <ChevronDown className={Styles.chevron} />}
 		</div>;
 	}
 }

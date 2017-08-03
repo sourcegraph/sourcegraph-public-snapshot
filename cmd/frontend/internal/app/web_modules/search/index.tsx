@@ -55,7 +55,7 @@ export function getSearchParamsFromLocalStorage(): SearchParams {
 }
 
 export function parseRepoList(repos: string): string[] {
-	return repos.split(/\s*,\s*/).map((repo) => repo.trim());
+	return repos.split(/\s*,\s*/).map((repo) => repo.trim()).filter((repo) => repo !== "");
 }
 
 export function expandActiveInactive(repos: string[], groups: ActiveRepoResults): string[] {
