@@ -163,7 +163,7 @@ function getTooltipObservable(target: HTMLElement, context: TooltipContext): Rx.
 	if (!context.coords) {
 		throw new Error("cannot get tooltip without line/char");
 	}
-	return Rx.Observable.fromPromise(getTooltip(context.path, context.coords.line, context.coords.char, context.repoRevSpec))
+	return Rx.Observable.fromPromise(getTooltip(context.path, context.coords.line, context.coords.char, { repoURI: context.repoRevSpec.repoURI, rev: context.repoRevSpec.rev, commitID: context.repoRevSpec.rev })) // TODO: commitID != rev
 		.do(data => {
 			if (data && data.title) {
 				// If non-empty tooltip data is returned, make the target "clickable" (via cursor pointer styling)
@@ -186,7 +186,7 @@ function getJ2DObservable(context: TooltipContext): Rx.Observable<string | null>
 	if (!context.coords) {
 		throw new Error("cannot get j2d without line/char");
 	}
-	return Rx.Observable.fromPromise(fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevSpec));
+	return Rx.Observable.fromPromise(fetchJumpURL(context.coords.char, context.path, context.coords.line, { repoURI: context.repoRevSpec.repoURI, rev: context.repoRevSpec.rev, commitID: context.repoRevSpec.rev })); // TODO: commitID != rev
 }
 
 /**

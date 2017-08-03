@@ -1,6 +1,6 @@
 import { doFetch as fetch } from "sourcegraph/backend/xhr";
 import { getModeFromExtension, getPathExtension, supportedExtensions } from "sourcegraph/util";
-import { RepoRevSpec } from "sourcegraph/util/types";
+import { ResolvedRepoRevSpec } from "sourcegraph/util/types";
 import { Reference, TooltipData, Workspace } from "sourcegraph/util/types";
 import * as URI from "urijs";
 
@@ -9,7 +9,7 @@ interface LSPRequest {
 	params: any;
 }
 
-function wrapLSP(req: LSPRequest, repoRevSpec: RepoRevSpec, path: string): any[] {
+function wrapLSP(req: LSPRequest, repoRevCommit: ResolvedRepoRevSpec, path: string): any[] {
 	return [
 		{
 			id: 0,
@@ -17,9 +17,9 @@ function wrapLSP(req: LSPRequest, repoRevSpec: RepoRevSpec, path: string): any[]
 			params: {
 				// TODO(sqs): rootPath is deprecated but xlang client proxy currently
 				// requires it. Pass rootUri as well (below) for forward compat.
-				rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
+				rootPath: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}`,
 
-				rootUri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
+				rootUri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}`,
 				mode: `${getModeFromExtension(getPathExtension(path))}`,
 			},
 		},
@@ -39,13 +39,13 @@ function wrapLSP(req: LSPRequest, repoRevSpec: RepoRevSpec, path: string): any[]
 }
 
 const tooltipCache: { [key: string]: TooltipData } = {};
-export function getTooltip(path: string, line: number, char: number, repoRevSpec: RepoRevSpec): Promise<TooltipData> {
+export function getTooltip(path: string, line: number, char: number, repoRevCommit: ResolvedRepoRevSpec): Promise<TooltipData> {
 	const ext = getPathExtension(path);
 	if (!supportedExtensions.has(ext)) {
 		return Promise.resolve({});
 	}
 
-	const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${char}`;
+	const cacheKey = `${path}@${repoRevCommit.commitID}:${line}@${char}`;
 
 	if (tooltipCache[cacheKey]) {
 		return Promise.resolve(tooltipCache[cacheKey]!);
@@ -55,14 +55,14 @@ export function getTooltip(path: string, line: number, char: number, repoRevSpec
 		method: "textDocument/hover",
 		params: {
 			textDocument: {
-				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+				uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`,
 			},
 			position: {
 				character: char - 1,
 				line: line - 1,
 			},
 		},
-	}, repoRevSpec, path);
+	}, repoRevCommit, path);
 
 	return fetch(`/.api/xlang/textDocument/hover`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
@@ -85,12 +85,12 @@ export function getTooltip(path: string, line: number, char: number, repoRevSpec
 }
 
 const j2dCache = {};
-export function fetchJumpURL(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<string | null> {
+export function fetchJumpURL(col: number, path: string, line: number, repoRevCommit: ResolvedRepoRevSpec): Promise<string | null> {
 	const ext = getPathExtension(path);
 	if (!supportedExtensions.has(ext)) {
 		return Promise.resolve(null);
 	}
-	const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
+	const cacheKey = `${path}@${repoRevCommit.commitID}:${line}@${col}`;
 	if (j2dCache[cacheKey]) {
 		return Promise.resolve(j2dCache[cacheKey]);
 	}
@@ -99,14 +99,14 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevSpe
 		method: "textDocument/definition",
 		params: {
 			textDocument: {
-				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+				uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`,
 			},
 			position: {
 				character: col - 1,
 				line: line - 1,
 			},
 		},
-	}, repoRevSpec, path);
+	}, repoRevCommit, path);
 
 	return fetch(`/.api/xlang/textDocument/definition`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
@@ -119,7 +119,7 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevSpe
 			const prt1Uri = prt0Uri[1].split("#");
 
 			const repoUri = prt0Uri[0];
-			const frevUri = (repoUri === repoRevSpec.repoURI ? repoRevSpec.rev : prt1Uri[0]) || "master"; // TODO(john): preserve rev branch
+			const frevUri = (repoUri === repoRevCommit.repoURI ? repoRevCommit.commitID : prt1Uri[0]) || "master"; // TODO(john): preserve rev branch
 			const pathUri = prt1Uri[1];
 			const startLine = parseInt(json[1].result[0].range.start.line, 10) + 1;
 			const startChar = parseInt(json[1].result[0].range.start.character, 10) + 1;
@@ -136,19 +136,19 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevSpe
 		});
 }
 
-export function fetchXdefinition(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<{ location: any, symbol: any } | null> {
+export function fetchXdefinition(col: number, path: string, line: number, repoRevCommit: ResolvedRepoRevSpec): Promise<{ location: any, symbol: any } | null> {
 	const body = wrapLSP({
 		method: "textDocument/xdefinition",
 		params: {
 			textDocument: {
-				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+				uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`,
 			},
 			position: {
 				character: col,
 				line: line,
 			},
 		},
-	}, repoRevSpec, path);
+	}, repoRevCommit, path);
 
 	return fetch(`/.api/xlang/textDocument/xdefinition`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
@@ -161,12 +161,12 @@ export function fetchXdefinition(col: number, path: string, line: number, repoRe
 }
 
 const referencesCache = {};
-export function fetchReferences(col: number, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<Reference[] | null> {
+export function fetchReferences(col: number, path: string, line: number, repoRevCommit: ResolvedRepoRevSpec): Promise<Reference[] | null> {
 	const ext = getPathExtension(path);
 	if (!supportedExtensions.has(ext)) {
 		return Promise.resolve(null);
 	}
-	const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
+	const cacheKey = `${path}@${repoRevCommit.commitID}:${line}@${col}`;
 	if (referencesCache[cacheKey]) {
 		return Promise.resolve(referencesCache[cacheKey]);
 	}
@@ -175,7 +175,7 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 		method: "textDocument/references",
 		params: {
 			textDocument: {
-				uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+				uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`,
 			},
 			position: {
 				character: col,
@@ -185,7 +185,7 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 		context: {
 			includeDeclaration: true,
 		},
-	} as any, repoRevSpec, path);
+	} as any, repoRevCommit, path);
 
 	return fetch(`/.api/xlang/textDocument/references`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
@@ -211,7 +211,9 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
 			query,
 			limit,
 		},
-	}, { repoURI: workspace.uri, rev: workspace.rev }, path);
+	}, { repoURI: workspace.uri, rev: workspace.rev, commitID: workspace.rev }, path);
+
+	// TODO(slimsag): Is workspace.rev always a commit ID? Why not call it that?
 
 	return fetch(`/.api/xlang/workspace/xreferences`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {

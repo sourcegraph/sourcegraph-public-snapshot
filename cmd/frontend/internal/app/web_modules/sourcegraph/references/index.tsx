@@ -5,9 +5,10 @@ import { addReferences, ReferencesContext, setReferences, setReferencesLoad, set
 const contextFetches = new Set<string>();
 
 export function triggerReferences(context: ReferencesContext): void {
-	const repoRevSpec = {
+	const repoRevCommit = {
 		repoURI: context.loc.uri,
 		rev: context.loc.rev,
+		commitID: context.loc.rev, // TODO: commitID != rev
 	};
 
 	setReferences({ ...referencesStore.getValue(), context });
@@ -17,7 +18,7 @@ export function triggerReferences(context: ReferencesContext): void {
 	if (!contextFetches.has(fetchKey)) {
 		setReferencesLoad(context.loc, "pending");
 		setXReferencesLoad(context.loc, "pending");
-		fetchReferences(context.loc.char - 1, context.loc.path, context.loc.line - 1, repoRevSpec)
+		fetchReferences(context.loc.char - 1, context.loc.path, context.loc.line - 1, repoRevCommit)
 			.then((references) => {
 				if (references) {
 					addReferences(context.loc, references);
@@ -27,11 +28,11 @@ export function triggerReferences(context: ReferencesContext): void {
 			.catch(() => {
 				setReferencesLoad(context.loc, "completed");
 			});
-		fetchXdefinition(context.loc.char - 1, context.loc.path, context.loc.line - 1, repoRevSpec)
+		fetchXdefinition(context.loc.char - 1, context.loc.path, context.loc.line - 1, repoRevCommit)
 			.then(defInfo => {
 				if (!defInfo) { throw new Error("no xrefs"); }
 
-				fetchDependencyReferences(repoRevSpec.repoURI, repoRevSpec.rev, context.loc.path, 40, 25).then((data) => {
+				fetchDependencyReferences(repoRevCommit.repoURI, repoRevCommit.rev, context.loc.path, 40, 25).then((data) => {
 					if (!data || !data.repoData.repos) { throw new Error("no xrefs"); }
 					const idToRepo = (id: number): any => {
 						const i = data.repoData.repoIds.indexOf(id);

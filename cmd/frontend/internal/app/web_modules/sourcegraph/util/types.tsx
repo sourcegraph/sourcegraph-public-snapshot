@@ -60,8 +60,24 @@ export interface Reference {
 	repoURI: string;
 }
 
+/**
+ * ResolvedRepoRevSpec is a RepoRevSpec whose rev field has been resolved to an
+ * proper commit ID (stored here in the commitID field).
+ */
+export interface ResolvedRepoRevSpec extends RepoRevSpec {
+	commitID: string;
+}
+
 export interface RepoRevSpec {
 	repoURI: string;
+
+	/**
+	 * rev is any type of revision specifier: a branch name, a short commit ID,
+	 * full commit ID, or empty string (use default branch).
+	 *
+	 * use ResolvedRepoRevSpec if you need this rev resolved to the actual
+	 * commit ID.
+	 */
 	rev: string;
 }
 
