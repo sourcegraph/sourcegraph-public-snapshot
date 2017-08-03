@@ -197,9 +197,12 @@ export class ReferencesWidget extends React.Component<Props, State> {
 	}
 }
 
-function getRefURL(ref: Reference): string {
+function getRefURL(ref: Reference, rev: string): string {
+	if (rev) {
+		rev = `@${rev}`;
+	}
 	const uri = URI.parse(ref.uri);
-	return `/${uri.hostname}/${uri.path}@${uri.query}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
+	return `/${uri.hostname}${uri.path}${rev}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
 }
 
 export class ReferencesGroup extends React.Component<{ uri: string, path: string, refs: Reference[], isLocal: boolean }, {}> {
@@ -235,10 +238,16 @@ export class ReferencesGroup extends React.Component<{ uri: string, path: string
 							<div onClick={() => {
 								if (this.props.isLocal) {
 									events.GoToLocalRefClicked.log();
+
+									// use same Rev that is in the browser's URL bar.
+									window.location.href = getRefURL(ref, pageVars.Rev);
 								} else {
 									events.GoToExternalRefClicked.log();
+
+									// External refs are currently always the latest revision,
+									// so use canonical URL ("" for default branch).
+									window.location.href = getRefURL(ref, "");
 								}
-								window.location.href = getRefURL(ref);
 							}}>
 								<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
 							</div>
