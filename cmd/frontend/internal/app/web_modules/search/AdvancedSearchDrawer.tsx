@@ -98,7 +98,7 @@ export class AdvancedSearchDrawer extends React.Component<{}, SearchState> {
 				break;
 			}
 		}
-		setSearchState({ ...searchStore.getValue(), showAutocomplete: false, repos: this.state.repos + addition });
+		setSearchState({ ...searchStore.getValue(), repos: this.state.repos + addition });
 	}
 
 	onUpdateRepos(value: string): void {
