@@ -1,5 +1,5 @@
-import "app/blame/dom";
 import { fetchBlameFile } from "sourcegraph/backend";
+import "sourcegraph/blame/dom";
 import { addHunks, BlameContext, setBlame, store } from "sourcegraph/blame/store";
 import * as types from "sourcegraph/util/types";
 
