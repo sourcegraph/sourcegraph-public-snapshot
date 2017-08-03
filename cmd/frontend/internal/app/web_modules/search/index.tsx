@@ -1,3 +1,4 @@
+import { ActiveRepoResults } from "app/util/types";
 import * as querystring from "querystring";
 import * as URI from "urijs";
 
@@ -10,13 +11,12 @@ export interface SearchParams {
 	matchRegex: boolean;
 }
 
-export function handleSearchInput(e: any, readSearchParamsFromURL: boolean): void {
+export function handleSearchInput(e: any, params: SearchParams): void {
 	const query = e.target.value;
 	if ((e.key !== "Enter" && e.keyCode !== 13) || !query) {
 		return;
 	}
 
-	const params = readSearchParamsFromURL ? getSearchParamsFromURL(window.location.href) : getSearchParamsFromLocalStorage();
 	params.query = query;
 
 	let newTab = false;
@@ -52,4 +52,22 @@ export function getSearchParamsFromLocalStorage(): SearchParams {
 		matchWord: window.localStorage.getItem("searchMatchWord") === "true",
 		matchRegex: window.localStorage.getItem("searchMatchRegex") === "true",
 	};
+}
+
+export function parseRepoList(repos: string): string[] {
+	return repos.split(/\s*,\s*/).map((repo) => repo.trim());
+}
+
+export function expandActiveInactive(repos: string[], groups: ActiveRepoResults): string[] {
+	const res: string[] = [];
+	for (const repo of repos) {
+		if (repo === "active") {
+			groups.active.forEach((r) => res.push(r));
+		} else if (repo === "inactive") {
+			groups.inactive.forEach((r) => res.push(r));
+		} else {
+			res.push(repo);
+		}
+	}
+	return res;
 }

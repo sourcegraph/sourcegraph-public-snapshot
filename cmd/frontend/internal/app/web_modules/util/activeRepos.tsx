@@ -1,9 +1,9 @@
 import { fetchActiveRepos } from "app/backend";
-import * as types from "app/util/types";
+import { ActiveRepoResults } from "app/util/types";
 
 const localStorageKey = "activeRepos";
 
-interface LocalStorage extends types.ActiveRepoResults {
+interface LocalStorage extends ActiveRepoResults {
 	timestamp: number;
 }
 
@@ -11,7 +11,7 @@ interface LocalStorage extends types.ActiveRepoResults {
  * get returns the ActiveRepoResults and properly fetches / caches them in
  * local storage.
  */
-export function get(): Promise<types.ActiveRepoResults> {
+export function get(): Promise<ActiveRepoResults> {
 	// Uncomment to debug the non-cached path more easily:
 	//window.localStorage.setItem(localStorageKey, "");
 
@@ -36,4 +36,12 @@ export function get(): Promise<types.ActiveRepoResults> {
 		window.localStorage.setItem(localStorageKey, JSON.stringify(activeRepos));
 		return activeRepos;
 	});
+}
+
+export function getCurrent(): ActiveRepoResults | null {
+	const data = window.localStorage.getItem(localStorageKey);
+	if (data) {
+		return JSON.parse(data) as ActiveRepoResults;
+	}
+	return null;
 }

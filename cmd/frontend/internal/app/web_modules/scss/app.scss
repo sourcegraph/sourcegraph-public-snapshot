@@ -25,78 +25,98 @@ $nav-height: 48px;
 		}
 	}
 
-	.spin:hover {	animation: spin 0.5s ease-in-out 1; }
+	#nav {
+		position: fixed;
+		top: 0px;
+		width: 100%;
+		z-index: 10000000000000;
 
-	@keyframes spin {
-		50% { transform: rotate(180deg) scale(1.2) }
-		100% { transform: rotate(180deg) scale(1) }
-	}
+		.spin:hover {	animation: spin 0.5s ease-in-out 1; }
 
-	.header {
-		background-color: rgb(35, 48, 67);
-		height: $nav-height;
-		display: flex;
-		align-items: center;
-
-		>a {
-			outline: 0;
-			margin: 0px 16px;
+		@keyframes spin {
+			50% { transform: rotate(180deg) scale(1.2) }
+			100% { transform: rotate(180deg) scale(1) }
 		}
 
-		.fill {
-			flex: 1;
-		}
-
-		.open-on-desktop {
-			background-color: #1098AD;
-			border-radius: 2px;
+		.header {
+			background-color: rgb(35, 48, 67);
+			height: $nav-height;
 			display: flex;
 			align-items: center;
-			color: #FFFFFF;
-			height: 32px;
-			padding: 8px 12px;
-			font-size: 12px;
-			margin-right: 16px;
-			text-decoration: none;
 
-			.icon {
-				margin-left: 8px;
+			>a {
+				outline: 0;
+				margin: 0px 16px;
 			}
-		}
 
-		.search {
-			width: 248px;
-			height: 32px;
+			.fill {
+				flex: 1;
+			}
 
-			background-color: #151D28;
+			.open-on-desktop {
+				background-color: #1098AD;
+				border-radius: 2px;
+				display: flex;
+				align-items: center;
+				color: #FFFFFF;
+				height: 32px;
+				padding: 8px 12px;
+				font-size: 12px;
+				margin-right: 16px;
+				text-decoration: none;
 
-			border-radius: 2px 2px 2px 2px;
-			border: 0px solid #000000;
+				.icon {
+					margin-left: 8px;
+				}
+			}
 
-			>input {
-				display: inline-block;
-				float: left;
+			.search {
+				display: flex;
+				align-items: center;
+				width: 248px;
 				height: 32px;
 
-				color: #93A9C8;
-				background: none;
-				border: 0;
-				outline: none;
-			}
-			>input::placeholder, input:focus {
-				color: #93A9C8;
-			}
+				background-color: #151D28;
 
-			.icon {
-				display: inline-block;
-				float: left;
-				margin-left: 0.625em;
-				margin-right: 0.625em;
-				margin-top: 0.40625em;
-				color: #93A9C8;
+				border-radius: 2px 2px 2px 2px;
+				border: 0px solid #000000;
+
+				>input {
+					display: inline-block;
+					flex: 1;
+					font-size: 14px;
+					height: 32px;
+
+					color: #FFFFFF;
+					background: none;
+					border: 0;
+					outline: none;
+				}
+
+				>input::placeholder {
+					color: #93A9C8;
+				}
+
+				.icon {
+					color: #93A9C8;
+					margin: 0px 8px;
+				}
 			}
 		}
+
+		#advanced-search {
+			display: none;
+			background-color: #2A3A51;
+			border-bottom: 3px solid #2A3A51;
+			border-radius: 2px;
+		}
+
 	}
+
+	#app-container {
+		margin-top: $nav-height;
+	}
+
 }
 
 // Define the "system" font family

@@ -1,5 +1,5 @@
+import { BlobURL, ParsedURL } from "app/util/types";
 import * as URI from "urijs";
-import { BlobURL, ParsedURL } from "util/types";
 
 // parse parses a generic Sourcegraph URL, where most components are shared
 // across all routes, e.g. repo URI and rev.
@@ -60,8 +60,27 @@ export function parseBlob(_loc: string = window.location.href): BlobURL {
 	return v;
 }
 
+export function isBlob(url: BlobURL): boolean {
+	return Boolean(url.uri && url.path);
+}
+
 export function toBlob(loc: BlobURL): string {
 	return `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/blob/${loc.path}${toBlobHash(loc)}`;
+}
+
+export function isSearchResultsPage(loc: Location = window.location): boolean {
+	// TODO(john): share route name with JS context?
+	return loc.pathname === "/search";
+}
+
+export function isHomePage(loc: Location = window.location): boolean {
+	// TODO(john): share route name with JS context?
+	return loc.pathname === "/";
+}
+
+export function isBlobPage(loc: Location = window.location): boolean {
+	// TODO(john): share route name with JS context?
+	return isBlob(parseBlob(loc.href));
 }
 
 export function toBlobHash(loc: BlobURL): string {

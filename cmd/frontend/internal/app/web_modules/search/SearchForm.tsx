@@ -102,7 +102,7 @@ export class SearchForm extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		return <div className={Styles.form}>
 			<div className={Styles.searchRow}>
-				<input className={Styles.searchInput} autoFocus placeholder="Search..." value={this.state.query} onKeyDown={(e) => handleSearchInput(e, false)} onChange={(e) => {
+				<input className={Styles.searchInput} autoFocus placeholder="Search..." value={this.state.query} onKeyDown={(e) => handleSearchInput(e, { ...this.state } as any)} onChange={(e) => {
 					window.localStorage.setItem("searchQuery", e.target.value);
 					this.setState({ ...this.state, query: e.target.value });
 				}} />
@@ -148,7 +148,7 @@ export class SearchForm extends React.Component<Props, State> {
 			</div>
 			<div className={Styles.filtersSection}>
 				{
-					[{ key: "matchCase", label: "Match case" }, { key: "matchWord", label: "Match whole word" }, { key: "matchRegex", label: "Regex" }]
+					[{ key: "matchCase", label: "Match case" }, { key: "matchWord", label: "Match word" }, { key: "matchRegex", label: "Regex" }]
 						.map((filter, i) => {
 							const clickHandler = () => {
 								const newValue: boolean = !this.state[filter.key];
