@@ -213,12 +213,14 @@ export function highlightAndScrollToLine(repoURI: string, rev: string, path: str
 	highlightLine(repoURI, rev, path, line, cells);
 
 	// Scroll to the line.
-	const scrollable = document.querySelector("#blob-table")!;
-	const scrollableRect = scrollable.getBoundingClientRect(); // e.x. the navbar height
-
+	const scrollingElement = document.querySelector("#blob-table")!;
+	const viewportBound = scrollingElement.getBoundingClientRect();
+	const blobTable = document.querySelector("#blob-table>table")!; // table that we're positioning tooltips relative to.
+	const tableBound = blobTable.getBoundingClientRect(); // tables bounds
 	const cell = cells[line - 1];
-	const cellRect = cell.cell.getBoundingClientRect(); // e.x. distance from top of code cell to top of table
-	scrollable.scrollTop = (cellRect.top + (cellRect.height / 2)) - (scrollableRect.top + (scrollableRect.height / 2));
+	const targetBound = cell.cell.getBoundingClientRect(); // our target elements bounds
+
+	scrollingElement.scrollTop = targetBound.top - tableBound.top - (viewportBound.height / 2) + (targetBound.height / 2);
 }
 
 window.onhashchange = (hash) => {
