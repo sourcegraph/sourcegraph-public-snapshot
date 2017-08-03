@@ -182,11 +182,11 @@ function registerListeners(): void {
 	}
 }
 
-function highlightLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
+function highlightLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[]): void {
 	triggerBlame({
 		time: moment(),
 		repoURI: repoURI,
-		rev: rev,
+		commitID: commitID,
 		path: path,
 		line: line,
 	});
@@ -211,8 +211,8 @@ function highlightLine(repoURI: string, rev: string, path: string, line: number,
 	}
 }
 
-export function highlightAndScrollToLine(repoURI: string, rev: string, path: string, line: number, cells: CodeCell[]): void {
-	highlightLine(repoURI, rev, path, line, cells);
+export function highlightAndScrollToLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[]): void {
+	highlightLine(repoURI, commitID, path, line, cells);
 
 	// Scroll to the line.
 	const scrollingElement = document.querySelector("#blob-table")!;
@@ -238,9 +238,8 @@ window.onhashchange = (hash) => {
 		// recursively.
 		return;
 	}
-	const rev = pageVars.CommitID;
 	const cells = getCodeCellsForAnnotation();
-	highlightAndScrollToLine(newURL.uri!, rev, newURL.path, newURL.line, cells);
+	highlightAndScrollToLine(newURL.uri!, pageVars.CommitID, newURL.path, newURL.line, cells);
 };
 
 export function getCodeCellsForAnnotation(): CodeCell[] {

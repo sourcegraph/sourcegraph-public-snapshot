@@ -7,7 +7,7 @@ export function triggerBlame(ctx: BlameContext): void {
 	setBlame({ ...store.getValue(), context: ctx, displayLoading: false });
 
 	// Fetch the data.
-	fetchBlameFile(ctx.repoURI, ctx.rev, ctx.path, ctx.line, ctx.line).then((hunks: types.Hunk[]) => {
+	fetchBlameFile(ctx.repoURI, ctx.commitID, ctx.path, ctx.line, ctx.line).then((hunks: types.Hunk[]) => {
 		if (!hunks) {
 			return;
 		}

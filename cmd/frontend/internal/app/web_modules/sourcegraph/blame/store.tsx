@@ -8,7 +8,7 @@ import * as types from "sourcegraph/util/types";
 export interface BlameContext {
 	time: moment.Moment;
 	repoURI: string;
-	rev: string;
+	commitID: string;
 	path: string;
 	line: number;
 }
@@ -44,7 +44,7 @@ export const setBlame: (t: BlameState) => void = actionDispatcher((payload) => (
 }));
 
 export function contextKey(ctx: BlameContext): string {
-	return `${ctx.repoURI}@${ctx.rev}/${ctx.path}#${ctx.line}`;
+	return `${ctx.repoURI}@${ctx.commitID}/${ctx.path}#${ctx.line}`;
 }
 
 export function addHunks(ctx: BlameContext, hunks: types.Hunk[]): void {
