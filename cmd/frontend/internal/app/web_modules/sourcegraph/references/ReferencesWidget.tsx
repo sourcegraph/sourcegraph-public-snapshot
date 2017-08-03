@@ -161,11 +161,11 @@ export class ReferencesWidget extends React.Component<Props, State> {
 				<div className={Styles.titleBarTitle}>
 					{this.state.context.word}
 				</div>
-				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, modalMode: "local", modal: "references" })} onClick={() => events.ShowLocalRefsButtonClicked.log()}>
+				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: "local", modal: "references" })} onClick={() => events.ShowLocalRefsButtonClicked.log()}>
 					This repository
 				</a>
 				<div className={Styles.badge}>{localRefs.length}</div>
-				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, modalMode: "external", modal: "references" })} onClick={() => events.ShowExternalRefsButtonClicked.log()}>
+				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: "external", modal: "references" })} onClick={() => events.ShowExternalRefsButtonClicked.log()}>
 					Other repositories
 				</a>
 				<div className={Styles.badge}>{externalRefs.length}</div>
