@@ -204,6 +204,11 @@ export function fetchReferences(col: number, path: string, line: number, repoRev
 }
 
 export function fetchXreferences(workspace: Workspace, path: string, query: any, hints: any, limit: any): Promise<Reference[] | null> {
+	const repoRevCommit = {
+		repoURI: workspace.uri,
+		rev: workspace.rev,
+		commitID: workspace.rev, // always a commit ID, comes from backend so we can't easily rename.
+	};
 	const body = wrapLSP({
 		method: "workspace/xreferences",
 		params: {
@@ -211,9 +216,7 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
 			query,
 			limit,
 		},
-	}, { repoURI: workspace.uri, rev: workspace.rev, commitID: workspace.rev }, path);
-
-	// TODO(slimsag): Is workspace.rev always a commit ID? Why not call it that?
+	}, repoRevCommit, path);
 
 	return fetch(`/.api/xlang/workspace/xreferences`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
