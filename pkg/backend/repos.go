@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -138,7 +139,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			// GitHub repo search API calls are subject to a strict
 			// rate limit shared by all unauthenticated users. We
 			// would quickly exceed it if we allowed this.
-			///return nil, errors.New("refusing to perform remote search for unauthenticated user")
+			return nil, errors.New("refusing to perform remote search for unauthenticated user")
 		}
 
 		ghquery := opt.Query
