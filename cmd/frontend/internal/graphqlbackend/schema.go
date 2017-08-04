@@ -60,6 +60,8 @@ type Repository implements Node {
 	description: String!
 	language: String!
 	fork: Boolean!
+	starsCount: Int
+	forksCount: Int
 	private: Boolean!
 	createdAt: String!
 	pushedAt: String!
