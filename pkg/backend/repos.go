@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -139,7 +138,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			// GitHub repo search API calls are subject to a strict
 			// rate limit shared by all unauthenticated users. We
 			// would quickly exceed it if we allowed this.
-			return nil, errors.New("refusing to perform remote search for unauthenticated user")
+			///return nil, errors.New("refusing to perform remote search for unauthenticated user")
 		}
 
 		ghquery := opt.Query
@@ -277,10 +276,10 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 	uintPtrEqual := func(a, b *uint) bool {
 		return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
 	}
-	if uintPtrEqual(ghrepo.StarsCount, repo.StarsCount) {
+	if !uintPtrEqual(ghrepo.StarsCount, repo.StarsCount) {
 		repo.StarsCount = ghrepo.StarsCount
 	}
-	if uintPtrEqual(ghrepo.ForksCount, repo.ForksCount) {
+	if !uintPtrEqual(ghrepo.ForksCount, repo.ForksCount) {
 		repo.ForksCount = ghrepo.ForksCount
 	}
 	if ghrepo.Private != repo.Private {
