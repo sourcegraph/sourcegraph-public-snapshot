@@ -26,7 +26,7 @@ function setLineBlameContent(line: number, blameContent: string): void {
 		const cell = cells[line - 1];
 		const blame = document.createElement("span");
 		blame.classList.add("blame");
-		blame.appendChild(document.createTextNode(blameContent));
+		blame.setAttribute("data-blame", blameContent);
 		cell.appendChild(blame);
 	}
 }

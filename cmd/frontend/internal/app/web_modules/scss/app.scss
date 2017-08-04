@@ -168,6 +168,10 @@ $nav-height: 48px;
 	width: 100%;
 
 	.line-number {
+		&::before {
+			// draw line number with css so it cannot be copied to clipboard
+			content: attr(data-line-number);
+		}
 		color: #31445E;
 	}
 
@@ -216,6 +220,9 @@ $nav-height: 48px;
 			font-size: .75em;
 			height: 1.7em;
 			>.blame {
+				&::before {
+					content: attr(data-blame);
+				}
 				color: #464d57;
 				padding-left: 4em;
 				display: inline-block;

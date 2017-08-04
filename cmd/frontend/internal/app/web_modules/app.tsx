@@ -122,7 +122,7 @@ window.addEventListener("DOMContentLoaded", () => {
 			const row = document.createElement("tr");
 			const line = document.createElement("td");
 			line.classList.add("line-number");
-			line.appendChild(document.createTextNode("" + (i + 1)));
+			line.setAttribute("data-line-number", "" + (i + 1));
 
 			const cell = document.createElement("td");
 			cell.classList.add("code-cell");
@@ -249,7 +249,7 @@ export function getCodeCellsForAnnotation(): CodeCell[] {
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];
 
-		const line = parseInt(row.cells[0].textContent!, 10);
+		const line = parseInt(row.cells[0].getAttribute("data-line-number")!, 10);
 		const codeCell: HTMLTableDataCellElement = row.cells[1]; // the actual cell that has code inside; each row contains multiple columns
 		cells.push({
 			cell: codeCell as HTMLElement,
