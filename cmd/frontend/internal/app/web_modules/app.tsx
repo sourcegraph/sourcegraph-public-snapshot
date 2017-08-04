@@ -1,7 +1,12 @@
 import { highlightBlock } from "highlight.js";
 import * as moment from "moment";
+import * as React from "react";
+import { render } from "react-dom";
+import * as backend from "sourcegraph/backend";
 import * as xhr from "sourcegraph/backend/xhr";
 import { triggerBlame } from "sourcegraph/blame";
+import { TreeViewer } from "sourcegraph/components/FileTree/TreeViewer";
+import { buildFileTree } from "sourcegraph/components/FileTree/util";
 import { injectReferencesWidget } from "sourcegraph/references/inject";
 import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from "sourcegraph/search/inject";
 import { injectShareWidget } from "sourcegraph/share";
@@ -41,6 +46,14 @@ window.addEventListener("DOMContentLoaded", () => {
 	injectShareWidget();
 	const u = url.parseBlob();
 	if (u.uri && u.path) {
+		const mount = document.querySelector("#tree-viewer")! as HTMLElement;
+		backend.localStoreListAllFiles(u.uri, pageVars.CommitID).then(resp => {
+			const treeData = buildFileTree(resp, u.path);
+
+			// TODO(slimsag): persist the toggled state across page loads
+			const toggled = false;
+			render(<TreeViewer onToggled={handleOnToggled} toggled={toggled} onChanged={handleOnChanged} treeData={treeData} parentRef={mount} />, mount);
+		});
 
 		const blob = document.querySelector("#blob")!;
 		blob.className = getModeFromExtension(getPathExtension(u.path));
@@ -171,6 +184,34 @@ window.addEventListener("DOMContentLoaded", () => {
 	// Note that this is a destructive operation (it changes the page URL and replaces browser state)
 	handleQueryEvents(window.location.href);
 });
+
+function handleOnToggled(toggled: boolean): void {
+	// TODO(slimsag): add eventLogger calls
+	//eventLogger.logFileTreeToggleClicked({toggled: toggled});
+
+	const treeViewer = document.querySelector("#tree-viewer")! as HTMLElement;
+	treeViewer.style.display = toggled ? "block" : "none";
+}
+
+function handleOnChanged(changedItems: any): void {
+	if (changedItems.length !== 1) {
+		return;
+	}
+	const path = changedItems[0].original.id;
+	if (!path) {
+		return;
+	}
+
+	// TODO(slimsag): add eventLogger calls
+	//eventLogger.logFileTreeItemClicked({repo: gitHubState.repo});
+
+	const u = url.parseBlob(); // TODO(slimsag): technically this is NOT always a blob page. Should probably use a closure or more generic URL parsing func.
+
+	if (u.path === path) {
+		return;
+	}
+	window.location.href = url.toBlob({ uri: u.uri, rev: u.rev, path: path });
+}
 
 function registerListeners(): void {
 	const openOnGitHub = document.querySelector(".github")!;
