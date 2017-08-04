@@ -3,6 +3,7 @@ package github
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os/exec"
 	"regexp"
 
@@ -255,6 +256,13 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		}
 		return *b
 	}
+	uintv := func(v *int) *uint {
+		if v == nil || *v > math.MaxUint32 {
+			return nil
+		}
+		u := uint(*v)
+		return &u
+	}
 	repo := sourcegraph.Repo{
 		URI:           "github.com/" + *ghrepo.FullName,
 		DefaultBranch: strv(ghrepo.DefaultBranch),
@@ -262,6 +270,8 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		Language:      strv(ghrepo.Language),
 		Private:       boolv(ghrepo.Private),
 		Fork:          boolv(ghrepo.Fork),
+		StarsCount:    uintv(ghrepo.StargazersCount),
+		ForksCount:    uintv(ghrepo.ForksCount),
 	}
 	if ghrepo.CreatedAt != nil {
 		repo.CreatedAt = &ghrepo.CreatedAt.Time

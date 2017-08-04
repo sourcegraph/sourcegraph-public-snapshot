@@ -358,6 +358,8 @@ declare namespace GQL {
 		description: string;
 		language: string;
 		fork: boolean;
+		starsCount: number | null;
+		forksCount: number | null;
 		private: boolean;
 		createdAt: string;
 		pushedAt: string;

@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -139,7 +138,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			// GitHub repo search API calls are subject to a strict
 			// rate limit shared by all unauthenticated users. We
 			// would quickly exceed it if we allowed this.
-			return nil, errors.New("refusing to perform remote search for unauthenticated user")
+			///return nil, errors.New("refusing to perform remote search for unauthenticated user")
 		}
 
 		ghquery := opt.Query
@@ -157,12 +156,21 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			ghrepos, err = github.SearchRepo(ctx, ghquery, nil)
 		}
 		if err == nil {
-			existingRepos := make(map[string]struct{}, len(repos))
+			existingRepos := make(map[string]*sourcegraph.Repo, len(repos))
 			for _, repo := range repos {
-				existingRepos[repo.URI] = struct{}{}
+				existingRepos[repo.URI] = repo
 			}
 			for _, ghrepo := range ghrepos {
-				if _, in := existingRepos[ghrepo.URI]; !in {
+				if repo, in := existingRepos[ghrepo.URI]; in {
+					// Stars and forks counts are not yet persisted in the DB, so
+					// localstore.Repos.List repos need to have those fields set from the ghrepo.
+					if repo.StarsCount == nil {
+						repo.StarsCount = ghrepo.StarsCount
+					}
+					if repo.ForksCount == nil {
+						repo.ForksCount = ghrepo.ForksCount
+					}
+				} else {
 					repos = append(repos, ghrepo)
 				}
 			}
@@ -264,6 +272,15 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 			updateOp.Fork = sourcegraph.ReposUpdateOp_FALSE
 		}
 		updated = true
+	}
+	uintPtrEqual := func(a, b *uint) bool {
+		return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
+	}
+	if !uintPtrEqual(ghrepo.StarsCount, repo.StarsCount) {
+		repo.StarsCount = ghrepo.StarsCount
+	}
+	if !uintPtrEqual(ghrepo.ForksCount, repo.ForksCount) {
+		repo.ForksCount = ghrepo.ForksCount
 	}
 	if ghrepo.Private != repo.Private {
 		repo.Private = ghrepo.Private

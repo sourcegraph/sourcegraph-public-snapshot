@@ -88,6 +88,10 @@ type Repo struct {
 	Blocked bool `json:"Blocked,omitempty"`
 	// Fork is whether this repository is a fork.
 	Fork bool `json:"Fork,omitempty"`
+	// StarsCount is the number of users who have starred this repository.
+	StarsCount *uint `json:"Stars,omitempty"`
+	// ForksCount is the number of forks of this repository that exist.
+	ForksCount *uint `json:"Forks,omitempty"`
 	// Private is whether this repository is private. Note: this field
 	// is currently only used when the repository is hosted on GitHub.
 	// All locally hosted repositories should be public. If Private is

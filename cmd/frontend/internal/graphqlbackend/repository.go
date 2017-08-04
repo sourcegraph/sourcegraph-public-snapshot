@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"sort"
 	"sync"
 
@@ -179,6 +180,22 @@ func (r *repositoryResolver) Language() string {
 
 func (r *repositoryResolver) Fork() bool {
 	return r.repo.Fork
+}
+
+func (r *repositoryResolver) StarsCount() *int32 {
+	return uintPtrToInt32Ptr(r.repo.StarsCount)
+}
+
+func (r *repositoryResolver) ForksCount() *int32 {
+	return uintPtrToInt32Ptr(r.repo.ForksCount)
+}
+
+func uintPtrToInt32Ptr(v *uint) *int32 {
+	if v == nil || *v > math.MaxInt32 {
+		return nil
+	}
+	v32 := int32(*v)
+	return &v32
 }
 
 func (r *repositoryResolver) PushedAt() string {
