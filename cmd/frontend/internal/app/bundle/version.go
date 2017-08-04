@@ -1,3 +1,3 @@
 package bundle
 
-var Version = "2017-07-31-19:48:20-dan-a4ea719"
+var Version = "2017-08-04-21:13:50-dan-4ac3ce1"
