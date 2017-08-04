@@ -48,8 +48,8 @@ func addGitHubDefaults() {
 	// a user-provided clone URL is passed to reverse, it still functions as
 	// expected. For the case of OriginMap, the first one is returned (i.e. the
 	// order below matters).
-	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "http://github.com/%.git"})
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "https://github.com/%.git"})
+	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "http://github.com/%.git"})
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "ssh://git@github.com:%.git"})
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "git://git@github.com:%.git"})
 	originMap = append(originMap, prefixAndOrgin{Prefix: "github.com/", Origin: "git@github.com:%.git"})

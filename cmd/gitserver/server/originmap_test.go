@@ -177,3 +177,43 @@ func TestReverse(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaults(t *testing.T) {
+	tests := []struct {
+		repo, origin    string
+		canonicalOrigin bool
+	}{
+		{"github.com/gorilla/mux", "https://github.com/gorilla/mux.git", true},
+		{"github.com/gorilla/pat", "http://github.com/gorilla/pat.git", false},
+		{"github.com/gorilla/pat", "ssh://git@github.com:gorilla/pat.git", false},
+		{"github.com/gorilla/pat", "git://git@github.com:gorilla/pat.git", false},
+		{"github.com/gorilla/pat", "git@github.com:gorilla/pat.git", false},
+
+		{"bitbucket.org/gorilla/pat", "https://bitbucket.org/gorilla/pat.git", true},
+		{"bitbucket.org/gorilla/pat", "git@bitbucket.org:gorilla/pat.git", false},
+
+		// We only support github and bitbucket by default
+		{"", "https://random.gitolite.org/foo/bar.git", false},
+	}
+
+	restoreOriginMap := originMap
+	defer func() {
+		originMap = restoreOriginMap
+	}()
+	originMap = nil
+	addGitHubDefaults()
+
+	for _, test := range tests {
+		got := reverse(test.origin)
+		if got != test.repo {
+			t.Errorf("reverse(%q) == %q != %q", test.origin, got, test.repo)
+		}
+
+		if test.canonicalOrigin {
+			got = OriginMap(test.repo)
+			if got != test.origin {
+				t.Errorf("OriginMap(%q) == %q != %q", test.repo, got, test.origin)
+			}
+		}
+	}
+}

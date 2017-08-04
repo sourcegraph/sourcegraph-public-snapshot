@@ -80,7 +80,7 @@ func TestRequest(t *testing.T) {
 	}
 
 	testRepoExists = func(ctx context.Context, origin string, opt *vcs.RemoteOpts) bool {
-		return origin == "http://github.com/nicksnyder/go-i18n.git"
+		return origin == "https://github.com/nicksnyder/go-i18n.git"
 	}
 	defer func() {
 		testRepoExists = nil
