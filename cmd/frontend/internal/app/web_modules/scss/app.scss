@@ -1,4 +1,5 @@
 @import "libs/highlight";
+@import "../sourcegraph/components/FileTree/jstree.css";
 
 $nav-height: 48px;
 
@@ -175,9 +176,36 @@ $nav-height: 48px;
 		color: #31445E;
 	}
 
+	#tree-blob-container {
+		display: flex;
+		flex-direction: row;
+		height: $blob-height;
+		width: 100%;
+		flex: 5;
+	}
+
+	#tree-viewer {
+		display: none;
+		position: relative;
+		flex: 1;
+		background-color: #233043;
+
+		/* TODO(slimsag): HACK: remove this and correctly set jstree height.. */
+		overflow: auto;
+
+		/*
+			These are only here because they are layout related; everything else
+			jstree should go in jstree.css
+		*/
+		.jstree {
+			overflow: auto;
+			height: 100%;
+		}
+	}
+
 	#blob-table {
 		position: relative;
-		flex: 5;
+		flex: 4;
 		overflow: auto;
 
 		table {
@@ -198,7 +226,7 @@ $nav-height: 48px;
 	}
 
 	#blob-table>table {
-		margin-bottom: 1.3em;
+		margin-bottom: 26px;
 		border-collapse: collapse;
 		.line-number, .code-cell {
 			padding: 0;
@@ -213,9 +241,11 @@ $nav-height: 48px;
 			color: #31445E;
 			text-align: right;
 			font-size: .75em;
-			padding-right: 1em;
+			padding-right: .5em;
+			min-width: 3em;
 		}
 		.code-cell {
+			padding-left: .5em;
 			white-space: pre;
 			font-size: .75em;
 			height: 1.7em;
@@ -264,7 +294,8 @@ $nav-height: 48px;
 	.navigation {
 		display: flex;
 		align-items: center;
-		margin-right: 30px;
+		margin-right: 1.5em;
+		margin-left: .75em;
 
 		.group-icon {
 			margin: 0px 10px;
@@ -282,7 +313,6 @@ $nav-height: 48px;
 			width: 10px;
 			height: 12px;
 			margin-right: 10px;
-			margin-left: 15px;
 		}
 
 		.book-link {
