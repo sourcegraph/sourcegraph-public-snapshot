@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/jsonrpc2"
+
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -28,7 +30,10 @@ func connectToServer(ctx context.Context, mode string) (io.ReadWriteCloser, erro
 	if connect, ok := ServersByMode[mode]; ok {
 		return connect()
 	}
-	return nil, fmt.Errorf("xlang server proxy: no server registered for mode %q", mode)
+	return nil, &jsonrpc2.Error{
+		Code:    CodeModeNotFound,
+		Message: fmt.Sprintf("xlang server proxy: no server registered for mode %q", mode),
+	}
 }
 
 // RegisterServersFromEnv registers a lang/build server for each

@@ -12,6 +12,13 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
+const (
+	// CodeModeNotFound is the JSON-RPC 2.0 error code that indicates that the client
+	// requested to initialize a session for a mode (language ID, such as "go") that no
+	// servers are registered to handle.
+	CodeModeNotFound = -32000
+)
+
 // New creates a new LSP proxy.
 func New() *Proxy {
 	return &Proxy{
