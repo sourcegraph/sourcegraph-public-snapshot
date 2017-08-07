@@ -29,10 +29,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.StrictSlash(true)
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoCreate).Handler(traceutil.TraceRoute(handler(serveRepoCreate)))
-	m.Get(apirouter.RepoEnsure).Handler(traceutil.TraceRoute(handler(serveRepoEnsure)))
-	m.Get(apirouter.RepoRefresh).Handler(traceutil.TraceRoute(handler(func(w http.ResponseWriter, r *http.Request) error { return nil }))) // legacy
-	m.Get(apirouter.RepoResolveRev).Handler(traceutil.TraceRoute(handler(serveRepoResolveRev)))
 	m.Get(apirouter.RepoShield).Handler(traceutil.TraceRoute(handler(serveRepoShield)))
 	m.Get(apirouter.ReposUpdate).Handler(traceutil.TraceRoute(handler(serveReposUpdate)))
 

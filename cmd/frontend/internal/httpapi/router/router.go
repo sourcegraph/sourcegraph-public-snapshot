@@ -15,10 +15,6 @@ const (
 	LSP     = "lsp"
 
 	GlobalSearch     = "global.search"
-	RepoCreate       = "repo.create"
-	RepoEnsure       = "repo.ensure"
-	RepoRefresh      = "repo.refresh"
-	RepoResolveRev   = "repo.resolve-rev"
 	RepoShield       = "repo.shield"
 	ReposUpdate      = "repos.update"
 	BetaSubscription = "beta-subscription"
@@ -44,8 +40,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 
-	base.Path("/repos").Methods("POST").Name(RepoCreate)
-	base.Path("/repos-ensure").Methods("POST").Name(RepoEnsure)
 	base.Path("/repos-update").Methods("POST").Name(ReposUpdate)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
@@ -54,9 +48,6 @@ func New(base *mux.Router) *mux.Router {
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
-	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
-	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
-	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
 	repo.Path("/shield").Methods("GET").Name(RepoShield)
 
 	return base
