@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -51,7 +53,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	_, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -76,19 +78,31 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	notifyThreadParticipants(thread, comments, comment)
+	notifyThreadParticipants(repo, thread, comments, comment)
 
 	return &threadResolver{thread: thread}, nil
 }
 
 // notifyThreadParticipants sends email notifications to the participants in the comment thread.
-func notifyThreadParticipants(thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) {
+func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) {
 	if !notif.EmailIsConfigured() {
 		return
 	}
 	emails := emailsToNotify(previousComments, comment)
 	for _, email := range emails {
-		notif.SendMandrillTemplate("new-comment", "", email, "New comment from "+comment.AuthorName, []gochimp.Var{}, []gochimp.Var{
+		subject := fmt.Sprintf("[%s] %s (#%d)", repo.RemoteURI, path.Base(thread.File), thread.ID)
+		if len(previousComments) > 0 {
+			subject = "Re: " + subject
+		}
+		config := &notif.EmailConfig{
+			Template:  "new-comment",
+			FromName:  comment.AuthorName,
+			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
+			ToName:    "",                        // We don't know names right now.
+			ToEmail:   email,
+			Subject:   subject,
+		}
+		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
 			gochimp.Var{Name: "AUTHOR", Content: comment.AuthorName},
 			gochimp.Var{Name: "AUTHOR_EMAIL", Content: comment.AuthorEmail},
 			gochimp.Var{Name: "FILENAME", Content: thread.File},

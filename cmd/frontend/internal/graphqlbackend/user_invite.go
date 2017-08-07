@@ -72,7 +72,15 @@ func (*schemaResolver) InviteOrgMemberToSourcegraph(ctx context.Context, args *s
 // sendEmail lets us avoid sending emails in tests.
 var sendEmail = func(template, name, email, subject string, templateContent []gochimp.Var, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
 	if notif.EmailIsConfigured() {
-		return notif.SendMandrillTemplateBlocking(template, name, email, subject, templateContent, mergeVars)
+		config := &notif.EmailConfig{
+			Template:  template,
+			FromName:  "Sourcegraph",
+			FromEmail: "noreply@sourcegraph.com",
+			ToName:    name,
+			ToEmail:   email,
+			Subject:   subject,
+		}
+		return notif.SendMandrillTemplateBlocking(config, templateContent, mergeVars)
 	}
 	return nil, errors.New("email client is not configured")
 }
