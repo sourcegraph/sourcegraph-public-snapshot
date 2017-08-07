@@ -107,8 +107,13 @@ func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.T
 			gochimp.Var{Name: "AUTHOR_EMAIL", Content: comment.AuthorEmail},
 			gochimp.Var{Name: "FILENAME", Content: thread.File},
 			gochimp.Var{Name: "PREVIEW", Content: comment.Contents},
+			gochimp.Var{Name: "COMMENT_URL", Content: getURL(repo, thread, comment)},
 		})
 	}
+}
+
+func getURL(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment) string {
+	return fmt.Sprintf("https://about.sourcegraph.com/open-native#open?resource=repo://%s/%s&threadId=%d&commentId=%d", repo.RemoteURI, thread.File, thread.ID, comment.ID)
 }
 
 // maxEmails is a limit on the number of email notifications
