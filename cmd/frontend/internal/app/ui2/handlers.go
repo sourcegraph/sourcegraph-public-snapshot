@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -86,6 +87,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, e
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
 				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+				return nil, nil
+			}
+			if legacyerr.ErrCode(err) == legacyerr.NotFound {
+				// Repo does not exist.
+				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
