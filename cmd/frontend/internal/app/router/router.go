@@ -35,6 +35,8 @@ const (
 	GDDORefs = "gddo.refs"
 	Editor   = "editor"
 
+	DebugHeaders = "debug.headers"
+
 	GopherconLiveBlog = "gophercon.live.blog"
 
 	GoSymbolURL = "go-symbol-url"
@@ -73,6 +75,8 @@ func New() *Router {
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)
+
+	base.Path("/-/debug/headers").Methods("GET").Name(DebugHeaders)
 
 	base.Path("/gophercon").Methods("GET").Name(GopherconLiveBlog)
 

@@ -83,6 +83,11 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.GDDORefs).Handler(traceutil.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(traceutil.TraceRoute(errorutil.Handler(serveEditor)))
 
+	r.Get(router.DebugHeaders).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Del("Cookie")
+		r.Header.Write(w)
+	})))
+
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)
 	h = session.CookieMiddleware(h)

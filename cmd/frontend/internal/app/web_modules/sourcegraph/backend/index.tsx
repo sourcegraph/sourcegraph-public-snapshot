@@ -361,3 +361,89 @@ export function fetchActiveRepos(): Promise<types.ActiveRepoResults> {
 		return json.data.root.activeRepos;
 	});
 }
+
+const fileTreeCache = new Map<string, Promise<any>>();
+
+export function listAllFiles(repo: string, revision: string): Promise<any> {
+	const key = cacheKey(repo, revision);
+	const promiseHit = fileTreeCache.get(key);
+	if (promiseHit) {
+		return promiseHit;
+	}
+
+	const body = {
+		query: `query FileTree($repo: String!, $revision: String!) {
+			root {
+				repository(uri: $repo) {
+					commit(rev: $revision) {
+						commit {
+							tree(recursive: true) {
+								files {
+									name
+								}
+							}
+						}
+					}
+				}
+			}
+		}`,
+		variables: { repo, revision },
+	};
+	const p = fetch(`/.api/graphql?FileTree`, {
+		method: "POST",
+		body: JSON.stringify(body),
+	}).then(resp => resp.json()).then((json: any) => {
+		fileTreeCache.delete(key);
+		if (!json.data) {
+			const error = new Error("invalid response received from graphql endpoint");
+			fileTreeCache.set(key, Promise.reject(error));
+			throw error;
+		}
+		if (!json.data.root.repository || !json.data.root.repository.commit || !json.data.root.repository.commit.commit.tree || !json.data.root.repository.commit.commit.tree.files) {
+			const notFound = { notFound: true };
+			fileTreeCache.set(key, Promise.resolve(notFound));
+			return notFound;
+		}
+		const results = json.data.root.repository.commit.commit.tree.files;
+		fileTreeCache.set(key, Promise.resolve(results));
+		return results;
+	});
+	return p;
+}
+
+const localStorageKeyListAllFiles = "listAllFiles";
+
+interface LocalStorageListAllFiles {
+	timestamp: number;
+	data: any;
+}
+
+/**
+ * Like listAllFiles, except the last repo@revision result is cached in
+ * localstore. A call for a new repo@revision will wipe out the cache, i.e.
+ * only a single repo@revision is stored in localstore at a time.
+ */
+export function localStoreListAllFiles(repo: string, revision: string): Promise<any> {
+	// Uncomment to debug the non-cached path more easily:
+	window.localStorage.setItem(localStorageKeyListAllFiles, "");
+
+	const data = window.localStorage.getItem(localStorageKeyListAllFiles);
+	if (data) {
+		const d: LocalStorageListAllFiles = JSON.parse(data);
+		const fiveMin = 5 * 60 * 1000; // 5m * 60s * 1000ms == 5m in milliseconds
+		if (d.timestamp && (Date.now() - d.timestamp) < fiveMin) {
+			// data exists and isn't stale.
+			return Promise.resolve(d.data);
+		}
+	}
+
+	// Fetch fresh data and store it.
+	return listAllFiles(repo, revision).then((res) => {
+		const d: LocalStorageListAllFiles = {
+			timestamp: Date.now(),
+			data: res,
+		};
+		window.localStorage.setItem(localStorageKeyListAllFiles, JSON.stringify(d));
+		return res;
+	});
+}
