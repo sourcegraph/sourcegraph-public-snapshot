@@ -113,7 +113,7 @@ func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.T
 }
 
 func getURL(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment) string {
-	return fmt.Sprintf("https://about.sourcegraph.com/open-native#open?resource=repo://%s/%s&threadId=%d&commentId=%d", repo.RemoteURI, thread.File, thread.ID, comment.ID)
+	return fmt.Sprintf("https://about.sourcegraph.com/open-native/#open?resource=repo://%s/%s&threadId=%d&commentId=%d", repo.RemoteURI, thread.File, thread.ID, comment.ID)
 }
 
 // maxEmails is a limit on the number of email notifications
