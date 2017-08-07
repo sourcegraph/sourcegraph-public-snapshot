@@ -13,11 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
-// emailMentionPattern is a regex that matches an email mention in a comment, of
-// the form "+alice@example.com". This is a simplified pattern that does not
-// ensure the email is valid.
-var emailMentionPattern = regexp.MustCompile(`\B\+[^\s]+@[^\s]+`)
-
 type commentResolver struct {
 	comment *sourcegraph.Comment
 }
@@ -66,6 +61,12 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	// Query all comments so we can send a notification to all participants.
+	comments, err := store.Comments.GetAllForThread(ctx, int64(args.ThreadID))
+	if err != nil {
+		return nil, err
+	}
+
 	comment, err := store.Comments.Create(ctx, &sourcegraph.Comment{
 		ThreadID:    args.ThreadID,
 		Contents:    args.Contents,
@@ -75,42 +76,76 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	notifyCommentMentions(thread, comment)
+	notifyThreadParticipants(thread, comments, comment)
 
 	return &threadResolver{thread: thread}, nil
 }
 
-func notifyCommentMentions(thread *sourcegraph.Thread, comment *sourcegraph.Comment) {
-	if notif.EmailIsConfigured() {
-		const sendLimit = 50
-		emails := parseEmailsFromComment(comment.Contents)
-		if len(emails) > sendLimit {
-			// Limit number of emails we send per comment to prevent spamming.
-			emails = emails[:sendLimit]
-		}
-		for _, email := range emails {
-			notif.SendMandrillTemplate("new-comment", "", email, "New comment from "+comment.AuthorName, []gochimp.Var{}, []gochimp.Var{
-				gochimp.Var{Name: "AUTHOR", Content: comment.AuthorName},
-				gochimp.Var{Name: "AUTHOR_EMAIL", Content: comment.AuthorEmail},
-				gochimp.Var{Name: "FILENAME", Content: thread.File},
-				gochimp.Var{Name: "PREVIEW", Content: comment.Contents},
-			})
-		}
+// notifyThreadParticipants sends email notifications to the participants in the comment thread.
+func notifyThreadParticipants(thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) {
+	if !notif.EmailIsConfigured() {
+		return
+	}
+	emails := emailsToNotify(previousComments, comment)
+	for _, email := range emails {
+		notif.SendMandrillTemplate("new-comment", "", email, "New comment from "+comment.AuthorName, []gochimp.Var{}, []gochimp.Var{
+			gochimp.Var{Name: "AUTHOR", Content: comment.AuthorName},
+			gochimp.Var{Name: "AUTHOR_EMAIL", Content: comment.AuthorEmail},
+			gochimp.Var{Name: "FILENAME", Content: thread.File},
+			gochimp.Var{Name: "PREVIEW", Content: comment.Contents},
+		})
 	}
 }
 
-func parseEmailsFromComment(contents string) []string {
-	matches := emailMentionPattern.FindAll([]byte(contents), -1)
-	emails := []string{}
-	added := map[string]interface{}{}
+// maxEmails is a limit on the number of email notifications
+// that we will send per comment to mitigate potential spam abuse.
+const maxEmails = 50
 
-	for _, m := range matches {
-		e := strings.TrimPrefix(string(m), "+")
-		if _, ok := added[e]; !ok {
-			emails = append(emails, e)
-			added[e] = struct{}{}
+// emailMentionPattern is a regex that matches an email mention in a comment, of
+// the form "+alice@example.com". This is a simplified pattern that does not
+// ensure the email is valid.
+var emailMentionPattern = regexp.MustCompile(`\B\+[^\s]+@[^\s]+`)
+
+// emailsToNotify returns all emails that should be notified of the new comment in the thread of previous comments.
+func emailsToNotify(previousComments []*sourcegraph.Comment, newComment *sourcegraph.Comment) []string {
+	unique := map[string]struct{}{}
+	var emails []string
+
+	// Notify everyone already in the conversation, except for the author of the new comment.
+	for _, c := range previousComments {
+		if c.AuthorEmail != newComment.AuthorEmail {
+			emails = appendUnique(unique, emails, c.AuthorEmail)
 		}
+		emails = appendUniqueEmailsFromMentions(unique, emails, c.Contents, newComment.AuthorEmail)
 	}
 
+	// Notify all mentions in the new comment (including the original author if they mentioned themself).
+	emails = appendUniqueEmailsFromMentions(unique, emails, newComment.Contents, "")
+
+	if len(emails) > maxEmails {
+		emails = emails[:maxEmails]
+	}
 	return emails
+}
+
+// appendUniqueEmailsFromMentions parses email mentions from comment and returns
+// the ones not already in unique appended to emails.
+func appendUniqueEmailsFromMentions(unique map[string]struct{}, emails []string, comment, excludeAuthor string) []string {
+	matches := emailMentionPattern.FindAll([]byte(comment), -1)
+	for _, m := range matches {
+		email := strings.TrimPrefix(string(m), "+")
+		if email != excludeAuthor {
+			emails = appendUnique(unique, emails, email)
+		}
+	}
+	return emails
+}
+
+// appendUnique returns value appended to values if value is not a key in unique.
+func appendUnique(unique map[string]struct{}, values []string, value string) []string {
+	if _, ok := unique[value]; ok {
+		return values
+	}
+	unique[value] = struct{}{}
+	return append(values, value)
 }

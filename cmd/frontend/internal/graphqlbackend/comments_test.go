@@ -9,7 +9,7 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-func TestComments_parseEmails(t *testing.T) {
+func TestComments_appendUniqueEmailsFromMentions(t *testing.T) {
 	tests := []struct {
 		Input  string
 		Output []string
@@ -23,13 +23,73 @@ func TestComments_parseEmails(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		out := parseEmailsFromComment(test.Input)
+		out := appendUniqueEmailsFromMentions(map[string]struct{}{}, []string{}, test.Input, "")
 		if !reflect.DeepEqual(out, test.Output) {
 			t.Errorf("expected %s for input \"%s\", got: %v", test.Output, test.Input, out)
 		}
 	}
 }
 
+func TestComments_emailsToNotify(t *testing.T) {
+	one := &sourcegraph.Comment{
+		AuthorEmail: "nick@sourcegraph.com",
+		Contents:    "Yo +renfred@sourcegraph.com",
+	}
+	two := &sourcegraph.Comment{
+		AuthorEmail: "nick@sourcegraph.com",
+		Contents:    "Did you see this comment?",
+	}
+	three := &sourcegraph.Comment{
+		AuthorEmail: "nick@sourcegraph.com",
+		Contents:    "Going to mention myself to test notifications +nick@sourcegraph.com",
+	}
+	four := &sourcegraph.Comment{
+		AuthorEmail: "renfred@sourcegraph.com",
+		Contents:    "Dude, I am on vacation. Ask +sqs@sourcegraph.com or +john@sourcegraph.com",
+	}
+	five := &sourcegraph.Comment{
+		AuthorEmail: "sqs@sourcegraph.com",
+		Contents:    "Stop bothering Renfred!",
+	}
+	tests := []struct {
+		previousComments []*sourcegraph.Comment
+		newComment       *sourcegraph.Comment
+		expected         []string
+	}{
+		{
+			[]*sourcegraph.Comment{},
+			one,
+			[]string{"renfred@sourcegraph.com"},
+		},
+		{
+			[]*sourcegraph.Comment{one},
+			two,
+			[]string{"renfred@sourcegraph.com"},
+		},
+		{
+			[]*sourcegraph.Comment{one, two},
+			three,
+			[]string{"renfred@sourcegraph.com", "nick@sourcegraph.com"},
+		},
+		{
+			[]*sourcegraph.Comment{one, two, three},
+			four,
+			[]string{"nick@sourcegraph.com", "sqs@sourcegraph.com", "john@sourcegraph.com"},
+		},
+		{
+			[]*sourcegraph.Comment{one, two, three, four},
+			five,
+			[]string{"nick@sourcegraph.com", "renfred@sourcegraph.com", "john@sourcegraph.com"},
+		},
+	}
+	for _, test := range tests {
+		actual := emailsToNotify(test.previousComments, test.newComment)
+		if !reflect.DeepEqual(actual, test.expected) {
+			t.Fatalf("emailsToNotify(%+v, %+v) expected %#v; got %#v", test.previousComments, test.newComment, test.expected, actual)
+		}
+	}
+
+}
 func TestComments_Create(t *testing.T) {
 	ctx := context.Background()
 

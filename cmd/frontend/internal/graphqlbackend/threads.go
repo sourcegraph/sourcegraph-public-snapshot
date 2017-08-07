@@ -132,7 +132,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	notifyCommentMentions(newThread, comment)
+	notifyThreadParticipants(newThread, nil, comment)
 
 	return &threadResolver{thread: newThread}, nil
 }
