@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"sort"
+	"strings"
 	"sync"
 
 	graphql "github.com/neelance/graphql-go"
@@ -130,8 +131,20 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*commi
 	return r.Latest(ctx)
 }
 
-func (r *repositoryResolver) DefaultBranch() string {
-	return r.repo.DefaultBranch
+func (r *repositoryResolver) DefaultBranch(ctx context.Context) (string, error) {
+	if r.repo.DefaultBranch != "" {
+		return r.repo.DefaultBranch, nil
+	}
+
+	// If this repository was retrieved from our local database, not from an external
+	// service, then it won't have DefaultBranch set. We need to query gitserver to
+	// determine it.
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.repo.ID)
+	if err != nil {
+		return "", err
+	}
+	defaultBranch, err := vcsrepo.GitCmdRaw(ctx, []string{"rev-parse", "--abbrev-ref", "HEAD"})
+	return strings.TrimSpace(defaultBranch), err
 }
 
 func (r *repositoryResolver) Branches(ctx context.Context) ([]string, error) {
