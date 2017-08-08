@@ -365,6 +365,36 @@ $nav-height: 48px;
 	max-width: 960px;
 }
 
+.cloning {
+	$cloning-height: unquote("calc(100vh - #{$nav-height})");
+
+	height: $cloning-height;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+
+	.top, .bottom {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+	}
+	.top {
+		flex: 2;
+		>img {
+			animation:spin 2s linear infinite;
+		}
+		@keyframes spin { 100% { transform:rotate(360deg); } }
+		>h1 {
+			margin-top: 1em;
+		}
+	}
+	.bottom {
+		flex: 1;
+	}
+}
+
 .fancyerror {
 	$fancyerror-height: unquote("calc(100vh - #{$nav-height})");
 

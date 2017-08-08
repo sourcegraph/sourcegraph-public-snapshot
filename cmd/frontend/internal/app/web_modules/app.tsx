@@ -43,6 +43,15 @@ window.addEventListener("DOMContentLoaded", () => {
 		injectSearchResults();
 	}
 
+	const cloning = document.querySelector("#cloning");
+	if (cloning) {
+		// TODO: Actually poll the backend instead of just reloading the page
+		// every 5s.
+		setTimeout(() => {
+			window.location.reload(false);
+		}, 5000);
+	}
+
 	injectReferencesWidget();
 	injectShareWidget();
 	const u = url.parseBlob();

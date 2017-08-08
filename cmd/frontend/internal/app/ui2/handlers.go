@@ -1,7 +1,6 @@
 package ui2
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -96,11 +95,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError 
 			}
 			if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
 				// Repo is cloning.
-				//
-				// TODO(slimsag): Move to template, auto-refresh page upon
-				// completion, etc.
-				fmt.Fprintf(w, "<html><h3>Repository is cloning...<h3/><p>(please refresh in a few seconds)</p></html>")
-				return nil, nil
+				return nil, renderTemplate(w, "cloning.html", &struct {
+					*Common
+				}{
+					Common: common,
+				})
 			}
 			return nil, err
 		}
