@@ -14,7 +14,7 @@ var interval, _ = strconv.Atoi(env.Get("REPO_LIST_UPDATE_INTERVAL", "", "interva
 func main() {
 	if interval == 0 {
 		log.Println("REPO_LIST_UPDATE_INTERVAL not set, not doing any updates")
-		select {} // block forever and do nothing
+		time.Sleep(10000 * 24 * time.Hour) // block forever and do nothing
 	}
 
 	for {
