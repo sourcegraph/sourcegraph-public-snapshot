@@ -128,6 +128,11 @@ $nav-height: 48px;
 
 }
 
+.blob, .cloning, .fancyerror, .repo, .search, .tree {
+	background-color: #151D28;
+	width: 960px;
+}
+
 // Define the "system" font family
 //
 // See https://css-tricks.com/snippets/css/system-font-stack/
@@ -177,7 +182,6 @@ $nav-height: 48px;
 	width: 100%;
 
 	#blob-container {
-		background-color: #151D28;
 		height: $blob-height;
 		overflow: auto;
 		flex: 3;
@@ -361,8 +365,6 @@ $nav-height: 48px;
 }
 
 .blob {
-	min-width: 960px;
-	max-width: 960px;
 }
 
 .cloning {
