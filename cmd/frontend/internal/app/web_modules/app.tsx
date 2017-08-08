@@ -1,3 +1,5 @@
+import { Tree, TreeHeader } from "@sourcegraph/components";
+import { content, flex, vertical } from "csstips";
 import { highlightBlock } from "highlight.js";
 import * as moment from "moment";
 import * as React from "react";
@@ -5,8 +7,6 @@ import { render } from "react-dom";
 import * as backend from "sourcegraph/backend";
 import * as xhr from "sourcegraph/backend/xhr";
 import { triggerBlame } from "sourcegraph/blame";
-import { TreeViewer } from "sourcegraph/components/FileTree/TreeViewer";
-import { buildFileTree } from "sourcegraph/components/FileTree/util";
 import { injectReferencesWidget } from "sourcegraph/references/inject";
 import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from "sourcegraph/search/inject";
 import { injectShareWidget } from "sourcegraph/share";
@@ -20,6 +20,7 @@ import { sourcegraphContext } from "sourcegraph/util/sourcegraphContext";
 import * as syntaxhighlight from "sourcegraph/util/syntaxhighlight";
 import { CodeCell } from "sourcegraph/util/types";
 import * as url from "sourcegraph/util/url";
+import { style } from "typestyle";
 
 window.addEventListener("DOMContentLoaded", () => {
 	registerListeners();
@@ -46,13 +47,17 @@ window.addEventListener("DOMContentLoaded", () => {
 	injectShareWidget();
 	const u = url.parseBlob();
 	if (u.uri && u.path) {
+		showExplorerTreeIfNecessary();
 		const mount = document.querySelector("#tree-viewer")! as HTMLElement;
+		document.querySelector("#file-explorer")!.addEventListener("click", () => {
+			handleToggleExplorerTree();
+		});
 		backend.localStoreListAllFiles(u.uri, pageVars.CommitID).then(resp => {
-			const treeData = buildFileTree(resp, u.path);
-
-			// TODO(slimsag): persist the toggled state across page loads
-			const toggled = false;
-			render(<TreeViewer onToggled={handleOnToggled} toggled={toggled} onChanged={handleOnChanged} treeData={treeData} parentRef={mount} />, mount);
+			const el = <div className={style(vertical)}>
+				<TreeHeader className={style(content)} title="Files" onDismiss={() => handleToggleExplorerTree()} />
+				<Tree onSelectFile={(path) => window.location.href = url.toBlob({ uri: u.uri, rev: u.rev, path })} className={style(flex)} paths={resp.map(res => res.name)} />
+			</div>;
+			render(el, mount);
 		});
 
 		const blob = document.querySelector("#blob")!;
@@ -185,32 +190,21 @@ window.addEventListener("DOMContentLoaded", () => {
 	handleQueryEvents(window.location.href);
 });
 
-function handleOnToggled(toggled: boolean): void {
+function handleToggleExplorerTree(): void {
 	// TODO(slimsag): add eventLogger calls
 	//eventLogger.logFileTreeToggleClicked({toggled: toggled});
-
+	const isShown = window.localStorage.getItem("show-explorer") === "true";
+	window.localStorage.setItem("show-explorer", isShown ? "false" : "true");
 	const treeViewer = document.querySelector("#tree-viewer")! as HTMLElement;
-	treeViewer.style.display = toggled ? "block" : "none";
+	treeViewer.style.display = isShown ? "none" : "flex";
 }
 
-function handleOnChanged(changedItems: any): void {
-	if (changedItems.length !== 1) {
-		return;
-	}
-	const path = changedItems[0].original.id;
-	if (!path) {
-		return;
-	}
-
+function showExplorerTreeIfNecessary(): void {
 	// TODO(slimsag): add eventLogger calls
-	//eventLogger.logFileTreeItemClicked({repo: gitHubState.repo});
-
-	const u = url.parseBlob(); // TODO(slimsag): technically this is NOT always a blob page. Should probably use a closure or more generic URL parsing func.
-
-	if (u.path === path) {
-		return;
-	}
-	window.location.href = url.toBlob({ uri: u.uri, rev: u.rev, path: path });
+	//eventLogger.logFileTreeToggleClicked({toggled: toggled});
+	const shouldShow = window.localStorage.getItem("show-explorer") === "true";
+	const treeViewer = document.querySelector("#tree-viewer")! as HTMLElement;
+	treeViewer.style.display = shouldShow ? "flex" : "none";
 }
 
 function registerListeners(): void {

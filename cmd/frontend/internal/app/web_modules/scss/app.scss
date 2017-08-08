@@ -1,5 +1,4 @@
 @import "libs/highlight";
-@import "../sourcegraph/components/FileTree/jstree.css";
 
 $nav-height: 48px;
 
@@ -17,24 +16,8 @@ $nav-height: 48px;
 
 	font-family: "system";
 
-	// Scrollbars - IE
-	scrollbar-base-color: #233043;
-	scrollbar-face-color: #43536d;
-	// Scrollbars - WebKit
-	::-webkit-scrollbar {
-		width: 12px;
-		height: 12px;
-	}
-	::-webkit-scrollbar-corner,
-	::-webkit-scrollbar-track {
-		background-color: #233043;
-	}
-	::-webkit-scrollbar-thumb {
-		background-color: #43536d;
-	}
-
 	>body {
-		background-color: #151D28;
+		background-color: #202A3B;
 		color: #C9D4E3;
 		a {
 			outline: 0;
@@ -44,94 +27,103 @@ $nav-height: 48px;
 
 	#nav {
 		position: fixed;
+		background-color: #2B3C53;
 		top: 0px;
 		width: 100%;
 		z-index: 10000000000000;
+		display: flex;
+		justify-content: center;
 
-		.spin:hover {	animation: spin 0.5s ease-in-out 1; }
+		#navbar {
+			min-width: 960px;
+			max-width: 960px;
 
-		@keyframes spin {
-			50% { transform: rotate(180deg) scale(1.2) }
-			100% { transform: rotate(180deg) scale(1) }
-		}
+			.spin:hover {	animation: spin 0.5s ease-in-out 1; }
 
-		.header {
-			background-color: rgb(35, 48, 67);
-			height: $nav-height;
-			display: flex;
-			align-items: center;
-
-			>a {
-				outline: 0;
-				margin: 0px 16px;
+			@keyframes spin {
+				50% { transform: rotate(180deg) scale(1.2) }
+				100% { transform: rotate(180deg) scale(1) }
 			}
 
-			.fill {
-				flex: 1;
-			}
-
-			.open-on-desktop {
-				background-color: #1098AD;
-				border-radius: 2px;
+			.header {
+				height: $nav-height;
 				display: flex;
 				align-items: center;
-				color: #FFFFFF;
-				height: 32px;
-				padding: 8px 12px;
-				font-size: 12px;
-				margin-right: 16px;
-				text-decoration: none;
 
-				.icon {
-					margin-left: 8px;
+				>a {
+					outline: 0;
+					margin: 0px 16px;
 				}
-			}
 
-			.search {
-				display: flex;
-				align-items: center;
-				width: 248px;
-				height: 32px;
-
-				background-color: #151D28;
-
-				border-radius: 2px 2px 2px 2px;
-				border: 0px solid #000000;
-
-				>input {
-					display: inline-block;
+				.fill {
 					flex: 1;
-					font-size: 14px;
+				}
+
+				.open-on-desktop {
+					background-color: #1098AD;
+					border-radius: 2px;
+					display: flex;
+					align-items: center;
+					color: #FFFFFF;
+					height: 32px;
+					padding: 8px 12px;
+					font-size: 12px;
+					margin-right: 16px;
+					text-decoration: none;
+
+					.icon {
+						margin-left: 8px;
+					}
+				}
+
+				.search {
+					display: flex;
+					align-items: center;
+					width: 248px;
 					height: 32px;
 
-					color: #FFFFFF;
-					background: none;
-					border: 0;
-					outline: none;
-				}
+					background-color: #151D28;
 
-				>input::placeholder {
-					color: #93A9C8;
-				}
+					border-radius: 2px 2px 2px 2px;
+					border: 0px solid #000000;
 
-				.icon {
-					color: #93A9C8;
-					margin: 0px 8px;
+					>input {
+						display: inline-block;
+						flex: 1;
+						font-size: 14px;
+						height: 32px;
+
+						color: #FFFFFF;
+						background: none;
+						border: 0;
+						outline: none;
+					}
+
+					>input::placeholder {
+						color: #93A9C8;
+					}
+
+					.icon {
+						color: #93A9C8;
+						margin: 0px 8px;
+					}
 				}
 			}
-		}
 
-		#advanced-search {
-			display: none;
-			background-color: #2A3A51;
-			border-bottom: 3px solid #2A3A51;
-			border-radius: 2px;
-		}
+			#advanced-search {
+				display: none;
+				background-color: #2A3A51;
+				border-bottom: 3px solid #2A3A51;
+				border-radius: 2px;
+			}
 
+		}
 	}
 
 	#app-container {
 		margin-top: $nav-height;
+		display: flex;
+		justify-content: center;
 	}
 
 }
@@ -180,9 +172,19 @@ $nav-height: 48px;
 
 	font-family: 'Menlo';
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	height: $blob-height;
 	width: 100%;
+
+	#blob-container {
+		background-color: #151D28;
+		height: $blob-height;
+		overflow: auto;
+		flex: 3;
+		display: flex;
+		flex-direction: column;
+		padding-top: 10px;
+	}
 
 	.line-number {
 		&::before {
@@ -192,31 +194,10 @@ $nav-height: 48px;
 		color: #31445E;
 	}
 
-	#tree-blob-container {
-		display: flex;
-		flex-direction: row;
-		height: $blob-height;
-		width: 100%;
-		flex: 5;
-	}
-
 	#tree-viewer {
 		display: none;
-		position: relative;
+		flex-direction: column;
 		flex: 1;
-		background-color: #233043;
-
-		/* TODO(slimsag): HACK: remove this and correctly set jstree height.. */
-		overflow: auto;
-
-		/*
-			These are only here because they are layout related; everything else
-			jstree should go in jstree.css
-		*/
-		.jstree {
-			overflow: auto;
-			height: 100%;
-		}
 	}
 
 	#blob-table {
@@ -302,13 +283,14 @@ $nav-height: 48px;
 	display: flex;
 	align-items: center;
 
-	a, a.navigation, .path a {
+	a, .path a {
 		text-decoration: none;
 		@extend .font-white;
 	}
 
-	.navigation {
+	#file-explorer {
 		display: flex;
+		cursor: pointer;
 		align-items: center;
 		margin-right: 1.5em;
 		margin-left: .75em;
@@ -318,8 +300,8 @@ $nav-height: 48px;
 			width: 9px;
 			height: 9px;
 		}
-
 	}
+
 	.path {
 		flex: 1;
 		display: flex;
@@ -379,7 +361,8 @@ $nav-height: 48px;
 }
 
 .blob {
-
+	min-width: 960px;
+	max-width: 960px;
 }
 
 .error {
