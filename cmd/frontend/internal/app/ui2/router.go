@@ -209,10 +209,44 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	}
 
 	var errorIfDebug string
-	if handlerutil.DebugMode {
+	if handlerutil.DebugMode && !nodebug {
 		errorIfDebug = err.Error()
 	}
-	err2 := renderTemplate(w, "error.html", &struct {
+
+	// First try to render the error fancily: this relies on *Common
+	// functionality that might always work (for example, if some services are
+	// down rather than something that is primarily a user error).
+	delete(mux.Vars(r), "Repo")
+	var commonServeErr error
+	common, commonErr := newCommon(w, r, "", func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+		// Stub out serveError to newCommon so that it is not reentrant.
+		commonServeErr = err
+	})
+	if commonErr == nil && commonServeErr == nil {
+		if common == nil {
+			return // request handled by newCommon
+		}
+		fancyErr := renderTemplate(w, "fancyerror.html", &struct {
+			*Common
+			StatusCode                 int
+			StatusText, Error, ErrorID string
+		}{
+			Common:     common,
+			StatusCode: statusCode,
+			StatusText: http.StatusText(statusCode),
+			Error:      errorIfDebug,
+			ErrorID:    errorID,
+		})
+		if fancyErr != nil {
+			log15.Error("ui: error while serving fancy error template", "error", fancyErr)
+			// continue onto fallback below..
+		} else {
+			return
+		}
+	}
+
+	// Fallback to ugly / reliable error template.
+	stdErr := renderTemplate(w, "error.html", &struct {
 		StatusCode                 int
 		StatusText, Error, ErrorID string
 	}{
@@ -221,8 +255,8 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 		Error:      errorIfDebug,
 		ErrorID:    errorID,
 	})
-	if err2 != nil {
-		log15.Error("ui: error while serving error template", "error", err2)
+	if stdErr != nil {
+		log15.Error("ui: error while serving final error template", "error", stdErr)
 	}
 }
 

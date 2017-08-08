@@ -1,0 +1,47 @@
+{{/*
+	IMPORTANT! There are two error templates:
+
+	- error.html
+	- fancyerror.html
+
+	error.html is designed to be as minimal and reliable as possible. It does
+	not include ANY other templates, as they may require data that is not
+	present (e.g. *Common data, which may not exist if e.g. gitserver or other
+	relied upon servers are degraded). This template should render even when
+	the system is severely broken.
+
+	fancyerror.html is designed to be more user friendly, and we always try to
+	render it first. It uses data from *Common etc, and can include other
+	templates like base.html. In the event that it fails to render, error.html
+	is the fallback that is used.
+*/}}
+{{define "Title"}}{{.StatusCode}} {{.StatusText}} - Sourcegraph{{end}}
+
+{{define "Body"}}
+<div class="fancyerror status-{{.StatusCode}}">
+	<div class="top">
+		{{if eq .StatusCode 500}}
+			<img src="{{.AssetURL}}/img/ui2/circle-500.svg" />
+		{{else}}
+			<img src="{{.AssetURL}}/img/ui2/circle-404.svg" />
+		{{end}}
+		<h1><span class="status-code">{{.StatusCode}}</span>: <span class="status-text">{{.StatusText}}</span></h1>
+		{{if eq .StatusCode 500}}
+			<p>Sorry, there's been a problem.</p>
+		{{else}}
+			<p>Sorry, the requested URL was not found.</p>
+		{{end}}
+	</div>
+	<div class="bottom">
+		{{if ne .StatusCode 404}}
+			<p>Please <a href="mailto:support@sourcegraph.com">contact us</a> and include the error ID: <span class="error-id">{{.ErrorID}}</span></p>
+		{{end}}
+		{{if .Error}}
+			<hr/>
+			<pre class="error-text">{{.Error}}</pre>
+		{{end}}
+	</div>
+</div>
+{{end}}
+
+{{template "base.html" .}}
