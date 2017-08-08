@@ -129,7 +129,8 @@ $nav-height: 48px;
 }
 
 .blob, .cloning, .fancyerror, .repo, .search, .tree {
-	background-color: #151D28;
+	border-bottom: 1px solid #233043;
+	background-color: #202A3B;
 	width: 960px;
 }
 
@@ -187,7 +188,7 @@ $nav-height: 48px;
 		flex: 3;
 		display: flex;
 		flex-direction: column;
-		padding-top: 10px;
+
 	}
 
 	.line-number {
@@ -206,6 +207,8 @@ $nav-height: 48px;
 
 	#blob-table {
 		position: relative;
+		background-color: #151D28;
+		padding-top: 10px;
 		flex: 4;
 		overflow: auto;
 
