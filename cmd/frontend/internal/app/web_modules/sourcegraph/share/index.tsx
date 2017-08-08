@@ -1,5 +1,6 @@
 import * as copy from "copy-to-clipboard";
 import { events } from "sourcegraph/tracking/events";
+import * as URI from "urijs";
 
 export function injectShareWidget(): void {
 	const a = document.querySelector(".navbar .share") as HTMLAnchorElement;
@@ -14,7 +15,10 @@ export function injectShareWidget(): void {
 			return;
 		}
 
-		copy(window.location.href);
+		const shareLink = URI.parse(window.location.href);
+		shareLink.query = (shareLink.query ? `${shareLink.query}&` : "") + "utm_source=share";
+		copy(URI.build(shareLink));
+
 		const textSpan = a.querySelector(".text");
 		const oldText = textSpan!.innerHTML;
 		a.removeAttribute("href"); // make it non-clickable

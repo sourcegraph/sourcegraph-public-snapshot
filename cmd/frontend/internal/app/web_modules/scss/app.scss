@@ -16,6 +16,20 @@ $nav-height: 48px;
 
 	font-family: "system";
 
+	scrollbar-base-color: #233043;
+	scrollbar-face-color: #43536d;
+	::-webkit-scrollbar {
+		width: 12px;
+		height: 12px;
+	}
+	::-webkit-scrollbar-corner,
+	::-webkit-scrollbar-track {
+		background-color: #233043;
+	}
+	::-webkit-scrollbar-thumb {
+		background-color: #43536d;
+	}
+
 	>body {
 		background-color: #202A3B;
 		color: #C9D4E3;
@@ -173,7 +187,7 @@ $nav-height: 48px;
 }
 
 .blobview {
-	$blob-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height})");
+	$blob-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
 
 	font-family: 'Menlo';
 	display: flex;
