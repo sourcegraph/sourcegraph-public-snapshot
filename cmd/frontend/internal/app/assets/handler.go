@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/shurcooL/httpgzip"
+	"github.com/sqs/httpgzip"
 )
 
 // Mount mounts the static asset handler.

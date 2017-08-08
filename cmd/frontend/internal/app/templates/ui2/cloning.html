@@ -1,0 +1,13 @@
+{{define "Title"}}Cloning - Sourcegraph{{end}}
+
+{{define "Body"}}
+<div class="cloning" id="cloning">
+	<div class="top">
+		<img src="{{.AssetURL}}/img/ui2/circle-loading.svg" />
+		<h1>Cloning repository...</h1>
+	</div>
+	<div class="bottom"></div>
+</div>
+{{end}}
+
+{{template "base.html" .}}

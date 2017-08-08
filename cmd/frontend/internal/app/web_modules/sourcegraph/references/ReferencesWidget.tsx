@@ -21,8 +21,8 @@ namespace Styles {
 
 	export const icon = style({ fontSize: "18px", marginLeft: "15px" });
 
-	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "0px 16px", fontSize: "14px", height: "32px", width: "100vw", position: "sticky", top: "0px" });
-	export const titleBarTitle = style(csstips.content, { maxWidth: "calc(50vw)", marginRight: "25px" });
+	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "0px 16px", fontSize: "14px", height: "32px", width: "100%", position: "sticky", top: "0px" });
+	export const titleBarTitle = style(csstips.content, { maxWidth: "50%", marginRight: "25px" });
 	export const titleBarGroup = style(csstips.content, {
 		textTransform: "uppercase",
 		letterSpacing: "1px",

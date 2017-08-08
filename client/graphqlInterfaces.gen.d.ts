@@ -405,8 +405,19 @@ declare namespace GQL {
 		currentUser: IUser | null;
 		activeRepos: IActiveRepoResults;
 		searchRepos: ISearchResults;
+		searchProfiles: Array<ISearchProfile>;
 		revealCustomerCompany: ICompanyProfile | null;
 		threads: Array<IThread>;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ISearchProfile {
+		__typename: string;
+		name: string;
+		description: string | null;
+		repositories: Array<IRepository>;
 	}
 
 	/*

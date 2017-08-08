@@ -32,6 +32,8 @@ var (
 		"remote": []string{"-v"},
 		"diff":   []string{"--name-status", "-C"},
 		"blame":  []string{"--root", "--incremental", "--"},
+
+		"rev-parse": []string{"--abbrev-ref"},
 	}
 )
 

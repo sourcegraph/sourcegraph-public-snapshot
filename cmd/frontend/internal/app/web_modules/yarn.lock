@@ -2,6 +2,22 @@
 # yarn lockfile v1
 
 
+"@sourcegraph/components@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/components/-/components-0.0.2.tgz#077d6b075a34de2c70f25b3baf1f2adf64adc446"
+  dependencies:
+    csstips "^0.2.2"
+    csx "^8.4.0"
+    dom-scroll-into-view "^1.2.1"
+    immutable "^3.8.1"
+    lodash "^4.17.4"
+    react "^15.6.1"
+    react-dom "^15.6.1"
+    react-icons "^2.2.5"
+    react-visibility-sensor "^3.10.1"
+    rxjs "^5.4.2"
+    typestyle "^1.3.7"
+
 "@types/jquery@*":
   version "3.2.9"
   resolved "https://registry.yarnpkg.com/@types/jquery/-/jquery-3.2.9.tgz#38e8b5d9eac75f6a0b15b839f7f6559fb0923bda"
@@ -37,9 +53,13 @@
     "@types/react" "*"
     "@types/react-icon-base" "*"
 
-"@types/react@*", "@types/react@^15.0.39":
+"@types/react@*":
   version "15.0.39"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-15.0.39.tgz#5a820c75cabf4cbfa177a3ab5a9a0634c46b14d1"
+
+"@types/react@^16.0.0":
+  version "16.0.0"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-16.0.0.tgz#fec7e6302e11c1cd307129d8ce1e6d5dca4a0283"
 
 "@types/urijs@^1.15.33":
   version "1.15.33"
@@ -764,6 +784,10 @@ csstips@^0.2.2:
 csx@^8.2.1:
   version "8.2.1"
   resolved "https://registry.yarnpkg.com/csx/-/csx-8.2.1.tgz#a2eadd886fd51c8eeaaac3dc2a6e8f0e49ecc5e2"
+
+csx@^8.4.0:
+  version "8.4.0"
+  resolved "https://registry.yarnpkg.com/csx/-/csx-8.4.0.tgz#46df8d2a5174a0fa6c6a7b172965411c370cc0df"
 
 currently-unhandled@^0.4.1:
   version "0.4.1"
@@ -1541,10 +1565,6 @@ isstream@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
 
-jquery@>=1.9.1, jquery@^3.2.1:
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.2.1.tgz#5c4d9de652af6cd0a770154a631bba12b015c787"
-
 js-base64@^2.1.8, js-base64@^2.1.9:
   version "2.1.9"
   resolved "https://registry.yarnpkg.com/js-base64/-/js-base64-2.1.9.tgz#f0e80ae039a4bd654b5f281fc93f04a914a7fcce"
@@ -1606,12 +1626,6 @@ jsprim@^1.2.2:
     extsprintf "1.0.2"
     json-schema "0.2.3"
     verror "1.3.6"
-
-jstree@^3.3.4:
-  version "3.3.4"
-  resolved "https://registry.yarnpkg.com/jstree/-/jstree-3.3.4.tgz#3d089bb9623bd6f3f25f64c4e4ce547b30d40264"
-  dependencies:
-    jquery ">=1.9.1"
 
 kind-of@^2.0.1:
   version "2.0.1"
@@ -1679,10 +1693,6 @@ lodash.clonedeep@^4.3.2:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
 
-lodash.isequal@^4.5.0:
-  version "4.5.0"
-  resolved "https://registry.yarnpkg.com/lodash.isequal/-/lodash.isequal-4.5.0.tgz#415c4478f2bcc30120c22ce10ed3226f7d3e18e0"
-
 lodash.memoize@^4.1.2:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/lodash.memoize/-/lodash.memoize-4.1.2.tgz#bcc6c49a42a2840ed997f323eada5ecd182e0bfe"
@@ -1699,7 +1709,7 @@ lodash.uniq@^4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.uniq/-/lodash.uniq-4.5.0.tgz#d0225373aeb652adc1bc82e4945339a842754773"
 
-lodash@^4.0.0, lodash@^4.11.2, lodash@^4.14.0, lodash@~4.17.4:
+lodash@^4.0.0, lodash@^4.11.2, lodash@^4.14.0, lodash@^4.17.4, lodash@~4.17.4:
   version "4.17.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
 
@@ -2556,12 +2566,6 @@ react-icons@^2.2.5:
   resolved "https://registry.yarnpkg.com/react-icons/-/react-icons-2.2.5.tgz#f942501c21a4cc0456ce2bbee5032c93f6051dcf"
   dependencies:
     react-icon-base "2.0.7"
-
-react-resizable-box@^2.0.6:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/react-resizable-box/-/react-resizable-box-2.0.6.tgz#c6fbd7c0bac7a6678eb32d0993cab7b601bea8e7"
-  dependencies:
-    lodash.isequal "^4.5.0"
 
 react-visibility-sensor@^3.10.1:
   version "3.10.1"

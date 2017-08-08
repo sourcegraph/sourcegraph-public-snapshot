@@ -1,7 +1,6 @@
 package ui2
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -61,7 +61,7 @@ func repoShortName(uri string) string {
 // request is handled by newCommon and nil, nil is returned. Basic usage looks
 // like:
 //
-// 	common, err := newCommon(w, r)
+// 	common, err := newCommon(w, r, routeName, serveError)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -69,7 +69,7 @@ func repoShortName(uri string) string {
 // 		return nil // request was handled
 // 	}
 //
-func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, error) {
+func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	common := &Common{
 		Context:  jscontext.NewJSContextFromRequest(r),
 		Route:    route,
@@ -88,13 +88,18 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, e
 				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
 				return nil, nil
 			}
+			if legacyerr.ErrCode(err) == legacyerr.NotFound {
+				// Repo does not exist.
+				serveError(w, r, err, http.StatusNotFound)
+				return nil, nil
+			}
 			if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
 				// Repo is cloning.
-				//
-				// TODO(slimsag): Move to template, auto-refresh page upon
-				// completion, etc.
-				fmt.Fprintf(w, "<html><h3>Repository is cloning...<h3/><p>(please refresh in a few seconds)</p></html>")
-				return nil, nil
+				return nil, renderTemplate(w, "cloning.html", &struct {
+					*Common
+				}{
+					Common: common,
+				})
 			}
 			return nil, err
 		}
@@ -126,7 +131,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Serve the signed-in homepage.
-	common, err := newCommon(w, r, routeHome)
+	common, err := newCommon(w, r, routeHome, serveError)
 	if err != nil {
 		return err
 	}
@@ -142,7 +147,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSearch(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeSearch)
+	common, err := newCommon(w, r, routeSearch, serveError)
 	if err != nil {
 		return err
 	}
@@ -208,7 +213,7 @@ func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeRepoOrMain)
+	common, err := newCommon(w, r, routeRepoOrMain, serveError)
 	if err != nil {
 		return err
 	}
@@ -244,7 +249,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTree(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeTree)
+	common, err := newCommon(w, r, routeTree, serveError)
 	if err != nil {
 		return err
 	}
@@ -286,7 +291,7 @@ type blobView struct {
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeBlob)
+	common, err := newCommon(w, r, routeBlob, serveError)
 	if err != nil {
 		return err
 	}

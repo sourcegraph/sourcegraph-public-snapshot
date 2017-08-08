@@ -3,16 +3,24 @@
         "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
-        "baseUrl": ".",
+        "baseUrl": "./",
         "paths": {
             "sourcegraph/*": [
                 "./sourcegraph/*"
+            ],
+            "@sourcegraph/components/*": [
+                "./node_modules/@sourcegraph/components/src/*"
+            ],
+            "*": [
+                "node_modules/@types/*",
+                "*"
             ]
         },
         "lib": [
             "es2016",
             "dom"
         ],
+        "typeRoots": ["./node_nodules/@types"],
         "jsx": "react",
         "allowJs": true,
         "sourceMap": true,
