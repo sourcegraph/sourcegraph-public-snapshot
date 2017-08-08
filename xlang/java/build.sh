@@ -2,6 +2,9 @@
 set -ex
 cd $(dirname "${BASH_SOURCE[0]}")
 
+export IMAGE=us.gcr.io/sourcegraph-dev/xlang-java
+export TAG=${TAG}
+
 SKINNY_MODE=false;
 if [ -z ${SKINNY+x} ]; then
     echo "building image with artifacts.";
@@ -38,4 +41,4 @@ if [ "$SKINNY_MODE" = false ]; then
 	fi
 fi
 
-docker build -t ${IMAGE-"xlang-java"} .
+docker build -t $IMAGE-$TAG .
