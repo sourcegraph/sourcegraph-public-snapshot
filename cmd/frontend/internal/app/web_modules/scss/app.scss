@@ -129,8 +129,7 @@ $nav-height: 48px;
 }
 
 .blob, .cloning, .fancyerror, .repo, .search, .tree {
-	border-bottom: 1px solid #233043;
-	background-color: #202A3B;
+	background-color: #151D28;
 	width: 960px;
 }
 
@@ -368,6 +367,8 @@ $nav-height: 48px;
 }
 
 .blob {
+	border-bottom: 1px solid #233043;
+	background-color: #202A3B;
 }
 
 .cloning {
