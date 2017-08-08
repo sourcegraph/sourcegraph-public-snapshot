@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -86,7 +87,7 @@ func listActiveAndInactive(ctx context.Context) (active []*sourcegraph.Repo, ina
 				PerPage: 10000, // we want every repo.
 			},
 		})
-	} else {
+	} else if actor.FromContext(ctx).IsAuthenticated() {
 		all, err = backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			RemoteOnly: true, // user's repo list
 			ListOptions: sourcegraph.ListOptions{
@@ -97,6 +98,9 @@ func listActiveAndInactive(ctx context.Context) (active []*sourcegraph.Repo, ina
 				PerPage: 10,
 			},
 		})
+	} else {
+		// If we are not on-prem and have no user, we have no relevant repos to return.
+		return nil, nil, nil
 	}
 	if err != nil {
 		return nil, nil, err
