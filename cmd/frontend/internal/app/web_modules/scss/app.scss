@@ -11,11 +11,28 @@ $nav-height: 48px;
 	file name, e.g. ".blobview" for the "shared/blobview.html" template.
 */
 
+
 .base {
 	// reset
 	* { margin:0; padding:0; box-sizing:border-box; }
 
 	font-family: "system";
+
+	// Scrollbars - IE
+	scrollbar-base-color: #233043;
+	scrollbar-face-color: #43536d;
+	// Scrollbars - WebKit
+	::-webkit-scrollbar {
+		width: 12px;
+		height: 12px;
+	}
+	::-webkit-scrollbar-corner,
+	::-webkit-scrollbar-track {
+		background-color: #233043;
+	}
+	::-webkit-scrollbar-thumb {
+		background-color: #43536d;
+	}
 
 	>body {
 		background-color: #151D28;
