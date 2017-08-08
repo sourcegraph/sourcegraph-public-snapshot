@@ -30,6 +30,7 @@ type Root {
 	currentUser: User
 	activeRepos(): ActiveRepoResults!
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
+	searchProfiles: [SearchProfile!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
 	threads(remoteURI: String!, accessToken: String!, file: String!): [Thread!]!
 }
@@ -171,6 +172,12 @@ type File {
 type ActiveRepoResults {
 	active: [String!]!
 	inactive: [String!]!
+}
+
+type SearchProfile {
+	name: String!
+	description: String
+	repositories: [Repository!]!
 }
 
 type SearchResults {

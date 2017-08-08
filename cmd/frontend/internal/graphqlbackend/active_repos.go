@@ -47,6 +47,28 @@ func (a *activeRepoResults) Inactive() []string {
 
 // ActiveRepos returns a list of active and inactive repository URIs for the
 // given user.
+func (*rootResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	active, inactive, err := listActiveAndInactive(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create result lists (split all.Repos into active and inactive groups).
+	res := &activeRepoResults{}
+	for _, r := range active {
+		res.active = append(res.active, r.URI)
+	}
+	for _, r := range inactive {
+		res.inactive = append(res.inactive, r.URI)
+	}
+	return res, nil
+}
+
+// listActiveAndInactive returns a list of active and inactive repository URIs
+// for the given user.
 //
 // In the case of on-prem, active repos is defined as all repositories known by
 // Sourcegraph minus inactive repositories (specified via $INACTIVE_REPOS).
@@ -54,17 +76,10 @@ func (a *activeRepoResults) Inactive() []string {
 // In the case of Sourcegraph.com, active repos is defined as all remote repos
 // for the authenticated user minus inactive repositories (again, specified via
 // $INACTIVE_REPOS).
-//
-func (*rootResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
+func listActiveAndInactive(ctx context.Context) (active []*sourcegraph.Repo, inactive []*sourcegraph.Repo, err error) {
 	// Find the list of all repos (this is the union of active + inactive
 	// repos, see description of this function above).
-	var (
-		all *sourcegraph.RepoList
-		err error
-	)
+	var all *sourcegraph.RepoList
 	if envvar.DeploymentOnPrem() {
 		all, err = backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			ListOptions: sourcegraph.ListOptions{
@@ -84,19 +99,15 @@ func (*rootResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, error
 		})
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	// Create result lists (split all.Repos into active and inactive groups).
-	res := &activeRepoResults{}
 	for _, r := range all.Repos {
 		if _, ok := inactiveReposMap[r.URI]; ok {
-			// repo is inactive
-			res.inactive = append(res.inactive, r.URI)
-			continue
+			inactive = append(inactive, r)
+		} else {
+			active = append(active, r)
 		}
-		// repo is active
-		res.active = append(res.active, r.URI)
 	}
-	return res, nil
+	return active, inactive, nil
 }
