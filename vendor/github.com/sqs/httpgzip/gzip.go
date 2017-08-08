@@ -60,7 +60,7 @@ func ServeContent(w http.ResponseWriter, req *http.Request, name string, modTime
 			ctype = http.DetectContentType(buf[:n])
 			_, err := content.Seek(0, io.SeekStart) // Rewind to output whole file.
 			if err != nil {
-				http.Error(w, "seeker can't seek", http.StatusInternalServerError)
+				http.Error(w, "500 Internal Server Error\n\nseeker can't seek", http.StatusInternalServerError)
 				return
 			}
 		}

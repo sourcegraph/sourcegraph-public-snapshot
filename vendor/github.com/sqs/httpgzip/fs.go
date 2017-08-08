@@ -28,6 +28,9 @@ var defaults = FileServerOptions{
 
 // FileServerOptions specifies options for FileServer.
 type FileServerOptions struct {
+	// DirListing controls whether a directory listing is shown for directories.
+	DirListing bool
+
 	// IndexHTML controls special handling of "index.html" file.
 	IndexHTML bool
 
@@ -61,11 +64,11 @@ var (
 	Detailed = func(w http.ResponseWriter, req *http.Request, err error) {
 		switch {
 		case os.IsNotExist(err):
-			http.Error(w, fmt.Sprintf("404 Not Found\n\n%v", err), http.StatusNotFound)
+			http.Error(w, "404 Not Found\n\n"+err.Error(), http.StatusNotFound)
 		case os.IsPermission(err):
-			http.Error(w, fmt.Sprintf("403 Forbidden\n\n%v", err), http.StatusForbidden)
+			http.Error(w, "403 Forbidden\n\n"+err.Error(), http.StatusForbidden)
 		default:
-			http.Error(w, fmt.Sprintf("500 Internal Server Error\n\n%v", err), http.StatusInternalServerError)
+			http.Error(w, "500 Internal Server Error\n\n"+err.Error(), http.StatusInternalServerError)
 		}
 	}
 )
@@ -78,7 +81,7 @@ type fileServer struct {
 func (fs *fileServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "GET" {
 		w.Header().Set("Allow", "GET")
-		http.Error(w, "method should be GET", http.StatusMethodNotAllowed)
+		http.Error(w, "405 Method Not Allowed\n\nmethod should be GET", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -143,6 +146,10 @@ func (fs *fileServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if checkLastModified(w, req, fi.ModTime()) {
 			return
 		}
+		if !fs.opt.DirListing {
+			http.Error(w, "403 Forbidden", http.StatusForbidden)
+			return
+		}
 		err := dirList(w, f, path == "/")
 		if err != nil {
 			fs.opt.ServeError(w, req, err)
@@ -161,7 +168,7 @@ func dirList(w http.ResponseWriter, f http.File, root bool) error {
 	sort.Sort(byName(dirs))
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, "<pre>\n")
+	fmt.Fprintln(w, "<pre>")
 	switch root {
 	case true:
 		fmt.Fprintln(w, `<a href=".">.</a>`)
@@ -179,7 +186,7 @@ func dirList(w http.ResponseWriter, f http.File, root bool) error {
 		url := url.URL{Path: name}
 		fmt.Fprintf(w, "<a href=\"%s\">%s</a>\n", url.String(), html.EscapeString(name))
 	}
-	fmt.Fprintf(w, "</pre>\n")
+	fmt.Fprintln(w, "</pre>")
 	return nil
 }
 
