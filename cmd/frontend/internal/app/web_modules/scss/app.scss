@@ -365,6 +365,50 @@ $nav-height: 48px;
 	max-width: 960px;
 }
 
+.fancyerror {
+	$fancyerror-height: unquote("calc(100vh - #{$nav-height})");
+
+	height: $fancyerror-height;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+
+	.top, .bottom {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+	}
+	.top {
+		flex: 2;
+		>h1 {
+			margin-top: 1em;
+		}
+		>p {
+			margin-top: .5em;
+		}
+	}
+	.bottom {
+		flex: 1;
+		.error-id {
+			font-family: 'Menlo';
+			background-color: rgb(36, 49, 66);
+			padding: .3em;
+			border-radius: 2px;
+		}
+		.error-text {
+			margin-top: 1em;
+			background-color: #233043;
+			padding: 1em;
+		}
+	}
+
+	>img {
+		display: block;
+	}
+}
+
 .error {
 
 }

@@ -62,7 +62,7 @@ func repoShortName(uri string) string {
 // request is handled by newCommon and nil, nil is returned. Basic usage looks
 // like:
 //
-// 	common, err := newCommon(w, r)
+// 	common, err := newCommon(w, r, routeName, serveError)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -70,7 +70,7 @@ func repoShortName(uri string) string {
 // 		return nil // request was handled
 // 	}
 //
-func newCommon(w http.ResponseWriter, r *http.Request, route string) (*Common, error) {
+func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	common := &Common{
 		Context:  jscontext.NewJSContextFromRequest(r),
 		Route:    route,
@@ -132,7 +132,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Serve the signed-in homepage.
-	common, err := newCommon(w, r, routeHome)
+	common, err := newCommon(w, r, routeHome, serveError)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSearch(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeSearch)
+	common, err := newCommon(w, r, routeSearch, serveError)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
 }
 
 func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeRepoOrMain)
+	common, err := newCommon(w, r, routeRepoOrMain, serveError)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveTree(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeTree)
+	common, err := newCommon(w, r, routeTree, serveError)
 	if err != nil {
 		return err
 	}
@@ -292,7 +292,7 @@ type blobView struct {
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, routeBlob)
+	common, err := newCommon(w, r, routeBlob, serveError)
 	if err != nil {
 		return err
 	}

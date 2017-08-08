@@ -1,0 +1,16 @@
+<svg width="96" height="96" viewBox="0 0 96 96" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<title>Canvas</title>
+<desc>Created using Figma</desc>
+<g id="Canvas" transform="translate(-21488 -17168)">
+<g id="Ellipse 3">
+<use xlink:href="#path0_fill" transform="translate(21488 17168)" fill="#233043"/>
+</g>
+<g id="Vector">
+<use xlink:href="#path1_fill" transform="translate(21514.9 17192)" fill="#93A9C8"/>
+</g>
+</g>
+<defs>
+<path id="path0_fill" d="M 96 48C 96 74.5097 74.5097 96 48 96C 21.4903 96 0 74.5097 0 48C 0 21.4903 21.4903 0 48 0C 74.5097 0 96 21.4903 96 48Z"/>
+<path id="path1_fill" d="M 39.5 16.4L 35 21C 34.3 21.7 33.5 22 32.5 22L 6.1 22C 5 22 4.1 21.1 4.1 20L 4.1 10C 4.1 8.9 5 8 6.1 8L 32.5 8C 33.4 8 34.3 8.4 35 9L 39.6 13.6C 40.3 14.4 40.3 15.6 39.5 16.4ZM 22.1 6L 18.1 6C 17.5 6 17.1 5.6 17.1 5L 17.1 2C 17.1 0.9 18 0 19.1 0L 21.1 0C 22.2 0 23.1 0.9 23.1 2L 23.1 5C 23.1 5.6 22.7 6 22.1 6ZM 7.7 24L 34.1 24C 35.2 24 36.1 24.9 36.1 26L 36.1 36C 36.1 37.1 35.2 38 34.1 38L 7.7 38C 6.8 38 5.9 37.6 5.2 37L 0.6 32.4C -0.2 31.6 -0.2 30.4 0.6 29.6L 5.2 25C 5.9 24.4 6.8 24 7.7 24ZM 18.1 40L 22.1 40C 22.7 40 23.1 40.4 23.1 41L 23.1 46C 23.1 47.1 22.2 48 21.1 48L 19.1 48C 18 48 17.1 47.1 17.1 46L 17.1 41C 17.1 40.4 17.6 40 18.1 40Z"/>
+</defs>
+</svg>
