@@ -184,13 +184,36 @@ type navbar struct {
 	ViewOnGitHub   string      // link to view on GitHub, optional
 }
 
-func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
-	n := &navbar{
-		RepoURL:  urlTo(routeRepoOrMain, "Repo", repoURI, "Rev", rev).String(),
-		RepoName: strings.Replace(repoShortName(repoURI), "/", " / ", -1),
+func githubURL(repo *sourcegraph.Repo, rev, fpath string, isDir bool) string {
+	revOrDefault := rev
+	if revOrDefault == "" {
+		revOrDefault = repo.DefaultBranch
+		if revOrDefault == "" {
+			revOrDefault = "master"
+		}
 	}
-	if strings.HasPrefix(repoURI, "github.com/") {
-		n.ViewOnGitHub = "https://" + repoURI
+	if fpath == "" {
+		fpath = "/"
+	}
+	switch {
+	case fpath == "/" && rev == "": // repo root
+		return "https://" + repo.URI
+	case fpath == "/" && rev != "": // repo@rev root
+		return "https://" + path.Join(repo.URI, "tree", rev)
+	case fpath != "/" && !isDir: // blob / file
+		return "https://" + path.Join(repo.URI, "blob", revOrDefault, fpath)
+	default: // tree
+		return "https://" + path.Join(repo.URI, "tree", revOrDefault, fpath)
+	}
+}
+
+func newNavbar(repo *sourcegraph.Repo, rev, fpath string, isDir bool) *navbar {
+	n := &navbar{
+		RepoURL:  urlTo(routeRepoOrMain, "Repo", repo.URI, "Rev", rev).String(),
+		RepoName: strings.Replace(repoShortName(repo.URI), "/", " / ", -1),
+	}
+	if strings.HasPrefix(repo.URI, "github.com/") {
+		n.ViewOnGitHub = githubURL(repo, strings.TrimPrefix(rev, "@"), fpath, isDir)
 	}
 	split := strings.Split(fpath, "/")
 	for i, p := range split {
@@ -206,7 +229,7 @@ func newNavbar(repoURI, rev, fpath string, isDir bool) *navbar {
 
 		// Construct a URL to this path.
 		fpath := path.Join("/", path.Join(split[:i+1]...))
-		u := urlTo(routeName, "Repo", repoURI, "Rev", rev, "Path", fpath).String()
+		u := urlTo(routeName, "Repo", repo.URI, "Rev", rev, "Path", fpath).String()
 		n.PathComponents = append(n.PathComponents, [2]string{u, p})
 	}
 	return n
@@ -244,7 +267,7 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 			Dir:     dir,
 			Files:   files,
 		},
-		Navbar: newNavbar(common.Repo.URI, common.Rev, dir, true),
+		Navbar: newNavbar(common.Repo, common.Rev, dir, true),
 	})
 }
 
@@ -280,7 +303,7 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 			Dir:     dir,
 			Files:   files,
 		},
-		Navbar: newNavbar(common.Repo.URI, common.Rev, dir, true),
+		Navbar: newNavbar(common.Repo, common.Rev, dir, true),
 	})
 }
 
@@ -321,6 +344,6 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 			Name: path.Base(fp),
 			File: string(file),
 		},
-		Navbar: newNavbar(common.Repo.URI, common.Rev, fp, false),
+		Navbar: newNavbar(common.Repo, common.Rev, fp, false),
 	})
 }
