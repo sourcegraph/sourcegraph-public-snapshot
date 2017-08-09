@@ -80,7 +80,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		backend.localStoreListAllFiles(u.uri, pageVars.CommitID).then(resp => {
 			const el = <div className={style(vertical)}>
 				<TreeHeader className={style(content)} title="Files" onDismiss={() => handleToggleExplorerTree()} />
-				<Tree onSelectFile={(path) => window.location.href = url.toBlob({ uri: u.uri, rev: u.rev, path })} className={style(flex)} paths={resp.map(res => res.name)} />
+				<Tree initSelectedPath={u.path} onSelectFile={(path) => window.location.href = url.toBlob({ uri: u.uri, rev: u.rev, path })} className={style(flex)} paths={resp.map(res => res.name)} />
 			</div>;
 			render(el, mount);
 		});
