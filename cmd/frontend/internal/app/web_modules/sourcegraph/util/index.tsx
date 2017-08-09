@@ -14,6 +14,9 @@ export const supportedExtensions = new Set<string>([
 /**
  * getModeFromExtension returns the LSP mode for the
  * provided file extension (e.g. "jsx")
+ *
+ * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages
+ * and https://github.com/github/linguist/blob/master/lib/linguist/languages.yml.
  */
 export function getModeFromExtension(ext: string): string {
 	switch (ext.toLowerCase()) {
