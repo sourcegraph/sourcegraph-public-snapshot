@@ -45,7 +45,7 @@ namespace Styles {
 	export const closeIcon = style({ cursor: "pointer", fontSize: "18px", color: colors.normalFontColor, $nest: { "&:hover": { color: white } } });
 	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
-	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px" });
+	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px", cursor: "pointer" });
 }
 
 interface Props {
@@ -234,23 +234,21 @@ export class ReferencesGroup extends React.Component<{ uri: string, path: string
 						return 1;
 					}).map((ref, i) => {
 						const uri = URI.parse(ref.uri);
-						return <div key={i} className={Styles.ref}>
-							<div onClick={() => {
-								if (this.props.isLocal) {
-									events.GoToLocalRefClicked.log();
+						return <div key={i} className={Styles.ref} onClick={() => {
+							if (this.props.isLocal) {
+								events.GoToLocalRefClicked.log();
 
-									// use same Rev that is in the browser's URL bar.
-									window.location.href = getRefURL(ref, pageVars.Rev);
-								} else {
-									events.GoToExternalRefClicked.log();
+								// use same Rev that is in the browser's URL bar.
+								window.location.href = getRefURL(ref, pageVars.Rev);
+							} else {
+								events.GoToExternalRefClicked.log();
 
-									// External refs are currently always the latest revision,
-									// so use canonical URL ("" for default branch).
-									window.location.href = getRefURL(ref, "");
-								}
-							}}>
-								<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
-							</div>
+								// External refs are currently always the latest revision,
+								// so use canonical URL ("" for default branch).
+								window.location.href = getRefURL(ref, "");
+							}
+						}}>
+							<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
 						</div>;
 					})
 				}
