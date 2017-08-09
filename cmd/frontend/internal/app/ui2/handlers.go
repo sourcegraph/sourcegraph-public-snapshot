@@ -261,10 +261,12 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 
 	return renderTemplate(w, "tree.html", &struct {
 		*Common
-		Navbar *navbar
+		Navbar   *navbar
+		FileName string
 	}{
-		Common: common,
-		Navbar: newNavbar(common.Repo, common.Rev, fp, true),
+		Common:   common,
+		Navbar:   newNavbar(common.Repo, common.Rev, fp, true),
+		FileName: path.Base(fp),
 	})
 }
 
