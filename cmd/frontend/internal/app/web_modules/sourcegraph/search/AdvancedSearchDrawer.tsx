@@ -30,7 +30,7 @@ namespace Styles {
 	export const addReposSection = style(csstips.flex3);
 	export const addReposButton = style(csstips.horizontal, csstips.center, { backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
 	export const autocomplete = style({ backgroundColor: inputBackgroundColor, cursor: "pointer", borderRadius: "4px", border: "1px solid #2A3A51" });
-	export const autocompleteResults = style({ maxHeight: "48px", overflow: "auto" });
+	export const autocompleteResults = style({ maxHeight: "48px", overflowY: "scroll", overflowX: "hidden" });
 	export const addReposInput = style(input, { height: rowHeight, padding, borderRadius: "4px", width: "100%" });
 	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding });
 	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding });
