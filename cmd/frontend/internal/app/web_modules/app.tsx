@@ -1,6 +1,5 @@
 import { Tree, TreeHeader } from "@sourcegraph/components";
 import { content, flex, vertical } from "csstips";
-import { highlightBlock } from "highlight.js";
 import * as moment from "moment";
 import * as React from "react";
 import { render } from "react-dom";
@@ -21,6 +20,23 @@ import * as syntaxhighlight from "sourcegraph/util/syntaxhighlight";
 import { CodeCell } from "sourcegraph/util/types";
 import * as url from "sourcegraph/util/url";
 import { style } from "typestyle";
+
+window.onhashchange = (hash) => {
+	const oldURL = url.parseBlob(hash.oldURL!);
+	const newURL = url.parseBlob(hash.newURL!);
+	if (!newURL.path || !newURL.line) {
+		return;
+	}
+	if (oldURL.line === newURL.line) {
+		// prevent e.g. re-scrolling to same line on toggling refs group
+		//
+		// also prevent highlightLine from retriggering onhashchange
+		// recursively.
+		return;
+	}
+	const cells = getCodeCellsForAnnotation();
+	highlightAndScrollToLine(newURL.uri!, pageVars.CommitID, newURL.path, newURL.line, cells);
+};
 
 window.addEventListener("DOMContentLoaded", () => {
 	registerListeners();
@@ -69,123 +85,29 @@ window.addEventListener("DOMContentLoaded", () => {
 			render(el, mount);
 		});
 
-		const blob = document.querySelector("#blob")!;
-		blob.className = getModeFromExtension(getPathExtension(u.path));
-		highlightBlock(document.querySelector("#blob"));
-
-		const lines: Node[][] = [[]];
-
-		const nodeProcessor = (node: Node, wrapperClass?: string) => {
-			const wrap = (n: Node, className: string): any => {
-				const wrapper = document.createElement("span");
-				wrapper.className = className;
-				wrapper.appendChild(n);
-				return wrapper;
-			};
-
-			if (node.nodeType === Node.TEXT_NODE) {
-				const text = node.textContent!;
-				if (text.indexOf("\n") !== -1) {
-					const split = text.split("\n");
-					split.forEach((val, i) => {
-						if (i !== 0) {
-							lines.push([]);
-						}
-						let newNode = document.createTextNode(val);
-						if (wrapperClass) {
-							newNode = wrap(newNode, wrapperClass);
-						}
-						lines[lines.length - 1].push(newNode);
-					});
-				} else {
-					if (wrapperClass) {
-						node = wrap(node, wrapperClass);
-					}
-					lines[lines.length - 1].push(node);
-				}
-			} else {
-				if (node.childNodes.length === 1) {
-					const className = (node as HTMLElement).className;
-					const text = node.textContent!;
-					if (text.indexOf("\n") !== -1) {
-						const split = text.split("\n");
-						split.forEach((val, i) => {
-							if (i !== 0) {
-								lines.push([]);
-							}
-							let newNode = wrap(document.createTextNode(val), className);
-							if (wrapperClass) {
-								newNode = wrap(newNode, wrapperClass);
-							}
-							lines[lines.length - 1].push(newNode);
-						});
-					} else {
-						let newNode = wrap(document.createTextNode(text), className);
-						if (wrapperClass) {
-							newNode = wrap(newNode, wrapperClass);
-						}
-						lines[lines.length - 1].push(newNode);
-					}
-				} else {
-					if (node.textContent!.indexOf("\n") !== -1) {
-						const className = (node as HTMLElement).className;
-						for (const n of Array.from(node.childNodes)) {
-							nodeProcessor(n, className);
-						}
-					} else {
-						lines[lines.length - 1].push(node);
-					}
-				}
+		const blob = document.querySelector("#blob") as HTMLElement;
+		highlightAsync(u.path, blob.textContent!);
+		syntaxhighlight.wait().then(() => {
+			// blob view, add tooltips
+			const rev = pageVars.Rev;
+			const commitID = pageVars.CommitID;
+			const cells = getCodeCellsForAnnotation();
+			addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, commitID: commitID }, cells);
+			if (u.line) {
+				highlightAndScrollToLine(u.uri!, commitID, u.path!, u.line, cells);
 			}
-		};
-		for (const node of Array.from(document.querySelector("#blob")!.childNodes)) {
-			nodeProcessor(node);
-		}
 
-		const table = document.createElement("table");
-		const body = document.createElement("tbody");
+			// Log blob view
+			viewEvents.Blob.log({ repo: u.uri!, commitID, path: u.path!, language: getPathExtension(u.path!) });
 
-		lines.forEach((l, i) => {
-			const row = document.createElement("tr");
-			const line = document.createElement("td");
-			line.classList.add("line-number");
-			line.setAttribute("data-line-number", "" + (i + 1));
-
-			const cell = document.createElement("td");
-			cell.classList.add("code-cell");
-			l.forEach(node => cell.appendChild(node));
-
-			row.appendChild(line);
-			row.appendChild(cell);
-
-			body.appendChild(row);
-		});
-
-		table.appendChild(body);
-
-		document.querySelector("#blob-table")!.appendChild(table);
-
-		syntaxhighlight.done(); // mark syntax highlighting as finished
-
-		// blob view, add tooltips
-		const rev = pageVars.Rev;
-		const commitID = pageVars.CommitID;
-		const cells = getCodeCellsForAnnotation();
-		addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, commitID: commitID }, cells);
-		if (u.line) {
-			highlightAndScrollToLine(u.uri, commitID, u.path, u.line, cells);
-		}
-
-		// Log blog view
-		viewEvents.Blob.log({ repo: u.uri!, commitID, path: u.path!, language: getPathExtension(u.path) });
-
-		// Add click handlers to all lines of code, which highlight and add
-		// blame information to the line.
-		Array.from(document.querySelectorAll(".blobview tr")).forEach((tr: HTMLElement, index: number) => {
-			tr.addEventListener("click", () => {
-				if (u.uri && u.path) {
-					highlightLine(u.uri, commitID, u.path, index + 1, cells);
-				}
+			// Add click handlers to all lines of code, which highlight and add
+			// blame information to the line.
+			Array.from(document.querySelectorAll(".blobview tr")).forEach((tr: HTMLElement, index: number) => {
+				tr.addEventListener("click", () => {
+					if (u.uri && u.path) {
+						highlightLine(u.uri, commitID, u.path, index + 1, cells);
+					}
+				});
 			});
 		});
 	} else if (u.uri) {
@@ -197,6 +119,7 @@ window.addEventListener("DOMContentLoaded", () => {
 	// from the URL and browser history
 	// Note that this is a destructive operation (it changes the page URL and replaces browser state)
 	handleQueryEvents(window.location.href);
+
 });
 
 function handleToggleExplorerTree(): void {
@@ -256,7 +179,7 @@ function highlightLine(repoURI: string, commitID: string, path: string, line: nu
 	}
 }
 
-export function highlightAndScrollToLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[]): void {
+function highlightAndScrollToLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[]): void {
 	highlightLine(repoURI, commitID, path, line, cells);
 
 	// Scroll to the line.
@@ -270,24 +193,18 @@ export function highlightAndScrollToLine(repoURI: string, commitID: string, path
 	scrollingElement.scrollTop = targetBound.top - tableBound.top - (viewportBound.height / 2) + (targetBound.height / 2);
 }
 
-window.onhashchange = (hash) => {
-	const oldURL = url.parseBlob(hash.oldURL!);
-	const newURL = url.parseBlob(hash.newURL!);
-	if (!newURL.path || !newURL.line) {
-		return;
-	}
-	if (oldURL.line === newURL.line) {
-		// prevent e.g. re-scrolling to same line on toggling refs group
-		//
-		// also prevent highlightLine from retriggering onhashchange
-		// recursively.
-		return;
-	}
-	const cells = getCodeCellsForAnnotation();
-	highlightAndScrollToLine(newURL.uri!, pageVars.CommitID, newURL.path, newURL.line, cells);
-};
+function highlightAsync(path: string, textContent: string): void {
+	const worker = new Worker(`${(window as any).context.assetsRoot}/scripts/highlighter.bundle.js`);
+	const lang = getModeFromExtension(getPathExtension(path));
+	worker.onmessage = (event) => {
+		const blob = document.querySelector("#blob") as HTMLElement;
+		blob.innerHTML = event.data.innerHTML;
+		syntaxhighlight.processBlock(blob);
+	};
+	worker.postMessage({ textContent, lang });
+}
 
-export function getCodeCellsForAnnotation(): CodeCell[] {
+function getCodeCellsForAnnotation(): CodeCell[] {
 	const table = document.querySelector("table") as HTMLTableElement;
 	const cells: CodeCell[] = [];
 	for (let i = 0; i < table.rows.length; ++i) {
