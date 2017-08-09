@@ -143,8 +143,11 @@ $nav-height: 48px;
 }
 
 .blob, .cloning, .fancyerror, .repo, .search, .tree {
+	$page-height: unquote("calc(100vh - #{$nav-height})");
+
 	background-color: #151D28;
 	width: 960px;
+	height: $page-height;
 }
 
 // Define the "system" font family
@@ -186,23 +189,64 @@ $nav-height: 48px;
 	font-weight: 600;
 }
 
-.blobview {
-	$blob-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
+.blob, .repo, .tree {
+	$page-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
+	height: $page-height;
+	border-bottom: 1px solid #233043;
+	background-color: #202A3B;
 
-	font-family: 'Menlo';
-	display: flex;
-	flex-direction: row;
-	height: $blob-height;
-	width: 100%;
-
-	#blob-container {
-		height: $blob-height;
-		overflow: auto;
-		flex: 3;
-		display: flex;
+	#tree-viewer {
+		display: none;
 		flex-direction: column;
-
+		flex: 1;
+		overflow-x: auto;
 	}
+
+	#tree-view-container {
+		$tvc-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
+		display: flex;
+		flex-direction: row;
+		height: $tvc-height;
+
+		.right {
+			height: $tvc-height;
+			background-color: #151D28;
+			flex: 3;
+		}
+	}
+
+	.repotree {
+		/* Affects only repo.html and tree.html #tree-view-container */
+		.right {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+
+			.top, .bottom {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+			}
+			.top {
+				flex: 2;
+				>h1 {
+					margin-top: 1em;
+				}
+			}
+			.bottom {
+				flex: 1;
+			}
+		}
+	}
+}
+
+.blobview {
+	font-family: 'Menlo';
+	overflow: auto;
+	display: flex;
+	flex-direction: column;
 
 	.line-number {
 		&::before {
@@ -212,16 +256,8 @@ $nav-height: 48px;
 		color: #31445E;
 	}
 
-	#tree-viewer {
-		display: none;
-		flex-direction: column;
-		flex: 1;
-		overflow-x: auto;
-	}
-
 	#blob-table {
 		position: relative;
-		background-color: #151D28;
 		padding-top: 10px;
 		flex: 4;
 		overflow: auto;
@@ -379,11 +415,6 @@ $nav-height: 48px;
 			margin-left: 14px;
 		}
 	}
-}
-
-.blob {
-	border-bottom: 1px solid #233043;
-	background-color: #202A3B;
 }
 
 .cloning {

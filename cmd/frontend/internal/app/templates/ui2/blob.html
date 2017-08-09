@@ -3,7 +3,17 @@
 {{define "Body"}}
 <div class="blob">
 	{{template "navbar.html" .Navbar}}
-	{{template "blobview.html" .BlobView}}
+	{{/*
+		Note: tree-view* structure should be kept in sync with repotree.html
+	*/}}
+	<div id="tree-view-container">
+		<div id="tree-viewer"></div>
+		<div class="blobview right">
+			<div id="blob">{{.BlobView.File}}</div>
+			<div id="blob-table"></div>
+			<div id="ref-widget"></div>
+		</div>
+	</div>
 </div>
 {{end}}
 

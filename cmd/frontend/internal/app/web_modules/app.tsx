@@ -68,23 +68,11 @@ window.addEventListener("DOMContentLoaded", () => {
 		}, 5000);
 	}
 
+	injectTreeViewer();
 	injectReferencesWidget();
 	injectShareWidget();
 	const u = url.parseBlob();
 	if (u.uri && u.path) {
-		showExplorerTreeIfNecessary();
-		const mount = document.querySelector("#tree-viewer")! as HTMLElement;
-		document.querySelector("#file-explorer")!.addEventListener("click", () => {
-			handleToggleExplorerTree();
-		});
-		backend.localStoreListAllFiles(u.uri, pageVars.CommitID).then(resp => {
-			const el = <div className={style(vertical)}>
-				<TreeHeader className={style(content)} title="Files" onDismiss={() => handleToggleExplorerTree()} />
-				<Tree initSelectedPath={u.path} onSelectFile={(path) => window.location.href = url.toBlob({ uri: u.uri, rev: u.rev, path })} className={style(flex)} paths={resp.map(res => res.name)} />
-			</div>;
-			render(el, mount);
-		});
-
 		const blob = document.querySelector("#blob") as HTMLElement;
 		highlightAsync(u.path, blob.textContent!);
 		syntaxhighlight.wait().then(() => {
@@ -124,6 +112,35 @@ window.addEventListener("DOMContentLoaded", () => {
 
 });
 
+function injectTreeViewer(): void {
+	const mount = document.querySelector("#tree-viewer");
+	if (!mount) {
+		return;
+	}
+
+	const repoURL = url.parse();
+	const blobURL = url.parseBlob();
+	const treeURL = url.parseTree();
+	const uri = blobURL.uri || treeURL.uri || repoURL.uri;
+	const rev = blobURL.rev || treeURL.rev || repoURL.rev;
+	const path = blobURL.path || treeURL.path || "/";
+
+	// Force show the tree viewer on any non-blob page.
+	const forceShow = !url.isBlob(blobURL);
+
+	showExplorerTreeIfNecessary(forceShow);
+	document.querySelector("#file-explorer")!.addEventListener("click", () => {
+		handleToggleExplorerTree();
+	});
+	backend.localStoreListAllFiles(uri!, pageVars.CommitID).then(resp => {
+		const el = <div className={style(vertical)}>
+			<TreeHeader className={style(content)} title="Files" onDismiss={() => handleToggleExplorerTree()} />
+			<Tree initSelectedPath={path} onSelectFile={(selectedPath) => window.location.href = url.toBlob({ uri: uri, rev: rev, path: selectedPath })} className={style(flex)} paths={resp.map(res => res.name)} />
+		</div>;
+		render(el, mount);
+	});
+}
+
 function handleToggleExplorerTree(): void {
 	// TODO(slimsag): add eventLogger calls
 	//eventLogger.logFileTreeToggleClicked({toggled: toggled});
@@ -133,10 +150,10 @@ function handleToggleExplorerTree(): void {
 	treeViewer.style.display = isShown ? "none" : "flex";
 }
 
-function showExplorerTreeIfNecessary(): void {
+function showExplorerTreeIfNecessary(force: boolean): void {
 	// TODO(slimsag): add eventLogger calls
 	//eventLogger.logFileTreeToggleClicked({toggled: toggled});
-	const shouldShow = window.localStorage.getItem("show-explorer") === "true";
+	const shouldShow = force || window.localStorage.getItem("show-explorer") === "true";
 	const treeViewer = document.querySelector("#tree-viewer")! as HTMLElement;
 	treeViewer.style.display = shouldShow ? "flex" : "none";
 }

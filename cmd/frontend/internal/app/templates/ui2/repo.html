@@ -3,8 +3,7 @@
 {{define "Body"}}
 <div class="repo">
 	{{template "navbar.html" .Navbar}}
-	<h3>{{.RepoShortName}} - <em>"{{.Repo.Description}}"</em></h3>
-	{{template "treeview.html" .TreeView}}
+	{{template "repotree.html" .}}
 </div>
 {{end}}
 

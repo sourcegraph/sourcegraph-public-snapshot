@@ -1,4 +1,4 @@
-import { BlobURL, ParsedURL } from "sourcegraph/util/types";
+import { BlobURL, ParsedURL, TreeURL } from "sourcegraph/util/types";
 import * as URI from "urijs";
 
 // parse parses a generic Sourcegraph URL, where most components are shared
@@ -18,6 +18,24 @@ export function parse(_loc: string = window.location.href): ParsedURL {
 		rev = uriSplit[1];
 	}
 	return { uri, rev };
+}
+
+// parseTree parses a tree page URL.
+export function parseTree(_loc: string = window.location.href): TreeURL {
+	const loc = URI.parse(_loc);
+	// Parse the generic Sourcegraph URL
+	const u = parse(_loc);
+
+	// Parse tree-specific URL components.
+	const urlsplit = loc.path.slice(1).split("/");
+	if (urlsplit.length < 3 && urlsplit[0] !== "github.com") {
+		return {};
+	}
+	let path: string | undefined;
+	if (loc.path.indexOf("/-/tree/") !== -1) {
+		path = urlsplit.slice(5).join("/");
+	}
+	return { ...u, path };
 }
 
 // parseBlob parses a blob page URL.

@@ -1,0 +1,18 @@
+<svg width="96" height="96" viewBox="0 0 96 96" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<title>Canvas</title>
+<desc>Created using Figma</desc>
+<g id="Canvas" transform="translate(-23449 -18489)">
+<g id="Ellipse 3">
+<use xlink:href="#path0_fill" transform="translate(23449 18489)" fill="#233043"/>
+</g>
+<g id="icon/book">
+<g id="Vector">
+<use xlink:href="#path1_fill" transform="translate(23478 18515)" fill="#93A9C8"/>
+</g>
+</g>
+</g>
+<defs>
+<path id="path0_fill" d="M 96 48C 96 74.5097 74.5097 96 48 96C 21.4903 96 0 74.5097 0 48C 0 21.4903 21.4903 0 48 0C 74.5097 0 96 21.4903 96 48Z"/>
+<path id="path1_fill" d="M 38 46L 8.5 46C 6.9 46 5.4 45.4 4.3 44.2L 1.2 41.1C 0.4 40.3 -1.77636e-15 39.3 -1.77636e-15 38.3L -1.77636e-15 2C -1.77636e-15 0.9 0.9 0 2 0L 32 0C 33.1 0 34 0.9 34 2L 34 38C 34 39.1 33.1 40 32 40L 6.8 40C 6.5 40 6.3 40.2 6.3 40.5C 6.3 40.6 6.4 40.8 6.4 40.9L 7 41.5C 7.4 41.9 7.9 42.1 8.4 42.1L 35.4 42.1C 35.7 42.1 35.9 41.9 35.9 41.6L 35.9 6.6C 35.9 6.3 36.1 6.1 36.4 6.1L 38 6.1C 39.1 6.1 40 7 40 8.1L 40 44.1C 40 45.1 39.1 46 38 46Z"/>
+</defs>
+</svg>

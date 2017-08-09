@@ -1,9 +1,9 @@
 package ui2
 
 import (
+	"html/template"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 
@@ -39,10 +39,11 @@ type Common struct {
 	AssetURL string
 
 	// The fields below have zero values when not on a repo page.
-	RepoShortName string
-	Repo          *sourcegraph.Repo
-	Rev           string                  // unresolved / user-specified revision (e.x.: "@master")
-	RevSpec       sourcegraph.RepoRevSpec // resolved SHA1 revision
+	RepoShortName, RepoShortNameSpaced string // "gorilla/mux" and "gorilla / mux"
+	Repo                               *sourcegraph.Repo
+	Rev                                string                  // unresolved / user-specified revision (e.x.: "@master")
+	RevSpec                            sourcegraph.RepoRevSpec // resolved SHA1 revision
+	OpenOnDesktop                      template.URL
 }
 
 // repoShortName trims the first path element of the given repo uri if it has
@@ -53,6 +54,10 @@ func repoShortName(uri string) string {
 		return uri
 	}
 	return strings.Join(split[1:], "/")
+}
+
+func (c *Common) addOpenOnDesktop(fpath string) {
+	c.OpenOnDesktop = template.URL("src-insiders:open?resource=repo://" + path.Join(c.Repo.URI, fpath))
 }
 
 // newCommon builds a *Common data structure, returning an error if one occurs.
@@ -107,6 +112,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError 
 		common.PageVars.Rev = strings.TrimPrefix(common.Rev, "@")
 		common.PageVars.CommitID = common.RevSpec.CommitID
 		common.RepoShortName = repoShortName(common.Repo.URI)
+		common.RepoShortNameSpaced = strings.Join(strings.Split(repoShortName(common.Repo.URI), "/"), " / ")
 	}
 	return common, nil
 }
@@ -160,20 +166,6 @@ func serveSearch(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: common,
 	})
-}
-
-// treeView is the data structure shared/treeview.html expects.
-type treeView struct {
-	RepoURI, Rev, Dir string
-	Files             []os.FileInfo
-}
-
-func (t *treeView) URL(i os.FileInfo) string {
-	routeName := routeBlob
-	if i.IsDir() {
-		routeName = routeTree
-	}
-	return urlTo(routeName, "Repo", t.RepoURI, "Rev", t.Rev, "Path", path.Join(t.Dir, i.Name())).String()
 }
 
 // navbar is the data structure shared/navbar.html expects.
@@ -244,30 +236,14 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
-	vcsrepo, err := localstore.RepoVCS.Open(r.Context(), common.Repo.ID)
-	if err != nil {
-		return err
-	}
-
-	dir := "/"
-	files, err := vcsrepo.ReadDir(r.Context(), vcs.CommitID(common.RevSpec.CommitID), dir, false)
-	if err != nil {
-		return err
-	}
+	common.addOpenOnDesktop("/")
 
 	return renderTemplate(w, "repo.html", &struct {
 		*Common
-		TreeView *treeView
-		Navbar   *navbar
+		Navbar *navbar
 	}{
 		Common: common,
-		TreeView: &treeView{
-			RepoURI: common.Repo.URI,
-			Rev:     common.Rev,
-			Dir:     dir,
-			Files:   files,
-		},
-		Navbar: newNavbar(common.Repo, common.Rev, dir, true),
+		Navbar: newNavbar(common.Repo, common.Rev, "/", true),
 	})
 }
 
@@ -280,30 +256,15 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
-	vcsrepo, err := localstore.RepoVCS.Open(r.Context(), common.Repo.ID)
-	if err != nil {
-		return err
-	}
-
-	dir := mux.Vars(r)["Path"]
-	files, err := vcsrepo.ReadDir(r.Context(), vcs.CommitID(common.RevSpec.CommitID), dir, false)
-	if err != nil {
-		return err
-	}
+	fp := mux.Vars(r)["Path"]
+	common.addOpenOnDesktop(fp)
 
 	return renderTemplate(w, "tree.html", &struct {
 		*Common
-		TreeView *treeView
-		Navbar   *navbar
+		Navbar *navbar
 	}{
 		Common: common,
-		TreeView: &treeView{
-			RepoURI: common.Repo.URI,
-			Rev:     common.Rev,
-			Dir:     dir,
-			Files:   files,
-		},
-		Navbar: newNavbar(common.Repo, common.Rev, dir, true),
+		Navbar: newNavbar(common.Repo, common.Rev, fp, true),
 	})
 }
 
@@ -328,6 +289,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	fp := mux.Vars(r)["Path"]
+	common.addOpenOnDesktop(fp)
 	file, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), fp)
 	if err != nil {
 		return err
