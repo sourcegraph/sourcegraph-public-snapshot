@@ -30,10 +30,12 @@ var (
 		"log":    []string{"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges"},
 		"show":   []string{},
 		"remote": []string{"-v"},
-		"diff":   []string{"--name-status", "-C"},
+		"diff":   []string{"--name-status", "-C", "-U1", "--histogram"},
 		"blame":  []string{"--root", "--incremental", "--"},
+		"branch": []string{"-r", "-a", "--contains"},
 
 		"rev-parse": []string{"--abbrev-ref"},
+		"rev-list":  []string{"--max-parents", "--reverse", "--max-count"},
 	}
 )
 
