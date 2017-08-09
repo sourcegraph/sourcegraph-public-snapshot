@@ -15,7 +15,7 @@
 	templates like base.html. In the event that it fails to render, error.html
 	is the fallback that is used.
 */}}
-{{define "Title"}}{{.StatusCode}} {{.StatusText}} - Sourcegraph{{end}}
+{{define "Title"}}{{.StatusCode}} {{.StatusText}}{{end}}
 
 {{define "Body"}}
 <div class="fancyerror status-{{.StatusCode}}">
