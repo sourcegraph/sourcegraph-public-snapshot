@@ -299,6 +299,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 		*Common
 		BlobView *blobView
 		Navbar   *navbar
+		FileName string
 	}{
 		Common: common,
 		BlobView: &blobView{
@@ -306,6 +307,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 			Name: path.Base(fp),
 			File: string(file),
 		},
-		Navbar: newNavbar(common.Repo, common.Rev, fp, false),
+		Navbar:   newNavbar(common.Repo, common.Rev, fp, false),
+		FileName: path.Base(fp),
 	})
 }
