@@ -100,6 +100,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError 
 			}
 			if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
 				// Repo is cloning.
+				common.RepoShortName = repoShortName(common.Repo.URI)
 				return nil, renderTemplate(w, "cloning.html", &struct {
 					*Common
 				}{
