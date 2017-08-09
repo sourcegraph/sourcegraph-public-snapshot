@@ -4,14 +4,29 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"strings"
 )
+
+var ssoUserHeader = env.Get("SSO_USER_HEADER", "", "Header injected by an SSO proxy to indicate the logged in user")
 
 // AuthorizationMiddleware authenticates the user based on the "Authorization" header.
 func AuthorizationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Accept, Authorization, Cookie")
+
+		if ssoUserHeader != "" {
+			if h := r.Header.Get(ssoUserHeader); h != "" {
+				r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{
+					UID:   h,
+					Login: h,
+				}))
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
 
 		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 		if len(parts) != 2 {
