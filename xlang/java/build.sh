@@ -41,4 +41,4 @@ if [ "$SKINNY_MODE" = false ]; then
 	fi
 fi
 
-docker build -t $IMAGE-$TAG .
+docker build -t $IMAGE:$TAG .
