@@ -81,15 +81,15 @@ func (*rootResolver) SearchProfiles(ctx context.Context) ([]*searchProfile, erro
 
 func ossProfiles() []*searchProfile {
 	return []*searchProfile{{
-		name:        "Go",
+		name:        "Go standard library (sample)",
 		description: "Repositories part of the Go Programming Language project.",
 		uris:        []string{"github.com/golang/go", "github.com/golang/net", "github.com/golang/tools", "github.com/golang/crypto", "github.com/golang/sys", "github.com/golang/arch", "github.com/golang/sync"},
 	}, {
-		name:        "Angular",
+		name:        "Angular (sample)",
 		description: "Repositories part of the Angular 2 Framework project.",
 		uris:        []string{"github.com/angular/angular", "github.com/angular/material2", "github.com/angular/angular-cli"},
 	}, {
-		name:        "vscode",
+		name:        "vscode (sample)",
 		description: "Repositories related to the Visual Studio Code project. Taken from https://github.com/Microsoft/vscode/wiki/Related-Projects",
 		uris: []string{"github.com/Microsoft/vscode",
 			// Core Repositories
@@ -106,7 +106,7 @@ func ossProfiles() []*searchProfile {
 			"github.com/Microsoft/vscode-themes",
 		},
 	}, {
-		name:        "Dropwizard",
+		name:        "Dropwizard (sample)",
 		description: "Repositories related to the Dropwizard project.",
 		uris: []string{"github.com/dropwizard/dropwizard",
 			// Jetty for HTTP servin".
@@ -127,7 +127,7 @@ func ossProfiles() []*searchProfile {
 			"github.com/liquibase/liquibase",
 		},
 	}, {
-		name:        "Kubernetes",
+		name:        "Kubernetes (sample)",
 		description: "Projects part of the Kubernetes Container Orchestartion project.",
 		uris:        []string{"github.com/kubernetes/kubernetes", "github.com/kubernetes/contrib", "github.com/kubernetes/charts", "github.com/kubernetes/client-go"},
 	}}
