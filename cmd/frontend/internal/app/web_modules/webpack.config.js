@@ -7,8 +7,13 @@ var WebpackShellPlugin = require('webpack-shell-plugin');
 var plugins;
 if (process.env.NODE_ENV === 'production') {
     plugins = [
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify('production')
+            }
+        }),
         new webpack.optimize.UglifyJsPlugin({
-            sourceMap: true,
+            sourceMap: false,
             compressor: {
                 warnings: false
             }
@@ -16,6 +21,11 @@ if (process.env.NODE_ENV === 'production') {
     ];
 } else {
     plugins = [
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify('development')
+            }
+        }),
         new webpack.NoEmitOnErrorsPlugin(),
         new WebpackShellPlugin({
             onBuildStart: ['yarn run fmt'],
