@@ -12,7 +12,7 @@ import { injectShareWidget } from "sourcegraph/share";
 import { addAnnotations } from "sourcegraph/tooltips";
 import { handleQueryEvents } from "sourcegraph/tracking/analyticsUtils";
 import { events, viewEvents } from "sourcegraph/tracking/events";
-import { getModeFromExtension, getPathExtension } from "sourcegraph/util";
+import { getModeFromExtension, getPathExtension, supportedExtensions } from "sourcegraph/util";
 import * as activeRepos from "sourcegraph/util/activeRepos";
 import { pageVars } from "sourcegraph/util/pageVars";
 import { sourcegraphContext } from "sourcegraph/util/sourcegraphContext";
@@ -92,7 +92,9 @@ window.addEventListener("DOMContentLoaded", () => {
 			const rev = pageVars.Rev;
 			const commitID = pageVars.CommitID;
 			const cells = getCodeCellsForAnnotation();
-			addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, commitID: commitID }, cells);
+			if (supportedExtensions.has(getPathExtension(u.path!))) {
+				addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, commitID: commitID }, cells);
+			}
 			if (u.line) {
 				highlightAndScrollToLine(u.uri!, commitID, u.path!, u.line, cells);
 			}

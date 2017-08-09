@@ -45,7 +45,7 @@ namespace Styles {
 	export const closeIcon = style({ cursor: "pointer", fontSize: "18px", color: colors.normalFontColor, $nest: { "&:hover": { color: white } } });
 	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
-	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px", cursor: "pointer" });
+	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px", cursor: "pointer", overflowX: "auto" });
 }
 
 interface Props {

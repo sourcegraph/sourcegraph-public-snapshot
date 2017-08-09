@@ -216,6 +216,7 @@ $nav-height: 48px;
 		display: none;
 		flex-direction: column;
 		flex: 1;
+		overflow-x: auto;
 	}
 
 	#blob-table {
