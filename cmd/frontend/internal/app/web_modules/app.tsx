@@ -21,6 +21,8 @@ import { CodeCell } from "sourcegraph/util/types";
 import * as url from "sourcegraph/util/url";
 import { style } from "typestyle";
 
+const navHeight = "48px";
+
 window.onhashchange = (hash) => {
 	const oldURL = url.parseBlob(hash.oldURL!);
 	const newURL = url.parseBlob(hash.newURL!);
@@ -133,9 +135,11 @@ function injectTreeViewer(): void {
 		handleToggleExplorerTree();
 	});
 	backend.localStoreListAllFiles(uri!, pageVars.CommitID).then(resp => {
-		const el = <div className={style(vertical)}>
+		// For Firefox, this can look like it's as tall as the overflown content (when the actual parent element is much smaller).
+		// We explicitly set the height so scrolling calculations are consistent across browsers.
+		const el = <div className={style(vertical, { height: `calc(100vh - ${navHeight} - ${navHeight} - 1px)` })} >
 			<TreeHeader className={style(content)} title="Files" onDismiss={() => handleToggleExplorerTree()} />
-			<Tree initSelectedPath={path} onSelectFile={(selectedPath) => window.location.href = url.toBlob({ uri: uri, rev: rev, path: selectedPath })} className={style(flex)} paths={resp.map(res => res.name)} />
+			<Tree initSelectedPath={path} onSelectFile={(p) => window.location.href = url.toBlob({ uri, rev, path: p })} className={style(flex)} paths={resp.map(res => res.name)} />
 		</div>;
 		render(el, mount);
 	});
