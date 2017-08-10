@@ -49,9 +49,6 @@ $nav-height: 48px;
 		justify-content: center;
 
 		#navbar {
-			min-width: 960px;
-			max-width: 960px;
-
 			.spin:hover {	animation: spin 0.5s ease-in-out 1; }
 
 			@keyframes spin {
@@ -146,8 +143,28 @@ $nav-height: 48px;
 	$page-height: unquote("calc(100vh - #{$nav-height})");
 
 	background-color: #151D28;
-	width: 960px;
 	height: $page-height;
+}
+
+/* screens 0-1080px wide: 100% width */
+@media (min-width: 0px) and (max-width: 1080px) {
+	.blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
+		width: 100%;
+	}
+}
+
+/* screens 1080-1920px wide: 1080px wide */
+@media (min-width: 1080px) and (max-width: 1920px) {
+	.blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
+		width: 1080px;
+	}
+}
+
+/* screens >1920px: 1180px wide */
+@media (min-width: 1920px) {
+	.blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
+		width: 1180px;
+	}
 }
 
 // Define the "system" font family
@@ -211,7 +228,7 @@ $nav-height: 48px;
 		.right {
 			height: $tvc-height;
 			background-color: #151D28;
-			flex: 3;
+			flex: 4;
 		}
 	}
 
