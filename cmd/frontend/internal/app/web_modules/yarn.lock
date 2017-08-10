@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@sourcegraph/components@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/components/-/components-0.0.5.tgz#74ee922592722285f5ac4a8b8041dfd1533846c9"
+"@sourcegraph/components@^0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/components/-/components-0.0.6.tgz#49b1b2df58daee4c0001be1ab5a4399d4d56d15c"
   dependencies:
     csstips "^0.2.2"
     csx "^8.4.0"
