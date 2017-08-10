@@ -162,10 +162,17 @@ func serveSearch(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
+	shortQuery := r.URL.Query().Get("q")
+	if len(shortQuery) > 8 {
+		shortQuery = shortQuery[:8]
+	}
+
 	return renderTemplate(w, "search.html", &struct {
 		*Common
+		ShortQuery string
 	}{
-		Common: common,
+		Common:     common,
+		ShortQuery: shortQuery,
 	})
 }
 
