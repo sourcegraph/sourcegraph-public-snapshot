@@ -7,7 +7,7 @@ import { expandActiveInactive, getSearchParamsFromLocalStorage, getSearchParamsF
 import { setState as setSearchState, store as searchStore } from "sourcegraph/search/store";
 import { getCurrent as getActiveRepos } from "sourcegraph/util/activeRepos";
 import { inputBackgroundColor, white } from "sourcegraph/util/colors";
-import { isBlob, isSearchResultsPage, parseBlob } from "sourcegraph/util/url";
+import { isSearchResultsPage, parse } from "sourcegraph/util/url";
 import { style } from "typestyle";
 
 namespace Styles {
@@ -25,7 +25,7 @@ export class AdvancedSearchToggle extends React.Component<{}, State> {
 
 	constructor(props: {}) {
 		super(props);
-		const url = parseBlob();
+		const url = parse();
 		const loc = window.location;
 		const searchParams = isSearchResultsPage(loc) ? getSearchParamsFromURL(loc.href) : getSearchParamsFromLocalStorage();
 		let repoList = parseRepoList(searchParams.repos);
@@ -35,7 +35,7 @@ export class AdvancedSearchToggle extends React.Component<{}, State> {
 		}
 
 		this.state = {
-			scope: isBlob(url) ? url.uri!.substr("github.com/".length) /* TODO(john): fix <-- that */ : `${repoList.length} repositor${repoList.length === 1 ? "y" : "ies"}`,
+			scope: Boolean(url.uri) ? url.uri!.substr("github.com/".length) /* TODO(john): fix <-- that */ : `${repoList.length} repositor${repoList.length === 1 ? "y" : "ies"}`,
 			showAdvancedSearch: searchStore.getValue().showAdvancedSearch,
 		};
 	}

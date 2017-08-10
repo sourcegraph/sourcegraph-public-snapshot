@@ -11,7 +11,7 @@ import { getSearchPath } from "sourcegraph/search";
 import { RepoResult } from "sourcegraph/search/SearchForm";
 import { setState as setSearchState, State as SearchState, store as searchStore } from "sourcegraph/search/store";
 import { inputBackgroundColor, normalFontColor, primaryBlue, referencesBackgroundColor, white } from "sourcegraph/util/colors";
-import { isBlobPage, parseBlob } from "sourcegraph/util/url";
+import { parse } from "sourcegraph/util/url";
 import { style } from "typestyle";
 
 namespace Styles {
@@ -59,8 +59,9 @@ export class AdvancedSearchDrawer extends React.Component<{}, SearchState> {
 			this.setState(state as any);
 		});
 
-		if (isBlobPage()) {
-			setSearchState({ ...searchStore.getValue(), repos: parseBlob().uri! });
+		const u = parse();
+		if (u.uri) {
+			setSearchState({ ...searchStore.getValue(), repos: u.uri! });
 		}
 	}
 
