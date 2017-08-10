@@ -301,8 +301,8 @@ $nav-height: 48px;
 		border-collapse: collapse;
 		.line-number, .code-cell {
 			padding: 0;
-			padding-top: 0.5em;
-			padding-bottom: 0.5em;
+			padding-top: 0.15em;
+			padding-bottom: 0.15em;
 
 			pre {
 				margin: 2px;
@@ -319,7 +319,6 @@ $nav-height: 48px;
 			padding-left: .5em;
 			white-space: pre;
 			font-size: .75em;
-			height: 1.7em;
 			>.blame {
 				&::before {
 					content: attr(data-blame);
