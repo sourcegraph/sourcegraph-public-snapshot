@@ -20,6 +20,9 @@ func TestComments_appendUniqueEmailsFromMentions(t *testing.T) {
 		{Input: "Hello alice@gmail.com", Output: []string{}},
 		{Input: "Hello alice@gmail.com", Output: []string{}},
 		{Input: "Hello +alice@gmail.com and +bob@acme.com", Output: []string{"alice@gmail.com", "bob@acme.com"}},
+		{Input: "Hello +alice@gmail.com, +bob@acme.com, and +charlie@acme.com.", Output: []string{"alice@gmail.com", "bob@acme.com", "charlie@acme.com"}},
+		{Input: "Hello alice+spam@gmail.com", Output: []string{}},
+		{Input: "Hello +alice+spam@gmail.com", Output: []string{"alice+spam@gmail.com"}},
 	}
 
 	for _, test := range tests {

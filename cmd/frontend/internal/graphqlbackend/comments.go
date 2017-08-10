@@ -123,7 +123,9 @@ const maxEmails = 50
 // emailMentionPattern is a regex that matches an email mention in a comment, of
 // the form "+alice@example.com". This is a simplified pattern that does not
 // ensure the email is valid.
-var emailMentionPattern = regexp.MustCompile(`\B\+[^\s]+@[^\s]+`)
+//
+// TODO: will not match emails with non-alphanumeric TLDs (e.g. user@foo.みんな)
+var emailMentionPattern = regexp.MustCompile(`\B\+[^\s]+@[^\s]+\.[A-Za-z0-9]+`)
 
 // emailsToNotify returns all emails that should be notified of the new comment in the thread of previous comments.
 func emailsToNotify(previousComments []*sourcegraph.Comment, newComment *sourcegraph.Comment) []string {
