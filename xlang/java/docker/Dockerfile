@@ -5,6 +5,15 @@ EXPOSE 2088
 RUN apt-get -qy update
 RUN apt-get -qy install unzip git maven
 
+# Install Gradle binary
+RUN apt-get -qy install wget
+RUN mkdir /gradle
+WORKDIR /gradle
+ADD https://services.gradle.org/distributions/gradle-4.1-bin.zip ./gradle.zip
+RUN unzip gradle.zip
+ENV PATH $PATH:/gradle/gradle-4.1/bin
+WORKDIR /
+
 COPY ./artifacts /root/.java-langserver/artifacts
 
 ENV ANDROID_HOME /android
