@@ -20,6 +20,19 @@ export function injectReferencesWidget(): void {
 		window.addEventListener("hashchange", (e) => {
 			if (e && e.newURL!.indexOf("$references") !== -1) {
 				widgetContainer.style.display = "block";
+
+				// References panel was shown, so scroll the blob table so
+				// that the selected line is centered.
+				const selectedLine = document.querySelector(".code-cell.sg-highlighted")!;
+				const blobTable = document.querySelector("#blob-table")!;
+				const horizontalScrollBefore = blobTable.scrollLeft;
+				selectedLine.scrollIntoView();
+
+				// Ensure horizontal scroll doesn't change.
+				blobTable.scrollLeft = horizontalScrollBefore;
+
+				// Center the line on the screen.
+				blobTable.scrollTop -= blobTable.getBoundingClientRect().height / 2;
 			}
 		});
 
