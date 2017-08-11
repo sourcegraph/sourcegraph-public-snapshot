@@ -1,4 +1,4 @@
-import { Autocomplete } from "@sourcegraph/components";
+import { Autocomplete } from "@sourcegraph/components/Autocomplete";
 import { Sourcegraph as AutocompleteStyles } from "@sourcegraph/components/Autocomplete/style";
 import * as csstips from "csstips";
 import * as React from "react";
@@ -25,14 +25,13 @@ namespace Styles {
 
 	export const container = style(csstips.horizontal, csstips.center, { height: "120px", backgroundColor: referencesBackgroundColor, color: normalFontColor, padding: "8px 12px", fontSize: "13px" });
 
-	export const repoArea = style(csstips.flex4, { marginLeft: "16px", maxWidth: "30%", height: "90px" });
+	export const repoArea = style(csstips.flex4, { marginLeft: "16px", maxWidth: "30%", height: "80px" });
 	export const reposInput = style(input, { borderRadius, minHeight: "100%", width: "100%", maxHeight: "100%", minWidth: "100%", maxWidth: "100%" });
 
 	export const addReposSection = style(csstips.flex3);
 	export const addReposButton = style(csstips.horizontal, csstips.center, { backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
 
 	export const autocomplete = AutocompleteStyles.repoAutocomplete({
-		container: style({ marginTop: "8px" }),
 		results: style({ maxHeight: "48px" }),
 	});
 

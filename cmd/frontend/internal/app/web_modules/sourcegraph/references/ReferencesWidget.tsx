@@ -1,3 +1,4 @@
+import { hoverSelection } from "@sourcegraph/components/style/color";
 import * as csstips from "csstips";
 import * as _ from "lodash";
 import * as React from "react";
@@ -47,7 +48,16 @@ namespace Styles {
 	export const closeIcon = style({ cursor: "pointer", fontSize: "18px", color: colors.normalFontColor, $nest: { "&:hover": { color: white } } });
 	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { cursor: "pointer", backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
-	export const ref = style({ textDecoration: "none", display: "block", fontFamily: "Menlo !important", borderBottom: border, padding: "10px", cursor: "pointer", overflowX: "auto" });
+	export const ref = style({
+		textDecoration: "none", // don't use cascading link style
+		display: "block",
+		fontFamily: "Menlo !important", // don't use cascading link style
+		borderBottom: border,
+		padding: "10px",
+		cursor: "pointer",
+		overflowX: "auto",
+		$nest: { "&:hover": { backgroundColor: hoverSelection } },
+	});
 	export const expandIcon = style({ fontSize: "18px", marginLeft: "15px", marginRight: "15px" });
 	export const fill = style({ flex: 1 });
 }

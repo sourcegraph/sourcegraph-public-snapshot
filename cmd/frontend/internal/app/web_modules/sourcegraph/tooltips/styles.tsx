@@ -7,7 +7,7 @@ import * as colors from "sourcegraph/util/colors";
 export const tooltip = {
 	backgroundColor: colors.backgroundColor,
 	maxWidth: "500px",
-	minWidth: "500px",
+	minWidth: "400px",
 	border: `solid 1px ${colors.borderColor}`,
 	fontFamily: normalFontFamily,
 	color: colors.normalFontColor,
@@ -59,8 +59,8 @@ export const tooltipAction = {
 	textDecoration: "none",
 	paddingTop: "8px",
 	paddingBottom: "8px",
-	paddingLeft: "16px",
-	paddingRight: "16px",
+	paddingLeft: "8px",
+	paddingRight: "8px",
 	color: colors.actionFontColor,
 };
 

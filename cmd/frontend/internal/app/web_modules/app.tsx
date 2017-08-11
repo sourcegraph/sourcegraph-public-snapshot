@@ -1,4 +1,4 @@
-import { Tree, TreeHeader } from "@sourcegraph/components";
+import { Tree, TreeHeader } from "@sourcegraph/components/Tree";
 import { content, flex, vertical } from "csstips";
 import * as moment from "moment";
 import * as React from "react";

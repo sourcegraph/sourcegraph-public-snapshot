@@ -1,4 +1,4 @@
-import { Autocomplete } from "@sourcegraph/components";
+import { Autocomplete } from "@sourcegraph/components/Autocomplete";
 import { Sourcegraph as AutocompleteStyles } from "@sourcegraph/components/Autocomplete/style";
 import * as csstips from "csstips";
 import * as React from "react";
