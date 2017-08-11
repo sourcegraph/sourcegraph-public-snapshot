@@ -6,21 +6,16 @@
         "baseUrl": "./",
         "paths": {
             "sourcegraph/*": [
-                "./sourcegraph/*"
+                "sourcegraph/*"
             ],
             "@sourcegraph/components/*": [
-                "./node_modules/@sourcegraph/components/src/*"
-            ],
-            "*": [
-                "node_modules/@types/*",
-                "*"
+                "node_modules/@sourcegraph/components/src/*"
             ]
         },
         "lib": [
             "es2016",
             "dom"
         ],
-        "typeRoots": ["./node_nodules/@types"],
         "jsx": "react",
         "allowJs": true,
         "sourceMap": true,

@@ -33,29 +33,6 @@
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/@types/query-string/-/query-string-4.3.1.tgz#59ea5c75d425817370158789aa4f6197e5abd987"
 
-"@types/react-dom@^0.14.18":
-  version "0.14.23"
-  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-0.14.23.tgz#cecfcfad754b4c2765fe5d29b81b301889ad6c2e"
-  dependencies:
-    "@types/react" "*"
-
-"@types/react-icon-base@*":
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/@types/react-icon-base/-/react-icon-base-2.0.4.tgz#2e5f10e116ed8757fd51368c623bf01f272ef817"
-  dependencies:
-    "@types/react" "*"
-
-"@types/react-icons@^2.2.2":
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/@types/react-icons/-/react-icons-2.2.2.tgz#7c08a237ae8fb7ddfeac1d715a8eaae2cba19799"
-  dependencies:
-    "@types/react" "*"
-    "@types/react-icon-base" "*"
-
-"@types/react@*":
-  version "15.0.39"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-15.0.39.tgz#5a820c75cabf4cbfa177a3ab5a9a0634c46b14d1"
-
 "@types/react@^16.0.0":
   version "16.0.0"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-16.0.0.tgz#fec7e6302e11c1cd307129d8ce1e6d5dca4a0283"
