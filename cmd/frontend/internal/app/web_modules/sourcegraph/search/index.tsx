@@ -1,5 +1,6 @@
 import * as querystring from "querystring";
 import { ActiveRepoResults } from "sourcegraph/util/types";
+import { openFromJS } from "sourcegraph/util/url";
 import * as URI from "urijs";
 
 export interface SearchParams {
@@ -18,13 +19,7 @@ export function handleSearchInput(e: any, params: SearchParams): void {
 	}
 
 	params.query = query;
-
-	let newTab = false;
-	if (e.metaKey || e.altKey || e.ctrlKey) {
-		newTab = true;
-	}
-	const path = getSearchPath(params);
-	newTab ? window.open(path, "_blank") : window.location.href = path;
+	openFromJS(getSearchPath(params), e);
 }
 
 export function getSearchPath(params: SearchParams): string {
