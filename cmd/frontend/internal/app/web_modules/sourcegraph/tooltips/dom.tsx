@@ -237,6 +237,7 @@ function updateTooltip(state: TooltipState): void {
 	}
 
 	const scrollingElement = document.querySelector("#blob-table")!;
+	const scrollingElementBound = scrollingElement.getBoundingClientRect();
 	const blobTable = document.querySelector("#blob-table>table")!; // table that we're positioning tooltips relative to.
 	const tableBound = blobTable.getBoundingClientRect(); // tables bounds
 	const targetBound = target.getBoundingClientRect(); // our target elements bounds
@@ -248,13 +249,13 @@ function updateTooltip(state: TooltipState): void {
 
 	// Anchor the tooltip vertically.
 	const tooltipBound = tooltip.getBoundingClientRect();
-	const relTop = targetBound.top - tableBound.top;
+	const relTop = (targetBound.top + scrollingElement.scrollTop) - scrollingElementBound.top;
 	const margin = 5;
 	let tooltipTop = relTop - (tooltipBound.height + margin);
 	if ((tooltipTop - scrollingElement.scrollTop) < 0) {
 		// Tooltip wouldn't be visible from the top, so display it at the
 		// bottom.
-		const relBottom = targetBound.bottom - tableBound.top;
+		const relBottom = (targetBound.bottom + scrollingElement.scrollTop) - scrollingElementBound.top;
 		tooltipTop = relBottom + margin;
 	}
 	tooltip.style.top = tooltipTop + "px";
