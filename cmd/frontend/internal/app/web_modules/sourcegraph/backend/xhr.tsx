@@ -20,7 +20,7 @@ function defaultOptions(): FetchOptions | undefined {
 		return; // for unit tests
 	}
 	const headers = new Headers();
-	headers.set("Authorization", `session ${token}`);
+	headers.set("Authorization", `sg-session ${token}`);
 	return {
 		headers,
 	};
