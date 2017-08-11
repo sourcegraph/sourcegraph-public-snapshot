@@ -33,7 +33,6 @@ export function injectReferencesWidget(): void {
 
 				// Center the line on the screen.
 				blobTable.scrollTop -= blobTable.getBoundingClientRect().height / 2;
-			} else {
 			}
 		});
 

@@ -6,7 +6,7 @@ import { render } from "react-dom";
 import * as backend from "sourcegraph/backend";
 import * as xhr from "sourcegraph/backend/xhr";
 import { triggerBlame } from "sourcegraph/blame";
-import { injectReferencesWidget, dismissReferencesWidget } from "sourcegraph/references/inject";
+import { dismissReferencesWidget, injectReferencesWidget } from "sourcegraph/references/inject";
 import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from "sourcegraph/search/inject";
 import { injectShareWidget } from "sourcegraph/share";
 import { addAnnotations } from "sourcegraph/tooltips";
