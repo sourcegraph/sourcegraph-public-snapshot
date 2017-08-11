@@ -1,5 +1,6 @@
 import { hoverSelection } from "@sourcegraph/components/src/style/color";
 import * as csstips from "csstips";
+import { color } from "csx";
 import * as _ from "lodash";
 import * as React from "react";
 import * as DownIcon from "react-icons/lib/fa/angle-down";
@@ -46,7 +47,13 @@ namespace Styles {
 
 	export const refsGroup = style({ fontSize: "12px", fontFamily: "system", color: normalFontColor, userSelect: "none" });
 	export const closeIcon = style({ cursor: "pointer", fontSize: "18px", color: colors.normalFontColor, $nest: { "&:hover": { color: white } } });
-	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { cursor: "pointer", backgroundColor: "#233043", height: "32px" });
+	const refsTitleColor = "#233043";
+	export const refsGroupTitle = style(csstips.horizontal, csstips.center, {
+		cursor: "pointer",
+		backgroundColor: refsTitleColor,
+		height: "32px",
+		$nest: { "&:hover": { backgroundColor: color(refsTitleColor).darken(.05).toString() } },
+	});
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
 	export const ref = style({
 		textDecoration: "none", // don't use cascading link style
@@ -224,16 +231,17 @@ interface ReferenceGroupProps {
 	path: string;
 	refs: Reference[];
 	isLocal: boolean;
+	hidden?: boolean;
 }
 
 interface ReferenceGroupState {
-	hidden: boolean;
+	hidden?: boolean;
 }
 
 export class ReferencesGroup extends React.Component<ReferenceGroupProps, ReferenceGroupState> {
 	constructor(props: ReferenceGroupProps) {
 		super(props);
-		this.state = { hidden: false };
+		this.state = { hidden: props.hidden };
 	}
 
 	render(): JSX.Element | null {

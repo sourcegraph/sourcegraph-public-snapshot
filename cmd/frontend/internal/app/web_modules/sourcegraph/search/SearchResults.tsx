@@ -1,14 +1,17 @@
+import * as csstips from "csstips";
 import * as React from "react";
 import { SearchResult, searchText } from "sourcegraph/backend";
 import { ReferencesGroup } from "sourcegraph/references/ReferencesWidget";
 import { getSearchParamsFromURL, parseRepoList } from "sourcegraph/search";
 import * as activeRepos from "sourcegraph/util/activeRepos";
-import { normalFontColor } from "sourcegraph/util/colors";
+import { normalFontColor, white } from "sourcegraph/util/colors";
 import { style } from "typestyle";
 import * as URI from "urijs";
 
 namespace Styles {
-	export const header = style({ padding: "10px 16px", color: normalFontColor, fontSize: "16px" });
+	export const header = style(csstips.horizontal, csstips.center, { padding: "16px 0px", color: normalFontColor, fontSize: "16px" });
+	export const badge = style({ backgroundColor: "#2A3A51 !important", borderRadius: "20px", color: white, marginRight: "8px", fontSize: "11px", padding: "3px 6px", fontFamily: "system" });
+	export const label = style({ color: normalFontColor, marginRight: "16px", fontSize: "12px" });
 }
 
 interface Props { }
@@ -17,6 +20,10 @@ interface State {
 	results: SearchResult[];
 	loading: boolean;
 	searchDuration?: number;
+}
+
+function numberWithCommas(x: any): string {
+	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 export class SearchResults extends React.Component<Props, State> {
@@ -105,11 +112,31 @@ export class SearchResults extends React.Component<Props, State> {
 				No results
 			</div>;
 		}
+		let totalMatches = 0;
+		let totalResults = 0;
+		let totalFiles = 0;
+		let totalRepos = 0;
+		const seenRepos = new Set<string>();
+		this.state.results.forEach(result => {
+			const parsed = URI.parse(result.resource);
+			if (!seenRepos.has(parsed.hostname + parsed.path)) {
+				seenRepos.add(parsed.hostname + parsed.path);
+				totalRepos += 1;
+			}
+			totalFiles += 1;
+			totalResults += result.lineMatches.length;
+		});
 		return <div>
 			<div className={Styles.header}>
-				Rendered results in {this.state.searchDuration! / 1000} seconds!
+				<div className={Styles.badge}>{numberWithCommas(totalResults)}</div>
+				<div className={Styles.label}>results in</div>
+				<div className={Styles.badge}>{numberWithCommas(totalFiles)}</div>
+				<div className={Styles.label}>files in</div>
+				<div className={Styles.badge}>{numberWithCommas(totalRepos)}</div>
+				<div className={Styles.label}>repos</div>
 			</div>
 			{this.state.results.map((result, i) => {
+				totalMatches += result.lineMatches.length;
 				const parsed = URI.parse(result.resource);
 				const refs = result.lineMatches.map(match => {
 					return {
@@ -128,7 +155,7 @@ export class SearchResults extends React.Component<Props, State> {
 					};
 				});
 
-				return <ReferencesGroup uri={parsed.hostname + parsed.path} path={parsed.fragment} key={i} refs={refs} isLocal={false} />;
+				return <ReferencesGroup hidden={totalMatches > 500} uri={parsed.hostname + parsed.path} path={parsed.fragment} key={i} refs={refs} isLocal={false} />;
 			})}
 		</div>;
 	}

@@ -145,6 +145,9 @@ $nav-height: 48px;
 	background-color: #151D28;
 	height: $page-height;
 }
+.search {
+	background-color: #202A3B !important;
+}
 
 /* screens 0-1080px wide: 100% width */
 @media (min-width: 0px) and (max-width: 1080px) {
