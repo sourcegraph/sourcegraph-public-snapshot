@@ -8,7 +8,7 @@
             "sourcegraph/*": [
                 "sourcegraph/*"
             ],
-            "@sourcegraph/components/*": [
+            "@sourcegraph/components/src/*": [
                 "node_modules/@sourcegraph/components/src/*"
             ]
         },

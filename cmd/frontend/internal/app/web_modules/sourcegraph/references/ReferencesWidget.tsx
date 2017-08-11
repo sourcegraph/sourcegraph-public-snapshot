@@ -1,4 +1,4 @@
-import { hoverSelection } from "@sourcegraph/components/style/color";
+import { hoverSelection } from "@sourcegraph/components/src/style/color";
 import * as csstips from "csstips";
 import * as _ from "lodash";
 import * as React from "react";
