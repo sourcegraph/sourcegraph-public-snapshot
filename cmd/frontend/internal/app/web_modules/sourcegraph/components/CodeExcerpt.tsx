@@ -52,8 +52,10 @@ export class CodeExcerpt extends React.Component<Props, State> {
 	onChangeVisibility(isVisible: boolean): void {
 		if (isVisible) {
 			fetchBlobContent(this.props.uri, this.props.rev, this.props.path).then(content => {
-				const blobLines = content.split("\n");
-				this.setState({ blobLines });
+				if (content) {
+					const blobLines = content.split("\n");
+					this.setState({ blobLines });
+				}
 			});
 		}
 	}
