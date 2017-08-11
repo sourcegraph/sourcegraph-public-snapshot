@@ -90,6 +90,7 @@ export function createTooltips(): void {
 		};
 		events.FindRefsClicked.log();
 		triggerReferences({ loc, word: context.coords.word });
+		hideTooltip();
 	});
 
 	const searchIcon = document.createElement("svg");
