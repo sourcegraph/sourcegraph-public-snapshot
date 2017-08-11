@@ -22,7 +22,6 @@ namespace Styles {
 	const border = `1px solid ${colors.borderColor}`;
 
 	export const icon = style({ fontSize: "18px", marginLeft: "15px" });
-	export const iconRight = style({ fontSize: "18px", marginLeft: "15px", marginRight: "15px" });
 
 	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "0px 16px", fontSize: "14px", height: "32px", width: "100%", position: "sticky", top: "0px" });
 	export const titleBarTitle = style(csstips.content, { maxWidth: "50%", marginRight: "25px" });
@@ -49,6 +48,7 @@ namespace Styles {
 	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
 	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px", cursor: "pointer", overflowX: "auto" });
+	export const expandIcon = style({ fontSize: "18px", marginLeft: "15px", marginRight: "15px", cursor: "pointer" });
 	export const fill = style({ flex: 1 });
 }
 
@@ -279,8 +279,8 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
 				<div className={Styles.filePathPart}>{filePart}</div>
 				<div className={Styles.fill} />
 				{this.state.hidden ?
-					<RightIcon className={Styles.iconRight} onClick={() => this.setState({ hidden: false })} /> :
-					<DownIcon className={Styles.iconRight} onClick={() => this.setState({ hidden: true })} />}
+					<RightIcon className={Styles.expandIcon} onClick={() => this.setState({ hidden: false })} /> :
+					<DownIcon className={Styles.expandIcon} onClick={() => this.setState({ hidden: true })} />}
 			</div>
 			{refs}
 		</div>;
