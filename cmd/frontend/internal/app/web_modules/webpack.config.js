@@ -44,7 +44,7 @@ plugins.push(new ExtractTextPlugin({
 }));
 
 
-var devtool = process.env.NODE_ENV === 'production' ? undefined : undefined;
+var devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map';
 
 module.exports = {
     entry: {
@@ -63,7 +63,7 @@ module.exports = {
         extensions: ['.ts', '.tsx', '.js'],
         alias: {
             sourcegraph: path.resolve(__dirname, 'sourcegraph'),
-            "@sourcegraph/components": path.resolve(__dirname, 'node_modules', '@sourcegraph', 'components', 'src'),
+            "@sourcegraph/components/src": path.resolve(__dirname, 'node_modules', '@sourcegraph', 'components', 'src'),
         }
     },
     module: {
