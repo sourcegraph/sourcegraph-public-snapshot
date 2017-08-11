@@ -126,14 +126,15 @@ export class SearchResults extends React.Component<Props, State> {
 			totalFiles += 1;
 			totalResults += result.lineMatches.length;
 		});
+		const pluralize = (str: string, n: number) => `${str}${n === 1 ? "" : "s"}`;
 		return <div>
 			<div className={Styles.header}>
 				<div className={Styles.badge}>{numberWithCommas(totalResults)}</div>
-				<div className={Styles.label}>results in</div>
+				<div className={Styles.label}>{pluralize("result", totalResults)} in</div>
 				<div className={Styles.badge}>{numberWithCommas(totalFiles)}</div>
-				<div className={Styles.label}>files in</div>
+				<div className={Styles.label}>{pluralize("file", totalFiles)}  in</div>
 				<div className={Styles.badge}>{numberWithCommas(totalRepos)}</div>
-				<div className={Styles.label}>repos</div>
+				<div className={Styles.label}>{pluralize("repo", totalRepos)} </div>
 			</div>
 			{this.state.results.map((result, i) => {
 				totalMatches += result.lineMatches.length;
