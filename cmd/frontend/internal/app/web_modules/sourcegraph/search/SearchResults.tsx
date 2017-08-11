@@ -137,6 +137,7 @@ export class SearchResults extends React.Component<Props, State> {
 				<div className={Styles.label}>{pluralize("repo", totalRepos)} </div>
 			</div>
 			{this.state.results.map((result, i) => {
+				const prevTotal = totalMatches;
 				totalMatches += result.lineMatches.length;
 				const parsed = URI.parse(result.resource);
 				const refs = result.lineMatches.map(match => {
@@ -156,7 +157,7 @@ export class SearchResults extends React.Component<Props, State> {
 					};
 				});
 
-				return <ReferencesGroup hidden={totalMatches > 500} uri={parsed.hostname + parsed.path} path={parsed.fragment} key={i} refs={refs} isLocal={false} />;
+				return <ReferencesGroup hidden={prevTotal > 500} uri={parsed.hostname + parsed.path} path={parsed.fragment} key={i} refs={refs} isLocal={false} />;
 			})}
 		</div>;
 	}
