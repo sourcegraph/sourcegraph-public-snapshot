@@ -37,7 +37,7 @@ window.onhashchange = (hash) => {
 		return;
 	}
 	const cells = getCodeCellsForAnnotation();
-	highlightAndScrollToLine(newURL.uri!, pageVars.CommitID, newURL.path, newURL.line, cells);
+	highlightAndScrollToLine(newURL.uri!, pageVars.CommitID, newURL.path, newURL.line, cells, false);
 };
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -86,7 +86,7 @@ window.addEventListener("DOMContentLoaded", () => {
 				addAnnotations(u.path!, { repoURI: u.uri!, rev: rev, commitID: commitID }, cells);
 			}
 			if (u.line) {
-				highlightAndScrollToLine(u.uri!, commitID, u.path!, u.line, cells);
+				highlightAndScrollToLine(u.uri!, commitID, u.path!, u.line, cells, false);
 			}
 
 			// Log blob view
@@ -97,7 +97,7 @@ window.addEventListener("DOMContentLoaded", () => {
 			Array.from(document.querySelectorAll(".blobview tr")).forEach((tr: HTMLElement, index: number) => {
 				tr.addEventListener("click", () => {
 					if (u.uri && u.path) {
-						highlightLine(u.uri, commitID, u.path, index + 1, cells);
+						highlightLine(u.uri, commitID, u.path, index + 1, cells, true);
 					}
 				});
 			});
@@ -177,7 +177,7 @@ function registerListeners(): void {
 	}
 }
 
-function highlightLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[]): void {
+function highlightLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
 	triggerBlame({
 		time: moment(),
 		repoURI: repoURI,
@@ -200,9 +200,10 @@ function highlightLine(repoURI: string, commitID: string, path: string, line: nu
 	const u = url.parseBlob();
 	u.line = line;
 
-	// Dismiss the references widget.
+	// Dismiss the references widget, if highlighting this line was user
+	// triggered (not done automatically onload).
 	const referencesOpen = u.modal === "references";
-	if (referencesOpen) {
+	if (referencesOpen && userTriggered) {
 		u.modal = undefined;
 		u.modalMode = undefined;
 	}
@@ -214,13 +215,13 @@ function highlightLine(repoURI: string, commitID: string, path: string, line: nu
 	}
 
 	window.history.pushState(null, "", url.toBlobHash(u));
-	if (referencesOpen) {
+	if (referencesOpen && userTriggered) {
 		dismissReferencesWidget();
 	}
 }
 
-function highlightAndScrollToLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[]): void {
-	highlightLine(repoURI, commitID, path, line, cells);
+function highlightAndScrollToLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
+	highlightLine(repoURI, commitID, path, line, cells, userTriggered);
 
 	// Scroll to the line.
 	const scrollingElement = document.querySelector("#blob-table")!;
