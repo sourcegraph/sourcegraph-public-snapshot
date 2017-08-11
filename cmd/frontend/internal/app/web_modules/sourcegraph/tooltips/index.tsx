@@ -10,6 +10,7 @@ import { CodeCell, ResolvedRepoRevSpec, TooltipData } from "sourcegraph/util/typ
  * activeTarget tracks the element which is currently hovered over / clicked
  */
 let activeTarget: HTMLElement | null;
+let highlightTarget: HTMLElement | null;
 
 interface DOMObservables {
 	mouseover: Rx.Observable<MouseEvent>;
@@ -299,6 +300,7 @@ export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec,
 
 	domObservables.forEach(observable => observable.mouseover.subscribe((e) => {
 		const t = e.target as HTMLElement;
+		highlightTarget = t;
 		if (!store.getValue().docked) {
 			activeTarget = t;
 		}
@@ -309,7 +311,12 @@ export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec,
 		const context = { path, repoRevCommit, coords: coords! };
 		const tooltipObservable = getTooltipObservable(t, context);
 		const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
-		tooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.HOVER));
+		tooltipObservable.subscribe((ev) => {
+			if (highlightTarget === t && ev.data.title) {
+				t.classList.add("selection-highlight");
+			}
+			tooltipEvent(ev, context, TooltipEventType.HOVER);
+		});
 		tooltipObservable.zip(getJ2DObservable(context)).subscribe((ev) => {
 			if (ev[1]) {
 				ev[0].data.j2dUrl = ev[1]!;
@@ -322,6 +329,9 @@ export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec,
 	let lastSelectedText: string = "";
 
 	domObservables.forEach(observable => observable.mouseout.subscribe((() => {
+		if (highlightTarget) {
+			highlightTarget.classList.remove("selection-highlight");
+		}
 		if (!store.getValue().docked) {
 			activeTarget = null;
 			clearTooltip();
