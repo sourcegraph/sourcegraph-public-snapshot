@@ -245,7 +245,7 @@ function highlightAsync(path: string, textContent: string): void {
 }
 
 function getCodeCellsForAnnotation(): CodeCell[] {
-	const table = document.querySelector("table") as HTMLTableElement;
+	const table = document.querySelector("#processed-blob") as HTMLTableElement;
 	const cells: CodeCell[] = [];
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];

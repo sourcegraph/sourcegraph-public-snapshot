@@ -104,6 +104,7 @@ export function processBlock(el: HTMLElement): void {
 	}
 
 	const table = document.createElement("table");
+	table.id = "processed-blob";
 	const body = document.createElement("tbody");
 
 	lines.forEach((l, i) => {
