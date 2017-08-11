@@ -1,3 +1,5 @@
+import { Autocomplete } from "@sourcegraph/components";
+import { Sourcegraph as AutocompleteStyles } from "@sourcegraph/components/Autocomplete/style";
 import * as csstips from "csstips";
 import * as React from "react";
 import * as AddIcon from "react-icons/lib/md/add";
@@ -6,10 +8,9 @@ import * as CheckboxOutline from "react-icons/lib/md/check-box-outline-blank";
 import * as SearchIcon from "react-icons/lib/md/search";
 import * as Rx from "rxjs";
 import { fetchRepos } from "sourcegraph/backend";
-import { Autocomplete } from "sourcegraph/components/Autocomplete";
 import { getSearchPath } from "sourcegraph/search";
-import { RepoResult } from "sourcegraph/search/SearchForm";
 import { setState as setSearchState, State as SearchState, store as searchStore } from "sourcegraph/search/store";
+import { defaultSearchGroups, RepoResult, resolveRepos } from "sourcegraph/search/util";
 import { inputBackgroundColor, normalFontColor, primaryBlue, referencesBackgroundColor, white } from "sourcegraph/util/colors";
 import { parse } from "sourcegraph/util/url";
 import { style } from "typestyle";
@@ -29,11 +30,11 @@ namespace Styles {
 
 	export const addReposSection = style(csstips.flex3);
 	export const addReposButton = style(csstips.horizontal, csstips.center, { backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
-	export const autocomplete = style({ backgroundColor: inputBackgroundColor, cursor: "pointer", borderRadius: "4px", border: "1px solid #2A3A51" });
-	export const autocompleteResults = style({ maxHeight: "48px", overflowY: "scroll", overflowX: "hidden" });
-	export const addReposInput = style(input, { height: rowHeight, padding, borderRadius: "4px", width: "100%" });
-	export const repoSelection = style({ backgroundColor: "#1C2736", color: white, padding });
-	export const repoSelectionSelected = style({ backgroundColor: "#2A3A51", color: white, padding });
+
+	export const autocomplete = AutocompleteStyles.repoAutocomplete({
+		container: style({ marginTop: "8px" }),
+		results: style({ maxHeight: "48px" }),
+	});
 
 	export const filesSection = style(csstips.flex, { marginLeft: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
@@ -118,18 +119,12 @@ export class AdvancedSearchDrawer extends React.Component<{}, SearchState> {
 				}
 				{
 					this.state.showAutocomplete &&
-					<Autocomplete
-						ref="autocomplete"
+					<Autocomplete classes={Styles.autocomplete}
 						ItemView={RepoResult}
+						initItems={defaultSearchGroups}
+						getItems={(value) => resolveRepos(value)}
 						onEscape={() => this.setState({ showAutocomplete: false })}
-						className={Styles.autocomplete}
-						inputClassName={Styles.addReposInput}
-						autocompleteResultsClassName={Styles.autocompleteResults}
-						emptyClassName={Styles.repoSelection}
-						onChange={(query) => this.onChange(query)}
-						onSelect={(item) => this.onSelect(item)}
-						onMount={() => setTimeout(() => this.onChange(""), 25)}
-						emptyMessage="No results" />
+						onSelect={(item) => this.onSelect(item)} />
 				}
 			</div>
 			<div className={Styles.repoArea}>
