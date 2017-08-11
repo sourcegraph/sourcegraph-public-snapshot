@@ -139,7 +139,11 @@ function injectTreeViewer(): void {
 		// We explicitly set the height so scrolling calculations are consistent across browsers.
 		const el = <div className={style(vertical, { height: `calc(100vh - ${navHeight} - ${navHeight} - 1px)` })} >
 			<TreeHeader className={style(content)} title="Files" onDismiss={() => handleToggleExplorerTree()} />
-			<Tree initSelectedPath={path} onSelectFile={(p) => window.location.href = url.toBlob({ uri, rev, path: p })} className={style(flex)} paths={resp.map(res => res.name)} />
+			<Tree initSelectedPath={path} onSelectPath={(p, isDir) => {
+				if (!isDir) {
+					window.location.href = url.toBlob({ uri, rev, path: p });
+				}
+			}} className={style(flex)} paths={resp.map(res => res.name)} />
 		</div>;
 		render(el, mount);
 	});
