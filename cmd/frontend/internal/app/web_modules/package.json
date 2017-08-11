@@ -31,7 +31,7 @@
     "webpack-shell-plugin": "^0.5.0"
   },
   "dependencies": {
-    "@sourcegraph/components": "^0.0.10",
+    "@sourcegraph/components": "^0.0.11",
     "copy-to-clipboard": "^3.0.7",
     "csstips": "^0.2.2",
     "csx": "^8.2.1",
