@@ -36,13 +36,21 @@ namespace Styles {
 		results: style({ maxHeight: "48px" }),
 	});
 
-	export const filesSection = style(csstips.flex, { marginLeft: "16px" });
+	export const filesSection = style(csstips.flex2, { marginLeft: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
 
 	export const filtersSection = style(csstips.flex, csstips.vertical, { marginLeft: "16px" });
-	export const filter = style(csstips.flex, csstips.horizontal, csstips.center, { cursor: "pointer", marginRight: "16px", userSelect: "none" });
+	export const filter = style(csstips.flex, csstips.horizontal, csstips.center, { cursor: "pointer", userSelect: "none" });
 
-	export const searchButton = style(csstips.horizontal, csstips.center, csstips.content, { backgroundColor: primaryBlue, height: rowHeight, padding, borderRadius, color: `${white} !important`, textDecoration: "none" });
+	export const searchButton = style(csstips.horizontal, csstips.center, csstips.content, {
+		marginLeft: "8px",
+		backgroundColor: primaryBlue,
+		height: rowHeight,
+		padding,
+		borderRadius,
+		color: `${white} !important`,
+		textDecoration: "none",
+	});
 
 }
 
@@ -133,14 +141,15 @@ export class AdvancedSearchDrawer extends React.Component<{}, SearchState> {
 				}} />
 			</div>
 			<div className={Styles.filesSection}>
-				<div>Files to include</div>
+				<div>Files to include:</div>
 				<input className={Styles.filesInput} value={this.state.files} placeholder="example: *.go" onChange={(e) => {
 					setSearchState({ ...searchStore.getValue(), files: e.target.value });
 				}} />
 			</div>
 			<div className={Styles.filtersSection}>
+				<span style={{ marginBottom: "8px" }}>Match:</span>
 				{
-					[{ key: "matchCase", label: "Match case" }, { key: "matchWord", label: "Match word" }, { key: "matchRegex", label: "Regex" }]
+					[{ key: "matchCase", label: "Case" }, { key: "matchWord", label: "Word" }, { key: "matchRegex", label: "Regex" }]
 						.map((filter, i) => {
 							const clickHandler = () => {
 								setSearchState({ ...searchStore.getValue(), [filter.key]: !this.state[filter.key] });
