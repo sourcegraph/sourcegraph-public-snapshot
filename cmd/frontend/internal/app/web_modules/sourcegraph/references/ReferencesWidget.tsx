@@ -43,12 +43,12 @@ namespace Styles {
 	export const pathPart = style({});
 	export const filePathPart = style({ color: "white", fontWeight: "bold", paddingRight: "15px" });
 
-	export const refsGroup = style({ fontSize: "12px", fontFamily: "system", color: normalFontColor });
+	export const refsGroup = style({ fontSize: "12px", fontFamily: "system", color: normalFontColor, userSelect: "none" });
 	export const closeIcon = style({ cursor: "pointer", fontSize: "18px", color: colors.normalFontColor, $nest: { "&:hover": { color: white } } });
-	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
+	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { cursor: "pointer", backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
-	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px", cursor: "pointer", overflowX: "auto" });
-	export const expandIcon = style({ fontSize: "18px", marginLeft: "15px", marginRight: "15px", cursor: "pointer" });
+	export const ref = style({ textDecoration: "none", display: "block", fontFamily: "Menlo !important", borderBottom: border, padding: "10px", cursor: "pointer", overflowX: "auto" });
+	export const expandIcon = style({ fontSize: "18px", marginLeft: "15px", marginRight: "15px" });
 	export const fill = style({ flex: 1 });
 }
 
@@ -250,38 +250,26 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
 						return 1;
 					}).map((ref, i) => {
 						const uri = URI.parse(ref.uri);
-						return <div key={i} className={Styles.ref} onClick={event => {
-							if (this.props.isLocal) {
-								events.GoToLocalRefClicked.log();
-
-								// use same Rev that is in the browser's URL bar.
-								url.openFromJS(getRefURL(ref, pageVars.Rev), event);
-
-							} else {
-								events.GoToExternalRefClicked.log();
-
-								// External refs are currently always the latest revision,
-								// so use canonical URL ("" for default branch).
-								url.openFromJS(getRefURL(ref, ""), event);
-							}
+						const href = getRefURL(ref, uri.query);
+						return <a href={href} key={i} className={Styles.ref} onClick={e => {
+							this.props.isLocal ? events.GoToLocalRefClicked.log() : events.GoToExternalRefClicked.log();
+							url.openFromJS(href, e);
 						}}>
 							<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
-						</div>;
+						</a>;
 					})
 				}
 			</div>;
 		}
 
 		return <div className={Styles.refsGroup}>
-			<div className={Styles.refsGroupTitle}>
+			<div className={Styles.refsGroupTitle} onClick={() => this.setState({ hidden: !this.state.hidden })}>
 				{this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
 				<div className={Styles.uriPathPart}>{uriStr}</div>
 				<div className={Styles.pathPart}>{pathSplit.join("/")}{pathSplit.length > 0 ? "/" : ""}</div>
 				<div className={Styles.filePathPart}>{filePart}</div>
 				<div className={Styles.fill} />
-				{this.state.hidden ?
-					<RightIcon className={Styles.expandIcon} onClick={() => this.setState({ hidden: false })} /> :
-					<DownIcon className={Styles.expandIcon} onClick={() => this.setState({ hidden: true })} />}
+				{this.state.hidden ? <RightIcon className={Styles.expandIcon} /> : <DownIcon className={Styles.expandIcon} />}
 			</div>
 			{refs}
 		</div>;
