@@ -41,20 +41,6 @@ func (o *organizationResolver) Collaborators() int32 {
 	return o.organization.Collaborators
 }
 
-func (o *organizationResolver) Members(ctx context.Context) ([]*organizationMemberResolver, error) {
-	// TODO(Dan): this method currently only returns a single page of results
-	membersList, err := ListOrgMembersForInvites(ctx, o.organization.Login, int(o.organization.ID), &sourcegraph.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	res := make([]*organizationMemberResolver, len(membersList.OrgMembers))
-	for i, member := range membersList.OrgMembers {
-		res[i] = &organizationMemberResolver{member}
-	}
-	return res, nil
-}
-
 // GetOrg returns a single *sourcegraph.Org representing a single GitHub organization
 func GetOrg(ctx context.Context, orgName string) (*sourcegraph.Org, error) {
 	client := extgithub.Client(ctx)

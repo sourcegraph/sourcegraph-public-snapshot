@@ -15,7 +15,6 @@ type Query {
 }
 
 type Mutation {
-	inviteOrgMemberToSourcegraph(orgLogin: String!, orgGithubId: Int!, userLogin: String!, userEmail: String = ""): Boolean!
 	createThread(remoteURI: String!, accessToken: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!, authorName: String!, authorEmail: String!): Thread!
 	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
 }
@@ -244,26 +243,6 @@ type Organization {
 	avatarURL: String!
 	description: String!
 	collaborators: Int!
-	members: [OrganizationMember!]!
-}
-
-type OrganizationMember {
-	login: String!
-	githubId: Int!
-	email: String!
-	avatarURL: String!
-	isSourcegraphUser: Boolean!
-	canInvite: Boolean!
-	invite: Invite
-}
-
-type Invite {
-	userLogin: String!
-	userEmail: String!
-	orgGithubId: Int!
-	orgLogin: String!
-	sentAt: Int!
-	uri: String!
 }
 
 type Installation {

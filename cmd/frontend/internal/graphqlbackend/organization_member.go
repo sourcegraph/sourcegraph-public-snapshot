@@ -3,15 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"time"
 
 	"github.com/sourcegraph/go-github/github"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 type organizationMemberResolver struct {
@@ -36,17 +32,6 @@ func (m *organizationMemberResolver) AvatarURL() string {
 
 func (m *organizationMemberResolver) IsSourcegraphUser() bool {
 	return m.member.SourcegraphUser
-}
-
-func (m *organizationMemberResolver) CanInvite() bool {
-	return m.member.CanInvite
-}
-
-func (m *organizationMemberResolver) Invite() *inviteResolver {
-	if m.member.Invite == nil {
-		return nil
-	}
-	return &inviteResolver{invite: m.member.Invite}
 }
 
 // listOrgMembersPage returns a single page of an organization's members
@@ -109,60 +94,6 @@ func ListAllOrgMembers(ctx context.Context, orgLogin string, opt *sourcegraph.Li
 		}
 	}
 	return allMembers, nil
-}
-
-// ListOrgMembersForInvites returns a list of org members with context required to invite them to Sourcegraph
-// TODO: make this function capable of returning more than a single page of org members
-func ListOrgMembersForInvites(ctx context.Context, orgLogin string, orgID int, opt *sourcegraph.ListOptions) (res *sourcegraph.OrgMembersList, err error) {
-	if !extgithub.HasAuthedUser(ctx) {
-		return &sourcegraph.OrgMembersList{}, nil
-	}
-
-	members, err := listOrgMembersPage(ctx, orgLogin, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	var ghIDs []string
-
-	for _, member := range members {
-		ghIDs = append(ghIDs, strconv.Itoa(*member.ID))
-	}
-
-	// Fetch members of org to see who is on Sourcegraph.
-	rUsers, err := auth0.ListUsersByGitHubID(ctx, ghIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	slice := []*sourcegraph.OrgMember{}
-	// Disable inviting for members on Sourcegraph and fetch full GitHub info for public email on non-registered Sourcegraph users
-	for _, member := range members {
-		orgMember := toOrgMember(member)
-		if rUser, ok := rUsers[strconv.Itoa(*member.ID)]; ok {
-			orgMember.SourcegraphUser = true
-			orgMember.CanInvite = false
-			orgMember.Email = rUser.Email
-		} else {
-			orgInvite, _ := store.UserInvites.GetByURI(ctx, *member.Login+strconv.Itoa(orgID))
-
-			if orgInvite == nil || time.Now().Unix()-orgInvite.SentAt.Unix() > 259200 {
-				orgMember.CanInvite = true
-				// Emails are not available through the GH API for org members. So instead of eagerly fetching each member's email,
-				// we defer, and do lazy fetching only when the user intends to invite someone.
-				orgMember.Email = ""
-			} else {
-				orgMember.CanInvite = false
-				orgMember.Invite = orgInvite
-				orgMember.Email = orgInvite.UserEmail
-			}
-		}
-
-		slice = append(slice, orgMember)
-	}
-
-	return &sourcegraph.OrgMembersList{
-		OrgMembers: slice}, nil
 }
 
 // IsOrgMember indicates if a user is a member of a given GitHub organization

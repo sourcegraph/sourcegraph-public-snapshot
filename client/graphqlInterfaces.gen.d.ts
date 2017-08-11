@@ -213,19 +213,6 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
-	interface IInvite {
-		__typename: string;
-		userLogin: string;
-		userEmail: string;
-		orgGithubId: number;
-		orgLogin: string;
-		sentAt: number;
-		uri: string;
-	}
-
-	/*
-	  description: null
-	*/
 	interface ILineMatch {
 		__typename: string;
 		preview: string;
@@ -239,7 +226,6 @@ declare namespace GQL {
 	*/
 	interface IMutation {
 		__typename: string;
-		inviteOrgMemberToSourcegraph: boolean;
 		createThread: IThread;
 		addCommentToThread: IThread;
 	}
@@ -269,21 +255,6 @@ declare namespace GQL {
 		avatarURL: string;
 		description: string;
 		collaborators: number;
-		members: Array<IOrganizationMember>;
-	}
-
-	/*
-	  description: null
-	*/
-	interface IOrganizationMember {
-		__typename: string;
-		login: string;
-		githubId: number;
-		email: string;
-		avatarURL: string;
-		isSourcegraphUser: boolean;
-		canInvite: boolean;
-		invite: IInvite | null;
 	}
 
 	/*
