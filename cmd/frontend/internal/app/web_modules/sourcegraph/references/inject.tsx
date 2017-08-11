@@ -33,13 +33,17 @@ export function injectReferencesWidget(): void {
 
 				// Center the line on the screen.
 				blobTable.scrollTop -= blobTable.getBoundingClientRect().height / 2;
+			} else {
 			}
 		});
 
-		render(<ReferencesWidget onDismiss={() => {
-			widgetContainer.style.display = "none";
-			const currURL = parseBlob();
-			window.location.href = toBlob({ ...currURL, modal: undefined, modalMode: undefined });
-		}} />, widgetContainer);
+		render(<ReferencesWidget onDismiss={dismissReferencesWidget} />, widgetContainer);
 	}
+}
+
+export function dismissReferencesWidget(): void {
+	const widgetContainer = document.getElementById(APP_ID) as HTMLElement;
+	widgetContainer.style.display = "none";
+	const currURL = parseBlob();
+	window.location.href = toBlob({ ...currURL, modal: undefined, modalMode: undefined });
 }

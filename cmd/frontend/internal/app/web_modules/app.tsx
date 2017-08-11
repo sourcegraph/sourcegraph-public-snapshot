@@ -6,7 +6,7 @@ import { render } from "react-dom";
 import * as backend from "sourcegraph/backend";
 import * as xhr from "sourcegraph/backend/xhr";
 import { triggerBlame } from "sourcegraph/blame";
-import { injectReferencesWidget } from "sourcegraph/references/inject";
+import { injectReferencesWidget, dismissReferencesWidget } from "sourcegraph/references/inject";
 import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from "sourcegraph/search/inject";
 import { injectShareWidget } from "sourcegraph/share";
 import { addAnnotations } from "sourcegraph/tooltips";
@@ -200,9 +200,22 @@ function highlightLine(repoURI: string, commitID: string, path: string, line: nu
 	const u = url.parseBlob();
 	u.line = line;
 
-	if (url.toBlob(u) !== (window.location.pathname + window.location.hash)) {
-		// Prevent duplicating history state for the same line.
-		window.history.pushState(null, "", url.toBlobHash(u));
+	// Dismiss the references widget.
+	const referencesOpen = u.modal === "references";
+	if (referencesOpen) {
+		u.modal = undefined;
+		u.modalMode = undefined;
+	}
+
+	// Check URL change first, since this function can be called in response to
+	// onhashchange.
+	if (url.toBlob(u) === (window.location.pathname + window.location.hash)) {
+		return;
+	}
+
+	window.history.pushState(null, "", url.toBlobHash(u));
+	if (referencesOpen) {
+		dismissReferencesWidget();
 	}
 }
 
