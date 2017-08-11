@@ -99,7 +99,7 @@ class EventLogger {
 
 	private logToConsole(eventLabel: string, object?: any): void {
 		if (localStorage && localStorage.getItem("eventLogDebug") === "true") {
-			console.debug("%cEVENT %s", "color: #aaa", eventLabel, object); // tslint:disable-line
+			console.debug("%cEVENT %s", "color: #aaa", eventLabel, object);
 		}
 	}
 

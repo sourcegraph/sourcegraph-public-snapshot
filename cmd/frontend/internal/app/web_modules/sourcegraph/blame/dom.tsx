@@ -12,7 +12,9 @@ function limitString(s: string, n: number, dotdotdot: boolean): string {
 	return s;
 }
 
-// setLineBlameContent sets the given line's blame content.
+/**
+ * setLineBlameContent sets the given line's blame content.
+ */
 function setLineBlameContent(line: number, blameContent: string): void {
 	// Remove blame class from all other lines.
 	const currentlyBlamed = document.querySelectorAll(".code-cell>.blame");

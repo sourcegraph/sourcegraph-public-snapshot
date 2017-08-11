@@ -94,12 +94,16 @@ export interface ParsedURL {
 	rev?: string;
 }
 
-// TreeURL is the URL format for tree pages.
+/**
+ * TreeURL is the URL format for tree pages.
+ */
 export interface TreeURL extends ParsedURL {
 	path?: string;
 }
 
-// BlobURL is the URL format for blob pages.
+/**
+ * BlobURL is the URL format for blob pages.
+ */
 export interface BlobURL extends ParsedURL {
 	path?: string;
 	line?: number;

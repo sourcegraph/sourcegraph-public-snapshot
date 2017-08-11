@@ -6,7 +6,9 @@ import { clearTooltip, setTooltip, store, TooltipContext } from "sourcegraph/too
 import { events } from "sourcegraph/tracking/events";
 import { CodeCell, ResolvedRepoRevSpec, TooltipData } from "sourcegraph/util/types";
 
-// activeTarget tracks the element which is currently hovered over / clicked
+/**
+ * activeTarget tracks the element which is currently hovered over / clicked
+ */
 let activeTarget: HTMLElement | null;
 
 interface DOMObservables {

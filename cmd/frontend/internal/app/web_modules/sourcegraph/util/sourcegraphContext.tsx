@@ -1,6 +1,8 @@
 import { EmailAddrList, ExternalToken, User } from "sourcegraph/util/types";
 
-// exported because webworkers need to be able to use it, and methods not transferred with context object
+/**
+ * exported because webworkers need to be able to use it, and methods not transferred with context object
+ */
 export function isOnPremInstance(authEnabled: boolean): boolean {
 	return !authEnabled;
 }
