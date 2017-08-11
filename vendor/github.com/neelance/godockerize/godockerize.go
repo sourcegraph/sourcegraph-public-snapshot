@@ -37,7 +37,7 @@ func main() {
 					&cli.StringFlag{
 						Name:  "base",
 						Usage: "base Docker image name",
-						Value: "alpine:3.5",
+						Value: "alpine:3.6",
 					},
 					&cli.StringSliceFlag{
 						Name:  "env",
