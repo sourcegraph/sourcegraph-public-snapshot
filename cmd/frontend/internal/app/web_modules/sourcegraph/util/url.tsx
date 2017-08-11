@@ -117,3 +117,14 @@ export function toBlobHash(loc: BlobURL): string {
 	}
 	return hash;
 }
+
+/**
+ * Correctly handle use of meta/ctrl/alt keys during onClick events that open new pages
+ */
+export function openFromJS(path: string, event?: React.MouseEvent<HTMLElement>): void {
+	if (event && (event.metaKey || event.altKey || event.ctrlKey)) {
+		window.open(path, "_blank");
+	} else {
+		window.location.href = path;
+	}
+}

@@ -234,18 +234,19 @@ export class ReferencesGroup extends React.Component<{ uri: string, path: string
 						return 1;
 					}).map((ref, i) => {
 						const uri = URI.parse(ref.uri);
-						return <div key={i} className={Styles.ref} onClick={() => {
+						return <div key={i} className={Styles.ref} onClick={event => {
 							if (this.props.isLocal) {
 								events.GoToLocalRefClicked.log();
 
 								// use same Rev that is in the browser's URL bar.
-								window.location.href = getRefURL(ref, pageVars.Rev);
+								url.openFromJS(getRefURL(ref, pageVars.Rev), event);
+
 							} else {
 								events.GoToExternalRefClicked.log();
 
 								// External refs are currently always the latest revision,
 								// so use canonical URL ("" for default branch).
-								window.location.href = getRefURL(ref, "");
+								url.openFromJS(getRefURL(ref, ""), event);
 							}
 						}}>
 							<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
