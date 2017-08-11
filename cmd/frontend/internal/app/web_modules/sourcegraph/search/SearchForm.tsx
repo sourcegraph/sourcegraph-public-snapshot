@@ -30,7 +30,9 @@ namespace Styles {
 	export const reposInput = style(input, { marginTop: "8px", borderRadius, minHeight: "64px", maxHeight: "250px", width: "100%", maxWidth: "100%" });
 	export const addReposButton = style(csstips.flex, csstips.horizontal, csstips.center, { marginTop: "8px", backgroundColor: inputBackgroundColor, height: rowHeight, padding, cursor: "pointer", borderRadius });
 
-	export const autocomplete = AutocompleteStyles.repoAutocomplete({});
+	export const autocomplete = AutocompleteStyles.repoAutocomplete({
+		results: style({ maxHeight: "200px" }),
+	});
 
 	export const filesSection = style({ marginTop: "16px" });
 	export const filesInput = style(input, { marginTop: "8px", borderRadius, height: rowHeight, width: "100%" });
@@ -66,7 +68,7 @@ export class SearchForm extends React.Component<Props, State> {
 			}
 		}
 		window.localStorage.setItem("searchRepoScope", this.state.repos + addition);
-		this.setState({ showAutocomplete: false, repos: this.state.repos + addition });
+		this.setState({ repos: this.state.repos + addition });
 	}
 
 	onUpdateRepos(value: string): void {
