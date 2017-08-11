@@ -42,6 +42,10 @@ export function parseTree(_loc: string = window.location.href): TreeURL {
 	return { ...u, path };
 }
 
+export function toTree(loc: TreeURL): string {
+	return `/${loc.uri}${loc.rev ? "@" + loc.rev : ""}/-/tree/${loc.path}`;
+}
+
 /**
  * parseBlob parses a blob page URL.
  */

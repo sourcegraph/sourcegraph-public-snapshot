@@ -142,6 +142,15 @@ function injectTreeViewer(): void {
 			<Tree initSelectedPath={path} onSelectPath={(p, isDir) => {
 				if (!isDir) {
 					window.location.href = url.toBlob({ uri, rev, path: p });
+					return;
+				} else if (!url.isBlob(blobURL)) {
+					// Directory, and on a tree or repo page. Update the URL so
+					// the user can share a link to a specific dir.
+					const newURL = url.toTree({ uri, rev, path: p });
+					if (newURL === (window.location.pathname + window.location.hash)) {
+						return; // don't push state twice if user clicks twice
+					}
+					window.history.pushState(null, "", newURL);
 				}
 			}} className={style(flex)} paths={resp.map(res => res.name)} />
 		</div>;
