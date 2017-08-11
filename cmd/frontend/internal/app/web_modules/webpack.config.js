@@ -73,6 +73,7 @@ module.exports = {
                 compilerOptions: {
                     noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
                 },
+                transpileOnly: process.env.DISABLE_TYPECHECKING === 'true',
             }),
         }, {
             // sass / scss loader for webpack

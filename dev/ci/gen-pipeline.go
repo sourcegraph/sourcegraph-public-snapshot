@@ -131,6 +131,13 @@ func main() {
 		Cmd("yarn run cover"),
 		ArtifactPaths("xlang/javascript-typescript/buildserver/coverage/lcov.info"))
 
+	pipeline.AddStep(":html:",
+		Cmd("cd cmd/frontend/internal/app/web_modules"),
+		Cmd("yarn install"),
+		Cmd("yarn run build"),
+		Cmd("yarn run lint"),
+		Cmd("yarn run fmt-check"))
+
 	for _, path := range pkgs {
 		coverageFile := path + "/coverage.txt"
 		pipeline.AddStep(":go:",
