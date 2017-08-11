@@ -1,6 +1,8 @@
 import * as csstips from "csstips";
 import * as _ from "lodash";
 import * as React from "react";
+import * as DownIcon from "react-icons/lib/fa/angle-down";
+import * as RightIcon from "react-icons/lib/fa/angle-right";
 import * as RepoIcon from "react-icons/lib/go/repo";
 import * as CloseIcon from "react-icons/lib/md/close";
 import * as GlobeIcon from "react-icons/lib/md/language";
@@ -46,6 +48,8 @@ namespace Styles {
 	export const refsGroupTitle = style(csstips.horizontal, csstips.center, { backgroundColor: "#233043", height: "32px" });
 	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
 	export const ref = style({ fontFamily: "Menlo", borderBottom: border, padding: "10px", cursor: "pointer", overflowX: "auto" });
+	export const expandIcon = style({ fontSize: "18px", marginLeft: "15px", marginRight: "15px", cursor: "pointer" });
+	export const fill = style({ flex: 1 });
 }
 
 interface Props {
@@ -205,20 +209,32 @@ function getRefURL(ref: Reference, rev: string): string {
 	return `/${uri.hostname}${uri.path}${rev}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
 }
 
-export class ReferencesGroup extends React.Component<{ uri: string, path: string, refs: Reference[], isLocal: boolean }, {}> {
+interface ReferenceGroupProps {
+	uri: string;
+	path: string;
+	refs: Reference[];
+	isLocal: boolean;
+}
+
+interface ReferenceGroupState {
+	hidden: boolean;
+}
+
+export class ReferencesGroup extends React.Component<ReferenceGroupProps, ReferenceGroupState> {
+	constructor(props: ReferenceGroupProps) {
+		super(props);
+		this.state = { hidden: false };
+	}
+
 	render(): JSX.Element | null {
 		const uriSplit = this.props.uri.split("/");
 		const uriStr = uriSplit.length > 1 ? uriSplit.slice(1).join("/") : this.props.uri;
 		const pathSplit = this.props.path.split("/");
 		const filePart = pathSplit.pop();
-		return <div className={Styles.refsGroup}>
-			<div className={Styles.refsGroupTitle}>
-				{this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
-				<div className={Styles.uriPathPart}>{uriStr}</div>
-				<div className={Styles.pathPart}>{pathSplit.join("/")}{pathSplit.length > 0 ? "/" : ""}</div>
-				<div className={Styles.filePathPart}>{filePart}</div>
-			</div>
-			<div className={Styles.refsList}>
+
+		let refs: JSX.Element | null = null;
+		if (!this.state.hidden) {
+			refs = <div className={Styles.refsList}>
 				{
 					this.props.refs.sort((a, b) => {
 						if (a.range.start.line < b.range.start.line) { return -1; }
@@ -253,7 +269,21 @@ export class ReferencesGroup extends React.Component<{ uri: string, path: string
 						</div>;
 					})
 				}
+			</div>;
+		}
+
+		return <div className={Styles.refsGroup}>
+			<div className={Styles.refsGroupTitle}>
+				{this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
+				<div className={Styles.uriPathPart}>{uriStr}</div>
+				<div className={Styles.pathPart}>{pathSplit.join("/")}{pathSplit.length > 0 ? "/" : ""}</div>
+				<div className={Styles.filePathPart}>{filePart}</div>
+				<div className={Styles.fill} />
+				{this.state.hidden ?
+					<RightIcon className={Styles.expandIcon} onClick={() => this.setState({ hidden: false })} /> :
+					<DownIcon className={Styles.expandIcon} onClick={() => this.setState({ hidden: true })} />}
 			</div>
+			{refs}
 		</div>;
 	}
 }
