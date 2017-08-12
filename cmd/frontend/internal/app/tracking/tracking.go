@@ -43,7 +43,7 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 
 	// If the user is in a dev environment, don't do any data pulls from GitHub, or any tracking
 	if env.Version == "dev" {
-		// return
+		return
 	}
 
 	// Generate a single set of user parameters for HubSpot and Slack exports
