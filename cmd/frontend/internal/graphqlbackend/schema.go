@@ -254,7 +254,6 @@ type Installation {
 }
 
 type User {
-	githubOrgs: [Organization!]!
 	githubInstallations: [Installation!]!
 }
 

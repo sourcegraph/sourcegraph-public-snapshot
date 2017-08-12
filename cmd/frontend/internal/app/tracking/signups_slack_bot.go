@@ -43,10 +43,7 @@ func notifySlackOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProper
 		return errors.New("Slack Webhook URL not defined")
 	}
 
-	color := "good"
-	if !hubSpotProps.IsPrivateCodeUser {
-		color = "danger"
-	}
+	color := "danger"
 
 	links := ""
 	if response != nil {
@@ -86,11 +83,6 @@ func notifySlackOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProper
 					&slackField{
 						Title: "GitHub Location",
 						Value: hubSpotProps.GitHubLocation,
-						Short: true,
-					},
-					&slackField{
-						Title: "Private code user?",
-						Value: fmt.Sprintf("%v", hubSpotProps.IsPrivateCodeUser),
 						Short: true,
 					},
 					&slackField{

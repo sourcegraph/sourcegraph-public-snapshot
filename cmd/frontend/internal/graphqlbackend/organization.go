@@ -98,11 +98,6 @@ func ListAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourceg
 	return &sourcegraph.OrgsList{Orgs: orgs}, nil
 }
 
-func OrganizationRepos(ctx context.Context, org string, opt *github.RepositoryListByOrgOptions) ([]*github.Repository, error) {
-	repo, _, err := extgithub.Client(ctx).Repositories.ListByOrg(ctx, org, opt)
-	return repo, err
-}
-
 // toOrg converts a GitHub API Organization object to a Sourcegraph API Org object
 func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
 	strv := func(s *string) string {

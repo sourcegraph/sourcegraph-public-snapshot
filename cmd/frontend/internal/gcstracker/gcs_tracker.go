@@ -16,7 +16,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 var gcstrackerVersion = "v0.0.1"
@@ -127,17 +126,9 @@ func (c *Client) NewTrackedObjects(event string) *TrackedObjects {
 }
 
 func generateUserInfo(user *actor.Actor) *UserInfo {
-	isPrivateCodeUser := false
-	for _, v := range user.GitHubScopes {
-		if v == "repo" {
-			isPrivateCodeUser = true
-			break
-		}
-	}
 	return &UserInfo{
-		BusinessUserID:    user.Login,
-		Email:             user.Email,
-		IsPrivateCodeUser: isPrivateCodeUser,
+		BusinessUserID: user.Login,
+		Email:          user.Email,
 	}
 }
 
@@ -148,40 +139,6 @@ func (tos *TrackedObjects) AddTrackedObject(objectType string, oc interface{}) {
 		Type:     objectType,
 		Ctx:      oc,
 	})
-}
-
-// AddReposWithDetailsObjects adds a series of RepoDetails objects to a TrackedObjects struct
-// based on a sourcegraph.ReposWithDetailsList
-func (tos *TrackedObjects) AddReposWithDetailsObjects(rl *sourcegraph.GitHubReposWithDetailsList) {
-	for _, repo := range rl.ReposWithDetails {
-		newRepo := &RepoWithDetailsContext{
-			URI:                  repo.URI,
-			IsFork:               repo.Fork,
-			IsPrivate:            repo.Private,
-			Languages:            make([]*RepoLanguage, len(repo.Languages)),
-			CommitTimes:          make([]int64, len(repo.CommitTimes)),
-			ErrorFetchingDetails: repo.ErrorFetchingDetails,
-			Skipped:              repo.Skipped,
-		}
-		if repo.CreatedAt != nil {
-			newRepo.CreatedAt = repo.CreatedAt.UTC().Unix()
-		}
-		if repo.PushedAt != nil {
-			newRepo.PushedAt = repo.PushedAt.UTC().Unix()
-		}
-		for i, lang := range repo.Languages {
-			newRepo.Languages[i] = &RepoLanguage{
-				Language: lang.Language,
-				Count:    lang.Count,
-			}
-		}
-		for i, commitTime := range repo.CommitTimes {
-			if commitTime != nil {
-				newRepo.CommitTimes[i] = commitTime.UTC().Unix()
-			}
-		}
-		tos.AddTrackedObject("RepoDetails", newRepo)
-	}
 }
 
 // AddOrgsWithDetailsObjects adds a series of OrgDetails objects to a TrackedObjects struct

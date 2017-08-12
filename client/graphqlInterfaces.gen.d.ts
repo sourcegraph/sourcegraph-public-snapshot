@@ -497,7 +497,6 @@ declare namespace GQL {
 	*/
 	interface IUser {
 		__typename: string;
-		githubOrgs: Array<IOrganization>;
 		githubInstallations: Array<IInstallation>;
 	}
 }

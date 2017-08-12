@@ -69,7 +69,6 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("github_company", h.GitHubCompany)
 	apiProps.set("location", h.GitHubLocation)
 	apiProps.set("registered_at", h.RegisteredAt)
-	apiProps.set("is_private_code_user", h.IsPrivateCodeUser)
 	return apiProps
 }
 

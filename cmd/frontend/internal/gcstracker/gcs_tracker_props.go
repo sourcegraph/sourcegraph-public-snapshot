@@ -27,9 +27,8 @@ type DeviceInfo struct {
 
 // UserInfo represents user-level properties
 type UserInfo struct {
-	BusinessUserID    string `json:"business_user_id"`
-	Email             string `json:"email"`
-	IsPrivateCodeUser bool   `json:"is_private_code_user"`
+	BusinessUserID string `json:"business_user_id"`
+	Email          string `json:"email"`
 }
 
 // TrackedObject represents a user data object to be tracked and stored
@@ -37,32 +36,6 @@ type TrackedObject struct {
 	ObjectID string      `json:"object_id,omitempty"`
 	Type     string      `json:"type,omitempty"`
 	Ctx      interface{} `json:"ctx,omitempty"`
-}
-
-// RepoWithDetailsContext is an (ideally) non-code host-specific data structure
-// for representing key information about a git repository
-type RepoWithDetailsContext struct {
-	URI         string          `json:"uri,omitempty"`
-	Owner       string          `json:"owner,omitempty"`
-	Name        string          `json:"name,omitempty"`
-	IsFork      bool            `json:"is_fork,omitempty"`
-	IsPrivate   bool            `json:"is_private,omitempty"`
-	CreatedAt   int64           `json:"created_at,omitempty"`
-	PushedAt    int64           `json:"pushed_at,omitempty"`
-	Languages   []*RepoLanguage `json:"languages,omitempty"`
-	CommitTimes []int64         `json:"latest_commit_tstamps,omitempty"`
-	// ErrorFetchingDetails is provided if tracker code receives error
-	// responses from GitHub while fetching language or commit details from
-	// https://api.github.com/repos/org/name/[languages|commits] URLs
-	ErrorFetchingDetails bool `json:"error_fetching_details,omitempty"`
-	// Skipped is provided if tracker code skips a repository due to
-	// it being sufficiently old or uninteresting
-	Skipped bool `json:"skipped,omitempty"`
-}
-
-type RepoLanguage struct {
-	Language string `json:"language,omitempty"`
-	Count    int    `json:"count,omitempty"`
 }
 
 type OrgWithDetailsContext struct {
