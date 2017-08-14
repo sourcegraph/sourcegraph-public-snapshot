@@ -70,7 +70,6 @@ func init() {
 //   to other devs of the migration (they now need to run it in dev).
 type dbRepo struct {
 	dbRepoOrig
-	Canonical *bool `db:"canonical"`
 }
 
 type dbRepoOrig struct {
@@ -119,9 +118,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	if r.FreezeIndexedRevision != nil && *r.FreezeIndexedRevision {
 		r2.FreezeIndexedRevision = true
 	}
-	if r.Canonical != nil && *r.Canonical {
-		r2.Canonical = true
-	}
 
 	r2.CreatedAt = &r.CreatedAt
 	r2.UpdatedAt = r.UpdatedAt
@@ -148,9 +144,6 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 
 	var freezeIndexedRevision bool = r2.FreezeIndexedRevision
 	r.FreezeIndexedRevision = &freezeIndexedRevision
-
-	var canonical = r2.Canonical
-	r.Canonical = &canonical
 }
 
 func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
