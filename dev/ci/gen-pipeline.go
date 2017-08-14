@@ -135,8 +135,7 @@ func main() {
 		Cmd("cd cmd/frontend/internal/app/web_modules"),
 		Cmd("yarn install"),
 		Cmd("yarn run build"),
-		Cmd("yarn run lint"),
-		Cmd("yarn run fmt-check"))
+		Cmd("yarn run lint"))
 
 	for _, path := range pkgs {
 		coverageFile := path + "/coverage.txt"
