@@ -34,9 +34,6 @@ export SRC_INDEXER=127.0.0.1:3179
 mkdir -p .bin
 env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
 
-. dev/langservers.lib.bash
-detect_dev_langservers
-
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
 
