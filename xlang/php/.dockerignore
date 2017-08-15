@@ -1,9 +1,0 @@
-.DS_Store
-.vscode/
-.idea/
-.git/
-tests/
-fixtures/
-coverage/
-coverage.xml
-images/

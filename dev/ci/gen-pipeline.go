@@ -120,9 +120,6 @@ func main() {
 			ArtifactPaths("dev/e2e/log.html"))
 	}
 
-	pipeline.AddStep(":php:",
-		Cmd("./xlang/php/test.sh"))
-
 	pipeline.AddStep(":typescript:",
 		Cmd("cd xlang/javascript-typescript/buildserver"),
 		Cmd("yarn install"),
