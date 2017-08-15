@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -122,11 +123,31 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 		return nil, err
 	}
 
-	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
+	if err := refreshRepo(ctx, repo); err != nil {
 		return nil, err
 	}
 
 	return &repositoryResolver{repo: repo}, nil
+}
+
+var skipRefresh = false // set by tests
+
+func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
+	if skipRefresh {
+		return nil
+	}
+
+	go func() {
+		if err := backend.Repos.UpdateRepoFieldsFromRemote(context.Background(), repo); err != nil {
+			log.Printf("failed to update repo %s from remote: %s", repo.URI, err)
+		}
+	}()
+
+	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *rootResolver) Repositories(ctx context.Context, args *struct {

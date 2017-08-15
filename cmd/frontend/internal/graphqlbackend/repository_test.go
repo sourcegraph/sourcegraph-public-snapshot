@@ -24,9 +24,6 @@ func TestRepositoryLatestCommit(t *testing.T) {
 			CommitID: exampleCommitSHA1,
 		}, nil
 	}
-	backend.Mocks.Repos.RefreshIndex = func(ctx context.Context, repo string) error {
-		return nil
-	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{

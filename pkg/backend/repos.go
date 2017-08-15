@@ -47,14 +47,6 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 		return nil, err
 	}
 
-	// SECURITY: calling setRepoFieldsFromRemote ensures we keep repository metadata up to date
-	// (most importantly the "Private" field) and also adds redundancy to our security. However, we
-	// don't call it if there are no GitHub creds. Do not remove this setRepoFieldsFromRemote call
-	// without first checking with Richard and Beyang.
-	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-		return nil, err
-	}
-
 	if repo.Blocked {
 		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo.URI)
 	}
@@ -184,9 +176,9 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
-// setRepoFieldsFromRemote sets the fields of the repository from the
+// UpdateRepoFieldsFromRemote sets the fields of the repository from the
 // remote (e.g., GitHub) and updates the repository in the store layer.
-func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
+func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		// Fetch latest metadata from GitHub
 		ghrepo, err := github.GetRepo(ctx, repo.URI)
@@ -195,7 +187,7 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 		}
 		if update := repoSetFromRemote(repo, ghrepo); update != nil {
 			log15.Debug("Updating repo metadata from remote", "repo", repo.URI)
-			// setRepoFieldsFromRemote is used in read requests, including
+			// UpdateRepoFieldsFromRemote is used in read requests, including
 			// unauthed ones. However, this write isn't as the user, but
 			// rather an optimization for us to save the data from
 			// github. As such we use an elevated context to allow the
