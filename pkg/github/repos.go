@@ -2,10 +2,7 @@ package github
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
-	"os/exec"
-	"regexp"
 
 	"context"
 
@@ -20,13 +17,6 @@ import (
 )
 
 var (
-	// PreferRawGit, when set to true, will make this package prefer using raw git functionality
-	// when fetching single repositories, rather than hitting the GitHub API. Currently used by the
-	// indexer, which otherwise would likely hit the GitHub API limit and doesn't even have GitHub
-	// auth credentials. We will soon replace `getFromAPI` with `getFromGit`, and this package
-	// variable can be removed when that's done.
-	PreferRawGit bool
-
 	reposGithubPublicCache        = rcache.NewWithTTL("gh_pub", 600)
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
@@ -96,25 +86,16 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return &cached.Repo, nil
 	}
 
-	var remoteRepo *sourcegraph.Repo
-	if !PreferRawGit { // normally prefer getting from GitHub API if we have authed credentials
-		remoteRepo, err = getFromAPI(ctx, owner, repoName)
-		if legacyerr.ErrCode(err) == legacyerr.NotFound {
-			// Before we do anything, ensure we cache NotFound responses.
-			// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-			addToPublicCache(repo, &cachedRepo{NotFound: true})
-			reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
-		}
-		if err != nil {
-			reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
-			return nil, err
-		}
-	} else { // fall back to getting repo via raw git
-		remoteRepo, err = getFromGit(ctx, owner, repoName)
-		if err != nil {
-			reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
-			return nil, err
-		}
+	remoteRepo, err := getFromAPI(ctx, owner, repoName)
+	if legacyerr.ErrCode(err) == legacyerr.NotFound {
+		// Before we do anything, ensure we cache NotFound responses.
+		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
+		addToPublicCache(repo, &cachedRepo{NotFound: true})
+		reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
+	}
+	if err != nil {
+		reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
+		return nil, err
 	}
 
 	// We are only allowed to cache public repos.
@@ -187,31 +168,6 @@ func addToPublicCache(repo string, c *cachedRepo) {
 }
 
 var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
-
-var lsRemoteRefMatcher = regexp.MustCompile(`^ref:\s+refs/heads/([^\s]+)\s+HEAD\n`)
-
-// getFromGit fetches a remote GitHub repository using git operations only. Curently this only works
-// for publicly accessible repositories.  At some future point, we may consider deleting gitFromAPI
-// and using getFromGit exclusively, as it works for any generic git repository and doesn't count
-// against the GitHub API rate limit.
-func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	cmd := exec.CommandContext(ctx, "git", "ls-remote", "--symref", fmt.Sprintf("https://github.com/%s/%s", owner, repoName), "HEAD")
-	cmd.Stdin = nil
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	m := lsRemoteRefMatcher.FindStringSubmatch(string(out))
-	if len(m) < 2 {
-		return nil, fmt.Errorf("couldn't parse HEAD ref from: %q", string(out))
-	}
-	defaultBranch := m[1]
-	return &sourcegraph.Repo{
-		URI:           fmt.Sprintf("github.com/%s/%s", owner, repoName),
-		DefaultBranch: defaultBranch,
-		Private:       false,
-	}, nil
-}
 
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
