@@ -120,14 +120,6 @@ func main() {
 			ArtifactPaths("dev/e2e/log.html"))
 	}
 
-	pipeline.AddStep(":typescript:",
-		Cmd("cd xlang/javascript-typescript/buildserver"),
-		Cmd("yarn install"),
-		Cmd("yarn run build"),
-		Cmd("yarn run lint"),
-		Cmd("yarn run cover"),
-		ArtifactPaths("xlang/javascript-typescript/buildserver/coverage/lcov.info"))
-
 	pipeline.AddStep(":html:",
 		Cmd("cd cmd/frontend/internal/app/web_modules"),
 		Cmd("yarn install"),

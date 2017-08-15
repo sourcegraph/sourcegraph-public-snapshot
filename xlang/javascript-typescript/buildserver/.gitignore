@@ -1,6 +1,0 @@
-node_modules
-lib
-.idea
-*.iml
-.nyc_output/
-coverage/
