@@ -1,5 +1,5 @@
-// search is a service which exposes an API to text search a repo at a
-// specific commit.
+// Package search is a service which exposes an API to text search a repo at
+// a specific commit.
 //
 // Architecture Notes:
 // * Archive is fetched from gitserver
@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
+
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/schema"
@@ -37,77 +39,6 @@ type Service struct {
 
 var decoder = schema.NewDecoder()
 
-// Params are the input for a search request. Most of the fields are based on
-// PatternInfo used in vscode.
-type Params struct {
-	// Repo is which repository to search. eg "github.com/gorilla/mux"
-	Repo string
-
-	// Commit is which commit to search. It is required to be resolved,
-	// not a ref like HEAD or master. eg
-	// "599cba5e7b6137d46ddf58fb1765f5d928e69604"
-	Commit string
-
-	// Pattern is the search query. It is a regular expression if IsRegExp
-	// is true, otherwise a fixed string. eg "route variable"
-	Pattern string
-
-	// IsRegExp if true will treat the Pattern as a regular expression.
-	IsRegExp bool
-
-	// IsWordMatch if true will only match the pattern at word boundaries.
-	IsWordMatch bool
-
-	// IsCaseSensitive if false will ignore the case of text and pattern
-	// when finding matches.
-	IsCaseSensitive bool
-
-	// ExcludePattern is a glob pattern that should not match the returned files.
-	// eg '**/node_modules'
-	ExcludePattern string
-
-	// Include pattern is a glob pattern that should match the returned files.
-	// eg '**/*.go' to search go files.
-	IncludePattern string
-
-	// FileMatchLimit limits the number of files with matches that are returned.
-	FileMatchLimit int
-}
-
-// Response represents the response from a Search request.
-type Response struct {
-	Matches []FileMatch
-
-	// LimitHit is true if Matches may not include all FileMatches.
-	LimitHit bool
-}
-
-// FileMatch is the struct used by vscode to receive search results
-type FileMatch struct {
-	Path        string
-	LineMatches []LineMatch
-
-	// LimitHit is true if LineMatches may not include all LineMatches.
-	LimitHit bool
-}
-
-// LineMatch is the struct used by vscode to receive search results for a line.
-type LineMatch struct {
-	// Preview is the matched line.
-	Preview string
-
-	// LineNumber is the 0-based line number. Note: Our editors present
-	// 1-based line numbers, but internally vscode uses 0-based.
-	LineNumber int
-
-	// OffsetAndLengths is a slice of 2-tuples (Offset, Length)
-	// representing each match on a line.
-	OffsetAndLengths [][]int
-
-	// LimitHit is true if OffsetAndLengths may not include all OffsetAndLengths.
-	LimitHit bool
-}
-
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	running.Inc()
@@ -119,7 +50,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var p Params
+	var p protocol.Request
 	err = decoder.Decode(&p, r.Form)
 	if err != nil {
 		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
@@ -143,11 +74,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if matches == nil {
 		// Return an empty list
-		matches = make([]FileMatch, 0)
+		matches = make([]protocol.FileMatch, 0)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	resp := Response{
+	resp := protocol.Response{
 		Matches:  matches,
 		LimitHit: limitHit,
 	}
@@ -159,7 +90,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, limitHit bool, err error) {
+func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
@@ -198,7 +129,7 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, l
 		}
 	}(time.Now())
 
-	rg, err := compile(p)
+	rg, err := compile(&p.PatternInfo)
 	if err != nil {
 		return nil, false, badRequestError{err.Error()}
 	}
@@ -212,7 +143,7 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, l
 	return concurrentFind(ctx, rg, ar.Reader(), p.FileMatchLimit)
 }
 
-func validateParams(p *Params) error {
+func validateParams(p *protocol.Request) error {
 	if p.Repo == "" {
 		return errors.New("Repo must be non-empty")
 	}

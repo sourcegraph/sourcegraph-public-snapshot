@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
 
 func TestSearch(t *testing.T) {
@@ -37,52 +38,52 @@ func main() {
 `,
 	}
 
-	cases := map[search.Params]string{
-		search.Params{Pattern: "foo"}: "",
+	cases := map[protocol.PatternInfo]string{
+		protocol.PatternInfo{Pattern: "foo"}: "",
 
-		search.Params{Pattern: "World", IsCaseSensitive: true}: `
+		protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}: `
 README.md:1:# Hello World
 `,
 
-		search.Params{Pattern: "world", IsCaseSensitive: true}: `
+		protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}: `
 README.md:3:Hello world example in go
 main.go:6:	fmt.Println("Hello world")
 `,
 
-		search.Params{Pattern: "world"}: `
+		protocol.PatternInfo{Pattern: "world"}: `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 main.go:6:	fmt.Println("Hello world")
 `,
 
-		search.Params{Pattern: "func.*main"}: "",
+		protocol.PatternInfo{Pattern: "func.*main"}: "",
 
-		search.Params{Pattern: "func.*main", IsRegExp: true}: `
+		protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}: `
 main.go:5:func main() {
 `,
 
-		search.Params{Pattern: "mai", IsWordMatch: true}: "",
+		protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}: "",
 
-		search.Params{Pattern: "main", IsWordMatch: true}: `
+		protocol.PatternInfo{Pattern: "main", IsWordMatch: true}: `
 main.go:1:package main
 main.go:5:func main() {
 `,
 
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
-		search.Params{Pattern: `printL\B`, IsRegExp: true}: `
+		protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}: `
 main.go:6:	fmt.Println("Hello world")
 `,
 
-		search.Params{Pattern: "world", ExcludePattern: "README.md"}: `
+		protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}: `
 main.go:6:	fmt.Println("Hello world")
 `,
-		search.Params{Pattern: "world", IncludePattern: "*.md"}: `
+		protocol.PatternInfo{Pattern: "world", IncludePattern: "*.md"}: `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `,
 
-		search.Params{Pattern: "doesnotmatch"}: "",
+		protocol.PatternInfo{Pattern: "doesnotmatch"}: "",
 	}
 
 	store, cleanup, err := newStore(files)
@@ -94,10 +95,12 @@ README.md:3:Hello world example in go
 	defer ts.Close()
 
 	for p, want := range cases {
-		p2 := p
-		p2.Repo = "foo"
-		p2.Commit = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
-		m, err := doSearch(ts.URL, &p2)
+		req := protocol.Request{
+			Repo:        "foo",
+			Commit:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: p,
+		}
+		m, err := doSearch(ts.URL, &req)
 		if err != nil {
 			t.Errorf("%v failed: %s", p, err)
 			continue
@@ -123,7 +126,7 @@ README.md:3:Hello world example in go
 }
 
 func TestSearch_badrequest(t *testing.T) {
-	cases := []search.Params{
+	cases := []protocol.Request{
 		// Empty pattern
 		{
 			Repo:   "foo",
@@ -132,45 +135,57 @@ func TestSearch_badrequest(t *testing.T) {
 
 		// Bad regexp
 		{
-			Repo:     "foo",
-			Commit:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Pattern:  `\F`,
-			IsRegExp: true,
+			Repo:   "foo",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:  `\F`,
+				IsRegExp: true,
+			},
 		},
 
 		// No repo
 		{
-			Commit:  "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Pattern: "test",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern: "test",
+			},
 		},
 
 		// No commit
 		{
-			Repo:    "foo",
-			Pattern: "test",
+			Repo: "foo",
+			PatternInfo: protocol.PatternInfo{
+				Pattern: "test",
+			},
 		},
 
 		// Non-absolute commit
 		{
-			Repo:    "foo",
-			Commit:  "HEAD",
-			Pattern: "test",
+			Repo:   "foo",
+			Commit: "HEAD",
+			PatternInfo: protocol.PatternInfo{
+				Pattern: "test",
+			},
 		},
 
 		// Bad include glob
 		{
-			Repo:           "foo",
-			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Pattern:        "test",
-			IncludePattern: "[c-a]",
+			Repo:   "foo",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:        "test",
+				IncludePattern: "[c-a]",
+			},
 		},
 
 		// Bad exclude glob
 		{
-			Repo:           "foo",
-			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Pattern:        "test",
-			ExcludePattern: "[c-a]",
+			Repo:   "foo",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:        "test",
+				ExcludePattern: "[c-a]",
+			},
 		},
 	}
 
@@ -193,7 +208,7 @@ func TestSearch_badrequest(t *testing.T) {
 	}
 }
 
-func doSearch(u string, p *search.Params) ([]search.FileMatch, error) {
+func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	form := url.Values{
 		"Repo":           []string{p.Repo},
 		"Commit":         []string{p.Commit},
@@ -223,7 +238,7 @@ func doSearch(u string, p *search.Params) ([]search.FileMatch, error) {
 		return nil, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
-	var r search.Response
+	var r protocol.Response
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		return nil, err
@@ -263,7 +278,7 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 	}, func() { os.RemoveAll(d) }, nil
 }
 
-func toString(m []search.FileMatch) string {
+func toString(m []protocol.FileMatch) string {
 	buf := new(bytes.Buffer)
 	for _, f := range m {
 		for _, l := range f.LineMatches {
@@ -278,7 +293,7 @@ func toString(m []search.FileMatch) string {
 	return buf.String()
 }
 
-func sanityCheckSorted(m []search.FileMatch) error {
+func sanityCheckSorted(m []protocol.FileMatch) error {
 	if !sort.IsSorted(sortByPath(m)) {
 		return errors.New("unsorted file matches, please sortByPath")
 	}
@@ -324,13 +339,13 @@ func diff(b1, b2 string) (string, error) {
 	return string(data), err
 }
 
-type sortByPath []search.FileMatch
+type sortByPath []protocol.FileMatch
 
 func (m sortByPath) Len() int           { return len(m) }
 func (m sortByPath) Less(i, j int) bool { return m[i].Path < m[j].Path }
 func (m sortByPath) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
 
-type sortByLineNumber []search.LineMatch
+type sortByLineNumber []protocol.LineMatch
 
 func (m sortByLineNumber) Len() int           { return len(m) }
 func (m sortByLineNumber) Less(i, j int) bool { return m[i].LineNumber < m[j].LineNumber }

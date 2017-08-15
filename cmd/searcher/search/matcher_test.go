@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"testing"
 	"testing/iotest"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
 
 func BenchmarkBytesToLowerASCII(b *testing.B) {
@@ -27,38 +29,46 @@ func BenchmarkBytesToLowerASCII(b *testing.B) {
 }
 
 func BenchmarkConcurrentFind_large_fixed(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:    "github.com/golang/go",
-		Commit:  "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		Pattern: "error handler",
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern: "error handler",
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_large_fixed_casesensitive(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:            "github.com/golang/go",
-		Commit:          "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		Pattern:         "error handler",
-		IsCaseSensitive: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "error handler",
+			IsCaseSensitive: true,
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_large_re_dotstar(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:     "github.com/golang/go",
-		Commit:   "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		Pattern:  ".*",
-		IsRegExp: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:  ".*",
+			IsRegExp: true,
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_large_re_common(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:            "github.com/golang/go",
-		Commit:          "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		Pattern:         "func +[A-Z]",
-		IsRegExp:        true,
-		IsCaseSensitive: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
 	})
 }
 
@@ -69,62 +79,74 @@ func BenchmarkConcurrentFind_large_re_anchor(b *testing.B) {
 	// performant/permissive.
 	// * Searching for any literal (Rabin-Karp aka bytes.Index) or group
 	// of literals (Aho-Corasick).
-	benchConcurrentFind(b, &Params{
-		Repo:            "github.com/golang/go",
-		Commit:          "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		Pattern:         "^func +[A-Z]",
-		IsRegExp:        true,
-		IsCaseSensitive: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_small_fixed(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:    "github.com/sourcegraph/go-langserver",
-		Commit:  "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		Pattern: "object not found",
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/sourcegraph/go-langserver",
+		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		PatternInfo: protocol.PatternInfo{
+			Pattern: "object not found",
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_small_fixed_casesensitive(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:            "github.com/sourcegraph/go-langserver",
-		Commit:          "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		Pattern:         "object not found",
-		IsCaseSensitive: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/sourcegraph/go-langserver",
+		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "object not found",
+			IsCaseSensitive: true,
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_small_re_dotstar(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:     "github.com/sourcegraph/go-langserver",
-		Commit:   "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		Pattern:  ".*",
-		IsRegExp: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/sourcegraph/go-langserver",
+		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:  ".*",
+			IsRegExp: true,
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_small_re_common(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:            "github.com/sourcegraph/go-langserver",
-		Commit:          "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		Pattern:         "func +[A-Z]",
-		IsRegExp:        true,
-		IsCaseSensitive: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/sourcegraph/go-langserver",
+		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
 	})
 }
 
 func BenchmarkConcurrentFind_small_re_anchor(b *testing.B) {
-	benchConcurrentFind(b, &Params{
-		Repo:            "github.com/sourcegraph/go-langserver",
-		Commit:          "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		Pattern:         "^func +[A-Z]",
-		IsRegExp:        true,
-		IsCaseSensitive: true,
+	benchConcurrentFind(b, &protocol.Request{
+		Repo:   "github.com/sourcegraph/go-langserver",
+		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
 	})
 }
 
-func benchConcurrentFind(b *testing.B, p *Params) {
+func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 	if testing.Short() {
 		b.Skip("")
 	}
@@ -135,7 +157,7 @@ func benchConcurrentFind(b *testing.B, p *Params) {
 		b.Fatal(err)
 	}
 
-	rg, err := compile(p)
+	rg, err := compile(&p.PatternInfo)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -238,7 +260,7 @@ func TestReadAll(t *testing.T) {
 }
 
 func TestLineLimit(t *testing.T) {
-	rg, err := compile(&Params{Pattern: "a"})
+	rg, err := compile(&protocol.PatternInfo{Pattern: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -304,7 +326,7 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rg, err := compile(&Params{Pattern: pattern})
+	rg, err := compile(&protocol.PatternInfo{Pattern: pattern})
 	if err != nil {
 		t.Fatal(err)
 	}
