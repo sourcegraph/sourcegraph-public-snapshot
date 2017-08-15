@@ -19,7 +19,7 @@ func serveReposUpdate(w http.ResponseWriter, r *http.Request) error {
 
 	ts := time.Now()
 	for _, uri := range list {
-		_, err := localstore.Repos.TryInsertNew(r.Context(), &sourcegraph.Repo{
+		err := localstore.Repos.TryInsertNew(r.Context(), &sourcegraph.Repo{
 			URI:       uri,
 			CreatedAt: &ts,
 		})

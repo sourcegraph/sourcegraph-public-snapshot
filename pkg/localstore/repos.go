@@ -12,7 +12,6 @@ import (
 
 	"github.com/lib/pq"
 	"gopkg.in/gorp.v1"
-	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
@@ -232,7 +231,11 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				Private:     ghRepo.Private,
 				CreatedAt:   &ts,
 			}
-			return s.TryInsertNew(ctx, newRepo)
+			if err := s.TryInsertNew(ctx, newRepo); err != nil {
+				return nil, err
+			}
+
+			return s.getByURI(ctx, ghRepo.URI)
 		}
 
 		return nil, err
@@ -441,19 +444,18 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	return nil
 }
 
-// TryInsertNew attempts to insert the repository rp into the db. On
-// success, it returns the repository that was actually inserted.
-func (s *repos) TryInsertNew(ctx context.Context, rp *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+// TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
+// with the given uri already exists.
+func (s *repos) TryInsertNew(ctx context.Context, rp *sourcegraph.Repo) error {
 	var r dbRepo
 	r.fromRepo(rp)
 	if err := appDBH(ctx).Insert(&r.dbRepoOrig); err != nil {
 		if isPQErrorUniqueViolation(err) {
-			if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
-				log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
+			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {
+				return nil // repo with given uri already exists
 			}
-			return s.getByURI(ctx, rp.URI) // might be race condition, try to read
 		}
-		return nil, err
+		return err
 	}
-	return r.toRepo(), nil
+	return nil
 }
