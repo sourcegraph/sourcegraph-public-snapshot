@@ -124,27 +124,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	return r2
 }
 
-func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
-	r.ID = r2.ID
-	r.URI = r2.URI
-	r.Description = r2.Description
-	r.HomepageURL = r2.HomepageURL
-	r.DefaultBranch = r2.DefaultBranch
-	r.Language = r2.Language
-	r.Blocked = r2.Blocked
-	r.Fork = r2.Fork
-	r.Private = r2.Private
-	if r2.CreatedAt != nil {
-		r.CreatedAt = *r2.CreatedAt
-	}
-	r.UpdatedAt = r2.UpdatedAt
-	r.PushedAt = r2.PushedAt
-	r.IndexedRevision = r2.IndexedRevision
-
-	var freezeIndexedRevision bool = r2.FreezeIndexedRevision
-	r.FreezeIndexedRevision = &freezeIndexedRevision
-}
-
 func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
 	r2s := make([]*sourcegraph.Repo, len(rs))
 	for i, r := range rs {
@@ -220,18 +199,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				}
 			}
 
-			// Purposefully set very few fields. We don't want to cache
-			// metadata, because it'll get stale, and fetching online from
-			// GitHub is quite easy and (with HTTP caching) performant.
-			ts := time.Now()
-			newRepo := &sourcegraph.Repo{
-				URI:         ghRepo.URI,
-				Description: ghRepo.Description,
-				Fork:        ghRepo.Fork,
-				Private:     ghRepo.Private,
-				CreatedAt:   &ts,
-			}
-			if err := s.TryInsertNew(ctx, newRepo); err != nil {
+			if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
 				return nil, err
 			}
 
@@ -446,10 +414,15 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
-func (s *repos) TryInsertNew(ctx context.Context, rp *sourcegraph.Repo) error {
-	var r dbRepo
-	r.fromRepo(rp)
-	if err := appDBH(ctx).Insert(&r.dbRepoOrig); err != nil {
+func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
+	err := appDBH(ctx).Insert(&dbRepoOrig{
+		URI:         uri,
+		Description: description,
+		Fork:        fork,
+		Private:     private,
+		CreatedAt:   time.Now(),
+	})
+	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {
 				return nil // repo with given uri already exists
