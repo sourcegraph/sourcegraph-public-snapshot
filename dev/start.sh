@@ -31,6 +31,9 @@ export REDIS_MASTER_ENDPOINT=127.0.0.1:6379
 export SRC_SESSION_STORE_REDIS=127.0.0.1:6379
 export SRC_INDEXER=127.0.0.1:3179
 
+export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
+export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
+
 mkdir -p .bin
 env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
 
