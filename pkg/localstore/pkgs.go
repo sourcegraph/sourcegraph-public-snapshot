@@ -23,6 +23,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
+// pkgs provides access to the `pkgs` table.
+//
+// For a detailed overview of the schema, see schema.txt.
 type pkgs struct{}
 
 func (*pkgs) CreateTable() string {

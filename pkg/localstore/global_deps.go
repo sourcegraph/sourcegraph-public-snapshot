@@ -44,6 +44,8 @@ import (
 // storing public repository data (like `global_dep` does), it only stores
 // private repository data. It includes all dependencies, public or private,
 // for all private repositories.
+//
+// For a detailed overview of the schema, see schema.txt.
 type globalDeps struct{}
 
 var globalDepEnabledLangs = map[string]struct{}{

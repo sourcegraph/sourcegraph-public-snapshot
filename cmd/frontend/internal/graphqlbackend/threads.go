@@ -123,12 +123,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, &sourcegraph.Comment{
-		ThreadID:    newThread.ID,
-		Contents:    args.Contents,
-		AuthorName:  args.AuthorName,
-		AuthorEmail: args.AuthorEmail,
-	})
+	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, args.AuthorName, args.AuthorEmail)
 	if err != nil {
 		return nil, err
 	}

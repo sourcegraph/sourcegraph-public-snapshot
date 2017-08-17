@@ -15,66 +15,37 @@ import (
 // valid domain, e.g. "github.com/gorilla/mux".
 var validRemoteURI = regexp.MustCompile(`^[^/@]+(\.[^/]+)+(:\d+)?(/[^/]+)+$`)
 
-func init() {
-	AppSchema.Map.AddTableWithName(dbLocalRepo{}, "local_repos").SetKeys(true, "ID").SetUniqueTogether("remote_uri", "access_token")
-	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
-		"CREATE INDEX ON local_repos(remote_uri);",
-		"ALTER TABLE local_repos ALTER COLUMN remote_uri TYPE citext;",
-	)
-}
-
-// dbLocalRepo DB-maps a sourcegraph.LocalRepo object.
-type dbLocalRepo struct {
-	ID          int64
-	RemoteURI   string     `db:"remote_uri"`
-	AccessToken string     `db:"access_token"`
-	CreatedAt   time.Time  `db:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at"`
-	DeletedAt   *time.Time `db:"deleted_at"`
-}
-
-func (r *dbLocalRepo) fromLocalRepo(r2 *sourcegraph.LocalRepo) {
-	r.ID = int64(r2.ID)
-	r.RemoteURI = r2.RemoteURI
-	r.AccessToken = r2.AccessToken
-}
-
-func (r *dbLocalRepo) toLocalRepo() *sourcegraph.LocalRepo {
-	r2 := &sourcegraph.LocalRepo{}
-	r2.ID = int32(r.ID)
-	r2.RemoteURI = r.RemoteURI
-	r2.AccessToken = r.AccessToken
-	r2.CreatedAt = r.CreatedAt
-	r2.UpdatedAt = r.UpdatedAt
-	return r2
-}
-
-func (r *dbLocalRepo) validate() error {
-	matched := validRemoteURI.MatchString(r.RemoteURI)
+func validateLocalRepo(repo *sourcegraph.LocalRepo) error {
+	if repo.RemoteURI == "" {
+		return errors.New("error creating local repo: RemoteURI required")
+	}
+	matched := validRemoteURI.MatchString(repo.RemoteURI)
 	if !matched {
-		return fmt.Errorf("not a valid remote URI: %s", r.RemoteURI)
+		return fmt.Errorf("not a valid remote URI: %s", repo.RemoteURI)
+	}
+	if repo.AccessToken == "" {
+		return fmt.Errorf("error creating local repo %s: AccessToken required", repo.RemoteURI)
 	}
 	return nil
 }
 
 type localRepos struct{}
 
-func (*localRepos) Get(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.LocalRepo, error) {
+func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.LocalRepo, error) {
 	if Mocks.LocalRepos.Get != nil {
 		return Mocks.LocalRepos.Get(ctx, remoteURI, accessToken)
 	}
 
-	var r dbLocalRepo
 	// 🚨 SECURITY: must include access_token field in query as a permissions 🚨
 	// check. Note other functions may rely on this method to verify repo permissions
-	err := appDBH(ctx).SelectOne(&r, "SELECT * FROM local_repos WHERE (remote_uri=$1 AND access_token=$2 AND deleted_at IS NULL)", remoteURI, accessToken)
+	repos, err := l.getBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
 	if err == sql.ErrNoRows {
 		return nil, ErrRepoNotFound
 	} else if err != nil {
 		return nil, err
 	}
-
-	return r.toLocalRepo(), nil
+	// repos should have at least one entry after passing the error check above.
+	return repos[0], nil
 }
 
 func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (*sourcegraph.LocalRepo, error) {
@@ -82,24 +53,43 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 		return Mocks.LocalRepos.Create(ctx, newRepo)
 	}
 
-	if newRepo.RemoteURI == "" {
-		return nil, errors.New("error creating local repo: RemoteURI required")
+	newRepo.CreatedAt = time.Now()
+	newRepo.UpdatedAt = newRepo.CreatedAt
+	err := validateLocalRepo(newRepo)
+	if err != nil {
+		return nil, err
 	}
-	if newRepo.AccessToken == "" {
-		return nil, fmt.Errorf("error creating local repo %s: AccessToken required", newRepo.RemoteURI)
+	var id int64
+	err = appDBH(ctx).Db.QueryRow(
+		"INSERT INTO local_repos(remote_uri, access_token, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
+		newRepo.RemoteURI, newRepo.AccessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&id)
+	if err != nil {
+		return nil, err
 	}
 
-	var r dbLocalRepo
-	r.fromLocalRepo(newRepo)
-	r.CreatedAt = time.Now()
-	r.UpdatedAt = r.CreatedAt
-	err := r.validate()
+	return newRepo, nil
+}
+
+// getBySQL returns localRepos matching the SQL query, if any exist.
+func (*localRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.LocalRepo, error) {
+	rows, err := appDBH(ctx).Db.Query("SELECT id, remote_uri, access_token, created_at, updated_at FROM local_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
-	err = appDBH(ctx).Insert(&r)
-	if err != nil {
+
+	localRepos := []*sourcegraph.LocalRepo{}
+	defer rows.Close()
+	for rows.Next() {
+		var l sourcegraph.LocalRepo
+		err := rows.Scan(&l.ID, &l.RemoteURI, &l.AccessToken, &l.CreatedAt, &l.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		localRepos = append(localRepos, &l)
+	}
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return r.toLocalRepo(), nil
+
+	return localRepos, nil
 }
