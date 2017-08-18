@@ -166,8 +166,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	dir := path.Join(s.ReposDir, req.Repo)
 	s.cloningMu.Lock()
 	_, cloneInProgress := s.cloning[dir]
+	s.cloningMu.Unlock()
 	if cloneInProgress || strings.ToLower(req.Repo) == "github.com/sourcegraphtest/alwayscloningtest" {
-		s.cloningMu.Unlock()
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
@@ -175,27 +175,36 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	}
 	if !repoCloned(dir) {
 		if origin := OriginMap(req.Repo); origin != "" && !req.NoAutoUpdate && s.repoExists(ctx, origin, req.Opt) {
-			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
+			// Mark this repo as currently being cloned. We have to check again if someone else isn't already
+			// cloning since we released the lock. We released the lock since repoExists is a potentially
+			// slow operation.
+			s.cloningMu.Lock()
+			_, cloneInProgress := s.cloning[dir]
+			if !cloneInProgress {
+				s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
+			}
 			s.cloningMu.Unlock()
 
-			go func() {
-				// Create a new context because this is in a background goroutine.
-				ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
-				defer func() {
-					cancel()
-					s.releaseCloneLock(dir)
+			if !cloneInProgress {
+				go func() {
+					// Create a new context because this is in a background goroutine.
+					ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+					defer func() {
+						cancel()
+						s.releaseCloneLock(dir)
+					}()
+
+					if skipCloneForTests {
+						return
+					}
+
+					cmd := cloneCmd(ctx, origin, dir)
+					if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
+						log15.Error("clone failed", "error", err, "output", string(output))
+						return
+					}
 				}()
-
-				if skipCloneForTests {
-					return
-				}
-
-				cmd := cloneCmd(ctx, origin, dir)
-				if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
-					log15.Error("clone failed", "error", err, "output", string(output))
-					return
-				}
-			}()
+			}
 
 			status = "clone-in-progress"
 			w.WriteHeader(http.StatusNotFound)
@@ -203,13 +212,11 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		s.cloningMu.Unlock()
 		status = "repo-not-found"
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
 		return
 	}
-	s.cloningMu.Unlock()
 
 	if req.EnsureRevision != "" {
 		cmd := exec.CommandContext(ctx, "git", "rev-parse", req.EnsureRevision)
