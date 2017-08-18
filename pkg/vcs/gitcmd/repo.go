@@ -36,6 +36,7 @@ var (
 
 		"rev-parse": []string{"--abbrev-ref"},
 		"rev-list":  []string{"--max-parents", "--reverse", "--max-count"},
+		"ls-remote": []string{"--get-url"},
 	}
 )
 
