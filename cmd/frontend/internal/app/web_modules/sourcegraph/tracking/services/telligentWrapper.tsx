@@ -1,5 +1,11 @@
 import { isOnPremInstance, sourcegraphContext } from "sourcegraph/util/sourcegraphContext";
 
+declare global {
+	interface Window {
+		telligent: (...args: any[]) => void | null;
+	}
+}
+
 class TelligentWrapper {
 	private telligent: (...args: any[]) => void | null;
 	private DEFAULT_ENV: string = "development";
@@ -7,8 +13,8 @@ class TelligentWrapper {
 	private DEFAULT_APP_ID: string = "UnknownApp";
 
 	constructor() {
-		if (window && window["telligent"]) {
-			this.telligent = window["telligent"];
+		if (window && window.telligent) {
+			this.telligent = window.telligent;
 		} else {
 			return;
 		}
