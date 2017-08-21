@@ -1,63 +1,76 @@
 export interface Workspace {
-	uri: string;
-	rev: string;
+    uri: string;
+    rev: string;
 }
 
 export interface Blob extends Workspace {
-	path: string;
+    path: string;
 }
 
 export interface BlobPosition extends Blob {
-	line: number;
-	char?: number;
+    line: number;
+    char?: number;
 }
 
 export interface Signature {
-	person: Person;
-	date: string;
+    person: Person;
+    date: string;
 }
 
 export interface Person {
-	name: string;
-	email: string;
-	gravatarHash: string;
+    name: string;
+    email: string;
+    gravatarHash: string;
 }
 
 export interface Hunk {
-	startLine: number;
-	endLine: number;
-	startByte: number;
-	endByte: number;
-	rev: string;
-	author: Signature;
-	message: string;
+    startLine: number;
+    endLine: number;
+    startByte: number;
+    endByte: number;
+    rev: string;
+    author: Signature;
+    message: string;
 }
 
 export interface ActiveRepoResults {
-	active: string[];
-	inactive: string[];
+    active: string[];
+    inactive: string[];
 }
 
 export interface TooltipData {
-	loading?: boolean;
-	title?: string;
-	doc?: string;
-	j2dUrl?: string;
+    loading?: boolean;
+    title?: string;
+    doc?: string;
+    j2dUrl?: string;
 }
 
 export interface Reference {
-	range: {
-		start: {
-			character: number;
-			line: number;
-		};
-		end: {
-			character: number;
-			line: number;
-		};
-	};
-	uri: string;
-	repoURI: string;
+    range: {
+        start: {
+            character: number;
+            line: number;
+        };
+        end: {
+            character: number;
+            line: number;
+        };
+    };
+    uri: string;
+    repoURI: string;
+}
+
+export interface RepoRevSpec {
+    repoURI: string;
+
+    /**
+     * rev is any type of revision specifier: a branch name, a short commit ID,
+     * full commit ID, or empty string (use default branch).
+     *
+     * use ResolvedRepoRevSpec if you need this rev resolved to the actual
+     * commit ID.
+     */
+    rev: string;
 }
 
 /**
@@ -65,84 +78,71 @@ export interface Reference {
  * proper commit ID (stored here in the commitID field).
  */
 export interface ResolvedRepoRevSpec extends RepoRevSpec {
-	commitID: string;
-}
-
-export interface RepoRevSpec {
-	repoURI: string;
-
-	/**
-	 * rev is any type of revision specifier: a branch name, a short commit ID,
-	 * full commit ID, or empty string (use default branch).
-	 *
-	 * use ResolvedRepoRevSpec if you need this rev resolved to the actual
-	 * commit ID.
-	 */
-	rev: string;
+    commitID: string;
 }
 
 export interface CodeCell {
-	cell: HTMLElement;
-	eventHandler: HTMLElement;
-	line: number;
-	isAddition?: boolean; // for diff views
-	isDeletion?: boolean; // for diff views
+    cell: HTMLElement;
+    eventHandler: HTMLElement;
+    line: number;
+    isAddition?: boolean; // for diff views
+    isDeletion?: boolean; // for diff views
 }
 
 export interface ParsedURL {
-	uri?: string;
-	rev?: string;
+    uri?: string;
+    rev?: string;
 }
 
 /**
  * TreeURL is the URL format for tree pages.
  */
 export interface TreeURL extends ParsedURL {
-	path?: string;
+    path?: string;
 }
 
 /**
  * BlobURL is the URL format for blob pages.
  */
 export interface BlobURL extends ParsedURL {
-	path?: string;
-	line?: number;
-	char?: number;
-	modal?: string; // e.g. "references"
-	modalMode?: string; // e.g. ["", "local", "external"]
+    path?: string;
+    line?: number;
+    char?: number;
+    modal?: string; // e.g. "references"
+    modalMode?: string; // e.g. ["", "local", "external"]
 }
 
 export interface User {
-	UID: string;
-	Login: string;
-	Name?: string;
-	IsOrganization?: boolean;
-	AvatarURL?: string;
-	Location?: string;
-	Company?: string;
-	HomepageURL?: string;
-	Disabled?: boolean;
-	Admin?: boolean;
-	Betas?: string[];
-	Write?: boolean;
-	RegisteredAt?: any;
+    UID: string;
+    Login: string;
+    Name?: string;
+    IsOrganization?: boolean;
+    AvatarURL?: string;
+    Location?: string;
+    Company?: string;
+    HomepageURL?: string;
+    Disabled?: boolean;
+    Admin?: boolean;
+    Betas?: string[];
+    Write?: boolean;
+    RegisteredAt?: any;
 }
 
 export interface EmailAddr {
-	Email?: string;
-	Verified?: boolean;
-	Primary?: boolean;
-	Guessed?: boolean;
-	Blacklisted?: boolean;
+    Email?: string;
+    Verified?: boolean;
+    Primary?: boolean;
+    Guessed?: boolean;
+    Blacklisted?: boolean;
 }
 
 export interface EmailAddrList {
-	EmailAddrs?: EmailAddr[];
+    EmailAddrs?: EmailAddr[];
 }
 
 export interface ExternalToken {
-	uid?: string;
-	host?: string;
-	token?: string;
-	scope?: string;
+    uid?: string;
+    host?: string;
+    token?: string;
+    scope?: string;
 }

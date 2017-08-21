@@ -1,295 +1,322 @@
-import { hoverSelection } from "@sourcegraph/components/src/style/color";
-import * as csstips from "csstips";
-import { color } from "csx";
-import * as _ from "lodash";
-import * as React from "react";
-import * as DownIcon from "react-icons/lib/fa/angle-down";
-import * as RightIcon from "react-icons/lib/fa/angle-right";
-import * as RepoIcon from "react-icons/lib/go/repo";
-import * as CloseIcon from "react-icons/lib/md/close";
-import * as GlobeIcon from "react-icons/lib/md/language";
-import { CodeExcerpt } from "sourcegraph/components/CodeExcerpt";
-import { triggerReferences } from "sourcegraph/references";
-import { locKey, ReferencesState, refsFetchKey, store } from "sourcegraph/references/store";
-import { events } from "sourcegraph/tracking/events";
-import * as colors from "sourcegraph/util/colors";
-import { normalFontColor, white } from "sourcegraph/util/colors";
-import { pageVars } from "sourcegraph/util/pageVars";
-import { Reference } from "sourcegraph/util/types";
-import * as url from "sourcegraph/util/url";
-import { classes, style } from "typestyle";
-import * as URI from "urijs";
+import { hoverSelection } from '@sourcegraph/components/src/style/color';
+import * as csstips from 'csstips';
+import { color } from 'csx';
+import * as _ from 'lodash';
+import * as React from 'react';
+import * as DownIcon from 'react-icons/lib/fa/angle-down';
+import * as RightIcon from 'react-icons/lib/fa/angle-right';
+import * as RepoIcon from 'react-icons/lib/go/repo';
+import * as CloseIcon from 'react-icons/lib/md/close';
+import * as GlobeIcon from 'react-icons/lib/md/language';
+import { CodeExcerpt } from 'sourcegraph/components/CodeExcerpt';
+import { triggerReferences } from 'sourcegraph/references';
+import { locKey, ReferencesState, refsFetchKey, store } from 'sourcegraph/references/store';
+import { events } from 'sourcegraph/tracking/events';
+import * as colors from 'sourcegraph/util/colors';
+import { normalFontColor, white } from 'sourcegraph/util/colors';
+import { pageVars } from 'sourcegraph/util/pageVars';
+import { Reference } from 'sourcegraph/util/types';
+import * as url from 'sourcegraph/util/url';
+import { classes, style } from 'typestyle';
+import * as URI from 'urijs';
 
 namespace Styles {
-	const border = `1px solid ${colors.borderColor}`;
+    const border = `1px solid ${colors.borderColor}`;
 
-	export const icon = style({ fontSize: "18px", marginLeft: "15px" });
+    export const icon = style({ fontSize: '18px', marginLeft: '15px' });
 
-	export const titleBar = style(csstips.horizontal, csstips.center, { backgroundColor: colors.referencesBackgroundColor, borderBottom: border, padding: "0px 16px", fontSize: "14px", height: "32px", width: "100%", position: "sticky", top: "0px" });
-	export const titleBarTitle = style(csstips.content, { maxWidth: "50%", marginRight: "25px" });
-	export const titleBarGroup = style(csstips.content, {
-		textTransform: "uppercase",
-		letterSpacing: "1px",
-		textDecoration: "none",
-		$nest: {
-			"&:hover": { color: "white" },
-		},
-	});
-	export const titleBarGroupActive = classes(style({ fontWeight: "bold !important", color: "white !important" } as any), titleBarGroup);
+    export const titleBar = style(csstips.horizontal, csstips.center, {
+        backgroundColor: colors.referencesBackgroundColor,
+        borderBottom: border,
+        padding: '0px 16px',
+        fontSize: '14px',
+        height: '32px',
+        width: '100%',
+        position: 'sticky',
+        top: '0px'
+    });
+    export const titleBarTitle = style(csstips.content, { maxWidth: '50%', marginRight: '25px' });
+    export const titleBarGroup = style(csstips.content, {
+        textTransform: 'uppercase',
+        letterSpacing: '1px',
+        textDecoration: 'none',
+        $nest: {
+            '&:hover': { color: 'white' }
+        }
+    });
+    export const titleBarGroupActive = classes(style({ fontWeight: 'bold !important', color: 'white !important' } as any), titleBarGroup);
 
-	export const badge = style(csstips.content, { backgroundColor: "#233043 !important", borderRadius: "20px", color: normalFontColor, marginLeft: "10px", marginRight: "25px", fontSize: "11px", padding: "3px 6px", fontFamily: "system" });
+    export const badge = style(csstips.content, {
+        backgroundColor: '#233043 !important',
+        borderRadius: '20px',
+        color: normalFontColor,
+        marginLeft: '10px',
+        marginRight: '25px',
+        fontSize: '11px',
+        padding: '3px 6px',
+        fontFamily: 'system'
+    });
 
-	export const emptyState = style({ padding: "10px 16px", fontFamily: "system", fontSize: "14px" });
+    export const emptyState = style({ padding: '10px 16px', fontFamily: 'system', fontSize: '14px' });
 
-	export const uriPathPart = style({ paddingLeft: "25px", paddingRight: "15px" });
-	export const pathPart = style({});
-	export const filePathPart = style({ color: "white", fontWeight: "bold", paddingRight: "15px" });
+    export const uriPathPart = style({ paddingLeft: '25px', paddingRight: '15px' });
+    export const pathPart = style({});
+    export const filePathPart = style({ color: 'white', fontWeight: 'bold', paddingRight: '15px' });
 
-	export const refsGroup = style({ fontSize: "12px", fontFamily: "system", color: normalFontColor, userSelect: "none" });
-	export const closeIcon = style({ cursor: "pointer", fontSize: "18px", color: colors.normalFontColor, $nest: { "&:hover": { color: white } } });
-	const refsTitleColor = "#233043";
-	export const refsGroupTitle = style(csstips.horizontal, csstips.center, {
-		cursor: "pointer",
-		backgroundColor: refsTitleColor,
-		height: "32px",
-		$nest: { "&:hover": { backgroundColor: color(refsTitleColor).darken(.05).toString() } },
-	});
-	export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
-	export const ref = style({
-		textDecoration: "none", // don't use cascading link style
-		display: "block",
-		fontFamily: "Menlo !important", // don't use cascading link style
-		borderBottom: border,
-		padding: "10px",
-		cursor: "pointer",
-		overflowX: "auto",
-		$nest: { "&:hover": { backgroundColor: hoverSelection } },
-	});
-	export const expandIcon = style({ fontSize: "18px", marginLeft: "15px", marginRight: "15px" });
-	export const fill = style({ flex: 1 });
-}
-
-interface Props {
-	onDismiss: () => void;
-}
-
-interface State extends ReferencesState {
-	docked: boolean;
-	group: "local" | "external";
-}
-
-export class ReferencesWidget extends React.Component<Props, State> {
-	subscription: any;
-	hashWatcher: any;
-
-	constructor(props: Props) {
-		super(props);
-		let u = url.parseBlob();
-		const onRefs = Boolean(u.path && u.modal && u.modal === "references");
-		this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
-		if (onRefs) {
-			triggerReferences({
-				loc: {
-					repoURI: u.uri!,
-					rev: pageVars.Rev,
-					commitID: pageVars.CommitID,
-					path: u.path!,
-					line: u.line!,
-					char: u.char!,
-				},
-				word: "", // TODO: derive the correct word from somewhere
-			});
-		}
-		this.hashWatcher = window.addEventListener("hashchange", (e) => {
-			u = url.parseBlob(e!.newURL!);
-			const shouldShow = Boolean(u.path && u.modal && u.modal === "references");
-			if (shouldShow) {
-				this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true });
-			}
-		});
-	}
-
-	getRefsGroupFromUrl(urlStr: string): "local" | "external" {
-		if (urlStr.indexOf("$references:local") !== -1) {
-			return "local";
-		}
-		if (urlStr.indexOf("$references:external") !== -1) {
-			return "external";
-		}
-		return "local";
-	}
-
-	componentDidMount(): void {
-		this.subscription = store.subscribe((state) => {
-			this.setState({ ...state, group: this.state.group, docked: this.state.docked });
-		});
-	}
-
-	componentWillUnmount(): void {
-		if (this.subscription) {
-			this.subscription.unsubscribe();
-		}
-		if (this.hashWatcher) {
-			window.removeEventListener("hashchange", this.hashWatcher);
-		}
-	}
-
-	isLoading(group: "local" | "external"): boolean {
-		if (!this.state.context) {
-			return false;
-		}
-
-		const state = store.getValue();
-		const loadingRefs = state.fetches.get(refsFetchKey(this.state.context.loc, true)) === "pending";
-		const loadingXRefs = state.fetches.get(refsFetchKey(this.state.context.loc, false)) === "pending";
-
-		switch (group) {
-			case "local":
-				return loadingRefs;
-			case "external":
-				return loadingXRefs;
-		}
-
-		return false;
-	}
-
-	render(): JSX.Element | null {
-		if (!this.state.context) {
-			return null;
-		}
-		const loc = locKey(this.state.context.loc);
-		const refs = this.state.refsByLoc.get(loc);
-
-		// References by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
-		const refsByUri = _.groupBy(refs, (ref) => ref.uri);
-
-		const localPrefix = "git://" + this.state.context.loc.repoURI;
-		const [localRefs, externalRefs] = _(refsByUri).keys().partition((uri) => uri.startsWith(localPrefix)).value();
-
-		const isEmptyGroup = () => {
-			switch (this.state.group) {
-				case "local":
-					return localRefs.length === 0;
-				case "external":
-					return externalRefs.length === 0;
-			}
-			return false;
-		};
-
-		const l = this.state.context.loc;
-		return <div>
-			<div className={Styles.titleBar}>
-				<div className={Styles.titleBarTitle}>
-					{this.state.context.word}
-				</div>
-				<a className={this.state.group === "local" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: "local", modal: "references" })} onClick={() => events.ShowLocalRefsButtonClicked.log()}>
-					This repository
-				</a>
-				<div className={Styles.badge}>{localRefs.length}</div>
-				<a className={this.state.group === "external" ? Styles.titleBarGroupActive : Styles.titleBarGroup} href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: "external", modal: "references" })} onClick={() => events.ShowExternalRefsButtonClicked.log()}>
-					Other repositories
-				</a>
-				<div className={Styles.badge}>{externalRefs.length}</div>
-				<div className={style(csstips.flex)} />
-				<CloseIcon className={Styles.closeIcon} onClick={() => this.props.onDismiss()} />
-			</div>
-			{
-				isEmptyGroup() && <div className={Styles.emptyState}>
-					{this.isLoading(this.state.group) ? "Working..." : "No results"}
-				</div>
-			}
-			<div>
-				{
-					this.state.group === "local" && localRefs.sort().map((uri, i) => {
-						const parsed = URI.parse(uri);
-						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refsByUri[uri]} />;
-					})
-				}
-			</div>
-			<div>
-				{
-					this.state.group === "external" && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
-						const parsed = URI.parse(uri);
-						return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refsByUri[uri]} />;
-					})
-				}
-			</div>
-		</div>;
-	}
-}
-
-function getRefURL(ref: Reference, rev: string): string {
-	if (rev) {
-		rev = `@${rev}`;
-	}
-	const uri = URI.parse(ref.uri);
-	return `/${uri.hostname}${uri.path}${rev}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
-}
-
-interface ReferenceGroupProps {
-	uri: string;
-	path: string;
-	refs: Reference[];
-	isLocal: boolean;
-	hidden?: boolean;
-}
-
-interface ReferenceGroupState {
-	hidden?: boolean;
+    export const refsGroup = style({ fontSize: '12px', fontFamily: 'system', color: normalFontColor, userSelect: 'none' });
+    export const closeIcon = style({ cursor: 'pointer', fontSize: '18px', color: colors.normalFontColor, $nest: { '&:hover': { color: white } } });
+    const refsTitleColor = '#233043';
+    export const refsGroupTitle = style(csstips.horizontal, csstips.center, {
+        cursor: 'pointer',
+        backgroundColor: refsTitleColor,
+        height: '32px',
+        $nest: { '&:hover': { backgroundColor: color(refsTitleColor).darken(0.05).toString() } }
+    });
+    export const refsList = style({ backgroundColor: colors.referencesBackgroundColor });
+    export const ref = style({
+        textDecoration: 'none', // don't use cascading link style
+        display: 'block',
+        fontFamily: 'Menlo !important', // don't use cascading link style
+        borderBottom: border,
+        padding: '10px',
+        cursor: 'pointer',
+        overflowX: 'auto',
+        $nest: { '&:hover': { backgroundColor: hoverSelection } }
+    });
+    export const expandIcon = style({ fontSize: '18px', marginLeft: '15px', marginRight: '15px' });
+    export const fill = style({ flex: 1 });
 }
 
 export class ReferencesGroup extends React.Component<ReferenceGroupProps, ReferenceGroupState> {
-	constructor(props: ReferenceGroupProps) {
-		super(props);
-		this.state = { hidden: props.hidden };
-	}
+    constructor(props: ReferenceGroupProps) {
+        super(props);
+        this.state = { hidden: props.hidden };
+    }
 
-	render(): JSX.Element | null {
-		const uriSplit = this.props.uri.split("/");
-		const uriStr = uriSplit.length > 1 ? uriSplit.slice(1).join("/") : this.props.uri;
-		const pathSplit = this.props.path.split("/");
-		const filePart = pathSplit.pop();
+    public render(): JSX.Element | null {
+        const uriSplit = this.props.uri.split('/');
+        const uriStr = uriSplit.length > 1 ? uriSplit.slice(1).join('/') : this.props.uri;
+        const pathSplit = this.props.path.split('/');
+        const filePart = pathSplit.pop();
 
-		let refs: JSX.Element | null = null;
-		if (!this.state.hidden) {
-			refs = <div className={Styles.refsList}>
-				{
-					this.props.refs.sort((a, b) => {
-						if (a.range.start.line < b.range.start.line) { return -1; }
-						if (a.range.start.line === b.range.start.line) {
-							if (a.range.start.character < b.range.start.character) {
-								return -1;
-							}
-							if (a.range.start.character === b.range.start.character) {
-								return 0;
-							}
-							return 1;
-						}
-						return 1;
-					}).map((ref, i) => {
-						const uri = URI.parse(ref.uri);
-						const href = getRefURL(ref, uri.query);
-						return <a href={href} key={i} className={Styles.ref} onClick={e => {
-							this.props.isLocal ? events.GoToLocalRefClicked.log() : events.GoToExternalRefClicked.log();
-							url.openFromJS(href, e);
-						}}>
-							<CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query} path={uri.fragment} line={ref.range.start.line} char={ref.range.start.character} highlightLength={ref.range.end.character - ref.range.start.character} previewWindowExtraLines={1} />
-						</a>;
-					})
-				}
-			</div>;
-		}
+        let refs: JSX.Element | null = null;
+        if (!this.state.hidden) {
+            refs = <div className={Styles.refsList}>
+                {
+                    this.props.refs.sort((a, b) => {
+                        if (a.range.start.line < b.range.start.line) { return -1; }
+                        if (a.range.start.line === b.range.start.line) {
+                            if (a.range.start.character < b.range.start.character) {
+                                return -1;
+                            }
+                            if (a.range.start.character === b.range.start.character) {
+                                return 0;
+                            }
+                            return 1;
+                        }
+                        return 1;
+                    }).map((ref, i) => {
+                        const uri = URI.parse(ref.uri);
+                        const href = getRefURL(ref, uri.query);
+                        return <a href={href} key={i} className={Styles.ref} onClick={e => {
+                            this.props.isLocal ? events.GoToLocalRefClicked.log() : events.GoToExternalRefClicked.log();
+                            url.openFromJS(href, e);
+                        }}>
+                            <CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query}
+                                         path={uri.fragment}
+                                         line={ref.range.start.line}
+                                         char={ref.range.start.character}
+                                         highlightLength={ref.range.end.character - ref.range.start.character}
+                                         previewWindowExtraLines={1} />
+                        </a>;
+                    })
+                }
+            </div>;
+        }
 
-		return <div className={Styles.refsGroup}>
-			<div className={Styles.refsGroupTitle} onClick={() => this.setState({ hidden: !this.state.hidden })}>
-				{this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
-				<div className={Styles.uriPathPart}>{uriStr}</div>
-				<div className={Styles.pathPart}>{pathSplit.join("/")}{pathSplit.length > 0 ? "/" : ""}</div>
-				<div className={Styles.filePathPart}>{filePart}</div>
-				<div className={Styles.fill} />
-				{this.state.hidden ? <RightIcon className={Styles.expandIcon} /> : <DownIcon className={Styles.expandIcon} />}
-			</div>
-			{refs}
-		</div>;
-	}
+        return <div className={Styles.refsGroup}>
+            <div className={Styles.refsGroupTitle} onClick={() => this.setState({ hidden: !this.state.hidden })}>
+                {this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
+                <div className={Styles.uriPathPart}>{uriStr}</div>
+                <div className={Styles.pathPart}>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>
+                <div className={Styles.filePathPart}>{filePart}</div>
+                <div className={Styles.fill} />
+                {this.state.hidden ? <RightIcon className={Styles.expandIcon} /> : <DownIcon className={Styles.expandIcon} />}
+            </div>
+            {refs}
+        </div>;
+    }
+}
+
+interface Props {
+    onDismiss(): void;
+}
+
+interface State extends ReferencesState {
+    docked: boolean;
+    group: 'local' | 'external';
+}
+
+export class ReferencesWidget extends React.Component<Props, State> {
+    public subscription: any;
+    public hashWatcher: any;
+
+    constructor(props: Props) {
+        super(props);
+        let u = url.parseBlob();
+        const onRefs = Boolean(u.path && u.modal && u.modal === 'references');
+        this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
+        if (onRefs) {
+            triggerReferences({
+                loc: {
+                    repoURI: u.uri!,
+                    rev: pageVars.Rev,
+                    commitID: pageVars.CommitID,
+                    path: u.path!,
+                    line: u.line!,
+                    char: u.char!
+                },
+                word: '' // TODO: derive the correct word from somewhere
+            });
+        }
+        this.hashWatcher = window.addEventListener('hashchange', e => {
+            u = url.parseBlob(e!.newURL!);
+            const shouldShow = Boolean(u.path && u.modal && u.modal === 'references');
+            if (shouldShow) {
+                this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true });
+            }
+        });
+    }
+
+    public getRefsGroupFromUrl(urlStr: string): 'local' | 'external' {
+        if (urlStr.indexOf('$references:local') !== -1) {
+            return 'local';
+        }
+        if (urlStr.indexOf('$references:external') !== -1) {
+            return 'external';
+        }
+        return 'local';
+    }
+
+    public componentDidMount(): void {
+        this.subscription = store.subscribe(state => {
+            this.setState({ ...state, group: this.state.group, docked: this.state.docked });
+        });
+    }
+
+    public componentWillUnmount(): void {
+        if (this.subscription) {
+            this.subscription.unsubscribe();
+        }
+        if (this.hashWatcher) {
+            window.removeEventListener('hashchange', this.hashWatcher);
+        }
+    }
+
+    public isLoading(group: 'local' | 'external'): boolean {
+        if (!this.state.context) {
+            return false;
+        }
+
+        const state = store.getValue();
+        const loadingRefs = state.fetches.get(refsFetchKey(this.state.context.loc, true)) === 'pending';
+        const loadingXRefs = state.fetches.get(refsFetchKey(this.state.context.loc, false)) === 'pending';
+
+        switch (group) {
+            case 'local':
+                return loadingRefs;
+            case 'external':
+                return loadingXRefs;
+        }
+
+        return false;
+    }
+
+    public render(): JSX.Element | null {
+        if (!this.state.context) {
+            return null;
+        }
+        const loc = locKey(this.state.context.loc);
+        const refs = this.state.refsByLoc.get(loc);
+
+        // References by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
+        const refsByUri = _.groupBy(refs, ref => ref.uri);
+
+        const localPrefix = 'git://' + this.state.context.loc.repoURI;
+        const [localRefs, externalRefs] = _(refsByUri).keys().partition(uri => uri.startsWith(localPrefix)).value();
+
+        const isEmptyGroup = () => {
+            switch (this.state.group) {
+                case 'local':
+                    return localRefs.length === 0;
+                case 'external':
+                    return externalRefs.length === 0;
+            }
+            return false;
+        };
+
+        const l = this.state.context.loc;
+        return <div>
+            <div className={Styles.titleBar}>
+                <div className={Styles.titleBarTitle}>
+                    {this.state.context.word}
+                </div>
+                <a className={this.state.group === 'local' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
+                   href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'local', modal: 'references' })}
+                   onClick={() => events.ShowLocalRefsButtonClicked.log()}>
+                    This repository
+                </a>
+                <div className={Styles.badge}>{localRefs.length}</div>
+                <a className={this.state.group === 'external' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
+                   href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'external', modal: 'references' })}
+                   onClick={() => events.ShowExternalRefsButtonClicked.log()}>
+                    Other repositories
+                </a>
+                <div className={Styles.badge}>{externalRefs.length}</div>
+                <div className={style(csstips.flex)} />
+                <CloseIcon className={Styles.closeIcon} onClick={() => this.props.onDismiss()} />
+            </div>
+            {
+                isEmptyGroup() && <div className={Styles.emptyState}>
+                    {this.isLoading(this.state.group) ? 'Working...' : 'No results'}
+                </div>
+            }
+            <div>
+                {
+                    this.state.group === 'local' && localRefs.sort().map((uri, i) => {
+                        const parsed = URI.parse(uri);
+                        return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refsByUri[uri]} />;
+                    })
+                }
+            </div>
+            <div>
+                {
+                    this.state.group === 'external' && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+                        const parsed = URI.parse(uri);
+                        return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refsByUri[uri]} />;
+                    })
+                }
+            </div>
+        </div>;
+    }
+}
+
+function getRefURL(ref: Reference, rev: string): string {
+    if (rev) {
+        rev = `@${rev}`;
+    }
+    const uri = URI.parse(ref.uri);
+    return `/${uri.hostname}${uri.path}${rev}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`;
+}
+
+interface ReferenceGroupProps {
+    uri: string;
+    path: string;
+    refs: Reference[];
+    isLocal: boolean;
+    hidden?: boolean;
+}
+
+interface ReferenceGroupState {
+    hidden?: boolean;
 }

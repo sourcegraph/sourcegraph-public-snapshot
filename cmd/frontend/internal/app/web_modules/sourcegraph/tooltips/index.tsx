@@ -1,10 +1,10 @@
-import * as _ from "lodash";
-import * as Rx from "rxjs";
-import { fetchJumpURL, getTooltip } from "sourcegraph/backend/lsp";
-import * as tooltips from "sourcegraph/tooltips/dom";
-import { clearTooltip, setTooltip, store, TooltipContext } from "sourcegraph/tooltips/store";
-import { events } from "sourcegraph/tracking/events";
-import { CodeCell, ResolvedRepoRevSpec, TooltipData } from "sourcegraph/util/types";
+import * as _ from 'lodash';
+import * as Rx from 'rxjs';
+import { fetchJumpURL, getTooltip } from 'sourcegraph/backend/lsp';
+import * as tooltips from 'sourcegraph/tooltips/dom';
+import { clearTooltip, setTooltip, store, TooltipContext } from 'sourcegraph/tooltips/store';
+import { events } from 'sourcegraph/tracking/events';
+import { CodeCell, ResolvedRepoRevSpec, TooltipData } from 'sourcegraph/util/types';
 
 /**
  * activeTarget tracks the element which is currently hovered over / clicked
@@ -13,9 +13,9 @@ let activeTarget: HTMLElement | null;
 let highlightTarget: HTMLElement | null;
 
 interface DOMObservables {
-	mouseover: Rx.Observable<MouseEvent>;
-	mouseout: Rx.Observable<MouseEvent>;
-	mouseup: Rx.Observable<MouseEvent>;
+    mouseover: Rx.Observable<MouseEvent>;
+    mouseout: Rx.Observable<MouseEvent>;
+    mouseup: Rx.Observable<MouseEvent>;
 }
 
 /**
@@ -25,16 +25,16 @@ interface DOMObservables {
  * @param hoverCb Calback to execute whenever hovering over the element.
  */
 function addEventListeners(el: HTMLElement, hoverCb: () => void): DOMObservables | undefined {
-	// Ensure we only add listeners once per element.
-	if (el.className.indexOf("sg-annotated") !== -1) {
-		return;
-	}
-	el.className = `${el.className} sg-annotated`;
+    // Ensure we only add listeners once per element.
+    if (el.className.indexOf('sg-annotated') !== -1) {
+        return undefined;
+    }
+    el.className = `${el.className} sg-annotated`;
 
-	const mouseover = Rx.Observable.fromEvent<MouseEvent>(el, "mouseover").do(hoverCb);
-	const mouseout = Rx.Observable.fromEvent<MouseEvent>(el, "mouseout");
-	const mouseup = Rx.Observable.fromEvent<MouseEvent>(el, "mouseup");
-	return { mouseout, mouseover, mouseup };
+    const mouseover = Rx.Observable.fromEvent<MouseEvent>(el, 'mouseover').do(hoverCb);
+    const mouseout = Rx.Observable.fromEvent<MouseEvent>(el, 'mouseout');
+    const mouseup = Rx.Observable.fromEvent<MouseEvent>(el, 'mouseup');
+    return { mouseout, mouseover, mouseup };
 }
 
 /**
@@ -77,41 +77,41 @@ function addEventListeners(el: HTMLElement, hoverCb: () => void): DOMObservables
  * @param parentNode The node to convert.
  */
 function convertNode(parentNode: HTMLElement): void {
-	for (let i = 0; i < parentNode.childNodes.length; ++i) {
-		const node = parentNode.childNodes[i];
-		const isLastNode = i === parentNode.childNodes.length - 1;
-		if (node.nodeType === Node.TEXT_NODE) {
-			let nodeText = _.unescape(node.textContent || "");
-			if (nodeText === "") {
-				continue;
-			}
-			parentNode.removeChild(node);
-			let insertBefore = i;
+    for (let i = 0; i < parentNode.childNodes.length; ++i) {
+        const node = parentNode.childNodes[i];
+        const isLastNode = i === parentNode.childNodes.length - 1;
+        if (node.nodeType === Node.TEXT_NODE) {
+            let nodeText = _.unescape(node.textContent || '');
+            if (nodeText === '') {
+                continue;
+            }
+            parentNode.removeChild(node);
+            let insertBefore = i;
 
-			while (true) {
-				const nextToken = consumeNextToken(nodeText);
-				if (nextToken === "") {
-					break;
-				}
-				const newTextNode = document.createTextNode(nextToken);
-				const newTextNodeWrapper = document.createElement("SPAN");
-				newTextNodeWrapper.appendChild(newTextNode);
-				if (isLastNode) {
-					parentNode.appendChild(newTextNodeWrapper);
-				} else {
-					// increment insertBefore as new span-wrapped text nodes are added
-					parentNode.insertBefore(newTextNodeWrapper, parentNode.childNodes[insertBefore++]);
-				}
-				nodeText = nodeText.substr(nextToken.length);
-			}
-		} else if (node.nodeType === Node.ELEMENT_NODE) {
-			const elementNode = node as HTMLElement;
-			// if (elementNode.children.length > 0) {
-			// The element is something more complicated than <span>text</span>; recurse.
-			convertNode(elementNode);
-			// }
-		}
-	}
+            while (true) {
+                const nextToken = consumeNextToken(nodeText);
+                if (nextToken === '') {
+                    break;
+                }
+                const newTextNode = document.createTextNode(nextToken);
+                const newTextNodeWrapper = document.createElement('SPAN');
+                newTextNodeWrapper.appendChild(newTextNode);
+                if (isLastNode) {
+                    parentNode.appendChild(newTextNodeWrapper);
+                } else {
+                    // increment insertBefore as new span-wrapped text nodes are added
+                    parentNode.insertBefore(newTextNodeWrapper, parentNode.childNodes[insertBefore++]);
+                }
+                nodeText = nodeText.substr(nextToken.length);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const elementNode = node as HTMLElement;
+            // if (elementNode.children.length > 0) {
+            // The element is something more complicated than <span>text</span>; recurse.
+            convertNode(elementNode);
+            // }
+        }
+    }
 }
 
 const VARIABLE_TOKENIZER = /(^\w+)/;
@@ -125,35 +125,35 @@ const NONVARIABLE_TOKENIZER = /(^[^\x21-\x7E]+)/;
  * @param txt Aribitrary text to tokenize.
  */
 function consumeNextToken(txt: string): string {
-	if (txt.length === 0) {
-		return "";
-	}
+    if (txt.length === 0) {
+        return '';
+    }
 
-	// first, check for real stuff, i.e. sets of [A-Za-z0-9_]
-	const variableMatch = txt.match(VARIABLE_TOKENIZER);
-	if (variableMatch) {
-		return variableMatch[0];
-	}
-	// next, check for tokens that are not variables, but should stand alone
-	// i.e. {}, (), :;. ...
-	const asciiMatch = txt.match(ASCII_CHARACTER_TOKENIZER);
-	if (asciiMatch) {
-		return asciiMatch[0];
-	}
-	// finally, the remaining tokens we can combine into blocks, since they are whitespace
-	// or UTF8 control characters. We had better clump these in case UTF8 control bytes
-	// require adjacent bytes
-	const nonVariableMatch = txt.match(NONVARIABLE_TOKENIZER);
-	if (nonVariableMatch) {
-		return nonVariableMatch[0];
-	}
-	return txt[0];
+    // first, check for real stuff, i.e. sets of [A-Za-z0-9_]
+    const variableMatch = txt.match(VARIABLE_TOKENIZER);
+    if (variableMatch) {
+        return variableMatch[0];
+    }
+    // next, check for tokens that are not variables, but should stand alone
+    // i.e. {}, (), :;. ...
+    const asciiMatch = txt.match(ASCII_CHARACTER_TOKENIZER);
+    if (asciiMatch) {
+        return asciiMatch[0];
+    }
+    // finally, the remaining tokens we can combine into blocks, since they are whitespace
+    // or UTF8 control characters. We had better clump these in case UTF8 control bytes
+    // require adjacent bytes
+    const nonVariableMatch = txt.match(NONVARIABLE_TOKENIZER);
+    if (nonVariableMatch) {
+        return nonVariableMatch[0];
+    }
+    return txt[0];
 }
 
 enum TooltipEventType {
-	HOVER,
-	CLICK,
-	SELECT_TEXT,
+    HOVER,
+    CLICK,
+    SELECT_TEXT
 }
 
 /**
@@ -163,21 +163,21 @@ enum TooltipEventType {
  * @param context The parameters for fetching tooltip data for `target`.
  */
 function getTooltipObservable(target: HTMLElement, context: TooltipContext): Rx.Observable<{ target: HTMLElement, data: TooltipData }> {
-	if (!context.coords) {
-		throw new Error("cannot get tooltip without line/char");
-	}
-	return Rx.Observable.fromPromise(getTooltip(context.path, context.coords.line, context.coords.char, context.repoRevCommit))
-		.do(data => {
-			if (data && data.title) {
-				// If non-empty tooltip data is returned, make the target "clickable" (via cursor pointer styling)
-				target.style.cursor = "pointer";
-				// TODO(john): remove sg-clickable styling if possible.
-				if (!target.className.includes("sg-clickable")) {
-					target.className = `${target.className} sg-clickable`;
-				}
-			}
-		})
-		.map(data => ({ target, data }));
+    if (!context.coords) {
+        throw new Error('cannot get tooltip without line/char');
+    }
+    return Rx.Observable.fromPromise(getTooltip(context.path, context.coords.line, context.coords.char, context.repoRevCommit))
+        .do(data => {
+            if (data && data.title) {
+                // If non-empty tooltip data is returned, make the target "clickable" (via cursor pointer styling)
+                target.style.cursor = 'pointer';
+                // TODO(john): remove sg-clickable styling if possible.
+                if (!target.className.includes('sg-clickable')) {
+                    target.className = `${target.className} sg-clickable`;
+                }
+            }
+        })
+        .map(data => ({ target, data }));
 }
 /**
  * getTooltipObservable wraps the asynchronous "fetch" of tooltip data from the Sourcegraph API.
@@ -186,24 +186,25 @@ function getTooltipObservable(target: HTMLElement, context: TooltipContext): Rx.
  * @param context The parameters for fetching tooltip data for `target`.
  */
 function getJ2DObservable(context: TooltipContext): Rx.Observable<string | null> {
-	if (!context.coords) {
-		throw new Error("cannot get j2d without line/char");
-	}
-	return Rx.Observable.fromPromise(fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevCommit));
+    if (!context.coords) {
+        throw new Error('cannot get j2d without line/char');
+    }
+    return Rx.Observable.fromPromise(fetchJumpURL(context.coords.char, context.path, context.coords.line, context.repoRevCommit));
 }
 
 /**
  * getLoadingTooltipObervable emits "loading" tooltip data after a delay, iff another Observable hasn't already emitted a value.
  * @param target The element tooltip is being requested for.
- * @param tooltipObservable An Observable used to short-circuit emitting a "loading" tooltip (likely the Observable which wraps the asynchronous "fetch" of tooltip data from the Sourcegraph API).
+ * @param tooltipObservable An Observable used to short-circuit emitting a "loading" tooltip
+ *                          (likely the Observable which wraps the asynchronous "fetch" of tooltip data from the Sourcegraph API).
  */
 function getLoadingTooltipObservable(target: HTMLElement, tooltipObservable: Rx.Observable<any>): Rx.Observable<{ target: HTMLElement, data: TooltipData }> {
-	// Show a loading tooltip after .5 seconds, ONLY if we haven't already gotten real tooltip data
-	return Rx.Observable.fromPromise<TooltipData>(new Promise((resolve) => {
-		setTimeout(() => resolve({ loading: true }), 500);
-	}))
-		.takeUntil(tooltipObservable) // short-circuit once actual tooltip is fetched
-		.map(data => ({ target, data }));
+    // Show a loading tooltip after .5 seconds, ONLY if we haven't already gotten real tooltip data
+    return Rx.Observable.fromPromise<TooltipData>(new Promise(resolve => {
+        setTimeout(() => resolve({ loading: true }), 500);
+    }))
+        .takeUntil(tooltipObservable) // short-circuit once actual tooltip is fetched
+        .map(data => ({ target, data }));
 }
 
 /**
@@ -212,51 +213,51 @@ function getLoadingTooltipObservable(target: HTMLElement, tooltipObservable: Rx.
  * @param context Parameters used to fetch the tooltip data.
  * @param type Which type of user interaction caused the event.
  */
-function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: TooltipContext, type: TooltipEventType, logEvent: boolean = true): void {
-	if (store.getValue().docked && type === TooltipEventType.HOVER) {
-		// While a tooltip is docked, hovers should not update the active tooltip.
-		return;
-	}
-	if (ev.target === activeTarget && logEvent) {
-		if (ev.data.title || ev.data.j2dUrl) {
-			switch (type) {
-				case TooltipEventType.HOVER:
-					events.SymbolHovered.log();
-					break;
-				case TooltipEventType.CLICK:
-					events.TooltipDocked.log();
-					break;
-				case TooltipEventType.SELECT_TEXT:
-					events.TextSelected.log();
-					break;
+function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: TooltipContext, type: TooltipEventType, logEvent = true): void {
+    if (store.getValue().docked && type === TooltipEventType.HOVER) {
+        // While a tooltip is docked, hovers should not update the active tooltip.
+        return;
+    }
+    if (ev.target === activeTarget && logEvent) {
+        if (ev.data.title || ev.data.j2dUrl) {
+            switch (type) {
+                case TooltipEventType.HOVER:
+                    events.SymbolHovered.log();
+                    break;
+                case TooltipEventType.CLICK:
+                    events.TooltipDocked.log();
+                    break;
+                case TooltipEventType.SELECT_TEXT:
+                    events.TextSelected.log();
+                    break;
 
-			}
-		}
-		setTooltip({
-			target: ev.target,
-			data: ev.data,
-			docked: type === TooltipEventType.CLICK || type === TooltipEventType.SELECT_TEXT,
-			context,
-		});
-	}
+            }
+        }
+        setTooltip({
+            target: ev.target,
+            data: ev.data,
+            docked: type === TooltipEventType.CLICK || type === TooltipEventType.SELECT_TEXT,
+            context
+        });
+    }
 }
 
 // TODO(john): add back this special-casing for spaces (consult Beyang)
 // var allSpaces = true;
 // while (nodeText.length > 0) {
-// 	const token = consumeNextToken(nodeText);
-// 	const isAllSpaces = SPACES.test(token);
-// 	allSpaces = isAllSpaces && allSpaces;
+//     const token = consumeNextToken(nodeText);
+//     const isAllSpaces = SPACES.test(token);
+//     allSpaces = isAllSpaces && allSpaces;
 
-// 	wrapperNode.appendChild(createTextNode(token, offset + prevConsumed));
-// 	prevConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
-// 	bytesConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
-// 	if (!allSpaces && spacesToTab > 0) {
-// 		// NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
-// 		// only divide by 2 for initial code indents.
-// 		spacesToTab = 0;
-// 	}
-// 	nodeText = nodeText.slice(token.length);
+//     wrapperNode.appendChild(createTextNode(token, offset + prevConsumed));
+//     prevConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
+//     bytesConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
+//     if (!allSpaces && spacesToTab > 0) {
+//         // NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
+//         // only divide by 2 for initial code indents.
+//         spacesToTab = 0;
+//     }
+//     nodeText = nodeText.slice(token.length);
 // }
 
 /**
@@ -277,122 +278,128 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
  * better mechanism is known at this time (see https://secure.phabricator.com/T2495).
  */
 export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec, cells: CodeCell[]): void {
-	tooltips.createTooltips(); // TODO(john): can we just do this once in the module)?
-	const ignoreFirstChar = false;
+    tooltips.createTooltips(); // TODO(john): can we just do this once in the module)?
+    const ignoreFirstChar = false;
 
-	// TODO(john): figure out how to do this without looking at the cell itself.
-	// if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {
-	// 	ignoreFirstTextChar = false;
-	// }
+    // TODO(john): figure out how to do this without looking at the cell itself.
+    // if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {
+    //     ignoreFirstTextChar = false;
+    // }
 
-	const domObservables = _.compact(cells.map((cell) => {
-		let hovered = false;
-		const hoverCb = () => {
-			if (hovered) {
-				return;
-			}
-			hovered = true;
-			convertNode(cell.cell);
-		};
-		cell.cell.setAttribute("data-sg-line-number", `${cell.line}`);
-		return addEventListeners(cell.eventHandler, hoverCb);
-	})) as DOMObservables[];
+    const domObservables = _.compact(cells.map(cell => {
+        let hovered = false;
+        const hoverCb = () => {
+            if (hovered) {
+                return;
+            }
+            hovered = true;
+            convertNode(cell.cell);
+        };
+        cell.cell.setAttribute('data-sg-line-number', `${cell.line}`);
+        return addEventListeners(cell.eventHandler, hoverCb);
+    })) as DOMObservables[];
 
-	domObservables.forEach(observable => observable.mouseover.subscribe((e) => {
-		const t = e.target as HTMLElement;
-		highlightTarget = t;
-		if (!store.getValue().docked) {
-			activeTarget = t;
-		}
-		const coords = getTargetLineAndOffset(e.target as HTMLElement, ignoreFirstChar);
-		if (!coords) {
-			return;
-		}
-		const context = { path, repoRevCommit, coords: coords! };
-		const tooltipObservable = getTooltipObservable(t, context);
-		const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
-		tooltipObservable.subscribe((ev) => {
-			if (highlightTarget === t && ev.data.title) {
-				t.classList.add("selection-highlight");
-			}
-			tooltipEvent(ev, context, TooltipEventType.HOVER);
-		});
-		tooltipObservable.zip(getJ2DObservable(context)).subscribe((ev) => {
-			if (ev[1]) {
-				ev[0].data.j2dUrl = ev[1]!;
-				tooltipEvent(ev[0], context, TooltipEventType.HOVER, false);
-			}
-		});
-		loadingTooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.HOVER));
-	}));
+    for (const observable of domObservables) {
+        observable.mouseover.subscribe(e => {
+            const t = e.target as HTMLElement;
+            highlightTarget = t;
+            if (!store.getValue().docked) {
+                activeTarget = t;
+            }
+            const coords = getTargetLineAndOffset(e.target as HTMLElement, ignoreFirstChar);
+            if (!coords) {
+                return;
+            }
+            const context = { path, repoRevCommit, coords: coords! };
+            const tooltipObservable = getTooltipObservable(t, context);
+            const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
+            tooltipObservable.subscribe(ev => {
+                if (highlightTarget === t && ev.data.title) {
+                    t.classList.add('selection-highlight');
+                }
+                tooltipEvent(ev, context, TooltipEventType.HOVER);
+            });
+            tooltipObservable.zip(getJ2DObservable(context)).subscribe(ev => {
+                if (ev[1]) {
+                    ev[0].data.j2dUrl = ev[1]!;
+                    tooltipEvent(ev[0], context, TooltipEventType.HOVER, false);
+                }
+            });
+            loadingTooltipObservable.subscribe(ev => tooltipEvent(ev, context, TooltipEventType.HOVER));
+        });
+    }
 
-	let lastSelectedText: string = "";
+    let lastSelectedText = '';
 
-	domObservables.forEach(observable => observable.mouseout.subscribe((() => {
-		if (highlightTarget) {
-			highlightTarget.classList.remove("selection-highlight");
-		}
-		if (!store.getValue().docked) {
-			activeTarget = null;
-			clearTooltip();
-		}
-	})));
+    for (const observable of domObservables) {
+        observable.mouseout.subscribe((() => {
+            if (highlightTarget) {
+                highlightTarget.classList.remove('selection-highlight');
+            }
+            if (!store.getValue().docked) {
+                activeTarget = null;
+                clearTooltip();
+            }
+        }));
+    }
 
-	domObservables.forEach(observable => observable.mouseup.subscribe((e) => {
-		const t = e.target as HTMLElement;
-		const clickedActiveTarget = t === activeTarget;
-		activeTarget = t;
+    for (const observable of domObservables) {
+        observable.mouseup.subscribe(e => {
+            const t = e.target as HTMLElement;
+            const clickedActiveTarget = t === activeTarget;
+            activeTarget = t;
 
-		if (lastSelectedText !== "") {
-			clearTooltip(t);
-		}
+            if (lastSelectedText !== '') {
+                clearTooltip(t);
+            }
 
-		const selectedText = getSelectedText();
-		if (selectedText !== "") {
-			const shortCircuitTooltip = lastSelectedText === selectedText;
-			lastSelectedText = selectedText;
+            const selectedText = getSelectedText();
+            if (selectedText !== '') {
+                const shortCircuitTooltip = lastSelectedText === selectedText;
+                lastSelectedText = selectedText;
 
-			if (!shortCircuitTooltip) {
-				const target = getSelectedTextTarget();
-				activeTarget = target;
+                if (!shortCircuitTooltip) {
+                    const target = getSelectedTextTarget();
+                    activeTarget = target;
 
-				const ctx = { path, repoRevCommit, selectedText };
-				tooltipEvent({ target, data: { title: selectedText } }, ctx, TooltipEventType.SELECT_TEXT);
-				return;
-			} else {
-				lastSelectedText = "";
-			}
-		} else {
-			lastSelectedText = "";
-		}
+                    const ctx = { path, repoRevCommit, selectedText };
+                    tooltipEvent({ target, data: { title: selectedText } }, ctx, TooltipEventType.SELECT_TEXT);
+                    return;
+                } else {
+                    lastSelectedText = '';
+                }
+            } else {
+                lastSelectedText = '';
+            }
 
-		const coords = getTargetLineAndOffset(e.target as HTMLElement, ignoreFirstChar);
-		if (!coords) {
-			clearTooltip(t);
-			return;
-		}
-		if (store.getValue().docked && clickedActiveTarget) {
-			setTooltip({ target: t, docked: false });
-			return;
-		}
-		const context = { path, repoRevCommit, coords: coords! };
-		const tooltipObservable = getTooltipObservable(t, context);
-		const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
-		tooltipObservable.subscribe((ev) => {
-			if (ev.data.loading || !ev.data.title) {
-				clearTooltip(t);
-				return;
-			}
-			tooltipEvent(ev, context, TooltipEventType.CLICK);
-		});
-		tooltipObservable.zip(getJ2DObservable(context)).subscribe((ev) => {
-			if (ev[1]) {
-				ev[0].data.j2dUrl = ev[1]!;
-				tooltipEvent(ev[0], context, TooltipEventType.CLICK, false);
-			}
-		});
-		loadingTooltipObservable.subscribe((ev) => tooltipEvent(ev, context, TooltipEventType.CLICK));
-	}));
+            const coords = getTargetLineAndOffset(e.target as HTMLElement, ignoreFirstChar);
+            if (!coords) {
+                clearTooltip(t);
+                return;
+            }
+            if (store.getValue().docked && clickedActiveTarget) {
+                setTooltip({ target: t, docked: false });
+                return;
+            }
+            const context = { path, repoRevCommit, coords: coords! };
+            const tooltipObservable = getTooltipObservable(t, context);
+            const loadingTooltipObservable = getLoadingTooltipObservable(t, tooltipObservable);
+            tooltipObservable.subscribe(ev => {
+                if (ev.data.loading || !ev.data.title) {
+                    clearTooltip(t);
+                    return;
+                }
+                tooltipEvent(ev, context, TooltipEventType.CLICK);
+            });
+            tooltipObservable.zip(getJ2DObservable(context)).subscribe(ev => {
+                if (ev[1]) {
+                    ev[0].data.j2dUrl = ev[1]!;
+                    tooltipEvent(ev[0], context, TooltipEventType.CLICK, false);
+                }
+            });
+            loadingTooltipObservable.subscribe(ev => tooltipEvent(ev, context, TooltipEventType.CLICK));
+        });
+    }
 }
 
 /**
@@ -404,67 +411,67 @@ export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec,
  * @param target The element to compute line & character offset for.
  * @param ignoreFirstChar Whether to ignore the first character on a line when computing character offset.
  */
-function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar: boolean = false): { line: number, char: number, word: string } | undefined {
-	const origTarget = target;
-	if (target.tagName === "TD") {
-		// Short-circuit; we are hovering over a line of code, but no token in particular.
-		return;
-	}
-	while (target && target.tagName !== "TD" && target.tagName !== "BODY" && !target.getAttribute("data-sg-line-number")) {
-		// Find ancestor which wraps the whole line of code, not just the target token.
-		target = (target.parentNode as HTMLElement);
-	}
-	if (!target.getAttribute("data-sg-line-number")) {
-		// Make sure we're looking at an element we've annotated line number for (otherwise we have no idea )
-		return;
-	}
-	const line = parseInt(target.getAttribute("data-sg-line-number")!, 10);
+function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = false): { line: number, char: number, word: string } | undefined {
+    const origTarget = target;
+    if (target.tagName === 'TD') {
+        // Short-circuit; we are hovering over a line of code, but no token in particular.
+        return undefined;
+    }
+    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && !target.getAttribute('data-sg-line-number')) {
+        // Find ancestor which wraps the whole line of code, not just the target token.
+        target = (target.parentNode as HTMLElement);
+    }
+    if (!target.getAttribute('data-sg-line-number')) {
+        // Make sure we're looking at an element we've annotated line number for (otherwise we have no idea )
+        return undefined;
+    }
+    const line = parseInt(target.getAttribute('data-sg-line-number')!, 10);
 
-	let char = 1;
-	// Iterate recursively over the current target's children until we find the original target;
-	// count characters along the way. Return true if the original target is found.
-	function findOrigTarget(root: HTMLElement): boolean {
-		// tslint:disable-next-line
-		for (let i = 0; i < root.childNodes.length; ++i) {
-			const child = root.childNodes[i] as HTMLElement;
-			if (child === origTarget) {
-				return true;
-			}
-			if (child.children === undefined) {
-				char += child.textContent!.length;
-				continue;
-			}
-			if (child.children.length > 0 && findOrigTarget(child)) {
-				// Walk over nested children, then short-circuit the loop to avoid double counting children.
-				return true;
-			}
-			if (child.children.length === 0) {
-				// Child is not the original target, but has no chidren to recurse on. Add to character offset.
-				char += (child.textContent as string).length; // TODO(john): I think this needs to be escaped before we add its length...
-				if (ignoreFirstChar) {
-					char -= 1; // make sure not to count weird diff prefix
-					ignoreFirstChar = false;
-				}
-			}
-		}
-		return false;
-	}
-	// Start recursion.
-	if (findOrigTarget(target)) {
-		return { line, char, word: origTarget.innerText };
-	}
+    let char = 1;
+    // Iterate recursively over the current target's children until we find the original target;
+    // count characters along the way. Return true if the original target is found.
+    function findOrigTarget(root: HTMLElement): boolean {
+        // tslint:disable-next-line
+        for (let i = 0; i < root.childNodes.length; ++i) {
+            const child = root.childNodes[i] as HTMLElement;
+            if (child === origTarget) {
+                return true;
+            }
+            if (child.children === undefined) {
+                char += child.textContent!.length;
+                continue;
+            }
+            if (child.children.length > 0 && findOrigTarget(child)) {
+                // Walk over nested children, then short-circuit the loop to avoid double counting children.
+                return true;
+            }
+            if (child.children.length === 0) {
+                // Child is not the original target, but has no chidren to recurse on. Add to character offset.
+                char += (child.textContent as string).length; // TODO(john): I think this needs to be escaped before we add its length...
+                if (ignoreFirstChar) {
+                    char -= 1; // make sure not to count weird diff prefix
+                    ignoreFirstChar = false;
+                }
+            }
+        }
+        return false;
+    }
+    // Start recursion.
+    if (findOrigTarget(target)) {
+        return { line, char, word: origTarget.innerText };
+    }
 }
 
 function getSelectedText(): string {
-	let text = "";
-	if (typeof window.getSelection !== "undefined") {
-		text = window.getSelection().toString();
-	} else if (typeof (document as any).selection !== "undefined" && (document as any).selection.type === "Text") {
-		text = (document as any).selection.createRange().text;
-	}
-	return text;
+    let text = '';
+    if (typeof window.getSelection !== 'undefined') {
+        text = window.getSelection().toString();
+    } else if (typeof (document as any).selection !== 'undefined' && (document as any).selection.type === 'Text') {
+        text = (document as any).selection.createRange().text;
+    }
+    return text;
 }
 
 function getSelectedTextTarget(): HTMLElement {
-	return window.getSelection().getRangeAt(0).startContainer.parentElement!;
+    return window.getSelection().getRangeAt(0).startContainer.parentElement!;
 }

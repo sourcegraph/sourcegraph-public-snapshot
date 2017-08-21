@@ -3,12 +3,9 @@
   "version": "0.0.1",
   "description": "Sourcegraph",
   "scripts": {
-    "dev": "NODE_ENV=development webpack --config webpack.config.js --progress --profile --colors --watch",
     "build": "NODE_ENV=production webpack --config webpack.config.js --progress --profile --colors",
-    "fmt": "./node_modules/.bin/tsfmt -r",
-    "fmt-check": "./node_modules/.bin/tsfmt --verify",
-    "lint": "./node_modules/.bin/tslint -c tslint.json -e 'node_modules/**' '**/*.tsx'",
-    "lint-fix": "./node_modules/.bin/tslint -c tslint.json -e 'node_modules/**' '**/*.tsx' --fix"
+    "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --profile --colors --watch",
+    "lint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.tsx'"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
@@ -23,10 +20,10 @@
     "node-sass": "^4.5.3",
     "postcss-loader": "^2.0.6",
     "ts-loader": "^2.1.0",
-    "tslint": "^5.5.0",
+    "tslint": "^5.6.0",
+    "tslint-language-service": "^0.9.6",
     "tslint-webpack-plugin": "^0.5.0",
-    "typescript": "^2.3.3",
-    "typescript-formatter": "^4.0.1",
+    "typescript": "^2.4.2",
     "webpack": "^3.0.0",
     "webpack-shell-plugin": "^0.5.0"
   },

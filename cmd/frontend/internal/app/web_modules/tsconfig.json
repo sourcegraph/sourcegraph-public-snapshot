@@ -1,31 +1,40 @@
 {
-    "compilerOptions": {
-        "target": "es5",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "baseUrl": "./",
-        "paths": {
-            "sourcegraph/*": [
-                "sourcegraph/*"
-            ],
-            "@sourcegraph/components/src/*": [
-                "node_modules/@sourcegraph/components/src/*"
-            ]
-        },
-        "lib": [
-            "es2016",
-            "dom"
-        ],
-        "jsx": "react",
-        "allowJs": true,
-        "sourceMap": true,
-        "strictNullChecks": true,
-        "experimentalDecorators": true,
-        "noEmit": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "sourcegraph/*": [
+        "sourcegraph/*"
+      ],
+      "@sourcegraph/components/src/*": [
+        "node_modules/@sourcegraph/components/src/*"
+      ]
     },
-    "exclude": [
-        "node_modules"
+    "lib": [
+      "es2017",
+      "dom",
+      "dom.iterable",
+      "es2017.object"
+    ],
+    "jsx": "react",
+    "allowJs": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "experimentalDecorators": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "downlevelIteration": true,
+    "plugins": [
+      {
+        "name": "tslint-language-service",
+        "configFile": "./tslint.json"
+      }
     ]
+  },
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -3,171 +3,171 @@
 $nav-height: 48px;
 
 /*
-	Styles for Go HTML template files only; all React code should use inline
-	style tags.
+    Styles for Go HTML template files only; all React code should use inline
+    style tags.
 
-	Every style here should be under a selector with the class name being the
-	file name, e.g. ".blobview" for the "shared/blobview.html" template.
+    Every style here should be under a selector with the class name being the
+    file name, e.g. ".blobview" for the "shared/blobview.html" template.
 */
 
 .base {
-	// reset
-	* { margin:0; padding:0; box-sizing:border-box; }
+    // reset
+    * { margin:0; padding:0; box-sizing:border-box; }
 
-	font-family: "system";
+    font-family: "system";
 
-	scrollbar-base-color: #233043;
-	scrollbar-face-color: #43536d;
-	::-webkit-scrollbar {
-		width: 12px;
-		height: 12px;
-	}
-	::-webkit-scrollbar-corner,
-	::-webkit-scrollbar-track {
-		background-color: #233043;
-	}
-	::-webkit-scrollbar-thumb {
-		background-color: #43536d;
-	}
+    scrollbar-base-color: #233043;
+    scrollbar-face-color: #43536d;
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    ::-webkit-scrollbar-corner,
+    ::-webkit-scrollbar-track {
+        background-color: #233043;
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: #43536d;
+    }
 
-	>body {
-		background-color: #202A3B;
-		color: #C9D4E3;
-		a {
-			outline: 0;
-			@extend .font-normal-grey;
-		}
-	}
+    >body {
+        background-color: #202A3B;
+        color: #C9D4E3;
+        a {
+            outline: 0;
+            @extend .font-normal-grey;
+        }
+    }
 
-	#nav {
-		position: fixed;
-		background-color: #2B3C53;
-		top: 0px;
-		width: 100%;
-		z-index: 10000000000000;
-		display: flex;
-		justify-content: center;
+    #nav {
+        position: fixed;
+        background-color: #2B3C53;
+        top: 0px;
+        width: 100%;
+        z-index: 10000000000000;
+        display: flex;
+        justify-content: center;
 
-		#navbar {
-			.spin:hover {	animation: spin 0.5s ease-in-out 1; }
+        #navbar {
+            .spin:hover {    animation: spin 0.5s ease-in-out 1; }
 
-			@keyframes spin {
-				50% { transform: rotate(180deg) scale(1.2) }
-				100% { transform: rotate(180deg) scale(1) }
-			}
+            @keyframes spin {
+                50% { transform: rotate(180deg) scale(1.2) }
+                100% { transform: rotate(180deg) scale(1) }
+            }
 
-			.header {
-				height: $nav-height;
-				display: flex;
-				align-items: center;
+            .header {
+                height: $nav-height;
+                display: flex;
+                align-items: center;
 
-				>a {
-					outline: 0;
-					margin: 0px 16px;
-				}
+                >a {
+                    outline: 0;
+                    margin: 0px 16px;
+                }
 
-				.fill {
-					flex: 1;
-				}
+                .fill {
+                    flex: 1;
+                }
 
-				.open-on-desktop {
-					background-color: #1098AD;
-					border-radius: 2px;
-					display: flex;
-					align-items: center;
-					color: #FFFFFF;
-					height: 32px;
-					padding: 8px 12px;
-					font-size: 12px;
-					margin-right: 16px;
-					text-decoration: none;
+                .open-on-desktop {
+                    background-color: #1098AD;
+                    border-radius: 2px;
+                    display: flex;
+                    align-items: center;
+                    color: #FFFFFF;
+                    height: 32px;
+                    padding: 8px 12px;
+                    font-size: 12px;
+                    margin-right: 16px;
+                    text-decoration: none;
 
-					.icon {
-						margin-left: 8px;
-					}
-				}
+                    .icon {
+                        margin-left: 8px;
+                    }
+                }
 
-				.search {
-					display: flex;
-					align-items: center;
-					width: 248px;
-					height: 32px;
+                .search {
+                    display: flex;
+                    align-items: center;
+                    width: 248px;
+                    height: 32px;
 
-					background-color: #151D28;
+                    background-color: #151D28;
 
-					border-radius: 2px 2px 2px 2px;
-					border: 0px solid #000000;
+                    border-radius: 2px 2px 2px 2px;
+                    border: 0px solid #000000;
 
-					>input {
-						display: inline-block;
-						flex: 1;
-						font-size: 14px;
-						height: 32px;
+                    >input {
+                        display: inline-block;
+                        flex: 1;
+                        font-size: 14px;
+                        height: 32px;
 
-						color: #FFFFFF;
-						background: none;
-						border: 0;
-						outline: none;
-					}
+                        color: #FFFFFF;
+                        background: none;
+                        border: 0;
+                        outline: none;
+                    }
 
-					>input::placeholder {
-						color: #93A9C8;
-					}
+                    >input::placeholder {
+                        color: #93A9C8;
+                    }
 
-					.icon {
-						color: #93A9C8;
-						margin: 0px 8px;
-					}
-				}
-			}
+                    .icon {
+                        color: #93A9C8;
+                        margin: 0px 8px;
+                    }
+                }
+            }
 
-			#advanced-search {
-				display: none;
-				background-color: #2A3A51;
-				border-bottom: 3px solid #2A3A51;
-				border-radius: 2px;
-			}
+            #advanced-search {
+                display: none;
+                background-color: #2A3A51;
+                border-bottom: 3px solid #2A3A51;
+                border-radius: 2px;
+            }
 
-		}
-	}
+        }
+    }
 
-	#app-container {
-		margin-top: $nav-height;
-		display: flex;
-		justify-content: center;
-	}
+    #app-container {
+        margin-top: $nav-height;
+        display: flex;
+        justify-content: center;
+    }
 
 }
 
 .blob, .cloning, .fancyerror, .repo, .search, .tree {
-	$page-height: unquote("calc(100vh - #{$nav-height})");
+    $page-height: unquote("calc(100vh - #{$nav-height})");
 
-	background-color: #151D28;
-	height: $page-height;
+    background-color: #151D28;
+    height: $page-height;
 }
 .search {
-	background-color: #202A3B !important;
+    background-color: #202A3B !important;
 }
 
 /* screens 0-1080px wide: 100% width */
 @media (min-width: 0px) and (max-width: 1080px) {
-	.blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
-		width: 100%;
-	}
+    .blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
+        width: 100%;
+    }
 }
 
 /* screens 1080-1920px wide: 1080px wide */
 @media (min-width: 1080px) and (max-width: 1920px) {
-	.blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
-		width: 1080px;
-	}
+    .blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
+        width: 1080px;
+    }
 }
 
 /* screens >1920px: 1180px wide */
 @media (min-width: 1920px) {
-	.blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
-		width: 1180px;
-	}
+    .blob, .cloning, .fancyerror, .repo, .search, .tree, .base #nav #navbar {
+        width: 1180px;
+    }
 }
 
 // Define the "system" font family
@@ -182,333 +182,333 @@ $nav-height: 48px;
 
 // usage: '@extend .font-capital-white;'
 .font-capital-white {
-	font-family: system;
-	font-weight: 600;
-	letter-spacing: 1.2px;
-	text-transform: uppercase;
-	color: #FFFFFF;
+    font-family: system;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #FFFFFF;
 }
 
 // usage: '@extend .font-normal-grey'
 .font-normal-grey {
-	font-family: system;
-	font-weight: normal;
-	color: #93A9C8;
+    font-family: system;
+    font-weight: normal;
+    color: #93A9C8;
 }
 
 // usage: '@extend .font-white'
 .font-white {
-	font-family: system;
-	font-style: normal;
-	color: #FFFFFF;
+    font-family: system;
+    font-style: normal;
+    color: #FFFFFF;
 }
 
 // usage: '@extend .font-heavy-white'
 .font-heavy-white {
-	@extend .font-white;
-	font-weight: 600;
+    @extend .font-white;
+    font-weight: 600;
 }
 
 .blob, .repo, .tree {
-	$page-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
-	height: $page-height;
-	border-bottom: 1px solid #233043;
-	background-color: #202A3B;
+    $page-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
+    height: $page-height;
+    border-bottom: 1px solid #233043;
+    background-color: #202A3B;
 
-	#tree-viewer {
-		display: none;
-		flex-direction: column;
-		flex: 1;
-		overflow-x: auto;
-	}
+    #tree-viewer {
+        display: none;
+        flex-direction: column;
+        flex: 1;
+        overflow-x: auto;
+    }
 
-	#tree-view-container {
-		$tvc-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
-		display: flex;
-		flex-direction: row;
-		height: $tvc-height;
+    #tree-view-container {
+        $tvc-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
+        display: flex;
+        flex-direction: row;
+        height: $tvc-height;
 
-		.right {
-			height: $tvc-height;
-			background-color: #151D28;
-			flex: 4;
-		}
-	}
+        .right {
+            height: $tvc-height;
+            background-color: #151D28;
+            flex: 4;
+        }
+    }
 
-	.repotree {
-		/* Affects only repo.html and tree.html #tree-view-container */
-		.right {
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
+    .repotree {
+        /* Affects only repo.html and tree.html #tree-view-container */
+        .right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
 
-			.top, .bottom {
-				display: flex;
-				flex-direction: column;
-				justify-content: center;
-				align-items: center;
-			}
-			.top {
-				flex: 2;
-				>h1 {
-					margin-top: 1em;
-				}
-			}
-			.bottom {
-				flex: 1;
-			}
-		}
-	}
+            .top, .bottom {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            .top {
+                flex: 2;
+                >h1 {
+                    margin-top: 1em;
+                }
+            }
+            .bottom {
+                flex: 1;
+            }
+        }
+    }
 }
 
 .blobview {
-	font-family: 'Menlo';
-	overflow: auto;
-	display: flex;
-	flex-direction: column;
+    font-family: 'Menlo';
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
 
-	.line-number {
-		&::before {
-			// draw line number with css so it cannot be copied to clipboard
-			content: attr(data-line-number);
-		}
-		color: #31445E;
-	}
+    .line-number {
+        &::before {
+            // draw line number with css so it cannot be copied to clipboard
+            content: attr(data-line-number);
+        }
+        color: #31445E;
+    }
 
-	#blob-table {
-		position: relative;
-		padding-top: 10px;
-		flex: 4;
-		overflow: auto;
+    #blob-table {
+        position: relative;
+        padding-top: 10px;
+        flex: 4;
+        overflow: auto;
 
-		table {
-			padding-left: 1em;
-			padding-right: 1em;
-			padding-top: 2em;
-			width: 100%;
+        table {
+            padding-left: 1em;
+            padding-right: 1em;
+            padding-top: 2em;
+            width: 100%;
 
-			.code-cell {
-				width: 100%;
-			}
-		}
-	}
+            .code-cell {
+                width: 100%;
+            }
+        }
+    }
 
-	#blob {
-		white-space: pre;
-		display: none;
-	}
+    #blob {
+        white-space: pre;
+        display: none;
+    }
 
-	#blob-table>table {
-		margin-bottom: 26px;
-		border-collapse: collapse;
-		.line-number, .code-cell {
-			padding: 0;
-			padding-top: 0.15em;
-			padding-bottom: 0.15em;
+    #blob-table>table {
+        margin-bottom: 26px;
+        border-collapse: collapse;
+        .line-number, .code-cell {
+            padding: 0;
+            padding-top: 0.15em;
+            padding-bottom: 0.15em;
 
-			pre {
-				margin: 2px;
-			}
-		}
-		.line-number {
-			color: #31445E;
-			text-align: right;
-			font-size: .75em;
-			padding-left: .25em;
-			padding-right: .75em;
-			min-width: 3em;
-		}
-		.code-cell {
-			padding-left: .5em;
-			white-space: pre;
-			font-size: .75em;
-			>.blame {
-				&::before {
-					content: attr(data-blame);
-				}
-				color: #464d57;
-				padding-left: 4em;
-				display: inline-block;
-				width: 0;
-			}
-		}
-	}
+            pre {
+                margin: 2px;
+            }
+        }
+        .line-number {
+            color: #31445E;
+            text-align: right;
+            font-size: .75em;
+            padding-left: .25em;
+            padding-right: .75em;
+            min-width: 3em;
+        }
+        .code-cell {
+            padding-left: .5em;
+            white-space: pre;
+            font-size: .75em;
+            >.blame {
+                &::before {
+                    content: attr(data-blame);
+                }
+                color: #464d57;
+                padding-left: 4em;
+                display: inline-block;
+                width: 0;
+            }
+        }
+    }
 
-	#ref-widget {
-		flex: 3;
-	}
+    #ref-widget {
+        flex: 3;
+    }
 
 }
 
 .treeview {
-	>a {
-		display: block;
-		padding: 1em;
-		text-decoration: none;
-	}
-	>a:hover {
-		background-color: #1862ab;
-	}
+    >a {
+        display: block;
+        padding: 1em;
+        text-decoration: none;
+    }
+    >a:hover {
+        background-color: #1862ab;
+    }
 }
 
 .navbar {
-	@extend .font-white;
-	font-size: .75em;
-	height: 48px;
-	border-bottom: 1px solid #233043;
-	display: flex;
-	align-items: center;
+    @extend .font-white;
+    font-size: .75em;
+    height: 48px;
+    border-bottom: 1px solid #233043;
+    display: flex;
+    align-items: center;
 
-	a, .path a {
-		text-decoration: none;
-		@extend .font-white;
-	}
+    a, .path a {
+        text-decoration: none;
+        @extend .font-white;
+    }
 
-	#file-explorer {
-		display: flex;
-		cursor: pointer;
-		align-items: center;
-		margin-right: 1.5em;
-		margin-left: .75em;
+    #file-explorer {
+        display: flex;
+        cursor: pointer;
+        align-items: center;
+        margin-right: 1.5em;
+        margin-left: .75em;
 
-		.group-icon {
-			margin: 0px 10px;
-			width: 9px;
-			height: 9px;
-		}
-	}
+        .group-icon {
+            margin: 0px 10px;
+            width: 9px;
+            height: 9px;
+        }
+    }
 
-	.path {
-		flex: 1;
-		display: flex;
-		align-items: center;
+    .path {
+        flex: 1;
+        display: flex;
+        align-items: center;
 
-		.book-icon {
-			width: 10px;
-			height: 12px;
-			margin-right: 10px;
-		}
+        .book-icon {
+            width: 10px;
+            height: 12px;
+            margin-right: 10px;
+        }
 
-		.book-link {
-			/* TODO(john): use uniform SVG asset box-sizing */
-			display: flex;
-			align-items: center;
-		}
+        .book-link {
+            /* TODO(john): use uniform SVG asset box-sizing */
+            display: flex;
+            align-items: center;
+        }
 
-		>span {
-			>a:last-child {
-				@extend .font-heavy-white;
-			}
-		}
-	}
+        >span {
+            >a:last-child {
+                @extend .font-heavy-white;
+            }
+        }
+    }
 
-	.right-pane {
-		display: inline-block;
-		.share {
-			.share-icon {
-				width: 9px;
-				height: 13px;
-				margin-left: 8px;
-				position: relative;
-				top: 2px;
-			}
-		}
-		.authorship {
-			.authorship-icon {
-				width: 14px;
-				height: 9px;
-				margin-left: 6px;
-			}
-			margin-left: 18px;
-		}
-		.github {
-			.github-icon {
-				width: 13px;
-				height: 14px;
-				margin-left: 6px;
-				position: relative;
-				top: 4px;
-			}
+    .right-pane {
+        display: inline-block;
+        .share {
+            .share-icon {
+                width: 9px;
+                height: 13px;
+                margin-left: 8px;
+                position: relative;
+                top: 2px;
+            }
+        }
+        .authorship {
+            .authorship-icon {
+                width: 14px;
+                height: 9px;
+                margin-left: 6px;
+            }
+            margin-left: 18px;
+        }
+        .github {
+            .github-icon {
+                width: 13px;
+                height: 14px;
+                margin-left: 6px;
+                position: relative;
+                top: 4px;
+            }
 
-			margin-right: 18px;
-			margin-left: 14px;
-		}
-	}
+            margin-right: 18px;
+            margin-left: 14px;
+        }
+    }
 }
 
 .cloning {
-	$cloning-height: unquote("calc(100vh - #{$nav-height})");
+    $cloning-height: unquote("calc(100vh - #{$nav-height})");
 
-	height: $cloning-height;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
+    height: $cloning-height;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
-	.top, .bottom {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-	}
-	.top {
-		flex: 2;
-		>img {
-			animation:spin 2s linear infinite;
-		}
-		@keyframes spin { 100% { transform:rotate(360deg); } }
-		>h1 {
-			margin-top: 1em;
-		}
-	}
-	.bottom {
-		flex: 1;
-	}
+    .top, .bottom {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .top {
+        flex: 2;
+        >img {
+            animation:spin 2s linear infinite;
+        }
+        @keyframes spin { 100% { transform:rotate(360deg); } }
+        >h1 {
+            margin-top: 1em;
+        }
+    }
+    .bottom {
+        flex: 1;
+    }
 }
 
 .fancyerror {
-	$fancyerror-height: unquote("calc(100vh - #{$nav-height})");
+    $fancyerror-height: unquote("calc(100vh - #{$nav-height})");
 
-	height: $fancyerror-height;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
+    height: $fancyerror-height;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
-	.top, .bottom {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-	}
-	.top {
-		flex: 2;
-		>h1 {
-			margin-top: 1em;
-		}
-		>p {
-			margin-top: .5em;
-		}
-	}
-	.bottom {
-		flex: 1;
-		.error-id {
-			font-family: 'Menlo';
-			background-color: rgb(36, 49, 66);
-			padding: .3em;
-			border-radius: 2px;
-		}
-		.error-text {
-			margin-top: 1em;
-			background-color: #233043;
-			padding: 1em;
-		}
-	}
+    .top, .bottom {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .top {
+        flex: 2;
+        >h1 {
+            margin-top: 1em;
+        }
+        >p {
+            margin-top: .5em;
+        }
+    }
+    .bottom {
+        flex: 1;
+        .error-id {
+            font-family: 'Menlo';
+            background-color: rgb(36, 49, 66);
+            padding: .3em;
+            border-radius: 2px;
+        }
+        .error-text {
+            margin-top: 1em;
+            background-color: #233043;
+            padding: 1em;
+        }
+    }
 
-	>img {
-		display: block;
-	}
+    >img {
+        display: block;
+    }
 }
 
 .error {
@@ -516,44 +516,44 @@ $nav-height: 48px;
 }
 
 .home {
-	$home-height: unquote("calc(100vh - #{$nav-height})");
+    $home-height: unquote("calc(100vh - #{$nav-height})");
 
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	height: $home-height;
-	width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: $home-height;
+    width: 100%;
 
-	.header {
-		flex: 2;
-		display: flex;
-		align-items: center;
-		background-color: initial;
-	}
+    .header {
+        flex: 2;
+        display: flex;
+        align-items: center;
+        background-color: initial;
+    }
 
-	#search-widget {
-		flex: 10;
-		width: 512px;
-		font-size: 14px;
-		color: #93A9C8;
-	}
+    #search-widget {
+        flex: 10;
+        width: 512px;
+        font-size: 14px;
+        color: #93A9C8;
+    }
 
-	.footer {
-		flex: 1;
-	}
+    .footer {
+        flex: 1;
+    }
 }
 
 .repo {
-	>h3 {
-		@extend .font-normal-grey;
-		padding: 1em;
-		border-bottom: 1px solid #233043;
-		font-weight: bold;
+    >h3 {
+        @extend .font-normal-grey;
+        padding: 1em;
+        border-bottom: 1px solid #233043;
+        font-weight: bold;
 
-		>em {
-			font-weight: normal;
-			font-size: .8em;
-		}
-	}
+        >em {
+            font-weight: normal;
+            font-size: .8em;
+        }
+    }
 }
