@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"sort"
 	"testing"
-	"time"
 
 	"context"
 
@@ -33,22 +32,19 @@ func repoURIs(repos []*sourcegraph.Repo) []string {
 	return uris
 }
 
-func createRepo(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
-	var r dbRepo
-	r.fromRepo(repo)
-	err := appDBH(ctx).Insert(&r.dbRepoOrig)
-	return r.ID, err
+func createRepo(ctx context.Context, t *testing.T, repo *sourcegraph.Repo) {
+	if err := Repos.TryInsertNew(ctx, repo.URI, repo.Description, repo.Fork, repo.Private); err != nil {
+		t.Fatal(err)
+	}
 }
 
-func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
+func mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
 	var createdRepos []*sourcegraph.Repo
 	for _, repo := range repos {
 		repo.DefaultBranch = "master"
 
-		if _, err := createRepo(ctx, repo); err != nil {
-			t.Fatal(err)
-		}
-		repo, err := s.GetByURI(ctx, repo.URI)
+		createRepo(ctx, t, repo)
+		repo, err := Repos.GetByURI(ctx, repo.URI)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,11 +64,9 @@ func TestRepos_Get(t *testing.T) {
 
 	ctx := testContext()
 
-	s := repos{}
+	want := mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
 
-	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
-
-	repo, err := s.Get(ctx, want[0].ID)
+	repo, err := Repos.Get(ctx, want[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,11 +84,9 @@ func TestRepos_List(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	s := repos{}
+	want := mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
 
-	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
-
-	repos, err := s.List(ctx, nil)
+	repos, err := Repos.List(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,15 +104,13 @@ func TestRepos_List_pagination(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	s := repos{}
-
 	createdRepos := []*sourcegraph.Repo{
 		{URI: "r1"},
 		{URI: "r2"},
 		{URI: "r3"},
 	}
 	for _, repo := range createdRepos {
-		s.mustCreate(ctx, t, repo)
+		mustCreate(ctx, t, repo)
 	}
 
 	type testcase struct {
@@ -140,12 +130,12 @@ func TestRepos_List_pagination(t *testing.T) {
 		{perPage: 4, page: 2, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &RepoListOp{ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
+		repos, err := Repos.List(ctx, &RepoListOp{ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.exp) {
-			t.Errorf("for test case %v, got %v (want %v)", test, repos, test.exp)
+			t.Errorf("for test case %v, got %v (want %v)", test, got, test.exp)
 		}
 	}
 }
@@ -161,7 +151,6 @@ func TestRepos_List_query1(t *testing.T) {
 	ctx := testContext()
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
-	s := repos{}
 
 	createdRepos := []*sourcegraph.Repo{
 		{URI: "abc/def"},
@@ -170,11 +159,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{URI: "github.com/abc/xyz"},
 	}
 	for _, repo := range createdRepos {
-		if created, err := createRepo(ctx, repo); err != nil {
-			t.Fatal(err)
-		} else {
-			repo.ID = created
-		}
+		createRepo(ctx, t, repo)
 	}
 	tests := []struct {
 		query string
@@ -187,7 +172,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{"jkl mno pqr", []string{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &RepoListOp{Query: test.query})
+		repos, err := Repos.List(ctx, &RepoListOp{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -206,7 +191,6 @@ func TestRepos_List_query2(t *testing.T) {
 	ctx := testContext()
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
-	s := repos{}
 
 	createdRepos := []*sourcegraph.Repo{
 		{URI: "a/def"},
@@ -218,11 +202,7 @@ func TestRepos_List_query2(t *testing.T) {
 		{URI: "abc/m"},
 	}
 	for _, repo := range createdRepos {
-		if created, err := createRepo(ctx, repo); err != nil {
-			t.Fatal(err)
-		} else {
-			repo.ID = created
-		}
+		createRepo(ctx, t, repo)
 	}
 	tests := []struct {
 		query string
@@ -234,7 +214,7 @@ func TestRepos_List_query2(t *testing.T) {
 		{"def/m", []string{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &RepoListOp{Query: test.query})
+		repos, err := Repos.List(ctx, &RepoListOp{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -264,8 +244,6 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 	}
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
-	s := repos{}
-
 	createRepos := []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "a/local", Private: false, DefaultBranch: "master"},
 		&sourcegraph.Repo{URI: "a/localPrivate", DefaultBranch: "master", Private: true},
@@ -274,14 +252,12 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 		&sourcegraph.Repo{URI: "github.com/is/inaccessibleBecausePrivate", Private: true, DefaultBranch: "master"},
 	}
 	for _, repo := range createRepos {
-		if _, err := createRepo(ctx, repo); err != nil {
-			t.Fatal(err)
-		}
+		createRepo(ctx, t, repo)
 	}
 
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
-	repoList, err := s.List(ctx, &RepoListOp{})
+	repoList, err := Repos.List(ctx, &RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,8 +279,6 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 	ctx := testContext()
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
-	s := repos{}
-
 	calledListAccessible := github.MockListAccessibleRepos_Return(nil)
 	github.GetRepoMock = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		return nil, fmt.Errorf("unauthorized")
@@ -316,12 +290,10 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Private: true},
 	}
 	for _, repo := range createRepos {
-		if _, err := createRepo(ctx, repo); err != nil {
-			t.Fatal(err)
-		}
+		createRepo(ctx, t, repo)
 	}
 
-	repoList, err := s.List(ctx, &RepoListOp{})
+	repoList, err := Repos.List(ctx, &RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,13 +320,9 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 		return nil, fmt.Errorf("unauthorized")
 	}
 
-	s := repos{}
+	createRepo(ctx, t, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master"})
 
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-
-	repoList, err := s.List(ctx, &RepoListOp{})
+	repoList, err := Repos.List(ctx, &RepoListOp{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,24 +343,15 @@ func TestRepos_Create(t *testing.T) {
 
 	ctx := testContext()
 
-	s := repos{}
-
-	tm := time.Now().Round(time.Second)
-
 	// Add a repo.
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
+	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"})
 
-	repo, err := s.GetByURI(ctx, "a/b")
+	repo, err := Repos.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if repo.CreatedAt == nil {
 		t.Fatal("got CreatedAt nil")
-	}
-	if want := tm; !repo.CreatedAt.Equal(want) {
-		t.Errorf("got CreatedAt %q, want %q", repo.CreatedAt, want)
 	}
 }
 
@@ -403,134 +362,9 @@ func TestRepos_Create_dupe(t *testing.T) {
 
 	ctx := testContext()
 
-	tm := time.Now().Round(time.Second)
-
 	// Add a repo.
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
+	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"})
 
 	// Add another repo with the same name.
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err == nil {
-		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
-	}
-}
-
-// TestRepos_Update_Description tests the behavior of Repos.Update to
-// update a repo's description.
-func TestRepos_Update_Description(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-
-	s := repos{}
-
-	// Add a repo.
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err := s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := ""; repo.Description != want {
-		t.Errorf("got description %q, want %q", repo.Description, want)
-	}
-
-	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID, Description: "d"}}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err = s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := "d"; repo.Description != want {
-		t.Errorf("got description %q, want %q", repo.Description, want)
-	}
-}
-
-func TestRepos_Update_UpdatedAt(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-
-	s := repos{}
-
-	// Add a repo.
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err := s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo.UpdatedAt != nil {
-		t.Errorf("got UpdatedAt %v, want nil", repo.UpdatedAt)
-	}
-
-	// Perform any update.
-	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID}, UpdatedAt: &newTime}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err = s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo.UpdatedAt == nil {
-		t.Fatal("got UpdatedAt nil, want non-nil")
-	}
-	if want := newTime; !repo.UpdatedAt.Equal(want) {
-		t.Errorf("got UpdatedAt %q, want %q", repo.UpdatedAt, want)
-	}
-}
-
-func TestRepos_Update_PushedAt(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-
-	s := repos{}
-
-	// Add a repo.
-	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err := s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo.PushedAt != nil {
-		t.Errorf("got PushedAt %v, want nil", repo.PushedAt)
-	}
-
-	newTime := time.Unix(123456, 0)
-	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID}, PushedAt: &newTime}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err = s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo.PushedAt == nil {
-		t.Fatal("got PushedAt nil, want non-nil")
-	}
-	if repo.UpdatedAt != nil {
-		t.Fatal("got UpdatedAt non-nil, want nil")
-	}
-	if want := newTime; !repo.PushedAt.Equal(want) {
-		t.Errorf("got PushedAt %q, want %q", repo.PushedAt, want)
-	}
+	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"})
 }

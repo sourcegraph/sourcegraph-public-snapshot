@@ -9,10 +9,8 @@ import (
 	"context"
 
 	gogithub "github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -32,7 +30,6 @@ func TestReposService_Get(t *testing.T) {
 	github.MockGetRepo_Return(ghrepo)
 
 	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
-	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
@@ -42,117 +39,6 @@ func TestReposService_Get(t *testing.T) {
 		t.Error("!calledGet")
 	}
 	// Should not be called because mock GitHub has same data as mock DB.
-	if *calledUpdate {
-		t.Error("calledUpdate")
-	}
-	if !reflect.DeepEqual(repo, wantRepo) {
-		t.Errorf("got %+v, want %+v", repo, wantRepo)
-	}
-}
-
-func TestReposService_Get_UpdateMeta(t *testing.T) {
-	var s repos
-	ctx := testContext()
-
-	wantRepo := &sourcegraph.Repo{
-		ID:      1,
-		URI:     "github.com/u/r",
-		Private: true,
-	}
-
-	github.MockGetRepo_Return(&sourcegraph.Repo{
-		Description: "This is a repository",
-		Private:     true,
-	})
-
-	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
-	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
-
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
-	}
-	if !*calledUpdate {
-		t.Error("!calledUpdate")
-	}
-	if !reflect.DeepEqual(repo, wantRepo) {
-		t.Errorf("got %+v, want %+v", repo, wantRepo)
-	}
-}
-
-func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
-	var s repos
-	ctx := testContext()
-
-	// Remove auth from testContext
-	ctx = actor.WithActor(ctx, &actor.Actor{})
-	ctx = accesscontrol.WithInsecureSkip(ctx, false)
-
-	wantRepo := &sourcegraph.Repo{
-		ID:  1,
-		URI: "github.com/u/r",
-	}
-
-	github.MockGetRepo_Return(&sourcegraph.Repo{
-		Description: "This is a repository",
-	})
-
-	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
-	var calledUpdate bool
-	localstore.Mocks.Repos.Update = func(ctx context.Context, op localstore.RepoUpdate) error {
-		if !accesscontrol.Skip(ctx) {
-			return legacyerr.Errorf(legacyerr.PermissionDenied, "permission denied")
-		}
-		calledUpdate = true
-		if op.ReposUpdateOp.Repo != wantRepo.ID {
-			t.Errorf("got repo %q, want %q", op.ReposUpdateOp.Repo, wantRepo.ID)
-			return legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo.ID)
-		}
-		return nil
-	}
-
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
-	}
-	if !calledUpdate {
-		t.Error("!calledUpdate")
-	}
-	if !reflect.DeepEqual(repo, wantRepo) {
-		t.Errorf("got %+v, want %+v", repo, wantRepo)
-	}
-}
-
-func TestReposService_Get_NonGitHub(t *testing.T) {
-	var s repos
-	ctx := testContext()
-
-	wantRepo := &sourcegraph.Repo{
-		ID:  1,
-		URI: "r",
-	}
-
-	github.MockGetRepo_Return(&sourcegraph.Repo{})
-
-	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
-	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
-
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
-	}
-	if *calledUpdate {
-		t.Error("calledUpdate")
-	}
 	if !reflect.DeepEqual(repo, wantRepo) {
 		t.Errorf("got %+v, want %+v", repo, wantRepo)
 	}

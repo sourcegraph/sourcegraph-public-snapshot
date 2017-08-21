@@ -6,12 +6,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -271,40 +269,5 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	// The authed user should also be able to get public repo from the cache
 	if authedGet() {
 		t.Fatal("authed should not get from cache")
-	}
-}
-
-func Test_getFromGit(t *testing.T) {
-	tests := []struct {
-		owner    string
-		repoName string
-		expRepo  *sourcegraph.Repo
-	}{{
-		owner:    "gorilla",
-		repoName: "mux",
-		expRepo: &sourcegraph.Repo{
-			URI:           "github.com/gorilla/mux",
-			DefaultBranch: "master",
-			Private:       false,
-		},
-	}, {
-		owner:    "apache",
-		repoName: "log4j",
-		expRepo: &sourcegraph.Repo{
-			URI:           "github.com/apache/log4j",
-			DefaultBranch: "trunk",
-			Private:       false,
-		},
-	}}
-	ctx := actor.WithActor(context.Background(), &actor.Actor{})
-
-	for _, test := range tests {
-		repo, err := getFromGit(ctx, test.owner, test.repoName)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(repo, test.expRepo) {
-			t.Errorf("for %s/%s, expected %+v, but got %+v", test.owner, test.repoName, test.expRepo, repo)
-		}
 	}
 }

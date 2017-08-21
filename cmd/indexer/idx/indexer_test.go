@@ -95,11 +95,6 @@ func Test_index_java(t *testing.T) {
 		}
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Java", Type: "programming"}}}, nil
 	}
-	updateCalled := false
-	backend.Mocks.Repos.Update = func(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error) {
-		updateCalled = true
-		return nil
-	}
 	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (res *sourcegraph.Repo, err error) {
 		rp, ok := repos[uri]
 		if !ok {
@@ -161,9 +156,6 @@ func Test_index_java(t *testing.T) {
 
 	if !defsRefreshIndexCalled {
 		t.Fatal("!defsRefreshIndexCalled")
-	}
-	if !updateCalled {
-		t.Fatal("!updateCalled")
 	}
 	if !pkgsRefreshIndexCalled {
 		t.Fatal("!pkgsRefreshIndexCalled")
