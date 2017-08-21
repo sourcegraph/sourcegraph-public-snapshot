@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	gogithub "github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
@@ -174,130 +172,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	return &sourcegraph.RepoList{Repos: repos}, nil
-}
-
-// UpdateRepoFieldsFromRemote sets the fields of the repository from the
-// remote (e.g., GitHub) and updates the repository in the store layer.
-func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
-	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
-		// Fetch latest metadata from GitHub
-		ghrepo, err := github.GetRepo(ctx, repo.URI)
-		if err != nil {
-			return err
-		}
-		if update := repoSetFromRemote(repo, ghrepo); update != nil {
-			log15.Debug("Updating repo metadata from remote", "repo", repo.URI)
-			// UpdateRepoFieldsFromRemote is used in read requests, including
-			// unauthed ones. However, this write isn't as the user, but
-			// rather an optimization for us to save the data from
-			// github. As such we use an elevated context to allow the
-			// write.
-			if err := localstore.Repos.Update(accesscontrol.WithInsecureSkip(ctx, true), *update); err != nil {
-				log15.Error("Failed updating repo metadata from remote", "repo", repo.URI, "error", err)
-			}
-		}
-	}
-	return nil
-}
-
-func timestampEqual(a, b *time.Time) bool {
-	if a == b {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return a.Equal(*b)
-}
-
-// repoSetFromRemote updates repo with fields from ghrepo that are
-// different. If any fields are changed a non-nil store.RepoUpdate is returned
-// representing the update.
-func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *localstore.RepoUpdate {
-	updated := false
-	updateOp := &localstore.RepoUpdate{
-		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
-			Repo: repo.ID,
-		},
-	}
-
-	if ghrepo.URI != repo.URI {
-		repo.URI = ghrepo.URI
-		updateOp.URI = ghrepo.URI
-		updated = true
-	}
-	if ghrepo.Description != repo.Description {
-		repo.Description = ghrepo.Description
-		updateOp.Description = ghrepo.Description
-		updated = true
-	}
-	if ghrepo.HomepageURL != repo.HomepageURL {
-		repo.HomepageURL = ghrepo.HomepageURL
-		updateOp.HomepageURL = ghrepo.HomepageURL
-		updated = true
-	}
-	if ghrepo.DefaultBranch != repo.DefaultBranch {
-		repo.DefaultBranch = ghrepo.DefaultBranch
-		updateOp.DefaultBranch = ghrepo.DefaultBranch
-		updated = true
-	}
-	if ghrepo.Language != repo.Language {
-		repo.Language = ghrepo.Language
-		updateOp.Language = ghrepo.Language
-		updated = true
-	}
-	if ghrepo.Blocked != repo.Blocked {
-		repo.Blocked = ghrepo.Blocked
-		if ghrepo.Blocked {
-			updateOp.Blocked = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Blocked = sourcegraph.ReposUpdateOp_FALSE
-		}
-		updated = true
-	}
-	if ghrepo.Fork != repo.Fork {
-		repo.Fork = ghrepo.Fork
-		if ghrepo.Fork {
-			updateOp.Fork = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Fork = sourcegraph.ReposUpdateOp_FALSE
-		}
-		updated = true
-	}
-	uintPtrEqual := func(a, b *uint) bool {
-		return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
-	}
-	if !uintPtrEqual(ghrepo.StarsCount, repo.StarsCount) {
-		repo.StarsCount = ghrepo.StarsCount
-	}
-	if !uintPtrEqual(ghrepo.ForksCount, repo.ForksCount) {
-		repo.ForksCount = ghrepo.ForksCount
-	}
-	if ghrepo.Private != repo.Private {
-		repo.Private = ghrepo.Private
-		if ghrepo.Private {
-			updateOp.Private = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Private = sourcegraph.ReposUpdateOp_FALSE
-		}
-		updated = true
-	}
-
-	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
-		repo.UpdatedAt = ghrepo.UpdatedAt
-		updateOp.UpdatedAt = ghrepo.UpdatedAt
-		updated = true
-	}
-	if !timestampEqual(repo.PushedAt, ghrepo.PushedAt) {
-		repo.PushedAt = ghrepo.PushedAt
-		updateOp.PushedAt = ghrepo.PushedAt
-		updated = true
-	}
-
-	if updated {
-		return updateOp
-	}
-	return nil
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error) {
