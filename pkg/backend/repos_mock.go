@@ -16,7 +16,6 @@ type MockRepos struct {
 	Get                  func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	GetByURI             func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
 	List                 func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	Update               func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
 	GetCommit            func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
 	ListCommits          func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)

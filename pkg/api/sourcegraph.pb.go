@@ -30,25 +30,6 @@ var TreeEntryType_value = map[string]int32{
 	"SubmoduleEntry": 3,
 }
 
-type ReposUpdateOp_BoolType int32
-
-const (
-	ReposUpdateOp_NONE  ReposUpdateOp_BoolType = 0
-	ReposUpdateOp_TRUE  ReposUpdateOp_BoolType = 1
-	ReposUpdateOp_FALSE ReposUpdateOp_BoolType = 2
-)
-
-var ReposUpdateOp_BoolType_name = map[int32]string{
-	0: "NONE",
-	1: "TRUE",
-	2: "FALSE",
-}
-var ReposUpdateOp_BoolType_value = map[string]int32{
-	"NONE":  0,
-	"TRUE":  1,
-	"FALSE": 2,
-}
-
 // ListOptions specifies general pagination options for fetching a list of results.
 type ListOptions struct {
 	PerPage int32 `json:"PerPage,omitempty" url:",omitempty"`
@@ -89,8 +70,10 @@ type Repo struct {
 	// Fork is whether this repository is a fork.
 	Fork bool `json:"Fork,omitempty"`
 	// StarsCount is the number of users who have starred this repository.
+	// Not persisted in DB!
 	StarsCount *uint `json:"Stars,omitempty"`
 	// ForksCount is the number of forks of this repository that exist.
+	// Not persisted in DB!
 	ForksCount *uint `json:"Forks,omitempty"`
 	// Private is whether this repository is private. Note: this field
 	// is currently only used when the repository is hosted on GitHub.
@@ -225,30 +208,6 @@ type ResolvedRev struct {
 
 type URIList struct {
 	URIs []string `json:"URIs,omitempty"`
-}
-
-// ReposUpdateOp is an operation to update a repository's metadata.
-type ReposUpdateOp struct {
-	// Repo is the repository to update.
-	Repo int32 `json:"Repo,omitempty"`
-	// URI, if non-empty, is the updated value of the URI
-	URI string `json:"URI,omitempty"`
-	// Description, if non-empty, is the updated value of the description.
-	Description string `json:"Description,omitempty"`
-	// HomepageURL, if non-empty, is the updated value of the homepage URL.
-	HomepageURL string `json:"HomepageURL,omitempty"`
-	// DefaultBranch, if non-empty, is the updated value of the default branch.
-	DefaultBranch string `json:"DefaultBranch,omitempty"`
-	// Language, if non-empty, is the updated value of the language.
-	Language string `json:"Language,omitempty"`
-	// Blocked, if non-empty, updates whether this repository is blocked.
-	Blocked ReposUpdateOp_BoolType `json:"Blocked,omitempty"`
-	// Fork, if non-empty, updates whether this repository is a fork.
-	Fork ReposUpdateOp_BoolType `json:"Fork,omitempty"`
-	// Private, if non-empty, updates whether this repository is private.
-	Private ReposUpdateOp_BoolType `json:"Private,omitempty"`
-	// IndexedRevision is the revision that the global index is currently based on.
-	IndexedRevision string `json:"IndexedRevision,omitempty"`
 }
 
 type ReposListCommitsOp struct {

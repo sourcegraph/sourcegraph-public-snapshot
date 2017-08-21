@@ -138,7 +138,7 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 	}
 
 	go func() {
-		if err := localstore.Repos.UpdateRepoFieldsFromRemote(context.Background(), repo); err != nil {
+		if err := localstore.Repos.UpdateRepoFieldsFromRemote(context.Background(), repo.ID); err != nil {
 			log.Printf("failed to update repo %s from remote: %s", repo.URI, err)
 		}
 	}()

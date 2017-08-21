@@ -174,23 +174,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
-func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error) {
-	if Mocks.Repos.Update != nil {
-		return Mocks.Repos.Update(ctx, op)
-	}
-
-	ctx, done := trace(ctx, "Repos", "Update", op, &err)
-	defer done()
-
-	ts := time.Now()
-	update := localstore.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
-	if err := localstore.Repos.Update(ctx, update); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 var inventoryCache = rcache.New("inv")
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {

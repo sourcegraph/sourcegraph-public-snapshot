@@ -11,10 +11,7 @@ import (
 
 	"github.com/lib/pq"
 	"gopkg.in/gorp.v1"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
@@ -311,21 +308,13 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	return repos, nil
 }
 
-// RepoUpdate represents an update to specific fields of a repo. Only
-// fields with non-zero values are updated.
-//
-// The ReposUpdateOp.Repo field must be filled in to specify the repo
-// that will be updated.
-type RepoUpdate struct {
-	*sourcegraph.ReposUpdateOp
+// UpdateRepoFieldsFromRemote updates the DB from the remote (e.g., GitHub).
+func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repoID int32) error {
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return err
+	}
 
-	UpdatedAt *time.Time
-	PushedAt  *time.Time
-}
-
-// UpdateRepoFieldsFromRemote sets the fields of the repository from the
-// remote (e.g., GitHub) and updates the repository in the store layer.
-func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		return s.updateRepoFieldsFromGitHub(ctx, repo)
 	}
@@ -339,161 +328,49 @@ func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegrap
 		return err
 	}
 
-	updated := false
-	updateOp := &RepoUpdate{
-		ReposUpdateOp: &sourcegraph.ReposUpdateOp{
-			Repo: repo.ID,
-		},
-	}
-
-	if ghrepo.URI != repo.URI {
-		repo.URI = ghrepo.URI
-		updateOp.URI = ghrepo.URI
-		updated = true
-	}
 	if ghrepo.Description != repo.Description {
-		repo.Description = ghrepo.Description
-		updateOp.Description = ghrepo.Description
-		updated = true
+		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET description=$1 WHERE id=$2", ghrepo.Description, repo.ID); err != nil {
+			return err
+		}
 	}
 	if ghrepo.HomepageURL != repo.HomepageURL {
-		repo.HomepageURL = ghrepo.HomepageURL
-		updateOp.HomepageURL = ghrepo.HomepageURL
-		updated = true
+		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET homepage_url=$1 WHERE id=$2", ghrepo.HomepageURL, repo.ID); err != nil {
+			return err
+		}
 	}
 	if ghrepo.DefaultBranch != repo.DefaultBranch {
-		repo.DefaultBranch = ghrepo.DefaultBranch
-		updateOp.DefaultBranch = ghrepo.DefaultBranch
-		updated = true
-	}
-	if ghrepo.Language != repo.Language {
-		repo.Language = ghrepo.Language
-		updateOp.Language = ghrepo.Language
-		updated = true
-	}
-	if ghrepo.Blocked != repo.Blocked {
-		repo.Blocked = ghrepo.Blocked
-		if ghrepo.Blocked {
-			updateOp.Blocked = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Blocked = sourcegraph.ReposUpdateOp_FALSE
+		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET default_branch=$1 WHERE id=$2", ghrepo.DefaultBranch, repo.ID); err != nil {
+			return err
 		}
-		updated = true
-	}
-	if ghrepo.Fork != repo.Fork {
-		repo.Fork = ghrepo.Fork
-		if ghrepo.Fork {
-			updateOp.Fork = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Fork = sourcegraph.ReposUpdateOp_FALSE
-		}
-		updated = true
-	}
-	uintPtrEqual := func(a, b *uint) bool {
-		return (a == nil && b == nil) || (a != nil && b != nil && *a == *b)
-	}
-	if !uintPtrEqual(ghrepo.StarsCount, repo.StarsCount) {
-		repo.StarsCount = ghrepo.StarsCount
-	}
-	if !uintPtrEqual(ghrepo.ForksCount, repo.ForksCount) {
-		repo.ForksCount = ghrepo.ForksCount
 	}
 	if ghrepo.Private != repo.Private {
-		repo.Private = ghrepo.Private
-		if ghrepo.Private {
-			updateOp.Private = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Private = sourcegraph.ReposUpdateOp_FALSE
+		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET private=$1 WHERE id=$2", ghrepo.Private, repo.ID); err != nil {
+			return err
 		}
-		updated = true
 	}
 
 	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
-		repo.UpdatedAt = ghrepo.UpdatedAt
-		updateOp.UpdatedAt = ghrepo.UpdatedAt
-		updated = true
+		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET updated_at=$1 WHERE id=$2", ghrepo.UpdatedAt, repo.ID); err != nil {
+			return err
+		}
 	}
 	if !timestampEqual(repo.PushedAt, ghrepo.PushedAt) {
-		repo.PushedAt = ghrepo.PushedAt
-		updateOp.PushedAt = ghrepo.PushedAt
-		updated = true
-	}
-
-	if !updated {
-		return nil
-	}
-
-	log15.Debug("Updating repo metadata from remote", "repo", repo.URI)
-	// UpdateRepoFieldsFromRemote is used in read requests, including
-	// unauthed ones. However, this write isn't as the user, but
-	// rather an optimization for us to save the data from
-	// github. As such we use an elevated context to allow the
-	// write.
-	if err := s.Update(accesscontrol.WithInsecureSkip(ctx, true), *updateOp); err != nil {
-		return err
+		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET pushed_at=$1 WHERE id=$2", ghrepo.PushedAt, repo.ID); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-// Update a repository.
-func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
-	if Mocks.Repos.Update != nil {
-		return Mocks.Repos.Update(ctx, op)
-	}
+func (s *repos) UpdateLanguage(ctx context.Context, repoID int32, language string) error {
+	_, err := appDBH(ctx).Db.Exec("UPDATE repo SET language=$1 WHERE id=$2", language, repoID)
+	return err
+}
 
-	if !accesscontrol.Skip(ctx) {
-		return legacyerr.Errorf(legacyerr.PermissionDenied, "permission denied")
-	}
-
-	var args []interface{}
-	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
-		args = append(args, a)
-		return v
-	}
-
-	var updates []string
-	if op.URI != "" {
-		updates = append(updates, `"uri"=`+arg(op.URI))
-	}
-	if op.Description != "" {
-		updates = append(updates, `"description"=`+arg(op.Description))
-	}
-	if op.HomepageURL != "" {
-		updates = append(updates, `"homepage_url"=`+arg(op.HomepageURL))
-	}
-	if op.DefaultBranch != "" {
-		updates = append(updates, `"default_branch"=`+arg(op.DefaultBranch))
-	}
-	if op.Language != "" {
-		updates = append(updates, `"language"=`+arg(op.Language))
-	}
-	if op.Blocked != sourcegraph.ReposUpdateOp_NONE {
-		updates = append(updates, `"blocked"=`+arg(op.Blocked == sourcegraph.ReposUpdateOp_TRUE))
-	}
-	if op.Fork != sourcegraph.ReposUpdateOp_NONE {
-		updates = append(updates, `"fork"=`+arg(op.Fork == sourcegraph.ReposUpdateOp_TRUE))
-	}
-	if op.Private != sourcegraph.ReposUpdateOp_NONE {
-		updates = append(updates, `"private"=`+arg(op.Private == sourcegraph.ReposUpdateOp_TRUE))
-	}
-	if op.UpdatedAt != nil {
-		updates = append(updates, `"updated_at"=`+arg(op.UpdatedAt))
-	}
-	if op.PushedAt != nil {
-		updates = append(updates, `"pushed_at"=`+arg(op.PushedAt))
-	}
-	if op.IndexedRevision != "" {
-		updates = append(updates, `"indexed_revision"=`+arg(op.IndexedRevision))
-	}
-
-	if len(updates) > 0 {
-		sql := `UPDATE repo SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(op.Repo)
-		_, err := appDBH(ctx).Exec(sql, args...)
-		return err
-	}
-	return nil
+func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev string) error {
+	_, err := appDBH(ctx).Db.Exec("UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repoID)
+	return err
 }
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo

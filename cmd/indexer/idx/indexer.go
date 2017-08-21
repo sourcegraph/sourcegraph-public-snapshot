@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -187,12 +188,12 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 		}
 	}
 
-	if err := backend.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{
-		Repo:            repo.ID,
-		IndexedRevision: string(headCommit),
-		Language:        inv.PrimaryProgrammingLanguage(),
-	}); err != nil {
-		return fmt.Errorf("Repos.Update failed: %s", err)
+	if err := localstore.Repos.UpdateIndexedRevision(ctx, repo.ID, string(headCommit)); err != nil {
+		return fmt.Errorf("Repos.UpdateIndexedRevision failed: %s", err)
+	}
+
+	if err := localstore.Repos.UpdateLanguage(ctx, repo.ID, inv.PrimaryProgrammingLanguage()); err != nil {
+		return fmt.Errorf("Repos.UpdateLanguage failed: %s", err)
 	}
 
 	return nil
