@@ -1,7 +1,6 @@
 package localstore
 
 import (
-	"database/sql"
 	"log"
 	"regexp"
 	"sort"
@@ -22,8 +21,34 @@ import (
 var autoRepoWhitelist []*regexp.Regexp
 
 func init() {
-	AppSchema.Map.AddTableWithName(dbRepoOrig{}, "repo").SetKeys(true, "ID")
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
+		`CREATE TABLE repo (
+			id SERIAL PRIMARY KEY,
+			uri citext,
+			owner citext,
+			name citext,
+			description text,
+			vcs text NOT NULL,
+			http_clone_url text,
+			ssh_clone_url text,
+			homepage_url text,
+			default_branch text NOT NULL,
+			language text,
+			blocked boolean,
+			deprecated boolean,
+			fork boolean,
+			mirror boolean,
+			private boolean,
+			created_at timestamp with time zone,
+			updated_at timestamp with time zone,
+			pushed_at timestamp with time zone,
+			vcs_synced_at timestamp with time zone,
+			indexed_revision text,
+			freeze_indexed_revision boolean,
+			origin_repo_id text,
+			origin_service integer,
+			origin_api_base_url text
+		)`,
 		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
 		"ALTER TABLE repo ALTER COLUMN owner TYPE citext", // migration 2016.9.30
 		"ALTER TABLE repo ALTER COLUMN name TYPE citext",  // migration 2016.9.30
@@ -42,6 +67,7 @@ func init() {
 
 		// migration 2016.9.30: `DROP INDEX repo_lower_uri_lower_name;`
 	)
+	AppSchema.DropSQL = append(AppSchema.DropSQL, "DROP TABLE repo")
 
 	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
 		expr, err := regexp.Compile("^" + pattern + "$")
@@ -50,86 +76,6 @@ func init() {
 		}
 		autoRepoWhitelist = append(autoRepoWhitelist, expr)
 	}
-}
-
-// dbRepo DB-maps a sourcegraph.Repo object. The reason for the split
-// between dbRepo and dbRepoOrig is to support adding new columns to
-// the table without downtime or a heavyweight migration.
-//
-// Fields in dbRepo (i.e., NOT in dbRepoOrig) should be nullable (in
-// both the data structure and the DB) and are not set on new repo
-// creation.
-//
-// Adding new fields to the repo table should follow these steps:
-// - Add the field to dbRepo. Test that it works both with and without
-//   the new field in the database.
-// - Deploy the new code into production.
-// - Add the new column to the repo table in production.
-// - Move the field from dbRepo into dbRepoOrig and post announcement
-//   to other devs of the migration (they now need to run it in dev).
-type dbRepo struct {
-	dbRepoOrig
-}
-
-type dbRepoOrig struct {
-	ID                    int32
-	URI                   string
-	Owner                 string
-	Name                  string
-	Description           string
-	VCS                   string
-	HTTPCloneURL          string `db:"http_clone_url"`
-	SSHCloneURL           string `db:"ssh_clone_url"`
-	HomepageURL           string `db:"homepage_url"`
-	DefaultBranch         string `db:"default_branch"`
-	Language              string
-	Blocked               bool
-	Deprecated            bool
-	Fork                  bool
-	Mirror                bool
-	Private               bool
-	CreatedAt             time.Time  `db:"created_at"`
-	UpdatedAt             *time.Time `db:"updated_at"`
-	PushedAt              *time.Time `db:"pushed_at"`
-	VCSSyncedAt           *time.Time `db:"vcs_synced_at"`
-	IndexedRevision       *string    `db:"indexed_revision"`
-	FreezeIndexedRevision *bool      `db:"freeze_indexed_revision"`
-
-	OriginRepoID     *string `db:"origin_repo_id"`
-	OriginService    *int32  `db:"origin_service"` // values from Origin.ServiceType enum
-	OriginAPIBaseURL *string `db:"origin_api_base_url"`
-}
-
-func (r *dbRepo) toRepo() *sourcegraph.Repo {
-	r2 := &sourcegraph.Repo{
-		ID:              r.ID,
-		URI:             r.URI,
-		Description:     r.Description,
-		HomepageURL:     r.HomepageURL,
-		DefaultBranch:   r.DefaultBranch,
-		Language:        r.Language,
-		Blocked:         r.Blocked,
-		Fork:            r.Fork,
-		Private:         r.Private,
-		IndexedRevision: r.IndexedRevision,
-	}
-
-	if r.FreezeIndexedRevision != nil && *r.FreezeIndexedRevision {
-		r2.FreezeIndexedRevision = true
-	}
-
-	r2.CreatedAt = &r.CreatedAt
-	r2.UpdatedAt = r.UpdatedAt
-	r2.PushedAt = r.PushedAt
-	return r2
-}
-
-func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
-	r2s := make([]*sourcegraph.Repo, len(rs))
-	for i, r := range rs {
-		r2s[i] = r.toRepo()
-	}
-	return r2s
 }
 
 // repos is a DB-backed implementation of the Repos
@@ -145,10 +91,16 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 		return Mocks.Repos.Get(ctx, id)
 	}
 
-	repo, err := s.getBySQL(ctx, "id=$1", id)
+	repos, err := s.getBySQL(ctx, "WHERE id=$1 LIMIT 1", id)
 	if err != nil {
 		return nil, err
 	}
+
+	if len(repos) == 0 {
+		return nil, ErrRepoNotFound
+	}
+	repo := repos[0]
+
 	// 🚨 SECURITY: access control check here 🚨
 	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
 		return nil, ErrRepoNotFound
@@ -213,14 +165,15 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 }
 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	repo, err := s.getBySQL(ctx, "uri=$1", uri)
+	repos, err := s.getBySQL(ctx, "WHERE uri=$1 LIMIT 1", uri)
 	if err != nil {
-		if legacyerr.ErrCode(err) == legacyerr.NotFound {
-			// Overwrite with error message containing repo URI.
-			err = legacyerr.Errorf(legacyerr.NotFound, "%s: %s", err, uri)
-		}
 		return nil, err
 	}
+
+	if len(repos) == 0 {
+		return nil, ErrRepoNotFound
+	}
+	repo := repos[0]
 
 	// 🚨 SECURITY: access control check here 🚨
 	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
@@ -233,14 +186,43 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 // getBySQL returns a repository matching the SQL query, if any
 // exists. A "LIMIT 1" clause is appended to the query before it is
 // executed.
-func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.Repo, error) {
-	var repo dbRepo
-	if err := appDBH(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
-		return nil, ErrRepoNotFound
-	} else if err != nil {
+func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Repo, error) {
+	rows, err := appDBH(ctx).Db.Query("SELECT id, uri, description, homepage_url, default_branch, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo "+query, args...)
+	if err != nil {
 		return nil, err
 	}
-	return repo.toRepo(), nil
+	defer rows.Close()
+
+	var repos []*sourcegraph.Repo
+	for rows.Next() {
+		var repo sourcegraph.Repo
+		var freezeIndexedRevision *bool
+
+		if err := rows.Scan(
+			&repo.ID,
+			&repo.URI,
+			&repo.Description,
+			&repo.HomepageURL,
+			&repo.DefaultBranch,
+			&repo.Language,
+			&repo.Blocked,
+			&repo.Fork,
+			&repo.Private,
+			&repo.IndexedRevision,
+			&repo.CreatedAt,
+			&repo.UpdatedAt,
+			&repo.PushedAt,
+			&freezeIndexedRevision,
+		); err != nil {
+			return nil, err
+		}
+
+		repo.FreezeIndexedRevision = freezeIndexedRevision != nil && *freezeIndexedRevision // FIXME: bad DB schema: nullable boolean
+
+		repos = append(repos, &repo)
+	}
+
+	return repos, nil
 }
 
 type RepoListOp struct {
@@ -285,11 +267,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	}
 
 	// fetch matching repos unordered
-	sql := "SELECT * FROM repo WHERE " + strings.Join(conds, " AND ") + " LIMIT 1000;"
-	rawRepos, err := s.query(ctx, sql, args...)
-	if err != nil {
-		return nil, err
-	}
+	rawRepos, err := s.getBySQL(ctx, "WHERE "+strings.Join(conds, " AND ")+" LIMIT 1000", args...)
 
 	// 🚨 SECURITY: It is very important that the input list of repos (rawRepos) 🚨
 	// comes directly from the DB as verifyUserHasReadAccessAll relies directly
@@ -330,14 +308,6 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	}
 
 	return repos, nil
-}
-
-func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*sourcegraph.Repo, error) {
-	var repos []*dbRepo
-	if _, err := appDBH(ctx).Select(&repos, sql, args...); err != nil {
-		return nil, err
-	}
-	return toRepos(repos), nil
 }
 
 // RepoUpdate represents an update to specific fields of a repo. Only
