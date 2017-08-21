@@ -123,7 +123,7 @@ func main() {
 	pipeline.AddStep(":html:",
 		Cmd("cd cmd/frontend/internal/app/web_modules"),
 		Cmd("yarn install"),
-		Cmd("./node_modules/.bin/node-sass ./scss/app.scss"),
+		Cmd("./node_modules/.bin/node-sass ./scss/app.scss > /dev/null"),
 		Cmd("./node_modules/.bin/tsc"),
 		Cmd("yarn run lint"))
 
