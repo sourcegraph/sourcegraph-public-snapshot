@@ -20,6 +20,7 @@ const (
 	BetaSubscription = "beta-subscription"
 	SubmitForm       = "submit-form"
 	GitHubWebhooks   = "github.webhooks"
+	Telemetry        = "telemetry"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -39,6 +40,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/submit-form").Methods("POST").Name(SubmitForm)
 
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
+	base.Path("/telemetry/{TelemetryPath:.*}").Methods("POST").Name(Telemetry)
 
 	base.Path("/repos-update").Methods("POST").Name(ReposUpdate)
 
