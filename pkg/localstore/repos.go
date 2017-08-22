@@ -181,9 +181,6 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	return repo, nil
 }
 
-// getBySQL returns a repository matching the SQL query, if any
-// exists. A "LIMIT 1" clause is appended to the query before it is
-// executed.
 func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Repo, error) {
 	rows, err := appDBH(ctx).Db.Query("SELECT id, uri, description, homepage_url, default_branch, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo "+query, args...)
 	if err != nil {
