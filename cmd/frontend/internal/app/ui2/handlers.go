@@ -280,8 +280,8 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 
 // blobView is the data structure shared/blobview.html expects.
 type blobView struct {
-	Path, Name string
-	File       string
+	Path, Name  string
+	Highlighted template.HTML
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
@@ -300,7 +300,13 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 
 	fp := mux.Vars(r)["Path"]
 	common.addOpenOnDesktop(fp)
-	file, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), fp)
+	code, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), fp)
+	if err != nil {
+		return err
+	}
+
+	// Highlight the code.
+	highlighted, err := highlight(string(code), strings.TrimPrefix(path.Ext(fp), "."))
 	if err != nil {
 		return err
 	}
@@ -313,9 +319,9 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: common,
 		BlobView: &blobView{
-			Path: fp,
-			Name: path.Base(fp),
-			File: string(file),
+			Path:        fp,
+			Name:        path.Base(fp),
+			Highlighted: highlighted,
 		},
 		Navbar:   newNavbar(common.Repo, common.Rev, fp, false),
 		FileName: path.Base(fp),
