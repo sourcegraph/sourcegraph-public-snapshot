@@ -1318,6 +1318,12 @@
 			"revisionTime": "2016-11-14T16:56:20Z"
 		},
 		{
+			"checksumSHA1": "Pod4/wb+6tjEMLyJY/MizqnWxPY=",
+			"path": "github.com/sourcegraph/gosyntect",
+			"revision": "0376bca1049c25c54f0a76ceeb0c313444feaea7",
+			"revisionTime": "2017-08-24T00:43:07Z"
+		},
+		{
 			"checksumSHA1": "OIaAIaprbQzo/X4L70+ancPk+jM=",
 			"path": "github.com/sourcegraph/httpcache",
 			"revision": "16db777d8ebea60a3e746a7e0703eaaa53f85f7f",
