@@ -4,7 +4,7 @@ import { openFromJS } from 'sourcegraph/util/url';
 import * as URI from 'urijs';
 
 export interface SearchParams {
-    query: string;
+    q: string;
     repos: string;
     files: string;
     matchCase: boolean;
@@ -18,20 +18,20 @@ export function handleSearchInput(e: any, params: SearchParams): void {
         return;
     }
 
-    params.query = query;
+    params.q = query;
     openFromJS(getSearchPath(params), e);
 }
 
 export function getSearchPath(params: SearchParams): string {
     // Build query string of the string representation of all truthy values
     const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value) as any); // https://github.com/Microsoft/TypeScript/issues/15338
-    return query.toString();
+    return '/search?' + query.toString();
 }
 
 export function getSearchParamsFromURL(url: string): SearchParams {
     const query: { [key: string]: string } = querystring.parse(URI.parse(url).query);
     return {
-        query: query.q || '',
+        q: query.q || '',
         repos: query.repos || 'active',
         files: query.files || '',
         matchCase: query.matchCase === 'true',
@@ -42,7 +42,7 @@ export function getSearchParamsFromURL(url: string): SearchParams {
 
 export function getSearchParamsFromLocalStorage(): SearchParams {
     return {
-        query: window.localStorage.getItem('searchQuery') || '',
+        q: window.localStorage.getItem('searchQuery') || '',
         repos: window.localStorage.getItem('searchRepoScope') || 'active',
         files: window.localStorage.getItem('searchFileScope') || '',
         matchCase: window.localStorage.getItem('searchMatchCase') === 'true',

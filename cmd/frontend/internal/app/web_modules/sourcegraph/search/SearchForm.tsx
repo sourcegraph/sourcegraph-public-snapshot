@@ -103,11 +103,11 @@ export class SearchForm extends React.Component<Props, State> {
             <div className={Styles.searchRow}>
                 <input className={Styles.searchInput}
                        autoFocus placeholder='Search...'
-                       value={this.state.query}
+                       value={this.state.q}
                        onKeyDown={e => handleSearchInput(e, { ...this.state } as any)}
                        onChange={e => {
                             window.localStorage.setItem('searchQuery', e.target.value);
-                            this.setState({ ...this.state, query: e.target.value });
+                            this.setState({ ...this.state, q: e.target.value });
                        }}
                 />
                 <a className={Styles.searchButton} href={getSearchPath(this.state)}>

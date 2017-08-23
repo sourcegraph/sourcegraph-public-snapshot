@@ -178,7 +178,7 @@ function updateTooltip(state: TooltipState): void {
 
     const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
     if (searchText) {
-        searchAction.href = getSearchPath({ ...getSearchParamsFromLocalStorage(), query: searchText });
+        searchAction.href = getSearchPath({ ...getSearchParamsFromLocalStorage(), q: searchText });
     } else {
         searchAction.href = '';
     }

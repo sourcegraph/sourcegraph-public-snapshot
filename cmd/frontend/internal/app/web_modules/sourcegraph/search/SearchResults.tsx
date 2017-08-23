@@ -39,7 +39,7 @@ export class SearchResults extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         const params = getSearchParamsFromURL(window.location.href);
-        const q = params.query;
+        const q = params.q;
         this.state = {
             results: [],
             loading: true
