@@ -1858,12 +1858,6 @@
 			"revisionTime": "2016-03-20T18:21:10Z"
 		},
 		{
-			"checksumSHA1": "0vRxoJBB9TdAb/qp9kM9+wKQwcQ=",
-			"path": "gopkg.in/gorp.v1",
-			"revision": "cfc99f60faeef6479ec4c06eca8c8b4439608024",
-			"revisionTime": "2016-03-22T12:14:41+01:00"
-		},
-		{
 			"checksumSHA1": "kTtk24+gnF63AQFyL7d0A7Kp6eY=",
 			"path": "gopkg.in/inconshreveable/log15.v2",
 			"revision": "b105bd37f74e5d9dc7b6ad7806715c7a2b83fd3f",
