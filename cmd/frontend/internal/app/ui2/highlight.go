@@ -34,9 +34,8 @@ func highlight(code, extension string) (template.HTML, error) {
 		if strings.HasSuffix(err.Error(), "invalid extension") { // TODO(slimsag): gosyntect should provide concrete error type
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
-			return generateTable(code)
+			return generatePlainTable(code)
 		}
-		fmt.Println(err)
 		return "", err
 	}
 	// Note: resp.Data is properly HTML escaped by syntect_server
@@ -135,7 +134,7 @@ func preSpansToTable(h string) (string, error) {
 	return buf.String(), nil
 }
 
-func generateTable(code string) (template.HTML, error) {
+func generatePlainTable(code string) (template.HTML, error) {
 	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
 	for row, line := range strings.Split(code, "\n") {
 		line = strings.TrimSuffix(line, "\r") // CRLF files

@@ -43,13 +43,13 @@ func TestPreSpansToTable_Complex(t *testing.T) {
 	}
 }
 
-func TestGenerateTable(t *testing.T) {
+func TestGeneratePlainTable(t *testing.T) {
 	input := `line 1
 line 2
 
 `
 	want := template.HTML(`<table><tr><td>1</td><td><span>line 1</span></td></tr><tr><td>2</td><td><span>line 2</span></td></tr><tr><td>3</td><td><span></span></td></tr><tr><td>4</td><td><span></span></td></tr></table>`)
-	got, err := generateTable(input)
+	got, err := generatePlainTable(input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,13 +58,13 @@ line 2
 	}
 }
 
-func TestGenerateTableSecurity(t *testing.T) {
+func TestGeneratePlainTableSecurity(t *testing.T) {
 	input := `<strong>line 1</strong>
 <script>alert("line 2")</script>
 
 `
 	want := template.HTML(`<table><tr><td>1</td><td><span>&lt;strong&gt;line 1&lt;/strong&gt;</span></td></tr><tr><td>2</td><td><span>&lt;script&gt;alert(&#34;line 2&#34;)&lt;/script&gt;</span></td></tr><tr><td>3</td><td><span></span></td></tr><tr><td>4</td><td><span></span></td></tr></table>`)
-	got, err := generateTable(input)
+	got, err := generatePlainTable(input)
 	if err != nil {
 		t.Fatal(err)
 	}
