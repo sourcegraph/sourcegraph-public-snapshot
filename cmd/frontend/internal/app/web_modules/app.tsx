@@ -12,11 +12,10 @@ import { injectShareWidget } from 'sourcegraph/share';
 import { addAnnotations } from 'sourcegraph/tooltips';
 import { handleQueryEvents } from 'sourcegraph/tracking/analyticsUtils';
 import { events, viewEvents } from 'sourcegraph/tracking/events';
-import { getModeFromExtension, getPathExtension, supportedExtensions } from 'sourcegraph/util';
+import { getPathExtension, supportedExtensions } from 'sourcegraph/util';
 import * as activeRepos from 'sourcegraph/util/activeRepos';
 import { pageVars } from 'sourcegraph/util/pageVars';
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
-import * as syntaxhighlight from 'sourcegraph/util/syntaxhighlight';
 import { CodeCell } from 'sourcegraph/util/types';
 import * as url from 'sourcegraph/util/url';
 import { style } from 'typestyle';
@@ -75,36 +74,29 @@ window.addEventListener('DOMContentLoaded', () => {
     injectShareWidget();
     const u = url.parseBlob();
     if (u.uri && u.path) {
-        const blob = document.querySelector('#blob') as HTMLElement;
-        highlightAsync(u.path, blob.textContent!);
-        syntaxhighlight.wait().then(() => {
-            // blob view, add tooltips
-            const rev = pageVars.Rev;
-            const commitID = pageVars.CommitID;
-            const cells = getCodeCellsForAnnotation();
-            if (supportedExtensions.has(getPathExtension(u.path!))) {
-                addAnnotations(u.path!, { repoURI: u.uri!, rev, commitID }, cells);
-            }
-            if (u.line) {
-                highlightAndScrollToLine(u.uri!, commitID, u.path!, u.line, cells, false);
-            }
+        // blob view, add tooltips
+        const rev = pageVars.Rev;
+        const commitID = pageVars.CommitID;
+        const cells = getCodeCellsForAnnotation();
+        if (supportedExtensions.has(getPathExtension(u.path!))) {
+            addAnnotations(u.path!, { repoURI: u.uri!, rev, commitID }, cells);
+        }
+        if (u.line) {
+            highlightAndScrollToLine(u.uri!, commitID, u.path!, u.line, cells, false);
+        }
 
-            // Log blob view
-            viewEvents.Blob.log({ repo: u.uri!, commitID, path: u.path!, language: getPathExtension(u.path!) });
+        // Log blob view
+        viewEvents.Blob.log({ repo: u.uri!, commitID, path: u.path!, language: getPathExtension(u.path!) });
 
-            // Add click handlers to all lines of code, which highlight and add
-            // blame information to the line.
-            for (const [index, tr] of document.querySelectorAll('.blobview tr').entries()) {
-                tr.addEventListener('click', () => {
-                    if (u.uri && u.path) {
-                        highlightLine(u.uri, commitID, u.path, index + 1, cells, true);
-                    }
-                });
-            }
-        }).catch(e => {
-            // TODO(slimsag): display error in UX
-            console.error('syntax highlighting failed', e);
-        });
+        // Add click handlers to all lines of code, which highlight and add
+        // blame information to the line.
+        for (const [index, tr] of document.querySelectorAll('.blobview tr').entries()) {
+            tr.addEventListener('click', () => {
+                if (u.uri && u.path) {
+                    highlightLine(u.uri, commitID, u.path, index + 1, cells, true);
+                }
+            });
+        }
     } else if (u.uri) {
         // tree view
         viewEvents.Tree.log();
@@ -248,21 +240,10 @@ function highlightAndScrollToLine(repoURI: string, commitID: string, path: strin
     scrollingElement.scrollTop = targetBound.top - tableBound.top - (viewportBound.height / 2) + (targetBound.height / 2);
 }
 
-function highlightAsync(path: string, textContent: string): void {
-    const worker = new Worker(`${(window as any).context.assetsRoot}/scripts/highlighter.bundle.js`);
-    const lang = getModeFromExtension(getPathExtension(path));
-    worker.onmessage = event => {
-        const blob = document.querySelector('#blob') as HTMLElement;
-        blob.innerHTML = event.data.innerHTML;
-        syntaxhighlight.processBlock(blob);
-    };
-    worker.postMessage({ textContent, lang });
-}
-
 function getCodeCellsForAnnotation(): CodeCell[] {
-    const table = document.querySelector('#processed-blob') as HTMLTableElement;
+    const table = document.querySelector('#blob-table>table') as HTMLTableElement;
     const cells = Array.from(table.rows).map(row => {
-        const line = parseInt(row.cells[0].getAttribute('data-line-number')!, 10);
+        const line = parseInt(row.cells[0].innerText, 10);
         const codeCell: HTMLTableDataCellElement = row.cells[1]; // the actual cell that has code inside; each row contains multiple columns
         return {
             cell: codeCell as HTMLElement,

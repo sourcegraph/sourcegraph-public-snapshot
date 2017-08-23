@@ -1,6 +1,5 @@
 import * as moment from 'moment';
 import { BlameState, contextKey, store } from 'sourcegraph/blame/store';
-import * as syntaxhighlight from 'sourcegraph/util/syntaxhighlight';
 
 function limitString(s: string, n: number, dotdotdot: boolean): string {
     if (s.length > n) {
@@ -17,14 +16,14 @@ function limitString(s: string, n: number, dotdotdot: boolean): string {
  */
 function setLineBlameContent(line: number, blameContent: string): void {
     // Remove blame class from all other lines.
-    const currentlyBlamed = document.querySelectorAll('.code-cell>.blame');
+    const currentlyBlamed = document.querySelectorAll('#blob-table td:first-child>.blame');
     for (const blame of currentlyBlamed) {
         blame.parentNode!.removeChild(blame);
     }
 
     if (line > 0) {
         // Add blame element to the target line's code cell.
-        const cells = document.querySelectorAll('.code-cell');
+        const cells = document.querySelectorAll('#blob-table td:first-child');
         const cell = cells[line - 1];
         const blame = document.createElement('span');
         blame.classList.add('blame');
@@ -34,28 +33,24 @@ function setLineBlameContent(line: number, blameContent: string): void {
 }
 
 store.subscribe((state: BlameState) => {
-    // We only render if syntax highlighting has finished (otherwise our work
-    // can conflict).
-    return syntaxhighlight.wait().then(() => {
-        state = store.getValue();
+    state = store.getValue();
 
-        // Clear the blame content on whatever line it was already on.
-        setLineBlameContent(-1, '');
+    // Clear the blame content on whatever line it was already on.
+    setLineBlameContent(-1, '');
 
-        if (!state.context) {
-            return;
+    if (!state.context) {
+        return;
+    }
+    const hunks = state.hunksByLoc.get(contextKey(state.context));
+    if (!hunks) {
+        if (state.displayLoading) {
+            setLineBlameContent(state.context.line, 'loading ◌');
         }
-        const hunks = state.hunksByLoc.get(contextKey(state.context));
-        if (!hunks) {
-            if (state.displayLoading) {
-                setLineBlameContent(state.context.line, 'loading ◌');
-            }
-            return;
-        }
+        return;
+    }
 
-        const timeSince = moment(hunks[0].author.date, 'YYYY-MM-DD HH:mm:ss ZZ UTC').fromNow();
-        const blameContent = `${hunks[0].author.person.name}, ${timeSince} • ${limitString(hunks[0].message, 80, true)} ${limitString(hunks[0].rev, 6, false)}`;
+    const timeSince = moment(hunks[0].author.date, 'YYYY-MM-DD HH:mm:ss ZZ UTC').fromNow();
+    const blameContent = `${hunks[0].author.person.name}, ${timeSince} • ${limitString(hunks[0].message, 80, true)} ${limitString(hunks[0].rev, 6, false)}`;
 
-        setLineBlameContent(state.context.line, blameContent);
-    });
+    setLineBlameContent(state.context.line, blameContent);
 });

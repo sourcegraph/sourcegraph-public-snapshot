@@ -23,7 +23,7 @@ export function injectReferencesWidget(): void {
 
                 // References panel was shown, so scroll the blob table so
                 // that the selected line is centered.
-                const selectedLine = document.querySelector('.code-cell.sg-highlighted')!;
+                const selectedLine = document.querySelector('#blob-table td:last-child.sg-highlighted')!;
                 const blobTable = document.querySelector('#blob-table')!;
                 const horizontalScrollBefore = blobTable.scrollLeft;
                 selectedLine.scrollIntoView();
