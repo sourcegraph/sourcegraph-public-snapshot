@@ -99,7 +99,7 @@ func TestGlobalDeps_update(t *testing.T) {
 	inputRefs := []lspext.DependencyReference{{
 		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
 	}}
-	if err := dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
+	if err := dbutil.Transaction(ctx, appDBH(ctx), func(tx *sql.Tx) error {
 		return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repoID)
 	}); err != nil {
 		t.Fatal(err)
@@ -247,7 +247,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 
 	for repoID, inputRefs := range inputRefs {
-		if err := dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
+		if err := dbutil.Transaction(ctx, appDBH(ctx), func(tx *sql.Tx) error {
 			return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repoID)
 		}); err != nil {
 			t.Fatal(err)

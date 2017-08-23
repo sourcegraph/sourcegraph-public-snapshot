@@ -60,7 +60,7 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 		return nil, err
 	}
 	var id int64
-	err = appDBH(ctx).Db.QueryRow(
+	err = appDBH(ctx).QueryRow(
 		"INSERT INTO local_repos(remote_uri, access_token, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
 		newRepo.RemoteURI, newRepo.AccessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&id)
 	if err != nil {
@@ -72,7 +72,7 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 
 // getBySQL returns localRepos matching the SQL query, if any exist.
 func (*localRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.LocalRepo, error) {
-	rows, err := appDBH(ctx).Db.Query("SELECT id, remote_uri, access_token, created_at, updated_at FROM local_repos "+query, args...)
+	rows, err := appDBH(ctx).Query("SELECT id, remote_uri, access_token, created_at, updated_at FROM local_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}

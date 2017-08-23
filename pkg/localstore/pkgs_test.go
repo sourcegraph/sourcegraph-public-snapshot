@@ -29,7 +29,7 @@ func TestPkgs_update(t *testing.T) {
 		}},
 	}}
 
-	if err := dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
+	if err := dbutil.Transaction(ctx, appDBH(ctx), func(tx *sql.Tx) error {
 		if err := Pkgs.update(ctx, tx, 1, "go", pks); err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func TestPkgs_update(t *testing.T) {
 		Lang:   "go",
 		Pkg:    map[string]interface{}{"name": "pkg"},
 	}}
-	gotPkgs, err := Pkgs.getAll(ctx, appDBH(ctx).Db)
+	gotPkgs, err := Pkgs.getAll(ctx, appDBH(ctx))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 			"version": "2.2.2",
 		},
 	}}
-	gotPkgs, err := Pkgs.getAll(ctx, appDBH(ctx).Db)
+	gotPkgs, err := Pkgs.getAll(ctx, appDBH(ctx))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 
 	for repo, pks := range repoToPkgs {
-		if err := dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
+		if err := dbutil.Transaction(ctx, appDBH(ctx), func(tx *sql.Tx) error {
 			if _, err := tx.Exec(`INSERT INTO repo(id, vcs, default_branch) VALUES ($1, '', 'master')`, repo); err != nil {
 				return err
 			}

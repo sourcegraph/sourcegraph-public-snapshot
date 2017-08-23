@@ -3,13 +3,8 @@ package dbutil2
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
 	"strings"
 	"sync"
-
-	"gopkg.in/gorp.v1"
 
 	_ "github.com/lib/pq"
 )
@@ -23,10 +18,6 @@ type Schema struct {
 	// DropSQL contains SQL statements run immediately before
 	// dropping the DB-mapped tables in this schema.
 	DropSQL []string
-
-	// Map is a DbMap without the Db/Dbx set (because a schema can be
-	// used to construct several DB connections).
-	Map *gorp.DbMap
 }
 
 var (
@@ -71,12 +62,10 @@ func Open(dataSource string, schema Schema) (*Handle, error) {
 		return nil, fmt.Errorf("%s (datasource=%q)", err, dataSource)
 	}
 
-	dbm := *schema.Map // copy
-	dbm.Db = db
 	h := &Handle{
 		DataSource: dataSource,
 		schema:     schema,
-		DbMap:      &dbm,
+		Db:         db,
 	}
 	if err := h.configure(); err != nil {
 		return nil, fmt.Errorf("configuring DB handle %q: %s", dataSource, err)
@@ -88,17 +77,9 @@ func Open(dataSource string, schema Schema) (*Handle, error) {
 // configureDB enables DB trace logging if the PGTRACE env var is
 // set and checks that the DB timezone is UTC.
 func (h *Handle) configure() error {
-	if trace, err := strconv.ParseBool(os.Getenv("PGTRACE")); err == nil && trace {
-		dbname, err := h.SelectStr("SELECT current_database()")
-		if err != nil {
-			return err
-		}
-		h.DbMap.TraceOn("["+dbname+"]", log.New(os.Stdout, "", log.Lmicroseconds))
-	}
-
 	// Ensure we're in UTC.
-	tz, err := h.SelectStr("SELECT current_setting('TIMEZONE')")
-	if err != nil {
+	var tz string
+	if err := h.Db.QueryRow("SELECT current_setting('TIMEZONE')").Scan(&tz); err != nil {
 		return fmt.Errorf("getting DB timezone: %s", err)
 	}
 	if tz != "UTC" {
@@ -117,16 +98,7 @@ type Handle struct {
 	// schema is the Schema that this handle was created from.
 	schema Schema
 
-	// DbMap is from the Schema that this handle was created
-	// from. Don't modify the DB mapping (by calling AddTable, for
-	// example) after init time because other goroutines might be
-	// using this handle concurrently and because changes will not be
-	// propagated to other handles built from the same underlying
-	// schema.
-	//
-	// It is embedded (although it also exists underneath the schema
-	// field) so that Handle exports DbMap's methods.
-	*gorp.DbMap
+	Db *sql.DB
 }
 
 // CreateUnloggedTables determines whether the PostgreSQL tables
@@ -140,12 +112,9 @@ var CreateUnloggedTables bool
 // CreateSchema creates the schema for this handle in the database
 // it's connected to.
 func (h *Handle) CreateSchema() error {
-	if err := h.DbMap.CreateTablesIfNotExists(); err != nil {
-		return err
-	}
 	var errs []error
 	for _, sql := range h.schema.CreateSQL {
-		if _, err := h.Exec(sql); err != nil && !IsAlreadyExistsError(err) {
+		if _, err := h.Db.Exec(sql); err != nil && !IsAlreadyExistsError(err) {
 			errs = append(errs, fmt.Errorf("%s (on SQL: %s)", err, sql))
 		}
 	}
@@ -160,23 +129,15 @@ func (h *Handle) CreateSchema() error {
 func (h *Handle) DropSchema() error {
 	var errs []error
 	for _, sql := range h.schema.DropSQL {
-		if _, err := h.Exec(sql); err != nil {
+		if _, err := h.Db.Exec(sql); err != nil {
 			errs = append(errs, fmt.Errorf("%s (on SQL: %s)", err, sql))
 		}
-	}
-	if err := h.DropTablesIfExists(); err != nil {
-		errs = append(errs, err)
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("%d errors dropping schema: %v (data source is %q)", len(errs), errs, h.DataSource)
 	}
 	return nil
 }
-
-// UnderlyingSQLExecutor implements dbutil.SQLExecutorWrapper so that
-// other utility funcs can unwrap Handle to get to its DbMap without
-// having to import package dbutil.
-func (h *Handle) UnderlyingSQLExecutor() gorp.SqlExecutor { return h.DbMap }
 
 // IsAlreadyExistsError returns true if err is a PostgreSQL error that
 // something "already exists" (such as a table).

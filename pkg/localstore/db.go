@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 )
 
@@ -36,7 +35,6 @@ var (
 			new(globalDeps).DropTable(),
 			new(pkgs).DropTable(),
 		},
-		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
 	}
 )
 
@@ -57,8 +55,8 @@ func globalDB() (*dbutil2.Handle, error) {
 		if err != nil {
 			return nil, err
 		}
-		registerPrometheusCollector(globalAppDBH.DbMap.Db, "_app")
-		configureConnectionPool(globalAppDBH.DbMap.Db)
+		registerPrometheusCollector(globalAppDBH.Db, "_app")
+		configureConnectionPool(globalAppDBH.Db)
 
 		if _, err := globalAppDBH.Db.Query("select id from repo limit 0;"); err != nil {
 			if err := globalAppDBH.CreateSchema(); err != nil {
@@ -75,16 +73,16 @@ type key int
 const dbhKey key = 0
 
 // appDBH returns the app DB handle.
-func appDBH(ctx context.Context) *dbutil2.Handle {
+func appDBH(ctx context.Context) *sql.DB {
 	dbh, ok := ctx.Value(dbhKey).(*dbutil2.Handle)
 	if ok {
-		return dbh
+		return dbh.Db
 	}
 	dbh, err := globalDB()
 	if err != nil {
 		panic("DB not available: " + err.Error())
 	}
-	return dbh
+	return dbh.Db
 }
 
 // openDB opens and returns the DB handle for the DB. Use DB unless

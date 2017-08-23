@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"sort"
@@ -10,7 +11,6 @@ import (
 	"context"
 
 	"github.com/lib/pq"
-	"gopkg.in/gorp.v1"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
@@ -182,7 +182,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 }
 
 func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Repo, error) {
-	rows, err := appDBH(ctx).Db.Query("SELECT id, uri, description, homepage_url, default_branch, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo "+query, args...)
+	rows, err := appDBH(ctx).Query("SELECT id, uri, description, homepage_url, default_branch, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
+		v := fmt.Sprintf("$%d", len(args)+1)
 		args = append(args, a)
 		return v
 	}
@@ -329,33 +329,33 @@ func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegrap
 	}
 
 	if ghrepo.Description != repo.Description {
-		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET description=$1 WHERE id=$2", ghrepo.Description, repo.ID); err != nil {
+		if _, err := appDBH(ctx).Exec("UPDATE repo SET description=$1 WHERE id=$2", ghrepo.Description, repo.ID); err != nil {
 			return err
 		}
 	}
 	if ghrepo.HomepageURL != repo.HomepageURL {
-		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET homepage_url=$1 WHERE id=$2", ghrepo.HomepageURL, repo.ID); err != nil {
+		if _, err := appDBH(ctx).Exec("UPDATE repo SET homepage_url=$1 WHERE id=$2", ghrepo.HomepageURL, repo.ID); err != nil {
 			return err
 		}
 	}
 	if ghrepo.DefaultBranch != repo.DefaultBranch {
-		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET default_branch=$1 WHERE id=$2", ghrepo.DefaultBranch, repo.ID); err != nil {
+		if _, err := appDBH(ctx).Exec("UPDATE repo SET default_branch=$1 WHERE id=$2", ghrepo.DefaultBranch, repo.ID); err != nil {
 			return err
 		}
 	}
 	if ghrepo.Private != repo.Private {
-		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET private=$1 WHERE id=$2", ghrepo.Private, repo.ID); err != nil {
+		if _, err := appDBH(ctx).Exec("UPDATE repo SET private=$1 WHERE id=$2", ghrepo.Private, repo.ID); err != nil {
 			return err
 		}
 	}
 
 	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
-		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET updated_at=$1 WHERE id=$2", ghrepo.UpdatedAt, repo.ID); err != nil {
+		if _, err := appDBH(ctx).Exec("UPDATE repo SET updated_at=$1 WHERE id=$2", ghrepo.UpdatedAt, repo.ID); err != nil {
 			return err
 		}
 	}
 	if !timestampEqual(repo.PushedAt, ghrepo.PushedAt) {
-		if _, err := appDBH(ctx).Db.Exec("UPDATE repo SET pushed_at=$1 WHERE id=$2", ghrepo.PushedAt, repo.ID); err != nil {
+		if _, err := appDBH(ctx).Exec("UPDATE repo SET pushed_at=$1 WHERE id=$2", ghrepo.PushedAt, repo.ID); err != nil {
 			return err
 		}
 	}
@@ -364,19 +364,19 @@ func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegrap
 }
 
 func (s *repos) UpdateLanguage(ctx context.Context, repoID int32, language string) error {
-	_, err := appDBH(ctx).Db.Exec("UPDATE repo SET language=$1 WHERE id=$2", language, repoID)
+	_, err := appDBH(ctx).Exec("UPDATE repo SET language=$1 WHERE id=$2", language, repoID)
 	return err
 }
 
 func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev string) error {
-	_, err := appDBH(ctx).Db.Exec("UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repoID)
+	_, err := appDBH(ctx).Exec("UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repoID)
 	return err
 }
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
-	_, err := appDBH(ctx).Db.Exec("INSERT INTO repo (uri, description, fork, private, created_at, vcs, default_branch, homepage_url, language, blocked) VALUES ($1, $2, $3, $4, $5, '', '', '', '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
+	_, err := appDBH(ctx).Exec("INSERT INTO repo (uri, description, fork, private, created_at, vcs, default_branch, homepage_url, language, blocked) VALUES ($1, $2, $3, $4, $5, '', '', '', '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {
