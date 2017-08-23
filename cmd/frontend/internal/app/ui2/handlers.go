@@ -1,11 +1,13 @@
 package ui2
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 
@@ -281,6 +283,7 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 // blobView is the data structure shared/blobview.html expects.
 type blobView struct {
 	Path, Name  string
+	IsBinary    bool
 	Highlighted template.HTML
 }
 
@@ -305,10 +308,19 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// Highlight the code.
-	highlighted, err := highlight(string(code), strings.TrimPrefix(path.Ext(fp), "."))
-	if err != nil {
-		return err
+	// If the file is not binary, highlight the code.
+	var (
+		isBinary    = !utf8.Valid(code)
+		highlighted template.HTML
+	)
+	fmt.Println("is binary", isBinary)
+	if !isBinary {
+		// Highlight the code.
+		var err error
+		highlighted, err = highlight(string(code), strings.TrimPrefix(path.Ext(fp), "."))
+		if err != nil {
+			return err
+		}
 	}
 
 	return renderTemplate(w, "blob.html", &struct {
@@ -321,6 +333,7 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 		BlobView: &blobView{
 			Path:        fp,
 			Name:        path.Base(fp),
+			IsBinary:    isBinary,
 			Highlighted: highlighted,
 		},
 		Navbar:   newNavbar(common.Repo, common.Rev, fp, false),

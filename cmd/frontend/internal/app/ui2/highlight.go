@@ -31,6 +31,12 @@ func highlight(code, extension string) (template.HTML, error) {
 		Theme:     "Visual Studio Dark", // In the future, we could let the user choose the theme.
 	})
 	if err != nil {
+		if strings.HasSuffix(err.Error(), "invalid extension") { // TODO(slimsag): gosyntect should provide concrete error type
+			// Failed to highlight code, e.g. for a text file. We still need to
+			// generate the table.
+			return generateTable(code)
+		}
+		fmt.Println(err)
 		return "", err
 	}
 	// Note: resp.Data is properly HTML escaped by syntect_server
@@ -127,4 +133,34 @@ func preSpansToTable(h string) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func generateTable(code string) (template.HTML, error) {
+	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
+	for row, line := range strings.Split(code, "\n") {
+		line = strings.TrimSuffix(line, "\r") // CRLF files
+		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
+		table.AppendChild(tr)
+
+		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tr.AppendChild(tdLineNumber)
+
+		lineNumber := &html.Node{Type: html.TextNode, Data: fmt.Sprint(row + 1)}
+		tdLineNumber.AppendChild(lineNumber)
+
+		codeCell := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tr.AppendChild(codeCell)
+
+		// Span to match same structure as what highlighting would usually generate.
+		span := &html.Node{Type: html.ElementNode, DataAtom: atom.Span, Data: atom.Span.String()}
+		codeCell.AppendChild(span)
+		spanText := &html.Node{Type: html.TextNode, Data: line}
+		span.AppendChild(spanText)
+	}
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, table); err != nil {
+		return "", err
+	}
+	return template.HTML(buf.String()), nil
 }

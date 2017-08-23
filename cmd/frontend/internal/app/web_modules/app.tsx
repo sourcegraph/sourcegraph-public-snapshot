@@ -121,8 +121,9 @@ function injectTreeViewer(): void {
     const rev = blobURL.rev || treeURL.rev || repoURL.rev;
     const path = blobURL.path || treeURL.path || '/';
 
-    // Force show the tree viewer on any non-blob page.
-    const forceShow = !url.isBlob(blobURL);
+    // Force show the tree viewer on any non-blob page OR on any blob page that
+    // is just telling the user "sorry, we don't support binary files."
+    const forceShow = !url.isBlob(blobURL) || Boolean(document.querySelector(".blobview-binary"));
 
     showExplorerTreeIfNecessary(forceShow);
     document.querySelector('#file-explorer')!.addEventListener('click', () => {

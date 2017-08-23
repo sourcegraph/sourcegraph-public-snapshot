@@ -8,10 +8,21 @@
 	*/}}
 	<div id="tree-view-container">
 		<div id="tree-viewer"></div>
-		<div class="blobview right">
-			<div id="blob-table">{{.BlobView.Highlighted}}</div>
-			<div id="ref-widget"></div>
-		</div>
+		{{if .BlobView.IsBinary}}
+			<div class="blobview-binary right">
+				<div class="top">
+					<img src="{{.AssetURL}}/img/ui2/circle-archive.svg" />
+					<h1>Binary file</h1>
+					<p>Sorry, we can't display this file type.</p>
+				</div>
+				<div class="bottom"></div>
+			</div>
+		{{else}}
+			<div class="blobview right">
+				<div id="blob-table">{{.BlobView.Highlighted}}</div>
+				<div id="ref-widget"></div>
+			</div>
+		{{end}}
 	</div>
 </div>
 {{end}}
