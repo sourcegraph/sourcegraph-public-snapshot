@@ -5,6 +5,7 @@
   "scripts": {
     "build": "NODE_ENV=production webpack --config webpack.config.js --progress --profile --colors",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --profile --colors --watch",
+    "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o gqlschema.d.ts",
     "lint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.tsx'"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
@@ -17,6 +18,8 @@
     "@types/urijs": "^1.15.33",
     "css-loader": "^0.28.4",
     "extract-text-webpack-plugin": "^3.0.0",
+    "get-graphql-schema": "^2.1.1",
+    "gql2ts": "^1.1.2",
     "node-sass": "^4.5.3",
     "postcss-loader": "^2.0.6",
     "ts-loader": "^2.1.0",
