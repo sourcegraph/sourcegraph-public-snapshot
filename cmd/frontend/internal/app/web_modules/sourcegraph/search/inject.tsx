@@ -4,15 +4,15 @@ import { render } from 'react-dom';
 import { handleSearchInput } from 'sourcegraph/search';
 import { AdvancedSearchDrawer } from 'sourcegraph/search/AdvancedSearchDrawer';
 import { AdvancedSearchToggle } from 'sourcegraph/search/AdvancedSearchToggle';
-import { SearchForm } from 'sourcegraph/search/SearchForm';
+import { SearchBox } from 'sourcegraph/search/SearchBox';
 import { SearchResults } from 'sourcegraph/search/SearchResults';
 import { setState as setSearchState, store as searchStore } from 'sourcegraph/search/store';
 import * as URI from 'urijs';
 
-export function injectSearchForm(): void {
+export function injectSearchBox(): void {
     const widget = document.getElementById('search-widget') as HTMLElement;
     if (widget) {
-        render(<SearchForm />, widget);
+        render(<SearchBox />, widget);
     }
 }
 

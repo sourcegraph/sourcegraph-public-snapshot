@@ -1,6 +1,11 @@
 @import "libs/highlight";
+@import "../sourcegraph/search/SearchBox";
 
 $nav-height: 48px;
+
+* {
+	box-sizing: border-box;
+}
 
 /*
     Styles for Go HTML template files only; all React code should use inline

@@ -7,7 +7,7 @@ import * as backend from 'sourcegraph/backend';
 import * as xhr from 'sourcegraph/backend/xhr';
 import { triggerBlame } from 'sourcegraph/blame';
 import { dismissReferencesWidget, injectReferencesWidget } from 'sourcegraph/references/inject';
-import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchForm, injectSearchInputHandler, injectSearchResults } from 'sourcegraph/search/inject';
+import { injectAdvancedSearchDrawer, injectAdvancedSearchToggle, injectSearchBox, injectSearchInputHandler, injectSearchResults } from 'sourcegraph/search/inject';
 import { injectShareWidget } from 'sourcegraph/share';
 import { addAnnotations } from 'sourcegraph/tooltips';
 import { handleQueryEvents } from 'sourcegraph/tracking/analyticsUtils';
@@ -49,7 +49,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (window.location.pathname === '/') {
         viewEvents.Home.log();
-        injectSearchForm();
+        injectSearchBox();
     } else {
         injectSearchInputHandler();
         injectAdvancedSearchToggle();
