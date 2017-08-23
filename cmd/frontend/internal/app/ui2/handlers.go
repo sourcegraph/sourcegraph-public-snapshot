@@ -1,7 +1,6 @@
 package ui2
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -313,11 +312,10 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 		isBinary    = !utf8.Valid(code)
 		highlighted template.HTML
 	)
-	fmt.Println("is binary", isBinary)
 	if !isBinary {
 		// Highlight the code.
 		var err error
-		highlighted, err = highlight(string(code), strings.TrimPrefix(path.Ext(fp), "."))
+		highlighted, err = highlight(r.Context(), string(code), strings.TrimPrefix(path.Ext(fp), "."))
 		if err != nil {
 			return err
 		}

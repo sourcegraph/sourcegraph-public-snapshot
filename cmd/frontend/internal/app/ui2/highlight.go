@@ -2,6 +2,7 @@ package ui2
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"strings"
@@ -24,8 +25,8 @@ func init() {
 // highlight highlights the given code with the given file extension (no
 // leading ".") and returns the properly escaped HTML table representing
 // the highlighted code.
-func highlight(code, extension string) (template.HTML, error) {
-	resp, err := client.Highlight(&gosyntect.Query{
+func highlight(ctx context.Context, code, extension string) (template.HTML, error) {
+	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:      code,
 		Extension: extension,
 		Theme:     "Visual Studio Dark", // In the future, we could let the user choose the theme.
