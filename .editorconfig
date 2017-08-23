@@ -7,7 +7,7 @@ trim_trailing_whitespace = true
 indent_style = tab
 indent_size = 4
 
-[*.{tsx?,jsx?,json}]
+[*.{ts,tsx,js,jsx,json}]
 indent_style = space
 
 [*.json]
