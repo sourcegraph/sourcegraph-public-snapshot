@@ -24,7 +24,11 @@ interface Query {
 /** Takes a string query and parses it into an object */
 function parseQuery(query: string): Query {
     const words = query.split(' ').filter(s => s);
-    const text = words.pop() || '';
+    let text = words.pop() || '';
+    if (text.includes(':')) {
+        words.push(text);
+        text = '';
+    }
     return { filters: words, text };
 }
 
@@ -175,19 +179,26 @@ export class SearchBox extends React.Component<Props, State> {
 
     /**
      * Called when the user submits the form (by pressing Enter)
-     * Redirects to the search results page
+     * If only one repo was selected and no query typed, redirects to the repo page
+     * Otherwise redirects to the search results page
      */
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        const { filters, text } = parseQuery(this.state.query);
-        const path = getSearchPath({
-            q: text,
-            repos: filters.map(f => 'github.com/' + f.split(':')[1]).join(','),
-            files: '',
-            matchCase: false,
-            matchRegex: false,
-            matchWord: false
-        });
         event.preventDefault();
-        location.href = path;
+        const { filters, text } = parseQuery(this.state.query);
+        if (text && filters.length > 0) {
+            // Go to search results
+            const path = getSearchPath({
+                q: text,
+                repos: filters.map(f => 'github.com/' + f.split(':')[1]).join(','),
+                files: '',
+                matchCase: false,
+                matchRegex: false,
+                matchWord: false
+            });
+            location.href = path;
+        } else if (filters.length === 1) {
+            // Go to repo
+            location.href = `/github.com/${filters[0].split(':')[1]}`;
+        }
     }
 }
