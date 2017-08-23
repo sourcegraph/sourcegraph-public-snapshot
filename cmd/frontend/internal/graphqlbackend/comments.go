@@ -69,12 +69,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, &sourcegraph.Comment{
-		ThreadID:    args.ThreadID,
-		Contents:    args.Contents,
-		AuthorName:  args.AuthorName,
-		AuthorEmail: args.AuthorEmail,
-	})
+	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, args.AuthorName, args.AuthorEmail)
 	if err != nil {
 		return nil, err
 	}

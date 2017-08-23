@@ -3,10 +3,12 @@ package localstore
 import (
 	"testing"
 	"time"
+
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestLocalRepos_Validate(t *testing.T) {
-	testRepo := &dbLocalRepo{
+	testRepo := &sourcegraph.LocalRepo{
 		ID:          1,
 		AccessToken: "1234",
 		CreatedAt:   time.Now(),
@@ -34,7 +36,7 @@ func TestLocalRepos_Validate(t *testing.T) {
 
 	for _, test := range tests {
 		testRepo.RemoteURI = test.uri
-		err := testRepo.validate()
+		err := validateLocalRepo(testRepo)
 		if test.isValid && err != nil {
 			t.Errorf("expected URI %s to be valid", test.uri)
 		} else if !test.isValid && err == nil {

@@ -7,71 +7,61 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func init() {
-	AppSchema.Map.AddTableWithName(dbComment{}, "comments").SetKeys(true, "ID")
-}
-
-// dbComment DB-maps a sourcegraph.Comment object.
-type dbComment struct {
-	ID          int64
-	ThreadID    int64 `db:"thread_id"`
-	Contents    string
-	CreatedAt   time.Time  `db:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at"`
-	DeletedAt   *time.Time `db:"deleted_at"`
-	AuthorName  string     `db:"author_name"`
-	AuthorEmail string     `db:"author_email"`
-}
-
+// comments provides access to the `comments` table.
+//
+// For a detailed overview of the schema, see schema.txt.
 type comments struct{}
 
-func (c *dbComment) fromComment(c2 *sourcegraph.Comment) {
-	c.ID = int64(c2.ID)
-	c.ThreadID = int64(c2.ThreadID)
-	c.Contents = c2.Contents
-	c.AuthorName = c2.AuthorName
-	c.AuthorEmail = c2.AuthorEmail
-}
-
-func (c *dbComment) toComment() *sourcegraph.Comment {
-	c2 := &sourcegraph.Comment{}
-	c2.ID = int32(c.ID)
-	c2.ThreadID = int32(c.ThreadID)
-	c2.Contents = c.Contents
-	c2.CreatedAt = c.CreatedAt
-	c2.UpdatedAt = c.UpdatedAt
-	c2.AuthorName = c.AuthorName
-	c2.AuthorEmail = c.AuthorEmail
-	return c2
-}
-
-func (*comments) Create(ctx context.Context, newComment *sourcegraph.Comment) (*sourcegraph.Comment, error) {
+func (*comments) Create(ctx context.Context, threadID int32, contents string, authorName, authorEmail string) (*sourcegraph.Comment, error) {
 	if Mocks.Comments.Create != nil {
-		return Mocks.Comments.Create(ctx, newComment)
+		return Mocks.Comments.Create(ctx, threadID, contents, authorName, authorEmail)
 	}
 
-	var c dbComment
-	c.fromComment(newComment)
-	c.CreatedAt = time.Now()
-	c.UpdatedAt = c.CreatedAt
-	err := appDBH(ctx).Insert(&c)
+	createdAt := time.Now()
+	updatedAt := createdAt
+	var id int64
+	err := appDBH(ctx).Db.QueryRow(
+		"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
+		threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.toComment(), nil
+	return &sourcegraph.Comment{
+		ID:          int32(id),
+		ThreadID:    threadID,
+		Contents:    contents,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+		AuthorName:  authorName,
+		AuthorEmail: authorName,
+	}, nil
 }
 
-func (*comments) GetAllForThread(ctx context.Context, threadID int64) ([]*sourcegraph.Comment, error) {
-	cs := []*dbComment{}
-	_, err := appDBH(ctx).Select(&cs, "SELECT * FROM comments WHERE (thread_id=$1 AND deleted_at IS NULL)", threadID)
+func (c *comments) GetAllForThread(ctx context.Context, threadID int64) ([]*sourcegraph.Comment, error) {
+	return c.getBySQL(ctx, "WHERE (thread_id=$1 AND deleted_at IS NULL)", threadID)
+}
+
+// getBySQL returns comments matching the SQL query, if any exist.
+func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Comment, error) {
+	rows, err := appDBH(ctx).Db.Query("SELECT id, thread_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	comments := []*sourcegraph.Comment{}
-	for _, c := range cs {
-		comments = append(comments, c.toComment())
+	defer rows.Close()
+	for rows.Next() {
+		var c sourcegraph.Comment
+		err := rows.Scan(&c.ID, &c.ThreadID, &c.Contents, &c.CreatedAt, &c.UpdatedAt, &c.AuthorName, &c.AuthorEmail)
+		if err != nil {
+			return nil, err
+		}
+		comments = append(comments, &c)
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return comments, nil
 }
