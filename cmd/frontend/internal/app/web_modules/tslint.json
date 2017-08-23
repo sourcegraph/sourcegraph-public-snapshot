@@ -99,12 +99,12 @@
     "number-literal-format": true,
     "object-literal-key-quotes": [
       true,
-      "as-needed"
+      "consistent-as-needed"
     ],
     "object-literal-shorthand": true,
     "prefer-method-signature": true,
     "prefer-template": [
-      true,
+      false,
       "allow-single-concat"
     ],
     "return-undefined": true,
