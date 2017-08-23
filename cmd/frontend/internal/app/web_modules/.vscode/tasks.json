@@ -63,7 +63,7 @@
         "background": {
           "activeOnStart": false,
           "beginsPattern": "^Begin compile at .*$",
-          "endsPattern": "^\\[tslint-plugin\\] Linting complete.$" // This is the last output of a build
+          "endsPattern": "^Time: .*$"
         }
       }
     }
