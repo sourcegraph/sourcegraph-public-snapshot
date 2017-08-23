@@ -3,7 +3,7 @@ import { ActiveRepoResults } from 'sourcegraph/util/types';
 
 const localStorageKey = 'activeRepos';
 
-interface LocalStorage extends ActiveRepoResults {
+interface LocalStorage extends GQL.IActiveRepoResults {
     timestamp: number;
 }
 
@@ -28,12 +28,16 @@ export function get(): Promise<ActiveRepoResults> {
 
     // Fetch fresh data and store it.
     return fetchActiveRepos().then(res => {
-        activeRepos = {
-            timestamp: Date.now(),
-            active: res.active,
-            inactive: res.inactive
-        };
-        window.localStorage.setItem(localStorageKey, JSON.stringify(activeRepos));
+        if (res) {
+            activeRepos = {
+                ...activeRepos,
+                timestamp: Date.now(),
+                active: res.active,
+                inactive: res.inactive
+            };
+            window.localStorage.setItem(localStorageKey, JSON.stringify(activeRepos));
+            return activeRepos;
+        }
         return activeRepos;
     });
 }

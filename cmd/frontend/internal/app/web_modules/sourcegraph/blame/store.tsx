@@ -1,7 +1,6 @@
 import * as immutable from 'immutable';
 import * as moment from 'moment';
 import * as Rx from 'rxjs';
-import * as types from 'sourcegraph/util/types';
 
 // reference implementation: http://rudiyardley.com/redux-single-line-of-code-rxjs/
 
@@ -15,7 +14,7 @@ export interface BlameContext {
 
 export interface BlameState {
     context?: BlameContext;
-    hunksByLoc: immutable.Map<string, types.Hunk[]>;
+    hunksByLoc: immutable.Map<string, GQL.IHunk[]>;
     displayLoading: boolean;
 }
 
@@ -47,7 +46,7 @@ export function contextKey(ctx: BlameContext): string {
     return `${ctx.repoURI}@${ctx.commitID}/${ctx.path}#${ctx.line}`;
 }
 
-export function addHunks(ctx: BlameContext, hunks: types.Hunk[]): void {
+export function addHunks(ctx: BlameContext, hunks: GQL.IHunk[]): void {
     const next = { ...store.getValue() };
     next.hunksByLoc = next.hunksByLoc.set(contextKey(ctx), hunks);
     setBlame(next);

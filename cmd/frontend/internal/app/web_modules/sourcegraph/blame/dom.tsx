@@ -48,9 +48,15 @@ store.subscribe((state: BlameState) => {
         }
         return;
     }
+    const hunk = hunks[0];
+    if (!hunk.author || !hunk.author.person) {
+        // Clear the blame content on whatever line it was already on.
+        setLineBlameContent(-1, '');
+        return;
+    }
 
-    const timeSince = moment(hunks[0].author.date, 'YYYY-MM-DD HH:mm:ss ZZ UTC').fromNow();
-    const blameContent = `${hunks[0].author.person.name}, ${timeSince} • ${limitString(hunks[0].message, 80, true)} ${limitString(hunks[0].rev, 6, false)}`;
+    const timeSince = moment(hunk.author.date, 'YYYY-MM-DD HH:mm:ss ZZ UTC').fromNow();
+    const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`;
 
     setLineBlameContent(state.context.line, blameContent);
 });

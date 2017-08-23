@@ -50,6 +50,9 @@ export function triggerReferences(context: ReferencesContext): void {
                         throw new Error('no xrefs'); // no results, map below would fail.
                     }
                     return Promise.all(dependents.map(dependent => {
+                        if (!dependent.workspace) {
+                            return undefined;
+                        }
                         // const refs2Locations = (references: ReferenceInformation[]): vscode.Location[] => {
                         //     return references.map(r => this.currentWorkspaceClient.protocol2CodeConverter.asLocation(r.reference));
                         // };
