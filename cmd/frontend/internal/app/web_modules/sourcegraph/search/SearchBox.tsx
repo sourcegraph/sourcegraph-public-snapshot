@@ -1,4 +1,6 @@
 
+import BookClosed from '@sourcegraph/icons/lib/BookClosed';
+import Document from '@sourcegraph/icons/lib/Document';
 import escapeRegexp = require('escape-string-regexp');
 import * as React from 'react';
 import AutoSuggest = require('react-autosuggest');
@@ -7,16 +9,30 @@ import { Subscription } from 'rxjs/Subscription';
 import { queryGraphQL } from 'sourcegraph/backend/graphql';
 import { getSearchPath } from './index';
 
+/** The type of type:value filters a user can enter */
+enum FilterType {
+    Repo = 'repo',
+    File = 'file'
+}
+
+/** The icons used to show a suggestion for a filter */
+const SUGGESTION_ICONS = {
+    [FilterType.Repo]: BookClosed,
+    [FilterType.File]: Document
+};
+
 /** Object representation of a suggestion in the suggestion list */
-interface Suggestion {
+interface Filter {
     /** The label that is displayed to the user. The `query.text` part will be highlighted inside it */
-    label: string;
+    value: string;
+    /** The type of suggestion (as indicated by an icon) */
+    type: FilterType;
 }
 
 /** Object representation of a typed query */
 interface Query {
-    /** The filters, e.g. `['repo:gorilla/mux']` */
-    filters: string[];
+    /** The type:value filters typed in */
+    filters: Filter[];
     /** The typed text in the input that is not a filter */
     text: string;
 }
@@ -29,19 +45,23 @@ function parseQuery(query: string): Query {
         words.push(text);
         text = '';
     }
-    return { filters: words, text };
+    const filters: Filter[] = words.map(word => {
+        const [type, value] = word.split(':') as [FilterType, string];
+        return { type, value };
+    });
+    return { filters, text };
 }
 
 /** Takes a parsed query and encodes it into a string */
 function stringifyQuery(query: Query): string {
-    return [...query.filters, query.text].filter(s => s).join(' ');
+    return [...query.filters.map(f => f.type + ':' + f.value), query.text].filter(s => s).join(' ');
 }
 
 interface Props {}
 
 interface State {
     /** The suggestions shown to the user */
-    suggestions: Suggestion[];
+    suggestions: Filter[];
     /** The whole content of the search input (a stringified query) */
     query: string;
 }
@@ -63,11 +83,10 @@ export class SearchBox extends React.Component<Props, State> {
         super(props);
         this.subscriptions.add(
             this.suggestionsFetchRequests
-                .map(query => parseQuery(query).text)
+                .map(parseQuery)
                 .debounceTime(200)
-                .switchMap(text => {
-                    const [filterText/*, filterType*/] = text.split(':').reverse();
-                    if (filterText.length <= 1) {
+                .switchMap(({ filters, text }) => {
+                    if (text.length <= 1) {
                         this.setState({ suggestions: [] });
                         return [];
                     }
@@ -75,27 +94,35 @@ export class SearchBox extends React.Component<Props, State> {
                     return queryGraphQL(`
                         query SearchRepos($query: String!) {
                             root {
-                                repositories(query: $query, fast: true) {
-                                    uri
-                                    description
-                                    private
-                                    fork
-                                    starsCount
-                                    forksCount
-                                    language
-                                    pushedAt
+                                search(query: $query, repositories: $repositories) {
+                                    ... on Repository {
+                                        __typename
+                                        uri
+                                    }
+                                    ... on File {
+                                        __typename
+                                        name
+                                    }
                                 }
                             }
                         }
-                    `, { query: text });
+                    `, {
+                        query: text,
+                        repositories: filters.filter(f => f.type === FilterType.Repo).map(f => 'github.com/' + f.value)
+                    })
+                        .catch(err => {
+                            console.error(err);
+                            return [];
+                        });
                 })
                 .subscribe(result => {
                     console.error(...result.errors || []);
-                    const suggestions: Suggestion[] = [
-                        ...result.data!.root.repositories.map(repo => ({
-                            label: repo.uri.split('/').slice(1).join('/')
-                        }))
-                    ];
+                    const suggestions = result.data!.root.search.map(item => {
+                        switch (item.__typename) {
+                            case 'Repository': return { value: item.uri.split('/').slice(1).join('/'), type: FilterType.Repo };
+                            case 'File':       return { value: item.name, type: FilterType.File };
+                        }
+                    }).filter(s => s) as Filter[];
                     this.setState({ suggestions });
                 }, err => {
                     console.error(err);
@@ -122,7 +149,8 @@ export class SearchBox extends React.Component<Props, State> {
                     inputProps={{
                         value: this.state.query,
                         onChange: this.onChange,
-                        placeholder: 'Search'
+                        placeholder: 'Search',
+                        spellCheck: false
                     }}
                 />
             </form>
@@ -138,24 +166,30 @@ export class SearchBox extends React.Component<Props, State> {
     /** Called whenever the suggestions should be refetched */
     private onSuggestionsFetchRequested = ({ value }: { value: string }): void => this.suggestionsFetchRequests.next(value);
 
-    private getSuggestionValue = (suggestion: Suggestion) => suggestion.label;
+    private getSuggestionValue = (suggestion: Filter) => suggestion.value;
 
     /**
      * Returns a React element for a suggestion
      * Applies a class to the typed-in text
      */
-    private renderSuggestionValue = ({ label }: Suggestion, { query }: { query: string }): JSX.Element => {
+    private renderSuggestionValue = ({ value, type }: Filter, { query }: { query: string }): JSX.Element => {
         const toHighlight = parseQuery(query).text.toLowerCase();
-        const parts = label.split(new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi'));
-        return <span>{parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box-highlighted-query' : ''}>{part}</span>)}</span>;
+        const parts = value.split(new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi'));
+        const Icon = SUGGESTION_ICONS[type];
+        return (
+            <span>
+                <Icon />
+                {parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box-highlighted-query' : ''}>{part}</span>)}
+            </span>
+        );
     }
 
     /**
      * Called when a suggestion is selected by pressing enter or clicking it
      */
-    private onSuggestionSelected = (event: React.SyntheticEvent<any>, { suggestion, method }: { suggestion: Suggestion, method: 'enter' | 'click' }): void => {
+    private onSuggestionSelected = (event: React.SyntheticEvent<any>, { suggestion, method }: { suggestion: Filter, method: 'enter' | 'click' }): void => {
         const { filters } = parseQuery(this.state.query);
-        filters.push('repo:' + suggestion.label);
+        filters.push(suggestion);
         this.setState({ query: stringifyQuery({ filters, text: '' }) + ' ', suggestions: [] });
         if (method === 'enter') {
             // Prevent a form submit
@@ -189,16 +223,21 @@ export class SearchBox extends React.Component<Props, State> {
             // Go to search results
             const path = getSearchPath({
                 q: text,
-                repos: filters.map(f => 'github.com/' + f.split(':')[1]).join(','),
-                files: '',
+                repos: filters.filter(f => f.type === FilterType.Repo).map(f => 'github.com/' + f.value).join(','),
+                files: filters.filter(f => f.type === FilterType.File).map(f => f.value).join(','),
                 matchCase: false,
                 matchRegex: false,
                 matchWord: false
             });
             location.href = path;
-        } else if (filters.length === 1) {
-            // Go to repo
-            location.href = `/github.com/${filters[0].split(':')[1]}`;
+        } else if (filters[0].type === FilterType.Repo) {
+            if (filters.length === 1) {
+                // Go to repo
+                location.href = `/github.com/${filters[0].value}`;
+            } else if (filters[1].type === FilterType.File && filters.length === 2 && !/\?|\*/.exec(filters[1].value)) {
+                // Go to file
+                location.href = `/github.com/${filters[0].value}/-/blob/${filters[1].value}`;
+            }
         }
     }
 }

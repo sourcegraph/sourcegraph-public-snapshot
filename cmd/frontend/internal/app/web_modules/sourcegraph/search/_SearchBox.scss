@@ -2,13 +2,14 @@
 .search-box {
 	width: 100%;
 	font-size: 14px;
+	color: #93A9C8;
 
 	&-highlighted-query {
 		color: white;
 	}
 
-	// Themed React AutoSuggest
-	// See https://github.com/moroshko/react-autosuggest#theme-optional
+	// Themed React AutoSuggest https://github.com/moroshko/react-autosuggest#theme-optional
+	// Class names use the BEM convention http://getbem.com/introduction/
 	.react-autosuggest__ {
 		&container {
 			width: 100%;
@@ -18,9 +19,6 @@
 			background-color: #1C2736;
 			border-radius: 4px;
 			box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.32);
-			&--open {
-
-			}
 		}
 		&input {
 			font-size: 14px;
@@ -32,9 +30,6 @@
 			color: white;
 			border-radius: 2px;
 			margin-bottom: 8px;
-			&--open {
-
-			}
 			&--focused {
 				outline: none;
 			}
@@ -42,6 +37,7 @@
 		&suggestions-container {
 			max-height: 350px;
 			overflow-y: auto;
+			overflow-x: hidden;
 			margin-left: -8px;
 			margin-right: -8px;
 			&--open {
@@ -57,11 +53,12 @@
 		&suggestion {
 			border-top: 1px solid #2A3A51;
 			cursor: pointer;
-			padding: 8px 16px;
+			padding: 0 11px;
 			height: 32px;
-			&--first {
-
-			}
+			line-height: 32px;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
 			&--highlighted {
 				background-color: #2A3A51;
 				&:last-child {
@@ -69,14 +66,15 @@
 					border-bottom-right-radius: 4px;
 				}
 			}
-		}
-		&section-container {
-			&--first {
-
+			.icon {
+				height: 31px;
+				width: 18px;
+				text-align: center;
+				fill: currentColor;
+				display: inline-block;
+				vertical-align: top;
+				margin-right: 8px;
 			}
-		}
-		&section-title {
-
 		}
 	}
 }
