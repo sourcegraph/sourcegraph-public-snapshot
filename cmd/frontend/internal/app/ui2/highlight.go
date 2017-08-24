@@ -90,11 +90,11 @@ func preSpansToTable(h string) (string, error) {
 	body := doc.FirstChild.LastChild // html->body
 	pre := body.FirstChild
 	if pre == nil || pre.Type != html.ElementNode || pre.DataAtom != atom.Pre {
-		return "", fmt.Errorf("exupected html->body->pre, found %+v", pre)
+		return "", fmt.Errorf("expected html->body->pre, found %+v", pre)
 	}
 	span := pre.FirstChild
 	if span == nil || span.Type != html.ElementNode || span.DataAtom != atom.Span {
-		return "", fmt.Errorf("exupected html->body->pre->span, found %+v", span)
+		return "", fmt.Errorf("expected html->body->pre->span, found %+v", span)
 	}
 
 	// We will walk over all of the <span> elements and add them to an existing
@@ -137,7 +137,7 @@ func preSpansToTable(h string) (string, error) {
 				newRow()
 			}
 		default:
-			return "", fmt.Errorf("unexpected HTML structre (encountered %+v)", next)
+			return "", fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
 		}
 		next = nextSibling
 	}
