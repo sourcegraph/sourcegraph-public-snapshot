@@ -56,6 +56,33 @@ var globalDepEnabledLangs = map[string]struct{}{
 	"python":     struct{}{},
 }
 
+func (g *globalDeps) CreateTable() string {
+	return g.eachTable(`CREATE table $TABLE (
+		language text NOT NULL,
+		dep_data jsonb NOT NULL,
+		repo_id integer NOT NULL,
+		hints jsonb
+	);
+	CREATE INDEX $TABLE_idxgin ON $TABLE USING gin (dep_data jsonb_path_ops);
+	CREATE INDEX $TABLE_repo_id ON $TABLE USING btree (repo_id);
+	CREATE INDEX $TABLE_language ON $TABLE USING btree (language);`)
+}
+
+func (g *globalDeps) DropTable() string {
+	return g.eachTable(`DROP TABLE IF EXISTS $TABLE CASCADE;`)
+}
+
+// eachTable appends the sql with "$TABLE" replaced by "global_dep" and
+// "global_dep_private", and a newline separating the SQL lines. The composed
+// SQL query is returned. It is obviously required that the input SQL end with
+// a proper semicolon.
+func (*globalDeps) eachTable(sql string) (composed string) {
+	for _, table := range []string{"global_dep", "global_dep_private"} {
+		composed += strings.Replace(sql, "$TABLE", table, -1) + "\n"
+	}
+	return
+}
+
 // RefreshIndex refreshes the global deps index for the specified repo@commit.
 func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)) error {
 	// 🚨 SECURITY: Do not remove this call. It prevents us from leaking 🚨

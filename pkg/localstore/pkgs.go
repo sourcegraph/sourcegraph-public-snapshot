@@ -28,6 +28,22 @@ import (
 // For a detailed overview of the schema, see schema.txt.
 type pkgs struct{}
 
+func (*pkgs) CreateTable() string {
+	return `CREATE table pkgs (
+		repo_id integer NOT NULL,
+		language text NOT NULL,
+		pkg jsonb NOT NULL
+	);
+	CREATE INDEX pkg_pkg_idx ON pkgs USING gin (pkg jsonb_path_ops);
+	CREATE INDEX pkg_lang_idx on pkgs USING btree (language);
+	CREATE INDEX pkg_repo_idx ON pkgs USING btree (repo_id);
+`
+}
+
+func (*pkgs) DropTable() string {
+	return `DROP TABLE IF EXISTS pkgs CASCADE;`
+}
+
 // RefreshIndex refreshes the packages index for the specified repo@commit.
 func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)) error {
 	// 🚨 SECURITY: Do not remove this call. It prevents us from leaking 🚨

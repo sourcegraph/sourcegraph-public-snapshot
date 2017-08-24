@@ -19,6 +19,54 @@ import (
 var autoRepoWhitelist []*regexp.Regexp
 
 func init() {
+	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
+		`CREATE TABLE repo (
+			id SERIAL PRIMARY KEY,
+			uri citext,
+			owner citext,
+			name citext,
+			description text,
+			vcs text NOT NULL,
+			http_clone_url text,
+			ssh_clone_url text,
+			homepage_url text,
+			default_branch text NOT NULL,
+			language text,
+			blocked boolean,
+			deprecated boolean,
+			fork boolean,
+			mirror boolean,
+			private boolean,
+			created_at timestamp with time zone,
+			updated_at timestamp with time zone,
+			pushed_at timestamp with time zone,
+			vcs_synced_at timestamp with time zone,
+			indexed_revision text,
+			freeze_indexed_revision boolean,
+			origin_repo_id text,
+			origin_service integer,
+			origin_api_base_url text
+		)`,
+		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
+		"ALTER TABLE repo ALTER COLUMN owner TYPE citext", // migration 2016.9.30
+		"ALTER TABLE repo ALTER COLUMN name TYPE citext",  // migration 2016.9.30
+		"CREATE UNIQUE INDEX repo_uri_unique ON repo(uri);",
+		"ALTER TABLE repo ALTER COLUMN description TYPE text",
+		`ALTER TABLE repo ALTER COLUMN default_branch SET NOT NULL;`,
+		`ALTER TABLE repo ALTER COLUMN vcs SET NOT NULL;`,
+		`ALTER TABLE repo ALTER COLUMN updated_at TYPE timestamp with time zone USING updated_at::timestamp with time zone;`,
+		`ALTER TABLE repo ALTER COLUMN pushed_at TYPE timestamp with time zone USING pushed_at::timestamp with time zone;`,
+		`ALTER TABLE repo ALTER COLUMN vcs_synced_at TYPE timestamp with time zone USING vcs_synced_at::timestamp with time zone;`,
+		"CREATE INDEX repo_name ON repo(name text_pattern_ops);",
+
+		"CREATE INDEX repo_owner_ci ON repo(owner);", // migration 2016.9.30
+		"CREATE INDEX repo_name_ci ON repo(name);",   // migration 2016.9.30
+		"CREATE INDEX repo_uri_trgm ON repo USING GIN (lower(uri) gin_trgm_ops);",
+
+		// migration 2016.9.30: `DROP INDEX repo_lower_uri_lower_name;`
+	)
+	AppSchema.DropSQL = append(AppSchema.DropSQL, "DROP TABLE repo")
+
 	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
 		expr, err := regexp.Compile("^" + pattern + "$")
 		if err != nil {
