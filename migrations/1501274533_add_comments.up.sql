@@ -1,6 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS citext;
-
-CREATE TABLE "threads" (
+CREATE TABLE IF NOT EXISTS "threads" (
 	"id" bigserial NOT NULL PRIMARY KEY, 
 	"local_repo_id" bigint, "file" text,
 	"revision" text, "start_line" integer,
@@ -10,7 +8,7 @@ CREATE TABLE "threads" (
 	"created_at" TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE "comments" (
+CREATE TABLE IF NOT EXISTS "comments" (
 	"id" bigserial NOT NULL PRIMARY KEY,
 	"thread_id" bigint,
 	"contents" text,
@@ -20,15 +18,18 @@ CREATE TABLE "comments" (
 	"author_name" text, "author_email" text
 );
 
-CREATE TABLE "local_repos" (
+CREATE TABLE IF NOT EXISTS "local_repos" (
 	"id" bigserial NOT NULL PRIMARY KEY,
-	"remote_uri" citext,
+	"remote_uri" text,
 	"access_token" text,
 	"created_at" TIMESTAMP WITH TIME ZONE,
 	"updated_at" TIMESTAMP WITH TIME ZONE,
 	"deleted_at" TIMESTAMP WITH TIME ZONE,
 	UNIQUE ("remote_uri", "access_token")
 );
+
+CREATE EXTENSION IF NOT EXISTS citext;
+ALTER TABLE local_repos ALTER COLUMN remote_uri TYPE citext;
 
 CREATE INDEX ON local_repos(remote_uri);
 CREATE INDEX ON threads(local_repo_id, file);
