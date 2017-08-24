@@ -14,86 +14,57 @@ import (
 )
 
 var (
-	// Note: the reason why DB table creation is done here (using the
-	// CreateTable / DropTable pattern) is because tables often rely on the
-	// table creation order and we should encourage our DB to be relational
-	// (i.e. tables referencing eachother). This is hard to do inside of
-	// multiple package init's, so we register all table creators/destructors
-	// here.
-
-	// AppSchema is the DB Schema for the app database used by this package.
-	// Currently, all db stores except GlobalRefs are grouped under AppSchema.
-	AppSchema = dbutil2.Schema{
-		CreateSQL: []string{
-			`CREATE EXTENSION IF NOT EXISTS citext;`,
-			`CREATE EXTENSION IF NOT EXISTS hstore;`,
-			`CREATE EXTENSION IF NOT EXISTS pg_trgm;`,
-			new(globalDeps).CreateTable(),
-			new(pkgs).CreateTable(),
-		},
-		DropSQL: []string{
-			new(globalDeps).DropTable(),
-			new(pkgs).DropTable(),
-		},
-	}
-)
-
-var (
-	globalAppDBH *dbutil2.Handle // global app DB handle
-	dbLock       sync.Mutex      // protects globalDBH
+	globalAppDB *sql.DB
+	dbLock      sync.Mutex
 )
 
 // globalDB opens the app DB if it isn't already open,
 // and returns it. Subsequent calls return the same DB handle.
-func globalDB() (*dbutil2.Handle, error) {
+func globalDB() (*sql.DB, error) {
 	dbLock.Lock()
 	defer dbLock.Unlock()
 
-	if globalAppDBH == nil {
+	if globalAppDB == nil {
 		var err error
-		globalAppDBH, err = openDB("", AppSchema)
+		globalAppDB, err = openDB("")
 		if err != nil {
 			return nil, err
 		}
-		registerPrometheusCollector(globalAppDBH.Db, "_app")
-		configureConnectionPool(globalAppDBH.Db)
+		registerPrometheusCollector(globalAppDB, "_app")
+		configureConnectionPool(globalAppDB)
 
-		if _, err := globalAppDBH.Db.Query("select id from repo limit 0;"); err != nil {
-			if err := globalAppDBH.CreateSchema(); err != nil {
-				return nil, err
-			}
-		}
+		// TODO migrate
 	}
 
-	return globalAppDBH, nil
+	return globalAppDB, nil
 }
 
 type key int
 
-const dbhKey key = 0
+const dbKey key = 0
 
 // appDBH returns the app DB handle.
 func appDBH(ctx context.Context) *sql.DB {
-	dbh, ok := ctx.Value(dbhKey).(*dbutil2.Handle)
+	db, ok := ctx.Value(dbKey).(*sql.DB)
 	if ok {
-		return dbh.Db
+		return db
 	}
-	dbh, err := globalDB()
+	db, err := globalDB()
 	if err != nil {
 		panic("DB not available: " + err.Error())
 	}
-	return dbh.Db
+	return db
 }
 
 // openDB opens and returns the DB handle for the DB. Use DB unless
 // you need access to the low-level DB handle or need to handle
 // errors.
-func openDB(dataSource string, schema dbutil2.Schema) (*dbutil2.Handle, error) {
-	dbh, err := dbutil2.Open(dataSource, schema)
+func openDB(dataSource string) (*sql.DB, error) {
+	db, err := dbutil2.Open(dataSource)
 	if err != nil {
 		return nil, fmt.Errorf("open DB (%s): %s", dataSource, err)
 	}
-	return dbh, nil
+	return db, nil
 }
 
 func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
