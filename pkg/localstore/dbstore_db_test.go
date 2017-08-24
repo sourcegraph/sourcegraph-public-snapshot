@@ -22,17 +22,12 @@ func testContext() (ctx context.Context) {
 
 	dbname := "localstore-test"
 	_ = exec.Command("createdb", dbname).Run()
-	dbh, err := dbutil2.Open("dbname="+dbname, AppSchema)
+	db, err := dbutil2.Open("dbname=" + dbname)
 	if err != nil {
 		log.Fatal("testdb: open DB:", err)
 	}
-	if err := dbh.DropSchema(); err != nil {
-		log.Fatal("testdb: drop schemas:", err)
-	}
-	if err := dbh.CreateSchema(); err != nil {
-		log.Fatal("testdb: create schemas:", err)
-	}
-	ctx = context.WithValue(ctx, dbhKey, dbh)
+	// TODO reset DB
+	ctx = context.WithValue(ctx, dbKey, db)
 
 	return ctx
 }
