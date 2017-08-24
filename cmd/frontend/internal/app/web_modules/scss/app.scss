@@ -272,6 +272,13 @@ $nav-height: 48px;
         color: #31445E;
     }
 
+    .blobview-highlighting-aborted {
+        background-color: #233043;
+        padding: 1em;
+        @extend .font-normal-grey;
+        font-size: .75em;
+    }
+
     #blob-table {
         position: relative;
         padding-top: 10px;

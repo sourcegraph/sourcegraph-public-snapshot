@@ -19,6 +19,9 @@
 			</div>
 		{{else}}
 			<div class="blobview right">
+				{{if .BlobView.HighlightingAborted}}
+					<p class="blobview-highlighting-aborted">Syntax highlighting for this file has been disabled because it took too long. <a href="javascript:location.search+='&highlighting=true';">(show anyway)</a></p>
+				{{end}}
 				<div id="blob-table">{{.BlobView.Highlighted}}</div>
 				<div id="ref-widget"></div>
 			</div>

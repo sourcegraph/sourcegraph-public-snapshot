@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/gosyntect"
 	"golang.org/x/net/html"
@@ -25,26 +26,39 @@ func init() {
 // highlight highlights the given code with the given file extension (no
 // leading ".") and returns the properly escaped HTML table representing
 // the highlighted code.
-func highlight(ctx context.Context, code, extension string) (template.HTML, error) {
+//
+// The returned boolean represents whether or not highlighting was aborted due
+// to timeout. In this scenario, a plain text table is returned.
+func highlight(ctx context.Context, code, extension string, disableTimeout bool) (template.HTML, bool, error) {
+	if !disableTimeout {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+	}
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:      code,
 		Extension: extension,
 		Theme:     "Visual Studio Dark", // In the future, we could let the user choose the theme.
 	})
-	if err != nil {
+	if ctx.Err() == context.DeadlineExceeded {
+		// Timeout, so render plain table.
+		table, err2 := generatePlainTable(code)
+		return table, true, err2
+	} else if err != nil {
 		if strings.HasSuffix(err.Error(), "invalid extension") { // TODO(slimsag): gosyntect should provide concrete error type
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
-			return generatePlainTable(code)
+			table, err2 := generatePlainTable(code)
+			return table, false, err2
 		}
-		return "", err
+		return "", false, err
 	}
 	// Note: resp.Data is properly HTML escaped by syntect_server
 	table, err := preSpansToTable(resp.Data)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
-	return template.HTML(table), nil
+	return template.HTML(table), false, nil
 }
 
 // preSpansToTable takes the syntect data structure, which looks like:

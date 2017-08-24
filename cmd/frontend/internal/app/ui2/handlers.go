@@ -281,9 +281,9 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 
 // blobView is the data structure shared/blobview.html expects.
 type blobView struct {
-	Path, Name  string
-	IsBinary    bool
-	Highlighted template.HTML
+	Path, Name                    string
+	IsBinary, HighlightingAborted bool
+	Highlighted                   template.HTML
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
@@ -309,13 +309,15 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 
 	// If the file is not binary, highlight the code.
 	var (
-		isBinary    = !utf8.Valid(code)
-		highlighted template.HTML
+		isBinary            = !utf8.Valid(code)
+		highlighted         template.HTML
+		highlightingAborted bool
 	)
 	if !isBinary {
 		// Highlight the code.
 		var err error
-		highlighted, err = highlight(r.Context(), string(code), strings.TrimPrefix(path.Ext(fp), "."))
+		disableTimeout := r.URL.Query().Get("highlighting") == "true" // disable timeout when highlighting=true
+		highlighted, highlightingAborted, err = highlight(r.Context(), string(code), strings.TrimPrefix(path.Ext(fp), "."), disableTimeout)
 		if err != nil {
 			return err
 		}
@@ -329,10 +331,11 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: common,
 		BlobView: &blobView{
-			Path:        fp,
-			Name:        path.Base(fp),
-			IsBinary:    isBinary,
-			Highlighted: highlighted,
+			Path:                fp,
+			Name:                path.Base(fp),
+			IsBinary:            isBinary,
+			HighlightingAborted: highlightingAborted,
+			Highlighted:         highlighted,
 		},
 		Navbar:   newNavbar(common.Repo, common.Rev, fp, false),
 		FileName: path.Base(fp),
