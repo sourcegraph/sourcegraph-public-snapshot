@@ -1,3 +1,3 @@
-DROP TABLE IF EXISTS "threads";
-DROP TABLE IF EXISTS "comments";
-DROP TABLE IF EXISTS "local_repos";
+DROP TABLE "threads";
+DROP TABLE "comments";
+DROP TABLE "local_repos";
