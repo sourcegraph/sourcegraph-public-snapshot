@@ -1,3 +1,5 @@
+#!/bin/sh
+
 if [ -z $PGHOST ]; then echo "error: \$PGHOST not set"; exit 1; fi
 if [ -z $PGPORT ]; then echo "error: \$PGPORT not set"; exit 1; fi
 if [ -z $PGDATABASE ]; then echo "error: \$PGDATABASE not set"; exit 1; fi
