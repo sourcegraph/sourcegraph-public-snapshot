@@ -92,17 +92,13 @@ func preSpansToTable(h string) (string, error) {
 	if pre == nil || pre.Type != html.ElementNode || pre.DataAtom != atom.Pre {
 		return "", fmt.Errorf("expected html->body->pre, found %+v", pre)
 	}
-	span := pre.FirstChild
-	if span == nil || span.Type != html.ElementNode || span.DataAtom != atom.Span {
-		return "", fmt.Errorf("expected html->body->pre->span, found %+v", span)
-	}
 
 	// We will walk over all of the <span> elements and add them to an existing
 	// code cell td, creating a new code cell td each time a newline is
 	// encountered.
 	var (
 		table    = &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
-		next     = span // span or TextNode
+		next     = pre.FirstChild // span or TextNode
 		rows     int
 		codeCell *html.Node
 	)
