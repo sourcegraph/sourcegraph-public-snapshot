@@ -2,7 +2,6 @@ package localstore
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"regexp"
@@ -39,12 +38,13 @@ func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string) (*s
 	// 🚨 SECURITY: must include access_token field in query as a permissions 🚨
 	// check. Note other functions may rely on this method to verify repo permissions
 	repos, err := l.getBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
-	if err == sql.ErrNoRows {
-		return nil, ErrRepoNotFound
-	} else if err != nil {
+	if err != nil {
 		return nil, err
 	}
-	// repos should have at least one entry after passing the error check above.
+	if len(repos) != 1 {
+		return nil, ErrRepoNotFound
+	}
+	// repos should have exactly one entry after passing the error check above.
 	return repos[0], nil
 }
 
