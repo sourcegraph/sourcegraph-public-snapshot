@@ -13,7 +13,7 @@ $ go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/
 
 Run the following from the project root to apply all the latest migrations:
 ```
-./dev/migrate.sh
+./dev/migrate_db.sh
 ```
 
 ### Add a new migration
