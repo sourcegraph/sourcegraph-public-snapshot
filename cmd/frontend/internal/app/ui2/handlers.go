@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 
@@ -280,8 +281,9 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 
 // blobView is the data structure shared/blobview.html expects.
 type blobView struct {
-	Path, Name string
-	File       string
+	Path, Name                    string
+	IsBinary, HighlightingAborted bool
+	Highlighted                   template.HTML
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
@@ -300,9 +302,25 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 
 	fp := mux.Vars(r)["Path"]
 	common.addOpenOnDesktop(fp)
-	file, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), fp)
+	code, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), fp)
 	if err != nil {
 		return err
+	}
+
+	// If the file is not binary, highlight the code.
+	var (
+		isBinary            = !utf8.Valid(code)
+		highlighted         template.HTML
+		highlightingAborted bool
+	)
+	if !isBinary {
+		// Highlight the code.
+		var err error
+		disableTimeout := r.URL.Query().Get("highlighting") == "true" // disable timeout when highlighting=true
+		highlighted, highlightingAborted, err = highlight(r.Context(), string(code), strings.TrimPrefix(path.Ext(fp), "."), disableTimeout)
+		if err != nil {
+			return err
+		}
 	}
 
 	return renderTemplate(w, "blob.html", &struct {
@@ -313,9 +331,11 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	}{
 		Common: common,
 		BlobView: &blobView{
-			Path: fp,
-			Name: path.Base(fp),
-			File: string(file),
+			Path:                fp,
+			Name:                path.Base(fp),
+			IsBinary:            isBinary,
+			HighlightingAborted: highlightingAborted,
+			Highlighted:         highlighted,
 		},
 		Navbar:   newNavbar(common.Repo, common.Rev, fp, false),
 		FileName: path.Base(fp),

@@ -1318,6 +1318,12 @@
 			"revisionTime": "2016-11-14T16:56:20Z"
 		},
 		{
+			"checksumSHA1": "Pod4/wb+6tjEMLyJY/MizqnWxPY=",
+			"path": "github.com/sourcegraph/gosyntect",
+			"revision": "0376bca1049c25c54f0a76ceeb0c313444feaea7",
+			"revisionTime": "2017-08-24T00:43:07Z"
+		},
+		{
 			"checksumSHA1": "OIaAIaprbQzo/X4L70+ancPk+jM=",
 			"path": "github.com/sourcegraph/httpcache",
 			"revision": "16db777d8ebea60a3e746a7e0703eaaa53f85f7f",
@@ -1515,6 +1521,18 @@
 			"path": "golang.org/x/net/context/ctxhttp",
 			"revision": "61557ac0112b576429a0df080e1c2cef5dfbb642",
 			"revisionTime": "2017-01-26T11:54:58Z"
+		},
+		{
+			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
+			"path": "golang.org/x/net/html",
+			"revision": "1c05540f6879653db88113bc4a2b70aec4bd491f",
+			"revisionTime": "2017-08-04T00:04:37Z"
+		},
+		{
+			"checksumSHA1": "00eQaGynDYrv3tL+C7l9xH0IDZg=",
+			"path": "golang.org/x/net/html/atom",
+			"revision": "1c05540f6879653db88113bc4a2b70aec4bd491f",
+			"revisionTime": "2017-08-04T00:04:37Z"
 		},
 		{
 			"checksumSHA1": "LC+mzxnIrUS9Kr4s7shpY+A9J2o=",
