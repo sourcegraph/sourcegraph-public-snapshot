@@ -34,7 +34,7 @@ func (*comments) Create(ctx context.Context, threadID int32, contents string, au
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 		AuthorName:  authorName,
-		AuthorEmail: authorName,
+		AuthorEmail: authorEmail,
 	}, nil
 }
 
