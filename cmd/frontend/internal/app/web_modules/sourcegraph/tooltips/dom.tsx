@@ -4,7 +4,8 @@
 import { highlightBlock } from 'highlight.js';
 import * as marked from 'marked';
 import { triggerReferences } from 'sourcegraph/references';
-import { getSearchParamsFromLocalStorage, getSearchPath } from 'sourcegraph/search';
+import { getSearchPath } from 'sourcegraph/search';
+import { setState as setSearchState, store as searchStore } from 'sourcegraph/search/store';
 import { clearTooltip, store, TooltipState } from 'sourcegraph/tooltips/store';
 import * as styles from 'sourcegraph/tooltips/styles';
 import { events } from 'sourcegraph/tracking/events';
@@ -178,7 +179,9 @@ function updateTooltip(state: TooltipState): void {
 
     const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
     if (searchText) {
-        searchAction.href = getSearchPath({ ...getSearchParamsFromLocalStorage(), q: searchText });
+        const params = { ...searchStore.getValue(), q: searchText };
+        setSearchState(params);
+        searchAction.href = getSearchPath(params);
     } else {
         searchAction.href = '';
     }
