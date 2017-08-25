@@ -72,3 +72,18 @@ func TestGeneratePlainTableSecurity(t *testing.T) {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
 }
+
+func TestIssue6892(t *testing.T) {
+	input := `<pre style="background-color:#1e1e1e;">
+
+<span style="color:#9b9b9b;">import</span>
+</pre>`
+	want := `<table><tr><td>1</td><td></td></tr><tr><td>2</td><td><span style="color:#9b9b9b;">import</span></td></tr><tr><td>3</td><td></td></tr></table>`
+	got, err := preSpansToTable(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	}
+}
