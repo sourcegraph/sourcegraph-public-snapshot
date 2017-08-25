@@ -24,14 +24,12 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 	}
 
 	newThread.CreatedAt = time.Now()
-	var id int64
 	err := appDBH(ctx).QueryRow(
 		"INSERT INTO threads(local_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-		newThread.LocalRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.CreatedAt).Scan(&id)
+		newThread.LocalRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.CreatedAt).Scan(&newThread.ID)
 	if err != nil {
 		return nil, err
 	}
-	newThread.ID = int32(id)
 
 	return newThread, nil
 }

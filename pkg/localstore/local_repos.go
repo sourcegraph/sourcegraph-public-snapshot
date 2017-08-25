@@ -59,10 +59,9 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 	if err != nil {
 		return nil, err
 	}
-	var id int64
 	err = appDBH(ctx).QueryRow(
 		"INSERT INTO local_repos(remote_uri, access_token, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
-		newRepo.RemoteURI, newRepo.AccessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&id)
+		newRepo.RemoteURI, newRepo.AccessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
 	if err != nil {
 		return nil, err
 	}
