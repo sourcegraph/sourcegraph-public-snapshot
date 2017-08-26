@@ -65,7 +65,7 @@ func init() {
 
 		// migration 2016.9.30: `DROP INDEX repo_lower_uri_lower_name;`
 	)
-	AppSchema.DropSQL = append(AppSchema.DropSQL, "DROP TABLE repo")
+	AppSchema.DropSQL = append(AppSchema.DropSQL, "DROP TABLE IF EXISTS repo")
 
 	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
 		expr, err := regexp.Compile("^" + pattern + "$")
