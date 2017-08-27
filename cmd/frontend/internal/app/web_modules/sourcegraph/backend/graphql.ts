@@ -1,4 +1,5 @@
 import 'rxjs/add/observable/dom/ajax';
+import 'rxjs/add/operator/map';
 import { Observable } from 'rxjs/Observable';
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
 
