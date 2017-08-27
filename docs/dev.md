@@ -30,7 +30,7 @@ This is a streamlined setup for Mac machines.
 3. Install Go, Node, PostgreSQL, Redis, Git, Python.
 
     ```
-    brew install go node redis postgresql yarn git python gnu-sed
+    brew install go node redis postgresql git python gnu-sed
     ```
 
 4. Install virtualenv.
@@ -112,7 +112,7 @@ docker-machine start default
 eval $(docker-machine env)
 ```
 
-Then run the following commands (**NOTE: Node.js and [Yarn](https://yarnpkg.com/en/docs/install) must be installed for the this step**):
+Then run the following commands (**NOTE: Node.js and npm must be installed for the this step**):
 
 ```
 ./dev/start.sh
