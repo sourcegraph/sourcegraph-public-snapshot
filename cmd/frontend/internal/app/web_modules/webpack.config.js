@@ -65,8 +65,7 @@ module.exports = {
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
         alias: {
-            sourcegraph: path.resolve(__dirname, 'sourcegraph'),
-            '@sourcegraph/components/src': path.resolve(__dirname, 'node_modules', '@sourcegraph', 'components', 'src'),
+            sourcegraph: path.resolve(__dirname, 'sourcegraph')
         },
     },
     module: {

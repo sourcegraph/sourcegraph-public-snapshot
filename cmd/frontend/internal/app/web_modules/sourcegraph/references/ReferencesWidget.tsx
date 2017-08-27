@@ -1,4 +1,4 @@
-import { hoverSelection } from '@sourcegraph/components/src/style/color';
+import { hoverSelection } from '@sourcegraph/components/lib/style/color';
 import * as csstips from 'csstips';
 import { color } from 'csx';
 import * as _ from 'lodash';

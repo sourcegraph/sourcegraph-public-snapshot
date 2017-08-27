@@ -1,5 +1,5 @@
-import { Autocomplete } from '@sourcegraph/components/src/Autocomplete';
-import { Sourcegraph as AutocompleteStyles } from '@sourcegraph/components/src/Autocomplete/style';
+import { Autocomplete } from '@sourcegraph/components/lib/Autocomplete';
+import { Sourcegraph as AutocompleteStyles } from '@sourcegraph/components/lib/Autocomplete/style';
 import * as csstips from 'csstips';
 import * as React from 'react';
 import * as AddIcon from 'react-icons/lib/md/add';

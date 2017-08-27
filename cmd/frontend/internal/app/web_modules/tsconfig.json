@@ -8,8 +8,8 @@
       "sourcegraph/*": [
         "sourcegraph/*"
       ],
-      "@sourcegraph/components/src/*": [
-        "node_modules/@sourcegraph/components/src/*"
+      "@sourcegraph/components/lib/*": [
+        "node_modules/@sourcegraph/components/lib/*"
       ]
     },
     "lib": [

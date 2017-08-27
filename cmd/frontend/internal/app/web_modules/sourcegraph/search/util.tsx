@@ -1,4 +1,4 @@
-import { Classes as AutocompleteClasses } from '@sourcegraph/components/src/Autocomplete/style';
+import { Classes as AutocompleteClasses } from '@sourcegraph/components/lib/Autocomplete/style';
 import * as React from 'react';
 import { fetchRepos } from 'sourcegraph/backend';
 
