@@ -1,6 +1,11 @@
 @import "libs/highlight";
+@import "../sourcegraph/search/SearchBox";
 
 $nav-height: 48px;
+
+* {
+	box-sizing: border-box;
+}
 
 /*
     Styles for Go HTML template files only; all React code should use inline
@@ -535,10 +540,14 @@ $nav-height: 48px;
     }
 
     #search-widget {
-        flex: 10;
-        width: 512px;
+		flex: 10;
+		width: 600px;
+		max-width: 100vw;
         font-size: 14px;
-        color: #93A9C8;
+		color: #93A9C8;
+		width: 600px;
+		max-width: 100vw;
+		margin: 20px;
     }
 
     .footer {

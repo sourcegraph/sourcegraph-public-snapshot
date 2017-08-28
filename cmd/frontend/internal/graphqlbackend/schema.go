@@ -19,6 +19,7 @@ type Mutation {
 	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
 }
 
+
 type Root {
 	organization(login: String!): Organization
 	repository(uri: String!): Repository
@@ -28,11 +29,14 @@ type Root {
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
 	activeRepos(): ActiveRepoResults!
+	search(query: String = "", repositories: [String!]!, first: Int): [SearchResult!]!
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	searchProfiles: [SearchProfile!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
 	threads(remoteURI: String!, accessToken: String!, file: String!): [Thread!]!
 }
+
+union SearchResult = Repository | File
 
 type RefFields {
 	refLocation: RefLocation
@@ -120,7 +124,7 @@ input SearchQuery {
 
 input RepositoryRevision {
 	repo: String!
-	rev: String	
+	rev: String
 }
 
 type Commit implements Node {

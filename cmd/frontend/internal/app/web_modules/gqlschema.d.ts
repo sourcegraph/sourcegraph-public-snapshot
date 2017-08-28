@@ -24,7 +24,7 @@ declare namespace GQL {
   interface IQuery {
     __typename: "Query";
     root: IRoot;
-    node: INode | null;
+    node: Node | null;
   }
 
   /*
@@ -40,6 +40,7 @@ declare namespace GQL {
     symbols: Array<ISymbol>;
     currentUser: IUser | null;
     activeRepos: IActiveRepoResults;
+    search: Array<SearchResult>;
     searchRepos: ISearchResults;
     searchProfiles: Array<ISearchProfile>;
     revealCustomerCompany: ICompanyProfile | null;
@@ -85,6 +86,11 @@ declare namespace GQL {
     listTotalRefs: ITotalRefList;
     gitCmdRaw: string;
   }
+
+  /*
+    description: null
+  */
+  type Node = IRepository | ICommit;
 
   /*
     description: null
@@ -311,24 +317,29 @@ declare namespace GQL {
   /*
     description: null
   */
+  type SearchResult = IRepository | IFile;
+
+
+
+  /*
+    description: null
+  */
   interface ISearchQuery {
-    __typename: "SearchQuery";
     pattern: string;
     isRegExp: boolean;
     isWordMatch: boolean;
     isCaseSensitive: boolean;
     fileMatchLimit: number;
-    includePattern: string | null;
-    excludePattern: string | null;
+    includePattern?: string | null;
+    excludePattern?: string | null;
   }
 
   /*
     description: null
   */
   interface IRepositoryRevision {
-    __typename: "RepositoryRevision";
     repo: string;
-    rev: string | null;
+    rev?: string | null;
   }
 
   /*
