@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -44,6 +45,10 @@ func NewHandler(m *mux.Router) http.Handler {
 			req.URL.Path = "/" + mux.Vars(req)["TelemetryPath"]
 		},
 	}))
+	m.Get(apirouter.CSRFToken).Handler(traceutil.TraceRoute(handler(func(w http.ResponseWriter, r *http.Request) error {
+		w.Header().Set("Content-Type", "application/json")
+		return writeJSON(w, csrf.Token(r))
+	})))
 
 	m.Get(apirouter.XLang).Handler(traceutil.TraceRoute(handler(serveXLang)))
 
