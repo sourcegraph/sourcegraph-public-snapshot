@@ -122,7 +122,7 @@ func searchFiles(ctx context.Context, query string, repoURIs []string, limit int
 		resMu sync.Mutex
 		res   []*searchResultResolver
 	)
-	done := make(chan error)
+	done := make(chan error, len(repoURIs))
 	for _, repoURI := range repoURIs {
 		repoURI := repoURI
 		go func() {
