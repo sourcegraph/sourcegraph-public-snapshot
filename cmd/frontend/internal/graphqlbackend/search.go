@@ -2,9 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
+
+	"log"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -79,7 +80,7 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 	for i := 0; i < 2; i++ {
 		if err := <-done; err != nil {
 			// TODO collect error
-			fmt.Println("search error: " + err.Error())
+			log.Println("search error: " + err.Error())
 		}
 	}
 
@@ -127,7 +128,7 @@ func searchFiles(ctx context.Context, query string, repoURIs []string, limit int
 	for range repoURIs {
 		if err := <-done; err != nil {
 			// TODO collect error
-			fmt.Println("searchFiles error: " + err.Error())
+			log.Println("searchFiles error: " + err.Error())
 		}
 	}
 	return res, nil
@@ -157,7 +158,6 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		if len(res) >= limit {
 			return res, nil
 		}
-		fmt.Println(fileResolver.Name())
 		if strings.Contains(fileResolver.Name(), query) {
 			res = append(res, &searchResultResolver{result: fileResolver})
 		}
