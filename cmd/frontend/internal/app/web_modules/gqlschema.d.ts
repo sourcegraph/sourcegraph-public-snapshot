@@ -24,7 +24,7 @@ declare namespace GQL {
   interface IQuery {
     __typename: string;
     root: IRoot;
-    node: Node | null;
+    node: INode | null;
   }
 
   /*
@@ -85,11 +85,6 @@ declare namespace GQL {
     listTotalRefs: ITotalRefList;
     gitCmdRaw: string;
   }
-
-  /*
-    description: null
-  */
-  type Node = IRepository | ICommit;
 
   /*
     description: null
@@ -317,21 +312,23 @@ declare namespace GQL {
     description: null
   */
   interface ISearchQuery {
+    __typename: string;
     pattern: string;
     isRegExp: boolean;
     isWordMatch: boolean;
     isCaseSensitive: boolean;
     fileMatchLimit: number;
-    includePattern?: string | null;
-    excludePattern?: string | null;
+    includePattern: string | null;
+    excludePattern: string | null;
   }
 
   /*
     description: null
   */
   interface IRepositoryRevision {
+    __typename: string;
     repo: string;
-    rev?: string | null;
+    rev: string | null;
   }
 
   /*

@@ -20,7 +20,7 @@
     "css-loader": "^0.28.4",
     "extract-text-webpack-plugin": "^3.0.0",
     "get-graphql-schema": "^2.1.1",
-    "gql2ts": "^1.1.2",
+    "gql2ts": "^1.1.3",
     "node-sass": "^4.5.3",
     "postcss-loader": "^2.0.6",
     "ts-loader": "^2.1.0",
