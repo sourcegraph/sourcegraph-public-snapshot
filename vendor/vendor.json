@@ -625,6 +625,18 @@
 			"revisionTime": "2016-04-14T05:52:04Z"
 		},
 		{
+			"checksumSHA1": "MzTCg3kFsi/89bf1wGsGJwIykEM=",
+			"path": "github.com/jteeuwen/go-bindata",
+			"revision": "a0ff2567cfb70903282db057e799fd826784d41d",
+			"revisionTime": "2015-10-23T09:11:02Z"
+		},
+		{
+			"checksumSHA1": "1E4XSPmZqO/s20/WWJKXsyGTfm4=",
+			"path": "github.com/jteeuwen/go-bindata/go-bindata",
+			"revision": "a0ff2567cfb70903282db057e799fd826784d41d",
+			"revisionTime": "2015-10-23T09:11:02Z"
+		},
+		{
 			"checksumSHA1": "sKheT5xw89Tbu2Q071FQO27CVmE=",
 			"origin": "k8s.io/client-go/vendor/github.com/juju/ratelimit",
 			"path": "github.com/juju/ratelimit",
