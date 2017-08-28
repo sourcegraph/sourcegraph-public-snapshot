@@ -113,7 +113,7 @@ export class SearchBox extends React.Component<Props, State> {
                         }
                     `, {
                         query: text,
-                        repositories: filters.filter(f => f.type === FilterType.Repo).map(f => 'github.com/' + f.value)
+                        repositories: filters.filter(f => f.type === FilterType.Repo).map(f => f.value)
                     })
                         .catch(err => {
                             console.error(err);
@@ -124,7 +124,7 @@ export class SearchBox extends React.Component<Props, State> {
                     console.error(...result.errors || []);
                     const suggestions = result.data!.root.search.map(item => {
                         switch (item.__typename) {
-                            case 'Repository': return { value: item.uri.split('/').slice(1).join('/'), type: FilterType.Repo };
+                            case 'Repository': return { value: item.uri, type: FilterType.Repo };
                             case 'File':       return { value: item.name, type: FilterType.File };
                         }
                     }).filter(s => s) as Filter[];
@@ -228,7 +228,7 @@ export class SearchBox extends React.Component<Props, State> {
             // Go to search results
             const path = getSearchPath({
                 q: text,
-                repos: filters.filter(f => f.type === FilterType.Repo).map(f => 'github.com/' + f.value).join(','),
+                repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value).join(','),
                 files: filters.filter(f => f.type === FilterType.File).map(f => f.value).join(','),
                 matchCase: false,
                 matchRegex: false,
@@ -238,10 +238,10 @@ export class SearchBox extends React.Component<Props, State> {
         } else if (filters[0].type === FilterType.Repo) {
             if (filters.length === 1) {
                 // Go to repo
-                location.href = `/github.com/${filters[0].value}`;
+                location.href = `/${filters[0].value}`;
             } else if (filters[1].type === FilterType.File && filters.length === 2 && !/\?|\*/.exec(filters[1].value)) {
                 // Go to file
-                location.href = `/github.com/${filters[0].value}/-/blob/${filters[1].value}`;
+                location.href = `/${filters[0].value}/-/blob/${filters[1].value}`;
             }
         }
     }
