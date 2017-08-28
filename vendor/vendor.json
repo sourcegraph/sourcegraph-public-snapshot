@@ -740,6 +740,36 @@
 			"revisionTime": "2015-07-15T10:31:50-07:00"
 		},
 		{
+			"checksumSHA1": "kdvsDmguft5CZiHCmjaaBwoVT08=",
+			"path": "github.com/mattes/migrate",
+			"revision": "804f9c2d4f403bdea957346b5c8ede7d66b4ba37",
+			"revisionTime": "2017-08-14T21:01:06Z"
+		},
+		{
+			"checksumSHA1": "6QePtWUFN9x9U/Y6OzcENUUudmM=",
+			"path": "github.com/mattes/migrate/database",
+			"revision": "804f9c2d4f403bdea957346b5c8ede7d66b4ba37",
+			"revisionTime": "2017-08-14T21:01:06Z"
+		},
+		{
+			"checksumSHA1": "Q9IScpP6lp1CaPqYoFGVrJjmZcE=",
+			"path": "github.com/mattes/migrate/database/postgres",
+			"revision": "804f9c2d4f403bdea957346b5c8ede7d66b4ba37",
+			"revisionTime": "2017-08-14T21:01:06Z"
+		},
+		{
+			"checksumSHA1": "kIHQkF+Nm0LBPppYbchll3njidY=",
+			"path": "github.com/mattes/migrate/source",
+			"revision": "804f9c2d4f403bdea957346b5c8ede7d66b4ba37",
+			"revisionTime": "2017-08-14T21:01:06Z"
+		},
+		{
+			"checksumSHA1": "yk6CYCkHnJRvEqYwfvDdbfC77JI=",
+			"path": "github.com/mattes/migrate/source/go-bindata",
+			"revision": "804f9c2d4f403bdea957346b5c8ede7d66b4ba37",
+			"revisionTime": "2017-08-14T21:01:06Z"
+		},
+		{
 			"checksumSHA1": "MrqRXuqj5suGXqcRUUwi+YA7PmE=",
 			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
 			"path": "github.com/mattn/go-colorable",
