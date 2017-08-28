@@ -4,41 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"sync"
 
 	_ "github.com/lib/pq"
 )
-
-var (
-	opened     map[string]*sql.DB // cache of Open dataSource -> DB
-	openedLock sync.Mutex         // protects opened
-)
-
-// open opens the DB identified by dataSource. If an existing *sql.DB
-// already exists for the same dataSource, the existing one is
-// returned instead of opening a new one.
-func open(dataSource string) (*sql.DB, error) {
-	openedLock.Lock()
-	defer openedLock.Unlock()
-	if db, present := opened[dataSource]; present {
-		return db, nil
-	}
-
-	db, err := sql.Open("postgres", dataSource)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	// Cache for next time.
-	if opened == nil {
-		opened = map[string]*sql.DB{}
-	}
-	opened[dataSource] = db
-	return db, nil
-}
 
 // Open creates a new DB handle with the given schema by connecting to
 // the database identified by dataSource (e.g., "dbname=mypgdb" or
@@ -46,7 +14,7 @@ func open(dataSource string) (*sql.DB, error) {
 //
 // Open assumes that the database already exists.
 func Open(dataSource string) (*sql.DB, error) {
-	db, err := open(dataSource)
+	db, err := sql.Open("postgres", dataSource)
 	if err != nil {
 		return nil, fmt.Errorf("%s (datasource=%q)", err, dataSource)
 	}

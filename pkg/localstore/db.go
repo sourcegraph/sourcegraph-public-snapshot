@@ -3,7 +3,6 @@ package localstore
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -26,7 +25,7 @@ func globalDB() (*sql.DB, error) {
 
 	if globalAppDB == nil {
 		var err error
-		globalAppDB, err = openDB("")
+		globalAppDB, err = dbutil2.Open("")
 		if err != nil {
 			return nil, err
 		}
@@ -54,17 +53,6 @@ func appDBH(ctx context.Context) *sql.DB {
 		panic("DB not available: " + err.Error())
 	}
 	return db
-}
-
-// openDB opens and returns the DB handle for the DB. Use DB unless
-// you need access to the low-level DB handle or need to handle
-// errors.
-func openDB(dataSource string) (*sql.DB, error) {
-	db, err := dbutil2.Open(dataSource)
-	if err != nil {
-		return nil, fmt.Errorf("open DB (%s): %s", dataSource, err)
-	}
-	return db, nil
 }
 
 func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
