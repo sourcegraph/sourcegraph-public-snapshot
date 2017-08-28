@@ -1390,6 +1390,12 @@
 			"revisionTime": "2015-06-26T09:08:21Z"
 		},
 		{
+			"checksumSHA1": "lat+Fmris/uABXK/WMiQ+/xqTP0=",
+			"path": "github.com/texttheater/golang-levenshtein/levenshtein",
+			"revision": "a809b0abc4bdd4591a275c2dcf0982b0581da4e6",
+			"revisionTime": "2017-02-19T10:36:50Z"
+		},
+		{
 			"checksumSHA1": "9+gcr3lIn3vwHhBqDZwJOC40CxY=",
 			"path": "github.com/uber/jaeger-client-go",
 			"revision": "8b30c0a82b52d17872be5b965afb70ed42ffaefc",

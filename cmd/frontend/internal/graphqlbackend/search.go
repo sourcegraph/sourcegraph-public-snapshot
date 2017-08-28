@@ -2,11 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 
 	"log"
 
+	"github.com/texttheater/golang-levenshtein/levenshtein"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
@@ -21,7 +23,10 @@ type searchArgs struct {
 }
 
 type searchResultResolver struct {
+	// Either a repositoryResolver or a fileResolver
 	result interface{}
+	// The string this element should be sorted by
+	sortText string
 }
 
 func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
@@ -88,6 +93,13 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 		res = res[0:limit]
 	}
 
+	sort.Slice(res, func(i, j int) bool {
+		query := []rune(args.Query)
+		distI := levenshtein.DistanceForStrings(query, []rune(res[i].sortText), levenshtein.DefaultOptions)
+		distJ := levenshtein.DistanceForStrings(query, []rune(res[j].sortText), levenshtein.DefaultOptions)
+		return distI < distJ
+	})
+
 	return res, nil
 }
 
@@ -100,7 +112,7 @@ func searchRepos(ctx context.Context, args *searchArgs, limit int) (res []*searc
 	}
 	for _, repo := range reposList.Repos {
 		repoResolver := &repositoryResolver{repo: repo}
-		res = append(res, &searchResultResolver{result: repoResolver})
+		res = append(res, &searchResultResolver{result: repoResolver, sortText: repo.URI})
 	}
 	return res, nil
 }
@@ -158,8 +170,9 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		if len(res) >= limit {
 			return res, nil
 		}
-		if strings.Contains(fileResolver.Name(), query) {
-			res = append(res, &searchResultResolver{result: fileResolver})
+		name := fileResolver.Name()
+		if strings.Contains(name, query) {
+			res = append(res, &searchResultResolver{result: fileResolver, sortText: name})
 		}
 	}
 	return res, nil
