@@ -37,7 +37,14 @@ interface Query {
     text: string;
 }
 
-/** Takes a string query and parses it into an object */
+/**
+ * Takes a string query and parses it into an object
+ *
+ * Examples:
+ *
+ *     repo:github.com/gorilla/mux repo:github.com/kubernetes/kubernetes route
+ *     repo:github.com/Microsoft/vscode file:gulpfile.js
+ */
 function parseQuery(query: string): Query {
     const words = query.split(/\s+/).filter(s => s);
     let text = words.pop() || '';
