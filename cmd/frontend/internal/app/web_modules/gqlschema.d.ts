@@ -22,7 +22,7 @@ declare namespace GQL {
     description: null
   */
   interface IQuery {
-    __typename: string;
+    __typename: "Query";
     root: IRoot;
     node: INode | null;
   }
@@ -31,7 +31,7 @@ declare namespace GQL {
     description: null
   */
   interface IRoot {
-    __typename: string;
+    __typename: "Root";
     organization: IOrganization | null;
     repository: IRepository | null;
     repositories: Array<IRepository>;
@@ -50,7 +50,7 @@ declare namespace GQL {
     description: null
   */
   interface IOrganization {
-    __typename: string;
+    __typename: "Organization";
     login: string;
     githubId: number;
     email: string;
@@ -64,7 +64,7 @@ declare namespace GQL {
     description: null
   */
   interface IRepository {
-    __typename: string;
+    __typename: "Repository";
     id: string;
     uri: string;
     description: string;
@@ -90,7 +90,7 @@ declare namespace GQL {
     description: null
   */
   interface INode {
-    __typename: string;
+    __typename: "Node";
     id: string;
   }
 
@@ -98,7 +98,7 @@ declare namespace GQL {
     description: null
   */
   interface ICommitState {
-    __typename: string;
+    __typename: "CommitState";
     commit: ICommit | null;
     cloneInProgress: boolean;
   }
@@ -107,7 +107,7 @@ declare namespace GQL {
     description: null
   */
   interface ICommit {
-    __typename: string;
+    __typename: "Commit";
     id: string;
     sha1: string;
     tree: ITree | null;
@@ -119,7 +119,7 @@ declare namespace GQL {
     description: null
   */
   interface ITree {
-    __typename: string;
+    __typename: "Tree";
     directories: Array<IDirectory>;
     files: Array<IFile>;
   }
@@ -128,7 +128,7 @@ declare namespace GQL {
     description: null
   */
   interface IDirectory {
-    __typename: string;
+    __typename: "Directory";
     name: string;
     tree: ITree;
   }
@@ -137,7 +137,7 @@ declare namespace GQL {
     description: null
   */
   interface IFile {
-    __typename: string;
+    __typename: "File";
     name: string;
     content: string;
     blame: Array<IHunk>;
@@ -150,7 +150,7 @@ declare namespace GQL {
     description: null
   */
   interface IHunk {
-    __typename: string;
+    __typename: "Hunk";
     startLine: number;
     endLine: number;
     startByte: number;
@@ -164,7 +164,7 @@ declare namespace GQL {
     description: null
   */
   interface ISignature {
-    __typename: string;
+    __typename: "Signature";
     person: IPerson | null;
     date: string;
   }
@@ -173,7 +173,7 @@ declare namespace GQL {
     description: null
   */
   interface IPerson {
-    __typename: string;
+    __typename: "Person";
     name: string;
     email: string;
     gravatarHash: string;
@@ -183,7 +183,7 @@ declare namespace GQL {
     description: null
   */
   interface ICommitInfo {
-    __typename: string;
+    __typename: "CommitInfo";
     rev: string;
     author: ISignature | null;
     committer: ISignature | null;
@@ -194,7 +194,7 @@ declare namespace GQL {
     description: null
   */
   interface IDependencyReferences {
-    __typename: string;
+    __typename: "DependencyReferences";
     dependencyReferenceData: IDependencyReferencesData;
     repoData: IRepoDataMap;
   }
@@ -203,7 +203,7 @@ declare namespace GQL {
     description: null
   */
   interface IDependencyReferencesData {
-    __typename: string;
+    __typename: "DependencyReferencesData";
     references: Array<IDependencyReference>;
     location: IDepLocation;
   }
@@ -212,7 +212,7 @@ declare namespace GQL {
     description: null
   */
   interface IDependencyReference {
-    __typename: string;
+    __typename: "DependencyReference";
     dependencyData: string;
     repoId: number;
     hints: string;
@@ -222,7 +222,7 @@ declare namespace GQL {
     description: null
   */
   interface IDepLocation {
-    __typename: string;
+    __typename: "DepLocation";
     location: string;
     symbol: string;
   }
@@ -231,7 +231,7 @@ declare namespace GQL {
     description: null
   */
   interface IRepoDataMap {
-    __typename: string;
+    __typename: "RepoDataMap";
     repos: Array<IRepository>;
     repoIds: Array<number>;
   }
@@ -240,7 +240,7 @@ declare namespace GQL {
     description: null
   */
   interface IRevState {
-    __typename: string;
+    __typename: "RevState";
     commit: ICommit | null;
     cloneInProgress: boolean;
   }
@@ -249,7 +249,7 @@ declare namespace GQL {
     description: null
   */
   interface ITotalRefList {
-    __typename: string;
+    __typename: "TotalRefList";
     repositories: Array<IRepository>;
     total: number;
   }
@@ -258,7 +258,7 @@ declare namespace GQL {
     description: null
   */
   interface IRemoteRepository {
-    __typename: string;
+    __typename: "RemoteRepository";
     uri: string;
     description: string;
     language: string;
@@ -272,7 +272,7 @@ declare namespace GQL {
     description: null
   */
   interface ISymbol {
-    __typename: string;
+    __typename: "Symbol";
     repository: IRepository;
     path: string;
     line: number;
@@ -283,7 +283,7 @@ declare namespace GQL {
     description: null
   */
   interface IUser {
-    __typename: string;
+    __typename: "User";
     githubInstallations: Array<IInstallation>;
   }
 
@@ -291,7 +291,7 @@ declare namespace GQL {
     description: null
   */
   interface IInstallation {
-    __typename: string;
+    __typename: "Installation";
     login: string;
     githubId: number;
     installId: number;
@@ -303,7 +303,7 @@ declare namespace GQL {
     description: null
   */
   interface IActiveRepoResults {
-    __typename: string;
+    __typename: "ActiveRepoResults";
     active: Array<string>;
     inactive: Array<string>;
   }
@@ -312,7 +312,7 @@ declare namespace GQL {
     description: null
   */
   interface ISearchQuery {
-    __typename: string;
+    __typename: "SearchQuery";
     pattern: string;
     isRegExp: boolean;
     isWordMatch: boolean;
@@ -326,7 +326,7 @@ declare namespace GQL {
     description: null
   */
   interface IRepositoryRevision {
-    __typename: string;
+    __typename: "RepositoryRevision";
     repo: string;
     rev: string | null;
   }
@@ -335,7 +335,7 @@ declare namespace GQL {
     description: null
   */
   interface ISearchResults {
-    __typename: string;
+    __typename: "SearchResults";
     results: Array<IFileMatch>;
     limitHit: boolean;
     cloning: Array<string>;
@@ -346,7 +346,7 @@ declare namespace GQL {
     description: null
   */
   interface IFileMatch {
-    __typename: string;
+    __typename: "FileMatch";
     resource: string;
     lineMatches: Array<ILineMatch>;
     limitHit: boolean;
@@ -356,7 +356,7 @@ declare namespace GQL {
     description: null
   */
   interface ILineMatch {
-    __typename: string;
+    __typename: "LineMatch";
     preview: string;
     lineNumber: number;
     offsetAndLengths: Array<Array<number>>;
@@ -367,7 +367,7 @@ declare namespace GQL {
     description: null
   */
   interface ISearchProfile {
-    __typename: string;
+    __typename: "SearchProfile";
     name: string;
     description: string | null;
     repositories: Array<IRepository>;
@@ -377,7 +377,7 @@ declare namespace GQL {
     description: null
   */
   interface ICompanyProfile {
-    __typename: string;
+    __typename: "CompanyProfile";
     ip: string;
     domain: string;
     fuzzy: boolean;
@@ -388,7 +388,7 @@ declare namespace GQL {
     description: null
   */
   interface ICompanyInfo {
-    __typename: string;
+    __typename: "CompanyInfo";
     id: string;
     name: string;
     legalName: string;
@@ -409,7 +409,7 @@ declare namespace GQL {
     description: null
   */
   interface ISiteDetails {
-    __typename: string;
+    __typename: "SiteDetails";
     url: string;
     title: string;
     phoneNumbers: Array<string>;
@@ -420,7 +420,7 @@ declare namespace GQL {
     description: null
   */
   interface ICompanyCategory {
-    __typename: string;
+    __typename: "CompanyCategory";
     sector: string;
     industryGroup: string;
     industry: string;
@@ -431,7 +431,7 @@ declare namespace GQL {
     description: null
   */
   interface IThread {
-    __typename: string;
+    __typename: "Thread";
     id: number;
     file: string;
     revision: string;
@@ -447,7 +447,7 @@ declare namespace GQL {
     description: null
   */
   interface IComment {
-    __typename: string;
+    __typename: "Comment";
     id: number;
     contents: string;
     createdAt: string;
@@ -460,7 +460,7 @@ declare namespace GQL {
     description: null
   */
   interface IMutation {
-    __typename: string;
+    __typename: "Mutation";
     createThread: IThread;
     addCommentToThread: IThread;
   }
@@ -469,7 +469,7 @@ declare namespace GQL {
     description: null
   */
   interface IRefFields {
-    __typename: string;
+    __typename: "RefFields";
     refLocation: IRefLocation | null;
     uri: IURI | null;
   }
@@ -478,7 +478,7 @@ declare namespace GQL {
     description: null
   */
   interface IRefLocation {
-    __typename: string;
+    __typename: "RefLocation";
     startLineNumber: number;
     startColumn: number;
     endLineNumber: number;
@@ -489,7 +489,7 @@ declare namespace GQL {
     description: null
   */
   interface IURI {
-    __typename: string;
+    __typename: "URI";
     host: string;
     fragment: string;
     path: string;
