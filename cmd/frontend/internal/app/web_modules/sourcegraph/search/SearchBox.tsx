@@ -39,16 +39,21 @@ interface Query {
 
 /** Takes a string query and parses it into an object */
 function parseQuery(query: string): Query {
-    const words = query.split(' ').filter(s => s);
+    const words = query.split(/\s+/).filter(s => s);
     let text = words.pop() || '';
     if (text.includes(':')) {
         words.push(text);
         text = '';
     }
-    const filters: Filter[] = words.map(word => {
-        const [type, value] = word.split(':') as [FilterType, string];
-        return { type, value };
-    });
+    const filters: Filter[] = [];
+    for (const word of words) {
+        const [type, value] = word.split(':') as [FilterType | undefined, string | undefined];
+        if ((type !== FilterType.File && type !== FilterType.Repo) || !value) {
+            console.warn(`Invalid query filter: ${word}`);
+            continue;
+        }
+        filters.push({ type, value });
+    }
     return { filters, text };
 }
 
