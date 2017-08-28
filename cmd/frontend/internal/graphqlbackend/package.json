@@ -1,9 +1,0 @@
-{
-  "name": "api",
-  "version": "1.0.0",
-  "dependencies": {
-    "gql2ts": "^0.5.1",
-    "typescript": "^2.2.1",
-    "typescript-formatter": "^5.1.1"
-  }
-}
