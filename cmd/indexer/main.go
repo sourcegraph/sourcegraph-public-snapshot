@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -45,6 +46,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Could not initialize Google API client: %s\n", err)
 		os.Exit(1)
 	}
+
+	localstore.ConnectToDB("")
 
 	// SECURITY: This is only safe because the indexer runs in isolation and does not expose any data to the outside world
 	ctx := accesscontrol.WithInsecureSkip(context.Background(), true)

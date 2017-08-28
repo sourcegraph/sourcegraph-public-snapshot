@@ -34,6 +34,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -157,6 +158,8 @@ func Main() error {
 		go debugserver.Start(profBindAddr)
 		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", profBindAddr))
 	}
+
+	localstore.ConnectToDB("")
 
 	app.Init()
 

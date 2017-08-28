@@ -20,7 +20,7 @@ func (*comments) Create(ctx context.Context, threadID int32, contents string, au
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int64
-	err := appDBH(ctx).QueryRow(
+	err := globalDB.QueryRow(
 		"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
 		threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
 	if err != nil {
@@ -44,7 +44,7 @@ func (c *comments) GetAllForThread(ctx context.Context, threadID int64) ([]*sour
 
 // getBySQL returns comments matching the SQL query, if any exist.
 func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Comment, error) {
-	rows, err := appDBH(ctx).Query("SELECT id, thread_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
+	rows, err := globalDB.Query("SELECT id, thread_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
 	if err != nil {
 		return nil, err
 	}

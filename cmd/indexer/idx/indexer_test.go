@@ -45,6 +45,8 @@ func Test_queueWithoutDuplicates(t *testing.T) {
 }
 
 func Test_index_java(t *testing.T) {
+	t.Skip("test tries to use DB")
+
 	// test input data
 	inputRepo := "github.com/sourcegraph/testname123"
 

@@ -27,7 +27,7 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 
 	newThread.UpdatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
-	err := appDBH(ctx).QueryRow(
+	err := globalDB.QueryRow(
 		"INSERT INTO threads(local_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
 		newThread.LocalRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
 	if err != nil {
@@ -68,11 +68,11 @@ func (t *threads) Update(ctx context.Context, id, repoID int64, archive *bool) (
 				Valid: true,
 			}
 		}
-		if _, err := appDBH(ctx).Exec("UPDATE threads SET archived_at=$1 WHERE id=$2", archivedAt, id); err != nil {
+		if _, err := globalDB.Exec("UPDATE threads SET archived_at=$1 WHERE id=$2", archivedAt, id); err != nil {
 			return nil, err
 		}
 	}
-	if _, err := appDBH(ctx).Exec("UPDATE threads SET updated_at=$1 WHERE id=$2", time.Now(), id); err != nil {
+	if _, err := globalDB.Exec("UPDATE threads SET updated_at=$1 WHERE id=$2", time.Now(), id); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +89,7 @@ func (t *threads) GetAllForFile(ctx context.Context, repoID int64, file string) 
 
 // getBySQL returns threads matching the SQL query, if any exist.
 func (*threads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Thread, error) {
-	rows, err := appDBH(ctx).Query("SELECT id, local_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, archived_at FROM threads "+query, args...)
+	rows, err := globalDB.Query("SELECT id, local_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, archived_at FROM threads "+query, args...)
 	if err != nil {
 		return nil, err
 	}

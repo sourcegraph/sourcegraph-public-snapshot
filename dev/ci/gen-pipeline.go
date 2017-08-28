@@ -116,6 +116,7 @@ func main() {
 	}
 	for _, f := range testFiles {
 		pipeline.AddStep(":robot_face:",
+			Cmd(`./dev/drop-entire-local-database.sh`),
 			Cmd("./dev/e2e/run-test.sh "+filepath.Base(f)),
 			ArtifactPaths("dev/e2e/log.html"))
 	}

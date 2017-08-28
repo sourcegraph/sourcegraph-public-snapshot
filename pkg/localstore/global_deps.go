@@ -272,7 +272,7 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 	sql := `SELECT count(distinct(repo_id))
 			FROM global_dep
 			WHERE ` + whereSQL
-	rows, err := appDBH(ctx).Query(sql, args...)
+	rows, err := globalDB.Query(sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "Query")
 	}
@@ -320,7 +320,7 @@ func (g *globalDeps) doListTotalRefs(ctx context.Context, repo int32, lang strin
 	sql := `SELECT distinct(repo_id)
 			FROM global_dep
 			WHERE ` + whereSQL
-	rows, err := appDBH(ctx).Query(sql, args...)
+	rows, err := globalDB.Query(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "Query")
 	}
@@ -347,7 +347,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
-	rows, err := appDBH(ctx).Query(`SELECT COUNT(DISTINCT repo_id)
+	rows, err := globalDB.Query(`SELECT COUNT(DISTINCT repo_id)
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
@@ -380,7 +380,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]in
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
-	rows, err := appDBH(ctx).Query(`SELECT DISTINCT repo_id
+	rows, err := globalDB.Query(`SELECT DISTINCT repo_id
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
@@ -431,7 +431,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 		table = "global_dep_private"
 	}
 
-	err = dbutil.Transaction(ctx, appDBH(ctx), func(tx *sql.Tx) error {
+	err = dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		// Update the table.
 		err = g.update(ctx, tx, table, language, deps, repo.ID)
 		if err != nil {
@@ -601,7 +601,7 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	}
 	sql := fmt.Sprintf("%s %s %s %s", selectSQL, fromSQL, whereSQL, limitSQL)
 
-	rows, err := appDBH(ctx).Query(sql, args...)
+	rows, err := globalDB.Query(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

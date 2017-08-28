@@ -102,7 +102,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		pks = append(pks, pk)
 	}
 
-	err = dbutil.Transaction(ctx, appDBH(ctx), func(tx *sql.Tx) error {
+	err = dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		// Update the pkgs table.
 		err = p.update(ctx, tx, repo.ID, language, pks)
 		if err != nil {
@@ -239,7 +239,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		WHERE ` + whereSQL + `
 		ORDER BY repo.created_at ASC NULLS LAST, pkgs.repo_id ASC
 		LIMIT ` + arg(op.Limit)
-	rows, err := appDBH(ctx).Query(sql, args...)
+	rows, err := globalDB.Query(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

@@ -1,58 +1,49 @@
 package localstore
 
 import (
-	"context"
 	"database/sql"
 	"log"
 	"os"
 	"strconv"
-	"sync"
 
+	"github.com/mattes/migrate"
+	"github.com/mattes/migrate/database/postgres"
+	bindata "github.com/mattes/migrate/source/go-bindata"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore/migrations"
 )
 
 var (
-	globalAppDB *sql.DB
-	dbLock      sync.Mutex
+	globalDB      *sql.DB
+	globalMigrate *migrate.Migrate
 )
 
-// globalDB opens the app DB if it isn't already open,
-// and returns it. Subsequent calls return the same DB handle.
-func globalDB() (*sql.DB, error) {
-	dbLock.Lock()
-	defer dbLock.Unlock()
-
-	if globalAppDB == nil {
-		var err error
-		globalAppDB, err = dbutil2.Open("")
-		if err != nil {
-			return nil, err
-		}
-		registerPrometheusCollector(globalAppDB, "_app")
-		configureConnectionPool(globalAppDB)
-
-		// TODO migrate
-	}
-
-	return globalAppDB, nil
-}
-
-type key int
-
-const dbKey key = 0
-
-// appDBH returns the app DB handle.
-func appDBH(ctx context.Context) *sql.DB {
-	db, ok := ctx.Value(dbKey).(*sql.DB)
-	if ok {
-		return db
-	}
-	db, err := globalDB()
+// ConnectToDB connects to the given DB and stores the handle globally.
+func ConnectToDB(dataSource string) {
+	var err error
+	globalDB, err = dbutil2.Open(dataSource)
 	if err != nil {
-		panic("DB not available: " + err.Error())
+		log.Fatal("DB not available: " + err.Error())
 	}
-	return db
+	registerPrometheusCollector(globalDB, "_app")
+	configureConnectionPool(globalDB)
+
+	globalMigrate = newMigrate(globalDB)
+
+	// support for legacy tables
+	if _, _, err := globalMigrate.Version(); err == migrate.ErrNilVersion {
+		if _, err := globalDB.Query("select id from repo limit 0;"); err == nil {
+			// no version in DB, but "repo" table exists
+			if err := globalMigrate.Force(1503575588); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	if err := globalMigrate.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatal(err)
+	}
 }
 
 func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
@@ -85,4 +76,24 @@ func configureConnectionPool(db *sql.DB) {
 	}
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
+}
+
+func newMigrate(db *sql.DB) *migrate.Migrate {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s := bindata.Resource(migrations.AssetNames(), migrations.Asset)
+	d, err := bindata.WithInstance(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	m, err := migrate.NewWithInstance("go-bindata", d, "postgres", driver)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return m
 }
