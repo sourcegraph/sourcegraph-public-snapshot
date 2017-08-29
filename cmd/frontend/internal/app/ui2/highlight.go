@@ -103,6 +103,16 @@ func preSpansToTable(h string) (string, error) {
 		codeCell *html.Node
 	)
 	newRow := func() {
+		// If the previous row did not have any children, then it was a blank
+		// line. Blank lines always need a span with a newline character for
+		// proper whitespace copy+paste support.
+		if codeCell != nil && codeCell.FirstChild == nil {
+			span := &html.Node{Type: html.ElementNode, DataAtom: atom.Span, Data: atom.Span.String()}
+			codeCell.AppendChild(span)
+			spanText := &html.Node{Type: html.TextNode, Data: "\n"}
+			span.AppendChild(spanText)
+		}
+
 		rows++
 		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 		table.AppendChild(tr)
@@ -149,6 +159,9 @@ func generatePlainTable(code string) (template.HTML, error) {
 	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
 	for row, line := range strings.Split(code, "\n") {
 		line = strings.TrimSuffix(line, "\r") // CRLF files
+		if line == "" {
+			line = "\n" // important for e.g. selecting whitespace in the produced table
+		}
 		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 		table.AppendChild(tr)
 
