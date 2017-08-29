@@ -4,7 +4,7 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-gcloud docker -- pull us.gcr.io/sourcegraph-dev/syntect_server
+gcloud docker -- pull sourcegraph/syntect_server
 
 GOBIN="$PWD"/vendor/.bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sqs/rego sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
 
