@@ -1,6 +1,7 @@
 package ui2
 
 import (
+	"errors"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -109,6 +110,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError 
 				})
 			}
 			return nil, err
+		}
+		if common.Repo.Private {
+			serveError(w, r, errors.New("accessing private repositories is forbidden"), http.StatusNotFound)
+			return nil, nil
 		}
 		common.Rev = mux.Vars(r)["Rev"]
 		common.PageVars.Rev = strings.TrimPrefix(common.Rev, "@")
