@@ -72,12 +72,12 @@ func highlight(ctx context.Context, code, extension string, disableTimeout bool)
 //
 // 	<table>
 // 	<tr>
-// 		<td>1</td>
-// 		<td><span style="color:#foobar">thecode.line1</span></td>
+// 		<td class="line" data-line="1"></td>
+// 		<td class="code"><span style="color:#foobar">thecode.line1</span></td>
 // 	</tr>
 // 	<tr>
-// 		<td>2</td>
-// 		<td><span style="color:#foobar">thecode.line2</span></td>
+// 		<td class="line" data-line="2"></td>
+// 		<td class="code"><span style="color:#foobar">thecode.line2</span></td>
 // 	</tr>
 // 	</table>
 //
@@ -108,12 +108,12 @@ func preSpansToTable(h string) (string, error) {
 		table.AppendChild(tr)
 
 		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(rows)})
 		tr.AppendChild(tdLineNumber)
 
-		lineNumber := &html.Node{Type: html.TextNode, Data: fmt.Sprint(rows)}
-		tdLineNumber.AppendChild(lineNumber)
-
 		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 		tr.AppendChild(codeCell)
 	}
 	newRow()
@@ -153,12 +153,12 @@ func generatePlainTable(code string) (template.HTML, error) {
 		table.AppendChild(tr)
 
 		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
 		tr.AppendChild(tdLineNumber)
 
-		lineNumber := &html.Node{Type: html.TextNode, Data: fmt.Sprint(row + 1)}
-		tdLineNumber.AppendChild(lineNumber)
-
 		codeCell := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 		tr.AppendChild(codeCell)
 
 		// Span to match same structure as what highlighting would usually generate.
