@@ -90,38 +90,24 @@ $nav-height: 48px;
                     }
                 }
 
-                .search {
-                    display: flex;
-                    align-items: center;
-                    width: 248px;
-                    height: 32px;
-
-                    background-color: #151D28;
-
-                    border-radius: 2px 2px 2px 2px;
-                    border: 0px solid #000000;
-
-                    >input {
-                        display: inline-block;
-                        flex: 1;
-                        font-size: 14px;
-                        height: 32px;
-
-                        color: #FFFFFF;
-                        background: none;
-                        border: 0;
-                        outline: none;
-                    }
-
-                    >input::placeholder {
-                        color: #93A9C8;
-                    }
-
-                    .icon {
-                        color: #93A9C8;
-                        margin: 0px 8px;
-                    }
-                }
+				#search-box-container {
+					flex: 1 0 0;
+					.react-autosuggest__ {
+						&container {
+							padding: 0;
+							box-shadow: none;
+						}
+						&input {
+							margin: 0;
+						}
+						&suggestions-container {
+							position: absolute;
+							width: 100%;
+							margin-left: 0;
+							margin-right: 0;
+						}
+					}
+				}
             }
 
             #advanced-search {

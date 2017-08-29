@@ -3,7 +3,6 @@ import * as React from 'react';
 import { render } from 'react-dom';
 import { handleSearchInput } from 'sourcegraph/search';
 import { AdvancedSearchDrawer } from 'sourcegraph/search/AdvancedSearchDrawer';
-import { AdvancedSearchToggle } from 'sourcegraph/search/AdvancedSearchToggle';
 import { SearchBox } from 'sourcegraph/search/SearchBox';
 import { SearchResults } from 'sourcegraph/search/SearchResults';
 import { setState as setSearchState, store as searchStore } from 'sourcegraph/search/store';
@@ -37,11 +36,8 @@ export function injectSearchInputHandler(): void {
 }
 
 export function injectAdvancedSearchToggle(): void {
-    const el = document.createElement('div');
-    el.id = 'advanced-search-toggle';
-    render(<AdvancedSearchToggle />, el);
-    const header = document.querySelector('.header') as HTMLElement;
-    header.insertBefore(el, header.querySelector('.fill')!);
+    const searchBoxContainer = document.getElementById('search-box-container') as HTMLElement;
+    render(<SearchBox />, searchBoxContainer);
 }
 
 export function injectAdvancedSearchDrawer(): void {

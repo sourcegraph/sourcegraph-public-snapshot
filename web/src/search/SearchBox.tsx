@@ -7,7 +7,8 @@ import AutoSuggest = require('react-autosuggest');
 import { Subject } from 'rxjs';
 import { Subscription } from 'rxjs/Subscription';
 import { queryGraphQL } from 'sourcegraph/backend/graphql';
-import { getSearchPath } from './index';
+import { isSearchResultsPage, parseBlob } from 'sourcegraph/util/url';
+import { getSearchParamsFromURL, getSearchPath, parseRepoList } from './index';
 
 /** The type of type:value filters a user can enter */
 enum FilterType {
@@ -93,6 +94,26 @@ export class SearchBox extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props);
+        // Fill text input from URL info
+        let query = '';
+        const parsedUrl = parseBlob();
+        if (isSearchResultsPage()) {
+            // Search results page, show query
+            const params = getSearchParamsFromURL(location.href);
+            query += parseRepoList(params.repos).map(uri => `repo:${uri}`).join(' ') + ' ';
+            if (params.files) {
+                query += `file:${params.files} `;
+            }
+            query += params.q;
+        } else if (parsedUrl.uri) {
+            // Repo page, add repo filter
+            query += `repo:${parsedUrl.uri} `;
+            if (parsedUrl.path) {
+                // Blob page, add file filter
+                query += `file:${parsedUrl.path} `;
+            }
+        }
+        this.state = { suggestions: [], query };
         this.subscriptions.add(
             this.suggestionsFetchRequests
                 .map(parseQuery)
