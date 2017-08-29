@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"context"
 
@@ -367,4 +368,73 @@ func TestRepos_Create_dupe(t *testing.T) {
 
 	// Add another repo with the same name.
 	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"})
+}
+
+func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := testContext()
+	ghrepo := &sourcegraph.Repo{
+		URI: "github.com/u/r",
+	}
+	github.MockGetRepo_Return(ghrepo)
+	createRepo(ctx, t, ghrepo)
+
+	repoWant, err := Repos.GetByURI(ctx, "github.com/u/r")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Copy to ensure we aren't mutating an inmemory reference
+	repoWantCopy := *repoWant
+	repoWant = &repoWantCopy
+
+	normaliseTime := func(ts *time.Time) *time.Time {
+		if ts == nil {
+			return nil
+		}
+		x := ts.UTC().Round(time.Second)
+		return &x
+	}
+	check := func(label string) {
+		err := Repos.UpdateRepoFieldsFromRemote(ctx, repoWant.ID)
+		if err != nil {
+			t.Fatal(label, err)
+		}
+		repo, err := Repos.Get(ctx, repoWant.ID)
+		if err != nil {
+			t.Fatal(label, err)
+		}
+		repo.UpdatedAt = normaliseTime(repo.UpdatedAt)
+		repo.PushedAt = normaliseTime(repo.PushedAt)
+		if !jsonEqual(t, repo, repoWant) {
+			t.Errorf("%s: got %v, want %v", label, asJSON(t, repo), asJSON(t, repoWant))
+		}
+	}
+
+	check("no updates")
+
+	// Update one field
+	repoWant.Description = "Test description"
+	ghrepo.Description = "Test description"
+	check("one update")
+
+	// Update two fields
+	repoWant.HomepageURL = "http://foo.com"
+	ghrepo.HomepageURL = "http://foo.com"
+	repoWant.DefaultBranch = "dev"
+	ghrepo.DefaultBranch = "dev"
+	check("two updates")
+
+	// Update the other fields we get from GitHub
+	t1 := time.Now().UTC()
+	t2 := t1.Add(time.Second)
+	repoWant.Private = true
+	ghrepo.Private = true
+	repoWant.UpdatedAt = normaliseTime(&t1)
+	ghrepo.UpdatedAt = normaliseTime(&t1)
+	repoWant.PushedAt = normaliseTime(&t2)
+	ghrepo.PushedAt = normaliseTime(&t2)
+	check("other updates")
 }

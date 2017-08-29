@@ -322,34 +322,30 @@ func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegrap
 		return err
 	}
 
+	var updates []*sqlf.Query
 	if ghrepo.Description != repo.Description {
-		if _, err := appDBH(ctx).Exec("UPDATE repo SET description=$1 WHERE id=$2", ghrepo.Description, repo.ID); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("description=%s", ghrepo.Description))
 	}
 	if ghrepo.HomepageURL != repo.HomepageURL {
-		if _, err := appDBH(ctx).Exec("UPDATE repo SET homepage_url=$1 WHERE id=$2", ghrepo.HomepageURL, repo.ID); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("homepage_url=%s", ghrepo.HomepageURL))
 	}
 	if ghrepo.DefaultBranch != repo.DefaultBranch {
-		if _, err := appDBH(ctx).Exec("UPDATE repo SET default_branch=$1 WHERE id=$2", ghrepo.DefaultBranch, repo.ID); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("default_branch=%s", ghrepo.DefaultBranch))
 	}
 	if ghrepo.Private != repo.Private {
-		if _, err := appDBH(ctx).Exec("UPDATE repo SET private=$1 WHERE id=$2", ghrepo.Private, repo.ID); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("private=%v", ghrepo.Private))
 	}
 
 	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
-		if _, err := appDBH(ctx).Exec("UPDATE repo SET updated_at=$1 WHERE id=$2", ghrepo.UpdatedAt, repo.ID); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("updated_at=%s", ghrepo.UpdatedAt))
 	}
 	if !timestampEqual(repo.PushedAt, ghrepo.PushedAt) {
-		if _, err := appDBH(ctx).Exec("UPDATE repo SET pushed_at=$1 WHERE id=$2", ghrepo.PushedAt, repo.ID); err != nil {
+		updates = append(updates, sqlf.Sprintf("pushed_at=%s", ghrepo.PushedAt))
+	}
+
+	if len(updates) > 0 {
+		q := sqlf.Sprintf("UPDATE repo SET %s WHERE id=%d", sqlf.Join(updates, ","), repo.ID)
+		if _, err := appDBH(ctx).Exec(q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			return err
 		}
 	}
