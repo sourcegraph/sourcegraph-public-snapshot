@@ -44,6 +44,14 @@ func (t *threadResolver) CreatedAt() string {
 	return t.thread.CreatedAt.Format(time.RFC3339) // ISO
 }
 
+func (t *threadResolver) ArchivedAt() *string {
+	if t.thread.ArchivedAt == nil {
+		return nil
+	}
+	a := t.thread.ArchivedAt.Format(time.RFC3339) // ISO
+	return &a
+}
+
 func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	RemoteURI   string
 	AccessToken string
@@ -130,4 +138,24 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	notifyThreadParticipants(repo, newThread, nil, comment)
 
 	return &threadResolver{thread: newThread}, nil
+}
+
+func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
+	RemoteURI   string
+	AccessToken string
+	ThreadID    int32
+	Archived    *bool
+}) (*threadResolver, error) {
+	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
+	// ensuring the user has permissions to access the repository.
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	thread, err := store.Threads.Update(ctx, int64(args.ThreadID), int64(repo.ID), args.Archived)
+	if err != nil {
+		return nil, err
+	}
+	return &threadResolver{thread: thread}, nil
 }

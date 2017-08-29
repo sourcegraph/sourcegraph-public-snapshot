@@ -490,15 +490,17 @@ type LocalRepo struct {
 }
 
 type Thread struct {
-	ID             int32     `json:"ID,omitempty"`
-	LocalRepoID    int32     `json:"LocalRepoID,omitempty"`
-	File           string    `json:"File,omitempty"`
-	Revision       string    `json:"Revision,omitempty"`
-	StartLine      int32     `json:"StartLine,omitempty"`
-	EndLine        int32     `json:"EndLine,omitempty"`
-	StartCharacter int32     `json:"StartCharacter,omitempty"`
-	EndCharacter   int32     `json:"EndCharacter,omitempty"`
-	CreatedAt      time.Time `json:"CreatedAt,omitempty"`
+	ID             int32      `json:"ID,omitempty"`
+	LocalRepoID    int32      `json:"LocalRepoID,omitempty"`
+	File           string     `json:"File,omitempty"`
+	Revision       string     `json:"Revision,omitempty"`
+	StartLine      int32      `json:"StartLine,omitempty"`
+	EndLine        int32      `json:"EndLine,omitempty"`
+	StartCharacter int32      `json:"StartCharacter,omitempty"`
+	EndCharacter   int32      `json:"EndCharacter,omitempty"`
+	CreatedAt      time.Time  `json:"CreatedAt,omitempty"`
+	UpdatedAt      time.Time  `json:"UpdatedAt,omitempty"`
+	ArchivedAt     *time.Time `json:"ArchivedAt,omitempty"`
 }
 
 type Comment struct {

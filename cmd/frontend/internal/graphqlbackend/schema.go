@@ -16,6 +16,7 @@ type Query {
 
 type Mutation {
 	createThread(remoteURI: String!, accessToken: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!, authorName: String!, authorEmail: String!): Thread!
+	updateThread(remoteURI: String!, accessToken: String!, threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
 }
 
@@ -308,6 +309,7 @@ type Thread {
 	startCharacter: Int!
 	endCharacter: Int!
 	createdAt: String!
+	archivedAt: String
 	comments: [Comment!]!
 }
 

@@ -94,3 +94,34 @@ func TestThreads_Get_RepoNotFound(t *testing.T) {
 		t.Errorf("expected threads to have length 0; got %#v", threads)
 	}
 }
+
+func TestThreads_Update(t *testing.T) {
+	wantRepo := sourcegraph.LocalRepo{
+		RemoteURI:   "test",
+		AccessToken: "1234",
+	}
+
+	store.Mocks.LocalRepos.MockGet_Return(t, &wantRepo, nil)
+	called := store.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{}, nil)
+
+	r := &schemaResolver{}
+	archived := true
+	_, err := r.UpdateThread(context.Background(), &struct {
+		RemoteURI   string
+		AccessToken string
+		ThreadID    int32
+		Archived    *bool
+	}{
+		RemoteURI:   wantRepo.RemoteURI,
+		AccessToken: wantRepo.AccessToken,
+		ThreadID:    1,
+		Archived:    &archived,
+	})
+
+	if err != nil {
+		t.Error(err)
+	}
+	if !*called {
+		t.Error("expected Threads.Update to be called")
+	}
+}
