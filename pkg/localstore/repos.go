@@ -1,7 +1,6 @@
 package localstore
 
 import (
-	"fmt"
 	"log"
 	"regexp"
 	"sort"
@@ -10,6 +9,7 @@ import (
 
 	"context"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -89,7 +89,7 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 		return Mocks.Repos.Get(ctx, id)
 	}
 
-	repos, err := s.getBySQL(ctx, "WHERE id=$1 LIMIT 1", id)
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d LIMIT 1", id))
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 }
 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	repos, err := s.getBySQL(ctx, "WHERE uri=$1 LIMIT 1", uri)
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", uri))
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +181,9 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	return repo, nil
 }
 
-func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Repo, error) {
-	rows, err := appDBH(ctx).Query("SELECT id, uri, description, homepage_url, default_branch, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo "+query, args...)
+func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourcegraph.Repo, error) {
+	q := sqlf.Sprintf("SELECT id, uri, description, homepage_url, default_branch, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
+	rows, err := appDBH(ctx).Query(q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -243,29 +244,22 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		opt = &RepoListOp{}
 	}
 
-	var args []interface{}
-	arg := func(a interface{}) string {
-		v := fmt.Sprintf("$%d", len(args)+1)
-		args = append(args, a)
-		return v
-	}
-
 	terms := strings.Fields(opt.Query)
 	if len(terms) > 10 {
 		terms = terms[:10]
 	}
 
-	conds := []string{"TRUE"}
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	for _, term := range terms {
 		term = strings.ToLower(term)
 		term = strings.Replace(term, `\`, `\\`, -1)
 		term = strings.Replace(term, "%", `\%`, -1)
 		term = strings.Replace(term, "_", `\_`, -1)
-		conds = append(conds, "lower(uri) LIKE "+arg("%"+term+"%"))
+		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", "%"+term+"%"))
 	}
 
 	// fetch matching repos unordered
-	rawRepos, err := s.getBySQL(ctx, "WHERE "+strings.Join(conds, " AND ")+" LIMIT 1000", args...)
+	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s LIMIT 1000", sqlf.Join(conds, "AND")))
 
 	// 🚨 SECURITY: It is very important that the input list of repos (rawRepos) 🚨
 	// comes directly from the DB as verifyUserHasReadAccessAll relies directly

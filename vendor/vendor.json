@@ -638,6 +638,12 @@
 			"revisionTime": "2015-12-22T15:32:29Z"
 		},
 		{
+			"checksumSHA1": "RBnEeiNEXROAITMYBNng6/2dJto=",
+			"path": "github.com/keegancsmith/sqlf",
+			"revision": "20361edea7d3760b60b6f58b3277d3f35b8795d7",
+			"revisionTime": "2017-08-28T17:09:48Z"
+		},
+		{
 			"path": "github.com/keegancsmith/tmpfriend",
 			"revision": "8cd4ff81b86b4b424d900910cefa16ff016acfea",
 			"revisionTime": "2016-01-12T00:40:12+02:00"
