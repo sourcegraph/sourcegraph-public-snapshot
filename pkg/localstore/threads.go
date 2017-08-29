@@ -25,7 +25,7 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 		return nil, errors.New("error creating thread: newThread is nil")
 	}
 
-	newThread.UpdatedAt = time.Now()
+	newThread.CreatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
 	err := globalDB.QueryRow(
 		"INSERT INTO threads(local_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
