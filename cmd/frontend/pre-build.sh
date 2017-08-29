@@ -3,7 +3,7 @@ set -ex
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 
 # Build the webapp typescript code.
-pushd cmd/frontend/internal/app/web_modules
+pushd web
 npm install
 NODE_ENV=production DISABLE_TYPECHECKING=true npm run build
 popd
