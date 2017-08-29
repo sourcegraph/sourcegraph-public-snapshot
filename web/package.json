@@ -5,8 +5,8 @@
   "scripts": {
     "build": "NODE_ENV=production webpack --config webpack.config.ts --progress --profile --colors",
     "watch": "NODE_ENV=development webpack --config webpack.config.ts --progress --profile --colors --watch",
-    "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o gqlschema.d.ts",
-    "lint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.tsx'"
+    "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o src/gqlschema.d.ts",
+    "lint": "tslint -c tslint.json -p tsconfig.json 'src/**/*.tsx'"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",

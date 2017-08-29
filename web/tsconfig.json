@@ -6,7 +6,7 @@
     "baseUrl": "./",
     "paths": {
       "sourcegraph/*": [
-        "sourcegraph/*"
+        "src/*"
       ],
       "@sourcegraph/components/lib/*": [
         "node_modules/@sourcegraph/components/lib/*"

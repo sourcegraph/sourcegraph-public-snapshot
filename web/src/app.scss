@@ -1,19 +1,17 @@
-@import "libs/highlight";
-@import "../sourcegraph/search/SearchBox";
+
+/*
+	This is the main entry point for all styles
+	It should import all component stylesheets
+*/
+
+@import "./highlight";
+@import "./search/SearchBox";
 
 $nav-height: 48px;
 
 * {
 	box-sizing: border-box;
 }
-
-/*
-    Styles for Go HTML template files only; all React code should use inline
-    style tags.
-
-    Every style here should be under a selector with the class name being the
-    file name, e.g. ".blobview" for the "shared/blobview.html" template.
-*/
 
 .base {
     // reset

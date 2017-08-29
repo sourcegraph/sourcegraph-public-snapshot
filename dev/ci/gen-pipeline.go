@@ -121,9 +121,9 @@ func main() {
 	}
 
 	pipeline.AddStep(":html:",
-		Cmd("cd cmd/frontend/internal/app/web_modules"),
+		Cmd("cd web"),
 		Cmd("npm install"),
-		Cmd("./node_modules/.bin/node-sass ./scss/app.scss > /dev/null"),
+		Cmd("./node_modules/.bin/node-sass ./src/app.scss > /dev/null"),
 		Cmd("./node_modules/.bin/tsc"),
 		Cmd("npm run lint"))
 

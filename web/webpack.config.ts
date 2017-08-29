@@ -49,12 +49,12 @@ const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-modul
 
 const config: webpack.Configuration = {
     entry: {
-        app: path.join(__dirname, 'app.tsx'),
-        highlighter: path.join(__dirname, 'highlighter.tsx'),
-        style: path.join(__dirname, './scss/app.scss')
+        app: path.join(__dirname, 'src/app.tsx'),
+        highlighter: path.join(__dirname, 'src/highlighter.tsx'),
+        style: path.join(__dirname, 'src/app.scss')
     },
     output: {
-        path: path.join(__dirname, '../../../../../ui/assets/scripts'),
+        path: path.join(__dirname, '../ui/assets/scripts'),
         filename: '[name].bundle.js',
         chunkFilename: '[id].chunk.js'
     },
@@ -63,7 +63,7 @@ const config: webpack.Configuration = {
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
         alias: {
-            sourcegraph: path.resolve(__dirname, 'sourcegraph')
+            sourcegraph: path.resolve(__dirname, 'src')
         }
     },
     module: {
