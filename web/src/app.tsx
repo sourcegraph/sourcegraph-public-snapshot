@@ -244,7 +244,7 @@ function highlightAndScrollToLine(repoURI: string, commitID: string, path: strin
 function getCodeCellsForAnnotation(): CodeCell[] {
     const table = document.querySelector('#blob-table>table') as HTMLTableElement;
     const cells = Array.from(table.rows).map(row => {
-        const line = parseInt(row.cells[0].innerText, 10);
+        const line = parseInt(row.cells[0].getAttribute('data-line')!, 10);
         const codeCell: HTMLTableDataCellElement = row.cells[1]; // the actual cell that has code inside; each row contains multiple columns
         return {
             cell: codeCell as HTMLElement,

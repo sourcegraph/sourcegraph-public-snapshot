@@ -72,12 +72,12 @@ func highlight(ctx context.Context, code, extension string, disableTimeout bool)
 //
 // 	<table>
 // 	<tr>
-// 		<td>1</td>
-// 		<td><span style="color:#foobar">thecode.line1</span></td>
+// 		<td class="line" data-line="1"></td>
+// 		<td class="code"><span style="color:#foobar">thecode.line1</span></td>
 // 	</tr>
 // 	<tr>
-// 		<td>2</td>
-// 		<td><span style="color:#foobar">thecode.line2</span></td>
+// 		<td class="line" data-line="2"></td>
+// 		<td class="code"><span style="color:#foobar">thecode.line2</span></td>
 // 	</tr>
 // 	</table>
 //
@@ -103,17 +103,27 @@ func preSpansToTable(h string) (string, error) {
 		codeCell *html.Node
 	)
 	newRow := func() {
+		// If the previous row did not have any children, then it was a blank
+		// line. Blank lines always need a span with a newline character for
+		// proper whitespace copy+paste support.
+		if codeCell != nil && codeCell.FirstChild == nil {
+			span := &html.Node{Type: html.ElementNode, DataAtom: atom.Span, Data: atom.Span.String()}
+			codeCell.AppendChild(span)
+			spanText := &html.Node{Type: html.TextNode, Data: "\n"}
+			span.AppendChild(spanText)
+		}
+
 		rows++
 		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 		table.AppendChild(tr)
 
 		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(rows)})
 		tr.AppendChild(tdLineNumber)
 
-		lineNumber := &html.Node{Type: html.TextNode, Data: fmt.Sprint(rows)}
-		tdLineNumber.AppendChild(lineNumber)
-
 		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 		tr.AppendChild(codeCell)
 	}
 	newRow()
@@ -149,16 +159,19 @@ func generatePlainTable(code string) (template.HTML, error) {
 	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
 	for row, line := range strings.Split(code, "\n") {
 		line = strings.TrimSuffix(line, "\r") // CRLF files
+		if line == "" {
+			line = "\n" // important for e.g. selecting whitespace in the produced table
+		}
 		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 		table.AppendChild(tr)
 
 		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
 		tr.AppendChild(tdLineNumber)
 
-		lineNumber := &html.Node{Type: html.TextNode, Data: fmt.Sprint(row + 1)}
-		tdLineNumber.AppendChild(lineNumber)
-
 		codeCell := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 		tr.AppendChild(codeCell)
 
 		// Span to match same structure as what highlighting would usually generate.

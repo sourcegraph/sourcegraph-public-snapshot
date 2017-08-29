@@ -256,9 +256,12 @@ $nav-height: 48px;
     display: flex;
     flex-direction: column;
 
-    td:first-child { /* line-number */
-        user-select: none; // prevent line numbers from being copied to clipboard
-        color: #31445E;
+    td.line {
+        &::before {
+            // draw line number with css so it cannot be copied to clipboard
+            content: attr(data-line);
+            color: #31445E;
+        }
     }
 
     .blobview-highlighting-aborted {
@@ -279,7 +282,7 @@ $nav-height: 48px;
             padding-right: 1em;
             padding-top: 2em;
             width: 100%;
-            td:last-child { /* code-cell */
+            td.code {
                 width: 100%;
             }
         }
@@ -293,7 +296,7 @@ $nav-height: 48px;
     #blob-table>table {
         margin-bottom: 26px;
         border-collapse: collapse;
-        td:first-child, td:last-child /* line-number, code-cell */ {
+        td.line, td.code {
             padding: 0;
             padding-top: 0.15em;
             padding-bottom: 0.15em;
@@ -302,7 +305,7 @@ $nav-height: 48px;
                 margin: 2px;
             }
         }
-        td:first-child { /* line-number */
+        td.line {
             color: #31445E;
             text-align: right;
             font-size: .75em;
@@ -310,7 +313,7 @@ $nav-height: 48px;
             padding-right: .75em;
             min-width: 3em;
         }
-        td:last-child { /* code-cell */
+        td.code {
             padding-left: .5em;
             white-space: pre;
             font-size: .75em;
