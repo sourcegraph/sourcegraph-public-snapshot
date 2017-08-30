@@ -66,6 +66,16 @@ This should be a separate GitHub user account for development whose username has
 - add a second profile to Chrome for your `*-test` GitHub user (https://cl.ly/3A3y1O040G3R),
     or download [Chrome Canary](https://www.google.com/chrome/browser/canary.html) to use for development
 
+## Create a BuildKite Account 
+
+Create an account [here](https://buildkite.com/signup), and then ask someone to add you the Sourcegraph organization. You can see the latest builds for Sourcegraph.com [here](https://buildkite.com/sourcegraph/sourcegraph). 
+
+## Create a NPM Account
+
+Create an account [here](https://www.npmjs.com/signup), and then ask @sqs to add you to the Sourcegraph organization. 
+
+Run [`npm login`](https://docs.npmjs.com/cli/adduser) inside the Sourcegraph directory, and input your npmjs.org credentials. 
+
 ## Get the code
 
 ```
@@ -134,11 +144,7 @@ ulimit -n 10000
 
 ## Test
 
-To run all tests:
-
-```
-make test
-```
+BuildKite runs all our unit tests, and its output can be viewed [here](https://buildkite.com/sourcegraph/sourcegraph). 
 
 To run tests within a directory (and recursively within its
 subdirectories):
