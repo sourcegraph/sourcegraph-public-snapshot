@@ -24,17 +24,10 @@ var (
 		Name:      "github_cache_hit",
 		Help:      "Counts cache hits and misses for public github repo metadata.",
 	}, []string{"type"})
-	reposGitHubRequestsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repos",
-		Name:      "github_unauthed_api_requests",
-		Help:      "Counts uncached requests to the GitHub API, and information on their origin if available.",
-	}, []string{"source"})
 )
 
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
-	prometheus.MustRegister(reposGitHubRequestsCounter)
 }
 
 type cachedRepo struct {
