@@ -72,7 +72,7 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 			// request the repo from the GitHub API (but do not add it to the cache).
 			if HasAuthedUser(ctx) {
 				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
-				return getFromAPI(ctx, owner, repoName)
+				return getPrivateFromAPI(ctx, owner, repoName)
 			}
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 		}
@@ -162,8 +162,8 @@ func addToPublicCache(repo string, c *cachedRepo) {
 
 var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
 
-// getFromAPI attempts to get a response from the GitHub API without use of
-// the redis cache.
+// getFromAPI attempts to fetch a public or private repo from the GitHub API
+// without use of the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
 	// Attempt directly accessing the repo first. If it is a public repo this will
 	// succeed, otherwise attempt fetching it from the private endpoints below.
@@ -171,6 +171,11 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	if err == nil {
 		return ToRepo(ghrepo), nil
 	}
+	return getPrivateFromAPI(ctx, owner, repoName)
+}
+
+// getPrivateFromAPI attempts to fetch a repo that the currently authed user owns.
+func getPrivateFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
 	// The current GitHub App API only allows users to access their repos by
 	// listing them via their installations. Check each installation and find the
 	// repo we're looking for.
