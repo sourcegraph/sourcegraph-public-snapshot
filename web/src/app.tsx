@@ -215,6 +215,12 @@ function highlightLine(repoURI: string, commitID: string, path: string, line: nu
         u.modalMode = undefined;
     }
 
+    // Update selection parameter in open-on-desktop button href.
+    const openOnDesktop = document.querySelector('.open-on-desktop') as HTMLAnchorElement | undefined;
+    if (openOnDesktop) {
+        openOnDesktop.href = openOnDesktop.href.replace(/(&selection=[\d:-]+)?$/, `&selection=${line}:1`);
+    }
+
     // Check URL change first, since this function can be called in response to
     // onhashchange.
     if (url.toBlob(u) === (window.location.pathname + window.location.hash)) {
