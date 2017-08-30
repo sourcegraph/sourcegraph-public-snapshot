@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -83,9 +82,17 @@ func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.T
 	if !notif.EmailIsConfigured() {
 		return
 	}
+
+	var first *sourcegraph.Comment
+	if len(previousComments) > 0 {
+		first = previousComments[0]
+	} else {
+		first = comment
+	}
 	emails := emailsToNotify(previousComments, comment)
+	repoName := repoNameFromURI(repo.RemoteURI)
 	for _, email := range emails {
-		subject := fmt.Sprintf("[%s] %s (#%d)", repo.RemoteURI, path.Base(thread.File), thread.ID)
+		subject := fmt.Sprintf("[%s] %s (#%d)", repoName, titleFromContents(first.Contents), thread.ID)
 		if len(previousComments) > 0 {
 			subject = "Re: " + subject
 		}
@@ -97,14 +104,21 @@ func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.T
 			ToEmail:   email,
 			Subject:   subject,
 		}
+
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
-			gochimp.Var{Name: "AUTHOR", Content: comment.AuthorName},
-			gochimp.Var{Name: "AUTHOR_EMAIL", Content: comment.AuthorEmail},
-			gochimp.Var{Name: "FILENAME", Content: thread.File},
-			gochimp.Var{Name: "PREVIEW", Content: comment.Contents},
+			gochimp.Var{Name: "CONTENTS", Content: comment.Contents},
 			gochimp.Var{Name: "COMMENT_URL", Content: getURL(repo, thread, comment)},
+			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
 		})
 	}
+}
+
+func repoNameFromURI(remoteURI string) string {
+	m := strings.SplitN(remoteURI, "/", 2)
+	if len(m) < 2 {
+		return remoteURI
+	}
+	return m[1]
 }
 
 func getURL(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment) string {

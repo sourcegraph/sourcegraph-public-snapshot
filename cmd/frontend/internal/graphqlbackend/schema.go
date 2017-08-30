@@ -304,6 +304,7 @@ type Thread {
 	id: Int!
 	file: String!
 	revision: String!
+	title: String!
 	startLine: Int!
 	endLine: Int!
 	startCharacter: Int!

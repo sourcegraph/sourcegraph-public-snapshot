@@ -125,3 +125,31 @@ func TestThreads_Update(t *testing.T) {
 		t.Error("expected Threads.Update to be called")
 	}
 }
+
+func TestTitleFromContents(t *testing.T) {
+	tests := []struct {
+		In  string
+		Out string
+	}{
+		{In: "Hello", Out: "Hello"},
+		{In: "Hello.", Out: "Hello."},
+		{In: "Hello?", Out: "Hello?"},
+		{In: "Hello!", Out: "Hello!"},
+		{In: "Hello there!", Out: "Hello there!"},
+		{In: "Check this out. Weird code huh?", Out: "Check this out."},
+		{In: "Hello world\n", Out: "Hello world"},
+		{In: "Hello world\nAnd all who inhabit it.", Out: "Hello world"},
+		{In: "Hello title\n\nSome contents?", Out: "Hello title"},
+		{In: "I have a question about this.\nWhat's going on here", Out: "I have a question about this."},
+		{In: "Hello title\n\nSome contents?", Out: "Hello title"},
+		{In: "What does foo.bar do?", Out: "What does foo.bar do?"},
+		{In: "It should be 1 != 2\nFYI 1 != 1 is wrong.", Out: "It should be 1 != 2"},
+	}
+
+	for _, test := range tests {
+		out := titleFromContents(test.In)
+		if out != test.Out {
+			t.Errorf("\n   input: \"%s\"\nexpected: \"%s\"\n     got: \"%s\"", test.In, test.Out, out)
+		}
+	}
+}

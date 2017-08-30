@@ -172,3 +172,21 @@ func TestComments_CreateAccessDenied(t *testing.T) {
 		t.Error("did not return error for failed Comments.Create")
 	}
 }
+
+func TestRepoNameFromURI(t *testing.T) {
+	tests := []struct {
+		In  string
+		Out string
+	}{
+		{In: "github.com/gorilla/mux", Out: "gorilla/mux"},
+		{In: "git.acmeinternal.org/acme/acme", Out: "acme/acme"},
+		{In: "company.internal/project", Out: "project"},
+	}
+
+	for _, test := range tests {
+		out := repoNameFromURI(test.In)
+		if out != test.Out {
+			t.Errorf("\n   input: \"%s\"\nexpected: \"%s\"\n     got: \"%s\"", test.In, test.Out, out)
+		}
+	}
+}
