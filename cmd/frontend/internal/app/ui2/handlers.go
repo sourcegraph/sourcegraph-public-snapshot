@@ -101,7 +101,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError 
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
-				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+				http.Redirect(w, r, "/"+e.NewURL, http.StatusMovedPermanently)
 				return nil, nil
 			}
 			if legacyerr.ErrCode(err) == legacyerr.NotFound {
