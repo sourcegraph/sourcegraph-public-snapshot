@@ -33,6 +33,12 @@
 		height: 1rem;
 		margin-top: 0.5rem;
 		margin-right: 0.5rem;
+		> input[type='checkbox'] {
+			display: none;
+			&:checked ~ span {
+				color: white;
+			}
+		}
 		&:hover {
 			color: white;
 		}

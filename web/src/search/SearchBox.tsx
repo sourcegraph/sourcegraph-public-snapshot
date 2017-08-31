@@ -47,6 +47,10 @@ interface State {
 
     /** The text typed in */
     query: string;
+
+    matchCase: boolean;
+    matchRegexp: boolean;
+    matchWord: boolean;
 }
 
 export class SearchBox extends React.Component<Props, State> {
@@ -66,6 +70,9 @@ export class SearchBox extends React.Component<Props, State> {
         const filters: Filter[] = [];
         let query = '';
         const parsedUrl = parseBlob();
+        let matchCase = false;
+        let matchWord = false;
+        let matchRegexp = false;
         if (isSearchResultsPage()) {
             // Search results page, show query
             const params = getSearchParamsFromURL(location.href);
@@ -76,6 +83,9 @@ export class SearchBox extends React.Component<Props, State> {
                 filters.push({ type: FilterType.File, value: params.files });
             }
             query = params.q;
+            matchCase = params.matchCase;
+            matchWord = params.matchWord;
+            matchRegexp = params.matchRegex;
         } else if (parsedUrl.uri) {
             // Repo page, add repo filter
             filters.push({ type: FilterType.Repo, value: parsedUrl.uri });
@@ -84,7 +94,15 @@ export class SearchBox extends React.Component<Props, State> {
                 filters.push({ type: FilterType.File, value: parsedUrl.path });
             }
         }
-        this.state = { filters, suggestions: [], query, selectedSuggestion: -1 };
+        this.state = {
+            filters,
+            suggestions: [],
+            query,
+            selectedSuggestion: -1,
+            matchCase,
+            matchWord,
+            matchRegexp
+        };
         this.subscriptions.add(
             this.inputValues
                 .do(query => this.setState({ query }))
@@ -172,9 +190,15 @@ export class SearchBox extends React.Component<Props, State> {
                             ref={ref => this.inputElement = ref!}
                         />
                     </div>
-                    <button className='search-box-option'>Aa</button>
-                    <button className='search-box-option'><u>Ab</u></button>
-                    <button className='search-box-option'>.*</button>
+                    <label className='search-box-option' title='Match case'>
+                        <input type='checkbox' checked={this.state.matchCase} onChange={e => this.setState({ matchCase: e.currentTarget.checked })}/><span>Aa</span>
+                    </label>
+                    <label className='search-box-option' title='Match whole word'>
+                        <input type='checkbox' checked={this.state.matchWord} onChange={e => this.setState({ matchWord: e.currentTarget.checked })}/><span><u>Ab</u></span>
+                    </label>
+                    <label className='search-box-option' title='Use regular expression'>
+                        <input type='checkbox' checked={this.state.matchRegexp} onChange={e => this.setState({ matchRegexp: e.currentTarget.checked })}/><span>.*</span>
+                    </label>
                 </div>
                 <ul className='search-box-suggestions'>
                     {
@@ -269,9 +293,9 @@ export class SearchBox extends React.Component<Props, State> {
                 q: query,
                 repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value).join(','),
                 files: filters.filter(f => f.type === FilterType.File).map(f => f.value).join(','),
-                matchCase: false,
-                matchRegex: false,
-                matchWord: false
+                matchCase: this.state.matchCase,
+                matchRegex: this.state.matchRegexp,
+                matchWord: this.state.matchWord
             });
             events.SearchSubmitted.log({ code_search: { pattern: query, repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value) } });
             location.href = path;
