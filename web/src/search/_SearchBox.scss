@@ -132,7 +132,9 @@
 	}
 
 	&-suggestions {
-		padding-top: 0.5rem;
+		margin-top: 0.5rem;
+		max-height: 25rem;
+		overflow-y: auto;
 		&-item {
 			display: flex;
 			border-top: 1px solid #2A3A51;
