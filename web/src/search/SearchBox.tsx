@@ -1,7 +1,7 @@
 
-import RepoIcon from '@sourcegraph/icons/lib/Repo';
 import CloseIcon from '@sourcegraph/icons/lib/Close';
 import FileIcon from '@sourcegraph/icons/lib/File';
+import RepoIcon from '@sourcegraph/icons/lib/Repo';
 import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
 import * as React from 'react';
