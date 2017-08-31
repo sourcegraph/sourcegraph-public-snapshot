@@ -1,4 +1,4 @@
-package ui2
+package highlight
 
 import (
 	"bytes"
@@ -16,26 +16,26 @@ import (
 
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "", "syntect_server HTTP(s) address")
-	SyntectClient *gosyntect.Client
+	client        *gosyntect.Client
 )
 
 func init() {
-	SyntectClient = gosyntect.New(syntectServer)
+	client = gosyntect.New(syntectServer)
 }
 
-// highlight highlights the given code with the given file extension (no
+// Code highlights the given code with the given file extension (no
 // leading ".") and returns the properly escaped HTML table representing
 // the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func highlight(ctx context.Context, code, extension string, disableTimeout bool) (template.HTML, bool, error) {
+func Code(ctx context.Context, code, extension string, disableTimeout bool) (template.HTML, bool, error) {
 	if !disableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 	}
-	resp, err := SyntectClient.Highlight(ctx, &gosyntect.Query{
+	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:      code,
 		Extension: extension,
 		Theme:     "Visual Studio Dark", // In the future, we could let the user choose the theme.
@@ -54,14 +54,14 @@ func highlight(ctx context.Context, code, extension string, disableTimeout bool)
 		return "", false, err
 	}
 	// Note: resp.Data is properly HTML escaped by syntect_server
-	table, err := PreSpansToTable(resp.Data)
+	table, err := preSpansToTable(resp.Data)
 	if err != nil {
 		return "", false, err
 	}
 	return template.HTML(table), false, nil
 }
 
-// PreSpansToTable takes the syntect data structure, which looks like:
+// preSpansToTable takes the syntect data structure, which looks like:
 //
 // 	<pre>
 // 	<span style="color:#foobar">thecode.line1</span>
@@ -81,7 +81,7 @@ func highlight(ctx context.Context, code, extension string, disableTimeout bool)
 // 	</tr>
 // 	</table>
 //
-func PreSpansToTable(h string) (string, error) {
+func preSpansToTable(h string) (string, error) {
 	doc, err := html.Parse(bytes.NewReader([]byte(h)))
 	if err != nil {
 		return "", err

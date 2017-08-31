@@ -1,4 +1,4 @@
-package ui2
+package highlight
 
 import (
 	"html/template"
