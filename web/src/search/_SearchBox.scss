@@ -1,81 +1,172 @@
 
 .search-box {
-	width: 100%;
-	font-size: 14px;
+	font-size: 12px;
 	color: #93A9C8;
+	padding: 0;
+	border-radius: 0.25rem;
+	// box-shadow: 0px 0.25rem 0.5rem rgba(0, 0, 0, 0.32);
+	background-color: #1C2736;
+	padding-top: 0.5rem;
 
-	&-highlighted-query {
-		color: white;
+	.icon {
+		height: 100%;
+		width: 1rem;
+		fill: currentColor;
+		text-align: center;
+		display: inline-block;
+		> svg {
+			width: 1rem;
+			height: 100%;
+		}
 	}
 
-	// Themed React AutoSuggest https://github.com/moroshko/react-autosuggest#theme-optional
-	// Class names use the BEM convention http://getbem.com/introduction/
-	.react-autosuggest__ {
-		&container {
-			width: 100%;
-			position: relative;
-			padding: 8px;
-			padding-bottom: 0;
-			background-color: #1C2736;
-			border-radius: 4px;
-			box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.32);
+	&-option {
+		flex: 0 0 auto;
+		border: none;
+		outline: none;
+		background-color: transparent;
+		padding: 0;
+		margin-left: 0.25rem;
+		color: inherit;
+		cursor: pointer;
+		width: 1rem;
+		height: 1rem;
+		margin-top: 0.5rem;
+		margin-right: 0.5rem;
+		> input[type='checkbox'] {
+			display: none;
+			&:checked ~ span {
+				color: white;
+			}
 		}
-		&input {
-			font-size: 14px;
-			height: 32px;
-			width: 100%;
-			padding: 8px;
-			border: none;
-			background-color: #151D28;
+		&:hover {
 			color: white;
-			border-radius: 2px;
-			margin-bottom: 8px;
-			&--focused {
+		}
+	}
+
+	&-query {
+		display: flex;
+		align-items: stretch;
+		background: #151D28;
+		border-radius: 2px;
+		margin-left: 0.5rem;
+		margin-right: 0.5rem;
+		padding-bottom: 0.25rem;
+
+		&-search-icon {
+			flex: 0 0 auto;
+			margin-left: 0.5rem;
+			margin-top: 0.5rem;
+			> .icon > svg {
+				height: auto;
+			}
+		}
+
+		&-chips {
+			flex: 1 1 auto;
+			display: flex;
+			margin-left: 0.5rem;
+			flex-wrap: wrap;
+
+			&-input, &-chip {
+				flex: 1 0 auto;
+				margin-top: 0.25rem;
+				margin-right: 0.25rem;
+				height: 1.5rem;
+			}
+
+			&-input {
+				// padding-left: 0.25rem;
+				background-color: transparent;
+				border: none;
 				outline: none;
+				color: white;
+				font-size: inherit;
+				&:not(:first-child) {
+					padding-left: 0.25rem;
+				}
+				&::-webkit-search-cancel-button {
+					display: none;
+				}
+				&::placeholder {
+					color: #93A9C8;
+				}
+			}
+
+			&-chip {
+				flex: 0 1 auto;
+				display: flex;
+				background-color: #2A3A51;
+				border-radius: 2px;
+				padding: 0.25rem 0.5rem;
+				color: white;
+				height: 1.5rem;
+				line-height: 1rem;
+				vertical-align: top;
+				max-width: 49%;
+				overflow: hidden;
+				white-space: nowrap;
+				&-text {
+					flex: 0 1 auto;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					direction: rtl;
+					display: inline-block;
+					vertical-align: top;
+					margin-left: 0.5rem;
+				}
+				&-remove-button {
+					border: none;
+					outline: none;
+					background-color: transparent;
+					padding: 0;
+					margin-left: 0.25rem;
+					color: #93A9C8;
+					cursor: pointer;
+					&:hover {
+						color: white;
+					}
+				}
 			}
 		}
-		&suggestions-container {
-			max-height: 350px;
-			overflow-y: auto;
-			overflow-x: hidden;
-			margin-left: -8px;
-			margin-right: -8px;
-			background-color: #1C2736;
-			&--open {
-				border-bottom-left-radius: 0;
-				border-bottom-right-radius: 0;
-			}
-		}
-		&suggestions-list {
-			margin: 0;
-			padding: 0;
-			list-style-type: none;
-		}
-		&suggestion {
+	}
+
+	&-suggestions {
+		margin-top: 0.5rem;
+		max-height: 25rem;
+		overflow-y: auto;
+		&-item {
+			display: flex;
 			border-top: 1px solid #2A3A51;
 			cursor: pointer;
-			padding: 0 11px;
-			height: 32px;
-			line-height: 32px;
+			padding: 0 1rem;
+			height: 2rem;
+			line-height: 2rem;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 			overflow: hidden;
-			&--highlighted {
+			&-tip {
+				flex: 0 1 auto;
+			}
+			&-label {
+				flex: 1 0 auto;
+			}
+			&-selected {
 				background-color: #2A3A51;
 				&:last-child {
-					border-bottom-left-radius: 4px;
-					border-bottom-right-radius: 4px;
+					border-bottom-left-radius: 0.25rem;
+					border-bottom-right-radius: 0.25rem;
 				}
 			}
 			.icon {
-				height: 31px;
-				width: 18px;
-				text-align: center;
-				fill: currentColor;
-				display: inline-block;
-				vertical-align: top;
-				margin-right: 8px;
+				flex: 0 1 auto;
+				margin-right: 0.5rem;
+				height: 100%;
 			}
 		}
+	}
+
+	&-highlighted-query {
+		color: white;
 	}
 }
