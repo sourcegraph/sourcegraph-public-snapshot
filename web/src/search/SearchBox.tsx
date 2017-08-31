@@ -187,6 +187,7 @@ export class SearchBox extends React.Component<Props, State> {
                             spellCheck={false}
                             autoCapitalize='off'
                             placeholder='Search'
+                            autoFocus={true}
                             ref={ref => this.inputElement = ref!}
                         />
                     </div>
