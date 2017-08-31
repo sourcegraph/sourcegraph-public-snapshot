@@ -91,6 +91,7 @@ func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.T
 	}
 	emails := emailsToNotify(previousComments, comment)
 	repoName := repoNameFromURI(repo.RemoteURI)
+	contents := strings.Replace(comment.Contents, "\n", "<br>", -1)
 	for _, email := range emails {
 		subject := fmt.Sprintf("[%s] %s (#%d)", repoName, titleFromContents(first.Contents), thread.ID)
 		if len(previousComments) > 0 {
@@ -106,7 +107,7 @@ func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.T
 		}
 
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
-			gochimp.Var{Name: "CONTENTS", Content: comment.Contents},
+			gochimp.Var{Name: "CONTENTS", Content: contents},
 			gochimp.Var{Name: "COMMENT_URL", Content: getURL(repo, thread, comment)},
 			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
 		})
