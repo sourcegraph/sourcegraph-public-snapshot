@@ -95,6 +95,7 @@
 
 			&-chip {
 				flex: 0 1 auto;
+				display: flex;
 				background-color: #2A3A51;
 				border-radius: 2px;
 				padding: 0.25rem 0.5rem;
@@ -102,7 +103,14 @@
 				height: 1.5rem;
 				line-height: 1rem;
 				vertical-align: top;
+				max-width: 49%;
+				overflow: hidden;
+				white-space: nowrap;
 				&-text {
+					flex: 0 1 auto;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					direction: rtl;
 					display: inline-block;
 					vertical-align: top;
 					margin-left: 0.5rem;
