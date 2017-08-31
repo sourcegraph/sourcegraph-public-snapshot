@@ -1,7 +1,7 @@
 
-import BookClosed from '@sourcegraph/icons/lib/BookClosed';
+import RepoIcon from '@sourcegraph/icons/lib/Repo';
 import CloseIcon from '@sourcegraph/icons/lib/Close';
-import Document from '@sourcegraph/icons/lib/Document';
+import FileIcon from '@sourcegraph/icons/lib/File';
 import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
 import * as React from 'react';
@@ -20,8 +20,8 @@ enum FilterType {
 
 /** The icons used to show a suggestion for a filter */
 const SUGGESTION_ICONS = {
-    [FilterType.Repo]: BookClosed,
-    [FilterType.File]: Document
+    [FilterType.Repo]: RepoIcon,
+    [FilterType.File]: FileIcon
 };
 
 /** Object representation of a suggestion in the suggestion list */
