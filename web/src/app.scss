@@ -48,7 +48,7 @@ kbd {
     }
 
     >body {
-        background-color: #202A3B;
+        background-color: #233043;
         color: #C9D4E3;
         a {
             outline: 0;
@@ -58,7 +58,7 @@ kbd {
 
     #nav {
         position: fixed;
-        background-color: #2B3C53;
+        background-color: #1C2736;
         top: 0px;
         width: 100%;
         z-index: 10000000000000;
@@ -76,15 +76,12 @@ kbd {
             .header {
                 height: $nav-height;
                 display: flex;
-                align-items: center;
+				align-items: center;
+				justify-content: space-between;
 
                 >a {
                     outline: 0;
                     margin: 0px 16px;
-                }
-
-                .fill {
-                    flex: 1;
                 }
 
                 .open-on-desktop {
@@ -106,20 +103,14 @@ kbd {
 
 				#search-box-container {
 					flex: 1 0 0;
-					.react-autosuggest__ {
-						&container {
-							padding: 0;
-							box-shadow: none;
-						}
-						&input {
-							margin: 0;
-						}
-						&suggestions-container {
-							position: absolute;
-							width: 100%;
-							margin-left: 0;
-							margin-right: 0;
-						}
+					max-width: 44.5rem;
+					.search-box {
+						position: relative;
+						padding-top: 0;
+					}
+					.search-box-suggestions {
+						position: absolute;
+						width: 100%;
 					}
 				}
             }
@@ -145,7 +136,7 @@ kbd {
 .blob, .cloning, .fancyerror, .repo, .search, .tree {
     $page-height: unquote("calc(100vh - #{$nav-height})");
 
-    background-color: #151D28;
+    // background-color: #151D28;
     height: $page-height;
 }
 .search {
@@ -216,7 +207,7 @@ kbd {
     $page-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
     height: $page-height;
     border-bottom: 1px solid #233043;
-    background-color: #202A3B;
+    // background-color: #202A3B;
 
     #tree-viewer {
         display: none;
@@ -524,13 +515,11 @@ kbd {
 }
 
 .home {
-    $home-height: unquote("calc(100vh - #{$nav-height})");
-
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: $home-height;
+    height: 100vh;
     width: 100%;
 
     .header {
@@ -538,12 +527,13 @@ kbd {
         display: flex;
 		align-items: center;
 		width: 20rem;
-		margin-top: 8rem;
+		// margin-top: 8rem;
+		margin-top: 5rem;
     }
 
     #search-widget {
 		flex: 10;
-		width: 624px;
+		width: 712px;
 		max-width: 100vw;
         font-size: 14px;
 		color: #93A9C8;
