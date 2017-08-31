@@ -8,6 +8,7 @@ import * as React from 'react';
 import { Subject } from 'rxjs';
 import { Subscription } from 'rxjs/Subscription';
 import { queryGraphQL } from 'sourcegraph/backend/graphql';
+import { events } from 'sourcegraph/tracking/events';
 import { isSearchResultsPage, parseBlob } from 'sourcegraph/util/url';
 import { getSearchParamsFromURL, getSearchPath, parseRepoList } from './index';
 
@@ -272,6 +273,7 @@ export class SearchBox extends React.Component<Props, State> {
                 matchRegex: false,
                 matchWord: false
             });
+            events.SearchSubmitted.log({ code_search: { pattern: query, repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value) } });
             location.href = path;
         } else if (filters[0].type === FilterType.Repo) {
             if (filters.length === 1) {
