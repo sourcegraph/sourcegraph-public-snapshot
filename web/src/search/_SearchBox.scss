@@ -9,69 +9,101 @@
 	padding-top: 0.5rem;
 
 	.icon {
-		height: 1rem;
+		height: 100%;
 		width: 1rem;
 		fill: currentColor;
 		text-align: center;
 		display: inline-block;
 	}
 
+	&-option {
+		flex: 0 0 auto;
+		border: none;
+		outline: none;
+		background-color: transparent;
+		padding: 0;
+		margin-left: 0.25rem;
+		color: inherit;
+		cursor: pointer;
+		width: 1rem;
+		height: 1rem;
+		margin-top: 0.5rem;
+		margin-right: 0.5rem;
+		&:hover {
+			color: white;
+		}
+	}
+
 	&-query {
 		display: flex;
-		flex-wrap: wrap;
+		align-items: stretch;
 		background: #151D28;
 		border-radius: 2px;
 		margin-left: 0.5rem;
 		margin-right: 0.5rem;
 		padding-bottom: 0.25rem;
-		&-input, &-chip {
-			flex: 1 0 auto;
-			margin-top: 0.25rem;
-			margin-left: 0.25rem;
-			height: 1.5rem;
+
+		&-search-icon {
+			flex: 0 0 auto;
+			margin-left: 0.5rem;
+			padding-top: 0.25rem;
 		}
 
-		&-input {
-			padding-left: 0.25rem;
-			background-color: transparent;
-			border: none;
-			outline: none;
-			color: white;
-			font-size: inherit;
-			&::-webkit-search-cancel-button {
-				display: none;
-			}
-			&::placeholder {
-				color: #93A9C8;
-			}
-		}
+		&-chips {
+			flex: 1 1 auto;
+			display: flex;
+			margin-left: 0.5rem;
+			flex-wrap: wrap;
 
-		&-chip {
-			flex: 0 1 auto;
-			background-color: #2A3A51;
-			border-radius: 2px;
-			padding: 0.25rem 0.5rem;
-			color: white;
-			height: 1.5rem;
-			line-height: 1rem;
-			vertical-align: top;
-			&-text {
-				display: inline-block;
-				vertical-align: top;
-				margin-left: 0.5rem;
+			&-input, &-chip {
+				flex: 1 0 auto;
+				margin-top: 0.25rem;
+				margin-right: 0.25rem;
+				height: 1.5rem;
 			}
-			&-remove-button {
+
+			&-input {
+				// padding-left: 0.25rem;
+				background-color: transparent;
 				border: none;
 				outline: none;
-				background-color: transparent;
-				padding: 0;
-				margin-left: 0.25rem;
-				color: inherit;
-				cursor: pointer;
-				.icon {
-					fill: #93A9C8;
+				color: white;
+				font-size: inherit;
+				&:not(:first-child) {
+					padding-left: 0.25rem;
+				}
+				&::-webkit-search-cancel-button {
+					display: none;
+				}
+				&::placeholder {
+					color: #93A9C8;
+				}
+			}
+
+			&-chip {
+				flex: 0 1 auto;
+				background-color: #2A3A51;
+				border-radius: 2px;
+				padding: 0.25rem 0.5rem;
+				color: white;
+				height: 1.5rem;
+				line-height: 1rem;
+				vertical-align: top;
+				&-text {
+					display: inline-block;
+					vertical-align: top;
+					margin-left: 0.5rem;
+				}
+				&-remove-button {
+					border: none;
+					outline: none;
+					background-color: transparent;
+					padding: 0;
+					margin-left: 0.25rem;
+					color: inherit;
+					cursor: pointer;
 					&:hover {
-						fill: white;
+						color: white;
 					}
 				}
 			}

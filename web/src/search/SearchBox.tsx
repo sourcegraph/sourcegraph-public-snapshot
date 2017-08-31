@@ -2,6 +2,7 @@
 import BookClosed from '@sourcegraph/icons/lib/BookClosed';
 import CloseIcon from '@sourcegraph/icons/lib/Close';
 import Document from '@sourcegraph/icons/lib/Document';
+import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
 import * as React from 'react';
 import { Subject } from 'rxjs';
@@ -142,31 +143,37 @@ export class SearchBox extends React.Component<Props, State> {
         return (
             <form className='search-box' onSubmit={this.onSubmit}>
                 <div className='search-box-query'>
-                    {
-                        this.state.filters.map((filter, i) => {
-                            const Icon = SUGGESTION_ICONS[filter.type];
-                            return (
-                                <span key={i} className='search-box-query-chip'>
-                                    <Icon />
-                                    <span className='search-box-query-chip-text'>{filter.value}</span>
-                                    <button type='button' className='search-box-query-chip-remove-button' onClick={() => this.removeFilter(i)}>
-                                        <CloseIcon />
-                                    </button>
-                                </span>
-                            );
-                        })
-                    }
-                    <input
-                        type='search'
-                        className='search-box-query-input'
-                        value={this.state.query}
-                        onChange={this.onInputChange}
-                        onKeyDown={this.onInputKeyDown}
-                        spellCheck={false}
-                        autoCapitalize='off'
-                        placeholder='Search'
-                        ref={ref => this.inputElement = ref!}
-                    />
+                    <div className='search-box-query-search-icon'><SearchIcon /></div>
+                    <div className='search-box-query-chips'>
+                        {
+                            this.state.filters.map((filter, i) => {
+                                const Icon = SUGGESTION_ICONS[filter.type];
+                                return (
+                                    <span key={i} className='search-box-query-chips-chip'>
+                                        <Icon />
+                                        <span className='search-box-query-chips-chip-text'>{filter.value}</span>
+                                        <button type='button' className='search-box-query-chips-chip-remove-button' onClick={() => this.removeFilter(i)}>
+                                            <CloseIcon />
+                                        </button>
+                                    </span>
+                                );
+                            })
+                        }
+                        <input
+                            type='search'
+                            className='search-box-query-chips-input'
+                            value={this.state.query}
+                            onChange={this.onInputChange}
+                            onKeyDown={this.onInputKeyDown}
+                            spellCheck={false}
+                            autoCapitalize='off'
+                            placeholder='Search'
+                            ref={ref => this.inputElement = ref!}
+                        />
+                    </div>
+                    <button className='search-box-option'>Aa</button>
+                    <button className='search-box-option'><u>Ab</u></button>
+                    <button className='search-box-option'>.*</button>
                 </div>
                 <ul className='search-box-suggestions'>
                     {
