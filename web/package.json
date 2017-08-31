@@ -47,7 +47,6 @@
     "moment": "^2.18.1",
     "query-string": "^5.0.0",
     "react": "^15.6.1",
-    "react-autosuggest": "^9.3.2",
     "react-dom": "^15.6.1",
     "react-icons": "^2.2.5",
     "react-visibility-sensor": "^3.10.1",
