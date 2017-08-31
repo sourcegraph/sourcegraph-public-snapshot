@@ -32,7 +32,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
                 }
             }
         }
-    `, { repo, rev }).toPromise().then(result => {
+    `, { repo, rev: rev || 'master' }).toPromise().then(result => {
         // Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
         promiseCache.delete(key);
         if (!result.data) {
@@ -333,7 +333,7 @@ export function fetchActiveRepos(): Promise<GQL.IActiveRepoResults | null> {
 
 const fileTreeCache = new Map<string, Promise<any>>();
 
-export function listAllFiles(repo: string, revision: string): Promise<{ notFound: boolean } | GQL.IFile[]> {
+export function listAllFiles(repo: string, revision: string): Promise<GQL.IFile[]> {
     const key = cacheKey(repo, revision);
     const promiseHit = fileTreeCache.get(key);
     if (promiseHit) {
@@ -356,27 +356,19 @@ export function listAllFiles(repo: string, revision: string): Promise<{ notFound
             }
         }
     `, { repo, revision }).toPromise().then(result => {
-        fileTreeCache.delete(key);
-        if (!result.data) {
-            const error = new Error('invalid response received from graphql endpoint');
-            fileTreeCache.set(key, Promise.reject(error));
-            throw error;
-        }
-        if (
+        if (!result.data ||
             !result.data.root.repository ||
             !result.data.root.repository.commit ||
             !result.data.root.repository.commit.commit ||
             !result.data.root.repository.commit.commit.tree ||
             !result.data.root.repository.commit.commit.tree.files
         ) {
-            const notFound = { notFound: true };
-            fileTreeCache.set(key, Promise.resolve(notFound));
-            return notFound;
+            throw new Error('invalid response received from graphql endpoint');
         }
         const results = result.data.root.repository.commit.commit.tree.files;
-        fileTreeCache.set(key, Promise.resolve(results));
         return results;
     });
+    fileTreeCache.set(key, p);
     return p;
 }
 
@@ -392,7 +384,7 @@ interface LocalStorageListAllFiles {
  * localstore. A call for a new repo@revision will wipe out the cache, i.e.
  * only a single repo@revision is stored in localstore at a time.
  */
-export function localStoreListAllFiles(repo: string, revision: string): Promise<any> {
+export function localStoreListAllFiles(repo: string, revision: string): Promise<GQL.IFile[]> {
     // Uncomment to debug the non-cached path more easily:
     window.localStorage.setItem(localStorageKeyListAllFiles, '');
 
@@ -414,5 +406,35 @@ export function localStoreListAllFiles(repo: string, revision: string): Promise<
         };
         window.localStorage.setItem(localStorageKeyListAllFiles, JSON.stringify(d));
         return res;
+    });
+}
+
+export function fetchBlobHighlightContentTable(repoURI: string, rev: string, path: string): Promise<string> {
+    return queryGraphQL(`
+        query HighlightedBlobContent($repo: String, $rev: String, $path: String) {
+            root {
+                repository(uri: $repo) {
+                    commit(rev: $rev) {
+                        commit {
+                            file(path: $path) {
+                                highlightedContentHTML
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    `, { repo: repoURI, rev, path }).toPromise().then(result => {
+        if (
+            !result.data ||
+            !result.data.root ||
+            !result.data.root.repository ||
+            !result.data.root.repository.commit ||
+            !result.data.root.repository.commit.commit ||
+            !result.data.root.repository.commit.commit.file
+        ) {
+            throw new Error(`cannot locate blob content: ${repoURI} ${rev} ${path}`);
+        }
+        return result.data.root.repository.commit.commit.file.highlightedContentHTML;
     });
 }

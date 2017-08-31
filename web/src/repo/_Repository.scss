@@ -1,0 +1,97 @@
+.repo {
+    background-color: #151D28;
+
+    $page-height: unquote("calc(100vh - #{$nav-height})");
+    height: $page-height;
+    border-bottom: 1px solid #233043;
+    background-color: #202A3B;
+
+
+    .container {
+        $tvc-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
+        display: flex;
+        flex-direction: row;
+        height: $tvc-height;
+
+        #tree {
+            flex-direction: column;
+            display: flex;
+            flex: 1;
+
+            .contents {
+                overflow: auto;
+                flex: 1;
+            }
+        }
+
+        .blob {
+            font-family: 'Menlo';
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+            flex: 4;
+
+            background-color: #151D28;
+            font-size: 12px;
+
+            .content {
+                position: relative;
+                white-space: pre;
+                overflow: auto;
+                flex: 3;
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .ref-panel {
+                flex: 2;
+                overflow: auto;
+                background-color: #070A0D;
+            }
+
+            table {
+                border-collapse: collapse;
+            }
+
+            td.line {
+                &::before {
+                    // draw line number with css so it cannot be copied to clipboard
+                    content: attr(data-line);
+                    color: #31445E;
+                }
+
+                color: #31445E;
+                text-align: center;
+                padding-left: .25em;
+                padding-right: .75em;
+                min-width: 3em;
+            }
+
+            td.line, td.code {
+                padding: 0;
+                padding-top: 0.15em;
+                padding-bottom: 0.15em;
+            }
+
+            td.code {
+                padding-left: .5em;
+                white-space: pre;
+                >.blame {
+                    &::before {
+                        content: attr(data-blame);
+                    }
+                    color: #464d57;
+                    padding-left: 4em;
+                    display: inline-block;
+                    width: 0;
+                }
+            }
+
+            .right {
+                height: $tvc-height;
+                background-color: #151D28;
+                flex: 4;
+            }
+        }
+    }
+}

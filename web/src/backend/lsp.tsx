@@ -134,7 +134,7 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevCom
                 lineAndCharEnding = `#L${startLine}`;
             }
 
-            j2dCache[cacheKey] = `/${repoUri}${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
+            j2dCache[cacheKey] = `/${repoUri}${frevUri || ''}/-/blob/${pathUri}${lineAndCharEnding}`;
             return j2dCache[cacheKey];
         });
 }

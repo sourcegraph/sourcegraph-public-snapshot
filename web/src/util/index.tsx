@@ -1,3 +1,9 @@
+
+import * as moment from 'moment';
+import { triggerBlame } from 'sourcegraph/blame';
+import { CodeCell } from 'sourcegraph/util/types';
+import * as url from 'sourcegraph/util/url';
+
 /**
  * supportedExtensions are the file extensions
  * the extension will apply annotations to
@@ -501,4 +507,73 @@ export function getPathExtension(path: string): string {
         return ''; // e.g. .gitignore
     }
     return pathSplit[pathSplit.length - 1].toLowerCase();
+}
+
+export function getCodeCellsForAnnotation(): CodeCell[] {
+    const table = document.querySelector('.blob>.content>table') as HTMLTableElement;
+    const cells = Array.from(table.rows).map(row => {
+        const line = parseInt(row.cells[0].getAttribute('data-line')!, 10);
+        const codeCell: HTMLTableDataCellElement = row.cells[1]; // the actual cell that has code inside; each row contains multiple columns
+        return {
+            cell: codeCell as HTMLElement,
+            eventHandler: codeCell, // allways the TD element
+            line
+        };
+    });
+
+    return cells;
+}
+
+export function highlightLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
+    triggerBlame({
+        time: moment(),
+        repoURI,
+        commitID,
+        path,
+        line
+    });
+
+    const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>;
+    for (const cellElem of currentlyHighlighted) {
+        cellElem.classList.remove('sg-highlighted');
+        cellElem.style.backgroundColor = 'inherit';
+    }
+
+    const cell = cells[line - 1];
+    cell.cell.style.backgroundColor = '#1c2736';
+    cell.cell.classList.add('sg-highlighted');
+
+    // Update the URL.
+    const u = url.parseBlob();
+    u.line = line;
+
+    // Dismiss the references widget, if highlighting this line was user
+    // triggered (not done automatically onload).
+    const referencesOpen = u.modal === 'references';
+    if (referencesOpen && userTriggered) {
+        u.modal = undefined;
+        u.modalMode = undefined;
+    }
+
+    // Check URL change first, since this function can be called in response to
+    // onhashchange.
+    if (url.toBlob(u) === (window.location.pathname + window.location.hash)) {
+        return;
+    }
+
+    window.history.pushState(null, '', url.toBlobHash(u));
+}
+
+export function highlightAndScrollToLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
+    highlightLine(repoURI, commitID, path, line, cells, userTriggered);
+
+    // Scroll to the line.
+    const scrollingElement = document.querySelector('.blob>.content')!;
+    const viewportBound = scrollingElement.getBoundingClientRect();
+    const blobTable = document.querySelector('.blob>.content>table')!; // table that we're positioning tooltips relative to.
+    const tableBound = blobTable.getBoundingClientRect(); // tables bounds
+    const cell = cells[line - 1];
+    const targetBound = cell.cell.getBoundingClientRect(); // our target elements bounds
+
+    scrollingElement.scrollTop = targetBound.top - tableBound.top - (viewportBound.height / 2) + (targetBound.height / 2);
 }

@@ -70,22 +70,32 @@ export function parseBlob(_loc: string = window.location.href): BlobURL {
     //
     // See https://github.com/sourcegraph/sourcegraph/issues/6493
     if (loc.fragment) {
-        const lineCharModalInfo = loc.fragment.split('$'); // e.g. "L17:19$references:external"
-        if (lineCharModalInfo[0]) {
-            const lineChar = lineCharModalInfo[0].split('L');
-            if (lineChar[1]) {
-                const coords = lineChar[1].split(':');
-                v.line = parseInt(coords[0], 10); // 17
-                v.char = parseInt(coords[1], 10); // 19
-            }
-        }
-        if (lineCharModalInfo[1]) {
-            const modalInfo = lineCharModalInfo[1].split(':');
-            v.modal = modalInfo[0]; // "references"
-            v.modalMode = modalInfo[1]; // "external"
-        }
+        Object.assign(v, parseHash(loc.fragment));
     }
     return v;
+}
+
+export function parseHash(hash: string): { line?: number, char?: number, modal?: string, modalMode?: string } {
+    let line: number | undefined;
+    let char: number | undefined;
+    let modal: string | undefined;
+    let modalMode: string | undefined;
+
+    const lineCharModalInfo = hash.split('$'); // e.g. "L17:19$references:external"
+    if (lineCharModalInfo[0]) {
+        const lineChar = lineCharModalInfo[0].split('L');
+        if (lineChar[1]) {
+            const coords = lineChar[1].split(':');
+            line = parseInt(coords[0], 10); // 17
+            char = parseInt(coords[1], 10); // 19
+        }
+    }
+    if (lineCharModalInfo[1]) {
+        const modalInfo = lineCharModalInfo[1].split(':');
+        modal = modalInfo[0]; // "references"
+        modalMode = modalInfo[1]; // "external"
+    }
+    return { line, char, modal, modalMode };
 }
 
 export function isBlob(url: BlobURL): boolean {

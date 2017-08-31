@@ -32,7 +32,7 @@ const definitionIconSVG = '<svg width="11px" height="9px"><path fill="#FFFFFF" x
  * to the DOM (but hidden). It is idempotent.
  */
 export function createTooltips(): void {
-    if (tooltip) {
+    if (document.querySelector('.sg-tooltip')) {
         return; // idempotence
     }
 
@@ -41,7 +41,7 @@ export function createTooltips(): void {
     tooltip.classList.add('sg-tooltip');
     tooltip.style.visibility = 'hidden';
 
-    document.querySelector('#blob-table')!.appendChild(tooltip);
+    document.querySelector('.blob>.content')!.appendChild(tooltip);
 
     loadingTooltip = document.createElement('DIV');
     loadingTooltip.appendChild(document.createTextNode('Loading...'));
@@ -202,11 +202,6 @@ function updateTooltip(state: TooltipState): void {
         Object.assign(tooltipText.style, styles.tooltipTitle);
         tooltipText.appendChild(document.createTextNode(data.title));
 
-        const icon = document.createElement('img');
-        // icon.src = getAssetURL("sourcegraph-mark.svg");
-        Object.assign(icon.style, styles.sourcegraphIcon);
-
-        container.appendChild(icon);
         container.appendChild(tooltipText);
         tooltip.insertBefore(container, moreContext);
 
@@ -243,9 +238,9 @@ function updateTooltip(state: TooltipState): void {
         loadingTooltip.style.visibility = 'visible';
     }
 
-    const scrollingElement = document.querySelector('#blob-table')!;
+    const scrollingElement = document.querySelector('.blob>.content')!;
     const scrollingElementBound = scrollingElement.getBoundingClientRect();
-    const blobTable = document.querySelector('#blob-table>table')!; // table that we're positioning tooltips relative to.
+    const blobTable = document.querySelector('.blob>.content>table')!; // table that we're positioning tooltips relative to.
     const tableBound = blobTable.getBoundingClientRect(); // tables bounds
     const targetBound = target.getBoundingClientRect(); // our target elements bounds
 

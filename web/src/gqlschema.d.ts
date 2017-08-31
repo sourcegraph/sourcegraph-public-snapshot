@@ -146,6 +146,7 @@ declare namespace GQL {
     __typename: "File";
     name: string;
     content: string;
+    highlightedContentHTML: string;
     blame: Array<IHunk>;
     commits: Array<ICommitInfo>;
     dependencyReferences: IDependencyReferences;
@@ -451,6 +452,7 @@ declare namespace GQL {
     startCharacter: number;
     endCharacter: number;
     createdAt: string;
+    archivedAt: string | null;
     comments: Array<IComment>;
   }
 
@@ -473,6 +475,7 @@ declare namespace GQL {
   interface IMutation {
     __typename: "Mutation";
     createThread: IThread;
+    updateThread: IThread;
     addCommentToThread: IThread;
   }
 

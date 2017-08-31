@@ -22,6 +22,7 @@ export const tooltip = {
 export const tooltipTitle = {
     fontFamily: codeFontFamily,
     wordWrap: 'break-word',
+    whiteSpace: 'pre-wrap',
     marginLeft: '0px',
     marginRight: '32px',
     padding: '0px'
@@ -44,6 +45,7 @@ export const tooltipDoc = {
     maxHeight: '150px',
     overflow: 'auto',
     marginBottom: '0px',
+    whiteSpace: 'pre-wrap',
     fontFamily: normalFontFamily,
     borderBottom: `1px solid ${colors.borderColor}`
 };

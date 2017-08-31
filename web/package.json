@@ -15,6 +15,8 @@
     "@types/marked": "^0.0.28",
     "@types/query-string": "^4.3.1",
     "@types/react": "^16.0.0",
+    "@types/react-router": "^4.0.15",
+    "@types/react-router-dom": "^4.0.7",
     "@types/urijs": "^1.15.33",
     "@types/webpack": "^3.0.10",
     "css-loader": "^0.28.4",
@@ -33,7 +35,7 @@
     "webpack-shell-plugin": "^0.5.0"
   },
   "dependencies": {
-    "@sourcegraph/components": "^0.0.15",
+    "@sourcegraph/components": "0.0.16",
     "@sourcegraph/icons": "^1.0.1",
     "copy-to-clipboard": "^3.0.7",
     "csstips": "^0.2.2",
@@ -50,6 +52,8 @@
     "react-autosuggest": "^9.3.2",
     "react-dom": "^15.6.1",
     "react-icons": "^2.2.5",
+    "react-router": "^4.2.0",
+    "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.10.1",
     "rxjs": "^5.4.2",
     "sass-loader": "^6.0.6",

@@ -167,6 +167,7 @@ type Directory {
 type File {
 	name: String!
 	content: String!
+	highlightedContentHTML: String!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!

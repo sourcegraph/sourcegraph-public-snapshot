@@ -16,11 +16,11 @@ import (
 
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "", "syntect_server HTTP(s) address")
-	client        *gosyntect.Client
+	SyntectClient *gosyntect.Client
 )
 
 func init() {
-	client = gosyntect.New(syntectServer)
+	SyntectClient = gosyntect.New(syntectServer)
 }
 
 // highlight highlights the given code with the given file extension (no
@@ -35,7 +35,7 @@ func highlight(ctx context.Context, code, extension string, disableTimeout bool)
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 	}
-	resp, err := client.Highlight(ctx, &gosyntect.Query{
+	resp, err := SyntectClient.Highlight(ctx, &gosyntect.Query{
 		Code:      code,
 		Extension: extension,
 		Theme:     "Visual Studio Dark", // In the future, we could let the user choose the theme.
@@ -54,14 +54,14 @@ func highlight(ctx context.Context, code, extension string, disableTimeout bool)
 		return "", false, err
 	}
 	// Note: resp.Data is properly HTML escaped by syntect_server
-	table, err := preSpansToTable(resp.Data)
+	table, err := PreSpansToTable(resp.Data)
 	if err != nil {
 		return "", false, err
 	}
 	return template.HTML(table), false, nil
 }
 
-// preSpansToTable takes the syntect data structure, which looks like:
+// PreSpansToTable takes the syntect data structure, which looks like:
 //
 // 	<pre>
 // 	<span style="color:#foobar">thecode.line1</span>
@@ -81,7 +81,7 @@ func highlight(ctx context.Context, code, extension string, disableTimeout bool)
 // 	</tr>
 // 	</table>
 //
-func preSpansToTable(h string) (string, error) {
+func PreSpansToTable(h string) (string, error) {
 	doc, err := html.Parse(bytes.NewReader([]byte(h)))
 	if err != nil {
 		return "", err

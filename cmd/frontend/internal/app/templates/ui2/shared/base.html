@@ -8,44 +8,21 @@
 	<link rel="stylesheet" href="{{.AssetURL}}/scripts/ui/assets/dist/style.bundle.css?v11">
 	<!-- Start of Telligent scripts -->
 	<script ignore-csp>
-		;(function(t,r,a,c,k,e,d){if(!t[k]){t.GlobalTelligentNamespace=t.GlobalTelligentNamespace||[];t.GlobalTelligentNamespace.push(k);t[k]=function(){(t[k].q=t[k].q||[]).push(arguments)};t[k].q=t[k].q||[];e=r.createElement(a);d=r.getElementsByTagName(a)[0];e.async=1;e.src=c;d.parentNode.insertBefore(e,d)}}(window,document,"script","https://storage.googleapis.com/telligent-artifacts/tracker/tel.js","telligent"));
+		; (function (t, r, a, c, k, e, d) { if (!t[k]) { t.GlobalTelligentNamespace = t.GlobalTelligentNamespace || []; t.GlobalTelligentNamespace.push(k); t[k] = function () { (t[k].q = t[k].q || []).push(arguments) }; t[k].q = t[k].q || []; e = r.createElement(a); d = r.getElementsByTagName(a)[0]; e.async = 1; e.src = c; d.parentNode.insertBefore(e, d) } }(window, document, "script", "https://storage.googleapis.com/telligent-artifacts/tracker/tel.js", "telligent"));
 	</script>
 	<!-- End of Telligent scripts-->
 	<script>
-		window.context = {{.Context}}
-		window.pageVars = {{.PageVars}}
+		window.context = {{ .Context }}
+		window.pageVars = {{ .PageVars }}
 	</script>
 </head>
 
 <body>
-	<div id="nav">
-		<div id="navbar">
-			<div class="header">
-				<!-- Logo -->
-				<a href="/"><img class="spin" src="{{.AssetURL}}/img/sourcegraph-mark.svg" width="24" /></a>
-
-				<!-- Search -->
-				{{if ne .Route "home"}}
-					<div id="search-box-container"></div>
-				{{end}}
-
-				<span class="fill"> </span>
-
-				{{with .OpenOnDesktop}}
-					<a href="{{.}}" class="open-on-desktop">
-						<span>Open on desktop</span>
-						<svg class="icon" width="11px" height="9px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path10_fill" d="M 6.325 8.4C 6.125 8.575 5.8 8.55 5.625 8.325C 5.55 8.25 5.5 8.125 5.5 8L 5.5 6C 2.95 6 1.4 6.875 0.825 8.7C 0.775 8.875 0.6 9 0.425 9C 0.2 9 -4.44089e-16 8.8 -4.44089e-16 8.575C -4.44089e-16 8.575 -4.44089e-16 8.575 -4.44089e-16 8.55C 0.125 4.825 1.925 2.675 5.5 2.5L 5.5 0.5C 5.5 0.225 5.725 8.88178e-16 6 8.88178e-16C 6.125 8.88178e-16 6.225 0.05 6.325 0.125L 10.825 3.875C 11.025 4.05 11.075 4.375 10.9 4.575C 10.875 4.6 10.85 4.625 10.825 4.65L 6.325 8.4Z"/></svg>
-					</a>
-				{{end}}
-			</div>
-			<div id="advanced-search"></div>
-		</div>
-	</div>
+	<noscript>
+		You need to enable JavaScript to run this app.
+	</noscript>
+	<div id="root"></div>
 	<script src="{{.AssetURL}}/scripts/app.bundle.js?v22"></script>
-	<div id="app-container">
-	{{template "Body" .}}
-	</div>
-
 </body>
 
 </html>
