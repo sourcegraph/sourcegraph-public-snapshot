@@ -2,6 +2,7 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close';
 import FileIcon from '@sourcegraph/icons/lib/File';
 import RepoIcon from '@sourcegraph/icons/lib/Repo';
+import RepoGroup from '@sourcegraph/icons/lib/RepoGroup';
 import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
 import * as React from 'react';
@@ -15,12 +16,14 @@ import { getSearchParamsFromURL, getSearchPath, parseRepoList } from './index';
 /** The type of type:value filters a user can enter */
 enum FilterType {
     Repo = 'repo',
+    RepoGroup = 'repogroup',
     File = 'file'
 }
 
 /** The icons used to show a suggestion for a filter */
 const SUGGESTION_ICONS = {
     [FilterType.Repo]: RepoIcon,
+    [FilterType.RepoGroup]: RepoGroup,
     [FilterType.File]: FileIcon
 };
 
@@ -125,6 +128,10 @@ export class SearchBox extends React.Component<Props, State> {
                                         __typename
                                         name
                                     }
+                                    ... on SearchProfile {
+                                        __typename
+                                        name
+                                    }
                                 }
                             }
                         }
@@ -141,8 +148,9 @@ export class SearchBox extends React.Component<Props, State> {
                     console.error(...result.errors || []);
                     const suggestions = result.data!.root.search.map(item => {
                         switch (item.__typename) {
-                            case 'Repository': return { value: item.uri, type: FilterType.Repo };
-                            case 'File':       return { value: item.name, type: FilterType.File };
+                            case 'Repository':    return { value: item.uri, type: FilterType.Repo };
+                            case 'SearchProfile': return { value: item.name, type: FilterType.RepoGroup };
+                            case 'File':          return { value: item.name, type: FilterType.File };
                         }
                     }).filter(s => s) as Filter[];
                     this.setState({ suggestions, selectedSuggestion: Math.min(suggestions.length - 1, 0) });
@@ -292,7 +300,7 @@ export class SearchBox extends React.Component<Props, State> {
             // Go to search results
             const path = getSearchPath({
                 q: query,
-                repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value).join(','),
+                repos: filters.filter(f => f.type === FilterType.Repo || f.type === FilterType.RepoGroup).map(f => f.value).join(','),
                 files: filters.filter(f => f.type === FilterType.File).map(f => f.value).join(','),
                 matchCase: this.state.matchCase,
                 matchRegex: this.state.matchRegexp,

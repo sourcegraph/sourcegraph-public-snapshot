@@ -37,7 +37,7 @@ type Root {
 	threads(remoteURI: String!, accessToken: String!, file: String): [Thread!]!
 }
 
-union SearchResult = Repository | File
+union SearchResult = Repository | File | SearchProfile
 
 type RefFields {
 	refLocation: RefLocation
