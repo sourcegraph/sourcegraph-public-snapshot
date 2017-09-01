@@ -106,6 +106,10 @@ export function toBlob(loc: BlobURL): string {
     return `/${loc.uri}${loc.rev ? '@' + loc.rev : ''}/-/blob/${loc.path}${toBlobHash(loc)}`;
 }
 
+export function toGitHubBlob(loc: BlobURL): string {
+    return `https://${loc.uri}/blob/${loc.rev}/${loc.path}${toBlobHash(loc)}`;
+}
+
 export function isSearchResultsPage(loc: Location = window.location): boolean {
     // TODO(john): share route name with JS context?
     return loc.pathname === '/search';

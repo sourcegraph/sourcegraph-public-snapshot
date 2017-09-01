@@ -25,6 +25,10 @@ function setLineBlameContent(line: number, blameContent: string): void {
         // Add blame element to the target line's code cell.
         const cells = document.querySelectorAll('.blob td.code');
         const cell = cells[line - 1];
+        if (!cell) {
+            return;
+        }
+
         const blame = document.createElement('span');
         blame.classList.add('blame');
         blame.setAttribute('data-blame', blameContent);

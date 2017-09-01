@@ -25,13 +25,12 @@ export interface S extends State {
 }
 
 export class Repository extends React.Component<Props, S> {
-    public hashWatcher: any;
-    public subscription: Rx.Subscription;
     public state: S = {
         ...store.getValue(),
         showTree: true,
         showRefs: false
     };
+    private subscription: Rx.Subscription;
 
     constructor(props: Props) {
         super(props);
@@ -52,6 +51,12 @@ export class Repository extends React.Component<Props, S> {
         if (showRefs !== this.state.showRefs) {
             this.setState({ showRefs });
         }
+        if (this.props.location.hash !== nextProps.location.hash && nextProps.history.action === 'POP') {
+            // handle 'back' and 'forward'
+            this.scrollToLine(nextProps);
+        } else if (this.props.location.pathname !== nextProps.location.pathname) {
+            this.scrollToLine(nextProps);
+        }
     }
 
     public componentWillUnmount(): void {
@@ -62,54 +67,21 @@ export class Repository extends React.Component<Props, S> {
 
     public render(): JSX.Element | null {
         const key = contextKey(this.props.uri, this.props.commitID, this.props.path);
+        const files = this.state.files.get(key) || [];
         return <div className='repo'>
             <RepoSubnav {...this.props} onClickNavigation={() => this.setState({ showTree: !this.state.showTree })} />
             <div className='container'>
                 {this.state.showTree && <div id='tree'>
                     <TreeHeader title='Files' onDismiss={() => this.setState({ showTree: false })} />
-                    {this.state.files.has(key) && <div className='contents'><Tree initSelectedPath={this.props.path} onSelectPath={(p, isDir) => {
-                        if (!isDir) {
-                            this.props.history.push(url.toBlob({ uri: this.props.uri, rev: this.props.rev, path: p }));
-                        }/* else if (!url.isBlob(blobURL)) {
-                            // Directory, and on a tree or repo page. Update the URL so
-                            // the user can share a link to a specific dir.
-                            const newURL = url.toTree({ uri: this.props.uri, rev: this.props.rev, path: p });
-                            if (newURL === (window.location.pathname + window.location.hash)) {
-                                return; // don't push state twice if user clicks twice
-                            }
-                            window.history.pushState(null, '', newURL);
-                        }*/
-                    }} paths={this.state.files.get(key).map(res => res.name)} /></div>}
+                    <div className='contents'><Tree scrollRootSelector='#tree' selectedPath={this.props.path} onSelectPath={this.selectTreePath} paths={files} /></div>
                 </div>}
                 <div className='blob'>
                     {!this.state.highlightedContents.has(key) && <div className='content' /> /* render placeholder for layout before content is fetched */}
                     {this.state.highlightedContents.has(key) &&
-                        <div className='content' ref={ref => {
-                            if (this.props.path && ref) {
-                                const cells = getCodeCellsForAnnotation();
-                                if (supportedExtensions.has(getPathExtension(this.props.path!))) {
-                                    addAnnotations(this.props.path!,
-                                        { repoURI: this.props.uri!, rev: this.props.rev!, commitID: this.props.commitID }, cells);
-                                }
-
-                                // TODO(john): it's dangerous to do this here.
-                                const line = url.parseHash(this.props.location.hash).line;
-                                if (line) {
-                                    highlightAndScrollToLine(this.props.uri,
-                                        this.props.commitID, this.props.path!, line, getCodeCellsForAnnotation(), false);
-                                }
-
-                                for (const [index, tr] of document.querySelectorAll('.blob tr').entries()) {
-                                    if (tr.classList.contains('sg-line-listener')) {
-                                        return;
-                                    }
-                                    tr.classList.add('sg-line-listener');
-                                    tr.addEventListener('click', () => {
-                                        highlightLine(this.props.uri, this.props.commitID, this.props.path!, index + 1, getCodeCellsForAnnotation(), true);
-                                    });
-                                }
-                            }
-                        }} dangerouslySetInnerHTML={{ __html: this.state.highlightedContents.get(key) }} />}
+                        <Blob onClick={this.handleBlobClick}
+                            applyAnnotations={this.applyAnnotations}
+                            scrollToLine={this.scrollToLine}
+                            html={this.state.highlightedContents.get(key)} />}
                     {this.state.showRefs && <div className='ref-panel'>
                         <ReferencesWidget onDismiss={() => {
                             const currURL = url.parseBlob();
@@ -121,13 +93,45 @@ export class Repository extends React.Component<Props, S> {
         </div>;
     }
 
+    private selectTreePath = (path: string, isDir: boolean) => {
+        if (!isDir) {
+            this.props.history.push(url.toBlob({ uri: this.props.uri, rev: this.props.rev, path }));
+        }
+    }
+
+    private handleBlobClick: React.MouseEventHandler<HTMLDivElement> = e => {
+        const target = e.target!;
+        const row: HTMLTableRowElement = (target as any).closest('tr');
+        if (!row) {
+            return;
+        }
+        const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10);
+        highlightLine(this.props.history, this.props.uri, this.props.commitID, this.props.path!, line, getCodeCellsForAnnotation(), true);
+    }
+
+    private scrollToLine = (props: Props = this.props) => {
+        const line = url.parseHash(props.location.hash).line;
+        if (line) {
+            highlightAndScrollToLine(props.history, props.uri,
+                props.commitID, props.path!, line, getCodeCellsForAnnotation(), false);
+        }
+    }
+
+    private applyAnnotations = () => {
+        const cells = getCodeCellsForAnnotation();
+        if (supportedExtensions.has(getPathExtension(this.props.path!))) {
+            addAnnotations(this.props.history, this.props.path!,
+                { repoURI: this.props.uri!, rev: this.props.rev!, commitID: this.props.commitID }, cells);
+        }
+    }
+
     private fetch(props: Props): void {
         const key = contextKey(props.uri, props.commitID, props.path);
         if (!this.state.files.has(key)) {
             listAllFiles(props.uri, props.commitID)
                 .then(files => {
                     const state = store.getValue();
-                    setState({ ...state, files: state.files.set(key, files) });
+                    setState({ ...state, files: state.files.set(key, files.map(file => file.name)) });
                 });
         }
 
@@ -138,5 +142,31 @@ export class Repository extends React.Component<Props, S> {
                     setState({ ...state, highlightedContents: state.highlightedContents.set(key, highlightedContents) });
                 });
         }
+    }
+}
+
+interface BlobProps {
+    html: string;
+    onClick: React.MouseEventHandler<HTMLDivElement>;
+    applyAnnotations: () => void;
+    scrollToLine: () => void;
+}
+
+class Blob extends React.Component<BlobProps, {}> {
+    private ref: any;
+
+    public shouldComponentUpdate(nextProps: BlobProps): boolean {
+        return this.props.html !== nextProps.html;
+    }
+
+    public render(): JSX.Element | null {
+        return <div className='content' onClick={this.props.onClick} ref={ref => {
+            if (!this.ref && ref) {
+                // first mount, do initial scroll
+                this.props.scrollToLine();
+            }
+            this.ref = ref;
+            this.props.applyAnnotations();
+        }} dangerouslySetInnerHTML={{ __html: this.props.html }} />;
     }
 }

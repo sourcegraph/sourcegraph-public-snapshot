@@ -1,3 +1,4 @@
+import * as H from 'history';
 import * as _ from 'lodash';
 import * as Rx from 'rxjs';
 import { fetchJumpURL, getTooltip } from 'sourcegraph/backend/lsp';
@@ -277,14 +278,9 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
  * mechanism would be to take use the `cm-tab` DOM attribute. For Phabricator, no
  * better mechanism is known at this time (see https://secure.phabricator.com/T2495).
  */
-export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec, cells: CodeCell[]): void {
-    tooltips.createTooltips(); // TODO(john): can we just do this once in the module)?
+export function addAnnotations(history: H.History, path: string, repoRevCommit: ResolvedRepoRevSpec, cells: CodeCell[]): void {
+    tooltips.createTooltips(history); // TODO(john): can we just do this once in the module)?
     const ignoreFirstChar = false;
-
-    // TODO(john): figure out how to do this without looking at the cell itself.
-    // if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {
-    //     ignoreFirstTextChar = false;
-    // }
 
     const domObservables = _.compact(cells.map(cell => {
         let hovered = false;

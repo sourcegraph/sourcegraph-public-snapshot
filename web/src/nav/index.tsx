@@ -1,10 +1,17 @@
 import BookClosed from '@sourcegraph/icons/lib/BookClosed';
 import List from '@sourcegraph/icons/lib/List';
+import Share from '@sourcegraph/icons/lib/Share';
+import * as copy from 'copy-to-clipboard';
+import * as H from 'history';
 import * as React from 'react';
+import * as GitHub from 'react-icons/lib/go/mark-github';
 import { RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
 import { RepoBreadcrumb } from 'sourcegraph/components/Breadcrumb';
 import { SearchBox } from 'sourcegraph/search/SearchBox';
+import { events } from 'sourcegraph/tracking/events';
+import * as url from 'sourcegraph/util/url';
+import * as URI from 'urijs';
 
 export class Navbar extends React.Component<RouteComponentProps<string[]>, {}> {
     public render(): JSX.Element | null {
@@ -27,10 +34,25 @@ export class Navbar extends React.Component<RouteComponentProps<string[]>, {}> {
     }
 }
 
-export class RepoSubnav extends React.Component<{ uri: string, rev?: string, path?: string, onClickNavigation: () => void }, {}> {
+interface RepoSubnavProps {
+    uri: string;
+    rev?: string;
+    path?: string;
+    onClickNavigation: () => void;
+    location: H.Location;
+}
+
+interface RepoSubnavState {
+    copiedLink?: boolean;
+}
+
+export class RepoSubnav extends React.Component<RepoSubnavProps, RepoSubnavState> {
+    public state: RepoSubnavState = {};
+
     public render(): JSX.Element | null {
+        const hash = url.parseHash(this.props.location.hash);
         return <div className='repo-subnav'>
-            <span id='file-explorer' onClick={() => this.props.onClickNavigation()}>
+            <span className='explorer' onClick={this.props.onClickNavigation}>
                 <List />
                 Navigation
             </span>
@@ -38,6 +60,27 @@ export class RepoSubnav extends React.Component<{ uri: string, rev?: string, pat
                 <BookClosed />
                 <RepoBreadcrumb {...this.props} />
             </span>
+            <span className='fill' />
+            <span className='share' onClick={() => {
+                events.ShareButtonClicked.log();
+
+                const shareLink = URI.parse(window.location.href); // TODO(john): use this.props.location
+                shareLink.query = (shareLink.query ? `${shareLink.query}&` : '') + 'utm_source=share';
+                copy(URI.build(shareLink));
+                this.setState({ copiedLink: true });
+
+                setTimeout(() => {
+                    this.setState({ copiedLink: undefined });
+                }, 3000);
+            }}>
+                {this.state.copiedLink ? 'Copied link to clipboard!' : 'Share'}
+                <Share />
+            </span>
+            {this.props.path && this.props.uri.split('/')[0] === 'github.com' &&
+                <a href={url.toGitHubBlob({ uri: this.props.uri, rev: this.props.rev || 'master', path: this.props.path, line: hash.line })} className='view-external'>
+                    View on GitHub
+                <GitHub className='github-icon' /* TODO(john): use icon library */ />
+                </a>}
         </div>;
     }
 }

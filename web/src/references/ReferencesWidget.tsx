@@ -123,11 +123,11 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                             url.openFromJS(href, e);
                         }}>
                             <CodeExcerpt uri={uri.hostname + uri.path} rev={uri.query}
-                                         path={uri.fragment}
-                                         line={ref.range.start.line}
-                                         char={ref.range.start.character}
-                                         highlightLength={ref.range.end.character - ref.range.start.character}
-                                         previewWindowExtraLines={1} />
+                                path={uri.fragment}
+                                line={ref.range.start.line}
+                                char={ref.range.start.character}
+                                highlightLength={ref.range.end.character - ref.range.start.character}
+                                previewWindowExtraLines={1} />
                         </a>;
                     })
                 }
@@ -159,14 +159,20 @@ interface State extends ReferencesState {
 
 export class ReferencesWidget extends React.Component<Props, State> {
     public subscription: any;
-    public hashWatcher: any;
 
     constructor(props: Props) {
         super(props);
-        let u = url.parseBlob();
+        const u = url.parseBlob();
         const onRefs = Boolean(u.path && u.modal && u.modal === 'references');
         this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs };
-        if (onRefs) {
+    }
+
+    public componentDidMount(): void {
+        this.subscription = store.subscribe(state => {
+            this.setState({ ...state, group: this.state.group, docked: this.state.docked });
+        });
+        const u = url.parseBlob();
+        if (this.state.docked) {
             triggerReferences({
                 loc: {
                     repoURI: u.uri!,
@@ -179,13 +185,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 word: '' // TODO: derive the correct word from somewhere
             });
         }
-        this.hashWatcher = window.addEventListener('hashchange', e => {
-            u = url.parseBlob(e!.newURL!);
-            const shouldShow = Boolean(u.path && u.modal && u.modal === 'references');
-            if (shouldShow) {
-                this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true });
-            }
-        });
+        window.addEventListener('hashchange', this.handleHashChange);
     }
 
     public getRefsGroupFromUrl(urlStr: string): 'local' | 'external' {
@@ -198,19 +198,11 @@ export class ReferencesWidget extends React.Component<Props, State> {
         return 'local';
     }
 
-    public componentDidMount(): void {
-        this.subscription = store.subscribe(state => {
-            this.setState({ ...state, group: this.state.group, docked: this.state.docked });
-        });
-    }
-
     public componentWillUnmount(): void {
         if (this.subscription) {
             this.subscription.unsubscribe();
         }
-        if (this.hashWatcher) {
-            window.removeEventListener('hashchange', this.hashWatcher);
-        }
+        window.removeEventListener('hashchange', this.handleHashChange);
     }
 
     public isLoading(group: 'local' | 'external'): boolean {
@@ -262,14 +254,14 @@ export class ReferencesWidget extends React.Component<Props, State> {
                     {this.state.context.word}
                 </div>
                 <a className={this.state.group === 'local' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
-                   href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'local', modal: 'references' })}
-                   onClick={() => events.ShowLocalRefsButtonClicked.log()}>
+                    href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'local', modal: 'references' })}
+                    onClick={() => events.ShowLocalRefsButtonClicked.log()}>
                     This repository
                 </a>
                 <div className={Styles.badge}>{localRefs.length}</div>
                 <a className={this.state.group === 'external' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
-                   href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'external', modal: 'references' })}
-                   onClick={() => events.ShowExternalRefsButtonClicked.log()}>
+                    href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'external', modal: 'references' })}
+                    onClick={() => events.ShowExternalRefsButtonClicked.log()}>
                     Other repositories
                 </a>
                 <div className={Styles.badge}>{externalRefs.length}</div>
@@ -298,6 +290,14 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 }
             </div>
         </div>;
+    }
+
+    private handleHashChange = (e: HashChangeEvent) => {
+        const u = url.parseBlob(e!.newURL!);
+        const shouldShow = Boolean(u.path && u.modal && u.modal === 'references');
+        if (shouldShow) {
+            this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true });
+        }
     }
 }
 

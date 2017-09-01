@@ -1,8 +1,26 @@
 import * as immutable from 'immutable';
 import * as Rx from 'rxjs';
 
+/**
+ * A contextKey is used to retrieve contents that are fetched and cached in the store.
+ * It identifies a repository, with an optional revision and filepath.
+ * To get the files that were fetched for repo A at rev B, you would use
+ * contextKey('A', 'B').
+ */
+export function contextKey(uri: string, rev?: string, path?: string): string {
+    return `${uri}@${rev}/${path}`;
+}
+
 export interface State {
-    files: immutable.Map<string, GQL.IFile[]>;
+    /**
+     * files is a map from contextKey to a list of paths, like ['foo', 'foo/bar', 'foo/bar/baz.go'].
+     * An example contextKey is {uri: 'github.com/gorilla/mux', rev: 'master'}.
+     */
+    files: immutable.Map<string, string[]>;
+    /**
+     * files is a map from contextKey to a list of paths, like ['foo', 'foo/bar', 'foo/bar/baz.go'].
+     * An example contextKey is {uri: 'github.com/gorilla/mux', rev: 'master', path: 'mux.go'}.
+     */
     highlightedContents: immutable.Map<string, string>;
 }
 
@@ -30,6 +48,3 @@ export const setState: (t: State) => void = actionDispatcher(payload => ({
     payload
 }));
 
-export function contextKey(uri: string, rev?: string, path?: string): string {
-    return `${uri}@${rev}/${path}`;
-}

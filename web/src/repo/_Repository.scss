@@ -17,6 +17,7 @@
             flex-direction: column;
             display: flex;
             flex: 1;
+            overflow: auto;
 
             .contents {
                 overflow: auto;
@@ -74,6 +75,7 @@
             }
 
             td.code {
+                width: 100%;
                 padding-left: .5em;
                 white-space: pre;
                 >.blame {

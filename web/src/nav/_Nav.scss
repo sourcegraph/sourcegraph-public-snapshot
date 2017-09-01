@@ -76,16 +76,23 @@
         @extend .font-white;
     }
 
-    .icon {
+    svg.icon {
         width: 16px;
         height: 16px;
-        display: inline-block;
+        display: inherit;
         fill: currentColor;
         margin-right: 5px;
+        margin-left: 5px;
     }
 
+    svg.github-icon {
+        display: inherit;
+        fill: currentColor;
+        margin-right: 7px;
+        margin-left: 7px;
+    }
 
-    #file-explorer {
+    .explorer {
         display: flex;
         cursor: pointer;
         align-items: center;
@@ -104,47 +111,22 @@
         display: flex;
         align-items: center;
 
-        >span {
-            >a:last-child {
-                @extend .font-heavy-white;
-            }
-        }
-
         .separator {
             padding: 0px 5px;
         }
     }
 
-    .right-pane {
-        display: inline-block;
-        .share {
-            .share-icon {
-                width: 9px;
-                height: 13px;
-                margin-left: 8px;
-                position: relative;
-                top: 2px;
-            }
-        }
-        .authorship {
-            .authorship-icon {
-                width: 14px;
-                height: 9px;
-                margin-left: 6px;
-            }
-            margin-left: 18px;
-        }
-        .github {
-            .github-icon {
-                width: 13px;
-                height: 14px;
-                margin-left: 6px;
-                position: relative;
-                top: 4px;
-            }
+    .share {
+        display: flex;
+        align-items: center;
+        color: #93A9C8;
+        margin-right: 10px;
+        cursor: pointer;
+    }
 
-            margin-right: 18px;
-            margin-left: 14px;
-        }
+    .view-external {
+        display: flex;
+        align-items: center;
+        color: #93A9C8;
     }
 }

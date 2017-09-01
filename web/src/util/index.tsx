@@ -1,4 +1,4 @@
-
+import * as H from 'history';
 import * as moment from 'moment';
 import { triggerBlame } from 'sourcegraph/blame';
 import { CodeCell } from 'sourcegraph/util/types';
@@ -524,7 +524,7 @@ export function getCodeCellsForAnnotation(): CodeCell[] {
     return cells;
 }
 
-export function highlightLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
+export function highlightLine(history: H.History, repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
     triggerBlame({
         time: moment(),
         repoURI,
@@ -540,6 +540,9 @@ export function highlightLine(repoURI: string, commitID: string, path: string, l
     }
 
     const cell = cells[line - 1];
+    if (!cell) {
+        return;
+    }
     cell.cell.style.backgroundColor = '#1c2736';
     cell.cell.classList.add('sg-highlighted');
 
@@ -561,11 +564,11 @@ export function highlightLine(repoURI: string, commitID: string, path: string, l
         return;
     }
 
-    window.history.pushState(null, '', url.toBlobHash(u));
+    history.push(url.toBlobHash(u));
 }
 
-export function highlightAndScrollToLine(repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
-    highlightLine(repoURI, commitID, path, line, cells, userTriggered);
+export function highlightAndScrollToLine(history: H.History, repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
+    highlightLine(history, repoURI, commitID, path, line, cells, userTriggered);
 
     // Scroll to the line.
     const scrollingElement = document.querySelector('.blob>.content')!;

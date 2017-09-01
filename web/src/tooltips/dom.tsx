@@ -2,6 +2,7 @@
 // import { getAssetURL } from "sourcegraph/util/assets";
 // import { eventLogger, searchEnabled } from "sourcegraph/util/context";
 import { highlightBlock } from 'highlight.js';
+import * as H from 'history';
 import * as marked from 'marked';
 import { triggerReferences } from 'sourcegraph/references';
 import { getSearchPath } from 'sourcegraph/search';
@@ -10,6 +11,7 @@ import { clearTooltip, store, TooltipState } from 'sourcegraph/tooltips/store';
 import * as styles from 'sourcegraph/tooltips/styles';
 import { events } from 'sourcegraph/tracking/events';
 import { getModeFromExtension } from 'sourcegraph/util';
+import * as URI from 'urijs';
 
 let tooltip: HTMLElement;
 let loadingTooltip: HTMLElement;
@@ -31,7 +33,7 @@ const definitionIconSVG = '<svg width="11px" height="9px"><path fill="#FFFFFF" x
  * tooltip and "Loading..." text indicator, adding the former
  * to the DOM (but hidden). It is idempotent.
  */
-export function createTooltips(): void {
+export function createTooltips(history: H.History): void {
     if (document.querySelector('.sg-tooltip')) {
         return; // idempotence
     }
@@ -64,9 +66,16 @@ export function createTooltips(): void {
     j2dAction.className = `btn btn-sm BtnGroup-item`;
     Object.assign(j2dAction.style, styles.tooltipAction);
     Object.assign(j2dAction.style, styles.tooltipActionNotLast);
-    j2dAction.addEventListener('click', () => {
+    j2dAction.onclick = (e: MouseEvent) => {
+        console.log('clicked', j2dAction.href);
         events.GoToDefClicked.log();
-    });
+        if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+            return;
+        }
+        e.preventDefault();
+        const uri = URI.parse(j2dAction.href);
+        history.push(uri.path + '#' + uri.fragment);
+    };
 
     const referencesIcon = document.createElement('svg');
     referencesIcon.innerHTML = referencesIconSVG;

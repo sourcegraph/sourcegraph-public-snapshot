@@ -60,6 +60,14 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
         resolveRev(this.props.uri, this.props.rev).then(resp => this.setState({ commitID: resp.commitID }));
     }
 
+    public componentWillReceiveProps(nextProps: WithResolvedRevProps): void {
+        if (this.props.uri !== nextProps.uri || this.props.rev !== nextProps.rev) {
+            // clear state so the child won't render until the revision is resolved for new props
+            this.state = {};
+            resolveRev(nextProps.uri, nextProps.rev).then(resp => this.setState({ commitID: resp.commitID }));
+        }
+    }
+
     public render(): JSX.Element | null {
         if (!this.state.commitID) {
             return null;
