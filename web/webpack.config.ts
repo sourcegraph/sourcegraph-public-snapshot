@@ -50,7 +50,6 @@ const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-modul
 const config: webpack.Configuration = {
     entry: {
         app: path.join(__dirname, 'src/app.tsx'),
-        highlighter: path.join(__dirname, 'src/highlighter.tsx'),
         style: path.join(__dirname, 'src/app.scss')
     },
     output: {

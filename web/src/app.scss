@@ -1,40 +1,40 @@
 /*
-	This is the main entry point for all styles
-	It should import all component stylesheets
+This is the main entry point for all styles
+It should import all component stylesheets
 */
 
+$color-page-background: #233043;
+$color-text: #93A9C8;
 $nav-height: 48px;
 
-@import "./highlight";
-@import "./home/Home";
-@import "./nav/Nav";
-@import "./search/SearchBox";
-@import "./repo/Repository";
+@import './highlight';
+@import './home/Home';
+@import './nav/Nav';
+@import './search/SearchBox';
+@import './repo/Repository';
+
+
+// Define the 'system' font family
+//
+// See https://css-tricks.com/snippets/css/system-font-stack/
+@font-face {
+  font-family: system;
+  font-style: normal;
+  font-weight: 300;
+  src: local('.SFNSText-Light'), local('.HelveticaNeueDeskInterface-Light'), local('.LucidaGrandeUI'), local('Ubuntu Light'), local('Segoe UI Light'), local('Roboto-Light'), local('DroidSans'), local('Tahoma');
+}
 
 * {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-kbd {
-	font-family: Menlo;
-	display: inline-block;
-	line-height: 1rem;
-	height: 1rem;
-	font-size: 0.5rem;
-	vertical-align: middle;
-	background-color: #93A9C8;
-	color: #2A3A51;
-	border-radius: 1px;
-	padding: 0 0.25rem;
-}
+html {
+    font-family: 'system';
+    font-size: 16px;
 
-.base {
-    // reset
-
-    font-family: "system";
-
+    // Scrollbar
     scrollbar-base-color: #233043;
     scrollbar-face-color: #43536d;
     ::-webkit-scrollbar {
@@ -48,23 +48,32 @@ kbd {
     ::-webkit-scrollbar-thumb {
         background-color: #43536d;
     }
-
-    >body {
-        background-color: #233043;
-        color: #C9D4E3;
-        a {
-            outline: 0;
-            @extend .font-normal-grey;
-        }
-    }
-
-    #app-container {
-        margin-top: $nav-height;
-        display: flex;
-        justify-content: center;
-    }
-
 }
+
+body {
+    background-color: $color-page-background;
+    color: #C9D4E3;
+}
+
+kbd {
+    font-family: Menlo;
+    display: inline-block;
+    line-height: 1rem;
+    height: 1rem;
+    font-size: 0.5rem;
+    vertical-align: middle;
+    background-color: #93A9C8;
+    color: #2A3A51;
+    border-radius: 1px;
+    padding: 0 0.25rem;
+}
+
+a {
+    outline: 0;
+    color: #93A9C8;
+}
+
+// TODO use a flexbox container
 
 /* screens 0-1080px wide: 100% width */
 @media (min-width: 0px) and (max-width: 1080px) {
@@ -87,47 +96,10 @@ kbd {
     }
 }
 
-// Define the "system" font family
-//
-// See https://css-tricks.com/snippets/css/system-font-stack/
-@font-face {
-  font-family: system;
-  font-style: normal;
-  font-weight: 300;
-  src: local(".SFNSText-Light"), local(".HelveticaNeueDeskInterface-Light"), local(".LucidaGrandeUI"), local("Ubuntu Light"), local("Segoe UI Light"), local("Roboto-Light"), local("DroidSans"), local("Tahoma");
-}
 
-// usage: '@extend .font-capital-white;'
-.font-capital-white {
-    font-family: system;
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #FFFFFF;
-}
-
-// usage: '@extend .font-normal-grey'
-.font-normal-grey {
-    font-family: system;
-    font-weight: normal;
-    color: #93A9C8;
-}
-
-// usage: '@extend .font-white'
-.font-white {
-    font-family: system;
-    font-style: normal;
-    color: #FFFFFF;
-}
-
-// usage: '@extend .font-heavy-white'
-.font-heavy-white {
-    @extend .font-white;
-    font-weight: 600;
-}
-
+// TODO move out of here
 .cloning {
-    $cloning-height: unquote("calc(100vh - #{$nav-height})");
+    $cloning-height: unquote('calc(100vh - #{$nav-height})');
 
     height: $cloning-height;
     display: flex;
@@ -157,7 +129,7 @@ kbd {
 }
 
 .fancyerror {
-    $fancyerror-height: unquote("calc(100vh - #{$nav-height})");
+    $fancyerror-height: unquote('calc(100vh - #{$nav-height})');
 
     height: $fancyerror-height;
     display: flex;

@@ -22,7 +22,9 @@ function defaultOptions(): FetchOptions | undefined {
         return undefined; // for unit tests
     }
     const headers = new Headers();
-    headers.set('Authorization', `sg-session ${token}`);
+    if (window.context && window.context.accessToken) {
+        headers.set('Authorization', `sg-session ${window.context.accessToken}`);
+    }
     return {
         headers
     };

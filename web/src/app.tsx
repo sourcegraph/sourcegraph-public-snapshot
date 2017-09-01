@@ -2,7 +2,7 @@ import * as React from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import * as xhr from 'sourcegraph/backend/xhr';
-import { Home } from 'sourcegraph/home';
+import { Home } from 'sourcegraph/home/Home';
 import { Navbar } from 'sourcegraph/nav';
 import { resolveRev } from 'sourcegraph/repo/backend';
 import { contextKey, repoCache, setRepoCache } from 'sourcegraph/repo/cache';
@@ -19,6 +19,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 });
 
+/**
+ * The root component
+ */
 class App extends React.Component<{}, {}> {
     public render(): JSX.Element | null {
         return <BrowserRouter>
@@ -30,6 +33,9 @@ class App extends React.Component<{}, {}> {
     }
 }
 
+/**
+ * Defines the layout of all pages that have a navbar
+ */
 class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
     public render(): JSX.Element | null {
         return <div>
@@ -94,7 +100,7 @@ class AppRouter extends React.Component<RouteComponentProps<string[]>, {}> {
             return null;
         }
         if (this.props.match.params[0] === 'search') {
-            return <div className='search'><SearchResults /></div>;
+            return <SearchResults />;
         }
 
         const uriPathSplit = this.props.match.params[0].split('/-/');
