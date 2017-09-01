@@ -20,7 +20,7 @@ export class Navbar extends React.Component<RouteComponentProps<string[]>, {}> {
                 <Link to='/'>
                     <img className='spin' src='/.assets/img/sourcegraph-mark.svg' width='24' />
                 </Link>
-                {this.props.location.pathname !== '/' && <div id='search-box-container'><SearchBox /></div>}
+                {this.props.location.pathname !== '/' && <div id='search-box-container'><SearchBox history={this.props.history} /></div>}
                 <span className='fill' />
                 {this.props.location.pathname !== '/' && <a href='' target='_blank' className='open-on-desktop'>
                     <span>Open on desktop</span>

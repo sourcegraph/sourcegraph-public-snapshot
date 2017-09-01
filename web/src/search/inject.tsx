@@ -11,7 +11,7 @@ import * as URI from 'urijs';
 export function injectSearchBox(): void {
     const widget = document.getElementById('search-widget') as HTMLElement;
     if (widget) {
-        render(<SearchBox />, widget);
+        render(<SearchBox history={null as any} />, widget);
     }
 }
 
@@ -37,7 +37,7 @@ export function injectSearchInputHandler(): void {
 
 export function injectAdvancedSearchToggle(): void {
     const searchBoxContainer = document.getElementById('search-box-container') as HTMLElement;
-    render(<SearchBox />, searchBoxContainer);
+    render(<SearchBox history={null as any} />, searchBoxContainer);
 }
 
 export function injectAdvancedSearchDrawer(): void {

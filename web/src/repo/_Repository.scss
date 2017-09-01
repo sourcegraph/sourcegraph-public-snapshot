@@ -1,11 +1,7 @@
 .repo {
-    background-color: #151D28;
-
     $page-height: unquote("calc(100vh - #{$nav-height})");
     height: $page-height;
     border-bottom: 1px solid #233043;
-    background-color: #202A3B;
-
 
     .container {
         $tvc-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");

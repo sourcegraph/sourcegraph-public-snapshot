@@ -4,6 +4,7 @@ import FileIcon from '@sourcegraph/icons/lib/File';
 import RepoIcon from '@sourcegraph/icons/lib/Repo';
 import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
+import * as H from 'history';
 import * as React from 'react';
 import { Subject } from 'rxjs';
 import { Subscription } from 'rxjs/Subscription';
@@ -32,7 +33,9 @@ interface Filter {
     type: FilterType;
 }
 
-interface Props {}
+interface Props {
+    history: H.History;
+}
 
 interface State {
 
@@ -129,9 +132,9 @@ export class SearchBox extends React.Component<Props, State> {
                             }
                         }
                     `, {
-                        query,
-                        repositories: this.state.filters.filter(f => f.type === FilterType.Repo).map(f => f.value)
-                    })
+                            query,
+                            repositories: this.state.filters.filter(f => f.type === FilterType.Repo).map(f => f.value)
+                        })
                         .catch(err => {
                             console.error(err);
                             return [];
@@ -142,7 +145,7 @@ export class SearchBox extends React.Component<Props, State> {
                     const suggestions = result.data!.root.search.map(item => {
                         switch (item.__typename) {
                             case 'Repository': return { value: item.uri, type: FilterType.Repo };
-                            case 'File':       return { value: item.name, type: FilterType.File };
+                            case 'File': return { value: item.name, type: FilterType.File };
                         }
                     }).filter(s => s) as Filter[];
                     this.setState({ suggestions, selectedSuggestion: Math.min(suggestions.length - 1, 0) });
@@ -192,13 +195,13 @@ export class SearchBox extends React.Component<Props, State> {
                         />
                     </div>
                     <label className='search-box-option' title='Match case'>
-                        <input type='checkbox' checked={this.state.matchCase} onChange={e => this.setState({ matchCase: e.currentTarget.checked })}/><span>Aa</span>
+                        <input type='checkbox' checked={this.state.matchCase} onChange={e => this.setState({ matchCase: e.currentTarget.checked })} /><span>Aa</span>
                     </label>
                     <label className='search-box-option' title='Match whole word'>
-                        <input type='checkbox' checked={this.state.matchWord} onChange={e => this.setState({ matchWord: e.currentTarget.checked })}/><span><u>Ab</u></span>
+                        <input type='checkbox' checked={this.state.matchWord} onChange={e => this.setState({ matchWord: e.currentTarget.checked })} /><span><u>Ab</u></span>
                     </label>
                     <label className='search-box-option' title='Use regular expression'>
-                        <input type='checkbox' checked={this.state.matchRegexp} onChange={e => this.setState({ matchRegexp: e.currentTarget.checked })}/><span>.*</span>
+                        <input type='checkbox' checked={this.state.matchRegexp} onChange={e => this.setState({ matchRegexp: e.currentTarget.checked })} /><span>.*</span>
                     </label>
                 </div>
                 <ul className='search-box-suggestions'>
@@ -299,14 +302,14 @@ export class SearchBox extends React.Component<Props, State> {
                 matchWord: this.state.matchWord
             });
             events.SearchSubmitted.log({ code_search: { pattern: query, repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value) } });
-            location.href = path;
+            this.props.history.push(path);
         } else if (filters[0].type === FilterType.Repo) {
             if (filters.length === 1) {
                 // Go to repo
-                location.href = `/${filters[0].value}`;
+                this.props.history.push(`/${filters[0].value}`);
             } else if (filters[1].type === FilterType.File && filters.length === 2 && !/\?|\*/.exec(filters[1].value)) {
                 // Go to file
-                location.href = `/${filters[0].value}/-/blob/${filters[1].value}`;
+                this.props.history.push(`/${filters[0].value}/-/blob/${filters[1].value}`);
             }
         }
     }

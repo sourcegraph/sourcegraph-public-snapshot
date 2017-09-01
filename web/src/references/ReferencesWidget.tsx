@@ -66,7 +66,7 @@ namespace Styles {
 
     export const refsGroup = style({ fontSize: '12px', fontFamily: 'system', color: normalFontColor, userSelect: 'none' });
     export const closeIcon = style({ cursor: 'pointer', fontSize: '18px', color: colors.normalFontColor, $nest: { '&:hover': { color: white } } });
-    const refsTitleColor = '#233043';
+    const refsTitleColor = '#2A3A51';
     export const refsGroupTitle = style(csstips.horizontal, csstips.center, {
         cursor: 'pointer',
         backgroundColor: refsTitleColor,
