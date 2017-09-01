@@ -1,6 +1,3 @@
-// import { fetchJumpURL } from "sourcegraph/backend/lsp";
-// import { getAssetURL } from "sourcegraph/util/assets";
-// import { eventLogger, searchEnabled } from "sourcegraph/util/context";
 import { highlightBlock } from 'highlight.js';
 import * as H from 'history';
 import * as marked from 'marked';
@@ -9,7 +6,8 @@ import { getSearchPath } from 'sourcegraph/search';
 import { clearTooltip, store, TooltipState } from 'sourcegraph/tooltips/store';
 import * as styles from 'sourcegraph/tooltips/styles';
 import { events } from 'sourcegraph/tracking/events';
-import { getModeFromExtension } from 'sourcegraph/util';
+import { getCodeCellsForAnnotation, getModeFromExtension, highlightAndScrollToLine } from 'sourcegraph/util';
+import * as url from 'sourcegraph/util/url';
 import * as URI from 'urijs';
 
 let tooltip: HTMLElement;
@@ -66,13 +64,23 @@ export function createTooltips(history: H.History): void {
     Object.assign(j2dAction.style, styles.tooltipAction);
     Object.assign(j2dAction.style, styles.tooltipActionNotLast);
     j2dAction.onclick = (e: MouseEvent) => {
+        const before = url.parseBlob();
         events.GoToDefClicked.log();
         if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
             return;
         }
         e.preventDefault();
         const uri = URI.parse(j2dAction.href);
-        history.push(uri.path + '#' + uri.fragment);
+
+        const after = url.parseBlob(j2dAction.href);
+        clearTooltip();
+        if (after.line && before.uri === after.uri && before.rev === after.rev && before.line !== after.line) {
+            // Handles URL update.
+            highlightAndScrollToLine(history, after.uri!,
+                after.rev!, after.path!, after.line, getCodeCellsForAnnotation(), false);
+        } else {
+            history.push(uri.path + '#' + uri.fragment);
+        }
     };
 
     const referencesIcon = document.createElement('svg');
