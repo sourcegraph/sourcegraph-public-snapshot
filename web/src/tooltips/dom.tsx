@@ -6,7 +6,6 @@ import * as H from 'history';
 import * as marked from 'marked';
 import { triggerReferences } from 'sourcegraph/references';
 import { getSearchPath } from 'sourcegraph/search';
-import { setState as setSearchState, store as searchStore } from 'sourcegraph/search/store';
 import { clearTooltip, store, TooltipState } from 'sourcegraph/tooltips/store';
 import * as styles from 'sourcegraph/tooltips/styles';
 import { events } from 'sourcegraph/tracking/events';
@@ -193,9 +192,7 @@ function updateTooltip(state: TooltipState): void {
 
     const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
     if (searchText) {
-        const params = { ...searchStore.getValue(), repos: context.repoRevCommit.repoURI, q: searchText };
-        setSearchState(params);
-        searchAction.href = getSearchPath(params);
+        searchAction.href = getSearchPath({ files: '', repos: context.repoRevCommit.repoURI, q: searchText, matchCase: false, matchWord: false, matchRegex: false });
     } else {
         searchAction.href = '';
     }
