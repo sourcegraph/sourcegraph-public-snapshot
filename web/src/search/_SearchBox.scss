@@ -114,6 +114,9 @@
 					display: inline-block;
 					vertical-align: top;
 					margin-left: 0.5rem;
+					&::after {
+						content: '\200E';
+					}
 				}
 				&-remove-button {
 					border: none;
