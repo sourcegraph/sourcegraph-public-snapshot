@@ -114,6 +114,7 @@
 					display: inline-block;
 					vertical-align: top;
 					margin-left: 0.5rem;
+					unicode-bidi: plaintext;
 					&::after {
 						content: '\200E';
 					}
