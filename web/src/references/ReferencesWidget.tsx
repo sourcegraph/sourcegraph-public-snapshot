@@ -8,6 +8,7 @@ import * as RightIcon from 'react-icons/lib/fa/angle-right';
 import * as RepoIcon from 'react-icons/lib/go/repo';
 import * as CloseIcon from 'react-icons/lib/md/close';
 import * as GlobeIcon from 'react-icons/lib/md/language';
+import { Link } from 'react-router-dom';
 import { CodeExcerpt } from 'sourcegraph/components/CodeExcerpt';
 import { triggerReferences } from 'sourcegraph/references';
 import { locKey, ReferencesState, refsFetchKey, store } from 'sourcegraph/references/store';
@@ -118,7 +119,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                     }).map((ref, i) => {
                         const uri = URI.parse(ref.uri);
                         const href = getRefURL(ref, uri.query);
-                        return <a href={href} key={i} className={Styles.ref} onClick={e => {
+                        return <Link to={href} key={i} className={Styles.ref} onClick={e => {
                             this.props.isLocal ? events.GoToLocalRefClicked.log() : events.GoToExternalRefClicked.log();
                             url.openFromJS(href, e);
                         }}>
@@ -128,7 +129,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                 char={ref.range.start.character}
                                 highlightLength={ref.range.end.character - ref.range.start.character}
                                 previewWindowExtraLines={1} />
-                        </a>;
+                        </Link>;
                     })
                 }
             </div>;

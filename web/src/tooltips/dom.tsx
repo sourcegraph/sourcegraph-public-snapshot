@@ -67,7 +67,6 @@ export function createTooltips(history: H.History): void {
     Object.assign(j2dAction.style, styles.tooltipAction);
     Object.assign(j2dAction.style, styles.tooltipActionNotLast);
     j2dAction.onclick = (e: MouseEvent) => {
-        console.log('clicked', j2dAction.href);
         events.GoToDefClicked.log();
         if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
             return;
@@ -110,9 +109,15 @@ export function createTooltips(history: H.History): void {
     searchAction.appendChild(searchIcon);
     searchAction.appendChild(document.createTextNode('Search'));
     Object.assign(searchAction.style, styles.tooltipAction);
-    searchAction.addEventListener('click', () => {
+    searchAction.onclick = (e: MouseEvent) => {
         events.SearchClicked.log();
-    });
+        if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+            return;
+        }
+        e.preventDefault();
+        const uri = URI.parse(searchAction.href);
+        history.push(uri.path + '?' + uri.query);
+    };
 
     tooltipActions.appendChild(j2dAction);
     tooltipActions.appendChild(findRefsAction);
@@ -188,7 +193,7 @@ function updateTooltip(state: TooltipState): void {
 
     const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
     if (searchText) {
-        const params = { ...searchStore.getValue(), q: searchText };
+        const params = { ...searchStore.getValue(), repos: context.repoRevCommit.repoURI, q: searchText };
         setSearchState(params);
         searchAction.href = getSearchPath(params);
     } else {

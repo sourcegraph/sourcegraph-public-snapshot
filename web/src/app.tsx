@@ -5,10 +5,10 @@ import { resolveRev } from 'sourcegraph/backend';
 import * as xhr from 'sourcegraph/backend/xhr';
 import { Navbar } from 'sourcegraph/nav';
 import { Repository } from 'sourcegraph/repo/Repository';
+import { SearchResults } from 'sourcegraph/search/SearchResults';
 import * as activeRepos from 'sourcegraph/util/activeRepos';
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
 import { Home } from 'sourcegraph/views/Home';
-import { Search } from 'sourcegraph/views/Search';
 
 window.addEventListener('DOMContentLoaded', () => {
     xhr.useAccessToken(sourcegraphContext.accessToken);
@@ -82,7 +82,7 @@ class AppRouter extends React.Component<RouteComponentProps<string[]>, {}> {
             return null;
         }
         if (this.props.match.params[0] === 'search') {
-            return <Search />;
+            return <div className='search'><SearchResults /></div>;
         }
 
         const uriPathSplit = this.props.match.params[0].split('/-/');
