@@ -75,15 +75,16 @@ func TestThreads_Get_RepoNotFound(t *testing.T) {
 
 	store.Mocks.LocalRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
 
+	file := "foo.go"
 	r := &rootResolver{}
 	threads, err := r.Threads(ctx, &struct {
 		RemoteURI   string
 		AccessToken string
-		File        string
+		File        *string
 	}{
 		RemoteURI:   "test",
 		AccessToken: "1234",
-		File:        "foo.go",
+		File:        &file,
 	})
 
 	if err != nil {
