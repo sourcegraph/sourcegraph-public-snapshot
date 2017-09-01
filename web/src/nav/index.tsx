@@ -35,9 +35,9 @@ export class Navbar extends React.Component<RouteComponentProps<string[]>, {}> {
 }
 
 interface RepoSubnavProps {
-    uri: string;
+    repoPath: string;
     rev?: string;
-    path?: string;
+    filePath?: string;
     onClickNavigation: () => void;
     location: H.Location;
 }
@@ -76,8 +76,8 @@ export class RepoSubnav extends React.Component<RepoSubnavProps, RepoSubnavState
                 {this.state.copiedLink ? 'Copied link to clipboard!' : 'Share'}
                 <Share />
             </span>
-            {this.props.path && this.props.uri.split('/')[0] === 'github.com' &&
-                <a href={url.toGitHubBlob({ uri: this.props.uri, rev: this.props.rev || 'master', path: this.props.path, line: hash.line })} className='view-external'>
+            {this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
+                <a href={url.toGitHubBlob({ uri: this.props.repoPath, rev: this.props.rev || 'master', path: this.props.filePath, line: hash.line })} className='view-external'>
                     View on GitHub
                 <GitHub className='github-icon' /* TODO(john): use icon library */ />
                 </a>}

@@ -1,7 +1,7 @@
 import { highlightBlock } from 'highlight.js';
 import * as React from 'react';
 import * as VisibilitySensor from 'react-visibility-sensor';
-import { fetchBlobContent } from 'sourcegraph/backend';
+import { fetchBlobContent } from 'sourcegraph/repo/backend';
 import { getModeFromExtension, getPathExtension } from 'sourcegraph/util';
 import * as colors from 'sourcegraph/util/colors';
 import { highlightNode } from 'sourcegraph/util/dom';
@@ -51,7 +51,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
 
     public onChangeVisibility(isVisible: boolean): void {
         if (isVisible) {
-            fetchBlobContent(this.props.uri, this.props.rev, this.props.path).then(content => {
+            fetchBlobContent({repoPath: this.props.uri, commitID: this.props.rev, filePath: this.props.path}).then(content => {
                 if (content) {
                     const blobLines = content.split('\n');
                     this.setState({ blobLines });

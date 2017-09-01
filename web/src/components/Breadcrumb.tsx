@@ -27,43 +27,43 @@ export class Breadcrumb extends React.Component<Props, {}> {
 }
 
 export interface RepoBreadcrumbProps {
-    uri: string;
+    repoPath: string;
     rev?: string;
-    path?: string;
+    filePath?: string;
 }
 
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     public render(): JSX.Element | null {
-        const trimmedUri = this.props.uri.split('/').slice(1).join('/'); // remove first path part
-        return <Breadcrumb path={trimmedUri + (this.props.path ? '/' + this.props.path : '')} partToUrl={this.partToUrl} partToClassName={this.partToClassName} />;
+        const trimmedUri = this.props.repoPath.split('/').slice(1).join('/'); // remove first path part
+        return <Breadcrumb path={trimmedUri + (this.props.filePath ? '/' + this.props.filePath : '')} partToUrl={this.partToUrl} partToClassName={this.partToClassName} />;
     }
 
     private partToUrl = (i: number) => {
-        const trimmedUri = this.props.uri.split('/').slice(1).join('/'); // remove first path part
+        const trimmedUri = this.props.repoPath.split('/').slice(1).join('/'); // remove first path part
         const uriParts = trimmedUri.split('/');
         if (i < uriParts.length) {
-            return '/' + this.props.uri;
+            return '/' + this.props.repoPath;
         }
-        if (this.props.path) {
+        if (this.props.filePath) {
             const j = i - uriParts.length;
-            const pathParts = this.props.path.split('/');
+            const pathParts = this.props.filePath.split('/');
             if (j < pathParts.length - 1) {
-                return url.toTree({ uri: this.props.uri, rev: this.props.rev, path: pathParts.slice(0, j + 1).join('/') });
+                return url.toTree({ uri: this.props.repoPath, rev: this.props.rev, path: pathParts.slice(0, j + 1).join('/') });
             }
-            return url.toBlob({ uri: this.props.uri, rev: this.props.rev, path: this.props.path });
+            return url.toBlob({ uri: this.props.repoPath, rev: this.props.rev, path: this.props.filePath });
         }
         return '';
     }
 
     private partToClassName = (i: number) => {
-        const trimmedUri = this.props.uri.split('/').slice(1).join('/'); // remove first path part
+        const trimmedUri = this.props.repoPath.split('/').slice(1).join('/'); // remove first path part
         const uriParts = trimmedUri.split('/');
         if (i < uriParts.length) {
             return 'part-repo';
         }
-        if (this.props.path) {
+        if (this.props.filePath) {
             const j = i - uriParts.length;
-            const pathParts = this.props.path.split('/');
+            const pathParts = this.props.filePath.split('/');
             if (j < pathParts.length - 1) {
                 return 'part-directory';
             }
