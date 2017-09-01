@@ -3,12 +3,12 @@ import { render } from 'react-dom';
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import { resolveRev } from 'sourcegraph/backend';
 import * as xhr from 'sourcegraph/backend/xhr';
+import { Home } from 'sourcegraph/home';
 import { Navbar } from 'sourcegraph/nav';
 import { Repository } from 'sourcegraph/repo/Repository';
 import { SearchResults } from 'sourcegraph/search/SearchResults';
 import * as activeRepos from 'sourcegraph/util/activeRepos';
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
-import { Home } from 'sourcegraph/views/Home';
 
 window.addEventListener('DOMContentLoaded', () => {
     xhr.useAccessToken(sourcegraphContext.accessToken);

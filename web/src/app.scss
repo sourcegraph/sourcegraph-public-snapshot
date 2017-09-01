@@ -6,9 +6,9 @@
 $nav-height: 48px;
 
 @import "./highlight";
+@import "./home/Home";
 @import "./nav/Nav";
 @import "./search/SearchBox";
-@import "./views/Home";
 @import "./repo/Repository";
 
 * {

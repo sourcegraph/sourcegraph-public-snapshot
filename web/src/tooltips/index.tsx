@@ -243,24 +243,6 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
     }
 }
 
-// TODO(john): add back this special-casing for spaces (consult Beyang)
-// var allSpaces = true;
-// while (nodeText.length > 0) {
-//     const token = consumeNextToken(nodeText);
-//     const isAllSpaces = SPACES.test(token);
-//     allSpaces = isAllSpaces && allSpaces;
-
-//     wrapperNode.appendChild(createTextNode(token, offset + prevConsumed));
-//     prevConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
-//     bytesConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
-//     if (!allSpaces && spacesToTab > 0) {
-//         // NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
-//         // only divide by 2 for initial code indents.
-//         spacesToTab = 0;
-//     }
-//     nodeText = nodeText.slice(token.length);
-// }
-
 /**
  * addAnnotations is the entry point for marking up a DOM element with source code in it.
  * An invisible marker is appended to the document to indicate that annotation

@@ -2,8 +2,6 @@ import * as Rx from 'rxjs';
 import { getPathExtension } from 'sourcegraph/util';
 import * as types from 'sourcegraph/util/types';
 
-// reference implementation: http://rudiyardley.com/redux-single-line-of-code-rxjs/
-
 export interface TooltipContext {
     path: string;
     repoRevCommit: types.ResolvedRepoRevSpec;

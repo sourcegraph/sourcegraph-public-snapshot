@@ -1,6 +1,4 @@
 import * as querystring from 'querystring';
-import { ActiveRepoResults } from 'sourcegraph/util/types';
-import { openFromJS } from 'sourcegraph/util/url';
 import * as URI from 'urijs';
 
 export interface SearchParams {
@@ -10,16 +8,6 @@ export interface SearchParams {
     matchCase: boolean;
     matchWord: boolean;
     matchRegex: boolean;
-}
-
-export function handleSearchInput(e: any, params: SearchParams): void {
-    const query = e.target.value;
-    if ((e.key !== 'Enter' && e.keyCode !== 13) || !query) {
-        return;
-    }
-
-    params.q = query;
-    openFromJS(getSearchPath(params), e);
 }
 
 export function getSearchPath(params: SearchParams): string {
@@ -53,22 +41,4 @@ export function getSearchParamsFromLocalStorage(): SearchParams {
 
 export function parseRepoList(repos: string): string[] {
     return repos.split(/\s*,\s*/).map(repo => repo.trim()).filter(repo => repo !== '');
-}
-
-export function expandActiveInactive(repos: string[], groups: ActiveRepoResults): string[] {
-    const res: string[] = [];
-    for (const repo of repos) {
-        if (repo === 'active') {
-            for (const r of groups.active) {
-                res.push(r);
-            }
-        } else if (repo === 'inactive') {
-            for (const r of groups.inactive) {
-                res.push(r);
-            }
-        } else {
-            res.push(repo);
-        }
-    }
-    return res;
 }
