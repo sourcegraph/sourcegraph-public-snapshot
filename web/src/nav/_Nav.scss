@@ -64,7 +64,6 @@
 }
 
 .repo-subnav {
-    @extend .font-white;
     font-size: .75em;
     height: 48px;
     border-bottom: 1px solid #233043;
@@ -73,7 +72,6 @@
 
     a, .path a {
         text-decoration: none;
-        @extend .font-white;
     }
 
     svg.icon {

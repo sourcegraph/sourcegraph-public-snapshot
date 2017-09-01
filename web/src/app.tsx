@@ -2,23 +2,14 @@ import * as React from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import { resolveRev } from 'sourcegraph/backend';
-import * as xhr from 'sourcegraph/backend/xhr';
-import { Home } from 'sourcegraph/home';
+import { Home } from 'sourcegraph/home/Home';
 import { Navbar } from 'sourcegraph/nav';
 import { Repository } from 'sourcegraph/repo/Repository';
 import { SearchResults } from 'sourcegraph/search/SearchResults';
-import * as activeRepos from 'sourcegraph/util/activeRepos';
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
 
-window.addEventListener('DOMContentLoaded', () => {
-    xhr.useAccessToken(sourcegraphContext.accessToken);
-
-    // Be a bit proactive and try to fetch/store active repos now. This helps
-    // on the first search query, and when the data in local storage is stale.
-    activeRepos.get().catch(err => console.error(err));
-
-});
-
+/**
+ * The root component
+ */
 class App extends React.Component<{}, {}> {
     public render(): JSX.Element | null {
         return <BrowserRouter>
@@ -30,6 +21,9 @@ class App extends React.Component<{}, {}> {
     }
 }
 
+/**
+ * Defines the layout of all pages that have a navbar
+ */
 class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
     public render(): JSX.Element | null {
         return <div>
@@ -82,7 +76,7 @@ class AppRouter extends React.Component<RouteComponentProps<string[]>, {}> {
             return null;
         }
         if (this.props.match.params[0] === 'search') {
-            return <div className='search'><SearchResults /></div>;
+            return <SearchResults />;
         }
 
         const uriPathSplit = this.props.match.params[0].split('/-/');
