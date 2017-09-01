@@ -83,6 +83,10 @@ func (t *threads) Update(ctx context.Context, id, repoID int64, archive *bool) (
 	return thread, nil
 }
 
+func (t *threads) GetAllForRepo(ctx context.Context, repoID int64) ([]*sourcegraph.Thread, error) {
+	return t.getBySQL(ctx, "WHERE (local_repo_id=$1 AND deleted_at IS NULL)", repoID)
+}
+
 func (t *threads) GetAllForFile(ctx context.Context, repoID int64, file string) ([]*sourcegraph.Thread, error) {
 	return t.getBySQL(ctx, "WHERE (local_repo_id=$1 AND file=$2 AND deleted_at IS NULL)", repoID, file)
 }

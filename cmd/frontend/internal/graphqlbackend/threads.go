@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"regexp"
+	"strings"
 	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -52,10 +54,21 @@ func (t *threadResolver) ArchivedAt() *string {
 	return &a
 }
 
+func (t *threadResolver) Title(ctx context.Context) (string, error) {
+	cs, err := t.Comments(ctx)
+	if err != nil {
+		return "", err
+	}
+	if len(cs) == 0 {
+		return "", nil
+	}
+	return titleFromContents(cs[0].Contents()), nil
+}
+
 func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	RemoteURI   string
 	AccessToken string
-	File        string
+	File        *string
 }) ([]*threadResolver, error) {
 	threads := []*threadResolver{}
 
@@ -69,7 +82,12 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	ts, err := store.Threads.GetAllForFile(ctx, int64(repo.ID), args.File)
+	var ts []*sourcegraph.Thread
+	if args.File != nil {
+		ts, err = store.Threads.GetAllForFile(ctx, int64(repo.ID), *args.File)
+	} else {
+		ts, err = store.Threads.GetAllForRepo(ctx, int64(repo.ID))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -158,4 +176,21 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &threadResolver{thread: thread}, nil
+}
+
+// titleFromContents returns a title based on the first sentence or line of the content.
+func titleFromContents(contents string) string {
+	matchEndpoint := regexp.MustCompile(`[.!?]\s`)
+	var title string
+	if idxs := matchEndpoint.FindStringSubmatchIndex(contents); len(idxs) > 0 {
+		title = contents[:idxs[0]+1]
+	} else if i := strings.Index(contents, "\n"); i != -1 {
+		title = contents[:i]
+	} else {
+		title = contents
+	}
+	if len(title) > 140 {
+		title = title[:140] + "..."
+	}
+	return title
 }

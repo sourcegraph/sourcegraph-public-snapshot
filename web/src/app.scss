@@ -13,11 +13,25 @@ $nav-height: 48px;
 
 * {
 	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+kbd {
+	font-family: Menlo;
+	display: inline-block;
+	line-height: 1rem;
+	height: 1rem;
+	font-size: 0.5rem;
+	vertical-align: middle;
+	background-color: #93A9C8;
+	color: #2A3A51;
+	border-radius: 1px;
+	padding: 0 0.25rem;
 }
 
 .base {
     // reset
-    * { margin:0; padding:0; box-sizing:border-box; }
 
     font-family: "system";
 
@@ -36,7 +50,7 @@ $nav-height: 48px;
     }
 
     >body {
-        background-color: #202A3B;
+        background-color: #233043;
         color: #C9D4E3;
         a {
             outline: 0;

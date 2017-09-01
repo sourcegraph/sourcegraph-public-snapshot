@@ -71,7 +71,7 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 
 	// Search repos
 	go func() {
-		repoResults, err := searchRepos(ctx, args, limit)
+		repoResults, err := searchRepos(ctx, args.Query, args.Repositories, limit)
 		if err != nil {
 			done <- err
 			return
@@ -103,14 +103,21 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 	return res, nil
 }
 
-func searchRepos(ctx context.Context, args *searchArgs, limit int) (res []*searchResultResolver, err error) {
-	opt := &sourcegraph.RepoListOptions{Query: args.Query, RemoteSearch: false}
+func searchRepos(ctx context.Context, query string, repoURIs []string, limit int) (res []*searchResultResolver, err error) {
+	opt := &sourcegraph.RepoListOptions{Query: query, RemoteSearch: false}
 	opt.PerPage = int32(limit)
 	reposList, err := backend.Repos.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
+outer:
 	for _, repo := range reposList.Repos {
+		// Don't suggest repos that were already added as a filter
+		for _, repoURI := range repoURIs {
+			if repoURI == repo.URI {
+				continue outer
+			}
+		}
 		repoResolver := &repositoryResolver{repo: repo}
 		res = append(res, &searchResultResolver{result: repoResolver, sortText: repo.URI})
 	}

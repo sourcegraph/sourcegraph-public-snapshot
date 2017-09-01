@@ -59,7 +59,16 @@ func repoShortName(uri string) string {
 }
 
 func (c *Common) addOpenOnDesktop(fpath string) {
-	c.OpenOnDesktop = template.URL("src-insiders:open?resource=repo://" + path.Join(c.Repo.URI, fpath))
+	query := url.Values{}
+	query.Set("repo", "git+ssh://"+c.Repo.URI+".git")
+	query.Set("vcs", "git")
+	if c.Rev != "" {
+		query.Set("revision", c.Rev)
+	}
+	if fpath != "" {
+		query.Set("path", strings.TrimPrefix(fpath, "/"))
+	}
+	c.OpenOnDesktop = template.URL("https://about.sourcegraph.com/open-native/#open?" + query.Encode())
 }
 
 // newCommon builds a *Common data structure, returning an error if one occurs.
@@ -92,7 +101,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, route string, serveError 
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
-				http.Redirect(w, r, e.NewURL, http.StatusMovedPermanently)
+				http.Redirect(w, r, "/"+e.NewURL, http.StatusMovedPermanently)
 				return nil, nil
 			}
 			if legacyerr.ErrCode(err) == legacyerr.NotFound {

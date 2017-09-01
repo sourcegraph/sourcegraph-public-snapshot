@@ -4,6 +4,7 @@
   ],
   "rules": {
     "adjacent-overload-signatures": true,
+    "no-shadowed-variable": false,
     "member-access": [
       true,
       "check-accessor"

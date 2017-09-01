@@ -1,0 +1,4 @@
+{
+	"typescript.tsdk": "./web/node_modules/typescript/lib",
+	"tslint.nodePath": "./web/node_modules"
+}
