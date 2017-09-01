@@ -3,7 +3,7 @@ import { render } from 'react-dom';
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import * as xhr from 'sourcegraph/backend/xhr';
 import { Home } from 'sourcegraph/home/Home';
-import { Navbar } from 'sourcegraph/nav';
+import { Navbar } from 'sourcegraph/nav/Navbar';
 import { resolveRev } from 'sourcegraph/repo/backend';
 import { contextKey, repoCache, setRepoCache } from 'sourcegraph/repo/cache';
 import { Repository } from 'sourcegraph/repo/Repository';
@@ -38,12 +38,14 @@ class App extends React.Component<{}, {}> {
  */
 class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
     public render(): JSX.Element | null {
-        return <div>
-            <Navbar {...this.props} />
-            <div id='app-container'>
-                <AppRouter {...this.props} />
+        return (
+            <div className='layout'>
+                <Navbar {...this.props} />
+                <div className='container'>
+                    <AppRouter {...this.props} />
+                </div>
             </div>
-        </div>;
+        );
     }
 }
 

@@ -1,3 +1,6 @@
+
+@import './RepoNav';
+
 .repo {
     $page-height: unquote("calc(100vh - #{$nav-height})");
     height: $page-height;

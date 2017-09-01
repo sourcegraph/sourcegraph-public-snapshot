@@ -2,13 +2,13 @@ import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree';
 import * as H from 'history';
 import * as React from 'react';
 import * as Rx from 'rxjs';
-import { RepoSubnav } from 'sourcegraph/nav';
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget';
 import { fetchBlobHighlightContentTable, listAllFiles } from 'sourcegraph/repo/backend';
 import { CacheState, contextKey, repoCache, setRepoCache } from 'sourcegraph/repo/cache';
 import { addAnnotations } from 'sourcegraph/tooltips';
 import { getCodeCellsForAnnotation, getPathExtension, highlightAndScrollToLine, highlightLine, supportedExtensions } from 'sourcegraph/util';
 import * as url from 'sourcegraph/util/url';
+import { RepoNav } from './RepoNav';
 
 export interface Props {
     repoPath: string;
@@ -69,7 +69,7 @@ export class Repository extends React.Component<Props, S> {
         const key = contextKey(this.props);
         const files = this.state.files.get(key) || [];
         return <div className='repo'>
-            <RepoSubnav {...this.props} onClickNavigation={() => this.setState({ showTree: !this.state.showTree })} />
+            <RepoNav {...this.props} onClickNavigation={() => this.setState({ showTree: !this.state.showTree })} />
             <div className='container'>
                 {this.state.showTree && <div id='tree'>
                     <TreeHeader title='Files' onDismiss={() => this.setState({ showTree: false })} />

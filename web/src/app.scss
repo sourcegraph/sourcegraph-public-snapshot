@@ -5,11 +5,11 @@ It should import all component stylesheets
 
 $color-page-background: #233043;
 $color-text: #93A9C8;
-$nav-height: 48px;
+$nav-height: 3rem;
 
 @import './highlight';
 @import './home/Home';
-@import './nav/Nav';
+@import './nav/Navbar';
 @import './search/SearchBox';
 @import './repo/Repository';
 
@@ -18,10 +18,10 @@ $nav-height: 48px;
 //
 // See https://css-tricks.com/snippets/css/system-font-stack/
 @font-face {
-  font-family: system;
-  font-style: normal;
-  font-weight: 300;
-  src: local('.SFNSText-Light'), local('.HelveticaNeueDeskInterface-Light'), local('.LucidaGrandeUI'), local('Ubuntu Light'), local('Segoe UI Light'), local('Roboto-Light'), local('DroidSans'), local('Tahoma');
+    font-family: system;
+    font-style: normal;
+    font-weight: 300;
+    src: local('.SFNSText-Light'), local('.HelveticaNeueDeskInterface-Light'), local('.LucidaGrandeUI'), local('Ubuntu Light'), local('Segoe UI Light'), local('Roboto-Light'), local('DroidSans'), local('Tahoma');
 }
 
 * {
@@ -73,29 +73,37 @@ a {
     color: #93A9C8;
 }
 
-// TODO use a flexbox container
+// Responsive Container
 
-/* screens 0-1080px wide: 100% width */
-@media (min-width: 0px) and (max-width: 1080px) {
-    .cloning, .fancyerror, .repo, .search, .tree, .base .navbar .contents {
-        width: 100%;
+.container {
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+@media (min-width: 576px) {
+    .container {
+        max-width: 540px;
     }
 }
 
-/* screens 1080-1920px wide: 1080px wide */
-@media (min-width: 1080px) and (max-width: 1920px) {
-    .cloning, .fancyerror, .repo, .search, .tree, .base .navbar .contents {
-        width: 1080px;
+@media (min-width: 768px) {
+    .container {
+        max-width: 720px;
     }
 }
 
-/* screens >1920px: 1180px wide */
-@media (min-width: 1920px) {
-    .cloning, .fancyerror, .repo, .search, .tree, .base .navbar .contents {
-        width: 1180px;
+@media (min-width: 992px) {
+    .container {
+        max-width: 960px;
     }
 }
 
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
+}
 
 // TODO move out of here
 .cloning {
