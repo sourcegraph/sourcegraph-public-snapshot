@@ -6,6 +6,7 @@ import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget';
 import { fetchBlobHighlightContentTable, listAllFiles } from 'sourcegraph/repo/backend';
 import { CacheState, contextKey, repoCache, setRepoCache } from 'sourcegraph/repo/cache';
 import { addAnnotations } from 'sourcegraph/tooltips';
+import { clearTooltip } from 'sourcegraph/tooltips/store';
 import { getCodeCellsForAnnotation, getPathExtension, highlightAndScrollToLine, highlightLine, supportedExtensions } from 'sourcegraph/util';
 import * as url from 'sourcegraph/util/url';
 import { RepoNav } from './RepoNav';
@@ -55,6 +56,7 @@ export class Repository extends React.Component<Props, S> {
             // handle 'back' and 'forward'
             this.scrollToLine(nextProps);
         } else if (this.props.location.pathname !== nextProps.location.pathname) {
+            clearTooltip(); // clear tooltip when transitioning between files
             this.scrollToLine(nextProps);
         }
     }
