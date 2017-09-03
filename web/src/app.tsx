@@ -1,15 +1,17 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom';
+import { Subject, Subscription } from 'rxjs';
 import * as xhr from 'sourcegraph/backend/xhr';
 import { Home } from 'sourcegraph/home/Home';
 import { Navbar } from 'sourcegraph/nav/Navbar';
+import { makeRepoURI, RepoURI } from 'sourcegraph/repo';
 import { resolveRev } from 'sourcegraph/repo/backend';
-import { contextKey, repoCache, setRepoCache } from 'sourcegraph/repo/cache';
 import { Repository } from 'sourcegraph/repo/Repository';
 import { SearchResults } from 'sourcegraph/search/SearchResults';
 import * as activeRepos from 'sourcegraph/util/activeRepos';
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
+import { parseHash } from 'sourcegraph/util/url';
 
 window.addEventListener('DOMContentLoaded', () => {
     xhr.useAccessToken(sourcegraphContext.accessToken);
@@ -51,6 +53,7 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
 
 interface WithResolvedRevProps {
     component: any;
+    uri: RepoURI;
     repoPath: string;
     rev?: string;
     [key: string]: any;
@@ -62,18 +65,38 @@ interface WithResolvedRevState {
 
 class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolvedRevState> {
     public state: WithResolvedRevState = {};
+    private componentUpdates = new Subject<WithResolvedRevProps>();
+    private subscriptions = new Subscription();
 
     constructor(props: WithResolvedRevProps) {
         super(props);
-        this.fetch(props);
+        this.subscriptions.add(
+            this.componentUpdates
+                // tslint:disable-next-line
+                .switchMap(props => resolveRev(props))
+                .subscribe(resolved => {
+                    const commitID = resolved.commitID;
+                    if (commitID) {
+                        this.setState(resolved);
+                    }
+                })
+        );
+    }
+
+    public componentDidMount(): void {
+        this.componentUpdates.next(this.props);
     }
 
     public componentWillReceiveProps(nextProps: WithResolvedRevProps): void {
-        if (this.props.uri !== nextProps.uri || this.props.rev !== nextProps.rev) {
+        if (this.props.repoPath !== nextProps.repoPath || this.props.rev !== nextProps.rev) {
             // clear state so the child won't render until the revision is resolved for new props
             this.state = {};
-            this.fetch(nextProps);
+            this.componentUpdates.next(nextProps);
         }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe();
     }
 
     public render(): JSX.Element | null {
@@ -81,18 +104,6 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
             return null;
         }
         return <this.props.component {...this.props} commitID={this.state.commitID} />;
-    }
-
-    private fetch(props: WithResolvedRevProps): void {
-        resolveRev(props).then(resp => {
-            const commitID = (resp as any).commitID;
-            if (commitID) {
-                const key = contextKey(props);
-                const state = repoCache.getValue();
-                setRepoCache({ ...state, resolvedRevs: state.resolvedRevs.set(key, commitID) });
-                this.setState(resp as any);
-            }
-        });
     }
 }
 
@@ -107,14 +118,16 @@ class AppRouter extends React.Component<RouteComponentProps<string[]>, {}> {
 
         const uriPathSplit = this.props.match.params[0].split('/-/');
         const repoRevSplit = uriPathSplit[0].split('@');
+        const hash = parseHash(this.props.location.hash);
+        const position = hash.line ? { line: hash.line, char: hash.char } : undefined;
+        const repoParams = { repoPath: repoRevSplit[0], rev: repoRevSplit[1], position };
         if (uriPathSplit.length === 1) {
-            return <WithResolvedRev repoPath={repoRevSplit[0]} rev={repoRevSplit[1]} history={this.props.history} location={this.props.location} component={Repository} />;
+            return <WithResolvedRev uri={makeRepoURI(repoParams)} {...repoParams} history={this.props.history} location={this.props.location} component={Repository} />;
         }
-        const path = uriPathSplit[1]; // e.g. '[blob|tree]/path/to/file/or/directory'; ignore the first component
-        return <WithResolvedRev
-            repoPath={repoRevSplit[0]}
-            rev={repoRevSplit[1]}
-            filePath={path.split('/').slice(1).join('/')}
+        const filePath = uriPathSplit[1].split('/').slice(1).join('/'); // e.g. '[blob|tree]/path/to/file/or/directory'; ignore the first component
+        return <WithResolvedRev {...repoParams}
+            filePath={filePath}
+            uri={makeRepoURI({...repoParams, filePath})}
             history={this.props.history}
             location={this.props.location}
             component={Repository} />;

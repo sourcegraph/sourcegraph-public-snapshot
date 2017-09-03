@@ -1,10 +1,9 @@
 import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree';
 import * as H from 'history';
 import * as React from 'react';
-import * as Rx from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget';
 import { fetchBlobHighlightContentTable, listAllFiles } from 'sourcegraph/repo/backend';
-import { CacheState, contextKey, repoCache, setRepoCache } from 'sourcegraph/repo/cache';
 import { addAnnotations } from 'sourcegraph/tooltips';
 import { clearTooltip } from 'sourcegraph/tooltips/store';
 import { getCodeCellsForAnnotation, getPathExtension, highlightAndScrollToLine, highlightLine, supportedExtensions } from 'sourcegraph/util';
@@ -20,33 +19,56 @@ export interface Props {
     history: H.History;
 }
 
-export interface S extends CacheState {
+interface State {
+    /**
+     * show the references panel
+     */
     showRefs: boolean;
+    /**
+     * show the file tree explorer
+     */
     showTree: boolean;
+    /**
+     * an array of file paths in the repository
+     */
+    files?: string[];
+    /**
+     * the HTML string for the Blob component
+     */
+    highlightedContents?: string;
 }
 
-export class Repository extends React.Component<Props, S> {
-    public state: S = {
-        ...repoCache.getValue(),
+export class Repository extends React.Component<Props, State> {
+    public state: State = {
         showTree: true,
         showRefs: false
     };
-    private subscription: Rx.Subscription;
+    private componentUpdates = new Subject<Props>();
+    private subscriptions = new Subscription();
 
     constructor(props: Props) {
         super(props);
-
         const u = url.parseBlob();
         this.state.showRefs = Boolean(u.path && u.modal && u.modal === 'references');
+        this.subscriptions.add(
+            this.componentUpdates
+                .switchMap(props => listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }))
+                .subscribe((files: string[]) => this.setState({ files }))
+        );
+        this.subscriptions.add(
+            this.componentUpdates
+                .filter(props => !!props.filePath)
+                .switchMap(props => fetchBlobHighlightContentTable({ repoPath: props.repoPath, commitID: props.commitID, filePath: props.filePath! }))
+                .subscribe((highlightedContents: string) => this.setState({ highlightedContents }))
+        );
     }
 
     public componentDidMount(): void {
-        this.subscription = repoCache.subscribe(state => this.setState(state));
-        this.fetch(this.props);
+        this.componentUpdates.next(this.props);
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
-        this.fetch(nextProps);
+        this.componentUpdates.next(nextProps);
         const hash = url.parseHash(nextProps.location.hash);
         const showRefs = Boolean(nextProps.filePath && hash.modal && hash.modal === 'references');
         if (showRefs !== this.state.showRefs) {
@@ -62,14 +84,11 @@ export class Repository extends React.Component<Props, S> {
     }
 
     public componentWillUnmount(): void {
-        if (this.subscription) {
-            this.subscription.unsubscribe();
-        }
+        this.subscriptions.unsubscribe();
     }
 
     public render(): JSX.Element | null {
-        const key = contextKey(this.props);
-        const files = this.state.files.get(key) || [];
+        const files = this.state.files || [];
         return <div className='repo'>
             <RepoNav {...this.props} onClickNavigation={() => this.setState({ showTree: !this.state.showTree })} />
             <div className='container'>
@@ -78,12 +97,12 @@ export class Repository extends React.Component<Props, S> {
                     <div className='contents'><Tree scrollRootSelector='#tree' selectedPath={this.props.filePath} onSelectPath={this.selectTreePath} paths={files} /></div>
                 </div>}
                 <div className='blob'>
-                    {!this.state.highlightedContents.has(key) && <div className='content' /> /* render placeholder for layout before content is fetched */}
-                    {this.state.highlightedContents.has(key) &&
+                    {this.state.highlightedContents ?
                         <Blob onClick={this.handleBlobClick}
                             applyAnnotations={this.applyAnnotations}
                             scrollToLine={this.scrollToLine}
-                            html={this.state.highlightedContents.get(key)} />}
+                            html={this.state.highlightedContents} /> :
+                        <div className='content' /> /* render placeholder for layout before content is fetched */}
                     {this.state.showRefs && <div className='ref-panel'>
                         <ReferencesWidget onDismiss={() => {
                             const currURL = url.parseBlob();
@@ -124,25 +143,6 @@ export class Repository extends React.Component<Props, S> {
         if (supportedExtensions.has(getPathExtension(this.props.filePath!))) {
             addAnnotations(this.props.history, this.props.filePath!,
                 { repoURI: this.props.repoPath!, rev: this.props.rev!, commitID: this.props.commitID }, cells);
-        }
-    }
-
-    private fetch(props: Props): void {
-        const key = contextKey(props);
-        if (!this.state.files.has(key)) {
-            listAllFiles(props)
-                .then(files => {
-                    const state = repoCache.getValue();
-                    setRepoCache({ ...state, files: state.files.set(key, files.map(file => file.name)) });
-                });
-        }
-
-        if (props.filePath && !this.state.highlightedContents.has(key)) {
-            fetchBlobHighlightContentTable(props as any)
-                .then(highlightedContents => {
-                    const state = repoCache.getValue();
-                    setRepoCache({ ...state, highlightedContents: state.highlightedContents.set(key, highlightedContents) });
-                });
         }
     }
 }
