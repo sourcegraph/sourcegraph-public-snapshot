@@ -281,9 +281,6 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	if err != nil {
 		return nil, err
 	}
-	if len(cloning)+len(missing) == len(args.Repositories) {
-		return nil, errors.Errorf("failed to search all repositories (%d cloning, %d missing)", len(cloning), len(missing))
-	}
 	sort.Slice(flattened, func(i, j int) bool {
 		a, b := len(flattened[i].JLineMatches), len(flattened[j].JLineMatches)
 		if a != b {
