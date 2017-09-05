@@ -6,7 +6,6 @@ import 'rxjs/add/operator/catch';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import { Subscription } from 'rxjs/Subscription';
-import * as xhr from 'sourcegraph/backend/xhr';
 import { Home } from 'sourcegraph/home/Home';
 import { Navbar } from 'sourcegraph/nav/Navbar';
 import { makeRepoURI, RepoURI } from 'sourcegraph/repo';
@@ -14,15 +13,12 @@ import { resolveRev } from 'sourcegraph/repo/backend';
 import { Repository } from 'sourcegraph/repo/Repository';
 import { SearchResults } from 'sourcegraph/search/SearchResults';
 import * as activeRepos from 'sourcegraph/util/activeRepos';
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
 import { parseHash } from 'sourcegraph/util/url';
 
 window.addEventListener('DOMContentLoaded', () => {
-    xhr.useAccessToken(sourcegraphContext.accessToken);
     // Be a bit proactive and try to fetch/store active repos now. This helps
     // on the first search query, and when the data in local storage is stale.
     activeRepos.get().catch(err => console.error(err));
-
 });
 
 interface WithResolvedRevProps {

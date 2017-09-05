@@ -32,7 +32,7 @@ function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IG
         url: '/.api/graphql',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `sg-session ${sourcegraphContext.accessToken}`
+            ...sourcegraphContext.xhrHeaders
         },
         body: JSON.stringify({ query: request, variables })
     }).map(({ response }) => response);

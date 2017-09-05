@@ -19,7 +19,6 @@ export class SourcegraphContext {
     public gitHubToken: ExternalToken | null;
     public sentryDSN: string;
     public intercomHash: string;
-    public accessToken: string;
 
     public appURL: string; // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)
     public assetsRoot: string; // URL path to image/font/etc. assets on server

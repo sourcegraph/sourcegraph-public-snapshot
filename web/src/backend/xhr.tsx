@@ -1,10 +1,5 @@
 import 'whatwg-fetch';
 
-let token: string | null = null;
-export function useAccessToken(tok: string): void {
-    token = tok;
-}
-
 interface FetchOptions {
     headers: Headers;
 }
@@ -22,8 +17,10 @@ function defaultOptions(): FetchOptions | undefined {
         return undefined; // for unit tests
     }
     const headers = new Headers();
-    if (window.context && window.context.accessToken) {
-        headers.set('Authorization', `sg-session ${window.context.accessToken}`);
+    if (window.context) {
+        for (const [name, value] of Object.entries(window.context.xhrHeaders)) {
+            headers.set(name, value);
+        }
     }
     return {
         headers
