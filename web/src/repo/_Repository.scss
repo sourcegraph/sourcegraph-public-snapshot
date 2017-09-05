@@ -44,6 +44,10 @@
         min-height: 0;
         min-width: 0;
     }
+
+    &__blob-placeholder {
+        flex: 1 1 50%;
+    }
 }
 
 .ref-panel {

@@ -113,7 +113,7 @@ export class Repository extends React.Component<Props, State> {
                                     scrollToLine={this.scrollToLine}
                                     html={this.state.highlightedContents} /> :
                                 /* render placeholder for layout before content is fetched */
-                                <div></div>
+                                <div className='repository__blob-placeholder'></div>
                         }
                         {
                             this.state.showRefs &&
