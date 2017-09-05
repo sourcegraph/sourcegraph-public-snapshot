@@ -21,7 +21,6 @@ const (
 	SubmitForm       = "submit-form"
 	GitHubWebhooks   = "github.webhooks"
 	Telemetry        = "telemetry"
-	CSRFToken        = "csrf-token"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -42,7 +41,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/telemetry/{TelemetryPath:.*}").Methods("POST").Name(Telemetry)
-	base.Path("/csrf-token").Methods("GET").Name(CSRFToken)
 
 	base.Path("/repos-update").Methods("POST").Name(ReposUpdate)
 
