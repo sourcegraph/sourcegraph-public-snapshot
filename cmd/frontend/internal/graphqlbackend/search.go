@@ -39,8 +39,13 @@ func (r *searchResultResolver) ToFile() (*fileResolver, bool) {
 	return res, ok
 }
 
+func (r *searchResultResolver) ToSearchProfile() (*searchProfile, bool) {
+	res, ok := r.result.(*searchProfile)
+	return res, ok
+}
+
 // Search searches over repos and their files
-func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchResultResolver, error) {
+func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchResultResolver, error) {
 	limit := 50
 	if args.First != nil {
 		limit = int(*args.First)
@@ -48,17 +53,18 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 			limit = 1000
 		}
 	}
+	query := strings.ToLower(args.Query)
 
 	var (
 		resMu sync.Mutex
 		res   []*searchResultResolver
 	)
 
-	done := make(chan error, 2)
+	done := make(chan error, 3)
 
 	// Search files
 	go func() {
-		fileResults, err := searchFiles(ctx, args.Query, args.Repositories, limit)
+		fileResults, err := searchFiles(ctx, query, args.Repositories, limit)
 		if err != nil {
 			done <- err
 			return
@@ -71,7 +77,7 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 
 	// Search repos
 	go func() {
-		repoResults, err := searchRepos(ctx, args.Query, args.Repositories, limit)
+		repoResults, err := searchRepos(ctx, query, args.Repositories, limit)
 		if err != nil {
 			done <- err
 			return
@@ -82,7 +88,20 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 		done <- nil
 	}()
 
-	for i := 0; i < 2; i++ {
+	// Search search profiles
+	go func() {
+		searchProfileResults, err := searchSearchProfiles(ctx, r, query, limit)
+		if err != nil {
+			done <- err
+			return
+		}
+		resMu.Lock()
+		res = append(res, searchProfileResults...)
+		resMu.Unlock()
+		done <- nil
+	}()
+
+	for i := 0; i < 3; i++ {
 		if err := <-done; err != nil {
 			// TODO collect error
 			log.Println("search error: " + err.Error())
@@ -94,12 +113,26 @@ func (*rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchRes
 	}
 
 	sort.Slice(res, func(i, j int) bool {
-		query := []rune(args.Query)
+		query := []rune(query)
 		distI := levenshtein.DistanceForStrings(query, []rune(res[i].sortText), levenshtein.DefaultOptions)
 		distJ := levenshtein.DistanceForStrings(query, []rune(res[j].sortText), levenshtein.DefaultOptions)
 		return distI < distJ
 	})
 
+	return res, nil
+}
+
+func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query string, limit int) (res []*searchResultResolver, err error) {
+	searchProfiles, err := rootResolver.SearchProfiles(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, searchProfile := range searchProfiles {
+		lowerName := strings.ToLower(searchProfile.name)
+		if strings.Contains(lowerName, query) {
+			res = append(res, &searchResultResolver{result: searchProfile, sortText: lowerName})
+		}
+	}
 	return res, nil
 }
 
@@ -177,7 +210,7 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		if len(res) >= limit {
 			return res, nil
 		}
-		name := fileResolver.Name()
+		name := strings.ToLower(fileResolver.Name())
 		if strings.Contains(name, query) {
 			res = append(res, &searchResultResolver{result: fileResolver, sortText: name})
 		}

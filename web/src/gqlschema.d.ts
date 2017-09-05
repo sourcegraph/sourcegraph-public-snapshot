@@ -318,9 +318,19 @@ declare namespace GQL {
   /*
     description: null
   */
-  type SearchResult = IRepository | IFile;
+  type SearchResult = IRepository | IFile | ISearchProfile;
 
 
+
+  /*
+    description: null
+  */
+  interface ISearchProfile {
+    __typename: "SearchProfile";
+    name: string;
+    description: string | null;
+    repositories: Array<IRepository>;
+  }
 
   /*
     description: null
@@ -373,16 +383,6 @@ declare namespace GQL {
     lineNumber: number;
     offsetAndLengths: Array<Array<number>>;
     limitHit: boolean;
-  }
-
-  /*
-    description: null
-  */
-  interface ISearchProfile {
-    __typename: "SearchProfile";
-    name: string;
-    description: string | null;
-    repositories: Array<IRepository>;
   }
 
   /*
@@ -447,6 +447,7 @@ declare namespace GQL {
     id: number;
     file: string;
     revision: string;
+    title: string;
     startLine: number;
     endLine: number;
     startCharacter: number;

@@ -1,12 +1,21 @@
 
 import CloseIcon from '@sourcegraph/icons/lib/Close';
 import FileIcon from '@sourcegraph/icons/lib/File';
+import FileGlobIcon from '@sourcegraph/icons/lib/FileGlob';
 import RepoIcon from '@sourcegraph/icons/lib/Repo';
+import RepoGroup from '@sourcegraph/icons/lib/RepoGroup';
 import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
 import * as H from 'history';
 import * as React from 'react';
-import { Subject } from 'rxjs';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/debounceTime';
+import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/mergeMap';
+import 'rxjs/add/operator/switchMap';
+import 'rxjs/add/operator/toArray';
+import { Subject } from 'rxjs/Subject';
 import { Subscription } from 'rxjs/Subscription';
 import { queryGraphQL } from 'sourcegraph/backend/graphql';
 import { events } from 'sourcegraph/tracking/events';
@@ -16,13 +25,17 @@ import { getSearchParamsFromURL, getSearchPath, parseRepoList } from './index';
 /** The type of type:value filters a user can enter */
 enum FilterType {
     Repo = 'repo',
-    File = 'file'
+    RepoGroup = 'repogroup',
+    File = 'file',
+    FileGlob = 'fileglob'
 }
 
 /** The icons used to show a suggestion for a filter */
 const SUGGESTION_ICONS = {
     [FilterType.Repo]: RepoIcon,
-    [FilterType.File]: FileIcon
+    [FilterType.RepoGroup]: RepoGroup,
+    [FilterType.File]: FileIcon,
+    [FilterType.FileGlob]: FileGlobIcon
 };
 
 /** Object representation of a suggestion in the suggestion list */
@@ -115,6 +128,13 @@ export class SearchBox extends React.Component<Props, State> {
                         this.setState({ suggestions: [], selectedSuggestion: -1 });
                         return [];
                     }
+                    // If query includes a wildcard, suggest a file glob filter
+                    // TODO suggest repo glob filter (needs server implementation)
+                    // TODO verify that the glob matches something server-side,
+                    //      only suggest if it does and show number of matches
+                    if (/\*|\?/.exec(this.state.query)) {
+                        return [[{ type: FilterType.FileGlob, value: this.state.query }]];
+                    }
                     // Search repos
                     return queryGraphQL(`
                         query SearchRepos($query: String!) {
@@ -128,26 +148,33 @@ export class SearchBox extends React.Component<Props, State> {
                                         __typename
                                         name
                                     }
+                                    ... on SearchProfile {
+                                        __typename
+                                        name
+                                    }
                                 }
                             }
                         }
                     `, {
-                            query,
-                            repositories: this.state.filters.filter(f => f.type === FilterType.Repo).map(f => f.value)
+                        query,
+                        repositories: this.state.filters.filter(f => f.type === FilterType.Repo).map(f => f.value)
+                    })
+                        .do(result => console.error(...result.errors || []))
+                        .mergeMap(result => result.data!.root.search)
+                        .map((item: GQL.SearchResult): Filter => {
+                            switch (item.__typename) {
+                                case 'Repository':    return { value: item.uri, type: FilterType.Repo };
+                                case 'SearchProfile': return { value: item.name, type: FilterType.RepoGroup };
+                                case 'File':          return { value: item.name, type: FilterType.File };
+                            }
                         })
+                        .toArray()
                         .catch(err => {
                             console.error(err);
                             return [];
                         });
                 })
-                .subscribe(result => {
-                    console.error(...result.errors || []);
-                    const suggestions = result.data!.root.search.map(item => {
-                        switch (item.__typename) {
-                            case 'Repository': return { value: item.uri, type: FilterType.Repo };
-                            case 'File': return { value: item.name, type: FilterType.File };
-                        }
-                    }).filter(s => s) as Filter[];
+                .subscribe(suggestions => {
                     this.setState({ suggestions, selectedSuggestion: Math.min(suggestions.length - 1, 0) });
                 }, err => {
                     console.error(err);
@@ -295,8 +322,8 @@ export class SearchBox extends React.Component<Props, State> {
             // Go to search results
             const path = getSearchPath({
                 q: query,
-                repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value).join(','),
-                files: filters.filter(f => f.type === FilterType.File).map(f => f.value).join(','),
+                repos: filters.filter(f => f.type === FilterType.Repo || f.type === FilterType.RepoGroup).map(f => f.value).join(','),
+                files: filters.filter(f => f.type === FilterType.File || f.type === FilterType.FileGlob).map(f => f.value).join(','),
                 matchCase: this.state.matchCase,
                 matchRegex: this.state.matchRegexp,
                 matchWord: this.state.matchWord
