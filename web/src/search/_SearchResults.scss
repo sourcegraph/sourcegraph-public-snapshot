@@ -1,0 +1,31 @@
+
+.search-results {
+    width: 100%;
+    font-size: 12px;
+
+    &__header {
+        display: flex;
+        align-items: baseline;
+        padding: 1rem 0;
+    }
+
+    &__badge {
+        height: 1rem;
+        min-width: 1rem;
+        margin-right: 1rem;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3px 5px;
+
+        font-size: 10px;
+        border-radius: 100%;
+        background-color: #2A3A51;
+        color: white;
+    }
+
+    &__label {
+        margin-right: 1rem;
+    }
+}
