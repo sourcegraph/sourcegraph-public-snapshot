@@ -33,7 +33,6 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 		jsctx := jscontext.NewJSContextFromRequest(r)
 
 		// Clear out sensitive data that vscode does not use.
-		jsctx.LegacyAccessToken = ""
 		if t := jsctx.GitHubToken; t != nil {
 			t.Token = ""
 		}

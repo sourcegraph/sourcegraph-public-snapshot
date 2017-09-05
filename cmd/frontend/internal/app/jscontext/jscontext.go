@@ -33,7 +33,6 @@ var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app lan
 // "sourcegraph/app/context" module.
 type JSContext struct {
 	AppRoot             string                     `json:"appRoot,omitempty"`
-	LegacyAccessToken   string                     `json:"accessToken"` // Legacy support for Chrome extension.
 	XHRHeaders          map[string]string          `json:"xhrHeaders"`
 	CSRFToken           string                     `json:"csrfToken"`
 	UserAgentIsBot      bool                       `json:"userAgentIsBot"`
@@ -88,14 +87,13 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	return JSContext{
-		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
-		XHRHeaders:        headers,
-		CSRFToken:         csrfToken,
-		UserAgentIsBot:    isBot(req.UserAgent()),
-		AssetsRoot:        assets.URL("/").String(),
-		Version:           env.Version,
-		Features:          feature.Features,
-		User:              actor.User(),
+		XHRHeaders:     headers,
+		CSRFToken:      csrfToken,
+		UserAgentIsBot: isBot(req.UserAgent()),
+		AssetsRoot:     assets.URL("/").String(),
+		Version:        env.Version,
+		Features:       feature.Features,
+		User:           actor.User(),
 		Emails: &sourcegraph.EmailAddrList{
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
