@@ -1,98 +1,113 @@
 
 @import './RepoNav';
 
-.repo {
-    $page-height: unquote("calc(100vh - #{$nav-height})");
-    height: $page-height;
+.repository {
+    flex: 1 1 auto;
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+
     border-bottom: 1px solid #233043;
 
-    .container {
-        $tvc-height: unquote("calc(100vh - #{$nav-height} - #{$nav-height} - 1px)");
+    &__content {
+        flex: 1 1 auto;
         display: flex;
-        flex-direction: row;
-        height: $tvc-height;
+        min-height: 0;
+    }
 
-        #tree {
-            flex-direction: column;
-            display: flex;
-            flex: 1;
-            overflow: auto;
+    &__sidebar {
+        flex: 0 0 auto;
+        width: 15.75rem;
 
-            .contents {
-                overflow: auto;
-                flex: 1;
-            }
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__tree-header {
+        flex: none;
+        width: 100%;
+    }
+
+    &__tree {
+        flex: 1 1 auto;
+        width: 100%;
+        overflow: auto;
+    }
+
+    &__viewer {
+        flex: 1 1 auto;
+
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+    }
+}
+
+.ref-panel {
+    flex: 2;
+    overflow: auto;
+    background-color: #070A0D;
+}
+
+.blob {
+    flex: 1 1 50%;
+    min-height: 0;
+
+    display: flex;
+    position: relative;
+    overflow: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+
+    white-space: pre;
+    background-color: #151D28;
+    font-family: 'Menlo';
+    font-size: 12px;
+
+    table {
+        border-collapse: collapse;
+    }
+
+    td.line {
+        &::before {
+            // draw line number with css so it cannot be copied to clipboard
+            content: attr(data-line);
+            color: #31445E;
         }
 
-        .blob {
-            font-family: 'Menlo';
-            display: flex;
-            flex-direction: column;
-            overflow: auto;
-            flex: 4;
+        color: #31445E;
+        text-align: center;
+        padding-left: .25em;
+        padding-right: .75em;
+        min-width: 3em;
+    }
 
-            background-color: #151D28;
-            font-size: 12px;
+    td.line, td.code {
+        padding: 0;
+        padding-top: 0.15em;
+        padding-bottom: 0.15em;
+    }
 
-            .content {
-                position: relative;
-                white-space: pre;
-                overflow: auto;
-                flex: 3;
-                padding-top: 10px;
-                padding-bottom: 10px;
+    td.code {
+        width: 100%;
+        padding-left: .5em;
+        white-space: pre;
+        >.blame {
+            &::before {
+                content: attr(data-blame);
             }
-
-            .ref-panel {
-                flex: 2;
-                overflow: auto;
-                background-color: #070A0D;
-            }
-
-            table {
-                border-collapse: collapse;
-            }
-
-            td.line {
-                &::before {
-                    // draw line number with css so it cannot be copied to clipboard
-                    content: attr(data-line);
-                    color: #31445E;
-                }
-
-                color: #31445E;
-                text-align: center;
-                padding-left: .25em;
-                padding-right: .75em;
-                min-width: 3em;
-            }
-
-            td.line, td.code {
-                padding: 0;
-                padding-top: 0.15em;
-                padding-bottom: 0.15em;
-            }
-
-            td.code {
-                width: 100%;
-                padding-left: .5em;
-                white-space: pre;
-                >.blame {
-                    &::before {
-                        content: attr(data-blame);
-                    }
-                    color: #464d57;
-                    padding-left: 4em;
-                    display: inline-block;
-                    width: 0;
-                }
-            }
-
-            .right {
-                height: $tvc-height;
-                background-color: #151D28;
-                flex: 4;
-            }
+            color: #464d57;
+            padding-left: 4em;
+            display: inline-block;
+            width: 0;
         }
+    }
+
+    .right {
+        background-color: #151D28;
+        flex: 4;
     }
 }

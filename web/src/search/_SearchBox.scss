@@ -78,7 +78,8 @@
 
 			&-input {
 				// padding-left: 0.25rem;
-				background-color: transparent;
+                background-color: transparent;
+                -webkit-appearance: none;
 				border: none;
 				outline: none;
 				color: white;

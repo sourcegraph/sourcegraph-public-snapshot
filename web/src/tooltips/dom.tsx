@@ -40,7 +40,7 @@ export function createTooltips(history: H.History): void {
     tooltip.classList.add('sg-tooltip');
     tooltip.style.visibility = 'hidden';
 
-    document.querySelector('.blob>.content')!.appendChild(tooltip);
+    document.querySelector('.blob')!.appendChild(tooltip);
 
     loadingTooltip = document.createElement('DIV');
     loadingTooltip.appendChild(document.createTextNode('Loading...'));
@@ -257,9 +257,9 @@ function updateTooltip(state: TooltipState): void {
         loadingTooltip.style.visibility = 'visible';
     }
 
-    const scrollingElement = document.querySelector('.blob>.content')!;
+    const scrollingElement = document.querySelector('.blob')!;
     const scrollingElementBound = scrollingElement.getBoundingClientRect();
-    const blobTable = document.querySelector('.blob>.content>table')!; // table that we're positioning tooltips relative to.
+    const blobTable = document.querySelector('.blob > table')!; // table that we're positioning tooltips relative to.
     const tableBound = blobTable.getBoundingClientRect(); // tables bounds
     const targetBound = target.getBoundingClientRect(); // our target elements bounds
 

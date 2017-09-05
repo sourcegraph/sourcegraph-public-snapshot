@@ -43,7 +43,7 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
         return (
             <div className='layout'>
                 <Navbar {...this.props} />
-                <div className='container'>
+                <div className='layout__app-router-container'>
                     <AppRouter {...this.props} />
                 </div>
             </div>

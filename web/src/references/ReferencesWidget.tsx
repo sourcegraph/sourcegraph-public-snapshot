@@ -64,7 +64,6 @@ namespace Styles {
     export const pathPart = style({});
     export const filePathPart = style({ color: 'white', fontWeight: 'bold', paddingRight: '15px' });
 
-    export const refsGroup = style({ fontSize: '12px', fontFamily: 'system', color: normalFontColor, userSelect: 'none' });
     export const closeIcon = style({ cursor: 'pointer', fontSize: '18px', color: colors.normalFontColor, $nest: { '&:hover': { color: white } } });
     const refsTitleColor = '#2A3A51';
     export const refsGroupTitle = style(csstips.horizontal, csstips.center, {
@@ -135,17 +134,19 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
             </div>;
         }
 
-        return <div className={Styles.refsGroup}>
-            <div className={Styles.refsGroupTitle} onClick={() => this.setState({ hidden: !this.state.hidden })}>
-                {this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
-                <div className={Styles.uriPathPart}>{uriStr}</div>
-                <div className={Styles.pathPart}>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>
-                <div className={Styles.filePathPart}>{filePart}</div>
-                <div className={Styles.fill} />
-                {this.state.hidden ? <RightIcon className={Styles.expandIcon} /> : <DownIcon className={Styles.expandIcon} />}
+        return (
+            <div className='references-widget'>
+                <div className={Styles.refsGroupTitle} onClick={() => this.setState({ hidden: !this.state.hidden })}>
+                    {this.props.isLocal ? <RepoIcon className={Styles.icon} /> : <GlobeIcon className={Styles.icon} />}
+                    <div className={Styles.uriPathPart}>{uriStr}</div>
+                    <div className={Styles.pathPart}>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>
+                    <div className={Styles.filePathPart}>{filePart}</div>
+                    <div className={Styles.fill} />
+                    {this.state.hidden ? <RightIcon className={Styles.expandIcon} /> : <DownIcon className={Styles.expandIcon} />}
+                </div>
+                {refs}
             </div>
-            {refs}
-        </div>;
+        );
     }
 }
 
@@ -249,48 +250,50 @@ export class ReferencesWidget extends React.Component<Props, State> {
         };
 
         const l = this.state.context.loc;
-        return <div>
-            <div className={Styles.titleBar}>
-                <div className={Styles.titleBarTitle}>
-                    {this.state.context.word}
+        return (
+            <div className='references-widget'>
+                <div className={Styles.titleBar}>
+                    <div className={Styles.titleBarTitle}>
+                        {this.state.context.word}
+                    </div>
+                    <a className={this.state.group === 'local' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
+                        href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'local', modal: 'references' })}
+                        onClick={() => events.ShowLocalRefsButtonClicked.log()}>
+                        This repository
+                    </a>
+                    <div className={Styles.badge}>{localRefs.length}</div>
+                    <a className={this.state.group === 'external' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
+                        href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'external', modal: 'references' })}
+                        onClick={() => events.ShowExternalRefsButtonClicked.log()}>
+                        Other repositories
+                    </a>
+                    <div className={Styles.badge}>{externalRefs.length}</div>
+                    <div className={style(csstips.flex)} />
+                    <CloseIcon className={Styles.closeIcon} onClick={() => this.props.onDismiss()} />
                 </div>
-                <a className={this.state.group === 'local' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
-                    href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'local', modal: 'references' })}
-                    onClick={() => events.ShowLocalRefsButtonClicked.log()}>
-                    This repository
-                </a>
-                <div className={Styles.badge}>{localRefs.length}</div>
-                <a className={this.state.group === 'external' ? Styles.titleBarGroupActive : Styles.titleBarGroup}
-                    href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'external', modal: 'references' })}
-                    onClick={() => events.ShowExternalRefsButtonClicked.log()}>
-                    Other repositories
-                </a>
-                <div className={Styles.badge}>{externalRefs.length}</div>
-                <div className={style(csstips.flex)} />
-                <CloseIcon className={Styles.closeIcon} onClick={() => this.props.onDismiss()} />
-            </div>
-            {
-                isEmptyGroup() && <div className={Styles.emptyState}>
-                    {this.isLoading(this.state.group) ? 'Working...' : 'No results'}
+                {
+                    isEmptyGroup() && <div className={Styles.emptyState}>
+                        {this.isLoading(this.state.group) ? 'Working...' : 'No results'}
+                    </div>
+                }
+                <div>
+                    {
+                        this.state.group === 'local' && localRefs.sort().map((uri, i) => {
+                            const parsed = URI.parse(uri);
+                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refsByUri[uri]} />;
+                        })
+                    }
                 </div>
-            }
-            <div>
-                {
-                    this.state.group === 'local' && localRefs.sort().map((uri, i) => {
-                        const parsed = URI.parse(uri);
-                        return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refsByUri[uri]} />;
-                    })
-                }
+                <div>
+                    {
+                        this.state.group === 'external' && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+                            const parsed = URI.parse(uri);
+                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refsByUri[uri]} />;
+                        })
+                    }
+                </div>
             </div>
-            <div>
-                {
-                    this.state.group === 'external' && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
-                        const parsed = URI.parse(uri);
-                        return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refsByUri[uri]} />;
-                    })
-                }
-            </div>
-        </div>;
+        );
     }
 
     private handleHashChange = (e: HashChangeEvent) => {

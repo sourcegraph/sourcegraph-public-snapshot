@@ -88,30 +88,44 @@ export class Repository extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const files = this.state.files || [];
-        return <div className='repo'>
-            <RepoNav {...this.props} onClickNavigation={() => this.setState({ showTree: !this.state.showTree })} />
-            <div className='container'>
-                {this.state.showTree && <div id='tree'>
-                    <TreeHeader title='Files' onDismiss={() => this.setState({ showTree: false })} />
-                    <div className='contents'><Tree scrollRootSelector='#tree' selectedPath={this.props.filePath} onSelectPath={this.selectTreePath} paths={files} /></div>
-                </div>}
-                <div className='blob'>
-                    {this.state.highlightedContents ?
-                        <Blob onClick={this.handleBlobClick}
-                            applyAnnotations={this.applyAnnotations}
-                            scrollToLine={this.scrollToLine}
-                            html={this.state.highlightedContents} /> :
-                        <div className='content' /> /* render placeholder for layout before content is fetched */}
-                    {this.state.showRefs && <div className='ref-panel'>
-                        <ReferencesWidget onDismiss={() => {
-                            const currURL = url.parseBlob();
-                            this.props.history.push(url.toBlob({ ...currURL, modal: undefined, modalMode: undefined }));
-                        }} />
-                    </div>}
+        return (
+            <div className='repository'>
+                <RepoNav {...this.props} onClickNavigation={() => this.setState({ showTree: !this.state.showTree })} />
+                <div className='repository__content'>
+                    {
+                        this.state.showTree &&
+                            <div id='explorer' className='repository__sidebar'>
+                                <TreeHeader className='repository__tree-header' title='Files' onDismiss={() => this.setState({ showTree: false })} />
+                                <Tree
+                                    className='repository__tree'
+                                    scrollRootSelector='#explorer'
+                                    selectedPath={this.props.filePath}
+                                    onSelectPath={this.selectTreePath}
+                                    paths={this.state.files || []}
+                                />
+                            </div>
+                    }
+                    <div className='repository__viewer'>
+                        {
+                            this.state.highlightedContents ?
+                                <Blob onClick={this.handleBlobClick}
+                                    applyAnnotations={this.applyAnnotations}
+                                    scrollToLine={this.scrollToLine}
+                                    html={this.state.highlightedContents} /> :
+                                /* render placeholder for layout before content is fetched */
+                                <div></div>
+                        }
+                        {
+                            this.state.showRefs &&
+                                <ReferencesWidget onDismiss={() => {
+                                    const currURL = url.parseBlob();
+                                    this.props.history.push(url.toBlob({ ...currURL, modal: undefined, modalMode: undefined }));
+                                }} />
+                        }
+                    </div>
                 </div>
             </div>
-        </div>;
+        );
     }
 
     private selectTreePath = (path: string, isDir: boolean) => {
@@ -162,13 +176,15 @@ class Blob extends React.Component<BlobProps, {}> {
     }
 
     public render(): JSX.Element | null {
-        return <div className='content' onClick={this.props.onClick} ref={ref => {
-            if (!this.ref && ref) {
-                // first mount, do initial scroll
-                this.props.scrollToLine();
-            }
-            this.ref = ref;
-            this.props.applyAnnotations();
-        }} dangerouslySetInnerHTML={{ __html: this.props.html }} />;
+        return (
+            <div className='blob' onClick={this.props.onClick} ref={ref => {
+                if (!this.ref && ref) {
+                    // first mount, do initial scroll
+                    this.props.scrollToLine();
+                }
+                this.ref = ref;
+                this.props.applyAnnotations();
+            }} dangerouslySetInnerHTML={{ __html: this.props.html }} />
+        );
     }
 }
