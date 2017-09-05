@@ -1,7 +1,11 @@
 import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree';
 import * as H from 'history';
 import * as React from 'react';
-import { Subject, Subscription } from 'rxjs';
+import 'rxjs/add/observable/fromPromise';
+import 'rxjs/add/operator/catch';
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
+import { Subscription } from 'rxjs/Subscription';
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget';
 import { fetchBlobHighlightContentTable, listAllFiles } from 'sourcegraph/repo/backend';
 import { addAnnotations } from 'sourcegraph/tooltips';
@@ -53,14 +57,36 @@ export class Repository extends React.Component<Props, State> {
         this.state.showRefs = Boolean(u.path && u.modal && u.modal === 'references');
         this.subscriptions.add(
             this.componentUpdates
-                .switchMap(props => listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }))
-                .subscribe((files: string[]) => this.setState({ files }))
+                .switchMap(props =>
+                    Observable.fromPromise(listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }))
+                        .catch(err => {
+                            console.error(err);
+                            return [];
+                        })
+                )
+                .subscribe(
+                    (files: string[]) => this.setState({ files }),
+                    err => console.error(err)
+                )
         );
         this.subscriptions.add(
             this.componentUpdates
                 .filter(props => !!props.filePath)
-                .switchMap(props => fetchBlobHighlightContentTable({ repoPath: props.repoPath, commitID: props.commitID, filePath: props.filePath! }))
-                .subscribe((highlightedContents: string) => this.setState({ highlightedContents }))
+                .switchMap(props =>
+                    Observable.fromPromise(fetchBlobHighlightContentTable({
+                        repoPath: props.repoPath,
+                        commitID: props.commitID,
+                        filePath: props.filePath!
+                    }))
+                        .catch(err => {
+                            console.error(err);
+                            return [];
+                        })
+                )
+                .subscribe(
+                    (highlightedContents: string) => this.setState({ highlightedContents }),
+                    err => console.error(err)
+                )
         );
     }
 

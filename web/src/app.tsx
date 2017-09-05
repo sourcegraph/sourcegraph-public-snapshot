@@ -1,7 +1,11 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom';
-import { Subject, Subscription } from 'rxjs';
+import 'rxjs/add/observable/fromPromise';
+import 'rxjs/add/operator/catch';
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
+import { Subscription } from 'rxjs/Subscription';
 import * as xhr from 'sourcegraph/backend/xhr';
 import { Home } from 'sourcegraph/home/Home';
 import { Navbar } from 'sourcegraph/nav/Navbar';
@@ -43,12 +47,20 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
         this.subscriptions.add(
             this.componentUpdates
                 // tslint:disable-next-line
-                .switchMap(props => resolveRev(props))
+                .switchMap(props =>
+                    Observable.fromPromise(resolveRev(props))
+                        .catch(err => {
+                            console.error(err);
+                            return [];
+                        })
+                )
                 .subscribe(resolved => {
                     const commitID = resolved.commitID;
                     if (commitID) {
                         this.setState(resolved);
                     }
+                }, err => {
+                    console.error(err);
                 })
         );
     }
