@@ -1,15 +1,14 @@
-// import { fetchJumpURL } from "sourcegraph/backend/lsp";
-// import { getAssetURL } from "sourcegraph/util/assets";
-// import { eventLogger, searchEnabled } from "sourcegraph/util/context";
 import { highlightBlock } from 'highlight.js';
+import * as H from 'history';
 import * as marked from 'marked';
 import { triggerReferences } from 'sourcegraph/references';
 import { getSearchPath } from 'sourcegraph/search';
-import { setState as setSearchState, store as searchStore } from 'sourcegraph/search/store';
 import { clearTooltip, store, TooltipState } from 'sourcegraph/tooltips/store';
 import * as styles from 'sourcegraph/tooltips/styles';
 import { events } from 'sourcegraph/tracking/events';
-import { getModeFromExtension } from 'sourcegraph/util';
+import { getCodeCellsForAnnotation, getModeFromExtension, highlightAndScrollToLine } from 'sourcegraph/util';
+import * as url from 'sourcegraph/util/url';
+import * as URI from 'urijs';
 
 let tooltip: HTMLElement;
 let loadingTooltip: HTMLElement;
@@ -31,8 +30,8 @@ const definitionIconSVG = '<svg width="11px" height="9px"><path fill="#FFFFFF" x
  * tooltip and "Loading..." text indicator, adding the former
  * to the DOM (but hidden). It is idempotent.
  */
-export function createTooltips(): void {
-    if (tooltip) {
+export function createTooltips(history: H.History): void {
+    if (document.querySelector('.sg-tooltip')) {
         return; // idempotence
     }
 
@@ -41,7 +40,7 @@ export function createTooltips(): void {
     tooltip.classList.add('sg-tooltip');
     tooltip.style.visibility = 'hidden';
 
-    document.querySelector('#blob-table')!.appendChild(tooltip);
+    document.querySelector('.blob')!.appendChild(tooltip);
 
     loadingTooltip = document.createElement('DIV');
     loadingTooltip.appendChild(document.createTextNode('Loading...'));
@@ -64,9 +63,25 @@ export function createTooltips(): void {
     j2dAction.className = `btn btn-sm BtnGroup-item`;
     Object.assign(j2dAction.style, styles.tooltipAction);
     Object.assign(j2dAction.style, styles.tooltipActionNotLast);
-    j2dAction.addEventListener('click', () => {
+    j2dAction.onclick = (e: MouseEvent) => {
+        const before = url.parseBlob();
         events.GoToDefClicked.log();
-    });
+        if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+            return;
+        }
+        e.preventDefault();
+        const uri = URI.parse(j2dAction.href);
+
+        const after = url.parseBlob(j2dAction.href);
+        clearTooltip();
+        if (after.line && before.uri === after.uri && before.rev === after.rev && before.line !== after.line) {
+            // Handles URL update.
+            highlightAndScrollToLine(history, after.uri!,
+                after.rev!, after.path!, after.line, getCodeCellsForAnnotation(), false);
+        } else {
+            history.push(uri.path + '#' + uri.fragment);
+        }
+    };
 
     const referencesIcon = document.createElement('svg');
     referencesIcon.innerHTML = referencesIconSVG;
@@ -101,9 +116,15 @@ export function createTooltips(): void {
     searchAction.appendChild(searchIcon);
     searchAction.appendChild(document.createTextNode('Search'));
     Object.assign(searchAction.style, styles.tooltipAction);
-    searchAction.addEventListener('click', () => {
+    searchAction.onclick = (e: MouseEvent) => {
         events.SearchClicked.log();
-    });
+        if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+            return;
+        }
+        e.preventDefault();
+        const uri = URI.parse(searchAction.href);
+        history.push(uri.path + '?' + uri.query);
+    };
 
     tooltipActions.appendChild(j2dAction);
     tooltipActions.appendChild(findRefsAction);
@@ -179,9 +200,7 @@ function updateTooltip(state: TooltipState): void {
 
     const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!;
     if (searchText) {
-        const params = { ...searchStore.getValue(), q: searchText };
-        setSearchState(params);
-        searchAction.href = getSearchPath(params);
+        searchAction.href = getSearchPath({ files: '', repos: context.repoRevCommit.repoURI, q: searchText, matchCase: false, matchWord: false, matchRegex: false });
     } else {
         searchAction.href = '';
     }
@@ -202,11 +221,6 @@ function updateTooltip(state: TooltipState): void {
         Object.assign(tooltipText.style, styles.tooltipTitle);
         tooltipText.appendChild(document.createTextNode(data.title));
 
-        const icon = document.createElement('img');
-        // icon.src = getAssetURL("sourcegraph-mark.svg");
-        Object.assign(icon.style, styles.sourcegraphIcon);
-
-        container.appendChild(icon);
         container.appendChild(tooltipText);
         tooltip.insertBefore(container, moreContext);
 
@@ -243,9 +257,9 @@ function updateTooltip(state: TooltipState): void {
         loadingTooltip.style.visibility = 'visible';
     }
 
-    const scrollingElement = document.querySelector('#blob-table')!;
+    const scrollingElement = document.querySelector('.blob')!;
     const scrollingElementBound = scrollingElement.getBoundingClientRect();
-    const blobTable = document.querySelector('#blob-table>table')!; // table that we're positioning tooltips relative to.
+    const blobTable = document.querySelector('.blob > table')!; // table that we're positioning tooltips relative to.
     const tableBound = blobTable.getBoundingClientRect(); // tables bounds
     const targetBound = target.getBoundingClientRect(); // our target elements bounds
 

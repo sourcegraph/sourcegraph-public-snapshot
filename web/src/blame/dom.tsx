@@ -16,15 +16,19 @@ function limitString(s: string, n: number, dotdotdot: boolean): string {
  */
 function setLineBlameContent(line: number, blameContent: string): void {
     // Remove blame class from all other lines.
-    const currentlyBlamed = document.querySelectorAll('#blob-table td.code>.blame');
+    const currentlyBlamed = document.querySelectorAll('.blob td.code>.blame');
     for (const blame of currentlyBlamed) {
         blame.parentNode!.removeChild(blame);
     }
 
     if (line > 0) {
         // Add blame element to the target line's code cell.
-        const cells = document.querySelectorAll('#blob-table td.code');
+        const cells = document.querySelectorAll('.blob td.code');
         const cell = cells[line - 1];
+        if (!cell) {
+            return;
+        }
+
         const blame = document.createElement('span');
         blame.classList.add('blame');
         blame.setAttribute('data-blame', blameContent);

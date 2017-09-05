@@ -1,26 +1,9 @@
-import * as csstips from 'csstips';
 import * as React from 'react';
 import { SearchResult, searchText } from 'sourcegraph/backend';
 import { ReferencesGroup } from 'sourcegraph/references/ReferencesWidget';
 import { getSearchParamsFromURL, parseRepoList } from 'sourcegraph/search';
 import * as activeRepos from 'sourcegraph/util/activeRepos';
-import { normalFontColor, white } from 'sourcegraph/util/colors';
-import { style } from 'typestyle';
 import * as URI from 'urijs';
-
-namespace Styles {
-    export const header = style(csstips.horizontal, csstips.center, { padding: '16px 0px', color: normalFontColor, fontSize: '16px' });
-    export const badge = style({
-        backgroundColor: '#2A3A51 !important',
-        borderRadius: '20px',
-        color: white,
-        marginRight: '8px',
-        fontSize: '11px',
-        padding: '3px 6px',
-        fontFamily: 'system'
-    });
-    export const label = style({ color: normalFontColor, marginRight: '16px', fontSize: '12px' });
-}
 
 interface Props { }
 
@@ -114,14 +97,22 @@ export class SearchResults extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.loading) {
-            return <div className={Styles.header}>
-                Working...
-            </div>;
+            return (
+                <div className='searchResults'>
+                    <div className='search-results__header'>
+                        Working...
+                    </div>
+                </div>
+            );
         }
         if (!this.state.results || this.state.results.length === 0) {
-            return <div className={Styles.header}>
-                No results
-            </div>;
+            return (
+                <div className='searchResults'>
+                    <div className='search-results__header'>
+                        No results
+                    </div>
+                </div>
+            );
         }
         let totalMatches = 0;
         let totalResults = 0;
@@ -138,38 +129,40 @@ export class SearchResults extends React.Component<Props, State> {
             totalResults += result.lineMatches.length;
         }
         const pluralize = (str: string, n: number) => `${str}${n === 1 ? '' : 's'}`;
-        return <div>
-            <div className={Styles.header}>
-                <div className={Styles.badge}>{numberWithCommas(totalResults)}</div>
-                <div className={Styles.label}>{pluralize('result', totalResults)} in</div>
-                <div className={Styles.badge}>{numberWithCommas(totalFiles)}</div>
-                <div className={Styles.label}>{pluralize('file', totalFiles)}  in</div>
-                <div className={Styles.badge}>{numberWithCommas(totalRepos)}</div>
-                <div className={Styles.label}>{pluralize('repo', totalRepos)} </div>
-            </div>
-            {this.state.results.map((result, i) => {
-                const prevTotal = totalMatches;
-                totalMatches += result.lineMatches.length;
-                const parsed = URI.parse(result.resource);
-                const refs = result.lineMatches.map(match => {
-                    return {
-                        range: {
-                            start: {
-                                character: match.offsetAndLengths[0][0],
-                                line: match.lineNumber
+        return (
+            <div className='search-results'>
+                <div className='search-results__header'>
+                    <div className='search-results__badge'>{numberWithCommas(totalResults)}</div>
+                    <div className='search-results__label'>{pluralize('result', totalResults)} in</div>
+                    <div className='search-results__badge'>{numberWithCommas(totalFiles)}</div>
+                    <div className='search-results__label'>{pluralize('file', totalFiles)}  in</div>
+                    <div className='search-results__badge'>{numberWithCommas(totalRepos)}</div>
+                    <div className='search-results__label'>{pluralize('repo', totalRepos)} </div>
+                </div>
+                {this.state.results.map((result, i) => {
+                    const prevTotal = totalMatches;
+                    totalMatches += result.lineMatches.length;
+                    const parsed = URI.parse(result.resource);
+                    const refs = result.lineMatches.map(match => {
+                        return {
+                            range: {
+                                start: {
+                                    character: match.offsetAndLengths[0][0],
+                                    line: match.lineNumber
+                                },
+                                end: {
+                                    character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
+                                    line: match.lineNumber
+                                }
                             },
-                            end: {
-                                character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
-                                line: match.lineNumber
-                            }
-                        },
-                        uri: result.resource,
-                        repoURI: parsed.hostname + parsed.path
-                    };
-                });
+                            uri: result.resource,
+                            repoURI: parsed.hostname + parsed.path
+                        };
+                    });
 
-                return <ReferencesGroup hidden={prevTotal > 500} uri={parsed.hostname + parsed.path} path={parsed.fragment} key={i} refs={refs} isLocal={false} />;
-            })}
-        </div>;
+                    return <ReferencesGroup hidden={prevTotal > 500} uri={parsed.hostname + parsed.path} path={parsed.fragment} key={i} refs={refs} isLocal={false} />;
+                })}
+            </div>
+        );
     }
 }

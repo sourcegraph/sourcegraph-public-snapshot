@@ -1,0 +1,54 @@
+.navbar {
+
+    position: sticky;
+    flex: none;
+    height: 3rem;
+    width: 100%;
+    z-index: 9999999;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background-color: #1C2736;
+
+    &__logo-link {
+        outline: 0;
+        margin: 0px 1rem;
+        display: flex;
+    }
+
+    &__logo {
+        width: 1.5rem;
+        &:hover {
+            animation: spin 0.5s ease-in-out 1;
+            @keyframes spin {
+                50% { transform: rotate(180deg) scale(1.2) }
+                100% { transform: rotate(180deg) scale(1) }
+            }
+        }
+    }
+
+    &__search-box-container {
+        align-self: flex-start;
+        width: 44.5rem;
+    }
+
+    // TODO move to file actions
+    .open-on-desktop {
+        background-color: #1098AD;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        color: #FFFFFF;
+        height: 32px;
+        padding: 8px 12px;
+        font-size: 12px;
+        margin-right: 16px;
+        text-decoration: none;
+
+        .icon {
+            margin-left: 8px;
+        }
+    }
+}

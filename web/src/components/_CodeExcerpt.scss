@@ -1,0 +1,15 @@
+
+.code-excerpt {
+
+    &__line_number, &__code-line {
+        height: 1rem;
+        line-height: 1rem;
+        vertical-align: middle;
+        padding: 0;
+    }
+
+    &__code-line {
+        white-space: pre;
+        padding-left: 1rem;
+    }
+}

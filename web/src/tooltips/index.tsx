@@ -1,3 +1,4 @@
+import * as H from 'history';
 import * as _ from 'lodash';
 import * as Rx from 'rxjs';
 import { fetchJumpURL, getTooltip } from 'sourcegraph/backend/lsp';
@@ -242,24 +243,6 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
     }
 }
 
-// TODO(john): add back this special-casing for spaces (consult Beyang)
-// var allSpaces = true;
-// while (nodeText.length > 0) {
-//     const token = consumeNextToken(nodeText);
-//     const isAllSpaces = SPACES.test(token);
-//     allSpaces = isAllSpaces && allSpaces;
-
-//     wrapperNode.appendChild(createTextNode(token, offset + prevConsumed));
-//     prevConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
-//     bytesConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
-//     if (!allSpaces && spacesToTab > 0) {
-//         // NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
-//         // only divide by 2 for initial code indents.
-//         spacesToTab = 0;
-//     }
-//     nodeText = nodeText.slice(token.length);
-// }
-
 /**
  * addAnnotations is the entry point for marking up a DOM element with source code in it.
  * An invisible marker is appended to the document to indicate that annotation
@@ -277,14 +260,9 @@ function tooltipEvent(ev: { target: HTMLElement, data: TooltipData }, context: T
  * mechanism would be to take use the `cm-tab` DOM attribute. For Phabricator, no
  * better mechanism is known at this time (see https://secure.phabricator.com/T2495).
  */
-export function addAnnotations(path: string, repoRevCommit: ResolvedRepoRevSpec, cells: CodeCell[]): void {
-    tooltips.createTooltips(); // TODO(john): can we just do this once in the module)?
+export function addAnnotations(history: H.History, path: string, repoRevCommit: ResolvedRepoRevSpec, cells: CodeCell[]): void {
+    tooltips.createTooltips(history); // TODO(john): can we just do this once in the module)?
     const ignoreFirstChar = false;
-
-    // TODO(john): figure out how to do this without looking at the cell itself.
-    // if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {
-    //     ignoreFirstTextChar = false;
-    // }
 
     const domObservables = _.compact(cells.map(cell => {
         let hovered = false;

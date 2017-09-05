@@ -56,7 +56,10 @@
     "no-console": [
       false
     ],
-    "arrow-parens": [true, "ban-single-arg-parens"],
+    "arrow-parens": [
+      true,
+      "ban-single-arg-parens"
+    ],
     "no-floating-promises": [
       true
     ],
@@ -103,7 +106,6 @@
       "consistent-as-needed"
     ],
     "object-literal-shorthand": true,
-    "prefer-method-signature": true,
     "prefer-template": [
       false,
       "allow-single-concat"

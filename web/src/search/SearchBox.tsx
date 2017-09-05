@@ -6,6 +6,7 @@ import RepoIcon from '@sourcegraph/icons/lib/Repo';
 import RepoGroup from '@sourcegraph/icons/lib/RepoGroup';
 import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
+import * as H from 'history';
 import * as React from 'react';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/debounceTime';
@@ -45,7 +46,9 @@ interface Filter {
     type: FilterType;
 }
 
-interface Props {}
+interface Props {
+    history: H.History;
+}
 
 interface State {
 
@@ -188,17 +191,17 @@ export class SearchBox extends React.Component<Props, State> {
         const splitRegexp = new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi');
         return (
             <form className='search-box' onSubmit={this.onSubmit}>
-                <div className='search-box-query'>
-                    <div className='search-box-query-search-icon'><SearchIcon /></div>
-                    <div className='search-box-query-chips'>
+                <div className='search-box__query'>
+                    <div className='search-box__search-icon'><SearchIcon /></div>
+                    <div className='search-box__chips'>
                         {
                             this.state.filters.map((filter, i) => {
                                 const Icon = SUGGESTION_ICONS[filter.type];
                                 return (
-                                    <span key={i} className='search-box-query-chips-chip'>
+                                    <span key={i} className='search-box__chip'>
                                         <Icon />
-                                        <span className='search-box-query-chips-chip-text'>{filter.value}</span>
-                                        <button type='button' className='search-box-query-chips-chip-remove-button' onClick={() => this.removeFilter(i)}>
+                                        <span className='search-box__chip-text'>{filter.value}</span>
+                                        <button type='button' className='search-box__chip-remove-button' onClick={() => this.removeFilter(i)}>
                                             <CloseIcon />
                                         </button>
                                     </span>
@@ -207,7 +210,7 @@ export class SearchBox extends React.Component<Props, State> {
                         }
                         <input
                             type='search'
-                            className='search-box-query-chips-input'
+                            className='search-box__input'
                             value={this.state.query}
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
@@ -218,24 +221,24 @@ export class SearchBox extends React.Component<Props, State> {
                             ref={ref => this.inputElement = ref!}
                         />
                     </div>
-                    <label className='search-box-option' title='Match case'>
-                        <input type='checkbox' checked={this.state.matchCase} onChange={e => this.setState({ matchCase: e.currentTarget.checked })}/><span>Aa</span>
+                    <label className='search-box__option' title='Match case'>
+                        <input type='checkbox' checked={this.state.matchCase} onChange={e => this.setState({ matchCase: e.currentTarget.checked })} /><span>Aa</span>
                     </label>
-                    <label className='search-box-option' title='Match whole word'>
-                        <input type='checkbox' checked={this.state.matchWord} onChange={e => this.setState({ matchWord: e.currentTarget.checked })}/><span><u>Ab</u></span>
+                    <label className='search-box__option' title='Match whole word'>
+                        <input type='checkbox' checked={this.state.matchWord} onChange={e => this.setState({ matchWord: e.currentTarget.checked })} /><span><u>Ab</u></span>
                     </label>
-                    <label className='search-box-option' title='Use regular expression'>
-                        <input type='checkbox' checked={this.state.matchRegexp} onChange={e => this.setState({ matchRegexp: e.currentTarget.checked })}/><span>.*</span>
+                    <label className='search-box__option' title='Use regular expression'>
+                        <input type='checkbox' checked={this.state.matchRegexp} onChange={e => this.setState({ matchRegexp: e.currentTarget.checked })} /><span>.*</span>
                     </label>
                 </div>
-                <ul className='search-box-suggestions'>
+                <ul className='search-box__suggestions'>
                     {
                         this.state.suggestions.map((suggestion, i) => {
                             const Icon = SUGGESTION_ICONS[suggestion.type];
                             const parts = suggestion.value.split(splitRegexp);
-                            let className = 'search-box-suggestions-item';
+                            let className = 'search-box__suggestion';
                             if (this.state.selectedSuggestion === i) {
-                                className += ' search-box-suggestions-item-selected';
+                                className += ' search-box__suggestion--selected';
                             }
                             return (
                                 <li key={i} className={className} onClick={() => {
@@ -247,10 +250,10 @@ export class SearchBox extends React.Component<Props, State> {
                                     });
                                 }}>
                                     <Icon />
-                                    <div className='search-box-suggestions-item-label'>
-                                        {parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box-highlighted-query' : ''}>{part}</span>)}
+                                    <div className='search-box__suggestion-label'>
+                                        {parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box__highlighted-query' : ''}>{part}</span>)}
                                     </div>
-                                    <div className='search-box-suggestions-item-tip' hidden={this.state.selectedSuggestion !== i}><kbd>tab</kbd> to add as filter</div>
+                                    <div className='search-box__suggestion-tip' hidden={this.state.selectedSuggestion !== i}><kbd>tab</kbd> to add as filter</div>
                                 </li>
                             );
                         })
@@ -326,14 +329,14 @@ export class SearchBox extends React.Component<Props, State> {
                 matchWord: this.state.matchWord
             });
             events.SearchSubmitted.log({ code_search: { pattern: query, repos: filters.filter(f => f.type === FilterType.Repo).map(f => f.value) } });
-            location.href = path;
+            this.props.history.push(path);
         } else if (filters[0].type === FilterType.Repo) {
             if (filters.length === 1) {
                 // Go to repo
-                location.href = `/${filters[0].value}`;
+                this.props.history.push(`/${filters[0].value}`);
             } else if (filters[1].type === FilterType.File && filters.length === 2 && !/\?|\*/.exec(filters[1].value)) {
                 // Go to file
-                location.href = `/${filters[0].value}/-/blob/${filters[1].value}`;
+                this.props.history.push(`/${filters[0].value}/-/blob/${filters[1].value}`);
             }
         }
     }

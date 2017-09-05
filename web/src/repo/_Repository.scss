@@ -1,0 +1,58 @@
+
+@import './RepoNav';
+@import './Blob';
+
+.repository {
+    flex: 1 1 auto;
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+
+    border-bottom: 1px solid #233043;
+
+    &__content {
+        flex: 1 1 auto;
+        display: flex;
+        min-height: 0;
+    }
+
+    &__sidebar {
+        flex: 0 0 auto;
+        width: 15.75rem;
+
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__tree-header {
+        flex: none;
+        width: 100%;
+    }
+
+    &__tree {
+        flex: 1 1 auto;
+        width: 100%;
+        overflow: auto;
+    }
+
+    &__viewer {
+        flex: 1 1 auto;
+
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+    }
+
+    &__blob-placeholder {
+        flex: 1 1 50%;
+    }
+}
+
+.ref-panel {
+    flex: 2;
+    overflow: auto;
+    background-color: #070A0D;
+}

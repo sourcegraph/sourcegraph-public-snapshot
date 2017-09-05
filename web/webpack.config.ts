@@ -1,8 +1,8 @@
-import * as path from 'path';
-import * as webpack from 'webpack';
-import Tapable = require('tapable');
 import ExtractTextPlugin = require('extract-text-webpack-plugin');
+import * as path from 'path';
+import Tapable = require('tapable');
 import TSLintPlugin = require('tslint-webpack-plugin');
+import * as webpack from 'webpack';
 
 const plugins: webpack.Plugin[] = [
     // Print some output for VS Code tasks to know when a build started
@@ -50,7 +50,6 @@ const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-modul
 const config: webpack.Configuration = {
     entry: {
         app: path.join(__dirname, 'src/app.tsx'),
-        highlighter: path.join(__dirname, 'src/highlighter.tsx'),
         style: path.join(__dirname, 'src/app.scss')
     },
     output: {
@@ -78,7 +77,7 @@ const config: webpack.Configuration = {
         }, {
             // sass / scss loader for webpack
             test: /\.(css|sass|scss)$/,
-            loader: ExtractTextPlugin.extract(['css-loader', 'sass-loader', 'postcss-loader'])
+            loader: ExtractTextPlugin.extract(['css-loader', 'postcss-loader', 'sass-loader'])
         }]
     }
 };

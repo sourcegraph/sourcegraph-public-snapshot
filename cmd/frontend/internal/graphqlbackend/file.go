@@ -3,8 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"path"
+	"strings"
 	"time"
 
+	"github.com/sourcegraph/gosyntect"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -36,6 +41,31 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	}
 
 	return string(contents), nil
+}
+
+func (r *fileResolver) HighlightedContentHTML(ctx context.Context) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	if err != nil {
+		return "", err
+	}
+
+	contents, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.CommitID), r.path)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := ui2.SyntectClient.Highlight(ctx, &gosyntect.Query{
+		Code:      string(contents),
+		Extension: strings.TrimPrefix(path.Ext(r.path), "."),
+		Theme:     "Visual Studio Dark", // In the future, we could let the user choose the theme.
+	})
+	if err != nil {
+		return "", err
+	}
+	return ui2.PreSpansToTable(resp.Data)
 }
 
 func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, error) {

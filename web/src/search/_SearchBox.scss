@@ -1,177 +1,183 @@
 
 .search-box {
-	font-size: 12px;
-	color: #93A9C8;
-	padding: 0;
-	border-radius: 0.25rem;
-	// box-shadow: 0px 0.25rem 0.5rem rgba(0, 0, 0, 0.32);
-	background-color: #1C2736;
-	padding-top: 0.5rem;
+    font-size: 12px;
+    color: #93A9C8;
+    padding: 0;
+    border-radius: 0.25rem;
+    // box-shadow: 0px 0.25rem 0.5rem rgba(0, 0, 0, 0.32);
+    background-color: #1C2736;
+    padding-top: 0.5rem;
+    width: 100%;
 
-	.icon {
-		height: 100%;
-		width: 1rem;
-		fill: currentColor;
-		text-align: center;
-		display: inline-block;
-		> svg {
-			width: 1rem;
-			height: 100%;
-		}
-	}
+    .icon {
+        height: 100%;
+        width: 1rem;
+        fill: currentColor;
+        text-align: center;
+        display: inline-block;
+        > svg {
+            width: 1rem;
+            height: 100%;
+        }
+    }
 
-	&-option {
-		flex: 0 0 auto;
-		border: none;
-		outline: none;
-		background-color: transparent;
-		padding: 0;
-		margin-left: 0.25rem;
-		color: inherit;
-		cursor: pointer;
-		width: 1rem;
-		height: 1rem;
-		margin-top: 0.5rem;
-		margin-right: 0.5rem;
-		> input[type='checkbox'] {
-			display: none;
-			&:checked ~ span {
-				color: white;
-			}
-		}
-		&:hover {
-			color: white;
-		}
-	}
+    &__option {
+        flex: 0 0 auto;
+        border: none;
+        outline: none;
+        background-color: transparent;
+        padding: 0;
+        margin-left: 0.25rem;
+        color: inherit;
+        cursor: pointer;
+        width: 1rem;
+        height: 1rem;
+        margin-top: 0.5rem;
+        margin-right: 0.5rem;
+        > input[type='checkbox'] {
+            display: none;
+            &:checked ~ span {
+                color: white;
+            }
+        }
+        &:hover {
+            color: white;
+        }
+    }
 
-	&-query {
-		display: flex;
-		align-items: stretch;
-		background: #151D28;
-		border-radius: 2px;
-		margin-left: 0.5rem;
-		margin-right: 0.5rem;
-		padding-bottom: 0.25rem;
+    &__query {
+        display: flex;
+        align-items: stretch;
+        background: #151D28;
+        border-radius: 2px;
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+        padding-bottom: 0.25rem;
+    }
 
-		&-search-icon {
-			flex: 0 0 auto;
-			margin-left: 0.5rem;
-			margin-top: 0.5rem;
-			> .icon > svg {
-				height: auto;
-			}
-		}
+    &__search-icon {
+        flex: 0 0 auto;
+        margin-left: 0.5rem;
+        margin-top: 0.5rem;
+        > .icon > svg {
+            height: auto;
+        }
+    }
 
-		&-chips {
-			flex: 1 1 auto;
-			display: flex;
-			margin-left: 0.5rem;
-			flex-wrap: wrap;
+    &__chips {
+        flex: 1 1 auto;
+        display: flex;
+        margin-left: 0.5rem;
+        flex-wrap: wrap;
+    }
 
-			&-input, &-chip {
-				flex: 1 0 auto;
-				margin-top: 0.25rem;
-				margin-right: 0.25rem;
-				height: 1.5rem;
-			}
+    &__input, &__chip {
+        flex: 1 0 auto;
+        margin-top: 0.25rem;
+        margin-right: 0.25rem;
+        height: 1.5rem;
+    }
 
-			&-input {
-				// padding-left: 0.25rem;
-				background-color: transparent;
-				border: none;
-				outline: none;
-				color: white;
-				font-size: inherit;
-				&:not(:first-child) {
-					padding-left: 0.25rem;
-				}
-				&::-webkit-search-cancel-button {
-					display: none;
-				}
-				&::placeholder {
-					color: #93A9C8;
-				}
-			}
+    &__input {
+        // padding-left: 0.25rem;
+        background-color: transparent;
+        -webkit-appearance: none;
+        border: none;
+        outline: none;
+        color: white;
+        font-size: inherit;
+        &:not(:first-child) {
+            padding-left: 0.25rem;
+        }
+        &::-webkit-search-cancel-button {
+            display: none;
+        }
+        &::placeholder {
+            color: #93A9C8;
+        }
+    }
 
-			&-chip {
-				flex: 0 1 auto;
-				display: flex;
-				background-color: #2A3A51;
-				border-radius: 2px;
-				padding: 0.25rem 0.5rem;
-				color: white;
-				height: 1.5rem;
-				line-height: 1rem;
-				vertical-align: top;
-				max-width: 49%;
-				overflow: hidden;
-				white-space: nowrap;
-				&-text {
-					flex: 0 1 auto;
-					overflow: hidden;
-					text-overflow: ellipsis;
-					direction: rtl;
-					display: inline-block;
-					vertical-align: top;
-					margin-left: 0.5rem;
-					unicode-bidi: plaintext;
-					&::after {
-						content: '\200E';
-					}
-				}
-				&-remove-button {
-					border: none;
-					outline: none;
-					background-color: transparent;
-					padding: 0;
-					margin-left: 0.25rem;
-					color: #93A9C8;
-					cursor: pointer;
-					&:hover {
-						color: white;
-					}
-				}
-			}
-		}
-	}
+    &__chip {
+        flex: 0 1 auto;
+        display: flex;
+        background-color: #2A3A51;
+        border-radius: 2px;
+        padding: 0.25rem 0.5rem;
+        color: white;
+        height: 1.5rem;
+        line-height: 1rem;
+        vertical-align: top;
+        max-width: 49%;
+        overflow: hidden;
+        white-space: nowrap;
+        &-text {
+            flex: 0 1 auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            direction: rtl;
+            display: inline-block;
+            vertical-align: top;
+            margin-left: 0.5rem;
+            &::after {
+                content: '\200E';
+            }
+        }
+        &-remove-button {
+            border: none;
+            outline: none;
+            background-color: transparent;
+            padding: 0;
+            margin-left: 0.25rem;
+            color: #93A9C8;
+            cursor: pointer;
+            &:hover {
+                color: white;
+            }
+        }
+    }
 
-	&-suggestions {
-		margin-top: 0.5rem;
-		max-height: 25rem;
-		overflow-y: auto;
-		&-item {
-			display: flex;
-			border-top: 1px solid #2A3A51;
-			background-color: #1C2736;
-			cursor: pointer;
-			padding: 0 1rem;
-			height: 2rem;
-			line-height: 2rem;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-			overflow: hidden;
-			&-tip {
-				flex: 0 1 auto;
-			}
-			&-label {
-				flex: 1 0 auto;
-			}
-			&-selected {
-				background-color: #2A3A51;
-				&:last-child {
-					border-bottom-left-radius: 0.25rem;
-					border-bottom-right-radius: 0.25rem;
-				}
-			}
-			.icon {
-				flex: 0 1 auto;
-				margin-right: 0.5rem;
-				height: 100%;
-			}
-		}
-	}
+    &__suggestions {
+        margin-top: 0.5rem;
+        max-height: 25rem;
+        overflow-y: auto;
+    }
 
-	&-highlighted-query {
-		color: white;
-	}
+    &__suggestion {
+        display: flex;
+        border-top: 1px solid #2A3A51;
+        background-color: #1C2736;
+        cursor: pointer;
+        padding: 0 1rem;
+        height: 2rem;
+        line-height: 2rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+
+        &--selected {
+            background-color: #2A3A51;
+            &:last-child {
+                border-bottom-left-radius: 0.25rem;
+                border-bottom-right-radius: 0.25rem;
+            }
+        }
+
+        &-tip {
+            flex: 0 1 auto;
+        }
+
+        &-label {
+            flex: 1 0 auto;
+        }
+
+        .icon {
+            flex: 0 1 auto;
+            margin-right: 0.5rem;
+            height: 100%;
+        }
+    }
+
+    &__highlighted-query {
+        color: white;
+    }
 }

@@ -146,6 +146,7 @@ declare namespace GQL {
     __typename: "File";
     name: string;
     content: string;
+    highlightedContentHTML: string;
     blame: Array<IHunk>;
     commits: Array<ICommitInfo>;
     dependencyReferences: IDependencyReferences;
