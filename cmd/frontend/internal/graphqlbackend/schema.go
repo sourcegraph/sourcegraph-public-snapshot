@@ -22,7 +22,6 @@ type Mutation {
 
 
 type Root {
-	organization(login: String!): Organization
 	repository(uri: String!): Repository
 	repositories(query: String = "", fast: Boolean = true): [Repository!]!
 	remoteRepositories: [RemoteRepository!]!
@@ -239,16 +238,6 @@ type Hunk {
 	rev: String!
 	author: Signature
 	message: String!
-}
-
-type Organization {
-	login: String!
-	githubId: Int!
-	email: String!
-	name: String!
-	avatarURL: String!
-	description: String!
-	collaborators: Int!
 }
 
 type Installation {

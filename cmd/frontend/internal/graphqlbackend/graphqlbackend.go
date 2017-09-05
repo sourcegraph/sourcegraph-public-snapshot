@@ -203,19 +203,6 @@ func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*reposi
 	return s, nil
 }
 
-func (r *rootResolver) Organization(ctx context.Context, args *struct{ Login string }) (*organizationResolver, error) {
-	if args.Login == "" {
-		return nil, nil
-	}
-
-	org, err := GetOrg(ctx, args.Login)
-	if err != nil {
-		return nil, err
-	}
-
-	return &organizationResolver{organization: org}, nil
-}
-
 // Resolves symbols by a global symbol ID (use case for symbol URLs)
 func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	ID   string
