@@ -30,24 +30,22 @@ $color-text: #93A9C8;
     padding: 0;
 }
 
+// Scrollbar
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-track {
+    background-color: #233043;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #43536d;
+}
+
 html {
     font-family: 'system';
     font-size: 16px;
-
-    // Scrollbar
-    scrollbar-base-color: #233043;
-    scrollbar-face-color: #43536d;
-    ::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
-    }
-    ::-webkit-scrollbar-corner,
-    ::-webkit-scrollbar-track {
-        background-color: #233043;
-    }
-    ::-webkit-scrollbar-thumb {
-        background-color: #43536d;
-    }
 }
 
 body {
