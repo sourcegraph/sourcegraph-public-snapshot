@@ -14,7 +14,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/stripe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -50,7 +49,6 @@ type JSContext struct {
 	TrackingAppID       string                     `json:"trackingAppID"`
 	OnPrem              bool                       `json:"onPrem"`
 	RepoHomeRegexFilter string                     `json:"repoHomeRegexFilter"`
-	StripePublicKey     string                     `json:"stripePublicKey"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -108,7 +106,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		OnPrem:              envvar.DeploymentOnPrem(),
 		TrackingAppID:       TrackingAppID,
 		RepoHomeRegexFilter: repoHomeRegexFilter,
-		StripePublicKey:     stripe.StripePublicKey,
 	}
 }
 

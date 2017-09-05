@@ -1408,30 +1408,6 @@
 			"revisionTime": "2017-08-08T06:49:59Z"
 		},
 		{
-			"checksumSHA1": "bfRNH6AMDpyYdDsAEVEBRGHNzpA=",
-			"path": "github.com/stripe/stripe-go",
-			"revision": "9cc2162607f5e21aa59ca074c1eb4dd62f2605f4",
-			"revisionTime": "2017-03-02T15:48:42Z"
-		},
-		{
-			"checksumSHA1": "2dVO9xvrpjU6VIGHa6eHHllHqJM=",
-			"path": "github.com/stripe/stripe-go/customer",
-			"revision": "9cc2162607f5e21aa59ca074c1eb4dd62f2605f4",
-			"revisionTime": "2017-03-02T15:48:42Z"
-		},
-		{
-			"checksumSHA1": "y5AD80EvDutFqGuAYsBtcya6ntM=",
-			"path": "github.com/stripe/stripe-go/orderitem",
-			"revision": "9cc2162607f5e21aa59ca074c1eb4dd62f2605f4",
-			"revisionTime": "2017-03-02T15:48:42Z"
-		},
-		{
-			"checksumSHA1": "OpqfvhUy4nzi4Y3lpSS8Zacvzyk=",
-			"path": "github.com/stripe/stripe-go/sub",
-			"revision": "9cc2162607f5e21aa59ca074c1eb4dd62f2605f4",
-			"revisionTime": "2017-03-02T15:48:42Z"
-		},
-		{
 			"checksumSHA1": "EXXAM9hs2jsOgED5aJBfAe5HWvI=",
 			"path": "github.com/temoto/robotstxt-go",
 			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",

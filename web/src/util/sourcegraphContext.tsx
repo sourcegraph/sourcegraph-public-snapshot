@@ -41,8 +41,6 @@ export class SourcegraphContext {
      */
     public repoHomeRegexFilter: string;
 
-    public stripePublicKey: string;
-
     constructor(ctx: any) {
         Object.assign(this, ctx);
     }
