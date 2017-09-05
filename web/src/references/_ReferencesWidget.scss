@@ -1,0 +1,134 @@
+
+.references-group {
+
+    &__icon {
+        font-size: 18px;
+        margin-left: 15px;
+    }
+
+    &__title {
+        height: 2rem;
+
+        display: flex;
+        align-items: center;
+
+        cursor: pointer;
+        $background-color: #2A3A51;
+        background-color: $background-color;
+
+        &:hover {
+            background-color: darken($background-color, 0.05);
+        }
+    }
+
+    &__uri-path-part {
+        padding-left: 25px;
+        padding-right: 15px;
+    }
+
+    &__file-path-part {
+        color: white;
+        font-weight: bold;
+        padding-right: 15px;
+    }
+
+    &__expand-icon {
+        margin-left: auto;
+        margin-right: 15px;
+        font-size: 18px;
+    }
+
+    &__list {
+        background-color: #070A0D;
+    }
+
+    &__reference {
+        text-decoration: none; // don't use cascading link style
+        display: block;
+        font-family: Menlo; // don't use cascading link style
+        border-bottom: 1px solid #2A3A51;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        overflow-x: auto;
+        &:hover {
+            background-color: rgba(#2A3A51, 0.5);
+        }
+    }
+}
+
+.references-widget {
+
+    flex: 1 1 50%;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    font-size: 12px;
+    font-family: system;
+    user-select: none;
+    background: #070A0D;
+    border-top: 1px solid #2A3A51;
+
+    &__title-bar {
+        flex: none;
+        width: 100%;
+        height: 2rem;
+
+        padding: 0 1rem;
+        border-bottom: 1px solid #2A3A51;
+        background-color: #070A0D;
+
+        display: flex;
+        align-items: center;
+
+        &-title {
+            max-width: 50%;
+            margin-right: 25px;
+        }
+
+        &-group {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            &:hover {
+                color: white;
+            }
+
+            &--active {
+                font-weight: bold;
+                color: white;
+            }
+        }
+    }
+
+    &__badge {
+        background-color: #233043;
+        border-radius: 20px;
+        margin-left: 10px;
+        margin-right: 25px;
+        font-size: 11px;
+        padding: 3px 6px;
+        font-family: system;
+    }
+
+    &__close-icon {
+        cursor: pointer;
+        font-size: 18px;
+        margin-left: auto;
+
+        &:hover {
+            color: white;
+        }
+    }
+
+    &__placeholder {
+        padding: 10px 16px;
+    }
+
+    &__groups {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+}

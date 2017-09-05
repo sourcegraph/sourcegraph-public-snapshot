@@ -5,13 +5,15 @@ It should import all component stylesheets
 
 $color-page-background: #233043;
 $color-text: #93A9C8;
-$nav-height: 3rem;
 
 @import './highlight';
 @import './home/Home';
 @import './nav/Navbar';
 @import './search/SearchBox';
+@import './search/SearchResults';
 @import './repo/Repository';
+@import './references/ReferencesWidget';
+@import './components/CodeExcerpt';
 
 
 // Define the 'system' font family
@@ -30,29 +32,49 @@ $nav-height: 3rem;
     padding: 0;
 }
 
+// Scrollbar
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-track {
+    background-color: #233043;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #43536d;
+}
+
 html {
     font-family: 'system';
     font-size: 16px;
-
-    // Scrollbar
-    scrollbar-base-color: #233043;
-    scrollbar-face-color: #43536d;
-    ::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
-    }
-    ::-webkit-scrollbar-corner,
-    ::-webkit-scrollbar-track {
-        background-color: #233043;
-    }
-    ::-webkit-scrollbar-thumb {
-        background-color: #43536d;
-    }
 }
 
 body {
+    height: 100vh;
+    display: flex;
+
     background-color: $color-page-background;
     color: #C9D4E3;
+}
+
+// React root element
+#root {
+    display: flex;
+    width: 100%;
+}
+
+.layout {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    &__app-router-container {
+        @extend .container;
+        flex: 1 1 auto;
+        width: 100%;
+        min-height: 0;
+        display: flex;
+    }
 }
 
 kbd {
@@ -76,9 +98,8 @@ a {
 // Responsive Container
 
 .container {
-    width: 100%;
-    margin-right: auto;
     margin-left: auto;
+    margin-right: auto;
 }
 
 @media (min-width: 576px) {
@@ -107,9 +128,6 @@ a {
 
 // TODO move out of here
 .cloning {
-    $cloning-height: unquote('calc(100vh - #{$nav-height})');
-
-    height: $cloning-height;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -137,9 +155,6 @@ a {
 }
 
 .fancyerror {
-    $fancyerror-height: unquote('calc(100vh - #{$nav-height})');
-
-    height: $fancyerror-height;
     display: flex;
     flex-direction: column;
     justify-content: center;

@@ -510,7 +510,7 @@ export function getPathExtension(path: string): string {
 }
 
 export function getCodeCellsForAnnotation(): CodeCell[] {
-    const table = document.querySelector('.blob>.content>table') as HTMLTableElement;
+    const table = document.querySelector('.blob > table') as HTMLTableElement;
     const cells = Array.from(table.rows).map(row => {
         const line = parseInt(row.cells[0].getAttribute('data-line')!, 10);
         const codeCell: HTMLTableDataCellElement = row.cells[1]; // the actual cell that has code inside; each row contains multiple columns
@@ -571,9 +571,9 @@ export function highlightAndScrollToLine(history: H.History, repoURI: string, co
     highlightLine(history, repoURI, commitID, path, line, cells, userTriggered);
 
     // Scroll to the line.
-    const scrollingElement = document.querySelector('.blob>.content')!;
+    const scrollingElement = document.querySelector('.blob')!;
     const viewportBound = scrollingElement.getBoundingClientRect();
-    const blobTable = document.querySelector('.blob>.content>table')!; // table that we're positioning tooltips relative to.
+    const blobTable = document.querySelector('.blob > table')!; // table that we're positioning tooltips relative to.
     const tableBound = blobTable.getBoundingClientRect(); // tables bounds
     const cell = cells[line - 1];
     const targetBound = cell.cell.getBoundingClientRect(); // our target elements bounds

@@ -21,36 +21,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 });
 
-/**
- * The root component
- */
-class App extends React.Component<{}, {}> {
-    public render(): JSX.Element | null {
-        return <BrowserRouter>
-            <Switch>
-                <Route exact path='/' component={Home} />
-                <Route path='/*' component={Layout} />
-            </Switch>
-        </BrowserRouter>;
-    }
-}
-
-/**
- * Defines the layout of all pages that have a navbar
- */
-class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
-    public render(): JSX.Element | null {
-        return (
-            <div className='layout'>
-                <Navbar {...this.props} />
-                <div className='container'>
-                    <AppRouter {...this.props} />
-                </div>
-            </div>
-        );
-    }
-}
-
 interface WithResolvedRevProps {
     component: any;
     uri: RepoURI;
@@ -131,6 +101,36 @@ class AppRouter extends React.Component<RouteComponentProps<string[]>, {}> {
             history={this.props.history}
             location={this.props.location}
             component={Repository} />;
+    }
+}
+
+/**
+ * Defines the layout of all pages that have a navbar
+ */
+class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
+    public render(): JSX.Element | null {
+        return (
+            <div className='layout'>
+                <Navbar {...this.props} />
+                <div className='layout__app-router-container'>
+                    <AppRouter {...this.props} />
+                </div>
+            </div>
+        );
+    }
+}
+
+/**
+ * The root component
+ */
+class App extends React.Component<{}, {}> {
+    public render(): JSX.Element | null {
+        return <BrowserRouter>
+            <Switch>
+                <Route exact path='/' component={Home} />
+                <Route path='/*' component={Layout} />
+            </Switch>
+        </BrowserRouter>;
     }
 }
 

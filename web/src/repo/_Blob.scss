@@ -1,0 +1,60 @@
+
+.blob {
+    flex: 1 1 50%;
+    min-height: 0;
+
+    display: flex;
+    position: relative;
+    overflow: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+
+    white-space: pre;
+    background-color: #151D28;
+    font-family: 'Menlo';
+    font-size: 12px;
+
+    table {
+        border-collapse: collapse;
+    }
+
+    td.line {
+        &::before {
+            // draw line number with css so it cannot be copied to clipboard
+            content: attr(data-line);
+            color: #31445E;
+        }
+
+        color: #31445E;
+        text-align: center;
+        padding-left: .25em;
+        padding-right: .75em;
+        min-width: 3em;
+    }
+
+    td.line, td.code {
+        padding: 0;
+        padding-top: 0.15em;
+        padding-bottom: 0.15em;
+    }
+
+    td.code {
+        width: 100%;
+        padding-left: .5em;
+        white-space: pre;
+        >.blame {
+            &::before {
+                content: attr(data-blame);
+            }
+            color: #464d57;
+            padding-left: 4em;
+            display: inline-block;
+            width: 0;
+        }
+    }
+
+    .right {
+        background-color: #151D28;
+        flex: 4;
+    }
+}
