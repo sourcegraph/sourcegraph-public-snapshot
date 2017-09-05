@@ -12,6 +12,8 @@
 // ../../../migrations/1503621752_add_fields_to_threads.up.sql
 // ../../../migrations/1503961087_add_default_timestamps.down.sql
 // ../../../migrations/1503961087_add_default_timestamps.up.sql
+// ../../../migrations/1504637681_orgs.down.sql
+// ../../../migrations/1504637681_orgs.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -319,6 +321,46 @@ func _1503961087_add_default_timestampsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1504637681_orgsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x50\xca\x2f\x4a\x2f\x56\xb2\xe6\x42\x13\x8a\xcf\x4d\xcd\x4d\x4a\x2d\x02\xc9\x00\x02\x00\x00\xff\xff\x2d\x0b\x7b\xbf\x2d\x00\x00\x00")
+
+func _1504637681_orgsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1504637681_orgsDownSql,
+		"1504637681_orgs.down.sql",
+	)
+}
+
+func _1504637681_orgsDownSql() (*asset, error) {
+	bytes, err := _1504637681_orgsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1504637681_orgs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1504637681_orgsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xcc\x90\xb1\x6a\xc3\x30\x10\x86\x67\xeb\x29\x0e\x4d\x36\xf4\x0d\x3a\xa9\xad\x0a\xa5\xaa\x1b\x8c\x3c\x78\x32\x4a\x7c\x38\x02\x4b\x36\xd2\x19\x87\x3c\x7d\x90\x87\x40\x30\x81\x64\xcb\x78\xf7\xff\x1f\xdc\x77\x9f\x95\x14\x5a\x82\x16\x1f\x4a\x02\x1f\x43\x1f\x39\xe4\x2c\xe3\xb6\xe3\x10\x31\x58\x33\x40\xf9\xaf\xa1\xac\x95\x82\x5d\xf5\xf3\x27\xaa\x06\x7e\x65\xf3\xc6\x32\xee\x8d\x43\x0e\x84\x27\xba\x56\xd2\xfa\x10\xd0\x10\x76\xad\x21\x0e\x64\x1d\x46\x32\x6e\x82\xc5\xd2\x71\x1d\xe1\x3c\x7a\x84\x2f\xf9\x2d\x6a\xa5\xc1\x8f\x4b\x5e\x24\x6a\x9e\xba\x27\x29\x56\xbc\x33\xb6\x39\xbf\x75\xe8\xf6\x18\x1e\xb7\x48\x4c\xaa\x59\x4f\xd8\x63\xb8\x51\x99\x23\x86\x35\xdc\x48\xae\x09\x3a\x63\x87\x7b\xe1\x0b\x7c\xe7\x12\x00\x00\xff\xff\x80\x19\xce\x50\xdc\x01\x00\x00")
+
+func _1504637681_orgsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1504637681_orgsUpSql,
+		"1504637681_orgs.up.sql",
+	)
+}
+
+func _1504637681_orgsUpSql() (*asset, error) {
+	bytes, err := _1504637681_orgsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1504637681_orgs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -383,6 +425,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1503621752_add_fields_to_threads.up.sql":    _1503621752_add_fields_to_threadsUpSql,
 	"1503961087_add_default_timestamps.down.sql": _1503961087_add_default_timestampsDownSql,
 	"1503961087_add_default_timestamps.up.sql":   _1503961087_add_default_timestampsUpSql,
+	"1504637681_orgs.down.sql":                   _1504637681_orgsDownSql,
+	"1504637681_orgs.up.sql":                     _1504637681_orgsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -438,6 +482,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1503621752_add_fields_to_threads.up.sql":    &bintree{_1503621752_add_fields_to_threadsUpSql, map[string]*bintree{}},
 	"1503961087_add_default_timestamps.down.sql": &bintree{_1503961087_add_default_timestampsDownSql, map[string]*bintree{}},
 	"1503961087_add_default_timestamps.up.sql":   &bintree{_1503961087_add_default_timestampsUpSql, map[string]*bintree{}},
+	"1504637681_orgs.down.sql":                   &bintree{_1504637681_orgsDownSql, map[string]*bintree{}},
+	"1504637681_orgs.up.sql":                     &bintree{_1504637681_orgsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -8,4 +8,5 @@ var (
 	LocalRepos = &localRepos{}
 	Threads    = &threads{}
 	Comments   = &comments{}
+	Orgs       = &orgs{}
 )

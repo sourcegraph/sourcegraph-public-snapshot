@@ -62,6 +62,35 @@ Indexes:
 
 ```
 
+# Table "public.org_members"
+```
+   Column   |           Type           |                        Modifiers                         
+------------+--------------------------+----------------------------------------------------------
+ id         | integer                  | not null default nextval('org_members_id_seq'::regclass)
+ org_id     | integer                  | not null
+ user_id    | text                     | not null
+ user_email | text                     | not null
+ user_name  | text                     | not null
+ created_at | timestamp with time zone | default now()
+ updated_at | timestamp with time zone | default now()
+Indexes:
+    "org_members_pkey" PRIMARY KEY, btree (id)
+
+```
+
+# Table "public.orgs"
+```
+   Column   |           Type           |                     Modifiers                     
+------------+--------------------------+---------------------------------------------------
+ id         | integer                  | not null default nextval('orgs_id_seq'::regclass)
+ name       | text                     | not null
+ created_at | timestamp with time zone | default now()
+ updated_at | timestamp with time zone | default now()
+Indexes:
+    "orgs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.pkgs"
 ```
   Column  |  Type   | Modifiers 
