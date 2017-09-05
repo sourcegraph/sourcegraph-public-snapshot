@@ -46,8 +46,8 @@
         text-decoration: none; // don't use cascading link style
         display: block;
         font-family: Menlo; // don't use cascading link style
-        border-bottom: border;
-        padding: 10px;
+        border-bottom: 1px solid #2A3A51;
+        padding: 0.5rem 1rem;
         cursor: pointer;
         overflow-x: auto;
         &:hover {
