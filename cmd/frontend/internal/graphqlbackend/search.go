@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"log"
 
 	"github.com/texttheater/golang-levenshtein/levenshtein"
@@ -64,6 +66,12 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 
 	// Search files
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log15.Error("unexpected panic while searching files", "error", r)
+				done <- nil
+			}
+		}()
 		fileResults, err := searchFiles(ctx, query, args.Repositories, limit)
 		if err != nil {
 			done <- err
@@ -77,6 +85,12 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 
 	// Search repos
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log15.Error("unexpected panic while searching repos", "error", r)
+				done <- nil
+			}
+		}()
 		repoResults, err := searchRepos(ctx, query, args.Repositories, limit)
 		if err != nil {
 			done <- err
@@ -90,6 +104,12 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 
 	// Search search profiles
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log15.Error("unexpected panic while searching search profiles", "error", r)
+				done <- nil
+			}
+		}()
 		searchProfileResults, err := searchSearchProfiles(ctx, r, query, limit)
 		if err != nil {
 			done <- err
