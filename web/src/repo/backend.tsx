@@ -38,20 +38,28 @@ export const resolveRev = memoize((ctx: { repoPath: string, rev?: string }): Pro
     }), makeRepoURI
 )
 
-export const fetchBlobHighlightContentTable = memoize((ctx: { repoPath: string, commitID: string, filePath: string }): Promise<string> =>
-    queryGraphQL(`query HighlightedBlobContent($repoPath: String, $commitID: String, $filePath: String) {
+export const fetchHighlightedFile = memoize((ctx: { repoPath: string, commitID: string, filePath: string, disableTimeout: boolean }): Promise<GQL.IHighlightedFile> =>
+    queryGraphQL(`query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean) {
         root {
             repository(uri: $repoPath) {
                 commit(rev: $commitID) {
                     commit {
                         file(path: $filePath) {
-                            highlightedContentHTML
+                            highlight(disableTimeout: $disableTimeout) {
+                                isBinary
+                                aborted
+                                html
+                            }
                         }
                     }
                 }
             }
         }
     }`, ctx).toPromise().then(result => {
+        if (result.errors) {
+            const errors = result.errors.map(e => e.message).join(', ')
+            throw new Error(`error fetching highlighted file: ${errors}`)
+        }
         if (
             !result.data ||
             !result.data.root ||
@@ -62,8 +70,8 @@ export const fetchBlobHighlightContentTable = memoize((ctx: { repoPath: string, 
         ) {
             throw new Error(`cannot locate blob content: ${ctx.repoPath} ${ctx.commitID} ${ctx.filePath}`)
         }
-        return result.data.root.repository.commit.commit.file.highlightedContentHTML
-    }), makeRepoURI
+        return result.data.root.repository.commit.commit.file.highlight
+    }), ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}`
 )
 
 export const listAllFiles = memoize((ctx: { repoPath: string, commitID: string }): Promise<string[]> =>
