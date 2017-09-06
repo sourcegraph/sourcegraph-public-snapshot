@@ -1,6 +1,6 @@
 import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree'
 import BookClosed from '@sourcegraph/icons/lib/BookClosed'
-import * as ErrorIcon from '@sourcegraph/icons/lib/Error'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
 import * as React from 'react'
 import 'rxjs/add/observable/fromPromise'
@@ -170,12 +170,12 @@ export class Repository extends React.Component<Props, State> {
                         }
                         {
                             this.state.highlightingError &&
-                                <p className='blob-highlighting-error'><ErrorIcon.Error />{this.state.highlightingError.message}</p>
+                                <p className='blob-highlighting-error'><ErrorIcon />{this.state.highlightingError.message}</p>
                         }
                         {
                             this.state.highlightedFile && this.state.highlightedFile.aborted &&
                                 <p className='blob-highlighting-aborted'>
-                                    <ErrorIcon.Error />
+                                    <ErrorIcon />
                                     Syntax highlighting for this file has been disabled because it took too long.
                                     (<span onClick={() => this.showAnywayButtonClicks.next()}>show anyway</span>)
                                 </p>
