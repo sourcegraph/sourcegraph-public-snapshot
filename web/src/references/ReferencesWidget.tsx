@@ -61,7 +61,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                         })
                         .map((ref, i) => {
                             const uri = URI.parse(ref.uri)
-                            const href = getRefURL(ref, uri.query)
+                            const href = this.getRefURL(ref)
                             return (
                                 <Link
                                     to={href}
@@ -69,17 +69,16 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                     className='references-group__reference'
                                     onClick={e => {
                                         (this.props.isLocal ? events.GoToLocalRefClicked : events.GoToExternalRefClicked).log()
-                                        url.openFromJS(href, e)
                                     }}
                                 >
-                                <CodeExcerpt
-                                    uri={uri.hostname + uri.path} rev={uri.query}
-                                    path={uri.fragment}
-                                    line={ref.range.start.line}
-                                    char={ref.range.start.character}
-                                    highlightLength={ref.range.end.character - ref.range.start.character}
-                                    previewWindowExtraLines={1}
-                                />
+                                    <CodeExcerpt
+                                        uri={uri.hostname + uri.path} rev={uri.query}
+                                        path={uri.fragment}
+                                        line={ref.range.start.line}
+                                        char={ref.range.start.character}
+                                        highlightLength={ref.range.end.character - ref.range.start.character}
+                                        previewWindowExtraLines={1}
+                                    />
                                 </Link>
                             )
                         })
@@ -99,6 +98,11 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                 {refs}
             </div>
         )
+    }
+
+    private getRefURL(ref: Reference): string {
+        const uri = URI.parse(ref.uri)
+        return `/${uri.hostname}${uri.path}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`
     }
 }
 
@@ -191,6 +195,9 @@ export class ReferencesWidget extends React.Component<Props, State> {
         const localPrefix = 'git://' + this.state.context.loc.repoURI
         const [localRefs, externalRefs] = _(refsByUri).keys().partition(uri => uri.startsWith(localPrefix)).value()
 
+        const localRefCount = localRefs.reduce((memo, uri) => memo + refsByUri[uri].length, 0)
+        const externalRefCount = externalRefs.reduce((memo, uri) => memo + refsByUri[uri].length, 0)
+
         const isEmptyGroup = () => {
             switch (this.state.group) {
                 case 'local':
@@ -213,13 +220,13 @@ export class ReferencesWidget extends React.Component<Props, State> {
                         onClick={() => events.ShowLocalRefsButtonClicked.log()}>
                         This repository
                     </a>
-                    <div className='references-widget__badge'>{localRefs.length}</div>
+                    <div className='references-widget__badge'>{localRefCount}</div>
                     <a className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
                         href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'external', modal: 'references' })}
                         onClick={() => events.ShowExternalRefsButtonClicked.log()}>
                         Other repositories
                     </a>
-                    <div className='references-widget__badge'>{externalRefs.length}</div>
+                    <div className='references-widget__badge'>{externalRefCount}</div>
                     <CloseIcon className='references-widget__close-icon' onClick={() => this.props.onDismiss()} />
                 </div>
                 {
@@ -252,12 +259,4 @@ export class ReferencesWidget extends React.Component<Props, State> {
             this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true })
         }
     }
-}
-
-function getRefURL(ref: Reference, rev: string): string {
-    if (rev) {
-        rev = `@${rev}`
-    }
-    const uri = URI.parse(ref.uri)
-    return `/${uri.hostname}${uri.path}${rev}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`
 }

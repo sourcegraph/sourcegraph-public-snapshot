@@ -26,7 +26,7 @@ export function triggerReferences(context: ReferencesContext): void {
             .then(defInfo => {
                 if (!defInfo) { throw new Error('no xrefs') }
 
-                fetchDependencyReferences(context.loc.repoURI, context.loc.rev, context.loc.path, 40, 25).then(data => {
+                fetchDependencyReferences(context.loc.repoURI, context.loc.rev, context.loc.path, context.loc.line - 1, context.loc.char - 1).then(data => {
                     if (!data || !data.repoData.repos) { throw new Error('no xrefs') }
                     const idToRepo = (id: number): any => {
                         const i = data.repoData.repoIds.indexOf(id)
