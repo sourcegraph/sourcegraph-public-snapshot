@@ -49,7 +49,8 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
                             });
 
                     }
-                    return Observable.fromPromise(Promise.resolve({} as ResolvedRev));
+                    const resolved: ResolvedRev = { cloneInProgress: false };
+                    return [resolved];
                 })
                 .subscribe(resolved => this.setState({ commitID: resolved.commitID }), err => console.error(err))
         );
