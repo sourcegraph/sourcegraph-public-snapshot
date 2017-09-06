@@ -36,13 +36,13 @@ func ConnectToDB(dataSource string) {
 		if _, err := globalDB.Query("select id from repo limit 0;"); err == nil {
 			// no version in DB, but "repo" table exists
 			if err := globalMigrate.Force(1503575588); err != nil {
-				log.Fatal(err)
+				log.Fatal("error force migrating DB: " + err.Error())
 			}
 		}
 	}
 
 	if err := globalMigrate.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal(err)
+		log.Fatal("error migrating DB: " + err.Error())
 	}
 }
 
