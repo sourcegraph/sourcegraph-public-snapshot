@@ -9,7 +9,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { Home } from 'sourcegraph/home/Home'
 import { Navbar } from 'sourcegraph/nav/Navbar'
 import { ResolvedRev, resolveRev } from 'sourcegraph/repo/backend'
-import { Repository } from 'sourcegraph/repo/Repository'
+import { Repository, RepositoryCloneInProgress } from 'sourcegraph/repo/Repository'
 import { SearchResults } from 'sourcegraph/search/SearchResults'
 import * as activeRepos from 'sourcegraph/util/activeRepos'
 import { ParsedRouteProps, parseRouteProps } from 'sourcegraph/util/routes'
@@ -22,6 +22,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 interface WithResolvedRevProps {
     component: any
+    cloningComponent?: any
     repoPath?: string
     rev?: string
     [key: string]: any
@@ -29,12 +30,14 @@ interface WithResolvedRevProps {
 
 interface WithResolvedRevState {
     commitID?: string
+    cloneInProgress: boolean
 }
 
 class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolvedRevState> {
-    public state: WithResolvedRevState = {}
+    public state: WithResolvedRevState = { cloneInProgress: false }
     private componentUpdates = new Subject<WithResolvedRevProps>()
     private subscriptions = new Subscription()
+    private cloneInProgressRefetchTimers: any[] = []
 
     constructor(props: WithResolvedRevProps) {
         super(props)
@@ -52,7 +55,13 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
                     const resolved: ResolvedRev = { cloneInProgress: false }
                     return [resolved]
                 })
-                .subscribe(resolved => this.setState({ commitID: resolved.commitID }), err => console.error(err))
+                .subscribe(resolved => {
+                    if (resolved.cloneInProgress) {
+                         // refetch every 5 seconds
+                        this.cloneInProgressRefetchTimers.push(setTimeout(() => this.componentUpdates.next(this.props), 5000))
+                    }
+                    this.setState(resolved)
+                }, err => console.error(err))
         )
     }
 
@@ -63,17 +72,26 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
     public componentWillReceiveProps(nextProps: WithResolvedRevProps): void {
         if (this.props.repoPath !== nextProps.repoPath || this.props.rev !== nextProps.rev) {
             // clear state so the child won't render until the revision is resolved for new props
-            this.state = {}
+            this.state = { cloneInProgress: false }
             this.componentUpdates.next(nextProps)
         }
     }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+        for (const timer of this.cloneInProgressRefetchTimers) {
+            clearTimeout(timer)
+        }
+        this.cloneInProgressRefetchTimers = []
     }
 
     public render(): JSX.Element | null {
+        if (this.props.cloningComponent && this.state.cloneInProgress) {
+            return <this.props.cloningComponent {...this.props} />
+        }
         if (this.props.repoPath && !this.state.commitID) {
+            // commit not yet resolved but required if repoPath prop is provided;
+            // render empty until commit resolved
             return null
         }
         return <this.props.component {...this.props} commitID={this.state.commitID} />
@@ -87,7 +105,7 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
                 return <SearchResults />
 
             case 'repository':
-                return <WithResolvedRev {...this.props} component={Repository} />
+                return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} />
 
             default:
                 return null
@@ -103,7 +121,7 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
         const props = parseRouteProps(this.props)
         return (
             <div className='layout'>
-                <WithResolvedRev {...props} component={Navbar} />
+                <WithResolvedRev {...props} component={Navbar} cloningComponent={Navbar} />
                 <div className='layout__app-router-container'>
                     <AppRouter {...props} />
                 </div>

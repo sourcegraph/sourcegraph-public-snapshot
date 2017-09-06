@@ -213,3 +213,26 @@ export class Repository extends React.Component<Props, State> {
         }
     }
 }
+
+export class RepositoryCloneInProgress extends React.Component<Props, {}> {
+    public render(): JSX.Element | null {
+        return (
+            <div className='repository'>
+                <RepoNav {...this.props} onClickNavigation={() => void(0)} />
+            <div className='repository__content'>
+                <div className='repository__viewer'>
+                    <div className='repository__no-file'>
+                        <div className='repository__icon-fab'>
+                            <BookClosed />
+                        </div>
+                        <div className='repository__uri-title'>
+                            {this.props.repoPath.split('/').slice(1).join('/')}
+                        </div>
+                        <div className='repository__subtitle'>Cloning in progress...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        )
+    }
+}
