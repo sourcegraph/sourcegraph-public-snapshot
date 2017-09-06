@@ -14,34 +14,6 @@
     font-family: 'Menlo';
     font-size: 12px;
 
-    &-highlighting-aborted, &-highlighting-error {
-        font-family: system;
-        font-size: 12px;
-        color: #93A9C8;
-        background-color: #1c2736;
-        display: flex;
-        padding: .5em;
-        line-height: 2em;
-
-        .icon {
-            margin-right: .25em;
-            width: 1.5rem;
-            height: 2em;
-            fill: currentColor;
-            text-align: center;
-            display: inline-block;
-            > svg {
-                width: 1.5rem;
-            }
-        }
-    }
-    &-highlighting-aborted {
-        font-weight: normal;
-    }
-    &-highlighting-error {
-        font-weight: bold;
-    }
-
     table {
         border-collapse: collapse;
     }

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"path"
 	"strings"
@@ -43,14 +44,28 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	return string(contents), nil
 }
 
-type highlightedFileResolver struct {
-	isBinary, aborted bool
-	html              string
+func (r *fileResolver) Binary(ctx context.Context) (bool, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.isBinary([]byte(content)), nil
 }
 
-func (h *highlightedFileResolver) IsBinary() bool { return h.isBinary }
-func (h *highlightedFileResolver) Aborted() bool  { return h.aborted }
-func (h *highlightedFileResolver) HTML() string   { return h.html }
+// isBinary is a helper to tell if the content of a file is binary or not. It
+// is used instead of utf8.Valid in case we ever need to add e.g. extension
+// specific checks in addition to checking if the content is valid utf8.
+func (r *fileResolver) isBinary(content []byte) bool {
+	return !utf8.Valid(content)
+}
+
+type highlightedFileResolver struct {
+	aborted bool
+	html    string
+}
+
+func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
+func (h *highlightedFileResolver) HTML() string  { return h.html }
 
 func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	DisableTimeout bool
@@ -68,21 +83,21 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	result := &highlightedFileResolver{
-		isBinary: !utf8.Valid(code),
+	// Never pass binary files to the syntax highlighter.
+	if r.isBinary(code) {
+		return nil, errors.New("cannot render binary file")
 	}
-	if !result.isBinary {
-		// Highlight the code.
-		var (
-			err  error
-			html template.HTML
-		)
-		html, result.aborted, err = highlight.Code(ctx, string(code), strings.TrimPrefix(path.Ext(r.path), "."), args.DisableTimeout)
-		if err != nil {
-			return nil, err
-		}
-		result.html = string(html)
+
+	// Highlight the code.
+	var (
+		html   template.HTML
+		result = &highlightedFileResolver{}
+	)
+	html, result.aborted, err = highlight.Code(ctx, string(code), strings.TrimPrefix(path.Ext(r.path), "."), args.DisableTimeout)
+	if err != nil {
+		return nil, err
 	}
+	result.html = string(html)
 	return result, nil
 }
 

@@ -46,7 +46,6 @@ export const fetchHighlightedFile = memoizedFetch((ctx: { repoPath: string, comm
                     commit {
                         file(path: $filePath) {
                             highlight(disableTimeout: $disableTimeout) {
-                                isBinary
                                 aborted
                                 html
                             }

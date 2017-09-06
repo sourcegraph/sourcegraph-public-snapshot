@@ -12,6 +12,31 @@
 
     border-bottom: 1px solid #233043;
 
+    &__blob-alert {
+        font-family: system;
+        font-size: 12px;
+        color: #93A9C8;
+        background-color: #1c2736;
+        display: flex;
+        padding: .5em;
+        line-height: 2em;
+
+        .icon {
+            margin-right: .25em;
+            width: 1.5rem;
+            height: 2em;
+            fill: currentColor;
+            text-align: center;
+            display: inline-block;
+            > svg {
+                width: 1.5rem;
+            }
+        }
+        &--error {
+            font-weight: bold;
+        }
+    }
+
     &__content {
         flex: 1 1 auto;
         display: flex;

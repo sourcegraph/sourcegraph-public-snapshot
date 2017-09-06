@@ -32,7 +32,6 @@ declare namespace GQL {
   */
   interface IRoot {
     __typename: "Root";
-    organization: IOrganization | null;
     repository: IRepository | null;
     repositories: Array<IRepository>;
     remoteRepositories: Array<IRemoteRepository>;
@@ -45,20 +44,6 @@ declare namespace GQL {
     searchProfiles: Array<ISearchProfile>;
     revealCustomerCompany: ICompanyProfile | null;
     threads: Array<IThread>;
-  }
-
-  /*
-    description: null
-  */
-  interface IOrganization {
-    __typename: "Organization";
-    login: string;
-    githubId: number;
-    email: string;
-    name: string;
-    avatarURL: string;
-    description: string;
-    collaborators: number;
   }
 
   /*
@@ -146,6 +131,7 @@ declare namespace GQL {
     __typename: "File";
     name: string;
     content: string;
+    binary: boolean;
     highlight: IHighlightedFile;
     blame: Array<IHunk>;
     commits: Array<ICommitInfo>;
@@ -158,7 +144,6 @@ declare namespace GQL {
   */
   interface IHighlightedFile {
     __typename: "HighlightedFile";
-    isBinary: boolean;
     aborted: boolean;
     html: string;
   }

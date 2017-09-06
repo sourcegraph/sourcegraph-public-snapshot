@@ -79,29 +79,27 @@ export class Repository extends React.Component<Props, State> {
 
         const [contentUpdatesWithFile, contentUpdatesWithoutFile] = Observable.merge(
             this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
-            this.showAnywayButtonClicks.map(() => ({ ...props, showHighlightingAnyway: true }))
+            this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
         ).partition(props => Boolean(props.filePath))
 
         // Transitions to routes with file should update file contents
         this.subscriptions.add(
             contentUpdatesWithFile
                 .switchMap(props =>
-                    fetchHighlightedFile({
+                    Observable.fromPromise(fetchHighlightedFile({
                         repoPath: props.repoPath,
                         commitID: props.commitID,
                         filePath: props.filePath!,
                         disableTimeout: props.showHighlightingAnyway
+                    })).catch(err => {
+                        this.setState({ highlightedFile: undefined, highlightingError: err })
+                        console.error(err)
+                        return []
                     })
-                    .catch(err => Promise.resolve(err))
                 )
                 .subscribe(
-                    result => {
-                        if (result instanceof Error) {
-                            this.setState({ highlightedFile: undefined, highlightingError: result })
-                        } else {
-                            this.setState({ highlightedFile: result, highlightingError: undefined })
-                        }
-                    }
+                    result => this.setState({ highlightedFile: result, highlightingError: undefined }),
+                    err => console.error(err)
                 )
         )
         // Transitions to routes without file should unset file contents
@@ -170,14 +168,15 @@ export class Repository extends React.Component<Props, State> {
                         }
                         {
                             this.state.highlightingError &&
-                                <p className='blob-highlighting-error'><ErrorIcon />{this.state.highlightingError.message}</p>
+                                <p className='repository__blob-alert repository__blob-alert--error'><ErrorIcon />{this.state.highlightingError.message}</p>
                         }
                         {
                             this.state.highlightedFile && this.state.highlightedFile.aborted &&
-                                <p className='blob-highlighting-aborted'>
+                                <p className='repository__blob-alert'>
                                     <ErrorIcon />
                                     Syntax highlighting for this file has been disabled because it took too long.
-                                    (<span onClick={() => this.showAnywayButtonClicks.next()}>show anyway</span>)
+                                    (<a href='#' onClick={this.handleShowAnywayButtonClick}>show anyway</a>)
+                                    {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
                                 </p>
                         }
                         {
@@ -197,6 +196,11 @@ export class Repository extends React.Component<Props, State> {
                 </div>
             </div>
         )
+    }
+
+    private handleShowAnywayButtonClick = e => {
+        e.preventDefault()
+        this.showAnywayButtonClicks.next()
     }
 
     private selectTreePath = (path: string, isDir: boolean) => {

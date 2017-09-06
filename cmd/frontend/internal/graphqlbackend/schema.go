@@ -164,7 +164,6 @@ type Directory {
 }
 
 type HighlightedFile {
-	isBinary: Boolean!
 	aborted: Boolean!
 	html: String!
 }
@@ -172,6 +171,7 @@ type HighlightedFile {
 type File {
 	name: String!
 	content: String!
+	binary: Boolean!
 	highlight(disableTimeout: Boolean!): HighlightedFile!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!
