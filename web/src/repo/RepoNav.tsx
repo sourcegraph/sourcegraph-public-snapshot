@@ -1,32 +1,32 @@
-import BookClosed from '@sourcegraph/icons/lib/BookClosed';
-import List from '@sourcegraph/icons/lib/List';
-import Share from '@sourcegraph/icons/lib/Share';
-import * as copy from 'copy-to-clipboard';
-import * as H from 'history';
-import * as React from 'react';
-import * as GitHub from 'react-icons/lib/go/mark-github';
-import { RepoBreadcrumb } from 'sourcegraph/components/Breadcrumb';
-import { events } from 'sourcegraph/tracking/events';
-import * as url from 'sourcegraph/util/url';
-import * as URI from 'urijs';
+import BookClosed from '@sourcegraph/icons/lib/BookClosed'
+import List from '@sourcegraph/icons/lib/List'
+import Share from '@sourcegraph/icons/lib/Share'
+import * as copy from 'copy-to-clipboard'
+import * as H from 'history'
+import * as React from 'react'
+import * as GitHub from 'react-icons/lib/go/mark-github'
+import { RepoBreadcrumb } from 'sourcegraph/components/Breadcrumb'
+import { events } from 'sourcegraph/tracking/events'
+import * as url from 'sourcegraph/util/url'
+import * as URI from 'urijs'
 
 interface RepoSubnavProps {
-    repoPath: string;
-    rev?: string;
-    filePath?: string;
-    onClickNavigation: () => void;
-    location: H.Location;
+    repoPath: string
+    rev?: string
+    filePath?: string
+    onClickNavigation: () => void
+    location: H.Location
 }
 
 interface RepoSubnavState {
-    copiedLink?: boolean;
+    copiedLink?: boolean
 }
 
 export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
-    public state: RepoSubnavState = {};
+    public state: RepoSubnavState = {}
 
     public render(): JSX.Element | null {
-        const hash = url.parseHash(this.props.location.hash);
+        const hash = url.parseHash(this.props.location.hash)
         return <div className='repo-nav'>
             <span className='explorer' onClick={this.props.onClickNavigation}>
                 <List />
@@ -38,16 +38,16 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             </span>
             <span className='fill' />
             <span className='share' onClick={() => {
-                events.ShareButtonClicked.log();
+                events.ShareButtonClicked.log()
 
-                const shareLink = URI.parse(window.location.href); // TODO(john): use this.props.location
-                shareLink.query = (shareLink.query ? `${shareLink.query}&` : '') + 'utm_source=share';
-                copy(URI.build(shareLink));
-                this.setState({ copiedLink: true });
+                const shareLink = URI.parse(window.location.href) // TODO(john): use this.props.location
+                shareLink.query = (shareLink.query ? `${shareLink.query}&` : '') + 'utm_source=share'
+                copy(URI.build(shareLink))
+                this.setState({ copiedLink: true })
 
                 setTimeout(() => {
-                    this.setState({ copiedLink: undefined });
-                }, 3000);
+                    this.setState({ copiedLink: undefined })
+                }, 3000)
             }}>
                 {this.state.copiedLink ? 'Copied link to clipboard!' : 'Share'}
                 <Share />
@@ -57,6 +57,6 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                     View on GitHub
                 <GitHub className='github-icon' /* TODO(john): use icon library */ />
                 </a>}
-        </div>;
+        </div>
     }
 }

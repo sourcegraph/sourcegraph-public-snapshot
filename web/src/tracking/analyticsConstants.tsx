@@ -105,7 +105,7 @@ export const EventCategories = {
      * Other/misc
      */
     Unknown: 'Unknown'
-};
+}
 
 export const EventActions = {
     /**
@@ -165,4 +165,4 @@ export const EventActions = {
      */
     Passive: 'Passive',
     Unknown: 'Unknown'
-};
+}

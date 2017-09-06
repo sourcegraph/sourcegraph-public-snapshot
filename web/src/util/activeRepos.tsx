@@ -1,10 +1,10 @@
-import { fetchActiveRepos } from 'sourcegraph/backend';
-import { ActiveRepoResults } from 'sourcegraph/util/types';
+import { fetchActiveRepos } from 'sourcegraph/backend'
+import { ActiveRepoResults } from 'sourcegraph/util/types'
 
-const localStorageKey = 'activeRepos';
+const localStorageKey = 'activeRepos'
 
 interface LocalStorage extends GQL.IActiveRepoResults {
-    timestamp: number;
+    timestamp: number
 }
 
 /**
@@ -15,14 +15,14 @@ export function get(): Promise<ActiveRepoResults> {
     // Uncomment to debug the non-cached path more easily:
     // window.localStorage.setItem(localStorageKey, "");
 
-    let activeRepos: LocalStorage;
-    const data = window.localStorage.getItem(localStorageKey);
+    let activeRepos: LocalStorage
+    const data = window.localStorage.getItem(localStorageKey)
     if (data) {
-        activeRepos = JSON.parse(data);
-        const halfHour = 30 * 60 * 1000; // 30m * 60s * 1000ms == 30m in milliseconds
+        activeRepos = JSON.parse(data)
+        const halfHour = 30 * 60 * 1000 // 30m * 60s * 1000ms == 30m in milliseconds
         if (activeRepos.timestamp && (Date.now() - activeRepos.timestamp) < halfHour) {
             // data exists and isn't stale.
-            return Promise.resolve(activeRepos);
+            return Promise.resolve(activeRepos)
         }
     }
 
@@ -34,18 +34,18 @@ export function get(): Promise<ActiveRepoResults> {
                 timestamp: Date.now(),
                 active: res.active,
                 inactive: res.inactive
-            };
-            window.localStorage.setItem(localStorageKey, JSON.stringify(activeRepos));
-            return activeRepos;
+            }
+            window.localStorage.setItem(localStorageKey, JSON.stringify(activeRepos))
+            return activeRepos
         }
-        return activeRepos;
-    });
+        return activeRepos
+    })
 }
 
 export function getCurrent(): ActiveRepoResults | null {
-    const data = window.localStorage.getItem(localStorageKey);
+    const data = window.localStorage.getItem(localStorageKey)
     if (data) {
-        return JSON.parse(data) as ActiveRepoResults;
+        return JSON.parse(data) as ActiveRepoResults
     }
-    return null;
+    return null
 }

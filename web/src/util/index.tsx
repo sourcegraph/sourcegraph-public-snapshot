@@ -1,8 +1,8 @@
-import * as H from 'history';
-import * as moment from 'moment';
-import { triggerBlame } from 'sourcegraph/blame';
-import { CodeCell } from 'sourcegraph/util/types';
-import * as url from 'sourcegraph/util/url';
+import * as H from 'history'
+import * as moment from 'moment'
+import { triggerBlame } from 'sourcegraph/blame'
+import { CodeCell } from 'sourcegraph/util/types'
+import * as url from 'sourcegraph/util/url'
 
 /**
  * supportedExtensions are the file extensions
@@ -15,7 +15,7 @@ export const supportedExtensions = new Set<string>([
     'java', // Java
     'py', // Python
     'php' // PHP
-]);
+])
 
 /**
  * getModeFromExtension returns the LSP mode for the
@@ -30,42 +30,42 @@ export function getModeFromExtension(ext: string): string {
         case 'adb':
         case 'ada':
         case 'ads':
-            return 'ada';
+            return 'ada'
 
         // Actionscript
         case 'as':
-            return 'actionscript';
+            return 'actionscript'
 
         // Apache
         case 'apacheconf':
-            return 'apache';
+            return 'apache'
 
         // Applescript
         case 'applescript':
         case 'scpt':
-            return 'applescript';
+            return 'applescript'
 
         // Bash
         case 'sh':
         case 'bash':
         case 'zsh':
-            return 'bash';
+            return 'bash'
 
         // Clojure
         case 'clj':
         case 'cljs':
         case 'cljx':
-            return 'clojure';
+            return 'clojure'
 
         // CSS
         case 'css':
-            return 'css';
+            return 'css'
 
         // CMake
         case 'cmake':
         case 'cmake.in':
         case 'in': // TODO(john): hack b/c we don't properly parse extensions w/ '.' in them
-            return 'cmake';
+            return 'cmake'
 
         // Coffeescript
         case 'coffee':
@@ -73,49 +73,49 @@ export function getModeFromExtension(ext: string): string {
         case 'cson':
         case 'cjsx':
         case 'iced':
-            return 'coffescript';
+            return 'coffescript'
 
         // C#
         case 'cs':
         case 'csx':
-            return 'cs';
+            return 'cs'
 
         // C++
         case 'c++':
         case 'h++':
         case 'hh':
-            return 'cpp';
+            return 'cpp'
 
         // Dart
         case 'dart':
-            return 'dart';
+            return 'dart'
 
         // Diff
         case 'diff':
         case 'patch':
-            return 'diff';
+            return 'diff'
 
         // Django
         case 'jinja':
-            return 'django';
+            return 'django'
 
         // DOS
         case 'bat':
         case 'cmd':
-            return 'dos';
+            return 'dos'
 
         // Elixir
         case 'ex':
         case 'exs':
-            return 'elixir';
+            return 'elixir'
 
         // Elm
         case 'elm':
-            return 'elm';
+            return 'elm'
 
         // Erlang
         case 'erl':
-            return 'erlang';
+            return 'erlang'
 
         // Fortran
         case 'f':
@@ -126,35 +126,35 @@ export function getModeFromExtension(ext: string): string {
         case 'forth':
         case '4th':
         case 'fth':
-            return 'fortran';
+            return 'fortran'
 
         // F#
         case 'fs':
-            return 'fsharp';
+            return 'fsharp'
 
         // Go
         case 'go':
-            return 'go';
+            return 'go'
 
         // HAML
         case 'haml':
-            return 'haml';
+            return 'haml'
 
         // Handlebars
         case 'hbs':
         case 'handlebars':
-            return 'handlebars';
+            return 'handlebars'
 
         // Haskell
         case 'hs':
         case 'hsc':
-            return 'haskell';
+            return 'haskell'
 
         // HTML
         case 'htm':
         case 'html':
         case 'xhtml':
-            return 'html';
+            return 'html'
 
         // INI
         case 'ini':
@@ -162,11 +162,11 @@ export function getModeFromExtension(ext: string): string {
         case 'prefs':
         case 'pro':
         case 'properties':
-            return 'ini';
+            return 'ini'
 
         // Java
         case 'java':
-            return 'java';
+            return 'java'
 
         // JavaScript
         case 'js':
@@ -175,7 +175,7 @@ export function getModeFromExtension(ext: string): string {
         case 'es6':
         case 'jss':
         case 'jsm':
-            return 'javascript';
+            return 'javascript'
 
         // JSON
         case 'json':
@@ -186,21 +186,21 @@ export function getModeFromExtension(ext: string): string {
         case 'sublime-project':
         case 'sublime-settings':
         case 'sublime-workspace':
-            return 'json';
+            return 'json'
 
         // Julia
         case 'jl':
-            return 'julia';
+            return 'julia'
 
         // Kotlin
         case 'kt':
         case 'ktm':
         case 'kts':
-            return 'kotlin';
+            return 'kotlin'
 
         // Less
         case 'less':
-            return 'less';
+            return 'less'
 
         // Lisp
         case 'lisp':
@@ -212,7 +212,7 @@ export function getModeFromExtension(ext: string): string {
         case 'podsl':
         case 'sexp':
         case 'el':
-            return 'lisp';
+            return 'lisp'
 
         // Lua
         case 'lua':
@@ -221,27 +221,27 @@ export function getModeFromExtension(ext: string): string {
         case 'pd_lua':
         case 'rbxs':
         case 'wlua':
-            return 'lua';
+            return 'lua'
 
         // Makefile
         case 'mk':
         case 'mak':
-            return 'makefile';
+            return 'makefile'
 
         // Markdown
         case 'md':
         case 'mkdown':
         case 'mkd':
-            return 'markdown';
+            return 'markdown'
 
         // nginx
         case 'nginxconf':
-            return 'nginx';
+            return 'nginx'
 
         // Objective-C
         case 'm':
         case 'mm':
-            return 'objectivec';
+            return 'objectivec'
 
         // OCaml
         case 'ml':
@@ -251,7 +251,7 @@ export function getModeFromExtension(ext: string): string {
         case 'mli':
         case 'mll':
         case 'mly':
-            return 'ocaml';
+            return 'ocaml'
 
         // Perl
         case 'pl':
@@ -265,7 +265,7 @@ export function getModeFromExtension(ext: string): string {
         case 'pod':
         case 'psgi':
         case 't':
-            return 'perl';
+            return 'perl'
 
         // PHP
         case 'php':
@@ -276,17 +276,17 @@ export function getModeFromExtension(ext: string): string {
         case 'php6':
         case 'php7':
         case 'phps':
-            return 'php';
+            return 'php'
 
         // Powershell
         case 'ps1':
         case 'psd1':
         case 'psm1':
-            return 'powershell';
+            return 'powershell'
 
         // Proto
         case 'proto':
-            return 'protobuf';
+            return 'protobuf'
 
         // Python
         case 'py':
@@ -295,13 +295,13 @@ export function getModeFromExtension(ext: string): string {
         case 'pyo':
         case 'pyw':
         case 'pyz':
-            return 'python';
+            return 'python'
 
         // R
         case 'r':
         case 'rd':
         case 'rsx':
-            return 'r';
+            return 'r'
 
         // Ruby
         case 'rb':
@@ -324,23 +324,23 @@ export function getModeFromExtension(ext: string): string {
         case 'spec':
         case 'thor':
         case 'watchr':
-            return 'ruby';
+            return 'ruby'
 
         // Rust
         case 'rs':
         case 'rs.in':
-            return 'rust';
+            return 'rust'
 
         // SASS
         case 'sass':
         case 'scss':
-            return 'scss';
+            return 'scss'
 
         // Scala
         case 'sbt':
         case 'sc':
         case 'scala':
-            return 'scala';
+            return 'scala'
 
         // Scheme
         case 'scm':
@@ -348,51 +348,51 @@ export function getModeFromExtension(ext: string): string {
         case 'sls':
         case 'sps':
         case 'ss':
-            return 'scheme';
+            return 'scheme'
 
         // Smalltalk
         case 'st':
-            return 'smalltalk';
+            return 'smalltalk'
 
         // SQL
         case 'sql':
-            return 'sql';
+            return 'sql'
 
         // Stylus
         case 'styl':
-            return 'stylus';
+            return 'stylus'
 
         // Swift
         case 'swift':
-            return 'swift';
+            return 'swift'
 
         // Thrift
         case 'thrift':
-            return 'thrift';
+            return 'thrift'
 
         // TypeScript
         case 'ts':
         case 'tsx':
-            return 'typescript';
+            return 'typescript'
 
         // Twig
         case 'twig':
-            return 'twig';
+            return 'twig'
 
         // Visual Basic
         case 'vb':
-            return 'vbnet';
+            return 'vbnet'
         case 'vbs':
-            return 'vbscrip';
+            return 'vbscrip'
 
         // Verilog
         case 'v':
         case 'veo':
-            return 'verilog';
+            return 'verilog'
 
         // VIM
         case 'vim':
-            return 'vim';
+            return 'vim'
 
         // XML
         case 'xml':
@@ -486,42 +486,42 @@ export function getModeFromExtension(ext: string): string {
         case 'xspec':
         case 'xul':
         case 'zcml':
-            return 'xml';
+            return 'xml'
 
         // YAML
         case 'yml':
         case 'yaml':
-            return 'yaml';
+            return 'yaml'
 
         default:
-            return '';
+            return ''
     }
 }
 
 export function getPathExtension(path: string): string {
-    const pathSplit = path.split('.');
+    const pathSplit = path.split('.')
     if (pathSplit.length === 1) {
-        return '';
+        return ''
     }
     if (pathSplit.length === 2 && pathSplit[0] === '') {
-        return ''; // e.g. .gitignore
+        return '' // e.g. .gitignore
     }
-    return pathSplit[pathSplit.length - 1].toLowerCase();
+    return pathSplit[pathSplit.length - 1].toLowerCase()
 }
 
 export function getCodeCellsForAnnotation(): CodeCell[] {
-    const table = document.querySelector('.blob > table') as HTMLTableElement;
+    const table = document.querySelector('.blob > table') as HTMLTableElement
     const cells = Array.from(table.rows).map(row => {
-        const line = parseInt(row.cells[0].getAttribute('data-line')!, 10);
-        const codeCell: HTMLTableDataCellElement = row.cells[1]; // the actual cell that has code inside; each row contains multiple columns
+        const line = parseInt(row.cells[0].getAttribute('data-line')!, 10)
+        const codeCell: HTMLTableDataCellElement = row.cells[1] // the actual cell that has code inside; each row contains multiple columns
         return {
             cell: codeCell as HTMLElement,
             eventHandler: codeCell, // allways the TD element
             line
-        };
-    });
+        }
+    })
 
-    return cells;
+    return cells
 }
 
 export function highlightLine(history: H.History, repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
@@ -531,52 +531,52 @@ export function highlightLine(history: H.History, repoURI: string, commitID: str
         commitID,
         path,
         line
-    });
+    })
 
-    const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>;
+    const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>
     for (const cellElem of currentlyHighlighted) {
-        cellElem.classList.remove('sg-highlighted');
-        cellElem.style.backgroundColor = 'inherit';
+        cellElem.classList.remove('sg-highlighted')
+        cellElem.style.backgroundColor = 'inherit'
     }
 
-    const cell = cells[line - 1];
+    const cell = cells[line - 1]
     if (!cell) {
-        return;
+        return
     }
-    cell.cell.style.backgroundColor = '#1c2736';
-    cell.cell.classList.add('sg-highlighted');
+    cell.cell.style.backgroundColor = '#1c2736'
+    cell.cell.classList.add('sg-highlighted')
 
     // Update the URL.
-    const u = url.parseBlob();
-    u.line = line;
+    const u = url.parseBlob()
+    u.line = line
 
     // Dismiss the references widget, if highlighting this line was user
     // triggered (not done automatically onload).
-    const referencesOpen = u.modal === 'references';
+    const referencesOpen = u.modal === 'references'
     if (referencesOpen && userTriggered) {
-        u.modal = undefined;
-        u.modalMode = undefined;
+        u.modal = undefined
+        u.modalMode = undefined
     }
 
     // Check URL change first, since this function can be called in response to
     // onhashchange.
     if (url.toBlob(u) === (window.location.pathname + window.location.hash)) {
-        return;
+        return
     }
 
-    history.push(url.toBlobHash(u));
+    history.push(url.toBlobHash(u))
 }
 
 export function highlightAndScrollToLine(history: H.History, repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
-    highlightLine(history, repoURI, commitID, path, line, cells, userTriggered);
+    highlightLine(history, repoURI, commitID, path, line, cells, userTriggered)
 
     // Scroll to the line.
-    const scrollingElement = document.querySelector('.blob')!;
-    const viewportBound = scrollingElement.getBoundingClientRect();
-    const blobTable = document.querySelector('.blob > table')!; // table that we're positioning tooltips relative to.
-    const tableBound = blobTable.getBoundingClientRect(); // tables bounds
-    const cell = cells[line - 1];
-    const targetBound = cell.cell.getBoundingClientRect(); // our target elements bounds
+    const scrollingElement = document.querySelector('.blob')!
+    const viewportBound = scrollingElement.getBoundingClientRect()
+    const blobTable = document.querySelector('.blob > table')! // table that we're positioning tooltips relative to.
+    const tableBound = blobTable.getBoundingClientRect() // tables bounds
+    const cell = cells[line - 1]
+    const targetBound = cell.cell.getBoundingClientRect() // our target elements bounds
 
-    scrollingElement.scrollTop = targetBound.top - tableBound.top - (viewportBound.height / 2) + (targetBound.height / 2);
+    scrollingElement.scrollTop = targetBound.top - tableBound.top - (viewportBound.height / 2) + (targetBound.height / 2)
 }

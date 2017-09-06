@@ -5,21 +5,21 @@
  * document them here.
  */
 export class PageVars {
-    public Rev: string;
-    public CommitID: string;
+    public Rev: string
+    public CommitID: string
 
     constructor(vars: any) {
         if (!vars) {
-            throw new TypeError('expected window.pageVars to exist, but it does not');
+            throw new TypeError('expected window.pageVars to exist, but it does not')
         }
-        Object.assign(this, vars);
+        Object.assign(this, vars)
     }
 }
 
 declare global {
     interface Window {
-        pageVars: PageVars;
+        pageVars: PageVars
     }
 }
 
-export const pageVars = new PageVars(window.pageVars);
+export const pageVars = new PageVars(window.pageVars)

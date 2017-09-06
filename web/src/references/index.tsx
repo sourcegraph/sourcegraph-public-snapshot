@@ -1,57 +1,57 @@
-import { fetchDependencyReferences } from 'sourcegraph/backend';
-import { fetchReferences, fetchXdefinition, fetchXreferences } from 'sourcegraph/backend/lsp';
-import { addReferences, ReferencesContext, setReferences, setReferencesLoad, setXReferencesLoad, store as referencesStore } from 'sourcegraph/references/store';
+import { fetchDependencyReferences } from 'sourcegraph/backend'
+import { fetchReferences, fetchXdefinition, fetchXreferences } from 'sourcegraph/backend/lsp'
+import { addReferences, ReferencesContext, setReferences, setReferencesLoad, setXReferencesLoad, store as referencesStore } from 'sourcegraph/references/store'
 
-const contextFetches = new Set<string>();
+const contextFetches = new Set<string>()
 
 export function triggerReferences(context: ReferencesContext): void {
-    setReferences({ ...referencesStore.getValue(), context });
+    setReferences({ ...referencesStore.getValue(), context })
 
     // HACK(john): prevent double fetching (as this will add duplicate references to our store).
-    const fetchKey = JSON.stringify(context);
+    const fetchKey = JSON.stringify(context)
     if (!contextFetches.has(fetchKey)) {
-        setReferencesLoad(context.loc, 'pending');
-        setXReferencesLoad(context.loc, 'pending');
+        setReferencesLoad(context.loc, 'pending')
+        setXReferencesLoad(context.loc, 'pending')
         fetchReferences(context.loc.char - 1, context.loc.path, context.loc.line - 1, context.loc)
             .then(references => {
                 if (references) {
-                    addReferences(context.loc, references);
+                    addReferences(context.loc, references)
                 }
-                setReferencesLoad(context.loc, 'completed');
+                setReferencesLoad(context.loc, 'completed')
             })
             .catch(() => {
-                setReferencesLoad(context.loc, 'completed');
-            });
+                setReferencesLoad(context.loc, 'completed')
+            })
         fetchXdefinition(context.loc.char - 1, context.loc.path, context.loc.line - 1, context.loc)
             .then(defInfo => {
-                if (!defInfo) { throw new Error('no xrefs'); }
+                if (!defInfo) { throw new Error('no xrefs') }
 
                 fetchDependencyReferences(context.loc.repoURI, context.loc.rev, context.loc.path, 40, 25).then(data => {
-                    if (!data || !data.repoData.repos) { throw new Error('no xrefs'); }
+                    if (!data || !data.repoData.repos) { throw new Error('no xrefs') }
                     const idToRepo = (id: number): any => {
-                        const i = data.repoData.repoIds.indexOf(id);
-                        if (i === -1) { throw new Error('repo id not found'); }
-                        return data.repoData.repos[i];
-                    };
+                        const i = data.repoData.repoIds.indexOf(id)
+                        if (i === -1) { throw new Error('repo id not found') }
+                        return data.repoData.repos[i]
+                    }
 
                     const retVal = data.dependencyReferenceData.references.map(ref => {
-                        const repo = idToRepo(ref.repoId);
-                        const commit = repo.lastIndexedRevOrLatest.commit;
-                        const workspace = commit ? { uri: repo.uri, rev: repo.lastIndexedRevOrLatest.commit.sha1 } : undefined;
+                        const repo = idToRepo(ref.repoId)
+                        const commit = repo.lastIndexedRevOrLatest.commit
+                        const workspace = commit ? { uri: repo.uri, rev: repo.lastIndexedRevOrLatest.commit.sha1 } : undefined
                         return {
                             workspace,
                             hints: ref.hints ? JSON.parse(ref.hints) : {}
-                        };
-                    }).filter(dep => dep.workspace); // possibly slice to MAX_DEPENDENT_REPOS (10)
+                        }
+                    }).filter(dep => dep.workspace) // possibly slice to MAX_DEPENDENT_REPOS (10)
 
-                    return retVal;
+                    return retVal
                 }).then(dependents => {
                     if (!dependents) {
-                        throw new Error('no xrefs'); // no results, map below would fail.
+                        throw new Error('no xrefs') // no results, map below would fail.
                     }
                     return Promise.all(dependents.map(dependent => {
                         if (!dependent.workspace) {
-                            return undefined;
+                            return undefined
                         }
                         // const refs2Locations = (references: ReferenceInformation[]): vscode.Location[] => {
                         //     return references.map(r => this.currentWorkspaceClient.protocol2CodeConverter.asLocation(r.reference));
@@ -59,18 +59,18 @@ export function triggerReferences(context: ReferencesContext): void {
                         // const params: WorkspaceReferencesParams = { query: defInfo.symbol, hints: dependent.hints, limit: 50 };
                         return fetchXreferences(dependent.workspace, context.loc.path, defInfo.symbol, dependent.hints, 50).then(refs => {
                             if (refs) {
-                                addReferences(context.loc, refs);
+                                addReferences(context.loc, refs)
                             }
-                        });
+                        })
                     })).then(() => {
-                        setXReferencesLoad(context.loc, 'completed');
-                    });
+                        setXReferencesLoad(context.loc, 'completed')
+                    })
                 }).catch(() => {
-                    setXReferencesLoad(context.loc, 'completed');
-                });
+                    setXReferencesLoad(context.loc, 'completed')
+                })
             }).catch(() => {
-                setXReferencesLoad(context.loc, 'completed');
-            });
+                setXReferencesLoad(context.loc, 'completed')
+            })
     }
-    contextFetches.add(JSON.stringify(context));
+    contextFetches.add(JSON.stringify(context))
 }

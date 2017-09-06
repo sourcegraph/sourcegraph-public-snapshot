@@ -1,58 +1,58 @@
-import { highlightBlock } from 'highlight.js';
-import * as React from 'react';
-import * as VisibilitySensor from 'react-visibility-sensor';
-import { fetchBlobContent } from 'sourcegraph/repo/backend';
-import { getModeFromExtension, getPathExtension } from 'sourcegraph/util';
-import { highlightNode } from 'sourcegraph/util/dom';
-import { BlobPosition } from 'sourcegraph/util/types';
+import { highlightBlock } from 'highlight.js'
+import * as React from 'react'
+import * as VisibilitySensor from 'react-visibility-sensor'
+import { fetchBlobContent } from 'sourcegraph/repo/backend'
+import { getModeFromExtension, getPathExtension } from 'sourcegraph/util'
+import { highlightNode } from 'sourcegraph/util/dom'
+import { BlobPosition } from 'sourcegraph/util/types'
 
 interface Props extends BlobPosition {
     // How many extra lines to show in the excerpt before/after the ref.
-    previewWindowExtraLines?: number;
-    highlightLength: number;
+    previewWindowExtraLines?: number
+    highlightLength: number
 }
 
 interface State {
-    blobLines?: string[];
+    blobLines?: string[]
 }
 
 export class CodeExcerpt extends React.Component<Props, State> {
     constructor(props: Props) {
-        super(props);
-        this.state = {};
+        super(props)
+        this.state = {}
     }
 
     public getPreviewWindowLines(): number[] {
-        const targetLine = this.props.line;
-        let res = [targetLine];
+        const targetLine = this.props.line
+        let res = [targetLine]
         for (let i = targetLine - this.props.previewWindowExtraLines!; i < targetLine + this.props.previewWindowExtraLines! + 1; ++i) {
             if (i > 0 && i < targetLine) {
-                res = [i].concat(res);
+                res = [i].concat(res)
             }
             if (this.state.blobLines) {
                 if (i < this.state.blobLines!.length && i > targetLine) {
-                    res = res.concat([i]);
+                    res = res.concat([i])
                 }
             } else {
                 if (i > targetLine) {
-                    res = res.concat([i]);
+                    res = res.concat([i])
                 }
             }
         }
-        return res;
+        return res
     }
 
     public onChangeVisibility(isVisible: boolean): void {
         if (isVisible) {
             fetchBlobContent({repoPath: this.props.uri, commitID: this.props.rev, filePath: this.props.path}).then(content => {
                 if (content) {
-                    const blobLines = content.split('\n');
-                    this.setState({ blobLines });
+                    const blobLines = content.split('\n')
+                    this.setState({ blobLines })
                 }
             }).catch(e => {
                 // TODO(slimsag): display error in UX
-                console.error('failed to fetch blob content', e);
-            });
+                console.error('failed to fetch blob content', e)
+            })
         }
     }
 
@@ -68,9 +68,9 @@ export class CodeExcerpt extends React.Component<Props, State> {
                                     <td className={'code-excerpt__code-line ' + getModeFromExtension(getPathExtension(this.props.path))}
                                         ref={!this.state.blobLines ? undefined : el => {
                                             if (el) {
-                                                highlightBlock(el);
+                                                highlightBlock(el)
                                                 if (i === this.props.line) {
-                                                    highlightNode(el, this.props.char!, this.props.highlightLength);
+                                                    highlightNode(el, this.props.char!, this.props.highlightLength)
                                                 }
                                             }
                                         }}>
@@ -86,6 +86,6 @@ export class CodeExcerpt extends React.Component<Props, State> {
                     </tbody>
                 </table>
             </VisibilitySensor>
-        );
+        )
     }
 }

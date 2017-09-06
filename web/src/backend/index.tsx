@@ -1,7 +1,7 @@
-import 'rxjs/add/operator/toPromise';
-import { SearchParams } from 'sourcegraph/search';
-import * as util from 'sourcegraph/util';
-import { queryGraphQL } from './graphql';
+import 'rxjs/add/operator/toPromise'
+import { SearchParams } from 'sourcegraph/search'
+import * as util from 'sourcegraph/util'
+import { queryGraphQL } from './graphql'
 
 export function fetchBlameFile(repo: string, rev: string, path: string, startLine: number, endLine: number): Promise<GQL.IHunk[] | null> {
     const p = queryGraphQL(`
@@ -41,12 +41,12 @@ export function fetchBlameFile(repo: string, rev: string, path: string, startLin
             !result.data.root.repository.commit.commit ||
             !result.data.root.repository.commit.commit.file ||
             !result.data.root.repository.commit.commit.file.blame) {
-            console.error('unexpected BlameFile response:', result);
-            return null;
+            console.error('unexpected BlameFile response:', result)
+            return null
         }
-        return result.data.root.repository.commit.commit.file.blame;
-    });
-    return p;
+        return result.data.root.repository.commit.commit.file.blame
+    })
+    return p
 }
 
 export function fetchRepos(query: string): Promise<GQL.IRepository[]> {
@@ -66,16 +66,16 @@ export function fetchRepos(query: string): Promise<GQL.IRepository[]> {
         if (!result.data ||
             !result.data.root ||
             !result.data.root.repositories) {
-            return [];
+            return []
         }
 
-        return result.data.root.repositories;
-    });
-    return p;
+        return result.data.root.repositories
+    })
+    return p
 }
 
 export function fetchDependencyReferences(repo: string, rev: string, path: string, line: number, character: number): Promise<GQL.IDependencyReferences | null> {
-    const mode = util.getModeFromExtension(util.getPathExtension(path));
+    const mode = util.getModeFromExtension(util.getPathExtension(path))
     const p = queryGraphQL(`
         query DependencyReferences($repo: String, $rev: String, $mode: String, $line: Int, $character: Int) {
             root {
@@ -126,29 +126,29 @@ export function fetchDependencyReferences(repo: string, rev: string, path: strin
             !result.data.root.repository.commit.commit.file.dependencyReferences.repoData ||
             !result.data.root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData ||
             !result.data.root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData.references.length) {
-            return null;
+            return null
         }
 
-        return result.data.root.repository.commit.commit.file.dependencyReferences;
-    });
-    return p;
+        return result.data.root.repository.commit.commit.file.dependencyReferences
+    })
+    return p
 }
 
 export interface SearchResult {
-    limitHit: boolean;
-    lineMatches: LineMatch[];
-    resource: string; // a URI like git://github.com/gorilla/mux
+    limitHit: boolean
+    lineMatches: LineMatch[]
+    resource: string // a URI like git://github.com/gorilla/mux
 }
 
 export interface LineMatch {
-    lineNumber: number;
-    offsetAndLengths: number[][]; // e.g. [[4, 3]]
-    preview: string;
+    lineNumber: number
+    offsetAndLengths: number[][] // e.g. [[4, 3]]
+    preview: string
 }
 
 export interface ResolvedSearchTextResp {
-    results?: SearchResult[];
-    notFound?: boolean;
+    results?: SearchResult[]
+    notFound?: boolean
 }
 
 export function searchText(query: string, repositories: { repo: string, rev: string }[], params: SearchParams): Promise<ResolvedSearchTextResp> {
@@ -162,7 +162,7 @@ export function searchText(query: string, repositories: { repo: string, rev: str
         // TODO(john)??: currently VS Code converts a string like "*.go" into "{*.go/**,*.go,**/*.go}" -- should we similarly add "**" glob patterns here?
         includePattern: params.files !== '' ? `{${params.files}` : '',
         excludePattern: '{.git,**/.git,.svn,**/.svn,.hg,**/.hg,CVS,**/CVS,.DS_Store,**/.DS_Store,node_modules,bower_components,vendor,dist,out,Godeps,third_party}'
-    };
+    }
 
     const p = queryGraphQL(`
         query SearchText(
@@ -201,16 +201,16 @@ export function searchText(query: string, repositories: { repo: string, rev: str
             }
         }
     `, variables).toPromise().then(result => {
-        const results = result.data && result.data.root!.searchRepos;
+        const results = result.data && result.data.root!.searchRepos
         if (!results) {
-            const notFound = { notFound: true };
-            return notFound;
+            const notFound = { notFound: true }
+            return notFound
         }
 
-        return results;
-    });
+        return results
+    })
 
-    return p;
+    return p
 }
 
 export function fetchActiveRepos(): Promise<GQL.IActiveRepoResults | null> {
@@ -227,8 +227,8 @@ export function fetchActiveRepos(): Promise<GQL.IActiveRepoResults | null> {
         if (!result.data ||
             !result.data.root ||
             !result.data.root.activeRepos) {
-            return null;
+            return null
         }
-        return result.data.root.activeRepos;
-    });
+        return result.data.root.activeRepos
+    })
 }

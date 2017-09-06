@@ -1,7 +1,7 @@
-import * as React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { SearchBox } from 'sourcegraph/search/SearchBox';
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
+import * as React from 'react'
+import { RouteComponentProps } from 'react-router'
+import { SearchBox } from 'sourcegraph/search/SearchBox'
+import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
 
 /**
  * The landing page
@@ -15,6 +15,6 @@ export class Home extends React.Component<RouteComponentProps<any>, {}> {
                     <SearchBox history={this.props.history} />
                 </div>
             </div>
-        );
+        )
     }
 }

@@ -1,38 +1,38 @@
-import 'whatwg-fetch';
+import 'whatwg-fetch'
 
 interface FetchOptions {
-    headers: Headers;
+    headers: Headers
 }
 
 export function combineHeaders(a: Headers, b: Headers): Headers {
-    const headers = new Headers(a);
+    const headers = new Headers(a)
     for (const [name, val] of b) {
-        headers.append(name, val);
+        headers.append(name, val)
     }
-    return headers;
+    return headers
 }
 
 function defaultOptions(): FetchOptions | undefined {
     if (typeof Headers === 'undefined') {
-        return undefined; // for unit tests
+        return undefined // for unit tests
     }
-    const headers = new Headers();
+    const headers = new Headers()
     if (window.context) {
         for (const [name, value] of Object.entries(window.context.xhrHeaders)) {
-            headers.set(name, value);
+            headers.set(name, value)
         }
     }
     return {
         headers
-    };
+    }
 }
 
 export function doFetch(url: string, opt?: any): Promise<Response> {
-    const defaults = defaultOptions();
-    const fetchOptions = { ...defaults, ...opt };
+    const defaults = defaultOptions()
+    const fetchOptions = { ...defaults, ...opt }
     if (opt && opt.headers && defaults) {
         // the above object merge might override the auth headers. add those back in.
-        fetchOptions.headers = combineHeaders(opt.headers, defaults.headers);
+        fetchOptions.headers = combineHeaders(opt.headers, defaults.headers)
     }
-    return fetch(url, fetchOptions);
+    return fetch(url, fetchOptions)
 }

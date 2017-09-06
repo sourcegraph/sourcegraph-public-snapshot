@@ -1,11 +1,11 @@
-import { EventActions, EventCategories } from 'sourcegraph/tracking/analyticsConstants';
-import { pageViewQueryParameters } from 'sourcegraph/tracking/analyticsUtils';
-import { eventLogger } from 'sourcegraph/tracking/eventLogger';
+import { EventActions, EventCategories } from 'sourcegraph/tracking/analyticsConstants'
+import { pageViewQueryParameters } from 'sourcegraph/tracking/analyticsUtils'
+import { eventLogger } from 'sourcegraph/tracking/eventLogger'
 
 export class LoggableViewEvent {
     constructor(private title: string) { }
     public log(props?: any): void {
-        eventLogger.logViewEvent(this.title, { ...props, ...pageViewQueryParameters(window.location.href) });
+        eventLogger.logViewEvent(this.title, { ...props, ...pageViewQueryParameters(window.location.href) })
     }
 }
 
@@ -19,12 +19,12 @@ export const viewEvents = {
     SearchResults: new LoggableViewEvent('ViewSearchResults'),
     Tree: new LoggableViewEvent('ViewTree'),
     Blob: new LoggableViewEvent('ViewBlob')
-};
+}
 
 export class LoggableEvent {
     constructor(private eventLabel: string, private eventCategory: string, private eventAction: string) { }
     public log(props?: any): void {
-        eventLogger.logEvent(this.eventCategory, this.eventAction, this.eventLabel, props);
+        eventLogger.logEvent(this.eventCategory, this.eventAction, this.eventLabel, props)
     }
 }
 
@@ -59,4 +59,4 @@ export const events = {
 
     // External events
     RepoBadgeRedirected: new LoggableEvent('RepoBadgeRedirected', EventCategories.External, EventActions.Redirect)
-};
+}

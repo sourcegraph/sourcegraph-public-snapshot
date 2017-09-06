@@ -1,9 +1,9 @@
 
-import * as React from 'react';
-import { Link } from 'react-router-dom';
-import { SearchBox } from 'sourcegraph/search/SearchBox';
-import { ParsedRouteProps } from 'sourcegraph/util/routes';
-import { toEditorURL } from 'sourcegraph/util/url';
+import * as React from 'react'
+import { Link } from 'react-router-dom'
+import { SearchBox } from 'sourcegraph/search/SearchBox'
+import { ParsedRouteProps } from 'sourcegraph/util/routes'
+import { toEditorURL } from 'sourcegraph/util/url'
 
 export class Navbar extends React.Component<ParsedRouteProps, {}> {
     public render(): JSX.Element | null {
@@ -28,6 +28,6 @@ export class Navbar extends React.Component<ParsedRouteProps, {}> {
                     }
                 </div>
             </div>
-        );
+        )
     }
 }
