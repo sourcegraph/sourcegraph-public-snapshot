@@ -8,12 +8,11 @@ import { Subject } from 'rxjs/Subject';
 import { Subscription } from 'rxjs/Subscription';
 import { Home } from 'sourcegraph/home/Home';
 import { Navbar } from 'sourcegraph/nav/Navbar';
-import { makeRepoURI, RepoURI } from 'sourcegraph/repo';
-import { resolveRev } from 'sourcegraph/repo/backend';
+import { ResolvedRev, resolveRev } from 'sourcegraph/repo/backend';
 import { Repository } from 'sourcegraph/repo/Repository';
 import { SearchResults } from 'sourcegraph/search/SearchResults';
 import * as activeRepos from 'sourcegraph/util/activeRepos';
-import { parseHash } from 'sourcegraph/util/url';
+import { ParsedRouteProps, parseRouteProps } from 'sourcegraph/util/routes';
 
 window.addEventListener('DOMContentLoaded', () => {
     // Be a bit proactive and try to fetch/store active repos now. This helps
@@ -23,8 +22,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 interface WithResolvedRevProps {
     component: any;
-    uri: RepoURI;
-    repoPath: string;
+    repoPath?: string;
     rev?: string;
     [key: string]: any;
 }
@@ -42,22 +40,18 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
         super(props);
         this.subscriptions.add(
             this.componentUpdates
-                // tslint:disable-next-line
-                .switchMap(props =>
-                    Observable.fromPromise(resolveRev(props))
-                        .catch(err => {
-                            console.error(err);
-                            return [];
-                        })
-                )
-                .subscribe(resolved => {
-                    const commitID = resolved.commitID;
-                    if (commitID) {
-                        this.setState(resolved);
+                .switchMap(props => {
+                    if (props.repoPath) {
+                        return Observable.fromPromise(resolveRev({ repoPath: props.repoPath, rev: props.rev }))
+                            .catch(err => {
+                                console.error(err);
+                                return [];
+                            });
+
                     }
-                }, err => {
-                    console.error(err);
+                    return Observable.fromPromise(Promise.resolve({} as ResolvedRev));
                 })
+                .subscribe(resolved => this.setState({ commitID: resolved.commitID }), err => console.error(err))
         );
     }
 
@@ -78,37 +72,25 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.commitID) {
+        if (this.props.repoPath && !this.state.commitID) {
             return null;
         }
         return <this.props.component {...this.props} commitID={this.state.commitID} />;
     }
 }
 
-class AppRouter extends React.Component<RouteComponentProps<string[]>, {}> {
+class AppRouter extends React.Component<ParsedRouteProps, {}> {
     public render(): JSX.Element | null {
-        if (!this.props.match.params[0]) {
-            return null;
-        }
-        if (this.props.match.params[0] === 'search') {
-            return <SearchResults />;
-        }
+        switch (this.props.routeName) {
+            case 'search':
+                return <SearchResults />;
 
-        const uriPathSplit = this.props.match.params[0].split('/-/');
-        const repoRevSplit = uriPathSplit[0].split('@');
-        const hash = parseHash(this.props.location.hash);
-        const position = hash.line ? { line: hash.line, char: hash.char } : undefined;
-        const repoParams = { repoPath: repoRevSplit[0], rev: repoRevSplit[1], position };
-        if (uriPathSplit.length === 1) {
-            return <WithResolvedRev uri={makeRepoURI(repoParams)} {...repoParams} history={this.props.history} location={this.props.location} component={Repository} />;
+            case 'repository':
+                return <WithResolvedRev {...this.props} component={Repository} />;
+
+            default:
+                return null;
         }
-        const filePath = uriPathSplit[1].split('/').slice(1).join('/'); // e.g. '[blob|tree]/path/to/file/or/directory'; ignore the first component
-        return <WithResolvedRev {...repoParams}
-            filePath={filePath}
-            uri={makeRepoURI({...repoParams, filePath})}
-            history={this.props.history}
-            location={this.props.location}
-            component={Repository} />;
     }
 }
 
@@ -117,11 +99,12 @@ class AppRouter extends React.Component<RouteComponentProps<string[]>, {}> {
  */
 class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
     public render(): JSX.Element | null {
+        const props = parseRouteProps(this.props);
         return (
             <div className='layout'>
-                <Navbar {...this.props} />
+                <WithResolvedRev {...props} component={Navbar} />
                 <div className='layout__app-router-container'>
-                    <AppRouter {...this.props} />
+                    <AppRouter {...props} />
                 </div>
             </div>
         );

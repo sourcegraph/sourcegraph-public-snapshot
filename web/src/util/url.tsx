@@ -106,6 +106,21 @@ export function toBlob(loc: BlobURL): string {
     return `/${loc.uri}${loc.rev ? '@' + loc.rev : ''}/-/blob/${loc.path}${toBlobHash(loc)}`;
 }
 
+export function toEditorURL(repoPath: string, rev?: string, filePath?: string): string {
+    let query = 'repo=' + encodeURIComponent('git+ssh://' + repoPath + '.git');
+    query += '&vcs=git';
+    if (rev) {
+        query += '&revision=' + encodeURIComponent(rev);
+    }
+    if (filePath) {
+        if (filePath.startsWith('/')) {
+            filePath = filePath.substr(1);
+        }
+        query += '&path=' + encodeURIComponent(filePath);
+    }
+    return 'https://about.sourcegraph.com/open-native/#open?' + query;
+}
+
 export function toGitHubBlob(loc: BlobURL): string {
     return `https://${loc.uri}/blob/${loc.rev}/${loc.path}${toBlobHash(loc)}`;
 }
