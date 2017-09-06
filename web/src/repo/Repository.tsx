@@ -1,4 +1,5 @@
 import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree'
+import BookClosed from '@sourcegraph/icons/lib/BookClosed'
 import * as ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
 import * as React from 'react'
@@ -10,9 +11,8 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
-import { addAnnotations } from 'sourcegraph/tooltips'
 import { clearTooltip } from 'sourcegraph/tooltips/store'
-import { getCodeCellsForAnnotation, getPathExtension, highlightAndScrollToLine, highlightLine, supportedExtensions } from 'sourcegraph/util'
+import { getCodeCellsForAnnotation, highlightAndScrollToLine } from 'sourcegraph/util'
 import * as url from 'sourcegraph/util/url'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
@@ -76,12 +76,14 @@ export class Repository extends React.Component<Props, State> {
                     err => console.error(err)
                 )
         )
+
+        const updateContents = Observable.merge(
+            this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
+            this.showAnywayButtonClicks.map(() => ({ ...props, showHighlightingAnyway: true }))
+        ).partition(props => Boolean(props.filePath))
+
         this.subscriptions.add(
-            Observable.merge(
-                this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
-                this.showAnywayButtonClicks.map(() => ({ ...props, showHighlightingAnyway: true }))
-            )
-            .filter(props => !!props.filePath)
+            updateContents[0] // transitions to routes with file should update file contents
             .switchMap(props =>
                 fetchHighlightedFile({
                     repoPath: props.repoPath,
@@ -100,6 +102,13 @@ export class Repository extends React.Component<Props, State> {
                     }
                 }
             )
+        )
+        this.subscriptions.add(
+            updateContents[1] // transitions to routes without file should unset file contents
+            .subscribe(() => {
+                console.log('got here!')
+                this.setState({ highlightedFile: undefined, highlightingError: undefined })
+            })
         )
     }
 
@@ -147,6 +156,18 @@ export class Repository extends React.Component<Props, State> {
                     }
                     <div className='repository__viewer'>
                         {
+                            !this.props.filePath &&
+                                <div className='repository__no-file'>
+                                    <div className='repository__icon-fab'>
+                                        <BookClosed />
+                                    </div>
+                                    <div className='repository__uri-title'>
+                                        {this.props.repoPath.split('/').slice(1).join('/')}
+                                    </div>
+                                    <div className='repository__subtitle'>Select a file to begin browsing.</div>
+                                </div>
+                        }
+                        {
                             this.state.highlightingError &&
                                 <p className='blob-highlighting-error'><ErrorIcon.Error />{this.state.highlightingError.message}</p>
                         }
@@ -160,10 +181,7 @@ export class Repository extends React.Component<Props, State> {
                         }
                         {
                             this.state.highlightedFile ?
-                                <Blob onClick={this.handleBlobClick}
-                                    applyAnnotations={this.applyAnnotations}
-                                    scrollToLine={this.scrollToLine}
-                                    html={this.state.highlightedFile.html} /> :
+                                <Blob {...this.props} filePath={this.props.filePath!} html={this.state.highlightedFile.html} /> :
                                 /* render placeholder for layout before content is fetched */
                                 <div className='repository__blob-placeholder'></div>
                         }
@@ -186,29 +204,11 @@ export class Repository extends React.Component<Props, State> {
         }
     }
 
-    private handleBlobClick: React.MouseEventHandler<HTMLDivElement> = e => {
-        const target = e.target!
-        const row: HTMLTableRowElement = (target as any).closest('tr')
-        if (!row) {
-            return
-        }
-        const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
-        highlightLine(this.props.history, this.props.repoPath, this.props.commitID, this.props.filePath!, line, getCodeCellsForAnnotation(), true)
-    }
-
-    private scrollToLine = (props: Props = this.props) => {
+    private scrollToLine = (props: Props) => {
         const line = url.parseHash(props.location.hash).line
         if (line) {
             highlightAndScrollToLine(props.history, props.repoPath,
                 props.commitID, props.filePath!, line, getCodeCellsForAnnotation(), false)
-        }
-    }
-
-    private applyAnnotations = () => {
-        const cells = getCodeCellsForAnnotation()
-        if (supportedExtensions.has(getPathExtension(this.props.filePath!))) {
-            addAnnotations(this.props.history, this.props.filePath!,
-                { repoURI: this.props.repoPath!, rev: this.props.rev!, commitID: this.props.commitID }, cells)
         }
     }
 }

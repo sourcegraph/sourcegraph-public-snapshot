@@ -44,6 +44,48 @@
         flex-direction: column;
         min-height: 0;
         min-width: 0;
+
+        background-color: #151D28;
+    }
+
+    &__no-file {
+        padding-top: 128px;
+        text-align: center;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        color: #93A9C8;
+    }
+
+    &__icon-fab {
+        border-radius: 100%;
+        width: 96px;
+        height: 96px;
+        background-color: #233043;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .icon {
+            fill: currentColor;
+            width: 64px;
+            height: 64px;
+        }
+    }
+
+    &__uri-title {
+        font-size: 32px;
+        margin-top: 16px;
+        font-family: system;
+        line-height: 40px;
+    }
+
+    &__subtitle {
+        font-size: 12px;
+        line-height: 16px;
+        margin-top: 8px;
     }
 
     &__blob-placeholder {
