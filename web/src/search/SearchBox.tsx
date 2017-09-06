@@ -373,6 +373,7 @@ export class SearchBox extends React.Component<Props, State> {
      */
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
+        this.setState({ suggestionsVisible: false });
         const { filters, query } = this.state;
         if (query && filters.length > 0) {
             // Go to search results
