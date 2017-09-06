@@ -3,6 +3,24 @@ import { SearchParams } from 'sourcegraph/search'
 import * as util from 'sourcegraph/util'
 import { queryGraphQL } from './graphql'
 
+export function memoizedFetch<K, T>(fetch: (ctx: K) => Promise<T>, makeKey?: (ctx: K) => string): (ctx: K, force?: boolean) => Promise<T> {
+    const cache = new Map<string, Promise<T>>()
+    return (ctx: K, force?: boolean) => {
+        const key = makeKey ? makeKey(ctx) : ctx.toString()
+        const hit = cache.get(key)
+        if (!force && hit) {
+            return hit
+        }
+        const p = fetch(ctx)
+        cache.set(key, p)
+        p.catch(e => {
+            cache.delete(key)
+            throw e
+        })
+        return p
+    }
+}
+
 export function fetchBlameFile(repo: string, rev: string, path: string, startLine: number, endLine: number): Promise<GQL.IHunk[] | null> {
     const p = queryGraphQL(`
         query BlameFile($repo: String, $rev: String, $path: String, $startLine: Int, $endLine: Int) {

@@ -45,7 +45,7 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
             this.componentUpdates
                 .switchMap(props => {
                     if (props.repoPath) {
-                        return Observable.fromPromise(resolveRev({ repoPath: props.repoPath, rev: props.rev }))
+                        return Observable.fromPromise(resolveRev({ repoPath: props.repoPath, rev: props.rev }, this.state.cloneInProgress))
                             .catch(err => {
                                 console.error(err)
                                 return []
