@@ -77,38 +77,39 @@ export class Repository extends React.Component<Props, State> {
                 )
         )
 
-        const updateContents = Observable.merge(
+        const [contentUpdatesWithFile, contentUpdatesWithoutFile] = Observable.merge(
             this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
             this.showAnywayButtonClicks.map(() => ({ ...props, showHighlightingAnyway: true }))
         ).partition(props => Boolean(props.filePath))
 
+        // Transitions to routes with file should update file contents
         this.subscriptions.add(
-            updateContents[0] // transitions to routes with file should update file contents
-            .switchMap(props =>
-                fetchHighlightedFile({
-                    repoPath: props.repoPath,
-                    commitID: props.commitID,
-                    filePath: props.filePath!,
-                    disableTimeout: props.showHighlightingAnyway
-                })
-                .catch(err => Promise.resolve(err))
-            )
-            .subscribe(
-                result => {
-                    if (result instanceof Error) {
-                        this.setState({ highlightedFile: undefined, highlightingError: result })
-                    } else {
-                        this.setState({ highlightedFile: result, highlightingError: undefined })
+            contentUpdatesWithFile
+                .switchMap(props =>
+                    fetchHighlightedFile({
+                        repoPath: props.repoPath,
+                        commitID: props.commitID,
+                        filePath: props.filePath!,
+                        disableTimeout: props.showHighlightingAnyway
+                    })
+                    .catch(err => Promise.resolve(err))
+                )
+                .subscribe(
+                    result => {
+                        if (result instanceof Error) {
+                            this.setState({ highlightedFile: undefined, highlightingError: result })
+                        } else {
+                            this.setState({ highlightedFile: result, highlightingError: undefined })
+                        }
                     }
-                }
-            )
+                )
         )
+        // Transitions to routes without file should unset file contents
         this.subscriptions.add(
-            updateContents[1] // transitions to routes without file should unset file contents
-            .subscribe(() => {
-                console.log('got here!')
-                this.setState({ highlightedFile: undefined, highlightingError: undefined })
-            })
+            contentUpdatesWithoutFile
+                .subscribe(() => {
+                    this.setState({ highlightedFile: undefined, highlightingError: undefined })
+                })
         )
     }
 

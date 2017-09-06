@@ -39,27 +39,26 @@ export class Blob extends React.Component<BlobProps, {}> {
     }
 
     private handleBlobClick: React.MouseEventHandler<HTMLDivElement> = e => {
-        const target = e.target!
-        const row: HTMLTableRowElement = (target as any).closest('tr')
+        const row = (e.target as Element).closest('tr') as HTMLTableRowElement | null
         if (!row) {
             return
         }
         const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
-        highlightLine(this.props.history, this.props.repoPath, this.props.commitID, this.props.filePath!, line, getCodeCellsForAnnotation(), true)
+        highlightLine(this.props.history, this.props.repoPath, this.props.commitID, this.props.filePath, line, getCodeCellsForAnnotation(), true)
     }
 
     private scrollToLine = (props: BlobProps) => {
         const line = url.parseHash(props.location.hash).line
         if (line) {
             highlightAndScrollToLine(props.history, props.repoPath,
-                props.commitID, props.filePath!, line, getCodeCellsForAnnotation(), false)
+                props.commitID, props.filePath, line, getCodeCellsForAnnotation(), false)
         }
     }
 
     private applyAnnotations = (props: BlobProps) => {
         const cells = getCodeCellsForAnnotation()
         if (supportedExtensions.has(getPathExtension(props.filePath))) {
-            addAnnotations(props.history, props.filePath!,
+            addAnnotations(props.history, props.filePath,
                 { repoURI: props.repoPath!, rev: props.rev!, commitID: props.commitID }, cells)
         }
     }
