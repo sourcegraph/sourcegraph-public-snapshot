@@ -8,6 +8,7 @@ import SearchIcon from '@sourcegraph/icons/lib/Search';
 import escapeRegexp = require('escape-string-regexp');
 import * as H from 'history';
 import * as React from 'react';
+import 'rxjs/add/observable/merge';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/debounceTime';
 import 'rxjs/add/operator/do';
@@ -15,6 +16,7 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/switchMap';
 import 'rxjs/add/operator/toArray';
+import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import { Subscription } from 'rxjs/Subscription';
 import { queryGraphQL } from 'sourcegraph/backend/graphql';
@@ -73,6 +75,9 @@ interface State {
     /** The selected filters (shown as chips) */
     filters: Filter[];
 
+    /** Whether suggestions are shown or not */
+    suggestionsVisible: boolean;
+
     /** The suggestions shown to the user */
     suggestions: Filter[];
 
@@ -94,6 +99,9 @@ export class SearchBox extends React.Component<Props, State> {
 
     /** Emits new input values */
     private inputValues = new Subject<string>();
+
+    /** Emits when the input field is clicked */
+    private inputClicks = new Subject<void>();
 
     /** Only used for selection and focus management */
     private inputElement: HTMLInputElement;
@@ -130,6 +138,7 @@ export class SearchBox extends React.Component<Props, State> {
         }
         this.state = {
             filters,
+            suggestionsVisible: false,
             suggestions: [],
             query,
             selectedSuggestion: -1,
@@ -138,9 +147,15 @@ export class SearchBox extends React.Component<Props, State> {
             matchRegexp
         };
         this.subscriptions.add(
-            this.inputValues
-                .do(query => this.setState({ query }))
-                .debounceTime(200)
+            Observable.merge(
+                // Trigger new suggestions every time the input field is typed into
+                this.inputValues
+                    .do(query => this.setState({ query }))
+                    .debounceTime(200),
+                // Trigger new suggestions every time the input field is clicked
+                this.inputClicks
+                    .map(() => this.inputElement.value)
+            )
                 .switchMap(query => {
                     if (query.length <= 1) {
                         this.setState({ suggestions: [], selectedSuggestion: -1 });
@@ -201,11 +216,17 @@ export class SearchBox extends React.Component<Props, State> {
                         });
                 })
                 .subscribe(suggestions => {
-                    this.setState({ suggestions, selectedSuggestion: Math.min(suggestions.length - 1, 0) });
+                    this.setState({ suggestions, selectedSuggestion: Math.min(suggestions.length - 1, 0), suggestionsVisible: true });
                 }, err => {
                     console.error(err);
                 })
         );
+    }
+
+    public componentDidMount(): void {
+        // Focus the input element and set cursor to the end
+        this.inputElement.focus();
+        this.inputElement.setSelectionRange(this.inputElement.value.length, this.inputElement.value.length);
     }
 
     public componentWillUnmount(): void {
@@ -240,10 +261,11 @@ export class SearchBox extends React.Component<Props, State> {
                             value={this.state.query}
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
+                            onBlur={this.onInputBlur}
+                            onClick={this.onInputClick}
                             spellCheck={false}
                             autoCapitalize='off'
                             placeholder='Search'
-                            autoFocus={true}
                             ref={ref => this.inputElement = ref!}
                         />
                     </div>
@@ -257,7 +279,7 @@ export class SearchBox extends React.Component<Props, State> {
                         <input type='checkbox' checked={this.state.matchRegexp} onChange={e => this.setState({ matchRegexp: e.currentTarget.checked })} /><span>.*</span>
                     </label>
                 </div>
-                <ul className='search-box__suggestions'>
+                <ul className='search-box__suggestions' style={this.state.suggestionsVisible ? {} : { height: 0 }}>
                     {
                         this.state.suggestions.map((suggestion, i) => {
                             const Icon = SUGGESTION_ICONS[suggestion.type];
@@ -296,7 +318,15 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.inputValues.next(event.target.value);
+        this.inputValues.next(event.currentTarget.value);
+    }
+
+    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
+        this.setState({ suggestionsVisible: false });
+    }
+
+    private onInputClick: React.MouseEventHandler<HTMLInputElement> = event => {
+        this.inputClicks.next();
     }
 
     private onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
