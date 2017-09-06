@@ -163,10 +163,16 @@ type Directory {
 	tree: Tree!
 }
 
+type HighlightedFile {
+	isBinary: Boolean!
+	aborted: Boolean!
+	html: String!
+}
+
 type File {
 	name: String!
 	content: String!
-	highlightedContentHTML: String!
+	highlight(disableTimeout: Boolean!): HighlightedFile!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!

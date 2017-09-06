@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 
@@ -16,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -291,13 +289,6 @@ func serveTree(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-// blobView is the data structure shared/blobview.html expects.
-type blobView struct {
-	Path, Name                    string
-	IsBinary, HighlightingAborted bool
-	Highlighted                   template.HTML
-}
-
 func serveBlob(w http.ResponseWriter, r *http.Request) error {
 	common, err := newCommon(w, r, routeBlob, serveError)
 	if err != nil {
@@ -307,49 +298,11 @@ func serveBlob(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
-	vcsrepo, err := localstore.RepoVCS.Open(r.Context(), common.Repo.ID)
-	if err != nil {
-		return err
-	}
-
-	fp := mux.Vars(r)["Path"]
-	common.addOpenOnDesktop(fp)
-	code, err := vcsrepo.ReadFile(r.Context(), vcs.CommitID(common.RevSpec.CommitID), fp)
-	if err != nil {
-		return err
-	}
-
-	// If the file is not binary, highlight the code.
-	var (
-		isBinary            = !utf8.Valid(code)
-		highlighted         template.HTML
-		highlightingAborted bool
-	)
-	if !isBinary {
-		// Highlight the code.
-		var err error
-		disableTimeout := r.URL.Query().Get("highlighting") == "true" // disable timeout when highlighting=true
-		highlighted, highlightingAborted, err = highlight(r.Context(), string(code), strings.TrimPrefix(path.Ext(fp), "."), disableTimeout)
-		if err != nil {
-			return err
-		}
-	}
-
 	return renderTemplate(w, "blob.html", &struct {
 		*Common
-		BlobView *blobView
-		Navbar   *navbar
 		FileName string
 	}{
-		Common: common,
-		BlobView: &blobView{
-			Path:                fp,
-			Name:                path.Base(fp),
-			IsBinary:            isBinary,
-			HighlightingAborted: highlightingAborted,
-			Highlighted:         highlighted,
-		},
-		Navbar:   newNavbar(common.Repo, common.Rev, fp, false),
-		FileName: path.Base(fp),
+		Common:   common,
+		FileName: path.Base(mux.Vars(r)["Path"]),
 	})
 }

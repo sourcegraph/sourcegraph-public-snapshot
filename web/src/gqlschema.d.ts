@@ -146,11 +146,21 @@ declare namespace GQL {
     __typename: "File";
     name: string;
     content: string;
-    highlightedContentHTML: string;
+    highlight: IHighlightedFile;
     blame: Array<IHunk>;
     commits: Array<ICommitInfo>;
     dependencyReferences: IDependencyReferences;
     blameRaw: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IHighlightedFile {
+    __typename: "HighlightedFile";
+    isBinary: boolean;
+    aborted: boolean;
+    html: string;
   }
 
   /*

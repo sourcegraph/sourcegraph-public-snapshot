@@ -1,13 +1,15 @@
 import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree'
+import * as ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
 import * as React from 'react'
 import 'rxjs/add/observable/fromPromise'
+import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
-import { fetchBlobHighlightContentTable, listAllFiles } from 'sourcegraph/repo/backend'
+import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
 import { addAnnotations } from 'sourcegraph/tooltips'
 import { clearTooltip } from 'sourcegraph/tooltips/store'
 import { getCodeCellsForAnnotation, getPathExtension, highlightAndScrollToLine, highlightLine, supportedExtensions } from 'sourcegraph/util'
@@ -38,9 +40,13 @@ interface State {
      */
     files?: string[]
     /**
-     * the HTML string for the Blob component
+     * the highlighted file
      */
-    highlightedContents?: string
+    highlightedFile?: GQL.IHighlightedFile
+    /**
+     * error preventing fetching file contents
+     */
+    highlightingError?: Error
 }
 
 export class Repository extends React.Component<Props, State> {
@@ -49,6 +55,7 @@ export class Repository extends React.Component<Props, State> {
         showRefs: false
     }
     private componentUpdates = new Subject<Props>()
+    private showAnywayButtonClicks = new Subject<void>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -70,23 +77,29 @@ export class Repository extends React.Component<Props, State> {
                 )
         )
         this.subscriptions.add(
-            this.componentUpdates
-                .filter(props => !!props.filePath)
-                .switchMap(props =>
-                    Observable.fromPromise(fetchBlobHighlightContentTable({
-                        repoPath: props.repoPath,
-                        commitID: props.commitID,
-                        filePath: props.filePath!
-                    }))
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
-                )
-                .subscribe(
-                    (highlightedContents: string) => this.setState({ highlightedContents }),
-                    err => console.error(err)
-                )
+            Observable.merge(
+                this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
+                this.showAnywayButtonClicks.map(() => ({ ...props, showHighlightingAnyway: true }))
+            )
+            .filter(props => !!props.filePath)
+            .switchMap(props =>
+                fetchHighlightedFile({
+                    repoPath: props.repoPath,
+                    commitID: props.commitID,
+                    filePath: props.filePath!,
+                    disableTimeout: props.showHighlightingAnyway
+                })
+                .catch(err => Promise.resolve(err))
+            )
+            .subscribe(
+                result => {
+                    if (result instanceof Error) {
+                        this.setState({ highlightedFile: undefined, highlightingError: result })
+                    } else {
+                        this.setState({ highlightedFile: result, highlightingError: undefined })
+                    }
+                }
+            )
         )
     }
 
@@ -134,11 +147,23 @@ export class Repository extends React.Component<Props, State> {
                     }
                     <div className='repository__viewer'>
                         {
-                            this.state.highlightedContents ?
+                            this.state.highlightingError &&
+                                <p className='blob-highlighting-error'><ErrorIcon.Error />{this.state.highlightingError.message}</p>
+                        }
+                        {
+                            this.state.highlightedFile && this.state.highlightedFile.aborted &&
+                                <p className='blob-highlighting-aborted'>
+                                    <ErrorIcon.Error />
+                                    Syntax highlighting for this file has been disabled because it took too long.
+                                    (<span onClick={() => this.showAnywayButtonClicks.next()}>show anyway</span>)
+                                </p>
+                        }
+                        {
+                            this.state.highlightedFile ?
                                 <Blob onClick={this.handleBlobClick}
                                     applyAnnotations={this.applyAnnotations}
                                     scrollToLine={this.scrollToLine}
-                                    html={this.state.highlightedContents} /> :
+                                    html={this.state.highlightedFile.html} /> :
                                 /* render placeholder for layout before content is fetched */
                                 <div className='repository__blob-placeholder'></div>
                         }
