@@ -11,7 +11,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
-import { clearTooltip } from 'sourcegraph/tooltips/store'
+import { hideTooltip } from 'sourcegraph/repo/tooltips'
 import { getCodeCellsForAnnotation, highlightAndScrollToLine } from 'sourcegraph/util'
 import * as url from 'sourcegraph/util/url'
 import { Blob } from './Blob'
@@ -126,7 +126,7 @@ export class Repository extends React.Component<Props, State> {
             // handle 'back' and 'forward'
             this.scrollToLine(nextProps)
         } else if (this.props.location.pathname !== nextProps.location.pathname) {
-            clearTooltip() // clear tooltip when transitioning between files
+            hideTooltip() // clear tooltip when transitioning between files
             this.scrollToLine(nextProps)
         }
     }

@@ -14,10 +14,10 @@ export function memoizedFetch<K, T>(fetch: (ctx: K) => Promise<T>, makeKey?: (ct
         }
         const p = fetch(ctx)
         cache.set(key, p)
-        p.catch(e => {
+        return p.catch(e => {
             cache.delete(key)
+            throw e
         })
-        return p
     }
 }
 

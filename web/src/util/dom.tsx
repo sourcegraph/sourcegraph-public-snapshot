@@ -1,5 +1,4 @@
 import * as _ from 'lodash'
-import * as colors from 'sourcegraph/util/colors'
 
 /**
  * Inserts an element after the reference node.
@@ -45,7 +44,6 @@ function highlightNodeHelper(parentNode: HTMLElement, curr: number, start: numbe
                     const text = rest.substr(0, length)
                     const highlight = document.createElement('span')
                     highlight.className = 'selection-highlight'
-                    highlight.style.backgroundColor = colors.selectionHighlight
                     highlight.appendChild(document.createTextNode(text))
                     containerNode.appendChild(highlight)
                     if (rest.substr(length)) {

@@ -1,24 +1,12 @@
 import * as immutable from 'immutable'
 import * as Rx from 'rxjs'
-import { Reference, ResolvedRepoRevSpec } from 'sourcegraph/util/types'
-
-// reference implementation: http://rudiyardley.com/redux-single-line-of-code-rxjs/
-
-export interface Location extends ResolvedRepoRevSpec {
-    path: string
-    line: number
-    char: number
-}
-
-export interface ReferencesContext {
-    loc: Location
-    word?: string
-}
+import { AbsoluteRepoPosition, makeRepoURI } from 'sourcegraph/repo'
+import { Reference } from 'sourcegraph/util/types'
 
 type FetchStatus = 'pending' | 'completed'
 
 export interface ReferencesState {
-    context?: ReferencesContext
+    context?: AbsoluteRepoPosition
     refsByLoc: immutable.Map<string, Reference[]>
     fetches: immutable.Map<string, FetchStatus>
 }
@@ -47,18 +35,14 @@ export const setReferences: (t: ReferencesState) => void = actionDispatcher(payl
     payload
 }))
 
-export function locKey(loc: Location): string {
-    return `${loc.repoURI}@${loc.commitID}/${loc.path}#${loc.line}:${loc.char}`
-}
-
-export function addReferences(loc: Location, refs: Reference[]): void {
+export function addReferences(loc: AbsoluteRepoPosition, refs: Reference[]): void {
     const next = { ...store.getValue() }
-    next.refsByLoc = next.refsByLoc.update(locKey(loc), _refs => (_refs || []).concat(refs))
+    next.refsByLoc = next.refsByLoc.update(makeRepoURI(loc), _refs => (_refs || []).concat(refs))
     setReferences(next)
 }
 
-export function refsFetchKey(loc: Location, local: boolean): string {
-    return `${locKey(loc)}_${local}`
+export function refsFetchKey(loc: AbsoluteRepoPosition, local: boolean): string {
+    return `${makeRepoURI(loc)}_${local}`
 }
 
 function setRefsHelper(key: string, status: FetchStatus): void {
@@ -67,10 +51,10 @@ function setRefsHelper(key: string, status: FetchStatus): void {
     setReferences(next)
 }
 
-export function setReferencesLoad(loc: Location, status: FetchStatus): void {
+export function setReferencesLoad(loc: AbsoluteRepoPosition, status: FetchStatus): void {
     setRefsHelper(refsFetchKey(loc, true), status)
 }
 
-export function setXReferencesLoad(loc: Location, status: FetchStatus): void {
+export function setXReferencesLoad(loc: AbsoluteRepoPosition, status: FetchStatus): void {
     setRefsHelper(refsFetchKey(loc, false), status)
 }

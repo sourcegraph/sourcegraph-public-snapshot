@@ -38,13 +38,6 @@ export interface ActiveRepoResults {
     inactive: string[]
 }
 
-export interface TooltipData {
-    loading?: boolean
-    title?: string
-    doc?: string
-    j2dUrl?: string
-}
-
 export interface Reference {
     range: {
         start: {
@@ -61,7 +54,7 @@ export interface Reference {
 }
 
 export interface RepoRevSpec {
-    repoURI: string
+    repoPath: string
 
     /**
      * rev is any type of revision specifier: a branch name, a short commit ID,
@@ -77,8 +70,10 @@ export interface RepoRevSpec {
  * ResolvedRepoRevSpec is a RepoRevSpec whose rev field has been resolved to an
  * proper commit ID (stored here in the commitID field).
  */
-export interface ResolvedRepoRevSpec extends RepoRevSpec {
+export interface ResolvedRepoRevSpec {
+    repoPath: string
     commitID: string
+    rev?: string
 }
 
 export interface CodeCell {

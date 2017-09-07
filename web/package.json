@@ -39,8 +39,6 @@
     "@sourcegraph/components": "^0.1.1",
     "@sourcegraph/icons": "^1.2.0",
     "copy-to-clipboard": "^3.0.7",
-    "csstips": "^0.2.2",
-    "csx": "^8.2.1",
     "escape-string-regexp": "^1.0.5",
     "highlight.js": "^9.12.0",
     "immutable": "^3.8.1",
@@ -55,7 +53,6 @@
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.10.1",
     "rxjs": "^5.4.2",
-    "typestyle": "^1.3.7",
     "urijs": "^1.18.10",
     "whatwg-fetch": "^2.0.3"
   }

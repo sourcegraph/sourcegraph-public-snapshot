@@ -8,7 +8,8 @@ import * as GlobeIcon from 'react-icons/lib/md/language'
 import { Link } from 'react-router-dom'
 import { CodeExcerpt } from 'sourcegraph/components/CodeExcerpt'
 import { triggerReferences } from 'sourcegraph/references'
-import { locKey, ReferencesState, refsFetchKey, store } from 'sourcegraph/references/store'
+import { ReferencesState, refsFetchKey, store } from 'sourcegraph/references/store'
+import { makeRepoURI } from 'sourcegraph/repo'
 import { events } from 'sourcegraph/tracking/events'
 import { pageVars } from 'sourcegraph/util/pageVars'
 import { Reference } from 'sourcegraph/util/types'
@@ -132,15 +133,14 @@ export class ReferencesWidget extends React.Component<Props, State> {
         const u = url.parseBlob()
         if (this.state.docked) {
             triggerReferences({
-                loc: {
-                    repoURI: u.uri!,
-                    rev: pageVars.Rev,
-                    commitID: pageVars.CommitID,
-                    path: u.path!,
+                repoPath: u.uri!,
+                rev: pageVars.Rev,
+                commitID: pageVars.CommitID,
+                filePath: u.path!,
+                position: {
                     line: u.line!,
                     char: u.char!
-                },
-                word: '' // TODO: derive the correct word from somewhere
+                }
             })
         }
         window.addEventListener('hashchange', this.handleHashChange)
@@ -169,8 +169,8 @@ export class ReferencesWidget extends React.Component<Props, State> {
         }
 
         const state = store.getValue()
-        const loadingRefs = state.fetches.get(refsFetchKey(this.state.context.loc, true)) === 'pending'
-        const loadingXRefs = state.fetches.get(refsFetchKey(this.state.context.loc, false)) === 'pending'
+        const loadingRefs = state.fetches.get(refsFetchKey(this.state.context, true)) === 'pending'
+        const loadingXRefs = state.fetches.get(refsFetchKey(this.state.context, false)) === 'pending'
 
         switch (group) {
             case 'local':
@@ -186,13 +186,13 @@ export class ReferencesWidget extends React.Component<Props, State> {
         if (!this.state.context) {
             return null
         }
-        const loc = locKey(this.state.context.loc)
+        const loc = makeRepoURI(this.state.context)
         const refs = this.state.refsByLoc.get(loc)
 
         // References by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
         const refsByUri = _.groupBy(refs, ref => ref.uri)
 
-        const localPrefix = 'git://' + this.state.context.loc.repoURI
+        const localPrefix = 'git://' + this.state.context.repoPath
         const [localRefs, externalRefs] = _(refsByUri).keys().partition(uri => uri.startsWith(localPrefix)).value()
 
         const localRefCount = localRefs.reduce((memo, uri) => memo + refsByUri[uri].length, 0)
@@ -208,21 +208,26 @@ export class ReferencesWidget extends React.Component<Props, State> {
             return false
         }
 
-        const l = this.state.context.loc
+        const l = this.state.context
         return (
             <div className='references-widget'>
                 <div className='references-widget__title-bar'>
-                    <div className='references-widget__title-bar-title'>
-                        {this.state.context.word}
-                    </div>
                     <a className={'references-widget__title-bar-group' + (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')}
-                        href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'local', modal: 'references' })}
+                        href={url.toBlob({ uri: l.repoPath, rev: l.rev, path: l.filePath, line: l.position.line, char: l.position.char, modalMode: 'local', modal: 'references' })}
                         onClick={() => events.ShowLocalRefsButtonClicked.log()}>
                         This repository
                     </a>
                     <div className='references-widget__badge'>{localRefCount}</div>
                     <a className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
-                        href={url.toBlob({ uri: l.repoURI, rev: l.rev, path: l.path, line: l.line, char: l.char, modalMode: 'external', modal: 'references' })}
+                        href={url.toBlob({
+                            uri: l.repoPath,
+                            rev: l.rev,
+                            path: l.filePath,
+                            line: l.position.line,
+                            char: l.position.char,
+                            modalMode: 'external',
+                            modal: 'references'
+                        })}
                         onClick={() => events.ShowExternalRefsButtonClicked.log()}>
                         Other repositories
                     </a>

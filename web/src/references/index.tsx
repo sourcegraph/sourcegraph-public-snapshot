@@ -1,32 +1,33 @@
 import { fetchDependencyReferences } from 'sourcegraph/backend'
 import { fetchReferences, fetchXdefinition, fetchXreferences } from 'sourcegraph/backend/lsp'
-import { addReferences, ReferencesContext, setReferences, setReferencesLoad, setXReferencesLoad, store as referencesStore } from 'sourcegraph/references/store'
+import { addReferences, setReferences, setReferencesLoad, setXReferencesLoad, store as referencesStore } from 'sourcegraph/references/store'
+import { AbsoluteRepoPosition, makeRepoURI } from 'sourcegraph/repo'
 
 const contextFetches = new Set<string>()
 
-export function triggerReferences(context: ReferencesContext): void {
-    setReferences({ ...referencesStore.getValue(), context })
+export function triggerReferences(ctx: AbsoluteRepoPosition): void {
+    setReferences({ ...referencesStore.getValue(), context: ctx })
 
     // HACK(john): prevent double fetching (as this will add duplicate references to our store).
-    const fetchKey = JSON.stringify(context)
+    const fetchKey = makeRepoURI(ctx)
     if (!contextFetches.has(fetchKey)) {
-        setReferencesLoad(context.loc, 'pending')
-        setXReferencesLoad(context.loc, 'pending')
-        fetchReferences(context.loc.char - 1, context.loc.path, context.loc.line - 1, context.loc)
+        setReferencesLoad(ctx, 'pending')
+        setXReferencesLoad(ctx, 'pending')
+        fetchReferences(ctx)
             .then(references => {
                 if (references) {
-                    addReferences(context.loc, references)
+                    addReferences(ctx, references)
                 }
-                setReferencesLoad(context.loc, 'completed')
+                setReferencesLoad(ctx, 'completed')
             })
             .catch(() => {
-                setReferencesLoad(context.loc, 'completed')
+                setReferencesLoad(ctx, 'completed')
             })
-        fetchXdefinition(context.loc.char - 1, context.loc.path, context.loc.line - 1, context.loc)
+        fetchXdefinition(ctx)
             .then(defInfo => {
                 if (!defInfo) { throw new Error('no xrefs') }
 
-                fetchDependencyReferences(context.loc.repoURI, context.loc.rev, context.loc.path, context.loc.line - 1, context.loc.char - 1).then(data => {
+                fetchDependencyReferences(ctx.repoPath, ctx.commitID, ctx.filePath, ctx.position.line - 1, ctx.position.char! - 1).then(data => {
                     if (!data || !data.repoData.repos) { throw new Error('no xrefs') }
                     const idToRepo = (id: number): any => {
                         const i = data.repoData.repoIds.indexOf(id)
@@ -57,20 +58,20 @@ export function triggerReferences(context: ReferencesContext): void {
                         //     return references.map(r => this.currentWorkspaceClient.protocol2CodeConverter.asLocation(r.reference));
                         // };
                         // const params: WorkspaceReferencesParams = { query: defInfo.symbol, hints: dependent.hints, limit: 50 };
-                        return fetchXreferences(dependent.workspace, context.loc.path, defInfo.symbol, dependent.hints, 50).then(refs => {
+                        return fetchXreferences(dependent.workspace, ctx.filePath, defInfo.symbol, dependent.hints, 50).then(refs => {
                             if (refs) {
-                                addReferences(context.loc, refs)
+                                addReferences(ctx, refs)
                             }
                         })
                     })).then(() => {
-                        setXReferencesLoad(context.loc, 'completed')
+                        setXReferencesLoad(ctx, 'completed')
                     })
                 }).catch(() => {
-                    setXReferencesLoad(context.loc, 'completed')
+                    setXReferencesLoad(ctx, 'completed')
                 })
             }).catch(() => {
-                setXReferencesLoad(context.loc, 'completed')
+                setXReferencesLoad(ctx, 'completed')
             })
     }
-    contextFetches.add(JSON.stringify(context))
+    contextFetches.add(fetchKey)
 }

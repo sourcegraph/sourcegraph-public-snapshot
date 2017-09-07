@@ -1,0 +1,90 @@
+.tooltip {
+    background-color: #1C2736;
+    max-width: 500px;
+    min-width: 400px;
+    border: solid 1px #2A3A51;
+    color: #93A9C8;
+    font-size: 12px;
+    z-index: 100;
+    position: absolute;
+    overflow: auto;
+    border-radius: 3px;
+    box-shadow: 0 3px 12px rgba(27,31,35,0.15);
+
+    &__title {
+        font-family: 'Menlo';
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        margin-left: 0px;
+        margin-right: 32px;
+        padding: 0px;
+    }
+
+    &__divider {
+        border-bottom: 1px solid #2A3A51;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-bottom: 16px;
+        padding-top: 16px;
+        line-height: 16px;
+    }
+
+    &__doc {
+        padding-top: 16px;
+        padding-left: 8px;
+        padding-right: 16px;
+        padding-bottom: 16px;
+        max-height: 150px;
+        overflow: auto;
+        margin-bottom: 0px;
+        white-space: pre-wrap;
+        font-family: system;
+        border-bottom: 1px solid #2A3A51;
+    }
+
+    &__actions {
+        display: flex;
+        text-align: center;
+        font-family: system;
+    }
+
+    &__action {
+        flex: 1;
+        cursor: pointer;
+        text-decoration: none;
+        padding: 8px;
+        color: #FFFFFF;
+
+        &:not(:last-child) {
+            border-right: 1px solid #2A3A51;
+        }
+    }
+
+    &__more-actions {
+        font-style: italic;
+        color: #FFFFFF;
+        padding: 8px 16px;
+        font-family: system;
+    }
+
+    &__close-icon {
+        width: 12px;
+        position: absolute;
+        top: 18px;
+        right: 16px;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+
+    &__loading {
+        padding: 16px;
+    }
+
+    &__definition-icon {
+        margin-right: 12px;
+    }
+
+    &__references-icon {
+        margin-right: 12px;
+    }
+}

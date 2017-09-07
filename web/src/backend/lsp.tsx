@@ -1,7 +1,9 @@
+import { memoizedFetch } from 'sourcegraph/backend'
 import { doFetch as fetch } from 'sourcegraph/backend/xhr'
+import { AbsoluteRepoPosition, makeRepoURI } from 'sourcegraph/repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from 'sourcegraph/util'
 import { ResolvedRepoRevSpec } from 'sourcegraph/util/types'
-import { Reference, TooltipData, Workspace } from 'sourcegraph/util/types'
+import { Reference, Workspace } from 'sourcegraph/util/types'
 import * as URI from 'urijs'
 
 interface LSPRequest {
@@ -9,7 +11,7 @@ interface LSPRequest {
     params: any
 }
 
-function wrapLSP(req: LSPRequest, repoRevCommit: ResolvedRepoRevSpec, path: string): any[] {
+function wrapLSP(req: LSPRequest, ctx: ResolvedRepoRevSpec, path: string): any[] {
     return [
         {
             id: 0,
@@ -17,9 +19,9 @@ function wrapLSP(req: LSPRequest, repoRevCommit: ResolvedRepoRevSpec, path: stri
             params: {
                 // TODO(sqs): rootPath is deprecated but xlang client proxy currently
                 // requires it. Pass rootUri as well (below) for forward compat.
-                rootPath: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}`,
+                rootPath: `git://${ctx.repoPath}?${ctx.commitID}`,
 
-                rootUri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}`,
+                rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
                 mode: `${getModeFromExtension(getPathExtension(path))}`
             }
         },
@@ -38,79 +40,81 @@ function wrapLSP(req: LSPRequest, repoRevCommit: ResolvedRepoRevSpec, path: stri
     ]
 }
 
-const tooltipCache: { [key: string]: TooltipData } = {}
-export function getTooltip(path: string, line: number, char: number, repoRevCommit: ResolvedRepoRevSpec): Promise<TooltipData> {
-    const ext = getPathExtension(path)
+export interface Tooltip {
+    title?: string
+    doc?: string
+}
+
+export const EEMPTYTOOLTIP = 'EEMPTYTOOLTIP'
+
+export const getTooltip = memoizedFetch((pos: AbsoluteRepoPosition): Promise<Tooltip> => {
+    const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve({})
-    }
-
-    const cacheKey = `${path}@${repoRevCommit.commitID}:${line}@${char}`
-
-    if (tooltipCache[cacheKey]) {
-        return Promise.resolve(tooltipCache[cacheKey]!)
     }
 
     const body = wrapLSP({
         method: 'textDocument/hover',
         params: {
             textDocument: {
-                uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`
+                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
             },
             position: {
-                character: char - 1,
-                line: line - 1
+                character: pos.position.char! - 1,
+                line: pos.position.line - 1
             }
         }
-    }, repoRevCommit, path)
+    }, pos, pos.filePath)
 
     return fetch(`/.api/xlang/textDocument/hover`, { method: 'POST', body: JSON.stringify(body) })
-        .then(resp => resp.json()).then(json => {
-            if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
-                const title = json[1].result.contents[0].value
-                let doc
-                for (const markedString of json[1].result.contents) {
-                    if (typeof markedString === 'string') {
-                        doc = markedString
-                    } else if (markedString.language === 'markdown') {
-                        doc = markedString.value
-                    }
-                }
-                tooltipCache[cacheKey] = { title, doc }
-            } else {
-                tooltipCache[cacheKey] = {}
+        .then(resp => resp.json())
+        .then(json => {
+            if (!json[1] ||
+                !json[1].result ||
+                !json[1].result.contents ||
+                json[1].result.contents.length === 0) {
+                throw Object.assign(new Error('empty tooltip'), { code: EEMPTYTOOLTIP })
             }
-            return tooltipCache[cacheKey]!
+            const title: string = json[1].result.contents[0].value
+            let doc: string | undefined
+            for (const markedString of json[1].result.contents) {
+                if (typeof markedString === 'string') {
+                    doc = markedString
+                } else if (markedString.language === 'markdown') {
+                    doc = markedString.value
+                }
+            }
+            return { title, doc }
         })
-}
+}, makeRepoURI)
 
-const j2dCache = {}
-export function fetchJumpURL(col: number, path: string, line: number, repoRevCommit: ResolvedRepoRevSpec): Promise<string | null> {
-    const ext = getPathExtension(path)
+export const fetchJumpURL = memoizedFetch((pos: AbsoluteRepoPosition): Promise<string | null> => {
+    const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve(null)
-    }
-    const cacheKey = `${path}@${repoRevCommit.commitID}:${line}@${col}`
-    if (j2dCache[cacheKey]) {
-        return Promise.resolve(j2dCache[cacheKey])
     }
 
     const body = wrapLSP({
         method: 'textDocument/definition',
         params: {
             textDocument: {
-                uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`
+                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
             },
             position: {
-                character: col - 1,
-                line: line - 1
+                character: pos.position.char! - 1,
+                line: pos.position.line - 1
             }
         }
-    }, repoRevCommit, path)
+    }, pos, pos.filePath)
 
     return fetch(`/.api/xlang/textDocument/definition`, { method: 'POST', body: JSON.stringify(body) })
-        .then(resp => resp.json()).then(json => {
-            if (!json || !json[1] || !json[1].result || !json[1].result[0] || !json[1].result[0].uri) {
+        .then(resp => resp.json())
+        .then(json => {
+            if (!json ||
+                !json[1] ||
+                !json[1].result ||
+                !json[1].result[0] ||
+                !json[1].result[0].uri) {
                 // TODO(john): better error handling.
                 return null
             }
@@ -119,7 +123,7 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevCom
             const prt1Uri = prt0Uri[1].split('#')
 
             const repoUri = prt0Uri[0]
-            let frevUri = repoUri === repoRevCommit.repoURI ? repoRevCommit.rev : prt1Uri[0]
+            let frevUri = repoUri === pos.repoPath ? pos.rev || pos.commitID : prt1Uri[0]
             if (frevUri) {
                 frevUri = `@${frevUri}`
             }
@@ -134,84 +138,80 @@ export function fetchJumpURL(col: number, path: string, line: number, repoRevCom
                 lineAndCharEnding = `#L${startLine}`
             }
 
-            j2dCache[cacheKey] = `/${repoUri}${frevUri || ''}/-/blob/${pathUri}${lineAndCharEnding}`
-            return j2dCache[cacheKey]
+            const ret = `/${repoUri}${frevUri || ''}/-/blob/${pathUri}${lineAndCharEnding}`
+            return ret
         })
-}
+}, makeRepoURI)
 
-export function fetchXdefinition(col: number, path: string, line: number, repoRevCommit: ResolvedRepoRevSpec): Promise<{ location: any, symbol: any } | null> {
+export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoPosition): Promise<{ location: any, symbol: any } | null> => {
     const body = wrapLSP({
         method: 'textDocument/xdefinition',
         params: {
             textDocument: {
-                uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`
+                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
             },
             position: {
-                character: col,
-                line
+                character: pos.position.char! - 1,
+                line: pos.position.line - 1
             }
         }
-    }, repoRevCommit, path)
+    }, pos, pos.filePath)
 
     return fetch(`/.api/xlang/textDocument/xdefinition`, { method: 'POST', body: JSON.stringify(body) })
-        .then(resp => resp.json()).then(json => {
-            if (!json || !json[1] || !json[1].result || !json[1].result[0]) {
+        .then(resp => resp.json())
+        .then(json => {
+            if (!json ||
+                !json[1] ||
+                !json[1].result ||
+                !json[1].result[0]) {
                 return null
             }
 
             return json[1].result[0]
         })
-}
+}, makeRepoURI)
 
-const referencesCache = {}
-export function fetchReferences(col: number, path: string, line: number, repoRevCommit: ResolvedRepoRevSpec): Promise<Reference[] | null> {
-    const ext = getPathExtension(path)
+export const fetchReferences = memoizedFetch((pos: AbsoluteRepoPosition): Promise<Reference[] | null> => {
+    const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve(null)
     }
-    const cacheKey = `${path}@${repoRevCommit.commitID}:${line}@${col}`
-    if (referencesCache[cacheKey]) {
-        return Promise.resolve(referencesCache[cacheKey])
-    }
-
     const body = wrapLSP({
         method: 'textDocument/references',
         params: {
             textDocument: {
-                uri: `git://${repoRevCommit.repoURI}?${repoRevCommit.commitID}#${path}`
+                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
             },
             position: {
-                character: col,
-                line
+                character: pos.position.char! - 1,
+                line: pos.position.line - 1
             }
         },
         context: {
             includeDeclaration: true
         }
-    } as any, repoRevCommit, path)
+    } as any, pos, pos.filePath)
 
     return fetch(`/.api/xlang/textDocument/references`, { method: 'POST', body: JSON.stringify(body) })
-        .then(resp => resp.json()).then(json => {
-            if (!json || !json[1] || !json[1].result) {
+        .then(resp => resp.json())
+        .then(json => {
+            if (!json ||
+                !json[1] ||
+                !json[1].result) {
                 // TODO(john): better error handling.
                 return null
             }
 
-            referencesCache[cacheKey] = json[1].result
-            for (const ref of referencesCache[cacheKey]) {
+            const result = json[1].result
+            for (const ref of result) {
                 const parsed = URI.parse(ref.uri)
                 ref.repoURI = `${parsed.hostname}/${parsed.path}`
             }
-            return referencesCache[cacheKey]
+            return result
         })
-}
+}, makeRepoURI)
 
 export function fetchXreferences(workspace: Workspace, path: string, query: any, hints: any, limit: any): Promise<Reference[] | null> {
-    const repoRevCommit = {
-        repoURI: workspace.uri,
-        rev: workspace.rev,
-        commitID: workspace.rev // always a commit ID, comes from backend so we can't easily rename.
-    }
     const body = wrapLSP({
         method: 'workspace/xreferences',
         params: {
@@ -219,11 +219,14 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
             query,
             limit
         }
-    }, repoRevCommit, path)
+    }, { repoPath: workspace.uri, commitID: workspace.rev }, path)
 
     return fetch(`/.api/xlang/workspace/xreferences`, { method: 'POST', body: JSON.stringify(body) })
-        .then(resp => resp.json()).then(json => {
-            if (!json || !json[1] || !json[1].result) {
+        .then(resp => resp.json())
+        .then(json => {
+            if (!json ||
+                !json[1] ||
+                !json[1].result) {
                 return null
             }
 

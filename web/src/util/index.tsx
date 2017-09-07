@@ -543,7 +543,7 @@ export function highlightLine(history: H.History, repoURI: string, commitID: str
     if (!cell) {
         return
     }
-    cell.cell.style.backgroundColor = '#1c2736'
+    cell.cell.style.backgroundColor = 'rgb(34, 44, 58)'
     cell.cell.classList.add('sg-highlighted')
 
     // Update the URL.

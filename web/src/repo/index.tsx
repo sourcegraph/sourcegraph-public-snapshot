@@ -31,6 +31,14 @@ export interface ParsedRepoURI {
     range?: Range
 }
 
+export interface AbsoluteRepoPosition {
+    repoPath: string
+    commitID: string
+    filePath: string
+    position: Position
+    rev?: string
+}
+
 const parsePosition = (str: string): Position => {
     const split = str.split('.')
     if (split.length === 1) {

@@ -12,6 +12,7 @@ $color-text: #93A9C8;
 @import './search/SearchBox';
 @import './search/SearchResults';
 @import './repo/Repository';
+@import './repo/Tooltips';
 @import './references/ReferencesWidget';
 @import './components/CodeExcerpt';
 
@@ -62,6 +63,10 @@ body {
 #root {
     display: flex;
     width: 100%;
+}
+
+.selection-highlight {
+    background-color: rgba(217, 72, 15, 0.5);
 }
 
 .layout {

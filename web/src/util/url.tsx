@@ -1,3 +1,4 @@
+import { AbsoluteRepoPosition } from 'sourcegraph/repo'
 import { BlobURL, ParsedURL, TreeURL } from 'sourcegraph/util/types'
 import * as URI from 'urijs'
 
@@ -75,6 +76,20 @@ export function parseBlob(_loc: string = window.location.href): BlobURL {
     return v
 }
 
+// TEMPORARY HELPER FUNCTION -- WILL BE REMOVED WITH URL CONSOLIDATION
+export function blobUrlToAbsolutePosition(blobUrl: BlobURL): AbsoluteRepoPosition {
+    return {
+        repoPath: blobUrl.uri!,
+        rev: blobUrl.rev!,
+        commitID: blobUrl.rev!,
+        filePath: blobUrl.path!,
+        position: {
+            line: blobUrl.line!,
+            char: blobUrl.char
+        }
+    }
+}
+
 export function parseHash(hash: string): { line?: number, char?: number, modal?: string, modalMode?: string } {
     let line: number | undefined
     let char: number | undefined
@@ -104,6 +119,10 @@ export function isBlob(url: BlobURL): boolean {
 
 export function toBlob(loc: BlobURL): string {
     return `/${loc.uri}${loc.rev ? '@' + loc.rev : ''}/-/blob/${loc.path}${toBlobHash(loc)}`
+}
+
+export function toBlobV2(ctx: AbsoluteRepoPosition): string {
+    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : '@' + ctx.commitID}/-/blob/${ctx.filePath}${toBlobHash(ctx.position)}`
 }
 
 export function toEditorURL(repoPath: string, rev?: string, filePath?: string): string {
