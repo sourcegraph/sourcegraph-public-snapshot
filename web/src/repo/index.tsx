@@ -22,6 +22,7 @@ export interface Range {
 }
 
 export interface ParsedRepoURI {
+    /** Example: github.com/gorilla/mux */
     repoPath: string
     rev?: string
     commitID?: string

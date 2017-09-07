@@ -102,7 +102,7 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
     public render(): JSX.Element | null {
         switch (this.props.routeName) {
             case 'search':
-                return <SearchResults />
+                return <SearchResults {...this.props} />
 
             case 'repository':
                 return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} />

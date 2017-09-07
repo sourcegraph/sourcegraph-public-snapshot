@@ -20,12 +20,16 @@
         padding: 3px 5px;
 
         font-size: 10px;
-        border-radius: 100%;
+        border-radius: 1rem;
         background-color: #2A3A51;
         color: white;
     }
 
     &__label {
         margin-right: 1rem;
+    }
+
+    &__duration {
+        margin-left: auto;
     }
 }

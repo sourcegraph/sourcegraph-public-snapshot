@@ -13,7 +13,7 @@ export class Navbar extends React.Component<ParsedRouteProps, {}> {
                     <img className='navbar__logo' src='/.assets/img/sourcegraph-mark.svg' />
                 </Link>
                 <div className='navbar__search-box-container'>
-                    <SearchBox history={this.props.history} />
+                    <SearchBox {...this.props} />
                 </div>
                 <div>
                     {

@@ -6,7 +6,6 @@ import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import RepoGroupIcon from '@sourcegraph/icons/lib/RepoGroup'
 import SearchIcon from '@sourcegraph/icons/lib/Search'
 import escapeRegexp = require('escape-string-regexp')
-import * as H from 'history'
 import * as React from 'react'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
@@ -21,15 +20,8 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { events } from 'sourcegraph/tracking/events'
-import { isSearchResultsPage, parseBlob } from 'sourcegraph/util/url'
-import { getSearchParamsFromURL, getSearchPath, parseRepoList } from './index'
-
-enum FilterType {
-    Repo = 'repo',
-    RepoGroup = 'repogroup',
-    File = 'file',
-    FileGlob = 'fileglob'
-}
+import { ParsedRouteProps } from 'sourcegraph/util/routes'
+import { buildSearchURLQuery, FileFilter, FileGlobFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
 
 /** The icons used to show a suggestion for a filter */
 const SUGGESTION_ICONS = {
@@ -39,41 +31,18 @@ const SUGGESTION_ICONS = {
     [FilterType.FileGlob]: FileGlobIcon
 }
 
-/** Object representation of a suggestion in the suggestion list */
-type Filter = RepoGroupFilter | RepoFilter | FileFilter | FileGlobFilter
-
-interface BaseFilter {
-    label: string
+function getFilterLabel(filter: Filter): string {
+    switch (filter.type) {
+        case FilterType.Repo:      return filter.repoPath
+        case FilterType.RepoGroup: return filter.name
+        case FilterType.File:      return filter.filePath
+        case FilterType.FileGlob:  return filter.glob
+    }
 }
 
-interface RepoFilter extends BaseFilter {
-    type: FilterType.Repo
-    repoUri: string
-}
+interface Props extends ParsedRouteProps { }
 
-interface FileFilter extends BaseFilter {
-    type: FilterType.File
-    filePath: string
-}
-
-interface FileGlobFilter extends BaseFilter {
-    type: FilterType.FileGlob
-    glob: string
-}
-
-interface RepoGroupFilter extends BaseFilter {
-    type: FilterType.RepoGroup
-    repoUris: string[]
-}
-
-interface Props {
-    history: H.History
-}
-
-interface State {
-
-    /** The selected filters (shown as chips) */
-    filters: Filter[]
+interface State extends SearchOptions {
 
     /** Whether suggestions are shown or not */
     suggestionsVisible: boolean
@@ -83,13 +52,6 @@ interface State {
 
     /** Index of the currently selected suggestion (-1 if none selected) */
     selectedSuggestion: number
-
-    /** The text typed in */
-    query: string
-
-    matchCase: boolean
-    matchRegexp: boolean
-    matchWord: boolean
 }
 
 export class SearchBox extends React.Component<Props, State> {
@@ -103,49 +65,30 @@ export class SearchBox extends React.Component<Props, State> {
     /** Emits when the input field is clicked */
     private inputClicks = new Subject<void>()
 
+    /** Emits on componentWillReceiveProps */
+    private componentUpdates = new Subject<Props>()
+
     /** Only used for selection and focus management */
     private inputElement: HTMLInputElement
 
     constructor(props: Props) {
         super(props)
         // Fill text input from URL info
-        const filters: Filter[] = []
-        let query = ''
-        const parsedUrl = parseBlob()
-        let matchCase = false
-        let matchWord = false
-        let matchRegexp = false
-        if (isSearchResultsPage()) {
-            // Search results page, show query
-            const params = getSearchParamsFromURL(location.href)
-            for (const repoUri of parseRepoList(params.repos)) {
-                filters.push({ type: FilterType.Repo, label: repoUri, repoUri })
-            }
-            if (params.files) {
-                filters.push({ type: FilterType.File, label: params.files, filePath: params.files })
-            }
-            query = params.q
-            matchCase = params.matchCase
-            matchWord = params.matchWord
-            matchRegexp = params.matchRegex
-        } else if (parsedUrl.uri) {
-            // Repo page, add repo filter
-            filters.push({ type: FilterType.Repo, label: parsedUrl.uri, repoUri: parsedUrl.uri })
-            if (parsedUrl.path) {
-                // Blob page, add file filter
-                filters.push({ type: FilterType.File, label: parsedUrl.path, filePath: parsedUrl.path })
-            }
-        }
-        this.state = {
-            filters,
-            suggestionsVisible: false,
-            suggestions: [],
-            query,
-            selectedSuggestion: -1,
-            matchCase,
-            matchWord,
-            matchRegexp
-        }
+        this.state = this.getStateFromProps(props)
+
+        /** Emits whenever the route changes */
+        const routeChanges = this.componentUpdates
+            .distinctUntilChanged((a, b) => a.location === b.location)
+
+        // Reset SearchBox on route changes
+        this.subscriptions.add(
+            routeChanges.subscribe(props => {
+                this.setState(this.getStateFromProps(props))
+            }, err => {
+                console.error(err)
+            })
+        )
+
         this.subscriptions.add(
             Observable.merge(
                 // Trigger new suggestions every time the input field is typed into
@@ -168,7 +111,6 @@ export class SearchBox extends React.Component<Props, State> {
                     if (/\*|\?/.exec(this.state.query)) {
                         const fileGlobFilter: FileGlobFilter = {
                             type: FilterType.FileGlob,
-                            label: this.state.query,
                             glob: this.state.query
                         }
                         return [[fileGlobFilter]]
@@ -198,15 +140,15 @@ export class SearchBox extends React.Component<Props, State> {
                         }
                     `, {
                         query,
-                        repositories: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoUri)
+                        repositories: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoPath)
                     })
                         .do(result => console.error(...result.errors || []))
                         .mergeMap(result => result.data!.root.search)
                         .map((item: GQL.SearchResult): Filter => {
                             switch (item.__typename) {
-                                case 'Repository':    return { label: item.uri, type: FilterType.Repo, repoUri: item.uri }
-                                case 'SearchProfile': return { label: item.name, type: FilterType.RepoGroup, repoUris: item.repositories.map(r => r.uri) }
-                                case 'File':          return { label: item.name, type: FilterType.File, filePath: item.name }
+                                case 'Repository':    return { type: FilterType.Repo, repoPath: item.uri }
+                                case 'SearchProfile': return { type: FilterType.RepoGroup, name: item.name, repoUris: item.repositories.map(r => r.uri) }
+                                case 'File':          return { type: FilterType.File, filePath: item.name }
                             }
                         })
                         .toArray()
@@ -215,12 +157,20 @@ export class SearchBox extends React.Component<Props, State> {
                             return []
                         })
                 })
+                // Abort suggestion display on route change
+                .takeUntil(routeChanges)
+                // But resubscribe afterwards
+                .repeat()
                 .subscribe(suggestions => {
                     this.setState({ suggestions, selectedSuggestion: Math.min(suggestions.length - 1, 0), suggestionsVisible: true })
                 }, err => {
                     console.error(err)
                 })
         )
+    }
+
+    public componentWillReceiveProps(newProps: Props): void {
+        this.componentUpdates.next(newProps)
     }
 
     public componentDidMount(): void {
@@ -247,7 +197,7 @@ export class SearchBox extends React.Component<Props, State> {
                                 return (
                                     <span key={i} className='search-box__chip'>
                                         <Icon />
-                                        <span className='search-box__chip-text'>{filter.label}</span>
+                                        <span className='search-box__chip-text'>{getFilterLabel(filter)}</span>
                                         <button type='button' className='search-box__chip-remove-button' onClick={() => this.removeFilter(i)}>
                                             <CloseIcon />
                                         </button>
@@ -276,14 +226,14 @@ export class SearchBox extends React.Component<Props, State> {
                         <input type='checkbox' checked={this.state.matchWord} onChange={e => this.setState({ matchWord: e.currentTarget.checked })} /><span><u>Ab</u></span>
                     </label>
                     <label className='search-box__option' title='Use regular expression'>
-                        <input type='checkbox' checked={this.state.matchRegexp} onChange={e => this.setState({ matchRegexp: e.currentTarget.checked })} /><span>.*</span>
+                        <input type='checkbox' checked={this.state.matchRegex} onChange={e => this.setState({ matchRegex: e.currentTarget.checked })} /><span>.*</span>
                     </label>
                 </div>
                 <ul className='search-box__suggestions' style={this.state.suggestionsVisible ? {} : { height: 0 }}>
                     {
                         this.state.suggestions.map((suggestion, i) => {
                             const Icon = SUGGESTION_ICONS[suggestion.type]
-                            const parts = suggestion.label.split(splitRegexp)
+                            const parts = getFilterLabel(suggestion).split(splitRegexp)
                             let className = 'search-box__suggestion'
                             if (this.state.selectedSuggestion === i) {
                                 className += ' search-box__suggestion--selected'
@@ -309,6 +259,31 @@ export class SearchBox extends React.Component<Props, State> {
                 </ul>
             </form>
         )
+    }
+
+    /**
+     * Reads initial state from the props (i.e. URL parameters)
+     */
+    private getStateFromProps(props: Props): State {
+        let searchOptions: SearchOptions = {
+            query: '',
+            filters: [],
+            matchCase: false,
+            matchWord: false,
+            matchRegex: false
+        }
+        if (props.routeName === 'search') {
+            // Search results page, show query
+            searchOptions = parseSearchURLQuery(props.location.search)
+        } else if (props.repoPath) {
+            // Repo page, add repo filter
+            searchOptions.filters.push({ type: FilterType.Repo, repoPath: props.repoPath })
+            if (props.filePath) {
+                // Blob page, add file filter
+                searchOptions.filters.push({ type: FilterType.File, filePath: props.filePath })
+            }
+        }
+        return { ...searchOptions, suggestions: [], selectedSuggestion: -1, suggestionsVisible: false }
     }
 
     private removeFilter(index: number): void {
@@ -374,31 +349,23 @@ export class SearchBox extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         this.setState({ suggestionsVisible: false })
-        const { filters, query } = this.state
-        if (query && filters.length > 0) {
+        if (this.state.query && this.state.filters.length > 0) {
             // Go to search results
-            const path = getSearchPath({
-                q: query,
-                repos: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoUri)
-                    .concat(...filters.filter(f => f.type === FilterType.RepoGroup).map((f: RepoGroupFilter) => f.repoUris))
-                    .join(','),
-                files: [
-                    ...filters.filter(f => f.type === FilterType.File).map((f: FileFilter) => f.filePath),
-                    ...filters.filter(f => f.type === FilterType.FileGlob).map((f: FileGlobFilter) => f.glob)
-                ].join(','),
-                matchCase: this.state.matchCase,
-                matchRegex: this.state.matchRegexp,
-                matchWord: this.state.matchWord
+            const path = '/search?' + buildSearchURLQuery(this.state)
+            events.SearchSubmitted.log({
+                code_search: {
+                    pattern: this.state.query,
+                    repos: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoPath)
+                }
             })
-            events.SearchSubmitted.log({ code_search: { pattern: query, repos: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoUri) } })
             this.props.history.push(path)
-        } else if (filters[0].type === FilterType.Repo) {
-            if (filters.length === 1) {
+        } else if (this.state.filters[0].type === FilterType.Repo) {
+            if (this.state.filters.length === 1) {
                 // Go to repo
-                this.props.history.push(`/${(filters[0] as RepoFilter).repoUri}`)
-            } else if (filters[1].type === FilterType.File && filters.length === 2) {
+                this.props.history.push(`/${(this.state.filters[0] as RepoFilter).repoPath}`)
+            } else if (this.state.filters[1].type === FilterType.File && this.state.filters.length === 2) {
                 // Go to file
-                this.props.history.push(`/${(filters[0] as RepoFilter).repoUri}/-/blob/${(filters[1] as FileFilter).filePath}`)
+                this.props.history.push(`/${(this.state.filters[0] as RepoFilter).repoPath}/-/blob/${(this.state.filters[1] as FileFilter).filePath}`)
             }
         }
     }

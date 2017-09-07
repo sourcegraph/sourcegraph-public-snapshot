@@ -1,5 +1,6 @@
 import 'rxjs/add/operator/toPromise'
-import { SearchParams } from 'sourcegraph/search'
+import { Observable } from 'rxjs/Observable'
+import { FileFilter, FileGlobFilter, FilterType, RepoFilter, SearchOptions } from 'sourcegraph/search'
 import * as util from 'sourcegraph/util'
 import { queryGraphQL } from './graphql'
 
@@ -164,25 +165,22 @@ export interface LineMatch {
     preview: string
 }
 
-export interface ResolvedSearchTextResp {
-    results?: SearchResult[]
-    notFound?: boolean
-}
-
-export function searchText(query: string, repositories: { repo: string, rev: string }[], params: SearchParams): Promise<ResolvedSearchTextResp> {
+export function searchText(params: SearchOptions): Observable<GQL.ISearchResults> {
     const variables = {
-        pattern: query,
+        pattern: params.query,
         fileMatchLimit: 500,
         isRegExp: params.matchRegex,
         isWordMatch: params.matchWord,
-        repositories,
+        repositories: params.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => ({ repo: f.repoPath })),
         isCaseSensitive: params.matchCase,
-        // TODO(john)??: currently VS Code converts a string like "*.go" into "{*.go/**,*.go,**/*.go}" -- should we similarly add "**" glob patterns here?
-        includePattern: params.files !== '' ? `{${params.files}` : '',
+        includePattern: [
+            ...params.filters.filter(f => f.type === FilterType.File).map((f: FileFilter) => f.filePath),
+            ...params.filters.filter(f => f.type === FilterType.FileGlob).map((f: FileGlobFilter) => f.glob)
+        ].join(','),
         excludePattern: '{.git,**/.git,.svn,**/.svn,.hg,**/.hg,CVS,**/CVS,.DS_Store,**/.DS_Store,node_modules,bower_components,vendor,dist,out,Godeps,third_party}'
     }
 
-    const p = queryGraphQL(`
+    return queryGraphQL(`
         query SearchText(
             $pattern: String!,
             $fileMatchLimit: Int!,
@@ -218,17 +216,9 @@ export function searchText(query: string, repositories: { repo: string, rev: str
                 }
             }
         }
-    `, variables).toPromise().then(result => {
-        const results = result.data && result.data.root!.searchRepos
-        if (!results) {
-            const notFound = { notFound: true }
-            return notFound
-        }
-
-        return results
-    })
-
-    return p
+    `, variables)
+        .do(result => console.error(...result.errors || []))
+        .map(result => result.data!.root.searchRepos)
 }
 
 export function fetchActiveRepos(): Promise<GQL.IActiveRepoResults | null> {

@@ -2,7 +2,7 @@ import { highlightBlock } from 'highlight.js'
 import * as H from 'history'
 import * as marked from 'marked'
 import { triggerReferences } from 'sourcegraph/references'
-import { getSearchPath } from 'sourcegraph/search'
+import { buildSearchURLQuery, FilterType } from 'sourcegraph/search'
 import { clearTooltip, store, TooltipState } from 'sourcegraph/tooltips/store'
 import * as styles from 'sourcegraph/tooltips/styles'
 import { events } from 'sourcegraph/tracking/events'
@@ -200,7 +200,13 @@ function updateTooltip(state: TooltipState): void {
 
     const searchText = context!.selectedText ? context!.selectedText! : target!.textContent!
     if (searchText) {
-        searchAction.href = getSearchPath({ files: '', repos: context.repoRevCommit.repoURI, q: searchText, matchCase: false, matchWord: false, matchRegex: false })
+        searchAction.href = '/search?' + buildSearchURLQuery({
+            filters: [{ type: FilterType.Repo, repoPath: context.repoRevCommit.repoURI }],
+            query: searchText,
+            matchCase: false,
+            matchWord: false,
+            matchRegex: false
+        })
     } else {
         searchAction.href = ''
     }
