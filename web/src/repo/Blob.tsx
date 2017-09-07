@@ -194,14 +194,14 @@ export class Blob extends React.Component<BlobProps, State> {
             return
         }
         const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
-        highlightLine(this.props.history, this.props.repoPath, this.props.commitID, this.props.filePath, line, getCodeCellsForAnnotation(), true)
+        highlightLine(this.props.history, this.props.repoPath, this.props.commitID, this.props.filePath, line, getCodeCellsForAnnotation(), e)
     }
 
     private scrollToLine = (props: BlobProps) => {
         const line = url.parseHash(props.location.hash).line
         if (line) {
             highlightAndScrollToLine(props.history, props.repoPath,
-                props.commitID, props.filePath, line, getCodeCellsForAnnotation(), false)
+                props.commitID, props.filePath, line, getCodeCellsForAnnotation())
         }
     }
 
