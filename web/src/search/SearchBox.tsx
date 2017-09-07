@@ -69,7 +69,13 @@ export class SearchBox extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
 
     /** Only used for selection and focus management */
-    private inputElement: HTMLInputElement
+    private inputElement?: HTMLInputElement
+
+    /** Only used for scroll state management */
+    private suggestionListElement?: HTMLElement
+
+    /** Only used for scroll state management */
+    private selectedSuggestionElement?: HTMLElement
 
     constructor(props: Props) {
         super(props)
@@ -97,7 +103,7 @@ export class SearchBox extends React.Component<Props, State> {
                     .debounceTime(200),
                 // Trigger new suggestions every time the input field is clicked
                 this.inputClicks
-                    .map(() => this.inputElement.value)
+                    .map(() => this.inputElement!.value)
             )
                 .switchMap(query => {
                     if (query.length <= 1) {
@@ -174,13 +180,32 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        // Focus the input element and set cursor to the end
-        this.inputElement.focus()
-        this.inputElement.setSelectionRange(this.inputElement.value.length, this.inputElement.value.length)
+        if (this.inputElement) {
+            // Focus the input element and set cursor to the end
+            this.inputElement.focus()
+            this.inputElement.setSelectionRange(this.inputElement.value.length, this.inputElement.value.length)
+        }
     }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+    }
+
+    public componentDidUpdate(): void {
+        // Check if selected suggestion is out of view
+        if (this.suggestionListElement && this.selectedSuggestionElement) {
+
+            const listRect = this.suggestionListElement.getBoundingClientRect()
+            const suggestionRect = this.selectedSuggestionElement.getBoundingClientRect()
+
+            if (suggestionRect.top <= listRect.top) {
+                // Scroll into view at the top of the list
+                this.selectedSuggestionElement.scrollIntoView(true)
+            } else if (suggestionRect.bottom >= listRect.bottom) {
+                // Scroll into view at the bottom of the list
+                this.selectedSuggestionElement.scrollIntoView(false)
+            }
+        }
     }
 
     public render(): JSX.Element | null {
@@ -229,7 +254,7 @@ export class SearchBox extends React.Component<Props, State> {
                         <input type='checkbox' checked={this.state.matchRegex} onChange={e => this.setState({ matchRegex: e.currentTarget.checked })} /><span>.*</span>
                     </label>
                 </div>
-                <ul className='search-box__suggestions' style={this.state.suggestionsVisible ? {} : { height: 0 }}>
+                <ul className='search-box__suggestions' style={this.state.suggestionsVisible ? {} : { height: 0 }} ref={this.setSuggestionListElement}>
                     {
                         this.state.suggestions.map((suggestion, i) => {
                             const Icon = SUGGESTION_ICONS[suggestion.type]
@@ -239,14 +264,23 @@ export class SearchBox extends React.Component<Props, State> {
                                 className += ' search-box__suggestion--selected'
                             }
                             return (
-                                <li key={i} className={className} onClick={() => {
-                                    this.setState({
-                                        filters: this.state.filters.concat(suggestion),
-                                        suggestions: [],
-                                        selectedSuggestion: -1,
-                                        query: ''
-                                    })
-                                }}>
+                                <li
+                                    key={i}
+                                    className={className}
+                                    onClick={() => {
+                                        this.setState({
+                                            filters: this.state.filters.concat(suggestion),
+                                            suggestions: [],
+                                            selectedSuggestion: -1,
+                                            query: ''
+                                        })
+                                    }}
+                                    ref={ref => {
+                                        if (this.state.selectedSuggestion === i) {
+                                            this.selectedSuggestionElement = ref || undefined
+                                        }
+                                    }}
+                                >
                                     <Icon />
                                     <div className='search-box__suggestion-label'>
                                         {parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box__highlighted-query' : ''}>{part}</span>)}
@@ -259,6 +293,10 @@ export class SearchBox extends React.Component<Props, State> {
                 </ul>
             </form>
         )
+    }
+
+    private setSuggestionListElement = (ref: HTMLElement | null): void => {
+        this.suggestionListElement = ref || undefined
     }
 
     /**
@@ -297,7 +335,7 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
-        this.setState({ suggestionsVisible: false })
+        // this.setState({ suggestionsVisible: false })
     }
 
     private onInputClick: React.MouseEventHandler<HTMLInputElement> = event => {
@@ -329,7 +367,7 @@ export class SearchBox extends React.Component<Props, State> {
                 break
             }
             case 'Backspace': {
-                if (this.inputElement.selectionStart === 0 && this.inputElement.selectionEnd === 0) {
+                if (this.inputElement!.selectionStart === 0 && this.inputElement!.selectionEnd === 0) {
                     this.setState({ filters: this.state.filters.slice(0, -1) })
                 }
                 break
