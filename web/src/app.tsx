@@ -1,14 +1,18 @@
 import * as React from 'react'
 import { render } from 'react-dom'
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
-import 'rxjs/add/observable/fromPromise'
+import 'rxjs/add/observable/defer'
 import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/delay'
+import 'rxjs/add/operator/do'
+import 'rxjs/add/operator/retryWhen'
+import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Home } from 'sourcegraph/home/Home'
 import { Navbar } from 'sourcegraph/nav/Navbar'
-import { ResolvedRev, resolveRev } from 'sourcegraph/repo/backend'
+import { ECLONEINPROGESS, resolveRev } from 'sourcegraph/repo/backend'
 import { Repository, RepositoryCloneInProgress } from 'sourcegraph/repo/Repository'
 import { SearchResults } from 'sourcegraph/search/SearchResults'
 import * as activeRepos from 'sourcegraph/util/activeRepos'
@@ -37,30 +41,38 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
     public state: WithResolvedRevState = { cloneInProgress: false }
     private componentUpdates = new Subject<WithResolvedRevProps>()
     private subscriptions = new Subscription()
-    private cloneInProgressRefetchTimers: any[] = []
 
     constructor(props: WithResolvedRevProps) {
         super(props)
         this.subscriptions.add(
             this.componentUpdates
-                .switchMap(props => {
-                    if (props.repoPath) {
-                        return Observable.fromPromise(resolveRev({ repoPath: props.repoPath, rev: props.rev }, this.state.cloneInProgress))
-                            .catch(err => {
-                                console.error(err)
-                                return []
+                .switchMap(({ repoPath, rev }) => {
+                    if (!repoPath) {
+                        return [undefined]
+                    }
+                    // Defer Observable so it retries the request on resubscription
+                    return Observable.defer(() => resolveRev({ repoPath, rev }))
+                        // On a CloneInProgress error, retry after 5s
+                        .retryWhen(errors => errors
+                            .do(err => {
+                                if (err.code === ECLONEINPROGESS) {
+                                    // Display cloning screen to the user and retry
+                                    this.setState({ cloneInProgress: true })
+                                    return
+                                }
+                                // Don't retry other errors
+                                throw err
                             })
-
-                    }
-                    const resolved: ResolvedRev = { cloneInProgress: false }
-                    return [resolved]
+                            .delay(1000)
+                        )
+                        // Log other errors but don't break the stream
+                        .catch(err => {
+                            console.error(err)
+                            return []
+                        })
                 })
-                .subscribe(resolved => {
-                    if (resolved.cloneInProgress) {
-                         // refetch every 5 seconds
-                        this.cloneInProgressRefetchTimers.push(setTimeout(() => this.componentUpdates.next(this.props), 5000))
-                    }
-                    this.setState(resolved)
+                .subscribe(commitID => {
+                    this.setState({ commitID, cloneInProgress: false })
                 }, err => console.error(err))
         )
     }
@@ -79,10 +91,6 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-        for (const timer of this.cloneInProgressRefetchTimers) {
-            clearTimeout(timer)
-        }
-        this.cloneInProgressRefetchTimers = []
     }
 
     public render(): JSX.Element | null {

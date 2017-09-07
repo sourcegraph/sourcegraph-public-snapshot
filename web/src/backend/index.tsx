@@ -16,7 +16,6 @@ export function memoizedFetch<K, T>(fetch: (ctx: K) => Promise<T>, makeKey?: (ct
         cache.set(key, p)
         p.catch(e => {
             cache.delete(key)
-            throw e
         })
         return p
     }

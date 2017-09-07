@@ -2,12 +2,19 @@ import { memoizedFetch } from 'sourcegraph/backend'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { makeRepoURI } from 'sourcegraph/repo'
 
-export interface ResolvedRev {
-    cloneInProgress: boolean
-    commitID?: string
+export const ECLONEINPROGESS = 'ECLONEINPROGESS'
+class CloneInProgressError extends Error {
+    public readonly code = ECLONEINPROGESS
+    constructor(repoPath: string) {
+        super(`${repoPath} is clone in progress`)
+    }
 }
 
-export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }): Promise<ResolvedRev> =>
+/**
+ * @return Promise that resolves to the commit ID
+ *         Will reject with a `CloneInProgressError` if the repo is still being cloned.
+ */
+export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }): Promise<string> =>
     queryGraphQL(`
         query ResolveRev($repoPath: String, $rev: String) {
             root {
@@ -22,19 +29,16 @@ export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }
             }
         }
     `, { ...ctx, rev: ctx.rev || 'master' }).toPromise().then(result => {
-        const resolved: ResolvedRev = { cloneInProgress: false }
         if (!result.data || !result.data.root.repository) {
             throw new Error('invalid response received from graphql endpoint')
         }
         if (result.data.root.repository.commit.cloneInProgress) {
-            resolved.cloneInProgress = true
-            return resolved
+            throw new CloneInProgressError(ctx.repoPath)
         }
         if (!result.data.root.repository.commit.commit) {
             throw new Error('not able to resolve sha1')
         }
-        resolved.commitID = result.data.root.repository.commit.commit.sha1
-        return resolved
+        return result.data.root.repository.commit.commit.sha1
     }), makeRepoURI
 )
 
