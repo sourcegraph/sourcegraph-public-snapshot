@@ -2,6 +2,7 @@ package ui2
 
 import (
 	"bytes"
+	"crypto/md5"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -11,11 +12,17 @@ import (
 	"strings"
 	"sync"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 // TODO(slimsag): tests for everything in this file
+
+var (
+	versionCacheMu sync.RWMutex
+	versionCache   = make(map[string]string)
+)
 
 // Functions that are exposed to templates.
 var funcMap = template.FuncMap{
@@ -24,6 +31,33 @@ var funcMap = template.FuncMap{
 	},
 	"add": func(a, b int) int {
 		return a + b
+	},
+	"version": func(fp string) (string, error) {
+		// Check the cache for the version.
+		versionCacheMu.RLock()
+		version, ok := versionCache[fp]
+		versionCacheMu.RUnlock()
+		if ok {
+			return version, nil
+		}
+
+		// Read file contents and calculate MD5 sum to represent version.
+		f, err := assets.Assets.Open(fp)
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+		data, err := ioutil.ReadAll(f)
+		if err != nil {
+			return "", err
+		}
+		version = fmt.Sprintf("%x", md5.Sum(data))
+
+		// Update cache.
+		versionCacheMu.Lock()
+		versionCache[fp] = version
+		versionCacheMu.Unlock()
+		return version, nil
 	},
 }
 
