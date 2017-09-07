@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-github/github"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -111,7 +112,7 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 
 	// Finally, post signup notification to Slack
 	if event == "SignupCompleted" {
-		err = notifySlackOnSignup(a, contactParams, hsResponse, tos)
+		err = slack.NotifyOnSignup(a, contactParams, hsResponse, tos)
 		if err != nil {
 			log15.Error("Error sending new signup details to Slack", "error", err)
 			return
@@ -199,7 +200,7 @@ func trackInstallationEvent(event *github.InstallationEvent) error {
 		return errors.Wrap(err, "Error writing to GCS")
 	}
 
-	err = notifySlackOnAppInstall(*event.Sender.Login, gitHubLink(*event.Sender.Login), lookerUserLink(*event.Sender.Login), event.Installation.Account, gitHubLink(*event.Installation.Account.Login))
+	err = slack.NotifyOnAppInstall(*event.Sender.Login, gitHubLink(*event.Sender.Login), lookerUserLink(*event.Sender.Login), event.Installation.Account, gitHubLink(*event.Installation.Account.Login))
 	if err != nil {
 		return errors.Wrap(err, "Error sending new app install details to Slack")
 	}

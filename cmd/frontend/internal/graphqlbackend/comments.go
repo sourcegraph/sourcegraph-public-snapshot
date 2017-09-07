@@ -9,6 +9,7 @@ import (
 
 	"github.com/mattbaird/gochimp"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
@@ -72,15 +73,16 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	notifyThreadParticipants(repo, thread, comments, comment)
+	emails := notifyThreadParticipants(repo, thread, comments, comment)
+	slack.NotifyOnComment(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
 
 	return &threadResolver{thread: thread}, nil
 }
 
 // notifyThreadParticipants sends email notifications to the participants in the comment thread.
-func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) {
+func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) []string {
 	if !notif.EmailIsConfigured() {
-		return
+		return []string{}
 	}
 
 	var first *sourcegraph.Comment
@@ -112,6 +114,7 @@ func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.T
 			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
 		})
 	}
+	return emails
 }
 
 func repoNameFromURI(remoteURI string) string {

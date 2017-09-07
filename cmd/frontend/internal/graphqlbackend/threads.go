@@ -2,9 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -153,7 +156,8 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	notifyThreadParticipants(repo, newThread, nil, comment)
+	emails := notifyThreadParticipants(repo, newThread, nil, comment)
+	slack.NotifyOnThread(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
 
 	return &threadResolver{thread: newThread}, nil
 }
