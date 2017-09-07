@@ -250,7 +250,7 @@ export class Blob extends React.Component<BlobProps, State> {
             if (ctx.position.line && this.props.repoPath === ctx.repoPath && this.props.rev === ctx.rev && lastHash.line !== ctx.position.line) {
                 // Handles URL update + scroll to file (for j2d within same file)
                 highlightAndScrollToLine(this.props.history, ctx.repoPath,
-                    ctx.commitID, ctx.filePath, ctx.position.line, getCodeCellsForAnnotation(), false)
+                    ctx.commitID, ctx.filePath, ctx.position.line, getCodeCellsForAnnotation())
             } else {
                 this.setState({ fixedTooltip: undefined }, () => this.props.history.push(url.toBlobV2(ctx)))
             }

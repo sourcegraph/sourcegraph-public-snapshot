@@ -532,7 +532,7 @@ export function highlightLine(history: H.History, repoURI: string, commitID: str
         commitID,
         path,
         line
-    })
+    }, userTriggered)
 
     const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>
     for (const cellElem of currentlyHighlighted) {
