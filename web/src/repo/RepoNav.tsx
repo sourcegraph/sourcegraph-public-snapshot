@@ -1,6 +1,6 @@
-import BookClosed from '@sourcegraph/icons/lib/BookClosed'
-import List from '@sourcegraph/icons/lib/List'
-import Share from '@sourcegraph/icons/lib/Share'
+import ListIcon from '@sourcegraph/icons/lib/List'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import ShareIcon from '@sourcegraph/icons/lib/Share'
 import * as copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
@@ -29,11 +29,11 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
         const hash = url.parseHash(this.props.location.hash)
         return <div className='repo-nav'>
             <span className='explorer' onClick={this.props.onClickNavigation}>
-                <List />
+                <ListIcon />
                 Navigation
             </span>
             <span className='path'>
-                <BookClosed />
+                <RepoIcon />
                 <RepoBreadcrumb {...this.props} />
             </span>
             <span className='fill' />
@@ -50,7 +50,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 }, 3000)
             }}>
                 {this.state.copiedLink ? 'Copied link to clipboard!' : 'Share'}
-                <Share />
+                <ShareIcon />
             </span>
             {this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
                 <a href={url.toGitHubBlob({ uri: this.props.repoPath, rev: this.props.rev || 'master', path: this.props.filePath, line: hash.line })} className='view-external'>

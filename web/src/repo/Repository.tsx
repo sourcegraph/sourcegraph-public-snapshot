@@ -1,6 +1,6 @@
 import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree'
-import BookClosed from '@sourcegraph/icons/lib/BookClosed'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
 import 'rxjs/add/observable/fromPromise'
@@ -158,7 +158,7 @@ export class Repository extends React.Component<Props, State> {
                             !this.props.filePath &&
                                 <div className='repository__no-file'>
                                     <div className='repository__icon-fab'>
-                                        <BookClosed />
+                                        <RepoIcon />
                                     </div>
                                     <div className='repository__uri-title'>
                                         {this.props.repoPath.split('/').slice(1).join('/')}
@@ -227,7 +227,7 @@ export class RepositoryCloneInProgress extends React.Component<Props, {}> {
                 <div className='repository__viewer'>
                     <div className='repository__no-file'>
                         <div className='repository__icon-fab'>
-                            <BookClosed />
+                            <RepoIcon />
                         </div>
                         <div className='repository__uri-title'>
                             {this.props.repoPath.split('/').slice(1).join('/')}
