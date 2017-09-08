@@ -207,7 +207,7 @@ export class Repository extends React.Component<Props, State> {
         const line = url.parseHash(props.location.hash).line
         if (line) {
             highlightAndScrollToLine(props.history, props.repoPath,
-                props.commitID, props.filePath!, line, getCodeCellsForAnnotation(), false)
+                props.commitID, props.filePath!, line, getCodeCellsForAnnotation())
         }
     }
 }

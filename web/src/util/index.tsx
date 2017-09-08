@@ -524,14 +524,15 @@ export function getCodeCellsForAnnotation(): CodeCell[] {
     return cells
 }
 
-export function highlightLine(history: H.History, repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
+export function highlightLine(history: H.History, repoURI: string, commitID: string, path: string, line: number,
+                              cells: CodeCell[], userTriggered?: React.MouseEvent<HTMLDivElement>): void {
     triggerBlame({
         time: moment(),
         repoURI,
         commitID,
         path,
         line
-    })
+    }, userTriggered)
 
     const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>
     for (const cellElem of currentlyHighlighted) {
@@ -567,7 +568,8 @@ export function highlightLine(history: H.History, repoURI: string, commitID: str
     history.push(url.toBlobHash(u))
 }
 
-export function highlightAndScrollToLine(history: H.History, repoURI: string, commitID: string, path: string, line: number, cells: CodeCell[], userTriggered: boolean): void {
+export function highlightAndScrollToLine(history: H.History, repoURI: string, commitID: string, path: string, line: number,
+                                         cells: CodeCell[], userTriggered?: React.MouseEvent<HTMLDivElement>): void {
     highlightLine(history, repoURI, commitID, path, line, cells, userTriggered)
 
     // Scroll to the line.

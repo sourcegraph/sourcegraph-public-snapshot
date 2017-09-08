@@ -194,14 +194,14 @@ export class Blob extends React.Component<BlobProps, State> {
             return
         }
         const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
-        highlightLine(this.props.history, this.props.repoPath, this.props.commitID, this.props.filePath, line, getCodeCellsForAnnotation(), true)
+        highlightLine(this.props.history, this.props.repoPath, this.props.commitID, this.props.filePath, line, getCodeCellsForAnnotation(), e)
     }
 
     private scrollToLine = (props: BlobProps) => {
         const line = url.parseHash(props.location.hash).line
         if (line) {
             highlightAndScrollToLine(props.history, props.repoPath,
-                props.commitID, props.filePath, line, getCodeCellsForAnnotation(), false)
+                props.commitID, props.filePath, line, getCodeCellsForAnnotation())
         }
     }
 
@@ -250,7 +250,7 @@ export class Blob extends React.Component<BlobProps, State> {
             if (ctx.position.line && this.props.repoPath === ctx.repoPath && this.props.rev === ctx.rev && lastHash.line !== ctx.position.line) {
                 // Handles URL update + scroll to file (for j2d within same file)
                 highlightAndScrollToLine(this.props.history, ctx.repoPath,
-                    ctx.commitID, ctx.filePath, ctx.position.line, getCodeCellsForAnnotation(), false)
+                    ctx.commitID, ctx.filePath, ctx.position.line, getCodeCellsForAnnotation())
             } else {
                 this.setState({ fixedTooltip: undefined }, () => this.props.history.push(url.toBlobV2(ctx)))
             }

@@ -45,6 +45,7 @@
         >.blame {
             &::before {
                 content: attr(data-blame);
+                cursor: pointer;
             }
             color: #464d57;
             padding-left: 4em;
