@@ -14,7 +14,7 @@
 
     &__blob-alert {
         font-family: system;
-        font-size: 12px;
+        font-size: .875rem;
         color: #93A9C8;
         background-color: #1c2736;
         display: flex;
@@ -73,8 +73,8 @@
         background-color: #151D28;
     }
 
-    &__no-file {
-        padding-top: 128px;
+    &__placeholder {
+        padding-top: 8rem;
         text-align: center;
 
         display: flex;
@@ -86,8 +86,9 @@
 
     &__icon-fab {
         border-radius: 100%;
-        width: 96px;
-        height: 96px;
+        width: 6rem;
+        height: 6rem;
+        min-height: 6rem;
         background-color: #233043;
         display: flex;
         align-items: center;
@@ -95,22 +96,22 @@
 
         .icon {
             fill: currentColor;
-            width: 64px;
-            height: 64px;
+            width: 4rem;
+            height: 4rem;
         }
     }
 
     &__uri-title {
-        font-size: 32px;
-        margin-top: 16px;
+        font-size: 2rem;
+        margin-top: 1rem;
         font-family: system;
-        line-height: 40px;
+        line-height: 2.5rem;
     }
 
     &__subtitle {
-        font-size: 12px;
-        line-height: 16px;
-        margin-top: 8px;
+        font-size: .875rem;
+        line-height: 1rem;
+        margin-top: .5rem;
     }
 
     &__blob-placeholder {

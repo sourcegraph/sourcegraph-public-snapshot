@@ -156,7 +156,7 @@ export class Repository extends React.Component<Props, State> {
                     <div className='repository__viewer'>
                         {
                             !this.props.filePath &&
-                                <div className='repository__no-file'>
+                                <div className='repository__placeholder'>
                                     <div className='repository__icon-fab'>
                                         <RepoIcon />
                                     </div>
@@ -225,7 +225,7 @@ export class RepositoryCloneInProgress extends React.Component<Props, {}> {
                 <RepoNav {...this.props} onClickNavigation={() => void(0)} />
             <div className='repository__content'>
                 <div className='repository__viewer'>
-                    <div className='repository__no-file'>
+                    <div className='repository__placeholder'>
                         <div className='repository__icon-fab'>
                             <RepoIcon />
                         </div>
