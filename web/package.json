@@ -40,7 +40,6 @@
     "@sourcegraph/icons": "^1.2.0",
     "copy-to-clipboard": "^3.0.7",
     "escape-string-regexp": "^1.0.5",
-    "highlight.js": "^9.12.0",
     "immutable": "^3.8.1",
     "js-yaml": "github:eseliger/js-yaml#4a2b61d6ca83942174e59ccc915a731358f2a80e",
     "lodash": "^4.11.2",
