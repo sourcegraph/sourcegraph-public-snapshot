@@ -199,11 +199,11 @@ export class SearchBox extends React.Component<Props, State> {
             const suggestionRect = this.selectedSuggestionElement.getBoundingClientRect()
 
             if (suggestionRect.top <= listRect.top) {
-                // Scroll into view at the top of the list
-                this.selectedSuggestionElement.scrollIntoView(true)
+                // Suggestion is out of view at the top of the list
+                this.suggestionListElement.scrollTop -= listRect.top - suggestionRect.top
             } else if (suggestionRect.bottom >= listRect.bottom) {
-                // Scroll into view at the bottom of the list
-                this.selectedSuggestionElement.scrollIntoView(false)
+                // Suggestion is out of view at the bottom of the list
+                this.suggestionListElement.scrollTop += suggestionRect.bottom - listRect.bottom
             }
         }
     }
@@ -335,7 +335,7 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
-        // this.setState({ suggestionsVisible: false })
+        this.setState({ suggestionsVisible: false })
     }
 
     private onInputClick: React.MouseEventHandler<HTMLInputElement> = event => {
