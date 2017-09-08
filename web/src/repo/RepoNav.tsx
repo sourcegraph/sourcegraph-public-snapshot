@@ -1,3 +1,4 @@
+import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ShareIcon from '@sourcegraph/icons/lib/Share'
@@ -14,6 +15,7 @@ interface RepoSubnavProps {
     rev?: string
     filePath?: string
     onClickNavigation?: () => void
+    onClickRevision?: () => void
     location: H.Location
 }
 
@@ -30,6 +32,10 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 <span className='explorer' onClick={this.props.onClickNavigation}>
                     <ListIcon />
                     Navigation
+                </span>
+                <span className='explorer' onClick={this.props.onClickRevision}>
+                    <ChevronDownIcon />
+                    {this.props.rev || 'master' /* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
                 </span>
                 <span className='path'>
                     <RepoIcon />

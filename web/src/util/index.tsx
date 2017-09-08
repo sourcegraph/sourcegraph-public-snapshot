@@ -1,4 +1,21 @@
 /**
+ * limitString limits the given string to N characters, optionally adding an
+ * ellipsis (…) at the end.
+ * @param s the string to limit
+ * @param n the number of characters to limit the string to
+ * @param ellipsis whether or not to add an ellipsis (…) when string is cut off.
+ */
+export function limitString(s: string, n: number, ellipsis: boolean): string {
+    if (s.length > n) {
+        if (ellipsis) {
+            return s.substring(0, n - 1) + '…'
+        }
+        return s.substring(0, n)
+    }
+    return s
+}
+
+/**
  * supportedExtensions are the file extensions
  * the extension will apply annotations to
  */
