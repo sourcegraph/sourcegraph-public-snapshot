@@ -1,4 +1,5 @@
 import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree'
+import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
@@ -9,6 +10,7 @@ import 'rxjs/add/operator/catch'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { HeroPage } from 'sourcegraph/components/HeroPage'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
 import { hideTooltip } from 'sourcegraph/repo/tooltips'
@@ -156,24 +158,16 @@ export class Repository extends React.Component<Props, State> {
                     <div className='repository__viewer'>
                         {
                             !this.props.filePath &&
-                                <div className='repository__placeholder'>
-                                    <div className='repository__icon-fab'>
-                                        <RepoIcon />
-                                    </div>
-                                    <div className='repository__uri-title'>
-                                        {this.props.repoPath.split('/').slice(1).join('/')}
-                                    </div>
-                                    <div className='repository__subtitle'>Select a file to begin browsing.</div>
-                                </div>
+                                <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Select a file to begin browsing.' />
                         }
                         {
                             this.state.highlightingError &&
-                                <p className='repository__blob-alert repository__blob-alert--error'><ErrorIcon />{this.state.highlightingError.message}</p>
+                                <HeroPage icon={ErrorIcon} title='' subtitle={this.state.highlightingError.message} />
                         }
                         {
                             this.state.highlightedFile && this.state.highlightedFile.aborted &&
                                 <p className='repository__blob-alert'>
-                                    <ErrorIcon />
+                                        <ErrorIcon />
                                     Syntax highlighting for this file has been disabled because it took too long.
                                     (<a href='#' onClick={this.handleShowAnywayButtonClick}>show anyway</a>)
                                     {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
@@ -222,21 +216,20 @@ export class RepositoryCloneInProgress extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <div className='repository'>
-                <RepoNav {...this.props} onClickNavigation={() => void(0)} />
-            <div className='repository__content'>
-                <div className='repository__viewer'>
-                    <div className='repository__placeholder'>
-                        <div className='repository__icon-fab'>
-                            <RepoIcon />
-                        </div>
-                        <div className='repository__uri-title'>
-                            {this.props.repoPath.split('/').slice(1).join('/')}
-                        </div>
-                        <div className='repository__subtitle'>Cloning in progress...</div>
-                    </div>
-                </div>
+                <RepoNav {...this.props} />
+                <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Cloning in progress' />
             </div>
-        </div>
+        )
+    }
+}
+
+export class RepositoryNotFound extends React.Component<Props, {}> {
+    public render(): JSX.Element | null {
+        return (
+            <div className='repository'>
+                <RepoNav {...this.props} />
+                <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested URL was not found.' />
+            </div>
         )
     }
 }

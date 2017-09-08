@@ -1,3 +1,4 @@
+import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
@@ -10,10 +11,11 @@ import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { HeroPage } from 'sourcegraph/components/HeroPage'
 import { Home } from 'sourcegraph/home/Home'
 import { Navbar } from 'sourcegraph/nav/Navbar'
-import { ECLONEINPROGESS, resolveRev } from 'sourcegraph/repo/backend'
-import { Repository, RepositoryCloneInProgress } from 'sourcegraph/repo/Repository'
+import { ECLONEINPROGESS, ENOTFOUND, resolveRev } from 'sourcegraph/repo/backend'
+import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from 'sourcegraph/repo/Repository'
 import { SearchResults } from 'sourcegraph/search/SearchResults'
 import * as activeRepos from 'sourcegraph/util/activeRepos'
 import { ParsedRouteProps, parseRouteProps } from 'sourcegraph/util/routes'
@@ -27,6 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
 interface WithResolvedRevProps {
     component: any
     cloningComponent?: any
+    notFoundComponent?: any // for 404s
     repoPath?: string
     rev?: string
     [key: string]: any
@@ -35,10 +38,11 @@ interface WithResolvedRevProps {
 interface WithResolvedRevState {
     commitID?: string
     cloneInProgress: boolean
+    notFound: boolean
 }
 
 class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolvedRevState> {
-    public state: WithResolvedRevState = { cloneInProgress: false }
+    public state: WithResolvedRevState = { cloneInProgress: false, notFound: false }
     private componentUpdates = new Subject<WithResolvedRevProps>()
     private subscriptions = new Subscription()
 
@@ -59,6 +63,10 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
                                     // Display cloning screen to the user and retry
                                     this.setState({ cloneInProgress: true })
                                     return
+                                }
+                                if (err.code === ENOTFOUND) {
+                                    // Display 404to the user and do not retry
+                                    this.setState({ notFound: true })
                                 }
                                 // Don't retry other errors
                                 throw err
@@ -84,7 +92,7 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
     public componentWillReceiveProps(nextProps: WithResolvedRevProps): void {
         if (this.props.repoPath !== nextProps.repoPath || this.props.rev !== nextProps.rev) {
             // clear state so the child won't render until the revision is resolved for new props
-            this.state = { cloneInProgress: false }
+            this.state = { cloneInProgress: false, notFound: false }
             this.componentUpdates.next(nextProps)
         }
     }
@@ -94,6 +102,9 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
     }
 
     public render(): JSX.Element | null {
+        if (this.props.notFoundComponent && this.state.notFound) {
+            return <this.props.notFoundComponent {...this.props} />
+        }
         if (this.props.cloningComponent && this.state.cloneInProgress) {
             return <this.props.cloningComponent {...this.props} />
         }
@@ -113,7 +124,7 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
                 return <SearchResults {...this.props} />
 
             case 'repository':
-                return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} />
+                return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />
 
             default:
                 return null
@@ -129,7 +140,7 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
         const props = parseRouteProps(this.props)
         return (
             <div className='layout'>
-                <WithResolvedRev {...props} component={Navbar} cloningComponent={Navbar} />
+                <WithResolvedRev {...props} component={Navbar} cloningComponent={Navbar} notFoundComponent={Navbar} />
                 <div className='layout__app-router-container'>
                     <AppRouter {...props} />
                 </div>
@@ -143,6 +154,26 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
  */
 class App extends React.Component<{}, {}> {
     public render(): JSX.Element | null {
+        const { statusCode, statusText, pageError, pageErrorID } = window
+        if (statusCode === 500) {
+            let subtitle: JSX.Element | undefined
+            if (pageErrorID) {
+                subtitle = <p>Sorry, there's been a problem. Please <a href='mailto:support@sourcegraph.com'>contact us</a> and include the error ID:
+                    <span className='error-id'>{pageErrorID}</span>
+                </p>
+            }
+            if (pageError) {
+                subtitle = <div className='app__error'>
+                    {subtitle}
+                    {subtitle && <hr />}
+                    <pre>{pageError}</pre>
+                </div>
+            } else {
+                subtitle = <div className='app__error'>{subtitle}</div>
+            }
+            return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
+        }
+
         return <BrowserRouter>
             <Switch>
                 <Route exact path='/' component={Home} />

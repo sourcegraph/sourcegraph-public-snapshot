@@ -31,10 +31,12 @@ type pageVars struct {
 }
 
 type Common struct {
-	Context  jscontext.JSContext
-	Route    string
-	PageVars *pageVars
-	AssetURL string
+	Context                    jscontext.JSContext
+	Route                      string
+	PageVars                   *pageVars
+	AssetURL                   string
+	StatusCode                 int
+	StatusText, Error, ErrorID string
 
 	// The fields below have zero values when not on a repo page.
 	RepoShortName, RepoShortNameSpaced string // "gorilla/mux" and "gorilla / mux"

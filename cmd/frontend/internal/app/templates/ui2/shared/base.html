@@ -14,8 +14,12 @@
 	</script>
 	<!-- End of Telligent scripts-->
 	<script>
-		window.context = {{ .Context }}
-		window.pageVars = {{ .PageVars }}
+		window.context = {{.Context}}
+		window.pageVars = {{.PageVars}}
+		window.statusCode = {{.StatusCode}}
+		window.statusText = {{.StatusText}}
+		window.pageError = {{.Error}}
+		window.pageErrorID = {{.ErrorID}}
 	</script>
 </head>
 

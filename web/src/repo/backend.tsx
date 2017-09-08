@@ -10,6 +10,14 @@ class CloneInProgressError extends Error {
     }
 }
 
+export const ENOTFOUND = 'ENOTFOUND'
+class NotFoundError extends Error {
+    public readonly code = ENOTFOUND
+    constructor(key: string) {
+        super(`${key} not found`)
+    }
+}
+
 /**
  * @return Promise that resolves to the commit ID
  *         Will reject with a `CloneInProgressError` if the repo is still being cloned.
@@ -29,8 +37,11 @@ export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }
             }
         }
     `, { ...ctx, rev: ctx.rev || 'master' }).toPromise().then(result => {
-        if (!result.data || !result.data.root.repository) {
+        if (!result.data) {
             throw new Error('invalid response received from graphql endpoint')
+        }
+        if (!result.data.root.repository) {
+            throw new NotFoundError(ctx.repoPath)
         }
         if (result.data.root.repository.commit.cloneInProgress) {
             throw new CloneInProgressError(ctx.repoPath)

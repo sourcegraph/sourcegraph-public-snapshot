@@ -32,9 +32,6 @@
                 width: 1.5rem;
             }
         }
-        &--error {
-            font-weight: bold;
-        }
     }
 
     &__content {
@@ -71,47 +68,6 @@
         min-width: 0;
 
         background-color: #151D28;
-    }
-
-    &__placeholder {
-        padding-top: 8rem;
-        text-align: center;
-
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-
-        color: #93A9C8;
-    }
-
-    &__icon-fab {
-        border-radius: 100%;
-        width: 6rem;
-        height: 6rem;
-        min-height: 6rem;
-        background-color: #233043;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        .icon {
-            fill: currentColor;
-            width: 4rem;
-            height: 4rem;
-        }
-    }
-
-    &__uri-title {
-        font-size: 2rem;
-        margin-top: 1rem;
-        font-family: system;
-        line-height: 2.5rem;
-    }
-
-    &__subtitle {
-        font-size: .875rem;
-        line-height: 1rem;
-        margin-top: .5rem;
     }
 
     &__blob-placeholder {

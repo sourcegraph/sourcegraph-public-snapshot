@@ -14,7 +14,7 @@ interface RepoSubnavProps {
     repoPath: string
     rev?: string
     filePath?: string
-    onClickNavigation: () => void
+    onClickNavigation?: () => void
     location: H.Location
 }
 
