@@ -216,8 +216,12 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
             }
         }
     `, variables)
-        .do(result => console.error(...result.errors || []))
-        .map(result => result.data!.root.searchRepos)
+        .map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.searchRepos) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.searchRepos
+        })
 }
 
 export function fetchActiveRepos(): Promise<GQL.IActiveRepoResults | null> {

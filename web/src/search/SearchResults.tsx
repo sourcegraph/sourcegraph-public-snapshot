@@ -1,3 +1,4 @@
+import upperFirst = require('lodash/upperFirst')
 import * as React from 'react'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/startWith'
@@ -15,6 +16,7 @@ interface State {
     results: SearchResult[]
     loading: boolean
     searchDuration?: number
+    error?: Error
 }
 
 function numberWithCommas(x: any): string {
@@ -43,12 +45,11 @@ export class SearchResults extends React.Component<Props, State> {
                     const start = Date.now()
                     const searchOptions = parseSearchURLQuery(props.location.search)
                     return searchText(searchOptions)
-                        .catch(err => {
-                            // TODO display error
-                            console.error(err)
-                            return []
+                        .map((res: GQL.ISearchResults): State => ({ results: res.results, loading: false, searchDuration: Date.now() - start, error: undefined }))
+                        .catch(error => {
+                            console.error(error)
+                            return [{ results: [], error, loading: false, searchDuration: undefined }]
                         })
-                        .map((res: GQL.ISearchResults): State => ({ results: res.results, loading: false, searchDuration: Date.now() - start }))
                 })
                 .subscribe(
                     newState => this.setState(newState),
@@ -66,24 +67,20 @@ export class SearchResults extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+
+        let alertTitle: string | undefined
+        let alertDetails: string | undefined
+        if (this.state.error) {
+            alertTitle = 'Something went wrong!'
+            alertDetails = upperFirst(this.state.error.message)
+        }
         if (this.state.loading) {
-            return (
-                <div className='searchResults'>
-                    <div className='search-results__header'>
-                        Working...
-                    </div>
-                </div>
-            )
+            alertTitle = 'Working...'
         }
-        if (!this.state.results || this.state.results.length === 0) {
-            return (
-                <div className='searchResults'>
-                    <div className='search-results__header'>
-                        No results
-                    </div>
-                </div>
-            )
+        if (this.state.results.length === 0) {
+            alertTitle = 'No results'
         }
+
         let totalMatches = 0
         let totalResults = 0
         let totalFiles = 0
@@ -98,17 +95,28 @@ export class SearchResults extends React.Component<Props, State> {
             totalFiles += 1
             totalResults += result.lineMatches.length
         }
+
         return (
-            <div className='search-results'>
-                <div className='search-results__header'>
-                    <div className='search-results__badge'>{numberWithCommas(totalResults)}</div>
-                    <div className='search-results__label'>{pluralize('result', totalResults)} in</div>
-                    <div className='search-results__badge'>{numberWithCommas(totalFiles)}</div>
-                    <div className='search-results__label'>{pluralize('file', totalFiles)}  in</div>
-                    <div className='search-results__badge'>{numberWithCommas(totalRepos)}</div>
-                    <div className='search-results__label'>{pluralize('repo', totalRepos)} </div>
-                    <div className='search-results__duration'>{this.state.searchDuration! / 1000} seconds</div>
-                </div>
+           <div className='search-results'>
+                {
+                    (alertTitle || alertDetails) &&
+                        <div className='search-results__alert'>
+                            {alertTitle && <h1 className='search-results__alert-title'>{alertTitle}</h1>}
+                            {alertDetails && <p className='search-results__alert-details'>{alertDetails}</p>}
+                        </div>
+                }
+                {
+                    this.state.results.length > 0 &&
+                        <div className='search-results__header'>
+                            <div className='search-results__badge'>{numberWithCommas(totalResults)}</div>
+                            <div className='search-results__label'>{pluralize('result', totalResults)} in</div>
+                            <div className='search-results__badge'>{numberWithCommas(totalFiles)}</div>
+                            <div className='search-results__label'>{pluralize('file', totalFiles)}  in</div>
+                            <div className='search-results__badge'>{numberWithCommas(totalRepos)}</div>
+                            <div className='search-results__label'>{pluralize('repo', totalRepos)} </div>
+                            <div className='search-results__duration'>{this.state.searchDuration! / 1000} seconds</div>
+                        </div>
+                }
                 {
                     this.state.results.map((result, i) => {
                         const prevTotal = totalMatches

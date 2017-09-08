@@ -3,6 +3,18 @@
     width: 100%;
     font-size: 12px;
 
+    &__alert {
+        width: 100%;
+        margin-top: 3rem;
+        text-align: center;
+        &-title {
+            text-align: inherit;
+        }
+        &-details {
+            margin-top: 1rem;
+        }
+    }
+
     &__header {
         display: flex;
         align-items: baseline;
