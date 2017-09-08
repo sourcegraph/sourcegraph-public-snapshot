@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -133,6 +134,7 @@ func getURL(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, comment *so
 	values.Set("vcs", "git")
 	values.Set("revision", thread.Revision)
 	values.Set("path", thread.File)
+	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
 	return fmt.Sprintf("https://about.sourcegraph.com/open-native/#open?%s", values.Encode())
 }
 
