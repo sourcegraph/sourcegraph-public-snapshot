@@ -36,15 +36,22 @@ interface State {
 export class Blob extends React.Component<BlobProps, State> {
     public state: State = {}
     private tooltip: TooltipData | null
-    private ref: HTMLElement
+    private blobElement: HTMLElement | null = null
     private subscriptions = new Subscription()
 
     public componentWillReceiveProps(nextProps: BlobProps): void {
+        const hash = url.parseHash(nextProps.location.hash)
+        if (this.props.location.pathname !== nextProps.location.pathname && !hash.line) {
+            if (this.blobElement) {
+                this.blobElement.scrollTop = 0
+            }
+        }
+
         if (this.props.html !== nextProps.html) {
             this.subscriptions.unsubscribe()
             this.subscriptions = new Subscription()
-            if (this.ref) {
-                this.addTooltipEventListeners(this.ref)
+            if (this.blobElement) {
+                this.addTooltipEventListeners(this.blobElement)
             }
             createTooltips()
             this.setState({ fixedTooltip: undefined })
@@ -70,8 +77,8 @@ export class Blob extends React.Component<BlobProps, State> {
     }
 
     private onBlobRef = (ref: HTMLElement | null) => {
+        this.blobElement = ref
         if (ref) {
-            this.ref = ref
             this.scrollToLine(this.props)
             createTooltips()
             if (supportedExtensions.has(getPathExtension(this.props.filePath))) {
