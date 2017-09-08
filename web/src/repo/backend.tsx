@@ -42,7 +42,14 @@ export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }
     }), makeRepoURI
 )
 
-export const fetchHighlightedFile = memoizedFetch((ctx: { repoPath: string, commitID: string, filePath: string, disableTimeout: boolean }): Promise<GQL.IHighlightedFile> =>
+interface FetchFileCtx {
+    repoPath: string
+    commitID: string
+    filePath: string
+    disableTimeout?: boolean
+}
+
+export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<GQL.IHighlightedFile> =>
     queryGraphQL(`query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean) {
         root {
             repository(uri: $repoPath) {
@@ -77,6 +84,24 @@ export const fetchHighlightedFile = memoizedFetch((ctx: { repoPath: string, comm
     }), ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}`
 )
 
+/**
+ * Produces a list like ['<tr>...</tr>', ...]
+ */
+export const fetchHighlightedFileLines = memoizedFetch((ctx: FetchFileCtx, force?: boolean): Promise<string[]> =>
+       fetchHighlightedFile(ctx, force).then(result => {
+            if (result.aborted) {
+                throw new Error('aborted fetching highlighted contents')
+            }
+            let parsed = result.html.substr('<table>'.length)
+            parsed = parsed.substr(0, parsed.length - '</table>'.length)
+            const rows = parsed.split('</tr>')
+            for (let i = 0; i < rows.length; ++i) {
+                rows[i] += '</tr>'
+            }
+            return rows
+        })
+    , makeRepoURI)
+
 export const listAllFiles = memoizedFetch((ctx: { repoPath: string, commitID: string }): Promise<string[]> =>
     queryGraphQL(`query FileTree($repoPath: String!, $commitID: String!) {
         root {
@@ -106,7 +131,7 @@ export const listAllFiles = memoizedFetch((ctx: { repoPath: string, commitID: st
     }), makeRepoURI
 )
 
-export const fetchBlobContent = memoizedFetch((ctx: { repoPath: string, commitID: string, filePath: string }): Promise<string> =>
+export const fetchBlobContent = memoizedFetch((ctx: FetchFileCtx): Promise<string> =>
     queryGraphQL(`query BlobContent($repoPath: String, $commitID: String, $filePath: String) {
         root {
             repository(uri: $repoPath) {

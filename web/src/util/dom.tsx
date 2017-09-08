@@ -16,6 +16,10 @@ export function isMouseEventWithModifierKey(e: MouseEvent): boolean {
 }
 
 export function highlightNode(parentNode: HTMLElement, start: number, end: number): void {
+    if (parentNode.classList.contains('annotated-selection-match')) {
+        return
+    }
+    parentNode.classList.add('annotated-selection-match')
     highlightNodeHelper(parentNode, 0, start, end)
 }
 

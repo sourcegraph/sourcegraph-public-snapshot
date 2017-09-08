@@ -1,8 +1,6 @@
-import { highlightBlock } from 'highlight.js'
 import * as React from 'react'
 import * as VisibilitySensor from 'react-visibility-sensor'
-import { fetchBlobContent } from 'sourcegraph/repo/backend'
-import { getModeFromExtension, getPathExtension } from 'sourcegraph/util'
+import { fetchHighlightedFileLines } from 'sourcegraph/repo/backend'
 import { highlightNode } from 'sourcegraph/util/dom'
 import { BlobPosition } from 'sourcegraph/util/types'
 
@@ -17,9 +15,28 @@ interface State {
 }
 
 export class CodeExcerpt extends React.Component<Props, State> {
+    private tableContainerElement: HTMLElement | null
+
     constructor(props: Props) {
         super(props)
         this.state = {}
+    }
+
+    public componentWillReceiveProps(nextProps: Props): void {
+        this.fetchContents(nextProps)
+    }
+
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        if (this.tableContainerElement) {
+            const rows = this.tableContainerElement.querySelectorAll('table tr')
+            for (const row of rows) {
+                const line = row.firstChild as HTMLTableDataCellElement
+                const code = row.lastChild as HTMLTableDataCellElement
+                if (line.getAttribute('data-line') === '' + (this.props.line + 1)) {
+                    highlightNode(code, this.props.char!, this.props.highlightLength)
+                }
+            }
+        }
     }
 
     public getPreviewWindowLines(): number[] {
@@ -44,48 +61,60 @@ export class CodeExcerpt extends React.Component<Props, State> {
 
     public onChangeVisibility(isVisible: boolean): void {
         if (isVisible) {
-            fetchBlobContent({repoPath: this.props.uri, commitID: this.props.rev, filePath: this.props.path}).then(content => {
-                if (content) {
-                    const blobLines = content.split('\n')
-                    this.setState({ blobLines })
-                }
-            }).catch(e => {
-                // TODO(slimsag): display error in UX
-                console.error('failed to fetch blob content', e)
-            })
+            this.fetchContents(this.props)
         }
     }
 
     public render(): JSX.Element | null {
         return (
             <VisibilitySensor onChange={isVisible => this.onChangeVisibility(isVisible)} partialVisibility={true}>
-                <table className='code-excerpt'>
-                    <tbody>
-                        {
-                            this.getPreviewWindowLines().map(i =>
-                                <tr key={i}>
-                                    <td className='code-excerpt__line-number'>{i + 1}</td>
-                                    <td className={'code-excerpt__code-line ' + getModeFromExtension(getPathExtension(this.props.path))}
-                                        ref={!this.state.blobLines ? undefined : el => {
-                                            if (el) {
-                                                highlightBlock(el)
-                                                if (i === this.props.line) {
-                                                    highlightNode(el, this.props.char!, this.props.highlightLength)
-                                                }
-                                            }
-                                        }}>
-                                        {
-                                            this.state.blobLines
-                                            ? this.state.blobLines[i]
-                                            : ' ' // create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch)
-                                        }
-                                    </td>
-                                </tr>
-                            )
-                        }
-                    </tbody>
-                </table>
+                <div className='code-excerpt'>
+                    {
+                        this.state.blobLines &&
+                        <div ref={this.setTableContainerElement} dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }} />
+                    }
+                    {
+                        !this.state.blobLines &&
+                        <table >
+                            <tbody>
+                                {
+                                    this.getPreviewWindowLines().map(i =>
+                                        <tr key={i}>
+                                            <td className='line'>{i + 1}</td>
+                                            {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                            <td className='code'> </td>
+                                        </tr>
+                                    )
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
             </VisibilitySensor>
         )
+    }
+
+    private setTableContainerElement = (ref: HTMLElement | null) => {
+        this.tableContainerElement = ref
+    }
+
+    private fetchContents(props: Props): void {
+        fetchHighlightedFileLines({
+            repoPath: props.uri,
+            commitID: props.rev,
+            filePath: props.path,
+            disableTimeout: true
+        })
+            .then(lines => this.setState({ blobLines: lines }))
+            .catch(err => {
+                console.error('failed to fetch blob content', err)
+            })
+    }
+
+    private makeTableHTML(): string {
+        const start = Math.max(0, this.props.line - (this.props.previewWindowExtraLines || 0))
+        const end = this.props.line + (this.props.previewWindowExtraLines || 0) + 1
+        const lineRange = this.state.blobLines!.slice(start, end)
+        return '<table>' + lineRange.join('') + '</table>'
     }
 }

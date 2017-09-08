@@ -1,14 +1,24 @@
 
 .code-excerpt {
 
-    &__line_number, &__code-line {
+    td.line {
+        &::before {
+            // draw line number with css so it cannot be copied to clipboard
+            content: attr(data-line);
+            color: #31445E;
+        }
+
+        color: #31445E;
+    }
+
+    .line, .code {
         height: 1rem;
         line-height: 1rem;
         vertical-align: middle;
         padding: 0;
     }
 
-    &__code-line {
+    .code {
         white-space: pre;
         padding-left: 1rem;
     }
