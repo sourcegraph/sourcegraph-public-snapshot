@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -126,7 +127,13 @@ func repoNameFromURI(remoteURI string) string {
 }
 
 func getURL(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment) string {
-	return fmt.Sprintf("https://about.sourcegraph.com/open-native/#open?resource=repo://%s/%s?threadID=%d&commentID=%d", repo.RemoteURI, thread.File, thread.ID, comment.ID)
+	cloneURL := fmt.Sprintf("https://%s", repo.RemoteURI)
+	values := url.Values{}
+	values.Set("repo", cloneURL)
+	values.Set("vcs", "git")
+	values.Set("revision", thread.Revision)
+	values.Set("path", thread.File)
+	return fmt.Sprintf("https://about.sourcegraph.com/open-native/#open?%s", values.Encode())
 }
 
 // maxEmails is a limit on the number of email notifications
