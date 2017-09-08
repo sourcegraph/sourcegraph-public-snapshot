@@ -23,6 +23,10 @@ export class CodeExcerpt extends React.Component<Props, State> {
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
+        if (this.props.highlightLength !== nextProps.highlightLength) {
+            // Redraw the component so the matched range highlighting is updated
+            this.setState({ blobLines: undefined })
+        }
         this.fetchContents(nextProps)
     }
 
