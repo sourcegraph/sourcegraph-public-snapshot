@@ -1,0 +1,60 @@
+.tree-header {
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
+    padding: .875rem;
+}
+
+.tree {
+    flex: 1 1 auto;
+    width: 100%;
+    overflow: auto;
+    white-space: pre;
+
+    &:focus {
+        outline: none;
+    }
+
+    table {
+        border-spacing: 0px;
+    }
+
+    &__close-icon {
+        cursor: pointer;
+        float: right;
+        color: #93A9C8;
+
+        &:hover {
+            color: #FFFFFF;
+        }
+    }
+
+    &__row {
+        color: #FFFFFF;
+        width: 100%;
+        display: table;
+        &:hover {
+            background-color: rgba(42,58,81,0.7);
+            cursor: pointer;
+        }
+
+        &--selected {
+            color: #FFFFFF;
+            width: 100%;
+            display: table;
+            background-color: #1C7CD6;
+        }
+    }
+
+    &__row-contents {
+        display: flex;
+        align-items: center;
+        padding-top: .5rem;
+        padding-bottom: .5rem;
+        line-height: .875rem;
+    }
+
+    &__row-icon {
+        margin-right: .25rem;
+    }
+}

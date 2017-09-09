@@ -1,4 +1,3 @@
-import { Tree, TreeHeader } from '@sourcegraph/components/lib/Tree'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -14,6 +13,7 @@ import { HeroPage } from 'sourcegraph/components/HeroPage'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
 import { hideTooltip } from 'sourcegraph/repo/tooltips'
+import { Tree, TreeHeader } from 'sourcegraph/tree/Tree'
 import { getCodeCellsForAnnotation, highlightAndScrollToLine } from 'sourcegraph/util'
 import * as url from 'sourcegraph/util/url'
 import { Blob } from './Blob'
@@ -145,9 +145,8 @@ export class Repository extends React.Component<Props, State> {
                     {
                         this.state.showTree &&
                             <div id='explorer' className='repository__sidebar'>
-                                <TreeHeader className='repository__tree-header' title='Files' onDismiss={() => this.setState({ showTree: false })} />
+                                <TreeHeader title='Files' onDismiss={() => this.setState({ showTree: false })} />
                                 <Tree
-                                    className='repository__tree'
                                     scrollRootSelector='#explorer'
                                     selectedPath={this.props.filePath}
                                     onSelectPath={this.selectTreePath}
