@@ -13,12 +13,19 @@ export function isMouseEventWithModifierKey(e: MouseEvent): boolean {
     return e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.which === 2
 }
 
-export function highlightNode(parentNode: HTMLElement, start: number, length: number): void {
-    if (parentNode.classList.contains('annotated-selection-match')) {
+/**
+ * Highlights a node using recursive node walking.
+ *
+ * @param node the node to highlight
+ * @param start the current character position (starts at 0).
+ * @param lenght the number of characters to highlight.
+ */
+export function highlightNode(node: HTMLElement, start: number, length: number): void {
+    if (node.classList.contains('annotated-selection-match')) {
         return
     }
-    parentNode.classList.add('annotated-selection-match')
-    highlightNodeHelper(parentNode, 0, start, length)
+    node.classList.add('annotated-selection-match')
+    highlightNodeHelper(node, 0, start, length)
 }
 
 interface HighlightResult {
@@ -29,6 +36,7 @@ interface HighlightResult {
 
 /**
  * Highlights a node using recursive node walking.
+ *
  * @param currNode the current node being walked.
  * @param currOffset the current character position (starts at 0).
  * @param start the offset character where highlting starts.
