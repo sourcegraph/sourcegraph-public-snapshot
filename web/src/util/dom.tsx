@@ -1,5 +1,3 @@
-import * as _ from 'lodash'
-
 /**
  * Inserts an element after the reference node.
  * @param el The element to be rendered.
@@ -15,101 +13,114 @@ export function isMouseEventWithModifierKey(e: MouseEvent): boolean {
     return e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.which === 2
 }
 
-export function highlightNode(parentNode: HTMLElement, start: number, end: number): void {
+export function highlightNode(parentNode: HTMLElement, start: number, length: number): void {
     if (parentNode.classList.contains('annotated-selection-match')) {
         return
     }
     parentNode.classList.add('annotated-selection-match')
-    highlightNodeHelper(parentNode, 0, start, end)
+    highlightNodeHelper(parentNode, 0, start, length)
 }
 
-interface HighlightIteration {
-    done: boolean
-    consumed: number
-    highlighted: number
+interface HighlightResult {
+    highlightingCompleted: boolean
+    charsConsumed: number
+    charsHighlighted: number
 }
 
-function highlightNodeHelper(parentNode: HTMLElement, curr: number, start: number, length: number, currContainerNode?: HTMLElement): HighlightIteration {
-    const origCurr = curr
-    const numParentNodes = parentNode.childNodes.length
-
+/**
+ * Highlights a node using recursive node walking.
+ * @param currNode the current node being walked.
+ * @param currOffset the current character position (starts at 0).
+ * @param start the offset character where highlting starts.
+ * @param lenght the number of characters to highlight.
+ */
+function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: number, length: number): HighlightResult {
     if (length === 0) {
-        return { done: true, consumed: 0, highlighted: 0}
+        return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0}
     }
 
-    let highlighted = 0
+    const origOffset = currOffset
+    const numChildNodes = currNode.childNodes.length
 
-    for (let i = 0; i < numParentNodes; ++i) {
-        if (curr >= start + length) {
-            return { done: true, consumed: 0, highlighted: 0 }
+    let charsHighlighted = 0
+
+    for (let i = 0; i < numChildNodes; ++i) {
+        if (currOffset >= start + length) {
+            return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0 }
         }
-        const isLastNode = i === parentNode.childNodes.length - 1
-        const node = parentNode.childNodes[i]
-        if (node.nodeType === Node.TEXT_NODE) {
-            const nodeText = _.unescape(node.textContent || '')
+        const isLastNode = i === currNode.childNodes.length - 1
+        const child = currNode.childNodes[i]
 
-            if (curr <= start && curr + nodeText.length > start) {
-                // Current node overlaps start of highlighting.
-                parentNode.removeChild(node)
+        switch (child.nodeType) {
+            case Node.TEXT_NODE: {
+                const nodeText = child.textContent!
 
-                // The characters beginning at the start of highlighting and extending to the end of the node.
-                const rest = nodeText.substr(start - curr)
+                if (currOffset <= start && currOffset + nodeText.length > start) {
+                    // Current node overlaps start of highlighting.
+                    currNode.removeChild(child)
 
-                const containerNode = document.createElement('span')
-                if (nodeText.substr(0, start - curr) !== '') {
-                    // If characters were consumed leading up to the start of highlighting, add them to the parent.
-                    containerNode.appendChild(document.createTextNode(nodeText.substr(0, start - curr)))
-                }
+                    // The characters beginning at the start of highlighting and extending to the end of the node.
+                    const rest = nodeText.substr(start - currOffset)
 
-                if (rest.length >= length) {
-                    // The highligted range is fully contained within the node.
-                    const text = rest.substr(0, length)
-                    const highlight = document.createElement('span')
-                    highlight.className = 'selection-highlight'
-                    highlight.appendChild(document.createTextNode(text))
-                    containerNode.appendChild(highlight)
-                    if (rest.substr(length)) {
-                        containerNode.appendChild(document.createTextNode(rest.substr(length)))
+                    const containerNode = document.createElement('span')
+                    if (nodeText.substr(0, start - currOffset) !== '') {
+                        // If characters were consumed leading up to the start of highlighting, add them to the parent.
+                        containerNode.appendChild(document.createTextNode(nodeText.substr(0, start - currOffset)))
                     }
 
-                    if (parentNode.childNodes.length === 0 || isLastNode) {
-                        parentNode.appendChild(containerNode)
-                    } else {
-                        parentNode.insertBefore(containerNode, parentNode.childNodes[i] || parentNode.firstChild)
+                    if (rest.length >= length) {
+                        // The highligted range is fully contained within the node.
+                        const text = rest.substr(0, length)
+                        const highlight = document.createElement('span')
+                        highlight.className = 'selection-highlight'
+                        highlight.appendChild(document.createTextNode(text))
+                        containerNode.appendChild(highlight)
+                        if (rest.length > length) {
+                            // There is more in the span than the highlighted chars.
+                            containerNode.appendChild(document.createTextNode(rest.substr(length)))
+                        }
+
+                        if (currNode.childNodes.length === 0 || isLastNode) {
+                            currNode.appendChild(containerNode)
+                        } else {
+                            currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
+                        }
+
+                        return { highlightingCompleted: true, charsConsumed: nodeText.length, charsHighlighted: length }
                     }
 
-                    return { done: true, consumed: nodeText.length, highlighted: length }
-                } else {
-                    // The highlighted range spans multiple nodes.
-                    highlighted += rest.length
+                    // Else the highlighted range spans multiple nodes.
+                    charsHighlighted += rest.length
 
                     const highlight = document.createElement('span')
                     highlight.className = 'selection-highlight'
                     highlight.appendChild(document.createTextNode(rest))
                     containerNode.appendChild(highlight)
 
-                    if (parentNode.childNodes.length === 0 || isLastNode) {
-                        parentNode.appendChild(containerNode)
+                    if (currNode.childNodes.length === 0 || isLastNode) {
+                        currNode.appendChild(containerNode)
                     } else {
-                        parentNode.insertBefore(containerNode, parentNode.childNodes[i] || parentNode.firstChild)
+                        currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
                     }
                 }
+
+                currOffset += nodeText.length
+                break
             }
 
-            curr += nodeText.length
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-            const elementNode = node as HTMLElement
-            if (elementNode.classList.contains('selection-highlight')) {
-                return { done: true, consumed: 0, highlighted: 0 }
-            }
-            const res = highlightNodeHelper(elementNode, curr, start + highlighted, length - highlighted)
-            if (res.done) {
-                return res
-            } else {
-                curr += res.consumed
-                highlighted += res.highlighted
+            case Node.ELEMENT_NODE: {
+                const elementNode = child as HTMLElement
+                const res = highlightNodeHelper(elementNode, currOffset, start + charsHighlighted, length - charsHighlighted)
+                if (res.highlightingCompleted) {
+                    return res
+                } else {
+                    currOffset += res.charsConsumed
+                    charsHighlighted += res.charsHighlighted
+                }
+                break
             }
         }
     }
-    return { done: false, consumed: curr - origCurr, highlighted }
+
+    return { highlightingCompleted: false, charsConsumed: currOffset - origOffset, charsHighlighted }
 }
