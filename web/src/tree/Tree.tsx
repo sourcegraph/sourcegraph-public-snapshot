@@ -18,7 +18,7 @@ export interface Props {
     paths: string[]
     onSelectPath: (path: string, isDir: boolean) => void
     scrollRootSelector?: string
-    selectedPath?: string
+    selectedPath: string
 }
 
 const treePadding = (depth: number, directory: boolean) => ({
@@ -188,20 +188,25 @@ export class Tree extends React.PureComponent<Props, {}> {
 
     public componentWillReceiveProps(nextProps: Props): void {
         this.pathSplits = nextProps.paths.map(path => path.split('/'))
-        if (this.props.selectedPath !== nextProps.selectedPath && nextProps.selectedPath) {
+        if (this.props.selectedPath !== nextProps.selectedPath) {
+            const selectedPath = nextProps.selectedPath
             let shownSubpaths = this.store.getValue().shownSubpaths
-            let curr = ''
-            const split = nextProps.selectedPath.split('/')
-            for(const part of split) {
-                if (curr !== '') { curr += '/' }
-                curr += part
-                shownSubpaths = shownSubpaths.add(curr)
+            if (selectedPath) {
+                let curr = ''
+                const split = selectedPath.split('/')
+                for(const part of split) {
+                    if (curr !== '') { curr += '/' }
+                    curr += part
+                    shownSubpaths = shownSubpaths.add(curr)
+                }
             }
-            this.store.setState({ ...this.store.getValue(), shownSubpaths, selectedPath: nextProps.selectedPath, selectedDir: getParentDir(nextProps.selectedPath) })
+            this.store.setState({ ...this.store.getValue(), shownSubpaths, selectedPath, selectedDir: getParentDir(selectedPath) })
             setTimeout(() => {
-                const el = this.locateDomNode(nextProps.selectedPath!)
-                if (el && !this.elementInViewport(el)) {
-                    el.scrollIntoView({ behavior: 'instant' })
+                if (selectedPath) {
+                    const el = this.locateDomNode(nextProps.selectedPath!)
+                    if (el && !this.elementInViewport(el)) {
+                        el.scrollIntoView({ behavior: 'instant' })
+                    }
                 }
             }, 250)
         }

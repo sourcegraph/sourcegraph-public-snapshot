@@ -148,7 +148,7 @@ export class Repository extends React.Component<Props, State> {
                                 <TreeHeader title='Files' onDismiss={() => this.setState({ showTree: false })} />
                                 <Tree
                                     scrollRootSelector='#explorer'
-                                    selectedPath={this.props.filePath}
+                                    selectedPath={this.props.filePath || ''}
                                     onSelectPath={this.selectTreePath}
                                     paths={this.state.files || []}
                                 />
@@ -161,7 +161,7 @@ export class Repository extends React.Component<Props, State> {
                         }
                         {
                             this.state.highlightingError &&
-                                <HeroPage icon={ErrorIcon} title='' subtitle={this.state.highlightingError.message} />
+                                <HeroPage icon={ErrorIcon} title='' subtitle={'Error: ' + this.state.highlightingError.message} />
                         }
                         {
                             this.state.highlightedFile && this.state.highlightedFile.aborted &&

@@ -79,7 +79,7 @@ export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<G
     }`, ctx).toPromise().then(result => {
         if (result.errors) {
             const errors = result.errors.map(e => e.message).join(', ')
-            throw new Error(`error fetching highlighted file: ${errors}`)
+            throw new Error(errors)
         }
         if (
             !result.data ||
