@@ -1,5 +1,3 @@
-import 'whatwg-fetch'
-
 interface FetchOptions {
     headers: Headers
 }

@@ -1,5 +1,3 @@
-import * as URI from 'urijs'
-
 /**
  * RepoURI is a URI identifing a repository resource, like
  *   - the repository itself: `git://github.com/gorilla/mux`
@@ -51,14 +49,14 @@ const parsePosition = (str: string): Position => {
 }
 
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
-    const parsed = URI.parse(uri)
-    const repoPath = parsed.hostname + '/' + parsed.path
-    const rev = parsed.query || undefined
+    const parsed = new URL(uri)
+    const repoPath = parsed.hostname + parsed.pathname
+    const rev = parsed.search.substr('?'.length) || undefined
     let commitID: string | undefined
     if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.fragment.split(':')
+    const fragmentSplit = parsed.hash.substr('#'.length).split(':')
     let filePath: string | undefined
     let position: Position | undefined
     let range: Range | undefined
@@ -81,7 +79,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         }
     }
     if (fragmentSplit.length > 2) {
-        throw new Error('unexpected fragment: ' + parsed.fragment)
+        throw new Error('unexpected fragment: ' + parsed.hash)
     }
 
     return { repoPath, rev, commitID, filePath, position, range }

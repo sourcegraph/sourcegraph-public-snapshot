@@ -1,5 +1,4 @@
 import * as H from 'history'
-import * as moment from 'moment'
 import { triggerBlame } from 'sourcegraph/blame'
 import { CodeCell } from 'sourcegraph/util/types'
 import * as url from 'sourcegraph/util/url'
@@ -527,7 +526,7 @@ export function getCodeCellsForAnnotation(): CodeCell[] {
 export function highlightLine(history: H.History, repoURI: string, commitID: string, path: string, line: number,
                               cells: CodeCell[], userTriggered?: React.MouseEvent<HTMLDivElement>): void {
     triggerBlame({
-        time: moment(),
+        time: new Date(),
         repoURI,
         commitID,
         path,

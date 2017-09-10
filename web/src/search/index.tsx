@@ -1,4 +1,4 @@
-import * as yaml from 'js-yaml'
+import * as yaml from 'js-yaml/dist/js-yaml'
 
 export enum FilterType {
     Repo = 'repo',

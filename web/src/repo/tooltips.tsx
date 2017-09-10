@@ -1,10 +1,17 @@
-import { highlightBlock } from 'highlight.js'
-import * as _ from 'lodash'
+import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
+import unescape = require('lodash/unescape')
 import * as marked from 'marked'
 import { Tooltip } from 'sourcegraph/backend/lsp'
 import { AbsoluteRepoPosition } from 'sourcegraph/repo'
 import { getModeFromExtension } from 'sourcegraph/util'
 import { blobUrlToAbsolutePosition, parseBlob } from 'sourcegraph/util/url'
+
+registerLanguage('go', require('highlight.js/lib/languages/go'))
+registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
+registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
+registerLanguage('java', require('highlight.js/lib/languages/java'))
+registerLanguage('python', require('highlight.js/lib/languages/python'))
+registerLanguage('php', require('highlight.js/lib/languages/php'))
 
 let tooltip: HTMLElement
 let loadingTooltip: HTMLElement
@@ -268,7 +275,7 @@ export function convertNode(parentNode: HTMLElement): void {
         const node = parentNode.childNodes[i]
         const isLastNode = i === parentNode.childNodes.length - 1
         if (node.nodeType === Node.TEXT_NODE) {
-            let nodeText = _.unescape(node.textContent || '')
+            let nodeText = unescape(node.textContent || '')
             if (nodeText === '') {
                 continue
             }

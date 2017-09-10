@@ -1,14 +1,13 @@
 import { AbsoluteRepoPosition } from 'sourcegraph/repo'
 import { BlobURL, ParsedURL, TreeURL } from 'sourcegraph/util/types'
-import * as URI from 'urijs'
 
 /**
  * parse parses a generic Sourcegraph URL, where most components are shared
  * across all routes, e.g. repo URI and rev.
  */
 export function parse(_loc: string = window.location.href): ParsedURL {
-    const loc = URI.parse(_loc)
-    const urlsplit = loc.path.slice(1).split('/')
+    const loc = new URL(_loc, window.location.href)
+    const urlsplit = loc.pathname.slice(1).split('/')
     if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
         return {}
     }
@@ -27,17 +26,17 @@ export function parse(_loc: string = window.location.href): ParsedURL {
  * parseTree parses a tree page URL.
  */
 export function parseTree(_loc: string = window.location.href): TreeURL {
-    const loc = URI.parse(_loc)
+    const loc = new URL(_loc)
     // Parse the generic Sourcegraph URL
     const u = parse(_loc)
 
     // Parse tree-specific URL components.
-    const urlsplit = loc.path.slice(1).split('/')
+    const urlsplit = loc.pathname.slice(1).split('/')
     if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
         return {}
     }
     let path: string | undefined
-    if (loc.path.indexOf('/-/tree/') !== -1) {
+    if (loc.pathname.indexOf('/-/tree/') !== -1) {
         path = urlsplit.slice(5).join('/')
     }
     return { ...u, path }
@@ -51,27 +50,23 @@ export function toTree(loc: TreeURL): string {
  * parseBlob parses a blob page URL.
  */
 export function parseBlob(_loc: string = window.location.href): BlobURL {
-    const loc = URI.parse(_loc)
+    const loc = new URL(_loc, window.location.href)
     // Parse the generic Sourcegraph URL
     const u = parse(_loc)
 
     // Parse blob-specific URL components.
-    const urlsplit = loc.path.slice(1).split('/')
+    const urlsplit = loc.pathname.slice(1).split('/')
     if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
         return {}
     }
     let path: string | undefined
-    if (loc.path.indexOf('/-/blob/') !== -1) {
+    if (loc.pathname.indexOf('/-/blob/') !== -1) {
         path = urlsplit.slice(5).join('/')
     }
     const v: BlobURL = { ...u, path }
 
-    // TODO: The TypeScript annotations for urijs are incorrect.. fragment
-    // is undefined when when there is no fragment in the URI.
-    //
-    // See https://github.com/sourcegraph/sourcegraph/issues/6493
-    if (loc.fragment) {
-        Object.assign(v, parseHash(loc.fragment))
+    if (loc.hash) {
+        Object.assign(v, parseHash(loc.hash.substr('#'.length)))
     }
     return v
 }

@@ -1,4 +1,5 @@
-import * as _ from 'lodash'
+import groupBy = require('lodash/groupBy')
+import partition = require('lodash/partition')
 import * as React from 'react'
 import * as DownIcon from 'react-icons/lib/fa/angle-down'
 import * as RightIcon from 'react-icons/lib/fa/angle-right'
@@ -14,7 +15,6 @@ import { events } from 'sourcegraph/tracking/events'
 import { pageVars } from 'sourcegraph/util/pageVars'
 import { Reference } from 'sourcegraph/util/types'
 import * as url from 'sourcegraph/util/url'
-import * as URI from 'urijs'
 
 interface ReferenceGroupProps {
     uri: string
@@ -61,7 +61,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                             return 1
                         })
                         .map((ref, i) => {
-                            const uri = URI.parse(ref.uri)
+                            const uri = new URL(ref.uri)
                             const href = this.getRefURL(ref)
                             return (
                                 <Link
@@ -73,8 +73,9 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                     }}
                                 >
                                     <CodeExcerpt
-                                        uri={uri.hostname + uri.path} rev={uri.query}
-                                        path={uri.fragment}
+                                        uri={uri.hostname + uri.pathname}
+                                        rev={uri.search.substr('?'.length)}
+                                        path={uri.hash.substr('#'.length)}
                                         line={ref.range.start.line}
                                         char={ref.range.start.character}
                                         highlightLength={ref.range.end.character - ref.range.start.character}
@@ -102,8 +103,8 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
     }
 
     private getRefURL(ref: Reference): string {
-        const uri = URI.parse(ref.uri)
-        return `/${uri.hostname}${uri.path}/-/blob/${uri.fragment}#L${ref.range.start.line + 1}`
+        const uri = new URL(ref.uri)
+        return `/${uri.hostname + uri.pathname}/-/blob/${uri.hash.substr('#'.length)}#L${ref.range.start.line + 1}`
     }
 }
 
@@ -190,10 +191,10 @@ export class ReferencesWidget extends React.Component<Props, State> {
         const refs = this.state.refsByLoc.get(loc)
 
         // References by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
-        const refsByUri = _.groupBy(refs, ref => ref.uri)
+        const refsByUri = groupBy(refs, ref => ref.uri)
 
         const localPrefix = 'git://' + this.state.context.repoPath
-        const [localRefs, externalRefs] = _(refsByUri).keys().partition(uri => uri.startsWith(localPrefix)).value()
+        const [localRefs, externalRefs] = partition(Object.keys(refsByUri), uri => uri.startsWith(localPrefix))
 
         const localRefCount = localRefs.reduce((memo, uri) => memo + refsByUri[uri].length, 0)
         const externalRefCount = externalRefs.reduce((memo, uri) => memo + refsByUri[uri].length, 0)
@@ -242,14 +243,14 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 <div className='references-widget__groups'>
                     {
                         this.state.group === 'local' && localRefs.sort().map((uri, i) => {
-                            const parsed = URI.parse(uri)
-                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={true} refs={refsByUri[uri]} />
+                            const parsed = new URL(uri)
+                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.pathname} path={parsed.hash.substr('#'.length)} isLocal={true} refs={refsByUri[uri]} />
                         })
                     }
                     {
                         this.state.group === 'external' && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
-                            const parsed = URI.parse(uri)
-                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.path} path={parsed.fragment} isLocal={false} refs={refsByUri[uri]} />
+                            const parsed = new URL(uri)
+                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.pathname} path={parsed.hash.substr('#'.length)} isLocal={false} refs={refsByUri[uri]} />
                         })
                     }
                 </div>

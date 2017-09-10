@@ -1,5 +1,8 @@
 import * as immutable from 'immutable'
-import * as Rx from 'rxjs'
+import 'rxjs/add/operator/scan'
+import 'rxjs/add/operator/startWith'
+import { BehaviorSubject } from 'rxjs/BehaviorSubject'
+import { Subject } from 'rxjs/Subject'
 import { AbsoluteRepoPosition, makeRepoURI } from 'sourcegraph/repo'
 import { Reference } from 'sourcegraph/util/types'
 
@@ -14,7 +17,7 @@ export interface ReferencesState {
 const initMap = immutable.Map<any, any>({})
 
 const initState: ReferencesState = { refsByLoc: initMap, fetches: initMap }
-const actionSubject = new Rx.Subject<ReferencesState>()
+const actionSubject = new Subject<ReferencesState>()
 
 const reducer = (state, action) => { // TODO(john): use immutable data structure
     switch (action.type) {
@@ -25,7 +28,7 @@ const reducer = (state, action) => { // TODO(john): use immutable data structure
     }
 }
 
-export const store = new Rx.BehaviorSubject<ReferencesState>(initState)
+export const store = new BehaviorSubject<ReferencesState>(initState)
 actionSubject.startWith(initState).scan(reducer).subscribe(store)
 
 const actionDispatcher = func => (...args) => actionSubject.next(func(...args))

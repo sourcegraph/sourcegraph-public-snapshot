@@ -4,7 +4,6 @@ import { AbsoluteRepoPosition, makeRepoURI } from 'sourcegraph/repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from 'sourcegraph/util'
 import { ResolvedRepoRevSpec } from 'sourcegraph/util/types'
 import { Reference, Workspace } from 'sourcegraph/util/types'
-import * as URI from 'urijs'
 
 interface LSPRequest {
     method: string
@@ -204,8 +203,8 @@ export const fetchReferences = memoizedFetch((pos: AbsoluteRepoPosition): Promis
 
             const result = json[1].result
             for (const ref of result) {
-                const parsed = URI.parse(ref.uri)
-                ref.repoURI = `${parsed.hostname}/${parsed.path}`
+                const parsed = new URL(ref.uri)
+                ref.repoURI = parsed.hostname + parsed.pathname
             }
             return result
         })
@@ -232,8 +231,8 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
 
             return json[1].result.map(res => {
                 const ref = res.reference
-                const parsed = URI.parse(ref.uri)
-                ref.repoURI = `${parsed.hostname}/${parsed.path}`
+                const parsed = new URL(ref.uri)
+                ref.repoURI = parsed.hostname + parsed.pathname
                 return ref
             })
         })

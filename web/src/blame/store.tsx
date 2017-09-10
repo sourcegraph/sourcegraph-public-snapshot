@@ -1,9 +1,11 @@
 import * as immutable from 'immutable'
-import * as moment from 'moment'
-import * as Rx from 'rxjs'
+import 'rxjs/add/operator/scan'
+import 'rxjs/add/operator/startWith'
+import { BehaviorSubject } from 'rxjs/BehaviorSubject'
+import { Subject } from 'rxjs/Subject'
 
 export interface BlameContext {
-    time: moment.Moment
+    time: Date
     repoURI: string
     commitID: string
     path: string
@@ -19,7 +21,7 @@ export interface BlameState {
 const initMap = immutable.Map<any, any>({})
 
 const initState: BlameState = { hunksByLoc: initMap, displayLoading: false }
-const actionSubject = new Rx.Subject<BlameState>()
+const actionSubject = new Subject<BlameState>()
 
 const reducer = (state, action) => { // TODO(john): use immutable data structure
     switch (action.type) {
@@ -30,7 +32,7 @@ const reducer = (state, action) => { // TODO(john): use immutable data structure
     }
 }
 
-export const store = new Rx.BehaviorSubject<BlameState>(initState)
+export const store = new BehaviorSubject<BlameState>(initState)
 actionSubject.startWith(initState).scan(reducer).subscribe(store)
 
 const actionDispatcher = func => (...args) => actionSubject.next(func(...args))

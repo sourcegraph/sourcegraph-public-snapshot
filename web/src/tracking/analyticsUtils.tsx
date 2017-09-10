@@ -1,7 +1,6 @@
 import { EventActions, EventCategories } from 'sourcegraph/tracking/analyticsConstants'
 import { eventLogger } from 'sourcegraph/tracking/eventLogger'
 import { events } from 'sourcegraph/tracking/events'
-import * as URI from 'urijs'
 
 export interface EventQueryParameters {
     utm_campaign?: string
@@ -63,16 +62,11 @@ export function handleQueryEvents(url: string): void {
  * Strip provided URL parameters and update window history
  */
 function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
-    const parsedUrl = URI.parse(url)
-    const currentQuery = URI.parseQuery(parsedUrl.query)
-    const newQuery = Object.keys(currentQuery)
-        .filter(key => paramsToRemove.indexOf(key) === -1)
-        .reduce<any>((r, key) => {
-            r[key] = currentQuery[key]
-            return r
-        }, {})
-    parsedUrl.query = URI.buildQuery(newQuery)
-    window.history.replaceState({}, window.document.title, URI.build(parsedUrl))
+    const parsedUrl = new URL(url)
+    for (const key of paramsToRemove) {
+        parsedUrl.searchParams.delete(key)
+    }
+    window.history.replaceState({}, window.document.title, parsedUrl.href)
 }
 
 function camelCaseToUnderscore(input: string): string {

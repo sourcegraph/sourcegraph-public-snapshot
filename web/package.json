@@ -17,7 +17,6 @@
     "@types/react": "^16.0.0",
     "@types/react-router": "^4.0.15",
     "@types/react-router-dom": "^4.0.7",
-    "@types/urijs": "^1.15.33",
     "@types/webpack": "^3.0.10",
     "css-loader": "^0.28.4",
     "extract-text-webpack-plugin": "^3.0.0",
@@ -33,18 +32,19 @@
     "tslint-webpack-plugin": "^0.5.0",
     "typescript": "^2.4.2",
     "webpack": "^3.0.0",
+    "webpack-bundle-analyzer": "^2.9.0",
     "webpack-shell-plugin": "^0.5.0"
   },
   "dependencies": {
     "@sourcegraph/icons": "^1.2.0",
     "copy-to-clipboard": "^3.0.7",
+    "date-fns": "^1.28.5",
     "escape-string-regexp": "^1.0.5",
     "highlight.js": "^9.12.0",
     "immutable": "^3.8.1",
-    "js-yaml": "github:eseliger/js-yaml#4a2b61d6ca83942174e59ccc915a731358f2a80e",
+    "js-yaml": "github:felixfbecker/js-yaml#a05bcd37fb9deb8cc8e149caecc78eac90a9f05b",
     "lodash": "^4.11.2",
     "marked": "^0.3.6",
-    "moment": "^2.18.1",
     "react": "^15.6.1",
     "react-dom": "^15.6.1",
     "react-icons": "^2.2.5",
@@ -52,7 +52,6 @@
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.10.1",
     "rxjs": "^5.4.2",
-    "urijs": "^1.18.10",
-    "whatwg-fetch": "^2.0.3"
+    "whatwg-url": "^6.1.0"
   }
 }

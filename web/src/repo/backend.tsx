@@ -1,3 +1,4 @@
+import 'rxjs/add/operator/toPromise'
 import { memoizedFetch } from 'sourcegraph/backend'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { makeRepoURI } from 'sourcegraph/repo'

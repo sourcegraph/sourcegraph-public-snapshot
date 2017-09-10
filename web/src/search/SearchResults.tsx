@@ -1,6 +1,7 @@
 import upperFirst = require('lodash/upperFirst')
 import * as React from 'react'
 import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/switchMap'
 import { Subject } from 'rxjs/Subject'
@@ -122,7 +123,7 @@ export class SearchResults extends React.Component<Props, State> {
                         const prevTotal = totalMatches
                         totalMatches += result.lineMatches.length
                         const parsed = new URL(result.resource)
-                        const repoPath = parsed.pathname.substr('//'.length)
+                        const repoPath = parsed.hostname + parsed.pathname
                         const filePath = parsed.hash.substr('#'.length)
                         const refs = result.lineMatches.map(match => ({
                             range: {

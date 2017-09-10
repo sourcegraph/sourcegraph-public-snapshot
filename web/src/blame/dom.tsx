@@ -1,4 +1,4 @@
-import * as moment from 'moment'
+import distanceInWords = require('date-fns/distance_in_words')
 import { BlameState, contextKey, store } from 'sourcegraph/blame/store'
 
 function limitString(s: string, n: number, dotdotdot: boolean): string {
@@ -71,7 +71,7 @@ store.subscribe((state: BlameState) => {
         return
     }
 
-    const timeSince = moment(hunk.author.date, 'YYYY-MM-DD HH:mm:ss ZZ UTC').fromNow()
+    const timeSince = distanceInWords(hunk.author.date, new Date(), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
 
     setLineBlameContent(state.context.line, blameContent, hunk.rev)

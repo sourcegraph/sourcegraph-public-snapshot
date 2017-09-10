@@ -3,8 +3,13 @@ import * as path from 'path'
 import Tapable = require('tapable')
 import TSLintPlugin = require('tslint-webpack-plugin')
 import * as webpack from 'webpack'
+// const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
 const plugins: webpack.Plugin[] = [
+
+    // Uncomment to analyze bundle size
+    // new BundleAnalyzerPlugin(),
+
     // Print some output for VS Code tasks to know when a build started
     function(this: Tapable): void {
         this.plugin('watch-run', (watching: any, cb: () => void) => {

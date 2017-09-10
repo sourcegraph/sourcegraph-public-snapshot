@@ -8,7 +8,6 @@ import * as GitHub from 'react-icons/lib/go/mark-github'
 import { RepoBreadcrumb } from 'sourcegraph/components/Breadcrumb'
 import { events } from 'sourcegraph/tracking/events'
 import * as url from 'sourcegraph/util/url'
-import * as URI from 'urijs'
 
 interface RepoSubnavProps {
     repoPath: string
@@ -40,9 +39,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             <span className='share' onClick={() => {
                 events.ShareButtonClicked.log()
 
-                const shareLink = URI.parse(window.location.href) // TODO(john): use this.props.location
-                shareLink.query = (shareLink.query ? `${shareLink.query}&` : '') + 'utm_source=share'
-                copy(URI.build(shareLink))
+                const shareLink = new URL(window.location.href) // TODO(john): use this.props.location
+                shareLink.searchParams.set('utm_source', 'share')
+                copy(shareLink.href)
                 this.setState({ copiedLink: true })
 
                 setTimeout(() => {
