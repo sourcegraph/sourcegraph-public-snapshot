@@ -1,0 +1,15 @@
+{
+  "extends": "stylelint-config-recommended",
+  "rules": {
+    "indentation": 4,
+    "string-quotes": "single",
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "extend"
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,7 @@
 {
     "typescript.tsdk": "./node_modules/typescript/lib",
-    "tslint.nodePath": "./node_modules"
+    "tslint.nodePath": "./node_modules",
+    "files.associations": {
+      ".stylelintrc": "json"
+    }
 }

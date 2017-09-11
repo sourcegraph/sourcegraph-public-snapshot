@@ -22,18 +22,13 @@
 
     &__divider {
         border-bottom: 1px solid #2A3A51;
-        padding-left: 8px;
-        padding-right: 8px;
-        padding-bottom: 16px;
-        padding-top: 16px;
+        padding: 16px 8px;
         line-height: 16px;
     }
 
     &__doc {
-        padding-top: 16px;
+        padding: 16px;
         padding-left: 8px;
-        padding-right: 16px;
-        padding-bottom: 16px;
         max-height: 150px;
         overflow: auto;
         margin-bottom: 0px;

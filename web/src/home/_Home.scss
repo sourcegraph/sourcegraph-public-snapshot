@@ -2,23 +2,23 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-	justify-content: flex-start;
+    justify-content: flex-start;
     height: 100vh;
-	width: 100%;
+    width: 100%;
 
     &__logo {
         flex: 0 0 auto;
         display: flex;
-		align-items: center;
-		width: 20rem;
-		margin-top: 8rem;
-		max-width: 90%;
-	}
+        align-items: center;
+        width: 20rem;
+        margin-top: 8rem;
+        max-width: 90%;
+    }
 
-	&__search-box-container {
-		flex: 0 0 auto;
-		margin-top: 4rem;
-		width: 44.5rem;
-		max-width: 90%;
-	}
+    &__search-box-container {
+        flex: 0 0 auto;
+        margin-top: 4rem;
+        width: 44.5rem;
+        max-width: 90%;
+    }
 }
