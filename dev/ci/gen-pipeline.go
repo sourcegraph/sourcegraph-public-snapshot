@@ -124,8 +124,7 @@ func main() {
 	pipeline.AddStep(":html:",
 		Cmd("cd web"),
 		Cmd("npm install"),
-		Cmd("./node_modules/.bin/node-sass ./src/app.scss > /dev/null"),
-		Cmd("./node_modules/.bin/tsc"),
+		Cmd("NODE_ENV=production npm run build"),
 		Cmd("npm run lint"))
 
 	for _, path := range pkgs {

@@ -37,6 +37,9 @@ export SRC_SYNTECT_SERVER=http://localhost:8000
 export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
 export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
 
+# WebApp
+export NODE_ENV=development
+
 mkdir -p .bin
 env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
 
