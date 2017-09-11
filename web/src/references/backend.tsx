@@ -1,4 +1,3 @@
-import 'rxjs/add/Observable/from'
 import { Observable } from 'rxjs/Observable'
 import { memoizedFetch } from 'sourcegraph/backend'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
