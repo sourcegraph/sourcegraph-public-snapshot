@@ -1,5 +1,5 @@
 import * as React from 'react'
-import * as VisibilitySensor from 'react-visibility-sensor'
+import VisibilitySensor from 'react-visibility-sensor'
 import { AbsoluteRepoFilePosition } from 'sourcegraph/repo'
 import { fetchHighlightedFileLines } from 'sourcegraph/repo/backend'
 import { highlightNode } from 'sourcegraph/util/dom'

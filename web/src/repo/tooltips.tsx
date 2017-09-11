@@ -1,6 +1,6 @@
 import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
-import unescape = require('lodash/unescape')
-import * as marked from 'marked'
+import unescape from 'lodash/unescape'
+import marked from 'marked'
 import { Tooltip } from 'sourcegraph/backend/lsp'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from 'sourcegraph/repo'
 import { getModeFromExtension } from 'sourcegraph/util'

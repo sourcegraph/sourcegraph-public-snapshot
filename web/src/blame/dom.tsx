@@ -1,4 +1,4 @@
-import distanceInWords = require('date-fns/distance_in_words')
+import distanceInWords from 'date-fns/distance_in_words'
 import { BlameState, contextKey, store } from 'sourcegraph/blame/store'
 
 function limitString(s: string, n: number, dotdotdot: boolean): string {

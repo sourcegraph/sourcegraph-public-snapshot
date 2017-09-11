@@ -5,7 +5,7 @@ import FileGlobIcon from '@sourcegraph/icons/lib/FileGlob'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import RepoGroupIcon from '@sourcegraph/icons/lib/RepoGroup'
 import SearchIcon from '@sourcegraph/icons/lib/Search'
-import escapeRegexp = require('escape-string-regexp')
+import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'

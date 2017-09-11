@@ -25,9 +25,6 @@ if (process.env.NODE_ENV === 'production') {
             'process.env': {
                 NODE_ENV: JSON.stringify('production')
             }
-        }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: false
         })
     )
 } else {
@@ -70,19 +67,27 @@ const config: webpack.Configuration = {
         }
     },
     module: {
-        loaders: [{
-            test: /\.tsx?$/,
-            loader: 'ts-loader?' + JSON.stringify({
-                compilerOptions: {
-                    noEmit: false // tsconfig.json sets this to true to avoid output when running tsc manually
-                },
-                transpileOnly: process.env.DISABLE_TYPECHECKING === 'true'
-            })
-        }, {
-            // sass / scss loader for webpack
-            test: /\.(css|sass|scss)$/,
-            loader: ExtractTextPlugin.extract(['css-loader', 'postcss-loader', 'sass-loader'])
-        }]
+        loaders: [
+            {
+                test: /\.tsx?$/,
+                loaders: ['babel-loader', 'ts-loader?' + JSON.stringify({
+                    compilerOptions: {
+                        module: 'esnext',
+                        noEmit: false // tsconfig.json sets this to true to avoid output when running tsc manually
+                    },
+                    transpileOnly: process.env.DISABLE_TYPECHECKING === 'true'
+                })]
+            },
+            {
+                test: /\.jsx?$/,
+                loader: 'babel-loader'
+            },
+            {
+                // sass / scss loader for webpack
+                test: /\.(css|sass|scss)$/,
+                loader: ExtractTextPlugin.extract(['css-loader', 'postcss-loader', 'sass-loader'])
+            }
+        ]
     }
 }
 
