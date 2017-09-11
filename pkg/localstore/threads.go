@@ -57,6 +57,8 @@ func (t *threads) Update(ctx context.Context, id, repoID int64, archive *bool) (
 		return Mocks.Threads.Update(ctx, id, repoID, archive)
 	}
 
+	now := time.Now()
+
 	if archive == nil {
 		return nil, errors.New("no update values provided")
 	}
@@ -64,7 +66,7 @@ func (t *threads) Update(ctx context.Context, id, repoID int64, archive *bool) (
 		archivedAt := pq.NullTime{}
 		if *archive == true {
 			archivedAt = pq.NullTime{
-				Time:  time.Now(),
+				Time:  now,
 				Valid: true,
 			}
 		}
@@ -72,7 +74,7 @@ func (t *threads) Update(ctx context.Context, id, repoID int64, archive *bool) (
 			return nil, err
 		}
 	}
-	if _, err := globalDB.Exec("UPDATE threads SET updated_at=$1 WHERE id=$2", time.Now(), id); err != nil {
+	if _, err := globalDB.Exec("UPDATE threads SET updated_at=$1 WHERE id=$2", now, id); err != nil {
 		return nil, err
 	}
 
