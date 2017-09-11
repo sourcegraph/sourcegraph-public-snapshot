@@ -22,16 +22,6 @@ import { events } from 'sourcegraph/tracking/events'
 import { getPathExtension, supportedExtensions } from 'sourcegraph/util'
 import { parseHash, toBlobPositionURL, toPrettyBlobPositionURL } from 'sourcegraph/util/url'
 
-interface Props extends AbsoluteRepoFile {
-    html: string
-    location: H.Location
-    history: H.History
-}
-
-interface State {
-    fixedTooltip?: TooltipData
-}
-
 /**
  * Highlights a <td> element and updates the page URL if necessary.
  */
@@ -80,6 +70,16 @@ function updateAndScrollToLine(cell: HTMLElement, history: H.History, ctx: Absol
     scrollingElement.scrollTop = targetBound.top - tableBound.top - (viewportBound.height / 2) + (targetBound.height / 2)
 }
 
+interface Props extends AbsoluteRepoFile {
+    html: string
+    location: H.Location
+    history: H.History
+}
+
+interface State {
+    fixedTooltip?: TooltipData
+}
+
 export class Blob extends React.Component<Props, State> {
     public state: State = {}
     private tooltip: TooltipData | null
@@ -95,12 +95,14 @@ export class Blob extends React.Component<Props, State> {
         }
 
         if (this.props.html !== nextProps.html) {
+            // Hide the previous tooltip, if it exists.
+            hideTooltip()
+
             this.subscriptions.unsubscribe()
             this.subscriptions = new Subscription()
             if (this.blobElement) {
                 this.addTooltipEventListeners(this.blobElement)
             }
-            createTooltips()
             this.setState({ fixedTooltip: undefined })
         }
     }
@@ -122,6 +124,8 @@ export class Blob extends React.Component<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
+        hideTooltip()
+        createTooltips()
         if (this.props.history.action === 'POP') {
             // The contents were updated on a mounted component and we did a 'back' or 'forward' event;
             // scroll to the appropariate line after the new table is created.
