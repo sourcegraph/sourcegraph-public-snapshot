@@ -1,95 +1,13 @@
-import { AbsoluteRepoPosition } from 'sourcegraph/repo'
-import { BlobURL, ParsedURL, TreeURL } from 'sourcegraph/util/types'
+import { AbsoluteRepoFilePosition, Position, RepoFile, RepoFilePosition } from 'sourcegraph/repo'
 
-/**
- * parse parses a generic Sourcegraph URL, where most components are shared
- * across all routes, e.g. repo URI and rev.
- */
-export function parse(_loc: string = window.location.href): ParsedURL {
-    const loc = new URL(_loc, window.location.href)
-    const urlsplit = loc.pathname.slice(1).split('/')
-    if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
-        return {}
-    }
+type Modal = 'references'
+type ModalMode = 'local' | 'external'
 
-    let uri = urlsplit.slice(0, 3).join('/')
-    let rev: string | undefined
-    const uriSplit = uri.split('@')
-    if (uriSplit.length > 0) {
-        uri = uriSplit[0]
-        rev = uriSplit[1]
-    }
-    return { uri, rev }
-}
-
-/**
- * parseTree parses a tree page URL.
- */
-export function parseTree(_loc: string = window.location.href): TreeURL {
-    const loc = new URL(_loc)
-    // Parse the generic Sourcegraph URL
-    const u = parse(_loc)
-
-    // Parse tree-specific URL components.
-    const urlsplit = loc.pathname.slice(1).split('/')
-    if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
-        return {}
-    }
-    let path: string | undefined
-    if (loc.pathname.indexOf('/-/tree/') !== -1) {
-        path = urlsplit.slice(5).join('/')
-    }
-    return { ...u, path }
-}
-
-export function toTree(loc: TreeURL): string {
-    return `/${loc.uri}${loc.rev ? '@' + loc.rev : ''}/-/tree/${loc.path}`
-}
-
-/**
- * parseBlob parses a blob page URL.
- */
-export function parseBlob(_loc: string = window.location.href): BlobURL {
-    const loc = new URL(_loc, window.location.href)
-    // Parse the generic Sourcegraph URL
-    const u = parse(_loc)
-
-    // Parse blob-specific URL components.
-    const urlsplit = loc.pathname.slice(1).split('/')
-    if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
-        return {}
-    }
-    let path: string | undefined
-    if (loc.pathname.indexOf('/-/blob/') !== -1) {
-        path = urlsplit.slice(5).join('/')
-    }
-    const v: BlobURL = { ...u, path }
-
-    if (loc.hash) {
-        Object.assign(v, parseHash(loc.hash.substr('#'.length)))
-    }
-    return v
-}
-
-// TEMPORARY HELPER FUNCTION -- WILL BE REMOVED WITH URL CONSOLIDATION
-export function blobUrlToAbsolutePosition(blobUrl: BlobURL): AbsoluteRepoPosition {
-    return {
-        repoPath: blobUrl.uri!,
-        rev: blobUrl.rev!,
-        commitID: blobUrl.rev!,
-        filePath: blobUrl.path!,
-        position: {
-            line: blobUrl.line!,
-            char: blobUrl.char
-        }
-    }
-}
-
-export function parseHash(hash: string): { line?: number, char?: number, modal?: string, modalMode?: string } {
+export function parseHash(hash: string): { line?: number, char?: number, modal?: Modal, modalMode?: ModalMode } {
     let line: number | undefined
     let char: number | undefined
-    let modal: string | undefined
-    let modalMode: string | undefined
+    let modal: Modal | undefined
+    let modalMode: ModalMode | undefined
 
     const lineCharModalInfo = hash.split('$') // e.g. "L17:19$references:external"
     if (lineCharModalInfo[0]) {
@@ -102,22 +20,38 @@ export function parseHash(hash: string): { line?: number, char?: number, modal?:
     }
     if (lineCharModalInfo[1]) {
         const modalInfo = lineCharModalInfo[1].split(':')
-        modal = modalInfo[0] // "references"
-        modalMode = modalInfo[1] // "external"
+        // TODO(john): validation
+        modal = modalInfo[0] as Modal // "references"
+        modalMode = modalInfo[1] as ModalMode || 'local' // "external"
     }
     return { line, char, modal, modalMode }
 }
 
-export function isBlob(url: BlobURL): boolean {
-    return Boolean(url.uri && url.path)
+export function toPositionHash(position: Position): string {
+    return '#L' + position.line + (position.char ? ':' + position.char : '')
 }
 
-export function toBlob(loc: BlobURL): string {
-    return `/${loc.uri}${loc.rev ? '@' + loc.rev : ''}/-/blob/${loc.path}${toBlobHash(loc)}`
+export function toReferencesHash(group: 'local' | 'external' | undefined): string {
+    return group ? (group === 'local' ? '$references' : '$references:external') : ''
 }
 
-export function toBlobV2(ctx: AbsoluteRepoPosition): string {
-    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : '@' + ctx.commitID}/-/blob/${ctx.filePath}${toBlobHash(ctx.position)}`
+export function toBlobURL(ctx: RepoFile): string {
+    const rev = ctx.commitID || ctx.rev || ''
+    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}`
+}
+
+export function toPrettyBlobPositionURL(ctx: RepoFilePosition): string {
+    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionHash(ctx.position)}${toReferencesHash(ctx.referencesMode)}`
+}
+
+export function toBlobPositionURL(ctx: AbsoluteRepoFilePosition): string {
+    const rev = ctx.commitID ? ctx.commitID : ctx.rev
+    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(ctx.position)}${toReferencesHash(ctx.referencesMode)}`
+}
+
+export function toTreeURL(ctx: RepoFile): string {
+    const rev = ctx.commitID || ctx.rev || ''
+    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/tree/${ctx.filePath}`
 }
 
 export function toEditorURL(repoPath: string, rev?: string, filePath?: string): string {
@@ -133,42 +67,6 @@ export function toEditorURL(repoPath: string, rev?: string, filePath?: string): 
         query += '&path=' + encodeURIComponent(filePath)
     }
     return 'https://about.sourcegraph.com/open-native/#open?' + query
-}
-
-export function toGitHubBlob(loc: BlobURL): string {
-    return `https://${loc.uri}/blob/${loc.rev}/${loc.path}${toBlobHash(loc)}`
-}
-
-export function isSearchResultsPage(loc: Location = window.location): boolean {
-    // TODO(john): share route name with JS context?
-    return loc.pathname === '/search'
-}
-
-export function isHomePage(loc: Location = window.location): boolean {
-    // TODO(john): share route name with JS context?
-    return loc.pathname === '/'
-}
-
-export function isBlobPage(loc: Location = window.location): boolean {
-    // TODO(john): share route name with JS context?
-    return isBlob(parseBlob(loc.href))
-}
-
-export function toBlobHash(loc: BlobURL): string {
-    let hash = ''
-    if (loc.line) { // construct hash w/ format #L[line][:char][$modal[:mode]]
-        hash += '#L' + loc.line
-        if (loc.char) {
-            hash += ':' + loc.char
-        }
-        if (loc.modal) {
-            hash += `$${loc.modal}`
-            if (loc.modalMode) {
-                hash += `:${loc.modalMode}`
-            }
-        }
-    }
-    return hash
 }
 
 /**

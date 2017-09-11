@@ -1,10 +1,10 @@
 import * as React from 'react'
 import * as VisibilitySensor from 'react-visibility-sensor'
+import { AbsoluteRepoFilePosition } from 'sourcegraph/repo'
 import { fetchHighlightedFileLines } from 'sourcegraph/repo/backend'
 import { highlightNode } from 'sourcegraph/util/dom'
-import { BlobPosition } from 'sourcegraph/util/types'
 
-interface Props extends BlobPosition {
+interface Props extends AbsoluteRepoFilePosition {
     // How many extra lines to show in the excerpt before/after the ref.
     previewWindowExtraLines?: number
     highlightLength: number
@@ -36,15 +36,15 @@ export class CodeExcerpt extends React.Component<Props, State> {
             for (const row of rows) {
                 const line = row.firstChild as HTMLTableDataCellElement
                 const code = row.lastChild as HTMLTableDataCellElement
-                if (line.getAttribute('data-line') === '' + (this.props.line + 1)) {
-                    highlightNode(code, this.props.char!, this.props.highlightLength)
+                if (line.getAttribute('data-line') === '' + (this.props.position.line + 1)) {
+                    highlightNode(code, this.props.position.char!, this.props.highlightLength)
                 }
             }
         }
     }
 
     public getPreviewWindowLines(): number[] {
-        const targetLine = this.props.line
+        const targetLine = this.props.position.line
         let res = [targetLine]
         for (let i = targetLine - this.props.previewWindowExtraLines!; i < targetLine + this.props.previewWindowExtraLines! + 1; ++i) {
             if (i > 0 && i < targetLine) {
@@ -104,9 +104,9 @@ export class CodeExcerpt extends React.Component<Props, State> {
 
     private fetchContents(props: Props): void {
         fetchHighlightedFileLines({
-            repoPath: props.uri,
-            commitID: props.rev,
-            filePath: props.path,
+            repoPath: props.repoPath,
+            commitID: props.commitID,
+            filePath: props.filePath,
             disableTimeout: true
         })
             .then(lines => this.setState({ blobLines: lines }))
@@ -116,8 +116,8 @@ export class CodeExcerpt extends React.Component<Props, State> {
     }
 
     private makeTableHTML(): string {
-        const start = Math.max(0, this.props.line - (this.props.previewWindowExtraLines || 0))
-        const end = this.props.line + (this.props.previewWindowExtraLines || 0) + 1
+        const start = Math.max(0, this.props.position.line - (this.props.previewWindowExtraLines || 0))
+        const end = this.props.position.line + (this.props.previewWindowExtraLines || 0) + 1
         const lineRange = this.state.blobLines!.slice(start, end)
         return '<table>' + lineRange.join('') + '</table>'
     }

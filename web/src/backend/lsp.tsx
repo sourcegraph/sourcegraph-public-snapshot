@@ -1,16 +1,15 @@
 import { memoizedFetch } from 'sourcegraph/backend'
 import { doFetch as fetch } from 'sourcegraph/backend/xhr'
-import { AbsoluteRepoPosition, makeRepoURI } from 'sourcegraph/repo'
+import { Reference } from 'sourcegraph/references'
+import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI } from 'sourcegraph/repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from 'sourcegraph/util'
-import { ResolvedRepoRevSpec } from 'sourcegraph/util/types'
-import { Reference, Workspace } from 'sourcegraph/util/types'
 
 interface LSPRequest {
     method: string
     params: any
 }
 
-function wrapLSP(req: LSPRequest, ctx: ResolvedRepoRevSpec, path: string): any[] {
+function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
     return [
         {
             id: 0,
@@ -46,7 +45,7 @@ export interface Tooltip {
 
 export const EEMPTYTOOLTIP = 'EEMPTYTOOLTIP'
 
-export const getTooltip = memoizedFetch((pos: AbsoluteRepoPosition): Promise<Tooltip> => {
+export const getTooltip = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<Tooltip> => {
     const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve({})
@@ -87,7 +86,7 @@ export const getTooltip = memoizedFetch((pos: AbsoluteRepoPosition): Promise<Too
         })
 }, makeRepoURI)
 
-export const fetchJumpURL = memoizedFetch((pos: AbsoluteRepoPosition): Promise<string | null> => {
+export const fetchJumpURL = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<string | null> => {
     const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve(null)
@@ -137,12 +136,11 @@ export const fetchJumpURL = memoizedFetch((pos: AbsoluteRepoPosition): Promise<s
                 lineAndCharEnding = `#L${startLine}`
             }
 
-            const ret = `/${repoUri}${frevUri || ''}/-/blob/${pathUri}${lineAndCharEnding}`
-            return ret
+            return `/${repoUri}${frevUri || ''}/-/blob/${pathUri}${lineAndCharEnding}`
         })
 }, makeRepoURI)
 
-export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoPosition): Promise<{ location: any, symbol: any } | null> => {
+export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<{ location: any, symbol: any } | null> => {
     const body = wrapLSP({
         method: 'textDocument/xdefinition',
         params: {
@@ -170,26 +168,26 @@ export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoPosition): Promi
         })
 }, makeRepoURI)
 
-export const fetchReferences = memoizedFetch((pos: AbsoluteRepoPosition): Promise<Reference[] | null> => {
-    const ext = getPathExtension(pos.filePath)
+export const fetchReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Promise<Reference[]> => {
+    const ext = getPathExtension(ctx.filePath)
     if (!supportedExtensions.has(ext)) {
-        return Promise.resolve(null)
+        return Promise.resolve([])
     }
     const body = wrapLSP({
         method: 'textDocument/references',
         params: {
             textDocument: {
-                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
+                uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
             },
             position: {
-                character: pos.position.char! - 1,
-                line: pos.position.line - 1
+                character: ctx.position.char! - 1,
+                line: ctx.position.line - 1
             }
         },
         context: {
             includeDeclaration: true
         }
-    } as any, pos, pos.filePath)
+    } as any, ctx, ctx.filePath)
 
     return fetch(`/.api/xlang/textDocument/references`, { method: 'POST', body: JSON.stringify(body) })
         .then(resp => resp.json())
@@ -197,8 +195,7 @@ export const fetchReferences = memoizedFetch((pos: AbsoluteRepoPosition): Promis
             if (!json ||
                 !json[1] ||
                 !json[1].result) {
-                // TODO(john): better error handling.
-                return null
+                return []
             }
 
             const result = json[1].result
@@ -210,15 +207,26 @@ export const fetchReferences = memoizedFetch((pos: AbsoluteRepoPosition): Promis
         })
 }, makeRepoURI)
 
-export function fetchXreferences(workspace: Workspace, path: string, query: any, hints: any, limit: any): Promise<Reference[] | null> {
+interface XReferencesParams extends AbsoluteRepoFile {
+    query: string
+    hints: any
+    limit: number
+}
+
+export const fetchXreferences = memoizedFetch((ctx: XReferencesParams): Promise<Reference[]> => {
+    const ext = getPathExtension(ctx.filePath)
+    if (!supportedExtensions.has(ext)) {
+        return Promise.resolve([])
+    }
+
     const body = wrapLSP({
         method: 'workspace/xreferences',
         params: {
-            hints,
-            query,
-            limit
+            hints: ctx.hints,
+            query: ctx.query,
+            limit: ctx.limit
         }
-    }, { repoPath: workspace.uri, commitID: workspace.rev }, path)
+    }, { repoPath: ctx.repoPath, commitID: ctx.commitID }, ctx.filePath)
 
     return fetch(`/.api/xlang/workspace/xreferences`, { method: 'POST', body: JSON.stringify(body) })
         .then(resp => resp.json())
@@ -226,7 +234,7 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
             if (!json ||
                 !json[1] ||
                 !json[1].result) {
-                return null
+                return []
             }
 
             return json[1].result.map(res => {
@@ -236,4 +244,4 @@ export function fetchXreferences(workspace: Workspace, path: string, query: any,
                 return ref
             })
         })
-}
+}, ctx => makeRepoURI(ctx) + '___' + ctx.query + '___' + ctx.limit)

@@ -7,7 +7,7 @@ import * as React from 'react'
 import * as GitHub from 'react-icons/lib/go/mark-github'
 import { RepoBreadcrumb } from 'sourcegraph/components/Breadcrumb'
 import { events } from 'sourcegraph/tracking/events'
-import * as url from 'sourcegraph/util/url'
+import { parseHash } from 'sourcegraph/util/url'
 
 interface RepoSubnavProps {
     repoPath: string
@@ -25,7 +25,6 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     public state: RepoSubnavState = {}
 
     public render(): JSX.Element | null {
-        const hash = url.parseHash(this.props.location.hash)
         return <div className='repo-nav'>
             <span className='explorer' onClick={this.props.onClickNavigation}>
                 <ListIcon />
@@ -38,8 +37,8 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             <span className='fill' />
             <span className='share' onClick={() => {
                 events.ShareButtonClicked.log()
-
-                const shareLink = new URL(window.location.href) // TODO(john): use this.props.location
+                const loc = this.props.location
+                const shareLink = new URL(loc.pathname + loc.search + loc.hash)
                 shareLink.searchParams.set('utm_source', 'share')
                 copy(shareLink.href)
                 this.setState({ copiedLink: true })
@@ -52,10 +51,15 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 <ShareIcon />
             </span>
             {this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
-                <a href={url.toGitHubBlob({ uri: this.props.repoPath, rev: this.props.rev || 'master', path: this.props.filePath, line: hash.line })} className='view-external'>
+                <a href={this.urlToGitHub()} className='view-external'>
                     View on GitHub
                 <GitHub className='github-icon' /* TODO(john): use icon library */ />
                 </a>}
         </div>
+    }
+
+    private urlToGitHub(): string {
+        const hash = parseHash(this.props.location.hash)
+        return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${hash.line ? '#L' + hash.line : ''}`
     }
 }

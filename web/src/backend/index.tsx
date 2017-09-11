@@ -3,7 +3,6 @@ import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/toPromise'
 import { Observable } from 'rxjs/Observable'
 import { FileFilter, FileGlobFilter, FilterType, RepoFilter, SearchOptions } from 'sourcegraph/search'
-import * as util from 'sourcegraph/util'
 import { queryGraphQL } from './graphql'
 
 export function memoizedFetch<K, T>(fetch: (ctx: K, force?: boolean) => Promise<T>, makeKey?: (ctx: K) => string): (ctx: K, force?: boolean) => Promise<T> {
@@ -90,66 +89,6 @@ export function fetchRepos(query: string): Promise<GQL.IRepository[]> {
         }
 
         return result.data.root.repositories
-    })
-    return p
-}
-
-export function fetchDependencyReferences(repo: string, rev: string, path: string, line: number, character: number): Promise<GQL.IDependencyReferences | null> {
-    const mode = util.getModeFromExtension(util.getPathExtension(path))
-    const p = queryGraphQL(`
-        query DependencyReferences($repo: String, $rev: String, $mode: String, $line: Int, $character: Int) {
-            root {
-                repository(uri: $repo) {
-                    commit(rev: $rev) {
-                        commit {
-                            file(path: $path) {
-                                dependencyReferences(Language: $mode, Line: $line, Character: $character) {
-                                    dependencyReferenceData {
-                                        references {
-                                            dependencyData
-                                            repoId
-                                            hints
-                                        }
-                                        location {
-                                            location
-                                            symbol
-                                        }
-                                    }
-                                    repoData {
-                                        repos {
-                                            id
-                                            uri
-                                            lastIndexedRevOrLatest {
-                                                commit {
-                                                    sha1
-                                                }
-                                            }
-                                        }
-                                        repoIds
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    `, { repo, rev, mode, path, line, character }).toPromise().then(result => {
-        // Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
-        if (!result.data ||
-            !result.data.root ||
-            !result.data.root.repository ||
-            !result.data.root.repository.commit ||
-            !result.data.root.repository.commit.commit ||
-            !result.data.root.repository.commit.commit.file ||
-            !result.data.root.repository.commit.commit.file.dependencyReferences ||
-            !result.data.root.repository.commit.commit.file.dependencyReferences.repoData ||
-            !result.data.root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData ||
-            !result.data.root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData.references.length) {
-            return null
-        }
-
-        return result.data.root.repository.commit.commit.file.dependencyReferences
     })
     return p
 }

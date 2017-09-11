@@ -1,8 +1,7 @@
+import { parseBrowserRepoURL } from 'sourcegraph/repo'
 import { telligent } from 'sourcegraph/tracking/services/telligentWrapper'
 import { getPathExtension } from 'sourcegraph/util'
-import { pageVars } from 'sourcegraph/util/pageVars'
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
-import * as url from 'sourcegraph/util/url'
 
 class EventLogger {
     private static PLATFORM = 'Web'
@@ -111,13 +110,13 @@ class EventLogger {
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : ''
         }
 
-        const u = url.parseBlob()
-        if (u.uri) {
-            props.repo = u.uri!
-            props.rev = pageVars.Rev
-            if (u.path) {
-                props.path = u.path!
-                props.language = getPathExtension(u.path)
+        const u = parseBrowserRepoURL(window.location.href)
+        if (u.repoPath) {
+            props.repo = u.repoPath!
+            props.rev = u.rev
+            if (u.filePath) {
+                props.path = u.filePath!
+                props.language = getPathExtension(u.filePath)
             }
         }
 

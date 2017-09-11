@@ -15,10 +15,10 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from 'sourcegraph/components/HeroPage'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
-import { hideTooltip } from 'sourcegraph/repo/tooltips'
 import { Tree, TreeHeader } from 'sourcegraph/tree/Tree'
-import { getCodeCellsForAnnotation, highlightAndScrollToLine } from 'sourcegraph/util'
 import * as url from 'sourcegraph/util/url'
+import { parseHash } from 'sourcegraph/util/url'
+import { Position } from '.'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
 
@@ -52,6 +52,10 @@ interface State {
      * error preventing fetching file contents
      */
     highlightingError?: Error
+    /**
+     * the current position selected
+     */
+    position?: Position
 }
 
 export class Repository extends React.Component<Props, State> {
@@ -65,8 +69,9 @@ export class Repository extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        const u = url.parseBlob()
-        this.state.showRefs = Boolean(u.path && u.modal && u.modal === 'references')
+        const parsedHash = parseHash(this.props.location.hash)
+        this.state.showRefs = parsedHash.modal === 'references'
+        this.state.position = parsedHash.line ? { line: parsedHash.line!, char: parsedHash.char } : undefined
         this.subscriptions.add(
             this.componentUpdates
                 .switchMap(props =>
@@ -122,18 +127,11 @@ export class Repository extends React.Component<Props, State> {
 
     public componentWillReceiveProps(nextProps: Props): void {
         this.componentUpdates.next(nextProps)
-        const hash = url.parseHash(nextProps.location.hash)
-        const showRefs = Boolean(nextProps.filePath && hash.modal && hash.modal === 'references')
-        if (showRefs !== this.state.showRefs) {
-            this.setState({ showRefs })
-        }
-        if (this.props.location.hash !== nextProps.location.hash && nextProps.history.action === 'POP') {
-            // handle 'back' and 'forward'
-            this.scrollToLine(nextProps)
-        } else if (this.props.location.pathname !== nextProps.location.pathname) {
-            hideTooltip() // clear tooltip when transitioning between files
-            this.scrollToLine(nextProps)
-        }
+
+        const parsedHash = parseHash(nextProps.location.hash)
+        const showRefs = parsedHash.modal === 'references'
+        const position = parsedHash.line ? { line: parsedHash.line!, char: parsedHash.char } : undefined
+        this.setState({ showRefs, position })
     }
 
     public componentWillUnmount(): void {
@@ -182,11 +180,8 @@ export class Repository extends React.Component<Props, State> {
                                 <div className='repository__blob-placeholder'></div>
                         }
                         {
-                            this.state.showRefs &&
-                                <ReferencesWidget onDismiss={() => {
-                                    const currURL = url.parseBlob()
-                                    this.props.history.push(url.toBlob({ ...currURL, modal: undefined, modalMode: undefined }))
-                                }} />
+                            this.state.showRefs && this.state.position &&
+                                <ReferencesWidget {...{ ...this.props, filePath: this.props.filePath!, position: this.state.position! }} />
                         }
                     </div>
                 </div>
@@ -201,15 +196,11 @@ export class Repository extends React.Component<Props, State> {
 
     private selectTreePath = (path: string, isDir: boolean) => {
         if (!isDir) {
-            this.props.history.push(url.toBlob({ uri: this.props.repoPath, rev: this.props.rev, path }))
-        }
-    }
-
-    private scrollToLine = (props: Props) => {
-        const line = url.parseHash(props.location.hash).line
-        if (line) {
-            highlightAndScrollToLine(props.history, props.repoPath,
-                props.commitID, props.filePath!, line, getCodeCellsForAnnotation())
+            this.props.history.push(url.toBlobURL({
+                repoPath: this.props.repoPath,
+                commitID: this.props.commitID,
+                filePath: path
+            }))
         }
     }
 }

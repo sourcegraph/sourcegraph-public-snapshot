@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import * as url from 'sourcegraph/util/url'
+import { toBlobURL, toTreeURL } from 'sourcegraph/util/url'
 
 export interface Props {
     path: string
@@ -48,9 +48,9 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
             const j = i - uriParts.length
             const pathParts = this.props.filePath.split('/')
             if (j < pathParts.length - 1) {
-                return url.toTree({ uri: this.props.repoPath, rev: this.props.rev, path: pathParts.slice(0, j + 1).join('/') })
+                return toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: pathParts.slice(0, j + 1).join('/') })
             }
-            return url.toBlob({ uri: this.props.repoPath, rev: this.props.rev, path: this.props.filePath })
+            return toBlobURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.props.filePath })
         }
         return ''
     }

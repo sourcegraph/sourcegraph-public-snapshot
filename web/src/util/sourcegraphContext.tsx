@@ -1,4 +1,37 @@
-import { EmailAddrList, ExternalToken, User } from 'sourcegraph/util/types'
+export interface EmailAddr {
+    Email?: string
+    Verified?: boolean
+    Primary?: boolean
+    Guessed?: boolean
+    Blacklisted?: boolean
+}
+
+export interface EmailAddrList {
+    EmailAddrs?: EmailAddr[]
+}
+
+export interface ExternalToken {
+    uid?: string
+    host?: string
+    token?: string
+    scope?: string
+}
+
+export interface User {
+    UID: string
+    Login: string
+    Name?: string
+    IsOrganization?: boolean
+    AvatarURL?: string
+    Location?: string
+    Company?: string
+    HomepageURL?: string
+    Disabled?: boolean
+    Admin?: boolean
+    Betas?: string[]
+    Write?: boolean
+    RegisteredAt?: any
+}
 
 /**
  * exported because webworkers need to be able to use it, and methods not transferred with context object

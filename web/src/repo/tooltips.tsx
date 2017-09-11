@@ -2,9 +2,8 @@ import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import unescape = require('lodash/unescape')
 import * as marked from 'marked'
 import { Tooltip } from 'sourcegraph/backend/lsp'
-import { AbsoluteRepoPosition } from 'sourcegraph/repo'
+import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from 'sourcegraph/repo'
 import { getModeFromExtension } from 'sourcegraph/util'
-import { blobUrlToAbsolutePosition, parseBlob } from 'sourcegraph/util/url'
 
 registerLanguage('go', require('highlight.js/lib/languages/go'))
 registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
@@ -28,7 +27,7 @@ const definitionIconSVG = '<svg width="11px" height="9px"><path fill="#FFFFFF" x
 
 export interface TooltipData extends Tooltip {
     target: HTMLElement
-    ctx: AbsoluteRepoPosition
+    ctx: AbsoluteRepoFilePosition
     defUrl?: string
     loading?: boolean
 }
@@ -105,8 +104,8 @@ export function hideTooltip(): void {
 }
 
 interface Actions {
-    definition: (ctx: AbsoluteRepoPosition) => (e: MouseEvent) => void
-    references: (ctx: AbsoluteRepoPosition) => (e: MouseEvent) => void
+    definition: (ctx: AbsoluteRepoFilePosition) => (e: MouseEvent) => void
+    references: (ctx: AbsoluteRepoFilePosition) => (e: MouseEvent) => void
     dismiss: () => void
 }
 
@@ -123,10 +122,6 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         // no target to show hover for; tooltip is hidden
         return
     }
-    if (!data.title) {
-        // no data; bail
-        return
-    }
 
     constructBaseTooltip()
     loadingTooltip.style.display = loading ? 'block' : 'none'
@@ -136,8 +131,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     j2dAction.style.display = 'block'
     j2dAction.href = data.defUrl ? data.defUrl : ''
     if (data.defUrl) {
-        const parsed = parseBlob(data.defUrl)
-        j2dAction.onclick = actions.definition(blobUrlToAbsolutePosition(parsed))
+        j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrl) as AbsoluteRepoFilePosition)
     }
 
     findRefsAction.style.display = 'block'

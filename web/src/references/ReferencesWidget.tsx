@@ -1,3 +1,4 @@
+import * as H from 'history'
 import groupBy = require('lodash/groupBy')
 import partition = require('lodash/partition')
 import * as React from 'react'
@@ -7,20 +8,25 @@ import * as RepoIcon from 'react-icons/lib/go/repo'
 import * as CloseIcon from 'react-icons/lib/md/close'
 import * as GlobeIcon from 'react-icons/lib/md/language'
 import { Link } from 'react-router-dom'
+import 'rxjs/add/operator/concat'
+import { Observable } from 'rxjs/Observable'
+import { Subject } from 'rxjs/Subject'
+import { Subscription } from 'rxjs/Subscription'
+import { fetchReferences } from 'sourcegraph/backend/lsp'
 import { CodeExcerpt } from 'sourcegraph/components/CodeExcerpt'
-import { triggerReferences } from 'sourcegraph/references'
-import { ReferencesState, refsFetchKey, store } from 'sourcegraph/references/store'
-import { makeRepoURI } from 'sourcegraph/repo'
+import { Reference } from 'sourcegraph/references'
+import { fetchExternalReferences } from 'sourcegraph/references/backend'
+import { AbsoluteRepoFilePosition, RepoFilePosition } from 'sourcegraph/repo'
 import { events } from 'sourcegraph/tracking/events'
-import { pageVars } from 'sourcegraph/util/pageVars'
-import { Reference } from 'sourcegraph/util/types'
 import * as url from 'sourcegraph/util/url'
+import { parseHash } from 'sourcegraph/util/url'
 
 interface ReferenceGroupProps {
     uri: string
     path: string
     refs: Reference[]
     isLocal: boolean
+    localRev?: string
     hidden?: boolean
 }
 
@@ -73,11 +79,10 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                     }}
                                 >
                                     <CodeExcerpt
-                                        uri={uri.hostname + uri.pathname}
-                                        rev={uri.search.substr('?'.length)}
-                                        path={uri.hash.substr('#'.length)}
-                                        line={ref.range.start.line}
-                                        char={ref.range.start.character}
+                                        repoPath={uri.hostname + uri.pathname}
+                                        commitID={uri.search.substr('?'.length)}
+                                        filePath={uri.hash.substr('#'.length)}
+                                        position={{ line: ref.range.start.line, char: ref.range.start.character }}
                                         highlightLength={ref.range.end.character - ref.range.start.character}
                                         previewWindowExtraLines={1}
                                     />
@@ -104,47 +109,73 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
 
     private getRefURL(ref: Reference): string {
         const uri = new URL(ref.uri)
-        return `/${uri.hostname + uri.pathname}/-/blob/${uri.hash.substr('#'.length)}#L${ref.range.start.line + 1}`
+        const rev = this.props.isLocal && this.props.localRev ?
+            this.props.localRev :
+            uri.search.substr('?'.length)
+        return `/${uri.hostname + uri.pathname}${rev ? '@' + rev : ''}/-/blob/${uri.hash.substr('#'.length)}#L${ref.range.start.line + 1}`
     }
 }
 
-interface Props {
-    onDismiss(): void
+interface Props extends AbsoluteRepoFilePosition {
+    location: H.Location
+    history: H.History
 }
 
-interface State extends ReferencesState {
-    docked: boolean
+interface State {
     group: 'local' | 'external'
+    references: Reference[]
+    loadingLocal: boolean
+    loadingExternal: boolean
 }
 
 export class ReferencesWidget extends React.Component<Props, State> {
-    public subscription: any
+    public state: State = {
+        group: 'local',
+        references: [],
+        loadingLocal: true,
+        loadingExternal: true
+    }
+    private componentUpdates = new Subject<Props>()
+    private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
-        const u = url.parseBlob()
-        const onRefs = Boolean(u.path && u.modal && u.modal === 'references')
-        this.state = { ...store.getValue(), group: this.getRefsGroupFromUrl(window.location.href), docked: onRefs }
+        const parsedHash = parseHash(props.location.hash)
+        this.state.group = parsedHash.modalMode ? parsedHash.modalMode : 'local'
+        this.subscriptions.add(
+            this.componentUpdates
+                .switchMap(props => Observable.merge(
+                    Observable.fromPromise(fetchReferences(props))
+                        .map(refs => ({ references: this.state.references.concat(refs) } as State))
+                        .catch(e => {
+                            console.error(e)
+                            return []
+                        })
+                        .concat([{ loadingLocal: false } as State]),
+                    fetchExternalReferences(props)
+                        .map(refs => ({ references: this.state.references.concat(refs) } as State))
+                        .catch(e => {
+                            console.error(e)
+                            return []
+                        })
+                        .concat([{ loadingExternal: false } as State])
+                ))
+                .subscribe(state => this.setState(state))
+        )
     }
 
     public componentDidMount(): void {
-        this.subscription = store.subscribe(state => {
-            this.setState({ ...state, group: this.state.group, docked: this.state.docked })
-        })
-        const u = url.parseBlob()
-        if (this.state.docked) {
-            triggerReferences({
-                repoPath: u.uri!,
-                rev: pageVars.Rev,
-                commitID: pageVars.CommitID,
-                filePath: u.path!,
-                position: {
-                    line: u.line!,
-                    char: u.char!
-                }
-            })
+        this.componentUpdates.next(this.props)
+    }
+
+    public componentWillReceiveProps(nextProps: Props): void {
+        const parsedHash = parseHash(nextProps.location.hash)
+        let group = this.state.group
+        if (parsedHash.modalMode) {
+            group = parsedHash.modalMode
         }
-        window.addEventListener('hashchange', this.handleHashChange)
+        this.setState({ references: [], loadingLocal: true, loadingExternal: true, group })
+        this.componentUpdates.next(nextProps)
     }
 
     public getRefsGroupFromUrl(urlStr: string): 'local' | 'external' {
@@ -158,42 +189,27 @@ export class ReferencesWidget extends React.Component<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        if (this.subscription) {
-            this.subscription.unsubscribe()
-        }
-        window.removeEventListener('hashchange', this.handleHashChange)
+        this.subscriptions.unsubscribe()
     }
 
-    public isLoading(group: 'local' | 'external'): boolean {
-        if (!this.state.context) {
-            return false
-        }
-
-        const state = store.getValue()
-        const loadingRefs = state.fetches.get(refsFetchKey(this.state.context, true)) === 'pending'
-        const loadingXRefs = state.fetches.get(refsFetchKey(this.state.context, false)) === 'pending'
-
+    public isLoading(group: string): boolean {
         switch (group) {
             case 'local':
-                return loadingRefs
-            case 'external':
-                return loadingXRefs
-        }
+                return this.state.loadingLocal
 
+            case 'external':
+                return this.state.loadingExternal
+        }
         return false
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.context) {
-            return null
-        }
-        const loc = makeRepoURI(this.state.context)
-        const refs = this.state.refsByLoc.get(loc)
+        const refs = this.state.references
 
         // References by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
         const refsByUri = groupBy(refs, ref => ref.uri)
 
-        const localPrefix = 'git://' + this.state.context.repoPath
+        const localPrefix = 'git://' + this.props.repoPath
         const [localRefs, externalRefs] = partition(Object.keys(refsByUri), uri => uri.startsWith(localPrefix))
 
         const localRefCount = localRefs.reduce((memo, uri) => memo + refsByUri[uri].length, 0)
@@ -203,37 +219,31 @@ export class ReferencesWidget extends React.Component<Props, State> {
             switch (this.state.group) {
                 case 'local':
                     return localRefs.length === 0
+
                 case 'external':
                     return externalRefs.length === 0
             }
             return false
         }
 
-        const l = this.state.context
+        const ctx: RepoFilePosition = this.props
+
         return (
             <div className='references-widget'>
                 <div className='references-widget__title-bar'>
-                    <a className={'references-widget__title-bar-group' + (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')}
-                        href={url.toBlob({ uri: l.repoPath, rev: l.rev, path: l.filePath, line: l.position.line, char: l.position.char, modalMode: 'local', modal: 'references' })}
+                    <Link className={'references-widget__title-bar-group' + (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')}
+                        to={url.toPrettyBlobPositionURL({ ...ctx, referencesMode: 'local' })}
                         onClick={() => events.ShowLocalRefsButtonClicked.log()}>
                         This repository
-                    </a>
+                    </Link>
                     <div className='references-widget__badge'>{localRefCount}</div>
-                    <a className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
-                        href={url.toBlob({
-                            uri: l.repoPath,
-                            rev: l.rev,
-                            path: l.filePath,
-                            line: l.position.line,
-                            char: l.position.char,
-                            modalMode: 'external',
-                            modal: 'references'
-                        })}
+                    <Link className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
+                        to={url.toPrettyBlobPositionURL({ ...ctx, referencesMode: 'external' })}
                         onClick={() => events.ShowExternalRefsButtonClicked.log()}>
                         Other repositories
-                    </a>
+                    </Link>
                     <div className='references-widget__badge'>{externalRefCount}</div>
-                    <CloseIcon className='references-widget__close-icon' onClick={() => this.props.onDismiss()} />
+                    <CloseIcon className='references-widget__close-icon' onClick={this.onDismiss} />
                 </div>
                 {
                     isEmptyGroup() && <div className='references-widget__placeholder'>
@@ -242,27 +252,36 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 }
                 <div className='references-widget__groups'>
                     {
-                        this.state.group === 'local' && localRefs.sort().map((uri, i) => {
-                            const parsed = new URL(uri)
-                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.pathname} path={parsed.hash.substr('#'.length)} isLocal={true} refs={refsByUri[uri]} />
-                        })
+                        this.state.group === 'local' &&
+                            localRefs.sort().map((uri, i) => {
+                                const parsed = new URL(uri)
+                                return <ReferencesGroup
+                                            key={i}
+                                            uri={parsed.hostname + parsed.pathname}
+                                            path={parsed.hash.substr('#'.length)}
+                                            isLocal={true}
+                                            localRev={this.props.rev}
+                                            refs={refsByUri[uri]} />
+                            })
                     }
                     {
-                        this.state.group === 'external' && externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
-                            const parsed = new URL(uri)
-                            return <ReferencesGroup key={i} uri={parsed.hostname + parsed.pathname} path={parsed.hash.substr('#'.length)} isLocal={false} refs={refsByUri[uri]} />
-                        })
+                        this.state.group === 'external' &&
+                            externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+                                const parsed = new URL(uri)
+                                return <ReferencesGroup
+                                            key={i}
+                                            uri={parsed.hostname + parsed.pathname}
+                                            path={parsed.hash.substr('#'.length)}
+                                            isLocal={false}
+                                            refs={refsByUri[uri]} />
+                            })
                     }
                 </div>
             </div>
         )
     }
 
-    private handleHashChange = (e: HashChangeEvent) => {
-        const u = url.parseBlob(e!.newURL!)
-        const shouldShow = Boolean(u.path && u.modal && u.modal === 'references')
-        if (shouldShow) {
-            this.setState({ ...this.state, group: this.getRefsGroupFromUrl(e!.newURL!), docked: true })
-        }
+    private onDismiss = (): void => {
+        this.props.history.push(url.toPrettyBlobPositionURL(this.props))
     }
 }

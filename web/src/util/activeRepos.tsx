@@ -1,5 +1,9 @@
 import { fetchActiveRepos } from 'sourcegraph/backend'
-import { ActiveRepoResults } from 'sourcegraph/util/types'
+
+export interface ActiveRepoResults {
+    active: string[]
+    inactive: string[]
+}
 
 const localStorageKey = 'activeRepos'
 
