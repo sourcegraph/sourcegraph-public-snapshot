@@ -256,6 +256,10 @@ type Installation {
 
 type User {
 	githubInstallations: [Installation!]!
+	id: String!
+	handle: String
+	avatarURL: String
+	email: String
 }
 
 type CompanyProfile {

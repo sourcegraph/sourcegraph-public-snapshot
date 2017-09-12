@@ -34,6 +34,9 @@ export class LoggableEvent {
  * Note: all newly added events should follow the "$Noun$Verb" naming scheme
  */
 export const events = {
+    // Auth
+    InitiateGitHubOAuth2Flow: new LoggableEvent('InitiateGitHubOAuth2Flow', EventCategories.Auth, EventActions.Click),
+
     // Nav bar events
     ShareButtonClicked: new LoggableEvent('ShareButtonClicked', EventCategories.Sharing, EventActions.Click),
     OpenInCodeHostClicked: new LoggableEvent('OpenInCodeHostClicked', EventCategories.External, EventActions.Click),

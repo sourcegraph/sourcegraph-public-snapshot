@@ -9,14 +9,18 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
-type currentUserResolver struct{}
+type currentUserResolver struct {
+	actor *actor.Actor
+}
 
 func currentUser(ctx context.Context) (*currentUserResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
-	return &currentUserResolver{}, nil
+	return &currentUserResolver{
+		actor: actor,
+	}, nil
 }
 
 func (r *currentUserResolver) GitHubInstallations(ctx context.Context) ([]*installationResolver, error) {
@@ -29,4 +33,32 @@ func (r *currentUserResolver) GitHubInstallations(ctx context.Context) ([]*insta
 		installs[i] = &installationResolver{v}
 	}
 	return installs, nil
+}
+
+func (r *currentUserResolver) ID(ctx context.Context) (string, error) {
+	if r.actor != nil {
+		return r.actor.UID, nil
+	}
+	return "", errors.New("no current user")
+}
+
+func (r *currentUserResolver) Handle(ctx context.Context) (*string, error) {
+	if r.actor != nil {
+		return &r.actor.Login, nil
+	}
+	return nil, errors.New("no current user")
+}
+
+func (r *currentUserResolver) AvatarURL(ctx context.Context) (*string, error) {
+	if r.actor != nil {
+		return &r.actor.AvatarURL, nil
+	}
+	return nil, errors.New("no current user")
+}
+
+func (r *currentUserResolver) Email(ctx context.Context) (*string, error) {
+	if r.actor != nil {
+		return &r.actor.Email, nil
+	}
+	return nil, errors.New("no current user")
 }

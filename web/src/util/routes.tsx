@@ -3,16 +3,16 @@ import { makeRepoURI, ParsedRepoURI } from 'sourcegraph/repo'
 import { parseHash } from 'sourcegraph/util/url'
 
 export interface ParsedRouteProps extends Partial<ParsedRepoURI>, RouteComponentProps<any> { // the typed parameters are not useful in the parsed props, as you shouldn't use them
-    routeName?: 'home' | 'search' | 'repository'
+    routeName?: 'home' | 'search' | 'sign-in' | 'editor-auth' | 'repository'
     uri?: string
 }
 
 export function parseRouteProps<T extends string | {[key: string]: string} | string[]>(props: RouteComponentProps<T>): ParsedRouteProps {
-    if (props.location.pathname === '/') {
-        return { ...props, routeName: 'home' }
-    }
-    if (props.location.pathname === '/search') {
-        return { ...props, routeName: 'search' }
+    switch (props.location.pathname) {
+        case '/':               return { ...props, routeName: 'home' }
+        case '/search':         return { ...props, routeName: 'search' }
+        case '/sign-in':        return { ...props, routeName: 'sign-in' }
+        case '/editor-auth':    return { ...props, routeName: 'editor-auth' }
     }
 
     const uriPathSplit = props.match.params[0].split('/-/')

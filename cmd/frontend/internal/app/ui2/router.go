@@ -30,6 +30,8 @@ const (
 	routeRepoOrMain = "repo-or-main" // see newRouter comment for details
 	routeTree       = "tree"
 	routeBlob       = "blob"
+	routeSignIn     = "sign-in"
+	routeEditorAuth = "editor-auth"
 
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
@@ -72,6 +74,10 @@ func newRouter() *mux.Router {
 	// search
 	r.Path("/search").Methods("GET").Name(routeSearch)
 
+	// TODO(slimsag): unify routing for SPA soon.
+	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
+	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
+
 	// repo-or-main
 	//
 	// This handles either a repo like 'sourcegraph.com/github.com/foo/bar' OR
@@ -94,6 +100,8 @@ func init() {
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSearch).Handler(handler(serveSearch))
+	router.Get(routeSignIn).Handler(handler(serveHome))
+	router.Get(routeEditorAuth).Handler(handler(serveHome))
 	serveRepoHandler := handler(serveRepo)
 	router.Get(routeRepoOrMain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.

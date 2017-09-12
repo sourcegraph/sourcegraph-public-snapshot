@@ -23,8 +23,11 @@ import { Navbar } from 'sourcegraph/nav/Navbar'
 import { ECLONEINPROGESS, ENOTFOUND, resolveRev } from 'sourcegraph/repo/backend'
 import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from 'sourcegraph/repo/Repository'
 import { SearchResults } from 'sourcegraph/search/SearchResults'
+import { EditorAuthPage } from 'sourcegraph/user/EditorAuthPage'
+import { SignInPage } from 'sourcegraph/user/SignInPage'
 import * as activeRepos from 'sourcegraph/util/activeRepos'
 import { ParsedRouteProps, parseRouteProps } from 'sourcegraph/util/routes'
+import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
 
 window.addEventListener('DOMContentLoaded', () => {
     // Be a bit proactive and try to fetch/store active repos now. This helps
@@ -128,6 +131,15 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
         switch (this.props.routeName) {
             case 'search':
                 return <SearchResults {...this.props} />
+
+            case 'sign-in':
+                return <SignInPage showEditorFlow={false} />
+
+            case 'editor-auth':
+                if (sourcegraphContext.user) {
+                    return <EditorAuthPage />
+                }
+                return <SignInPage showEditorFlow={true} />
 
             case 'repository':
                 return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />

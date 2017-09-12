@@ -152,8 +152,8 @@ export const EventActions = {
     Error: 'Error',
 
     Signup: 'Signup',
-    Login: 'Login',
-    Logout: 'Logout',
+    SignIn: 'SignIn',
+    SignOut: 'SignOut',
 
     /**
      *  Get redirected from one page or location to another
