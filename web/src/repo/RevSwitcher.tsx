@@ -132,11 +132,10 @@ export class RevSwitcher extends React.Component<Props, State> {
                         Observable.fromPromise(resolveRev({repoPath: this.props.repoPath, rev: query}))
                             .map(query => ({ queryIsCommit: true } as State))
                             .catch(err => {
-                                if (err.code === EREVNOTFOUND) {
-                                    return [] // no-op
+                                if (err.code !== EREVNOTFOUND) {
+                                    console.error(err)
                                 }
-                                console.error(err)
-                                throw err
+                                return [] // no-op
                             })
                     ),
 
