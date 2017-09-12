@@ -1,7 +1,7 @@
 import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ShareIcon from '@sourcegraph/icons/lib/Share'
-import * as copy from 'copy-to-clipboard'
+import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
 import GitHub from 'react-icons/lib/go/mark-github'

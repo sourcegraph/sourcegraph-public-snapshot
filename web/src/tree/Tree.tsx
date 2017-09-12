@@ -2,13 +2,13 @@
 
 import * as immutable from 'immutable'
 import { Dictionary } from 'lodash'
-import groupBy = require('lodash/groupBy')
-import partition = require('lodash/partition')
+import groupBy from 'lodash/groupBy'
+import partition from 'lodash/partition'
 import * as React from 'react'
-import * as DownIcon from 'react-icons/lib/fa/angle-down'
-import * as RightIcon from 'react-icons/lib/fa/angle-right'
-import * as CloseIcon from 'react-icons/lib/md/close'
-import * as VisibilitySensor from 'react-visibility-sensor'
+import DownIcon from 'react-icons/lib/fa/angle-down'
+import RightIcon from 'react-icons/lib/fa/angle-right'
+import CloseIcon from 'react-icons/lib/md/close'
+import VisibilitySensor from 'react-visibility-sensor'
 import { Subscription } from 'rxjs/Subscription'
 import { createTreeStore, TreeStore } from 'sourcegraph/tree/store'
 import { getParentDir } from 'sourcegraph/tree/util'

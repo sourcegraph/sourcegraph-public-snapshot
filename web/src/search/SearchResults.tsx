@@ -1,4 +1,4 @@
-import upperFirst = require('lodash/upperFirst')
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/map'
