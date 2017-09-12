@@ -110,14 +110,16 @@ class EventLogger {
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : ''
         }
 
-        const u = parseBrowserRepoURL(window.location.href)
-        if (u.repoPath) {
+        try {
+            const u = parseBrowserRepoURL(window.location.href)
             props.repo = u.repoPath!
             props.rev = u.rev
             if (u.filePath) {
                 props.path = u.filePath!
                 props.language = getPathExtension(u.filePath)
             }
+        } catch (error) {
+            // no-op
         }
 
         return props
