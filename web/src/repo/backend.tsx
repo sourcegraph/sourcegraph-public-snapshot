@@ -14,16 +14,16 @@ class CloneInProgressError extends Error {
 export const EREPONOTFOUND = 'EREPONOTFOUND'
 class RepoNotFoundError extends Error {
     public readonly code = EREPONOTFOUND
-    constructor(key: string) {
-        super(`${key} not found`)
+    constructor(repoPath: string) {
+        super(`repo ${repoPath} not found`)
     }
 }
 
 export const EREVNOTFOUND = 'EREVNOTFOUND'
 class RevNotFoundError extends Error {
     public readonly code = EREVNOTFOUND
-    constructor(key?: string) {
-        super(`${key} not found`)
+    constructor(rev?: string) {
+        super(`rev ${rev} not found`)
     }
 }
 
