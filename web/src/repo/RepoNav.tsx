@@ -1,4 +1,4 @@
-import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
+import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ShareIcon from '@sourcegraph/icons/lib/Share'
@@ -35,7 +35,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 </span>
                 <span className='rev' onClick={this.props.onClickRevision}>
                     {this.props.rev || 'master' /* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
-                    <ChevronDownIcon />
+                    <CaretDownIcon />
                 </span>
                 <span className='path'>
                     <RepoIcon />
