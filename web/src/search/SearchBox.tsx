@@ -23,6 +23,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { events } from 'sourcegraph/tracking/events'
+import { scrollIntoView } from 'sourcegraph/util'
 import { ParsedRouteProps } from 'sourcegraph/util/routes'
 import { buildSearchURLQuery, FileFilter, FileGlobFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
 
@@ -196,19 +197,7 @@ export class SearchBox extends React.Component<Props, State> {
 
     public componentDidUpdate(): void {
         // Check if selected suggestion is out of view
-        if (this.suggestionListElement && this.selectedSuggestionElement) {
-
-            const listRect = this.suggestionListElement.getBoundingClientRect()
-            const suggestionRect = this.selectedSuggestionElement.getBoundingClientRect()
-
-            if (suggestionRect.top <= listRect.top) {
-                // Suggestion is out of view at the top of the list
-                this.suggestionListElement.scrollTop -= listRect.top - suggestionRect.top
-            } else if (suggestionRect.bottom >= listRect.bottom) {
-                // Suggestion is out of view at the bottom of the list
-                this.suggestionListElement.scrollTop += suggestionRect.bottom - listRect.bottom
-            }
-        }
+        scrollIntoView(this.suggestionListElement, this.selectedSuggestionElement)
     }
 
     public render(): JSX.Element | null {

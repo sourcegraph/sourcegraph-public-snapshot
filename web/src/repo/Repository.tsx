@@ -21,6 +21,7 @@ import { parseHash } from 'sourcegraph/util/url'
 import { Position } from '.'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
+import { RevSwitcher } from './RevSwitcher'
 
 export interface Props {
     repoPath: string
@@ -40,6 +41,10 @@ interface State {
      * show the file tree explorer
      */
     showTree: boolean
+    /**
+     * show the rev switcher
+     */
+    showRevSwitcher: boolean
     /**
      * an array of file paths in the repository
      */
@@ -61,7 +66,8 @@ interface State {
 export class Repository extends React.Component<Props, State> {
     public state: State = {
         showTree: true,
-        showRefs: false
+        showRefs: false,
+        showRevSwitcher: false
     }
     private componentUpdates = new Subject<Props>()
     private showAnywayButtonClicks = new Subject<void>()
@@ -141,7 +147,8 @@ export class Repository extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className='repository'>
-                <RepoNav {...this.props} onClickNavigation={this.onNavigation} />
+                <RepoNav {...this.props} onClickNavigation={this.onNavigation} onClickRevision={this.toggleRevSwitcher} />
+                {this.state.showRevSwitcher && <RevSwitcher {...this.props} onClose={this.toggleRevSwitcher} />}
                 <div className='repository__content'>
                     {
                         this.state.showTree &&
@@ -191,6 +198,13 @@ export class Repository extends React.Component<Props, State> {
 
     private onTreeHeaderDismiss = () => this.setState({ showTree: false })
     private onNavigation = () => this.setState({ showTree: !this.state.showTree })
+
+    /**
+     * toggles display of the rev switcher
+     */
+    private toggleRevSwitcher = () => {
+        this.setState({ showRevSwitcher: !this.state.showRevSwitcher })
+    }
 
     private handleShowAnywayButtonClick = e => {
         e.preventDefault()

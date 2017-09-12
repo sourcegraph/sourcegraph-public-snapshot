@@ -1,15 +1,6 @@
 import distanceInWords from 'date-fns/distance_in_words'
 import { BlameState, contextKey, store } from 'sourcegraph/blame/store'
-
-function limitString(s: string, n: number, dotdotdot: boolean): string {
-    if (s.length > n) {
-        if (dotdotdot) {
-            return s.substring(0, n - 1) + '…'
-        }
-        return s.substring(0, n)
-    }
-    return s
-}
+import { limitString } from 'sourcegraph/util'
 
 /**
  * setLineBlameContent sets the given line's blame content.

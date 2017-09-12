@@ -20,7 +20,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from 'sourcegraph/components/HeroPage'
 import { Home } from 'sourcegraph/home/Home'
 import { Navbar } from 'sourcegraph/nav/Navbar'
-import { ECLONEINPROGESS, ENOTFOUND, resolveRev } from 'sourcegraph/repo/backend'
+import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from 'sourcegraph/repo/backend'
 import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from 'sourcegraph/repo/Repository'
 import { SearchResults } from 'sourcegraph/search/SearchResults'
 import { EditorAuthPage } from 'sourcegraph/user/EditorAuthPage'
@@ -73,7 +73,7 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
                                     this.setState({ cloneInProgress: true })
                                     return
                                 }
-                                if (err.code === ENOTFOUND) {
+                                if (err.code === EREPONOTFOUND) {
                                     // Display 404to the user and do not retry
                                     this.setState({ notFound: true })
                                 }

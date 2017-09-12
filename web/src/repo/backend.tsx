@@ -11,10 +11,18 @@ class CloneInProgressError extends Error {
     }
 }
 
-export const ENOTFOUND = 'ENOTFOUND'
-class NotFoundError extends Error {
-    public readonly code = ENOTFOUND
+export const EREPONOTFOUND = 'EREPONOTFOUND'
+class RepoNotFoundError extends Error {
+    public readonly code = EREPONOTFOUND
     constructor(key: string) {
+        super(`${key} not found`)
+    }
+}
+
+export const EREVNOTFOUND = 'EREVNOTFOUND'
+class RevNotFoundError extends Error {
+    public readonly code = EREVNOTFOUND
+    constructor(key?: string) {
         super(`${key} not found`)
     }
 }
@@ -42,13 +50,13 @@ export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }
             throw new Error('invalid response received from graphql endpoint')
         }
         if (!result.data.root.repository) {
-            throw new NotFoundError(ctx.repoPath)
+            throw new RepoNotFoundError(ctx.repoPath)
         }
         if (result.data.root.repository.commit.cloneInProgress) {
             throw new CloneInProgressError(ctx.repoPath)
         }
         if (!result.data.root.repository.commit.commit) {
-            throw new Error('not able to resolve sha1')
+            throw new RevNotFoundError(ctx.rev)
         }
         return result.data.root.repository.commit.commit.sha1
     }), makeRepoURI
@@ -168,5 +176,36 @@ export const fetchBlobContent = memoizedFetch((ctx: FetchFileCtx): Promise<strin
             throw new Error(`cannot locate blob content: ${ctx}`)
         }
         return result.data.root.repository.commit.commit.file.content
+    }), makeRepoURI
+)
+
+export interface RepoRevisions {
+    branches: string[]
+    tags: string[]
+}
+
+export const fetchRepoRevisions = memoizedFetch((ctx: { repoPath: string }): Promise<RepoRevisions> =>
+    queryGraphQL(`query RepoRevisions($repoPath: String) {
+        root {
+            repository(uri: $repoPath) {
+                branches
+                tags
+            }
+        }
+    }`, ctx).toPromise().then(result => {
+        if (result.errors) {
+            const errors = result.errors.map(e => e.message).join(', ')
+            throw new Error(errors)
+        }
+        if (
+            !result.data ||
+            !result.data.root ||
+            !result.data.root.repository ||
+            !result.data.root.repository.branches ||
+            !result.data.root.repository.tags
+        ) {
+            throw new Error(`cannot locate repo revisions: ${ctx}`)
+        }
+        return result.data.root.repository
     }), makeRepoURI
 )

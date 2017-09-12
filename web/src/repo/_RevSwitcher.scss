@@ -1,0 +1,70 @@
+.repo-rev-switcher {
+    width: 0;
+    height: 0;
+    z-index: 1;
+    
+    &__inner {
+        background: #1c2736;
+        border: 1px solid #151d28;
+        border-radius: 2px;
+        width: 15.5em;
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__header {
+        padding: .5em;
+        display: flex;
+        .icon {
+            flex: 1;
+            width: 1em;
+            cursor: pointer;
+            fill: currentColor;
+            &:hover {
+                fill: white;
+            }
+        }
+    }
+    &__title {
+        font-weight: bold;
+        font-size: .875em;
+        flex: 100;
+    }
+    &__input {
+        padding: 1em;
+        border: none;
+        outline: none;
+        background: #151D28;
+        width: 100%;
+        color: white;
+    }
+    &__list-view {
+        height: 13em;
+        overflow: auto;
+        background: #233043;
+    }
+    &__list-item {
+        font-size: .875em;
+        display: inline-block;
+        width: 100%;
+        cursor: pointer;
+        padding: .5em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        &:hover {
+            background: #2A3A51;
+        }
+        &--selected {
+            background: #1C7CD6;
+            &:hover {
+                background: #1C7CD6;
+            }
+        }
+        .icon {
+            width: 1.5em;
+            fill: currentColor;
+            vertical-align: middle;
+        }
+    }
+}
