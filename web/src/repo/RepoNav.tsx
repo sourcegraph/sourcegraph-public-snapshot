@@ -33,7 +33,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                     <ListIcon />
                     Navigation
                 </span>
-                <span className='explorer' onClick={this.props.onClickRevision}>
+                <span className='rev' onClick={this.props.onClickRevision}>
                     {this.props.rev || 'master' /* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
                     <ChevronDownIcon />
                 </span>

@@ -29,7 +29,7 @@
         margin-left: 0.5rem;
     }
 
-    .explorer {
+    .explorer, .rev {
         display: flex;
         cursor: pointer;
         align-items: center;
@@ -41,6 +41,13 @@
             width: 0.5rem;
             height: 0.5rem;
         }
+    }
+    .rev {
+        border: 1px solid #93A9C8;
+        line-height: 24px;
+        padding-left: 8px;
+        border-radius: 2px;
+        user-select: none;
     }
 
     .path {
