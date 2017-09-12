@@ -1,5 +1,4 @@
 import BranchIcon from '@sourcegraph/icons/lib/Branch'
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
@@ -192,14 +191,10 @@ export class RevSwitcher extends React.Component<Props, State> {
         })
         return <div className='repo-rev-switcher'>
             <div className='repo-rev-switcher__inner'>
-                <div className='repo-rev-switcher__header'>
-                    <span className='repo-rev-switcher__title'>Switch branches/tags</span>
-                    <span onClick={this.props.onClose}><CloseIcon /></span>
-                </div>
                 <input
                     className='repo-rev-switcher__input'
                     type='text'
-                    placeholder='Filter branches/tags'
+                    placeholder='Filter branches/tags/commits...'
                     autoFocus
                     onChange={this.onInputChange}
                     onKeyDown={this.onInputKeyDown} />
