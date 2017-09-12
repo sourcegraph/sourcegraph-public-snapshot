@@ -301,9 +301,9 @@ export class SearchBox extends React.Component<Props, State> {
         )
     }
 
-    private toggleMatchCase = () => this.setState({ matchCase: !!this.state.matchCase })
-    private toggleMatchWord = () => this.setState({ matchWord: !!this.state.matchWord })
-    private toggleMatchRegex = () => this.setState({ matchRegex: !!this.state.matchRegex })
+    private toggleMatchCase = () => this.setState({ matchCase: !this.state.matchCase })
+    private toggleMatchWord = () => this.setState({ matchWord: !this.state.matchWord })
+    private toggleMatchRegex = () => this.setState({ matchRegex: !this.state.matchRegex })
 
     private setSuggestionListElement = (ref: HTMLElement | null): void => {
         this.suggestionListElement = ref || undefined
