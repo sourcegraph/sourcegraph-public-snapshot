@@ -2,69 +2,72 @@
     width: 0;
     height: 0;
     z-index: 1;
-    
+
     &__inner {
         background: #1c2736;
-        border: 1px solid #151d28;
-        border-radius: 2px;
-        width: 15.5em;
+        border: calc(1rem/16) solid #2A3A51;
+        border-radius: calc(4rem/16);
+        font-size: calc(14rem/16);
+        width: calc(256rem/16);
         display: flex;
         flex-direction: column;
     }
 
-    &__header {
-        padding: .5em;
-        display: flex;
-        .icon {
-            flex: 1;
-            width: 1em;
-            cursor: pointer;
-            fill: currentColor;
-            &:hover {
-                fill: white;
-            }
-        }
-    }
-    &__title {
-        font-weight: bold;
-        font-size: .875em;
-        flex: 100;
-    }
     &__input {
-        padding: 1em;
+        margin: calc(8rem/16);
+        padding: calc(8rem/16);
         border: none;
         outline: none;
         background: #151D28;
-        width: 100%;
         color: white;
+        font-size: inherit;
+        line-height: calc(24rem/16);
+        &::placeholder {
+            color: #93A9C8;
+        }
     }
     &__list-view {
-        height: 13em;
         overflow: auto;
         background: #233043;
+        max-height: calc(580rem/16);
     }
     &__list-item {
-        font-size: .875em;
         display: inline-block;
         width: 100%;
+        height: calc(40rem/16);
         cursor: pointer;
-        padding: .5em;
+        padding-left: calc(8rem/16);
+        padding-right: calc(8rem/16);
+        padding-top: calc(4rem/16);
+        padding-bottom: calc(4rem/16);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-size: calc(12rem/16);
+        line-height: calc(16rem/16);
         &:hover {
             background: #2A3A51;
         }
         &--selected {
-            background: #1C7CD6;
+            background: #2A3A51;
             &:hover {
-                background: #1C7CD6;
+                background: #2A3A51;
             }
         }
-        .icon {
-            width: 1.5em;
+        >span.icon {
+            background: #2A3A51;
+            display: inline-block;
+            width: calc(40rem/16);
+            height: calc(32rem/16);
+            margin-right: calc(8rem/16);
             fill: currentColor;
             vertical-align: middle;
+            padding-left: calc(11rem/16);
+            padding-top: calc(7rem/16);
+            >svg.icon {
+                width: calc(18rem/16);
+                height: calc(18rem/16);
+            }
         }
     }
 }
