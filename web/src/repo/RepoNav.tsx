@@ -38,7 +38,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             <span className='share' onClick={() => {
                 events.ShareButtonClicked.log()
                 const loc = this.props.location
-                const shareLink = new URL(loc.pathname + loc.search + loc.hash)
+                const shareLink = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
                 shareLink.searchParams.set('utm_source', 'share')
                 copy(shareLink.href)
                 this.setState({ copiedLink: true })
