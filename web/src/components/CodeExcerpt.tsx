@@ -63,7 +63,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
         return res
     }
 
-    public onChangeVisibility(isVisible: boolean): void {
+    public onChangeVisibility = (isVisible: boolean): void => {
         if (isVisible) {
             this.fetchContents(this.props)
         }
@@ -71,11 +71,11 @@ export class CodeExcerpt extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <VisibilitySensor onChange={isVisible => this.onChangeVisibility(isVisible)} partialVisibility={true}>
+            <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
                 <div className='code-excerpt'>
                     {
                         this.state.blobLines &&
-                        <div ref={this.setTableContainerElement} dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }} />
+                            <div ref={this.setTableContainerElement} dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }} />
                     }
                     {
                         !this.state.blobLines &&

@@ -20,9 +20,11 @@ export class Breadcrumb extends React.Component<Props, {}> {
                 spans.push(<span key={'sep' + i} className='separator'>/</span>)
             }
         }
-        return <span className='breadcrumb'>
-            {...spans}
-        </span>
+        return (
+            <span className='breadcrumb'>
+                {...spans}
+            </span>
+        )
     }
 }
 

@@ -141,12 +141,12 @@ export class Repository extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className='repository'>
-                <RepoNav {...this.props} onClickNavigation={() => this.setState({ showTree: !this.state.showTree })} />
+                <RepoNav {...this.props} onClickNavigation={this.onNavigation} />
                 <div className='repository__content'>
                     {
                         this.state.showTree &&
                             <div id='explorer' className='repository__sidebar'>
-                                <TreeHeader title='Files' onDismiss={() => this.setState({ showTree: false })} />
+                                <TreeHeader title='Files' onDismiss={this.onTreeHeaderDismiss} />
                                 <Tree
                                     scrollRootSelector='#explorer'
                                     selectedPath={this.props.filePath || ''}
@@ -188,6 +188,9 @@ export class Repository extends React.Component<Props, State> {
             </div>
         )
     }
+
+    private onTreeHeaderDismiss = () => this.setState({ showTree: false })
+    private onNavigation = () => this.setState({ showTree: !this.state.showTree })
 
     private handleShowAnywayButtonClick = e => {
         e.preventDefault()

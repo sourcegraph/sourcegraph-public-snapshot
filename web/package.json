@@ -13,6 +13,7 @@
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
   "devDependencies": {
+    "@sourcegraph/tslint-config": "^1.0.1",
     "@types/js-yaml": "^3.9.1",
     "@types/lodash": "^4.14.38",
     "@types/marked": "^0.0.28",
@@ -37,7 +38,7 @@
     "stylelint": "^8.1.1",
     "stylelint-config-recommended": "^1.0.0",
     "ts-node": "^3.3.0",
-    "tslint": "^5.6.0",
+    "tslint": "^5.7.0",
     "tslint-language-service": "^0.9.6",
     "tslint-webpack-plugin": "^0.5.0",
     "typescript": "^2.4.2",

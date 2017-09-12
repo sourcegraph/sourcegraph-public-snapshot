@@ -176,28 +176,34 @@ class App extends React.Component<{}, {}> {
         if (statusCode === 500) {
             let subtitle: JSX.Element | undefined
             if (pageErrorID) {
-                subtitle = <p>Sorry, there's been a problem. Please <a href='mailto:support@sourcegraph.com'>contact us</a> and include the error ID:
-                    <span className='error-id'>{pageErrorID}</span>
-                </p>
+                subtitle = (
+                    <p>Sorry, there's been a problem. Please <a href='mailto:support@sourcegraph.com'>contact us</a> and include the error ID:
+                        <span className='error-id'>{pageErrorID}</span>
+                    </p>
+                )
             }
             if (pageError) {
-                subtitle = <div className='app__error'>
-                    {subtitle}
-                    {subtitle && <hr />}
-                    <pre>{pageError}</pre>
-                </div>
+                subtitle = (
+                    <div className='app__error'>
+                        {subtitle}
+                        {subtitle && <hr />}
+                        <pre>{pageError}</pre>
+                    </div>
+                )
             } else {
                 subtitle = <div className='app__error'>{subtitle}</div>
             }
             return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
         }
 
-        return <BrowserRouter>
-            <Switch>
-                <Route exact path='/' component={Home} />
-                <Route path='/*' component={Layout} />
-            </Switch>
-        </BrowserRouter>
+        return (
+            <BrowserRouter>
+                <Switch>
+                    <Route exact={true} path='/' component={Home} />
+                    <Route path='/*' component={Layout} />
+                </Switch>
+            </BrowserRouter>
+        )
     }
 }
 

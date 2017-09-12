@@ -222,11 +222,12 @@ export class SearchBox extends React.Component<Props, State> {
                         {
                             this.state.filters.map((filter, i) => {
                                 const Icon = SUGGESTION_ICONS[filter.type]
+                                const removeFilter = () => this.removeFilter(i)
                                 return (
                                     <span key={i} className='search-box__chip'>
                                         <Icon />
                                         <span className='search-box__chip-text'>{getFilterLabel(filter)}</span>
-                                        <button type='button' className='search-box__chip-remove-button' onClick={() => this.removeFilter(i)}>
+                                        <button type='button' className='search-box__chip-remove-button' onClick={removeFilter}>
                                             <CloseIcon />
                                         </button>
                                     </span>
@@ -248,18 +249,31 @@ export class SearchBox extends React.Component<Props, State> {
                         />
                     </div>
                     <label className='search-box__option' title='Match case'>
-                        <input type='checkbox' checked={this.state.matchCase} onChange={e => this.setState({ matchCase: e.currentTarget.checked })} /><span>Aa</span>
+                        <input type='checkbox' checked={this.state.matchCase} onChange={this.toggleMatchCase} /><span>Aa</span>
                     </label>
                     <label className='search-box__option' title='Match whole word'>
-                        <input type='checkbox' checked={this.state.matchWord} onChange={e => this.setState({ matchWord: e.currentTarget.checked })} /><span><u>Ab</u></span>
+                        <input type='checkbox' checked={this.state.matchWord} onChange={this.toggleMatchWord} /><span><u>Ab</u></span>
                     </label>
                     <label className='search-box__option' title='Use regular expression'>
-                        <input type='checkbox' checked={this.state.matchRegex} onChange={e => this.setState({ matchRegex: e.currentTarget.checked })} /><span>.*</span>
+                        <input type='checkbox' checked={this.state.matchRegex} onChange={this.toggleMatchRegex} /><span>.*</span>
                     </label>
                 </div>
                 <ul className='search-box__suggestions' style={this.state.suggestionsVisible ? {} : { height: 0 }} ref={this.setSuggestionListElement}>
                     {
                         this.state.suggestions.map((suggestion, i) => {
+                            const onClick = () => {
+                                this.setState({
+                                    filters: this.state.filters.concat(suggestion),
+                                    suggestions: [],
+                                    selectedSuggestion: -1,
+                                    query: ''
+                                })
+                            }
+                            const onRef = ref => {
+                                if (this.state.selectedSuggestion === i) {
+                                    this.selectedSuggestionElement = ref || undefined
+                                }
+                            }
                             const Icon = SUGGESTION_ICONS[suggestion.type]
                             const parts = getFilterLabel(suggestion).split(splitRegexp)
                             let className = 'search-box__suggestion'
@@ -270,19 +284,8 @@ export class SearchBox extends React.Component<Props, State> {
                                 <li
                                     key={i}
                                     className={className}
-                                    onClick={() => {
-                                        this.setState({
-                                            filters: this.state.filters.concat(suggestion),
-                                            suggestions: [],
-                                            selectedSuggestion: -1,
-                                            query: ''
-                                        })
-                                    }}
-                                    ref={ref => {
-                                        if (this.state.selectedSuggestion === i) {
-                                            this.selectedSuggestionElement = ref || undefined
-                                        }
-                                    }}
+                                    onClick={onClick}
+                                    ref={onRef}
                                 >
                                     <Icon />
                                     <div className='search-box__suggestion-label'>
@@ -297,6 +300,10 @@ export class SearchBox extends React.Component<Props, State> {
             </form>
         )
     }
+
+    private toggleMatchCase = () => this.setState({ matchCase: !!this.state.matchCase })
+    private toggleMatchWord = () => this.setState({ matchWord: !!this.state.matchWord })
+    private toggleMatchRegex = () => this.setState({ matchRegex: !!this.state.matchRegex })
 
     private setSuggestionListElement = (ref: HTMLElement | null): void => {
         this.suggestionListElement = ref || undefined
