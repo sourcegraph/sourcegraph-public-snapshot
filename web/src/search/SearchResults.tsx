@@ -74,11 +74,9 @@ export class SearchResults extends React.Component<Props, State> {
         if (this.state.error) {
             alertTitle = 'Something went wrong!'
             alertDetails = upperFirst(this.state.error.message)
-        }
-        if (this.state.loading) {
+        } else if (this.state.loading) {
             alertTitle = 'Working...'
-        }
-        if (this.state.results.length === 0) {
+        } else if (this.state.results.length === 0) {
             alertTitle = 'No results'
         }
 
