@@ -16,6 +16,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { parseBrowserRepoURL } from 'sourcegraph/repo'
 import { EREVNOTFOUND, fetchRepoRevisions, RepoRevisions, resolveRev } from 'sourcegraph/repo/backend'
+import { scrollIntoView } from 'sourcegraph/util'
 
 /**
  * Component props.
@@ -172,18 +173,7 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public componentDidUpdate(): void {
         // Check if selected item is out of view.
-        if (this.listElement && this.selectedElement) {
-            const listRect = this.listElement.getBoundingClientRect()
-            const selectedRect = this.selectedElement.getBoundingClientRect()
-
-            if (selectedRect.top <= listRect.top) {
-                // Selected item is out of view at the top of the list.
-                this.listElement.scrollTop -= listRect.top - selectedRect.top
-            } else if (selectedRect.bottom >= listRect.bottom) {
-                // Selected item is out of view at the bottom of the list.
-                this.listElement.scrollTop += selectedRect.bottom - listRect.bottom
-            }
-        }
+        scrollIntoView(this.listElement, this.selectedElement)
     }
 
     public render(): JSX.Element | null {
@@ -237,7 +227,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                 this.moveSelection(-1)
                 break
             }
-            case 'Enter`': {
+            case 'Enter': {
                 event.preventDefault()
                 this.chooseIndex(this.state.selection)
                 break
