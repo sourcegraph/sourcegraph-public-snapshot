@@ -25,7 +25,7 @@ interface Props {
     repoPath: string
     rev?: string
     /**
-     * Called when the user clicks the exit icon or hits escape when the input is focused.
+     * Called when the user defocuses the input or hits escape.
      */
     onClose: () => void
 }
