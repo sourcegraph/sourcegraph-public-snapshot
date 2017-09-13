@@ -173,6 +173,10 @@ outer:
 		}
 		repoResolver := &repositoryResolver{repo: repo}
 		distance := levenshtein.DistanceForStrings(queryRunes, []rune(repo.URI), levenshtein.DefaultOptions)
+		// Push forks down
+		if repo.Fork {
+			distance += 10
+		}
 		res = append(res, &searchResultResolver{result: repoResolver, distance: distance})
 	}
 	return res, nil
