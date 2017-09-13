@@ -1,10 +1,29 @@
 {
   "plugins": [
-    "add-module-exports"
+    "add-module-exports",
+    "transform-new-target"
   ],
   "presets": [
     [
-      "es2015"
+      "env", {
+        "targets": {
+          "browsers": ["last 2 versions", "safari >= 7"]
+        }
+      }
     ]
-  ]
+  ],
+  "env": {
+    "production": {
+      "presets": [
+        [
+          "env", {
+            "targets": {
+              "browsers": ["last 2 versions", "safari >= 7"],
+              "uglify": true
+            }
+          }
+        ]
+      ]
+    }
+  }
 }
