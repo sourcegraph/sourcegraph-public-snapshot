@@ -1,22 +1,22 @@
-import 'rxjs/add/observable/dom/ajax';
-import 'rxjs/add/operator/map';
-import { Observable } from 'rxjs/Observable';
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext';
+import 'rxjs/add/observable/dom/ajax'
+import 'rxjs/add/operator/map'
+import { Observable } from 'rxjs/Observable'
+import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
 
 /**
  * Interface for the response result of a GraphQL query
  */
 export interface QueryResult {
-    data?: GQL.IQuery;
-    errors?: GQL.IGraphQLResponseError[];
+    data?: GQL.IQuery
+    errors?: GQL.IGraphQLResponseError[]
 }
 
 /**
  * Interface for the response result of a GraphQL mutation
  */
 export interface MutationResult {
-    data?: GQL.IMutation;
-    errors?: GQL.IGraphQLResponseError[];
+    data?: GQL.IMutation
+    errors?: GQL.IGraphQLResponseError[]
 }
 
 /**
@@ -27,15 +27,16 @@ export interface MutationResult {
  * @return Observable That emits the result or errors if the HTTP request failed
  */
 function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IGraphQLResponseRoot> {
+    const nameMatch = request.match(/^\s*query (\w+)/)
     return Observable.ajax({
         method: 'POST',
-        url: '/.api/graphql',
+        url: '/.api/graphql' + (nameMatch ? '?' + nameMatch[1] : ''),
         headers: {
             'Content-Type': 'application/json',
             ...sourcegraphContext.xhrHeaders
         },
         body: JSON.stringify({ query: request, variables })
-    }).map(({ response }) => response);
+    }).map(({ response }) => response)
 }
 
 /**
@@ -46,7 +47,7 @@ function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IG
  * @return Observable That emits the result or errors if the HTTP request failed
  */
 export function queryGraphQL(query: string, variables: any = {}): Observable<QueryResult> {
-    return requestGraphQL(query, variables) as Observable<QueryResult>;
+    return requestGraphQL(query, variables) as Observable<QueryResult>
 }
 
 /**
@@ -57,5 +58,5 @@ export function queryGraphQL(query: string, variables: any = {}): Observable<Que
  * @return Observable That emits the result or errors if the HTTP request failed
  */
 export function mutateGraphQL(mutation: string, variables: any = {}): Observable<MutationResult> {
-    return requestGraphQL(mutation, variables) as Observable<MutationResult>;
+    return requestGraphQL(mutation, variables) as Observable<MutationResult>
 }
