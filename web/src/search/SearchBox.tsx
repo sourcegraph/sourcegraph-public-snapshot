@@ -172,7 +172,7 @@ export class SearchBox extends React.Component<Props, State> {
                 // But resubscribe afterwards
                 .repeat()
                 .subscribe(suggestions => {
-                    this.setState({ suggestions, selectedSuggestion: Math.min(suggestions.length - 1, 0), suggestionsVisible: true })
+                    this.setState({ suggestions, selectedSuggestion: -1, suggestionsVisible: true })
                 }, err => {
                     console.error(err)
                 })
@@ -280,7 +280,7 @@ export class SearchBox extends React.Component<Props, State> {
                                     <div className='search-box__suggestion-label'>
                                         {parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box__highlighted-query' : ''}>{part}</span>)}
                                     </div>
-                                    <div className='search-box__suggestion-tip' hidden={this.state.selectedSuggestion !== i}><kbd>tab</kbd> to add as filter</div>
+                                    <div className='search-box__suggestion-tip' hidden={this.state.selectedSuggestion !== i}><kbd>enter</kbd> to add as filter</div>
                                 </li>
                             )
                         })
@@ -353,6 +353,7 @@ export class SearchBox extends React.Component<Props, State> {
                 this.moveSelection(-1)
                 break
             }
+            case 'Enter':
             case 'Tab': {
                 if (this.state.selectedSuggestion > -1) {
                     event.preventDefault()
