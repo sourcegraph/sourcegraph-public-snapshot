@@ -1,4 +1,4 @@
-import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
+import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ShareIcon from '@sourcegraph/icons/lib/Share'
@@ -33,9 +33,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                     <ListIcon />
                     Navigation
                 </span>
-                <span className='explorer' onClick={this.props.onClickRevision}>
-                    <ChevronDownIcon />
+                <span className='repo-nav__rev' onMouseDown={this.preventDefault} onClick={this.props.onClickRevision}>
                     {this.props.rev || 'master' /* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
+                    <CaretDownIcon />
                 </span>
                 <span className='path'>
                     <RepoIcon />
@@ -67,6 +67,13 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             this.setState({ copiedLink: undefined })
         }, 3000)
     }
+
+    /**
+     * preventDefault is called when the mouseDown event is fired on the revision button. This
+     * prevents mouseClick from firing when the RevSwitcher's blur event would also fire and
+     * both toggle the same state in response to a single user mouse click.
+     */
+    private preventDefault = e => e.preventDefault()
 
     private urlToGitHub(): string {
         const hash = parseHash(this.props.location.hash)

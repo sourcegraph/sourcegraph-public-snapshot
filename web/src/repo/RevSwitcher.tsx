@@ -1,5 +1,4 @@
 import BranchIcon from '@sourcegraph/icons/lib/Branch'
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
@@ -26,7 +25,7 @@ interface Props {
     repoPath: string
     rev?: string
     /**
-     * Called when the user clicks the exit icon or hits escape when the input is focused.
+     * Called when the user defocuses the input or hits escape.
      */
     onClose: () => void
 }
@@ -132,11 +131,10 @@ export class RevSwitcher extends React.Component<Props, State> {
                         Observable.fromPromise(resolveRev({repoPath: this.props.repoPath, rev: query}))
                             .map(query => ({ queryIsCommit: true } as State))
                             .catch(err => {
-                                if (err.code === EREVNOTFOUND) {
-                                    return [] // no-op
+                                if (err.code !== EREVNOTFOUND) {
+                                    console.error(err)
                                 }
-                                console.error(err)
-                                throw err
+                                return [] // no-op
                             })
                     ),
 
@@ -193,16 +191,13 @@ export class RevSwitcher extends React.Component<Props, State> {
         })
         return <div className='repo-rev-switcher'>
             <div className='repo-rev-switcher__inner'>
-                <div className='repo-rev-switcher__header'>
-                    <span className='repo-rev-switcher__title'>Switch branches/tags</span>
-                    <span onClick={this.props.onClose}><CloseIcon /></span>
-                </div>
                 <input
                     className='repo-rev-switcher__input'
                     type='text'
-                    placeholder='Filter branches/tags'
+                    placeholder='Filter branches/tags/commits...'
                     autoFocus
                     onChange={this.onInputChange}
+                    onBlur={this.props.onClose}
                     onKeyDown={this.onInputKeyDown} />
                 <div className='repo-rev-switcher__list-view' ref={this.setListElement}>
                     {items}
