@@ -25,10 +25,10 @@ type searchArgs struct {
 }
 
 type searchResultResolver struct {
-	// Either a repositoryResolver or a fileResolver
+	// result is either a repositoryResolver or a fileResolver
 	result interface{}
-	// The string this element should be sorted by
-	sortText string
+	// distance is the string distance of this item from the search query
+	distance int
 }
 
 func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
@@ -133,10 +133,7 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 	}
 
 	sort.Slice(res, func(i, j int) bool {
-		query := []rune(query)
-		distI := levenshtein.DistanceForStrings(query, []rune(res[i].sortText), levenshtein.DefaultOptions)
-		distJ := levenshtein.DistanceForStrings(query, []rune(res[j].sortText), levenshtein.DefaultOptions)
-		return distI < distJ
+		return res[i].distance < res[j].distance
 	})
 
 	return res, nil
@@ -147,10 +144,12 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 	if err != nil {
 		return nil, err
 	}
+	queryRunes := []rune(query)
 	for _, searchProfile := range searchProfiles {
 		lowerName := strings.ToLower(searchProfile.name)
 		if strings.Contains(lowerName, query) {
-			res = append(res, &searchResultResolver{result: searchProfile, sortText: lowerName})
+			distance := levenshtein.DistanceForStrings(queryRunes, []rune(lowerName), levenshtein.DefaultOptions)
+			res = append(res, &searchResultResolver{result: searchProfile, distance: distance})
 		}
 	}
 	return res, nil
@@ -163,6 +162,7 @@ func searchRepos(ctx context.Context, query string, repoURIs []string, limit int
 	if err != nil {
 		return nil, err
 	}
+	queryRunes := []rune(query)
 outer:
 	for _, repo := range reposList.Repos {
 		// Don't suggest repos that were already added as a filter
@@ -172,7 +172,12 @@ outer:
 			}
 		}
 		repoResolver := &repositoryResolver{repo: repo}
-		res = append(res, &searchResultResolver{result: repoResolver, sortText: repo.URI})
+		distance := levenshtein.DistanceForStrings(queryRunes, []rune(repo.URI), levenshtein.DefaultOptions)
+		// Push forks down
+		if repo.Fork {
+			distance += 10
+		}
+		res = append(res, &searchResultResolver{result: repoResolver, distance: distance})
 	}
 	return res, nil
 }
@@ -226,13 +231,15 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 	if err != nil {
 		return nil, err
 	}
+	queryRunes := []rune(query)
 	for _, fileResolver := range treeResolver.Files() {
 		if len(res) >= limit {
 			return res, nil
 		}
 		name := strings.ToLower(fileResolver.Name())
 		if strings.Contains(name, query) {
-			res = append(res, &searchResultResolver{result: fileResolver, sortText: name})
+			distance := levenshtein.DistanceForStrings(queryRunes, []rune(name), levenshtein.DefaultOptions)
+			res = append(res, &searchResultResolver{result: fileResolver, distance: distance})
 		}
 	}
 	return res, nil
