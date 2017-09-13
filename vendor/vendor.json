@@ -1414,10 +1414,10 @@
 			"revisionTime": "2015-06-26T09:08:21Z"
 		},
 		{
-			"checksumSHA1": "lat+Fmris/uABXK/WMiQ+/xqTP0=",
+			"checksumSHA1": "lqFM7OYAiAW9g7xKxY03BgHfyn8=",
 			"path": "github.com/texttheater/golang-levenshtein/levenshtein",
-			"revision": "a809b0abc4bdd4591a275c2dcf0982b0581da4e6",
-			"revisionTime": "2017-02-19T10:36:50Z"
+			"revision": "1a14278c506abae7c17b3cb0b84ae863c7300454",
+			"revisionTime": "2017-09-06T10:46:04Z"
 		},
 		{
 			"checksumSHA1": "9+gcr3lIn3vwHhBqDZwJOC40CxY=",
