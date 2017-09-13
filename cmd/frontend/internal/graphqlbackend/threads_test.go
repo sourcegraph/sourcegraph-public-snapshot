@@ -81,10 +81,12 @@ func TestThreads_Get_RepoNotFound(t *testing.T) {
 		RemoteURI   string
 		AccessToken string
 		File        *string
+		Limit       *int32
 	}{
 		RemoteURI:   "test",
 		AccessToken: "1234",
 		File:        &file,
+		Limit:       nil,
 	})
 
 	if err != nil {

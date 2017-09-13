@@ -72,6 +72,7 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	RemoteURI   string
 	AccessToken string
 	File        *string
+	Limit       *int32
 }) ([]*threadResolver, error) {
 	threads := []*threadResolver{}
 
@@ -85,11 +86,16 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	limit := int64(1000)
+	if args.Limit != nil && int64(*args.Limit) < limit {
+		limit = int64(*args.Limit)
+	}
+
 	var ts []*sourcegraph.Thread
 	if args.File != nil {
-		ts, err = store.Threads.GetAllForFile(ctx, int64(repo.ID), *args.File)
+		ts, err = store.Threads.GetAllForFile(ctx, int64(repo.ID), *args.File, limit)
 	} else {
-		ts, err = store.Threads.GetAllForRepo(ctx, int64(repo.ID))
+		ts, err = store.Threads.GetAllForRepo(ctx, int64(repo.ID), limit)
 	}
 	if err != nil {
 		return nil, err
