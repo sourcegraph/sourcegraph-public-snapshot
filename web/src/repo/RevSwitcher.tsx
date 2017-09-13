@@ -197,6 +197,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                     placeholder='Filter branches/tags/commits...'
                     autoFocus
                     onChange={this.onInputChange}
+                    onBlur={this.props.onClose}
                     onKeyDown={this.onInputKeyDown} />
                 <div className='repo-rev-switcher__list-view' ref={this.setListElement}>
                     {items}
