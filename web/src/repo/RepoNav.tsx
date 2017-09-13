@@ -33,7 +33,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                     <ListIcon />
                     Navigation
                 </span>
-                <span className='rev' onClick={this.props.onClickRevision}>
+                <span className='rev' onMouseDown={this.preventDefault} onClick={this.props.onClickRevision}>
                     {this.props.rev || 'master' /* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
                     <CaretDownIcon />
                 </span>
@@ -67,6 +67,13 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             this.setState({ copiedLink: undefined })
         }, 3000)
     }
+
+    /**
+     * preventDefault is called when the mouseDown event is fired on the revision button. This
+     * prevents mouseClick from firing when the RevSwitcher's blur event would also fire and
+     * both toggle the same state in response to a single user mouse click.
+     */
+    private preventDefault = e => e.preventDefault()
 
     private urlToGitHub(): string {
         const hash = parseHash(this.props.location.hash)
