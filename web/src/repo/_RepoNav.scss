@@ -29,7 +29,7 @@
         margin-left: 0.5rem;
     }
 
-    .explorer, .rev {
+    .explorer, &__rev {
         display: flex;
         cursor: pointer;
         align-items: center;
@@ -42,7 +42,7 @@
             height: 0.5rem;
         }
     }
-    .rev {
+    &__rev {
         border: 1px solid #93A9C8;
         line-height: 24px;
         padding-left: 8px;
