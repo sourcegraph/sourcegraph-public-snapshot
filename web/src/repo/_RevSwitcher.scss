@@ -5,23 +5,23 @@
 
     &__inner {
         background: #1c2736;
-        border: calc(1rem/16) solid #2A3A51;
-        border-radius: calc(4rem/16);
-        font-size: calc(14rem/16);
-        width: calc(256rem/16);
+        border: 0.0625rem solid #2A3A51;
+        border-radius: .25rem;
+        font-size: .875rem;
+        width: 16rem;
         display: flex;
         flex-direction: column;
     }
 
     &__input {
-        margin: calc(8rem/16);
-        padding: calc(8rem/16);
+        margin: .5rem;
+        padding: .5rem;
         border: none;
         outline: none;
         background: #151D28;
         color: white;
         font-size: inherit;
-        line-height: calc(24rem/16);
+        line-height: 1.5rem;
         &::placeholder {
             color: #93A9C8;
         }
@@ -29,22 +29,22 @@
     &__list-view {
         overflow: auto;
         background: #233043;
-        max-height: calc(580rem/16);
+        max-height: 36.25rem;
     }
     &__list-item {
         display: inline-block;
         width: 100%;
-        height: calc(40rem/16);
+        height: 2.5rem;
         cursor: pointer;
-        padding-left: calc(8rem/16);
-        padding-right: calc(8rem/16);
-        padding-top: calc(4rem/16);
-        padding-bottom: calc(4rem/16);
+        padding-left: .5rem;
+        padding-right: .5rem;
+        padding-top: .25rem;
+        padding-bottom: .25rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: calc(12rem/16);
-        line-height: calc(16rem/16);
+        font-size: .75rem;
+        line-height: 1rem;
         &:hover {
             background: #2A3A51;
         }
@@ -57,16 +57,16 @@
         >span.icon {
             background: #2A3A51;
             display: inline-block;
-            width: calc(40rem/16);
-            height: calc(32rem/16);
-            margin-right: calc(8rem/16);
+            width: 2.5rem;
+            height: 2rem;
+            margin-right: .5rem;
             fill: currentColor;
             vertical-align: middle;
-            padding-left: calc(11rem/16);
-            padding-top: calc(7rem/16);
+            padding-left: .6875rem;
+            padding-top: .4375rem;
             >svg.icon {
-                width: calc(18rem/16);
-                height: calc(18rem/16);
+                width: 1.125rem;
+                height: 1.125rem;
             }
         }
     }
