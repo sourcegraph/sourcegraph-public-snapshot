@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -163,7 +165,10 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 	emails := notifyThreadParticipants(repo, newThread, nil, comment)
-	slack.NotifyOnThread(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
+	err = slack.NotifyOnThread(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
+	if err != nil {
+		log15.Error("slack.NotifyOnThread failed", "error", err)
+	}
 
 	return &threadResolver{thread: newThread}, nil
 }
