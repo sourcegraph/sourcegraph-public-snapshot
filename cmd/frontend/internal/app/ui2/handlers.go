@@ -58,7 +58,7 @@ func repoShortName(uri string) string {
 
 func (c *Common) addOpenOnDesktop(fpath string) {
 	query := url.Values{}
-	query.Set("repo", "git+ssh://"+c.Repo.URI+".git")
+	query.Set("repo", "ssh://"+c.Repo.URI+".git")
 	query.Set("vcs", "git")
 	if c.Rev != "" {
 		query.Set("revision", c.Rev)
