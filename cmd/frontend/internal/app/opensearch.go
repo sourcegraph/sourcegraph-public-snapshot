@@ -1,13 +1,8 @@
 package app
 
 import (
-	"bytes"
 	"html/template"
 	"net/http"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var openSearchDescription = template.Must(template.New("").Parse(`
@@ -26,27 +21,28 @@ func openSearch(w http.ResponseWriter, r *http.Request) {
 	// See https://github.com/sourcegraph/sourcegraph/issues/6798
 	w.WriteHeader(http.StatusNotFound)
 	return
+	/*
+		type vars struct {
+			SiteName string
+			BaseURL  string
+		}
+		data := vars{
+			BaseURL: conf.AppURL.String(),
+		}
+		if conf.AppURL.String() == "https://sourcegraph.com" {
+			data.SiteName = "Sourcegraph"
+		} else {
+			data.SiteName = "Sourcegraph (" + conf.AppURL.Host + ")"
+		}
 
-	type vars struct {
-		SiteName string
-		BaseURL  string
-	}
-	data := vars{
-		BaseURL: conf.AppURL.String(),
-	}
-	if conf.AppURL.String() == "https://sourcegraph.com" {
-		data.SiteName = "Sourcegraph"
-	} else {
-		data.SiteName = "Sourcegraph (" + conf.AppURL.Host + ")"
-	}
+		var buf bytes.Buffer
+		if err := openSearchDescription.Execute(&buf, data); err != nil {
+			log15.Error("Failed to execute OpenSearch template", "err", err)
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
 
-	var buf bytes.Buffer
-	if err := openSearchDescription.Execute(&buf, data); err != nil {
-		log15.Error("Failed to execute OpenSearch template", "err", err)
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/xml")
-	_, _ = buf.WriteTo(w)
+		w.Header().Set("Content-Type", "application/xml")
+		_, _ = buf.WriteTo(w)
+	*/
 }
