@@ -1,4 +1,6 @@
 
+@import '../components/Breadcrumb';
+
 .repo-nav {
     flex: none;
     height: 3rem;
@@ -7,70 +9,61 @@
     align-items: center;
 
     border-bottom: 1px solid #233043;
-    font-size: .75em;
 
     a, .path a {
         text-decoration: none;
     }
 
-    svg.icon {
-        width: 1rem;
-        height: 1rem;
-        display: inherit;
+    svg, .icon {
+        width: 1.5rem;
+        height: 1.5rem;
         fill: currentColor;
-        margin-right: 5px;
-        margin-left: 5px;
+        display: inline-block;
     }
 
-    svg.github-icon {
-        display: inherit;
-        fill: currentColor;
-        margin-right: 0.5rem;
-        margin-left: 0.5rem;
-    }
+    &__rev {
+        flex: none;
+        margin-right: 1rem;
 
-    .explorer, &__rev {
         display: flex;
         cursor: pointer;
         align-items: center;
-        margin-right: 1.5em;
-        margin-left: .75em;
-
-        .group-icon {
-            margin: 0px 10px;
-            width: 0.5rem;
-            height: 0.5rem;
-        }
-    }
-    &__rev {
-        border: 0.0625rem solid #93A9C8;
-        line-height: 1.5rem;
+        border: 1px solid #93A9C8;
         padding-left: .5rem;
         border-radius: .125rem;
         user-select: none;
-    }
+        max-width: 8rem;
+        transition: all 100ms ease-in;
 
-    .path {
-        flex: 1;
-        display: flex;
-        align-items: center;
+        &:hover {
+            border-color: white;
+            color: white;
+        }
 
-        .separator {
-            padding: 0px 5px;
+        &-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     }
 
-    .share {
+    &__path {
+        flex: 1;
         display: flex;
         align-items: center;
-        color: #93A9C8;
-        margin-right: 10px;
-        cursor: pointer;
     }
 
-    .view-external {
+    &__action {
         display: flex;
         align-items: center;
         color: #93A9C8;
+        margin-left: 1rem;
+        cursor: pointer;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        .icon {
+            margin-right: 0.25rem;
+        }
     }
 }

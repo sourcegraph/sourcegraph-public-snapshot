@@ -1,7 +1,6 @@
 
 .search-results {
     width: 100%;
-    font-size: 12px;
 
     &__alert {
         width: 100%;
@@ -19,26 +18,27 @@
         display: flex;
         align-items: baseline;
         padding: 1rem 0;
+        color: #93A9C8;
     }
 
     &__badge {
-        height: 1rem;
-        min-width: 1rem;
-        margin-right: 1rem;
+        height: 1.5rem;
+        min-width: 1.5rem;
+        margin-right: 0.25rem;
 
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 3px 5px;
+        padding: 0.25rem 0.5rem;
 
-        font-size: 10px;
+        font-size: 0.857em;
         border-radius: 1rem;
         background-color: #2A3A51;
         color: white;
     }
 
     &__label {
-        margin-right: 1rem;
+        margin-right: 0.25rem;
     }
 
     &__duration {

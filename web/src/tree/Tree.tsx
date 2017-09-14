@@ -7,7 +7,6 @@ import partition from 'lodash/partition'
 import * as React from 'react'
 import DownIcon from 'react-icons/lib/fa/angle-down'
 import RightIcon from 'react-icons/lib/fa/angle-right'
-import CloseIcon from 'react-icons/lib/md/close'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Subscription } from 'rxjs/Subscription'
 import { createTreeStore, TreeStore } from 'sourcegraph/tree/store'
@@ -225,15 +224,6 @@ export class Tree extends React.PureComponent<Props, {}> {
     public render(): JSX.Element | null {
         return <div className='tree' tabIndex={1} onKeyDown={e => this.onKeyDown(e)}>
             <TreeLayer onSelectPath={this.props.onSelectPath} pathSplits={this.pathSplits} store={this.store} currSubpath='' />
-        </div>
-    }
-}
-
-export class TreeHeader extends React.Component<{ title: string, onDismiss: () => void }, {}> {
-    public render(): JSX.Element {
-        return <div className='tree-header'>
-            <span style={{ flex: 1 }}>{this.props.title}</span>
-            <CloseIcon onClick={() => this.props.onDismiss()} className='tree__close-icon' />
         </div>
     }
 }

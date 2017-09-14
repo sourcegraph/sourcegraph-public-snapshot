@@ -4,7 +4,7 @@ import { toBlobURL, toTreeURL } from 'sourcegraph/util/url'
 
 export interface Props {
     path: string
-    partToUrl: (i: number) => string
+    partToUrl: (i: number) => string | undefined
     partToClassName?: (i: number) => string
 }
 
@@ -15,9 +15,13 @@ export class Breadcrumb extends React.Component<Props, {}> {
         for (const [i, part] of parts.entries()) {
             const link = this.props.partToUrl(i)
             const className = `part ${this.props.partToClassName ? this.props.partToClassName(i) : ''}`
-            spans.push(<Link key={i} className={className} to={link}>{part}</Link>)
+            if (link) {
+                spans.push(<Link key={i} className={className} to={link}>{part}</Link>)
+            } else {
+                spans.push(<span key={i} className={className}>{part}</span>)
+            }
             if (i < parts.length - 1) {
-                spans.push(<span key={'sep' + i} className='separator'>/</span>)
+                spans.push(<span key={'sep' + i} className='breadcrumb__separator'>/</span>)
             }
         }
         return (
@@ -40,10 +44,13 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
         return <Breadcrumb path={trimmedUri + (this.props.filePath ? '/' + this.props.filePath : '')} partToUrl={this.partToUrl} partToClassName={this.partToClassName} />
     }
 
-    private partToUrl = (i: number) => {
+    private partToUrl = (i: number): string | undefined => {
         const trimmedUri = this.props.repoPath.split('/').slice(1).join('/') // remove first path part
         const uriParts = trimmedUri.split('/')
-        if (i < uriParts.length) {
+        if (i < uriParts.length - 1) {
+            return undefined
+        }
+        if (i === uriParts.length - 1) {
             return '/' + this.props.repoPath
         }
         if (this.props.filePath) {
@@ -54,7 +61,7 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
             }
             return toBlobURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.props.filePath })
         }
-        return ''
+        return undefined
     }
 
     private partToClassName = (i: number) => {

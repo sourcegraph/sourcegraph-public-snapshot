@@ -1,61 +1,67 @@
 import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
-import ListIcon from '@sourcegraph/icons/lib/List'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import ShareIcon from '@sourcegraph/icons/lib/Share'
+import ComputerIcon from '@sourcegraph/icons/lib/Computer'
+import CopyIcon from '@sourcegraph/icons/lib/Copy'
+import GitHub from '@sourcegraph/icons/lib/Github'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
-import GitHub from 'react-icons/lib/go/mark-github'
 import { RepoBreadcrumb } from 'sourcegraph/components/Breadcrumb'
 import { events } from 'sourcegraph/tracking/events'
-import { parseHash } from 'sourcegraph/util/url'
+import { parseHash, toEditorURL } from 'sourcegraph/util/url'
 
 interface RepoSubnavProps {
     repoPath: string
     rev?: string
+    commitID?: string
     filePath?: string
-    onClickNavigation?: () => void
     onClickRevision?: () => void
     location: H.Location
 }
 
 interface RepoSubnavState {
-    copiedLink?: boolean
+    copiedLink: boolean
 }
 
 export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
-    public state: RepoSubnavState = {}
+    public state: RepoSubnavState = {
+        copiedLink: false
+    }
 
     public render(): JSX.Element | null {
         return (
             <div className='repo-nav'>
-                <span className='explorer' onClick={this.props.onClickNavigation}>
-                    <ListIcon />
-                    Navigation
-                </span>
                 <span className='repo-nav__rev' onMouseDown={this.preventDefault} onClick={this.props.onClickRevision}>
-                    {this.props.rev || 'master' /* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
+                     {/* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
+                    <span className='repo-nav__rev-text'>{this.props.rev || 'master'}</span>
                     <CaretDownIcon />
                 </span>
-                <span className='path'>
-                    <RepoIcon />
+                <span className='repo-nav__path'>
                     <RepoBreadcrumb {...this.props} />
                 </span>
-                <span className='fill' />
-                <span className='share' onClick={this.onShareButtonClick}>
-                    {this.state.copiedLink ? 'Copied link to clipboard!' : 'Share'}
-                    <ShareIcon />
-                </span>
-                {this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
-                    <a href={this.urlToGitHub()} className='view-external'>
-                        View on GitHub
-                    <GitHub className='github-icon' /* TODO(john): use icon library */ />
-                    </a>}
+                <a href='' className='repo-nav__action' onClick={this.onShareButtonClick}>
+                    <CopyIcon />
+                    {this.state.copiedLink ? 'Copied!' : 'Copy link'}
+                </a>
+                {
+                    this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
+                        <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action'>
+                            <GitHub />
+                            View on GitHub
+                        </a>
+                }
+                {
+                    this.props.repoPath &&
+                        <a href={toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath)} target='_blank' className='repo-nav__action'>
+                            <ComputerIcon />
+                            <span>Open on desktop</span>
+                        </a>
+                }
             </div>
         )
     }
 
-    private onShareButtonClick: React.MouseEventHandler<HTMLButtonElement> = () => {
+    private onShareButtonClick: React.MouseEventHandler<HTMLElement> = event => {
+        event.preventDefault()
         events.ShareButtonClicked.log()
         const loc = this.props.location
         const shareLink = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
@@ -64,8 +70,8 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
         this.setState({ copiedLink: true })
 
         setTimeout(() => {
-            this.setState({ copiedLink: undefined })
-        }, 3000)
+            this.setState({ copiedLink: false })
+        }, 1000)
     }
 
     /**

@@ -2,6 +2,8 @@
 @import './RepoNav';
 @import './RevSwitcher';
 @import './Blob';
+@import '../tree/Tree';
+@import '../tree/TreeHeader';
 
 .repository {
     flex: 1 1 auto;
@@ -43,14 +45,57 @@
 
     &__sidebar {
         flex: 0 0 auto;
-        width: 15.75rem;
+        width: 0;
 
         display: flex;
         flex-direction: column;
+        position: relative;
+
+        transition: all 100ms ease-in-out;
+        background: #1C2736;
+
+        &--open {
+            width: 16rem;
+        }
+    }
+
+
+    &__sidebar-toggle {
+        position: absolute;
+        top: 0;
+        left: -2.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        z-index: 20;
+
+        background: #1C2736;
+        border-radius: 0.25rem 0 0 0.25rem;
+        border: none;
+        color: inherit;
+        outline: none;
+        cursor: pointer;
+
+        @media (max-width: $media-sm) {
+            // Make toggle float over code and file tree instead of off to the right
+            left: inherit;
+            right: -2.5rem;
+            border-radius: 0 0 0.25rem;
+        }
+
+        &:hover {
+            color: white;
+        }
+
+        .icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            fill: currentColor;
+        }
     }
 
     &__viewer {
         flex: 1 1 auto;
+        z-index: 10; // Overlay the sidebar when sidebar is closed
 
         display: flex;
         flex-direction: column;
@@ -58,6 +103,7 @@
         min-width: 0;
 
         background-color: #151D28;
+        border-top-right-radius: 0.25rem;
     }
 
     &__blob-placeholder {

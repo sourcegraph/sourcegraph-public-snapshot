@@ -1,6 +1,8 @@
 
 .code-excerpt {
 
+    font-family: Menlo;
+
     td.line {
         &::before {
             // draw line number with css so it cannot be copied to clipboard
@@ -12,10 +14,16 @@
     }
 
     .line, .code {
-        height: 1rem;
-        line-height: 1rem;
+        height: 20px;
+        line-height: 20px;
+        font-size: 12px;
         vertical-align: middle;
         padding: 0;
+    }
+
+    .line {
+        min-width: 1.5rem;
+        text-align: right;
     }
 
     .code {

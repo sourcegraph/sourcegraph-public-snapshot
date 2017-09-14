@@ -1,9 +1,3 @@
-.tree-header {
-    display: flex;
-    align-items: center;
-    text-transform: uppercase;
-    padding: .875rem;
-}
 
 .tree {
     flex: 1 1 auto;
@@ -17,16 +11,6 @@
 
     table {
         border-spacing: 0px;
-    }
-
-    &__close-icon {
-        cursor: pointer;
-        float: right;
-        color: #93A9C8;
-
-        &:hover {
-            color: #FFFFFF;
-        }
     }
 
     &__row {

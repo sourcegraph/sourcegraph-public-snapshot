@@ -1,19 +1,26 @@
 
 .references-group {
 
+    margin-bottom: 1px;
+
     &__icon {
-        font-size: 18px;
-        margin-left: 15px;
+        .icon, svg {
+            width: 1.5rem;
+            fill: currentColor;
+            vertical-align: middle;
+        }
     }
 
     &__title {
-        height: 2rem;
+
+        padding-left: 1rem;
+        height: 2.5rem;
 
         display: flex;
         align-items: center;
 
         cursor: pointer;
-        $background-color: #2A3A51;
+        $background-color: #1C2736;
         background-color: $background-color;
 
         &:hover {
@@ -22,8 +29,8 @@
     }
 
     &__uri-path-part {
-        padding-left: 25px;
-        padding-right: 15px;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
     }
 
     &__file-path-part {
@@ -35,23 +42,22 @@
     &__expand-icon {
         margin-left: auto;
         margin-right: 15px;
-        font-size: 18px;
-    }
-
-    &__list {
-        background-color: #070A0D;
+        font-size: 1.5rem;
     }
 
     &__reference {
         text-decoration: none; // don't use cascading link style
         display: block;
-        font-family: Menlo; // don't use cascading link style
-        border-bottom: 1px solid #2A3A51;
-        padding: 0.5rem 1rem;
+        padding: 1rem;
         cursor: pointer;
         overflow-x: auto;
+        overflow-y: hidden;
+        background-color: #070A0D;
         &:hover {
-            background-color: rgba(#2A3A51, 0.5);
+            background-color: #151D28;
+        }
+        &:not(:first-child) {
+            border-top: 1px solid #2A3A51;
         }
     }
 }
@@ -64,23 +70,21 @@
     display: flex;
     flex-direction: column;
 
-    font-size: 12px;
     font-family: system;
     user-select: none;
     background: #070A0D;
-    border-top: 1px solid #2A3A51;
 
     &__title-bar {
+
         flex: none;
         width: 100%;
-        height: 2rem;
+        height: 2.5rem;
 
         padding: 0 1rem;
-        border-bottom: 1px solid #2A3A51;
-        background-color: #070A0D;
-
         display: flex;
         align-items: center;
+
+        background-color: #070A0D;
 
         &-title {
             max-width: 50%;
@@ -88,31 +92,42 @@
         }
 
         &-group {
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            @extend .ui-title;
+
+            margin-left: 1rem;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
             text-decoration: none;
+
             &:hover {
                 color: white;
             }
 
             &--active {
-                font-weight: bold;
                 color: white;
             }
         }
     }
 
     &__badge {
-        background-color: #233043;
-        border-radius: 20px;
-        margin-left: 10px;
-        margin-right: 25px;
-        font-size: 11px;
-        padding: 3px 6px;
-        font-family: system;
+        height: 1.5rem;
+        min-width: 1.5rem;
+        margin: 0 0.25rem;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem 0.5rem;
+
+        font-size: 0.857em;
+        border-radius: 1rem;
+        background-color: #2A3A51;
+        color: white;
     }
 
     &__close-icon {
+        flex: none;
         cursor: pointer;
         font-size: 18px;
         margin-left: auto;

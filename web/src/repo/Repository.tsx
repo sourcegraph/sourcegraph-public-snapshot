@@ -1,5 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
@@ -15,7 +16,8 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from 'sourcegraph/components/HeroPage'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
-import { Tree, TreeHeader } from 'sourcegraph/tree/Tree'
+import { Tree } from 'sourcegraph/tree/Tree'
+import { TreeHeader } from 'sourcegraph/tree/TreeHeader'
 import * as url from 'sourcegraph/util/url'
 import { parseHash } from 'sourcegraph/util/url'
 import { Position } from '.'
@@ -147,21 +149,19 @@ export class Repository extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className='repository'>
-                <RepoNav {...this.props} onClickNavigation={this.onNavigation} onClickRevision={this.toggleRevSwitcher} />
+                <RepoNav {...this.props} onClickRevision={this.toggleRevSwitcher} />
                 {this.state.showRevSwitcher && <RevSwitcher {...this.props} onClose={this.toggleRevSwitcher} />}
                 <div className='repository__content'>
-                    {
-                        this.state.showTree &&
-                            <div id='explorer' className='repository__sidebar'>
-                                <TreeHeader title='Files' onDismiss={this.onTreeHeaderDismiss} />
-                                <Tree
-                                    scrollRootSelector='#explorer'
-                                    selectedPath={this.props.filePath || ''}
-                                    onSelectPath={this.selectTreePath}
-                                    paths={this.state.files || []}
-                                />
-                            </div>
-                    }
+                    <div id='explorer' className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}>
+                        <button type='button' className='repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon /></button>
+                        <TreeHeader title='File Explorer' onDismiss={this.onTreeToggle} />
+                        <Tree
+                            scrollRootSelector='#explorer'
+                            selectedPath={this.props.filePath || ''}
+                            onSelectPath={this.selectTreePath}
+                            paths={this.state.files || []}
+                        />
+                    </div>
                     <div className='repository__viewer'>
                         {
                             !this.props.filePath &&
@@ -196,8 +196,7 @@ export class Repository extends React.Component<Props, State> {
         )
     }
 
-    private onTreeHeaderDismiss = () => this.setState({ showTree: false })
-    private onNavigation = () => this.setState({ showTree: !this.state.showTree })
+    private onTreeToggle = () => this.setState({ showTree: !this.state.showTree })
 
     /**
      * toggles display of the rev switcher

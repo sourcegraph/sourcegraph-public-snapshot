@@ -1,6 +1,5 @@
 
 .search-box {
-    font-size: 12px;
     color: #93A9C8;
     padding: 0;
     border-radius: 0.25rem;
@@ -11,12 +10,11 @@
 
     .icon {
         height: 100%;
-        width: 1rem;
+        width: 1.5rem;
         fill: currentColor;
         text-align: center;
         display: inline-block;
         > svg {
-            width: 1rem;
             height: 100%;
         }
     }
@@ -27,13 +25,13 @@
         outline: none;
         background-color: transparent;
         padding: 0;
-        margin-left: 0.25rem;
+        margin-left: 0.5rem;
         color: inherit;
         cursor: pointer;
-        width: 1rem;
-        height: 1rem;
+        width: 1.5rem;
+        height: 1.5rem;
         margin-top: 0.5rem;
-        margin-right: 0.5rem;
+        line-height: 1.5rem;
         > input[type='checkbox'] {
             display: none;
             &:checked ~ span {
@@ -52,7 +50,7 @@
         border-radius: 2px;
         margin-left: 0.5rem;
         margin-right: 0.5rem;
-        padding-bottom: 0.25rem;
+        padding-bottom: 0.125rem;
     }
 
     &__search-icon {
@@ -68,14 +66,18 @@
         flex: 1 1 auto;
         display: flex;
         margin-left: 0.5rem;
-        flex-wrap: wrap;
+        overflow-x: auto;
+        &::-webkit-scrollbar {
+            display: none;
+        }
     }
 
     &__input, &__chip {
         flex: 1 0 auto;
         margin-top: 0.25rem;
         margin-right: 0.25rem;
-        height: 1.5rem;
+        height: 2rem;
+        line-height: 1.5rem;
     }
 
     &__input {
@@ -104,11 +106,9 @@
         border-radius: 2px;
         padding: 0.25rem 0.5rem;
         color: white;
-        height: 1.5rem;
-        line-height: 1rem;
         vertical-align: top;
-        max-width: 49%;
-        overflow: hidden;
+        width: 49%;
+        max-width: fit-content;
         white-space: nowrap;
         &-text {
             flex: 0 1 auto;
@@ -149,8 +149,8 @@
         background-color: #1C2736;
         cursor: pointer;
         padding: 0 1rem;
-        height: 2rem;
-        line-height: 2rem;
+        height: 2.5rem;
+        line-height: 2.5rem;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;

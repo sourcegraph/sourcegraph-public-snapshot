@@ -1,0 +1,43 @@
+.tree-header {
+    @extend .ui-title;
+    flex: none;
+    height: 2.5rem;
+
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    user-select: none;
+    position: relative;
+
+    &__title {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__close-button {
+        cursor: pointer;
+        color: #93A9C8;
+        background: transparent;
+        outline: none;
+        border: none;
+        font-size: inherit;
+
+        @media (max-width: $media-sm) {
+            display: none;
+        }
+
+        &:hover {
+            color: #FFFFFF;
+        }
+
+        .icon, svg {
+            height: 1.5em;
+            width: 1.5em;
+            fill: currentColor;
+        }
+    }
+}

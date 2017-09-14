@@ -18,7 +18,12 @@
     &__search-box-container {
         flex: 0 0 auto;
         margin-top: 4rem;
-        width: 44.5rem;
+        width: 52rem;
         max-width: 90%;
+
+        // Make chips multi-line on the homepage
+        .search-box__chips {
+            flex-wrap: wrap;
+        }
     }
 }

@@ -6,6 +6,12 @@ It should import all component stylesheets
 $color-page-background: #233043;
 $color-text: #93A9C8;
 
+// Media breakpoints
+$media-sm: 576px;
+$media-md: 768px;
+$media-lg: 992px;
+$media-xl: 1200px;
+
 @import './highlight';
 @import './home/Home';
 @import './nav/Navbar';
@@ -14,7 +20,6 @@ $color-text: #93A9C8;
 @import './repo/Repository';
 @import './repo/Tooltips';
 @import './references/ReferencesWidget';
-@import './tree/Tree';
 @import './components/CodeExcerpt';
 @import './components/HeroPage';
 
@@ -50,6 +55,7 @@ $color-text: #93A9C8;
 
 html {
     font-family: 'system';
+    // Base for layout rem values
     font-size: 16px;
 }
 
@@ -58,7 +64,10 @@ body {
     display: flex;
 
     background-color: $color-page-background;
-    color: #C9D4E3;
+    color: #93A9C8;
+    // Actual base font size
+    font-size: 14px;
+    line-height: 1.5rem;
 }
 
 // React root element
@@ -100,9 +109,19 @@ kbd {
     box-shadow: inset 0 -2px 0 #5D7EAC;
 }
 
+.ui-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
 a {
     outline: 0;
     color: #93A9C8;
+    transition: all 100ms ease-out;
+    &:hover {
+        color: white;
+    }
 }
 
 // Responsive Container
@@ -112,25 +131,25 @@ a {
     margin-right: auto;
 }
 
-@media (min-width: 576px) {
+@media (min-width: $media-sm) {
     .container {
         max-width: 540px;
     }
 }
 
-@media (min-width: 768px) {
+@media (min-width: $media-md) {
     .container {
         max-width: 720px;
     }
 }
 
-@media (min-width: 992px) {
+@media (min-width: $media-lg) {
     .container {
         max-width: 960px;
     }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: $media-xl) {
     .container {
         max-width: 1140px;
     }

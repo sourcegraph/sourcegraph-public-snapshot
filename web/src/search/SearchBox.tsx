@@ -7,11 +7,13 @@ import RepoGroupIcon from '@sourcegraph/icons/lib/RepoGroup'
 import SearchIcon from '@sourcegraph/icons/lib/Search'
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
+import 'rxjs/add/observable/fromEvent'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/debounceTime'
 import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/do'
+import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
 import 'rxjs/add/operator/repeat'
@@ -80,6 +82,9 @@ export class SearchBox extends React.Component<Props, State> {
 
     /** Only used for scroll state management */
     private selectedSuggestionElement?: HTMLElement
+
+    /** Only used for scroll state management */
+    private chipsElement?: HTMLElement
 
     constructor(props: Props) {
         super(props)
@@ -177,6 +182,23 @@ export class SearchBox extends React.Component<Props, State> {
                     console.error(err)
                 })
         )
+
+        // Quick-Open hotkeys
+        this.subscriptions.add(
+            Observable.fromEvent<KeyboardEvent>(window, 'keydown')
+                .filter(event =>
+                    // Slash shortcut (if no input element is focused)
+                    (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName))
+                    // Cmd/Ctrl+P shortcut
+                    || ((event.metaKey || event.ctrlKey) && event.key === 'p')
+                    // Cmd/Ctrl+Shift+S shortcut
+                    || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 's')
+                )
+                .subscribe(event => {
+                    event.preventDefault()
+                    this.focusInput()
+                })
+        )
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -184,11 +206,7 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        if (this.inputElement) {
-            // Focus the input element and set cursor to the end
-            this.inputElement.focus()
-            this.inputElement.setSelectionRange(this.inputElement.value.length, this.inputElement.value.length)
-        }
+        this.focusInput()
     }
 
     public componentWillUnmount(): void {
@@ -207,7 +225,7 @@ export class SearchBox extends React.Component<Props, State> {
             <form className='search-box' onSubmit={this.onSubmit}>
                 <div className='search-box__query'>
                     <div className='search-box__search-icon'><SearchIcon /></div>
-                    <div className='search-box__chips'>
+                    <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
                         {
                             this.state.filters.map((filter, i) => {
                                 const Icon = SUGGESTION_ICONS[filter.type]
@@ -298,6 +316,14 @@ export class SearchBox extends React.Component<Props, State> {
         this.suggestionListElement = ref || undefined
     }
 
+    private focusInput(): void {
+        if (this.inputElement) {
+            // Focus the input element and set cursor to the end
+            this.inputElement.focus()
+            this.inputElement.setSelectionRange(this.inputElement.value.length, this.inputElement.value.length)
+        }
+    }
+
     /**
      * Reads initial state from the props (i.e. URL parameters)
      */
@@ -362,6 +388,11 @@ export class SearchBox extends React.Component<Props, State> {
                         suggestions: [],
                         selectedSuggestion: -1,
                         query: ''
+                    }, () => {
+                        // Scroll chips so search input stays visible
+                        if (this.chipsElement) {
+                            this.chipsElement!.scrollLeft = this.chipsElement!.scrollWidth
+                        }
                     })
                 }
                 break

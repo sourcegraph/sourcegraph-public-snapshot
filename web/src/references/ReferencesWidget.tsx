@@ -1,12 +1,12 @@
+import GlobeIcon from '@sourcegraph/icons/lib/Globe'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import groupBy from 'lodash/groupBy'
 import partition from 'lodash/partition'
 import * as React from 'react'
 import DownIcon from 'react-icons/lib/fa/angle-down'
 import RightIcon from 'react-icons/lib/fa/angle-right'
-import RepoIcon from 'react-icons/lib/go/repo'
 import CloseIcon from 'react-icons/lib/md/close'
-import GlobeIcon from 'react-icons/lib/md/language'
 import { Link } from 'react-router-dom'
 import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/merge'
@@ -101,7 +101,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
         return (
             <div className='references-group'>
                 <div className='references-group__title' onClick={this.toggle}>
-                    {this.props.isLocal ? <RepoIcon className='references-group__icon' /> : <GlobeIcon className='references-group__icon' />}
+                    <div className='references-group__icon'>{this.props.isLocal ? <RepoIcon /> : <GlobeIcon />}</div>
                     <div className='references-group__uri-path-part'>{uriStr}</div>
                     <div>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>
                     <div className='references-group__file-path-part'>{filePart}</div>

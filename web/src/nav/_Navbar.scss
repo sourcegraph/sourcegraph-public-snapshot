@@ -2,7 +2,7 @@
 
     position: sticky;
     flex: none;
-    height: 3rem;
+    height: 3.51rem; // +.01 to avoid the search box leaking
     width: 100%;
     z-index: 9999999;
 
@@ -12,14 +12,20 @@
 
     background-color: #1C2736;
 
+    &__left {
+        flex: 1;
+    }
+
     &__logo-link {
         outline: 0;
         margin: 0px 1rem;
         display: flex;
+        width: fit-content;
     }
 
     &__logo {
         width: 1.5rem;
+        height: 1.5rem;
         &:hover {
             animation: spin 0.5s ease-in-out 1;
             @keyframes spin {
@@ -30,25 +36,11 @@
     }
 
     &__search-box-container {
+        width: 52rem;
         align-self: flex-start;
-        width: 44.5rem;
     }
 
-    // TODO move to file actions
-    .open-on-desktop {
-        background-color: #1098AD;
-        border-radius: 2px;
-        display: flex;
-        align-items: center;
-        color: #FFFFFF;
-        height: 32px;
-        padding: 8px 12px;
-        font-size: 12px;
-        margin-right: 16px;
-        text-decoration: none;
-
-        .icon {
-            margin-left: 8px;
-        }
+    &__right {
+        flex: 1;
     }
 }

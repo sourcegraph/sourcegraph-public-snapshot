@@ -6,16 +6,16 @@
     display: flex;
     position: relative;
     overflow: auto;
-    padding-top: 10px;
-    padding-bottom: 10px;
-
-    white-space: pre;
-    background-color: #151D28;
-    font-family: 'Menlo';
-    font-size: 12px;
+    padding: 1rem 0;
 
     table {
         border-collapse: collapse;
+
+        white-space: pre;
+        background-color: #151D28;
+        font-family: 'Menlo';
+        font-size: 12px;
+        line-height: 20px;
     }
 
     td.line {
@@ -26,21 +26,18 @@
         }
 
         color: #31445E;
-        text-align: center;
-        padding-left: .25em;
-        padding-right: .75em;
+        text-align: right;
+        padding-left: 1rem;
         min-width: 3em;
     }
 
     td.line, td.code {
         padding: 0;
-        padding-top: 0.15em;
-        padding-bottom: 0.15em;
     }
 
     td.code {
         width: 100%;
-        padding-left: .5em;
+        padding-left: 1rem;
         white-space: pre;
         >.blame {
             &::before {
