@@ -1,7 +1,7 @@
 import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import ComputerIcon from '@sourcegraph/icons/lib/Computer'
 import CopyIcon from '@sourcegraph/icons/lib/Copy'
-import GitHub from '@sourcegraph/icons/lib/Github'
+import GitHub from '@sourcegraph/icons/lib/GitHub'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
