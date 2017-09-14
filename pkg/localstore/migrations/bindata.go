@@ -14,6 +14,8 @@
 // ../../../migrations/1503961087_add_default_timestamps.up.sql
 // ../../../migrations/1504637681_orgs.down.sql
 // ../../../migrations/1504637681_orgs.up.sql
+// ../../../migrations/1504821553_add_org_constraints.down.sql
+// ../../../migrations/1504821553_add_org_constraints.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -361,6 +363,46 @@ func _1504637681_orgsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1504821553_add_org_constraintsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\xe2\x74\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x89\xc6\xe7\x25\xe6\xa6\xc6\x97\xe6\x65\x16\x96\xa6\xea\xe0\x51\x51\x96\x98\x93\x99\x12\x9f\x9c\x91\x58\x54\x6c\xcd\xc5\x85\x66\x74\x7c\x6e\x6a\x6e\x52\x6a\x11\x0e\x1b\xa0\x92\xf1\x20\x76\x66\x4a\x7c\x69\x71\x6a\x11\x88\xce\x4e\xad\xc4\x61\x21\x36\x0d\x60\x47\x90\xa6\x25\x35\x37\x31\x33\x07\xa4\xc7\x9a\x0b\x10\x00\x00\xff\xff\xd4\x56\xf2\xe9\x0b\x01\x00\x00")
+
+func _1504821553_add_org_constraintsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1504821553_add_org_constraintsDownSql,
+		"1504821553_add_org_constraints.down.sql",
+	)
+}
+
+func _1504821553_add_org_constraintsDownSql() (*asset, error) {
+	bytes, err := _1504821553_add_org_constraintsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1504821553_add_org_constraints.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1504821553_add_org_constraintsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\xe2\x74\x74\x71\x51\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x09\xc6\xe7\x25\xe6\xa6\xc6\x97\xe6\x65\x16\x96\xa6\x2a\x84\xfa\x79\x06\x86\xba\x2a\x68\x80\xc4\x34\x75\x70\x2b\x2f\x4b\xcc\xc9\x4c\x89\x4f\xce\x48\x2c\x2a\x56\x70\xf6\x70\x75\xf6\x86\x68\x51\xa8\x53\x50\x8f\x8b\x4e\xd4\xad\x72\xd4\x8d\x32\xd0\xb5\x8c\x8f\xd1\x8d\xd5\x56\x51\xd7\xb4\xe6\xe2\x42\x73\x49\x7c\x6e\x6a\x6e\x52\x6a\x11\xd4\x41\x30\x5b\x41\x12\x99\x29\x3a\x0a\xa5\xc5\xa9\x45\xf1\x99\x29\x30\x07\x60\x95\x46\x76\x21\x56\x05\xa9\xb9\x89\x99\x39\x9a\xd6\x5c\x80\x00\x00\x00\xff\xff\x76\x87\x53\x70\x04\x01\x00\x00")
+
+func _1504821553_add_org_constraintsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1504821553_add_org_constraintsUpSql,
+		"1504821553_add_org_constraints.up.sql",
+	)
+}
+
+func _1504821553_add_org_constraintsUpSql() (*asset, error) {
+	bytes, err := _1504821553_add_org_constraintsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1504821553_add_org_constraints.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -427,6 +469,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1503961087_add_default_timestamps.up.sql":   _1503961087_add_default_timestampsUpSql,
 	"1504637681_orgs.down.sql":                   _1504637681_orgsDownSql,
 	"1504637681_orgs.up.sql":                     _1504637681_orgsUpSql,
+	"1504821553_add_org_constraints.down.sql":    _1504821553_add_org_constraintsDownSql,
+	"1504821553_add_org_constraints.up.sql":      _1504821553_add_org_constraintsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -484,6 +528,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1503961087_add_default_timestamps.up.sql":   &bintree{_1503961087_add_default_timestampsUpSql, map[string]*bintree{}},
 	"1504637681_orgs.down.sql":                   &bintree{_1504637681_orgsDownSql, map[string]*bintree{}},
 	"1504637681_orgs.up.sql":                     &bintree{_1504637681_orgsUpSql, map[string]*bintree{}},
+	"1504821553_add_org_constraints.down.sql":    &bintree{_1504821553_add_org_constraintsDownSql, map[string]*bintree{}},
+	"1504821553_add_org_constraints.up.sql":      &bintree{_1504821553_add_org_constraintsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

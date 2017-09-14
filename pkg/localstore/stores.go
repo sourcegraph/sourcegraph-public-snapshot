@@ -9,4 +9,5 @@ var (
 	Threads    = &threads{}
 	Comments   = &comments{}
 	Orgs       = &orgs{}
+	OrgMembers = &orgMembers{}
 )

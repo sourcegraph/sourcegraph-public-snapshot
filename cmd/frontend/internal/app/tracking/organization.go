@@ -14,7 +14,7 @@ import (
 //
 // This method may return an error and a partial list of organizations
 func listAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourcegraph.OrgsList, err error) {
-	var orgs []*sourcegraph.Org
+	var orgs []*sourcegraph.GitHubOrg
 	if !extgithub.HasAuthedUser(ctx) {
 		return &sourcegraph.OrgsList{}, nil
 	}
@@ -30,7 +30,7 @@ func listAllOrgs(ctx context.Context, op *sourcegraph.ListOptions) (res *sourceg
 	return &sourcegraph.OrgsList{Orgs: orgs}, nil
 }
 
-func toOrgFromAccount(user *github.User) *sourcegraph.Org {
+func toOrgFromAccount(user *github.User) *sourcegraph.GitHubOrg {
 	strv := func(s *string) string {
 		if s == nil {
 			return ""
@@ -45,7 +45,7 @@ func toOrgFromAccount(user *github.User) *sourcegraph.Org {
 		return int32(*i)
 	}
 
-	org := sourcegraph.Org{
+	org := sourcegraph.GitHubOrg{
 		Login:         *user.Login,
 		ID:            int32(*user.ID),
 		AvatarURL:     strv(user.AvatarURL),

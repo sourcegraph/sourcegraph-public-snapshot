@@ -75,6 +75,9 @@ Indexes:
  updated_at | timestamp with time zone | default now()
 Indexes:
     "org_members_pkey" PRIMARY KEY, btree (id)
+    "org_members_org_id_user_email_key" UNIQUE CONSTRAINT, btree (org_id, user_email)
+    "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
+    "org_members_org_id_user_name_key" UNIQUE CONSTRAINT, btree (org_id, user_name)
 
 ```
 
@@ -88,6 +91,9 @@ Indexes:
  updated_at | timestamp with time zone | default now()
 Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
+    "org_name_unique" UNIQUE CONSTRAINT, btree (name)
+Check constraints:
+    "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9_\-]+$'::text)
 
 ```
 

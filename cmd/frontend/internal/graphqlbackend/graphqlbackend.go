@@ -65,6 +65,10 @@ func init() {
 	}
 }
 
+// EmptyResponse is a type that can be used in the return signature for graphql queries
+// that don't require a return value.
+type EmptyResponse interface{}
+
 type node interface {
 	ID() graphql.ID
 }

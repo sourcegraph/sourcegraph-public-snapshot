@@ -22,6 +22,7 @@ export SRC_GITHUB_APP_ID=2534
 export SRC_GITHUB_APP_URL=https://github.com/apps/sourcegraph-dev
 export SRC_GITHUB_APP_PRIVATE_KEY="$(cat $PWD/dev/github/sourcegraph-dev.private-key.pem)"
 
+export SRC_APP_SECRET_KEY=OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export DEBUG=true

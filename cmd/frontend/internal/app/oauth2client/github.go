@@ -24,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
@@ -184,12 +185,18 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 	}
 
+	currentOrgID, err := localstore.Orgs.CurrentOrgFromUID(info.UID)
+	if err != nil {
+		return err
+	}
+
 	actor := &actor.Actor{
 		UID:             info.UID,
 		Login:           info.Nickname,
 		Email:           info.Email,
 		AvatarURL:       info.Picture,
 		GitHubConnected: true,
+		OrgID:           int(currentOrgID),
 	}
 
 	if info.AppMetadata.GitHubAccessTokenOverride == "" {

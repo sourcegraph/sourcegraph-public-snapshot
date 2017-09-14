@@ -26,6 +26,9 @@ type Actor struct {
 	// Email is the primary email address of the user.
 	Email string
 
+	// OrgID is the ID of the Sourcegraph org the user is currently signed in under.
+	OrgID int
+
 	// AvatarURL is the URL to an avatar image for the user.
 	AvatarURL string
 
@@ -48,6 +51,11 @@ func (a *Actor) String() string {
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.
 func (a *Actor) IsAuthenticated() bool {
 	return a.UID != ""
+}
+
+// IsAuthenticated returns true if the Actor is derived from a user authenticated for a given org.
+func (a *Actor) IsAuthenticatedWithOrg() bool {
+	return a.IsAuthenticated() && a.OrgID != 0
 }
 
 func (a *Actor) UserSpec() *sourcegraph.UserSpec {

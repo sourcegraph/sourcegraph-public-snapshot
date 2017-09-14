@@ -429,11 +429,11 @@ type EventList struct {
 
 // OrgsList is a list of GitHub organizations for a given user
 type OrgsList struct {
-	Orgs []*Org `json:"Orgs,omitempty"`
+	Orgs []*GitHubOrg `json:"Orgs,omitempty"`
 }
 
-// Org holds the result of an org for Orgs.ListOrgs
-type Org struct {
+// GitHubOrg holds the result of an org for Orgs.ListOrgs
+type GitHubOrg struct {
 	Login         string `json:"Login"`
 	ID            int32  `json:"ID"`
 	AvatarURL     string `json:"AvatarURL,omitempty"`
@@ -443,22 +443,6 @@ type Org struct {
 	Email         string `json:"Email,omitempty"`
 	Description   string `json:"Description,omitempty"`
 	Collaborators int32  `json:"Collaborators,omitempty"`
-}
-
-// OrgMembersList is a list of GitHub organization members for an organization
-type OrgMembersList struct {
-	OrgMembers []*OrgMember `json:"OrgMembers,omitempty"`
-}
-
-// OrgMember holds the result of an org member for Orgs.ListOrgMembers
-type OrgMember struct {
-	Login           string      `json:"Login"`
-	ID              int32       `json:"ID"`
-	AvatarURL       string      `json:"AvatarURL,omitempty"`
-	Email           string      `json:"Email,omitempty"`
-	SourcegraphUser bool        `json:"SourcegraphUser,omitempty"`
-	CanInvite       bool        `json:"CanInvite,omitempty"`
-	Invite          *UserInvite `json:"Invite,omitempty"`
 }
 
 // UserInvite holds the result of an invite for Orgs.InviteUser
@@ -513,4 +497,21 @@ type Comment struct {
 	// accounts.
 	AuthorName  string `json:"AuthorName,omitempty"`
 	AuthorEmail string `json:"AuthorEmail,omitempty"`
+}
+
+type Org struct {
+	ID        int32     `json:"ID"`
+	Name      string    `json:"Name,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+}
+
+type OrgMember struct {
+	ID        int32     `json:"ID"`
+	OrgID     int32     `json:"OrgID"`
+	UserID    string    `json:"UserID"`
+	Username  string    `json:"Username,omitempty"`
+	Email     string    `json:"Email,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 }
