@@ -223,6 +223,10 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 	if err != nil {
 		return nil, err
 	}
+	if commitStateResolver.cloneInProgress {
+		// TODO report a cloning repo
+		return res, nil
+	}
 	commitResolver := commitStateResolver.Commit()
 	treeResolver, err := commitResolver.Tree(ctx, &struct {
 		Path      string
