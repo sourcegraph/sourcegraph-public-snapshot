@@ -287,6 +287,10 @@ declare namespace GQL {
   interface IUser {
     __typename: "User";
     githubInstallations: Array<IInstallation>;
+    id: string;
+    handle: string | null;
+    avatarURL: string | null;
+    email: string | null;
   }
 
   /*
@@ -473,6 +477,41 @@ declare namespace GQL {
     createThread: IThread;
     updateThread: IThread;
     addCommentToThread: IThread;
+    createOrg: IOrg;
+    inviteUser: IEmptyResponse | null;
+    acceptUserInvite: IOrgMember;
+    removeUserFromOrg: IEmptyResponse | null;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrg {
+    __typename: "Org";
+    id: number;
+    name: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IEmptyResponse {
+    __typename: "EmptyResponse";
+    alwaysNil: string | null;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgMember {
+    __typename: "OrgMember";
+    id: number;
+    orgID: number;
+    userID: string;
+    username: string;
+    email: string;
+    createdAt: string;
+    updatedAt: string;
   }
 
   /*

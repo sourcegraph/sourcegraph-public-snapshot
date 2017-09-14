@@ -5,7 +5,9 @@ var Schema = `schema {
 	mutation: Mutation
 }
 
-type EmptyResponse {}
+type EmptyResponse {
+	alwaysNil: String
+}
 
 interface Node {
 	id: ID!
