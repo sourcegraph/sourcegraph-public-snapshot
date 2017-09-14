@@ -194,7 +194,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                 <input
                     className='repo-rev-switcher__input'
                     type='text'
-                    placeholder='Filter branches/tags/commits...'
+                    placeholder='Filter branches/tags...'
                     autoFocus
                     onChange={this.onInputChange}
                     onBlur={this.props.onClose}
