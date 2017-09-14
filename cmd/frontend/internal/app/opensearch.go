@@ -22,6 +22,10 @@ var openSearchDescription = template.Must(template.New("").Parse(`
 `))
 
 func openSearch(w http.ResponseWriter, r *http.Request) {
+	// TODO: Omnisearch disabled currently. Re-enable in the future.
+	// See https://github.com/sourcegraph/sourcegraph/issues/6798
+	w.WriteHeader(http.StatusNotFound)
+	return
 
 	type vars struct {
 		SiteName string
