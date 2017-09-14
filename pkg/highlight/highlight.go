@@ -38,7 +38,7 @@ func Code(ctx context.Context, code, extension string, disableTimeout bool) (tem
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:      code,
 		Extension: extension,
-		Theme:     "Visual Studio Dark", // In the future, we could let the user choose the theme.
+		Theme:     "Sourcegraph",
 	})
 	if ctx.Err() == context.DeadlineExceeded {
 		// Timeout, so render plain table.
