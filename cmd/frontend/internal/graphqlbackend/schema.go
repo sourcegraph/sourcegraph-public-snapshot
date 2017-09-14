@@ -33,7 +33,7 @@ type Root {
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	searchProfiles: [SearchProfile!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
-	threads(remoteURI: String!, accessToken: String!, file: String): [Thread!]!
+	threads(remoteURI: String!, accessToken: String!, file: String, limit: Int): [Thread!]!
 }
 
 union SearchResult = Repository | File | SearchProfile
