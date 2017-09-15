@@ -323,12 +323,7 @@ func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn jsonrpc2.J
 	if id, ok := q.Symbol["id"]; ok {
 		// id implicitly contains a dir hint. We can use that to
 		// reduce the number of files we have to parse.
-		importPath := strings.SplitN(id.(string), "/-/", 2)[0]
-		if isStdLib := PathHasPrefix(h.BuildContext(ctx).GOROOT, h.FilePath(h.init.Root())); isStdLib {
-			q.Dir = path.Join("/src", importPath)
-		} else {
-			q.Dir = importPath
-		}
+		q.Dir = strings.SplitN(id.(string), "/-/", 2)[0]
 		q.Filter = FilterDir
 	}
 	if params.Limit == 0 {
