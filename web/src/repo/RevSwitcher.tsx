@@ -134,7 +134,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                 // Find out if the query is a commit ID.
                 this.inputChanges
                     // We're only interested in query if it is a commit ID, not a branch or tag.
-                    .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(i => i.rev.includes(query))))
+                    .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(item => item.rev.includes(query))))
                     .switchMap(query =>
                         Observable.fromPromise(resolveRev({repoPath: this.props.repoPath, rev: query}))
                             .map(query => ({ queryIsCommit: true } as State))
@@ -152,11 +152,12 @@ export class RevSwitcher extends React.Component<Props, State> {
                         if (!this.state.repoRevisions) {
                             return {} as State
                         }
-                        const visible = this.state.repoRevisions.filter(i => i.rev.includes(query))
+                        const visible = this.state.repoRevisions
+                            .filter(item => item.rev.includes(query))
                             // Assign score to each item.
-                            .map(i => ({ ...i, score: score(i.rev, query)}))
+                            .map(item => ({ ...item, score: score(item.rev, query)}))
                             // Remove items with zero zero (no match).
-                            .filter(i => i.score > 0 )
+                            .filter(item => item.score > 0 )
                             // Sort by sort value.
                             .sort((a, b) => {
                                 if (a.score !== b.score) {
