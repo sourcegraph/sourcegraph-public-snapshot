@@ -163,8 +163,8 @@ export class SearchBox extends React.Component<Props, State> {
                     (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName))
                     // Cmd/Ctrl+P shortcut
                     || ((event.metaKey || event.ctrlKey) && event.key === 'p')
-                    // Cmd/Ctrl+Shift+S shortcut
-                    || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 's')
+                    // Cmd/Ctrl+Shift+F shortcut
+                    || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
                 )
                 .subscribe(event => {
                     event.preventDefault()
