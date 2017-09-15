@@ -15,7 +15,6 @@ import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
 import 'rxjs/add/operator/repeat'
 import 'rxjs/add/operator/switchMap'
 import 'rxjs/add/operator/takeUntil'
@@ -23,10 +22,10 @@ import 'rxjs/add/operator/toArray'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { events } from 'sourcegraph/tracking/events'
 import { scrollIntoView } from 'sourcegraph/util'
 import { ParsedRouteProps } from 'sourcegraph/util/routes'
+import { fetchSuggestions } from './backend'
 import { buildSearchURLQuery, FileFilter, FileGlobFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
 
 /** The icons used to show a suggestion for a filter */
@@ -131,38 +130,11 @@ export class SearchBox extends React.Component<Props, State> {
                         return [[fileGlobFilter]]
                     }
                     // Search repos
-                    return queryGraphQL(`
-                        query SearchRepos($query: String!) {
-                            root {
-                                search(query: $query, repositories: $repositories) {
-                                    ... on Repository {
-                                        __typename
-                                        uri
-                                    }
-                                    ... on File {
-                                        __typename
-                                        name
-                                    }
-                                    ... on SearchProfile {
-                                        __typename
-                                        name
-                                        repositories {
-                                            uri
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    `, {
-                        query,
-                        repositories: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoPath)
-                    })
-                        .do(result => console.error(...result.errors || []))
-                        .mergeMap(result => result.data!.root.search)
+                    return fetchSuggestions(query, this.state.filters)
                         .map((item: GQL.SearchResult): Filter => {
                             switch (item.__typename) {
                                 case 'Repository':    return { type: FilterType.Repo, repoPath: item.uri }
-                                case 'SearchProfile': return { type: FilterType.RepoGroup, name: item.name, repoUris: item.repositories.map(r => r.uri) }
+                                case 'SearchProfile': return { type: FilterType.RepoGroup, name: item.name }
                                 case 'File':          return { type: FilterType.File, filePath: item.name }
                             }
                         })

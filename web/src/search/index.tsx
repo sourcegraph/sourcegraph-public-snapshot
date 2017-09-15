@@ -27,7 +27,6 @@ export interface FileGlobFilter {
 export interface RepoGroupFilter {
     type: FilterType.RepoGroup
     name: string
-    repoUris: string[]
 }
 
 export interface SearchOptions {

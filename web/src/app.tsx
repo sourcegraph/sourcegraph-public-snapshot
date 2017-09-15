@@ -25,15 +25,8 @@ import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from 'sourc
 import { SearchResults } from 'sourcegraph/search/SearchResults'
 import { EditorAuthPage } from 'sourcegraph/user/EditorAuthPage'
 import { SignInPage } from 'sourcegraph/user/SignInPage'
-import * as activeRepos from 'sourcegraph/util/activeRepos'
 import { ParsedRouteProps, parseRouteProps } from 'sourcegraph/util/routes'
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
-
-window.addEventListener('DOMContentLoaded', () => {
-    // Be a bit proactive and try to fetch/store active repos now. This helps
-    // on the first search query, and when the data in local storage is stale.
-    activeRepos.get().catch(err => console.error(err))
-})
 
 interface WithResolvedRevProps {
     component: any

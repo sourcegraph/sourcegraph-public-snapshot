@@ -6,15 +6,15 @@ import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { SearchResult, searchText } from 'sourcegraph/backend'
 import { ReferencesGroup } from 'sourcegraph/references/ReferencesWidget'
 import { parseSearchURLQuery } from 'sourcegraph/search'
 import { ParsedRouteProps } from 'sourcegraph/util/routes'
+import { searchText } from './backend'
 
 interface Props extends ParsedRouteProps { }
 
 interface State {
-    results: SearchResult[]
+    results: GQL.IFileMatch[]
     loading: boolean
     searchDuration?: number
     error?: Error
