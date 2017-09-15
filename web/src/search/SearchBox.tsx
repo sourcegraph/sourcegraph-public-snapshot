@@ -37,12 +37,7 @@ const SUGGESTION_ICONS = {
 }
 
 function getFilterLabel(filter: Filter): string {
-    switch (filter.type) {
-        case FilterType.Repo: return filter.repoPath
-        case FilterType.RepoGroup: return filter.name
-        case FilterType.File: return filter.filePath
-        case FilterType.FileGlob: return filter.glob
-    }
+    return filter.value
 }
 
 interface Props extends ParsedRouteProps { }
@@ -125,7 +120,7 @@ export class SearchBox extends React.Component<Props, State> {
                     if (/\*|\?/.exec(this.state.query)) {
                         const fileGlobFilter: FileGlobFilter = {
                             type: FilterType.FileGlob,
-                            glob: this.state.query
+                            value: this.state.query
                         }
                         return [[fileGlobFilter]]
                     }
@@ -133,9 +128,9 @@ export class SearchBox extends React.Component<Props, State> {
                     return fetchSuggestions(query, this.state.filters)
                         .map((item: GQL.SearchResult): Filter => {
                             switch (item.__typename) {
-                                case 'Repository':    return { type: FilterType.Repo, repoPath: item.uri }
-                                case 'SearchProfile': return { type: FilterType.RepoGroup, name: item.name }
-                                case 'File':          return { type: FilterType.File, filePath: item.name }
+                                case 'Repository':    return { type: FilterType.Repo, value: item.uri }
+                                case 'SearchProfile': return { type: FilterType.RepoGroup, value: item.name }
+                                case 'File':          return { type: FilterType.File, value: item.name }
                             }
                         })
                         .toArray()
@@ -333,10 +328,10 @@ export class SearchBox extends React.Component<Props, State> {
             searchOptions = parseSearchURLQuery(props.location.search)
         } else if (props.repoPath) {
             // Repo page, add repo filter
-            searchOptions.filters.push({ type: FilterType.Repo, repoPath: props.repoPath })
+            searchOptions.filters.push({ type: FilterType.Repo, value: props.repoPath })
             if (props.filePath) {
                 // Blob page, add file filter
-                searchOptions.filters.push({ type: FilterType.File, filePath: props.filePath })
+                searchOptions.filters.push({ type: FilterType.File, value: props.filePath })
             }
         }
         return { ...searchOptions, suggestions: [], selectedSuggestion: -1, suggestionsVisible: false }
@@ -427,17 +422,17 @@ export class SearchBox extends React.Component<Props, State> {
             events.SearchSubmitted.log({
                 code_search: {
                     pattern: this.state.query,
-                    repos: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoPath)
+                    repos: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value)
                 }
             })
             this.props.history.push(path)
         } else if (this.state.filters[0].type === FilterType.Repo) {
             if (this.state.filters.length === 1) {
                 // Go to repo
-                this.props.history.push(`/${(this.state.filters[0] as RepoFilter).repoPath}`)
+                this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}`)
             } else if (this.state.filters[1].type === FilterType.File && this.state.filters.length === 2) {
                 // Go to file
-                this.props.history.push(`/${(this.state.filters[0] as RepoFilter).repoPath}/-/blob/${(this.state.filters[1] as FileFilter).filePath}`)
+                this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}/-/blob/${(this.state.filters[1] as FileFilter).value}`)
             }
         }
     }

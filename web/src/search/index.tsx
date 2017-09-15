@@ -1,4 +1,3 @@
-import * as yaml from 'js-yaml/dist/js-yaml'
 
 export enum FilterType {
     Repo = 'repo',
@@ -7,26 +6,28 @@ export enum FilterType {
     FileGlob = 'fileglob'
 }
 
+const filterTypes = new Set(Object.values(FilterType))
+
 export type Filter = RepoGroupFilter | RepoFilter | FileFilter | FileGlobFilter
 
-export interface RepoFilter {
+interface BaseFilter {
+    value: string
+}
+
+export interface RepoFilter extends BaseFilter {
     type: FilterType.Repo
-    repoPath: string
 }
 
-export interface FileFilter {
+export interface FileFilter extends BaseFilter {
     type: FilterType.File
-    filePath: string
 }
 
-export interface FileGlobFilter {
+export interface FileGlobFilter extends BaseFilter {
     type: FilterType.FileGlob
-    glob: string
 }
 
-export interface RepoGroupFilter {
+export interface RepoGroupFilter extends BaseFilter {
     type: FilterType.RepoGroup
-    name: string
 }
 
 export interface SearchOptions {
@@ -43,31 +44,13 @@ export interface SearchOptions {
 export function buildSearchURLQuery({ query, filters, matchCase, matchRegex, matchWord }: SearchOptions): string {
     const searchParams = new URLSearchParams()
     searchParams.set('q', query)
-    const filterString = yaml.safeDump(filters, {
-        flowLevel: 0,
-        indent: 0,
-        lineWidth: Infinity,
-        noCompatMode: true,
-        sortKeys: true,
-        noRefs: true,
-        condenseFlow: true
-    }).trim()
-    searchParams.set('filters', filterString)
+    for (const filter of filters) {
+        searchParams.append(filter.type, filter.value)
+    }
     searchParams.set('matchCase', matchCase + '')
     searchParams.set('matchWord', matchWord + '')
     searchParams.set('matchCase', matchRegex + '')
-    // Unescape some characters that are technically reserved but no modern browser has issues with
-    // Escape spaces to + instead of %20
-    const querystring = searchParams.toString()
-        .replace(/%20/g, '+')
-        .replace(/%5B/g, '[')
-        .replace(/%5D/g, ']')
-        .replace(/%7B/g, '{')
-        .replace(/%7D/g, '}')
-        .replace(/%2C/g, ',')
-        .replace(/%3A/g, ':')
-        .replace(/%2F/g, '/')
-    return querystring
+    return searchParams.toString().replace(/%2F/g, '/')
 }
 
 /**
@@ -75,9 +58,12 @@ export function buildSearchURLQuery({ query, filters, matchCase, matchRegex, mat
  */
 export function parseSearchURLQuery(query: string): SearchOptions {
     const searchParams = new URLSearchParams(query)
+    const filters: Filter[] = Array.from(searchParams.entries())
+        .filter(([name]) => filterTypes.has(name))
+        .map(([name, value]) => ({ type: name, value } as Filter))
     return {
+        filters,
         query: searchParams.get('q') || '',
-        filters: yaml.safeLoad(searchParams.get('filters') || '[]'),
         matchCase: searchParams.get('matchCase') === 'true',
         matchWord: searchParams.get('matchWord') === 'true',
         matchRegex: searchParams.get('matchCase') === 'true'

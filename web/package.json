@@ -52,7 +52,6 @@
     "escape-string-regexp": "^1.0.5",
     "highlight.js": "^9.12.0",
     "immutable": "^3.8.1",
-    "js-yaml": "github:felixfbecker/js-yaml#a05bcd37fb9deb8cc8e149caecc78eac90a9f05b",
     "lodash": "^4.11.2",
     "marked": "^0.3.6",
     "react": "^15.6.1",
