@@ -3,6 +3,7 @@ import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
 import * as React from 'react'
+import 'rxjs/add/observable/fromEvent'
 import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
@@ -16,6 +17,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { parseBrowserRepoURL } from 'sourcegraph/repo'
 import { EREVNOTFOUND, fetchRepoRevisions, RepoRevisions, resolveRev } from 'sourcegraph/repo/backend'
 import { scrollIntoView } from 'sourcegraph/util'
+import { score } from 'sourcegraph/util/scorer'
 
 /**
  * Component props.
@@ -69,6 +71,10 @@ interface Item {
      */
     rev: string
     type: 'commit' | 'branch' | 'tag'
+    /**
+     * score used for sorting
+     */
+    score?: number
 }
 
 export class RevSwitcher extends React.Component<Props, State> {
@@ -88,6 +94,9 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     /** Subject for when the user-entered query string changes */
     private inputChanges = new Subject<string>()
+
+    /** Only used to detect clicks outside component */
+    private containerElement?: HTMLElement
 
     /** Only used for scroll state management */
     private listElement?: HTMLElement
@@ -126,7 +135,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                 // Find out if the query is a commit ID.
                 this.inputChanges
                     // We're only interested in query if it is a commit ID, not a branch or tag.
-                    .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(i => i.rev.includes(query))))
+                    .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(item => item.rev.includes(query))))
                     .switchMap(query =>
                         Observable.fromPromise(resolveRev({repoPath: this.props.repoPath, rev: query}))
                             .map(query => ({ queryIsCommit: true } as State))
@@ -144,7 +153,21 @@ export class RevSwitcher extends React.Component<Props, State> {
                         if (!this.state.repoRevisions) {
                             return {} as State
                         }
-                        const visible = this.state.repoRevisions.filter(i => i.rev.includes(query))
+                        const visible = this.state.repoRevisions
+                            .filter(item => item.rev.includes(query))
+                            // Assign score to each item.
+                            .map(item => ({ ...item, score: score(item.rev, query)}))
+                            // Remove items with zero zero (no match).
+                            .filter(item => item.score > 0 )
+                            // Sort by sort value.
+                            .sort((a, b) => {
+                                if (a.score !== b.score) {
+                                    return b.score - a.score
+                                }
+
+                                // Scores are identical so prefer shorter length strings.
+                                return a.rev.length - b.rev.length
+                            })
 
                         return { visible, query } as State
                     })
@@ -159,6 +182,13 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
+        this.subscriptions.add(Observable.fromEvent(document, 'click')
+            .subscribe((e: MouseEvent) => {
+                if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
+                    // Click outside of our component.
+                    this.props.onClose()
+                }
+            }))
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -190,14 +220,13 @@ export class RevSwitcher extends React.Component<Props, State> {
                 {item.rev}</div>
         })
         return <div className='repo-rev-switcher'>
-            <div className='repo-rev-switcher__inner'>
+            <div ref={this.setContainer} className='repo-rev-switcher__inner'>
                 <input
                     className='repo-rev-switcher__input'
                     type='text'
                     placeholder='Filter branches/tags...'
                     autoFocus
                     onChange={this.onInputChange}
-                    onBlur={this.props.onClose}
                     onKeyDown={this.onInputKeyDown} />
                 <div className='repo-rev-switcher__list-view' ref={this.setListElement}>
                     {items}
@@ -238,6 +267,10 @@ export class RevSwitcher extends React.Component<Props, State> {
     private moveSelection(steps: number): void {
         const selection = Math.max(Math.min(this.state.selection + steps, this.getVisibleLength() - 1), 0)
         this.setState({ selection })
+    }
+
+    private setContainer = (ref: HTMLElement | null): void => {
+        this.containerElement = ref || undefined
     }
 
     private setListElement = (ref: HTMLElement | null): void => {
