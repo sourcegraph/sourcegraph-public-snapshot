@@ -89,6 +89,9 @@ export class RevSwitcher extends React.Component<Props, State> {
     /** Subject for when the user-entered query string changes */
     private inputChanges = new Subject<string>()
 
+    /** Only used to detect clicks outside component */
+    private containerElement?: HTMLElement
+
     /** Only used for scroll state management */
     private listElement?: HTMLElement
 
@@ -97,6 +100,8 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
+
+        this.onDocumentClick = this.onDocumentClick.bind(this)
 
         // Fetch all revisions for repo whenever component props change.
         this.subscriptions.add(
@@ -159,6 +164,7 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
+        document.addEventListener('click', this.onDocumentClick)
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -167,6 +173,7 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+        document.removeEventListener('click', this.onDocumentClick)
     }
 
     public componentDidUpdate(): void {
@@ -182,7 +189,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                     key={item.rev}
                     title={item.rev}
                     ref={index === this.state.selection ? this.setSelectedElement : undefined}
-                    onMouseDown={() => this.chooseIndex(index)}
+                    onClick={() => this.chooseIndex(index)}
                 >
                 {item.type === 'commit' && <CommitIcon />}
                 {item.type === 'branch' && <BranchIcon />}
@@ -190,20 +197,26 @@ export class RevSwitcher extends React.Component<Props, State> {
                 {item.rev}</div>
         })
         return <div className='repo-rev-switcher'>
-            <div className='repo-rev-switcher__inner'>
+            <div ref={this.setContainer} className='repo-rev-switcher__inner'>
                 <input
                     className='repo-rev-switcher__input'
                     type='text'
                     placeholder='Filter branches/tags...'
                     autoFocus
                     onChange={this.onInputChange}
-                    onBlur={this.props.onClose}
                     onKeyDown={this.onInputKeyDown} />
                 <div className='repo-rev-switcher__list-view' ref={this.setListElement}>
                     {items}
                 </div>
             </div>
         </div>
+    }
+
+    private onDocumentClick(e: MouseEvent): void {
+        if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
+            // Click outside of our component.
+            this.props.onClose()
+        }
     }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = e => {
@@ -238,6 +251,10 @@ export class RevSwitcher extends React.Component<Props, State> {
     private moveSelection(steps: number): void {
         const selection = Math.max(Math.min(this.state.selection + steps, this.getVisibleLength() - 1), 0)
         this.setState({ selection })
+    }
+
+    private setContainer = (ref: HTMLElement | null): void => {
+        this.containerElement = ref || undefined
     }
 
     private setListElement = (ref: HTMLElement | null): void => {
