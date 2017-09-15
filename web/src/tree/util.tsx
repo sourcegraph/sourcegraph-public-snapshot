@@ -14,7 +14,7 @@ export function scrollIntoView(el: Element, scrollRoot: Element): void {
     const rootRect = scrollRoot.getBoundingClientRect()
     const elRect = el.getBoundingClientRect()
 
-    const elAbove = elRect.top <= rootRect.top
+    const elAbove = elRect.top <= rootRect.top + 30
     const elBelow = elRect.bottom >= rootRect.bottom
 
     if (elAbove) {
