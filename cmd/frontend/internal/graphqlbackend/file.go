@@ -44,6 +44,23 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	return string(contents), nil
 }
 
+func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	if err != nil {
+		return false, err
+	}
+
+	stat, err := vcsrepo.Stat(ctx, vcs.CommitID(r.commit.CommitID), r.path)
+	if err != nil {
+		return false, err
+	}
+
+	return stat.IsDir(), nil
+}
+
 func (r *fileResolver) Binary(ctx context.Context) (bool, error) {
 	content, err := r.Content(ctx)
 	if err != nil {

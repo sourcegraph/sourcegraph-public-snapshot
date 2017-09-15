@@ -134,6 +134,7 @@ declare namespace GQL {
     name: string;
     content: string;
     binary: boolean;
+    isDirectory: boolean;
     highlight: IHighlightedFile;
     blame: Array<IHunk>;
     commits: Array<ICommitInfo>;

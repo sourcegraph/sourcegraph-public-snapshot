@@ -182,6 +182,7 @@ type File {
 	name: String!
 	content: String!
 	binary: Boolean!
+	isDirectory: Boolean!
 	highlight(disableTimeout: Boolean!): HighlightedFile!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!

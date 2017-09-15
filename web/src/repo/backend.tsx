@@ -69,13 +69,19 @@ interface FetchFileCtx {
     disableTimeout?: boolean
 }
 
-export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<GQL.IHighlightedFile> =>
+interface HighlightedFileResult {
+    isDirectory: boolean
+    highlightedFile: GQL.IHighlightedFile
+}
+
+export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<HighlightedFileResult> =>
     queryGraphQL(`query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean) {
         root {
             repository(uri: $repoPath) {
                 commit(rev: $commitID) {
                     commit {
                         file(path: $filePath) {
+                            isDirectory
                             highlight(disableTimeout: $disableTimeout) {
                                 aborted
                                 html
@@ -100,7 +106,8 @@ export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<G
         ) {
             throw new Error(`cannot locate blob content: ${ctx.repoPath} ${ctx.commitID} ${ctx.filePath}`)
         }
-        return result.data.root.repository.commit.commit.file.highlight
+        const file = result.data.root.repository.commit.commit.file
+        return { isDirectory: file.isDirectory, highlightedFile: file.highlight }
     }), ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}`
 )
 
@@ -108,11 +115,14 @@ export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<G
  * Produces a list like ['<tr>...</tr>', ...]
  */
 export const fetchHighlightedFileLines = memoizedFetch((ctx: FetchFileCtx, force?: boolean): Promise<string[]> =>
-       fetchHighlightedFile(ctx, force).then(result => {
-            if (result.aborted) {
+        fetchHighlightedFile(ctx, force).then(result => {
+            if (result.isDirectory) {
+                return []
+            }
+            if (result.highlightedFile.aborted) {
                 throw new Error('aborted fetching highlighted contents')
             }
-            let parsed = result.html.substr('<table>'.length)
+            let parsed = result.highlightedFile.html.substr('<table>'.length)
             parsed = parsed.substr(0, parsed.length - '</table>'.length)
             const rows = parsed.split('</tr>')
             for (let i = 0; i < rows.length; ++i) {
@@ -151,13 +161,19 @@ export const listAllFiles = memoizedFetch((ctx: { repoPath: string, commitID: st
     }), makeRepoURI
 )
 
-export const fetchBlobContent = memoizedFetch((ctx: FetchFileCtx): Promise<string> =>
+interface BlobContent {
+    isDirectory: boolean
+    content: string
+}
+
+export const fetchBlobContent = memoizedFetch((ctx: FetchFileCtx): Promise<BlobContent> =>
     queryGraphQL(`query BlobContent($repoPath: String, $commitID: String, $filePath: String) {
         root {
             repository(uri: $repoPath) {
                 commit(rev: $commitID) {
                     commit {
                         file(path: $filePath) {
+                            isDirectory
                             content
                         }
                     }
@@ -175,7 +191,8 @@ export const fetchBlobContent = memoizedFetch((ctx: FetchFileCtx): Promise<strin
         ) {
             throw new Error(`cannot locate blob content: ${ctx}`)
         }
-        return result.data.root.repository.commit.commit.file.content
+        const file = result.data.root.repository.commit.commit.file
+        return { isDirectory: file.isDirectory, content: file.content }
     }), makeRepoURI
 )
 

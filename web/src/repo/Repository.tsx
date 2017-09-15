@@ -56,6 +56,10 @@ interface State {
      */
     highlightedFile?: GQL.IHighlightedFile
     /**
+     * the current path is a directory
+     */
+    isDirectory: boolean
+    /**
      * error preventing fetching file contents
      */
     highlightingError?: Error
@@ -69,7 +73,8 @@ export class Repository extends React.Component<Props, State> {
     public state: State = {
         showTree: true,
         showRefs: false,
-        showRevSwitcher: false
+        showRevSwitcher: false,
+        isDirectory: false
     }
     private componentUpdates = new Subject<Props>()
     private showAnywayButtonClicks = new Subject<void>()
@@ -110,13 +115,19 @@ export class Repository extends React.Component<Props, State> {
                         filePath: props.filePath!,
                         disableTimeout: props.showHighlightingAnyway
                     })).catch(err => {
-                        this.setState({ highlightedFile: undefined, highlightingError: err })
+                        this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
                         console.error(err)
                         return []
                     })
                 )
                 .subscribe(
-                    result => this.setState({ highlightedFile: result, highlightingError: undefined }),
+                    result => this.setState({
+                        isDirectory: result.isDirectory,
+                        // file contents for a directory is a textual representation of the directory tree;
+                        // we prefer not to display that
+                        highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
+                        highlightingError: undefined
+                    }),
                     err => console.error(err)
                 )
         )
@@ -164,7 +175,7 @@ export class Repository extends React.Component<Props, State> {
                     </div>
                     <div className='repository__viewer'>
                         {
-                            !this.props.filePath &&
+                            (!this.props.filePath || this.state.isDirectory) &&
                                 <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Select a file to begin browsing.' />
                         }
                         {
