@@ -54,6 +54,8 @@ interface State extends SearchOptions {
     selectedSuggestion: number
 }
 
+const shortcutModifier = navigator.platform.startsWith('Mac') ? 'Ctrl' : 'Cmd'
+
 export class SearchBox extends React.Component<Props, State> {
 
     /** Subscriptions to unsubscribe from on component unmount */
@@ -243,13 +245,13 @@ export class SearchBox extends React.Component<Props, State> {
                             ref={ref => this.inputElement = ref!}
                         />
                     </div>
-                    <label className='search-box__option' title='Match case'>
+                    <label className='search-box__option' title={`Match case (${shortcutModifier}+C)`}>
                         <input type='checkbox' checked={this.state.matchCase} onChange={this.toggleMatchCase} /><span>Aa</span>
                     </label>
-                    <label className='search-box__option' title='Match whole word'>
+                    <label className='search-box__option' title={`Match whole word (${shortcutModifier}+W)`}>
                         <input type='checkbox' checked={this.state.matchWord} onChange={this.toggleMatchWord} /><span><u>Ab</u></span>
                     </label>
-                    <label className='search-box__option' title='Use regular expression'>
+                    <label className='search-box__option' title={`Match regular expression (${shortcutModifier}+R)`}>
                         <input type='checkbox' checked={this.state.matchRegex} onChange={this.toggleMatchRegex} /><span>.*</span>
                     </label>
                 </div>
@@ -395,6 +397,24 @@ export class SearchBox extends React.Component<Props, State> {
             case 'Backspace': {
                 if (this.inputElement!.selectionStart === 0 && this.inputElement!.selectionEnd === 0) {
                     this.setState({ filters: this.state.filters.slice(0, -1) })
+                }
+                break
+            }
+            case 'r': {
+                if (event.ctrlKey || event.metaKey) {
+                    this.setState(prevState => ({ matchRegex: !prevState.matchRegex }))
+                }
+                break
+            }
+            case 'w': {
+                if (event.ctrlKey || event.metaKey) {
+                    this.setState(prevState => ({ matchWord: !prevState.matchWord }))
+                }
+                break
+            }
+            case 'c': {
+                if (event.ctrlKey || event.metaKey) {
+                    this.setState(prevState => ({ matchCase: !prevState.matchCase }))
                 }
                 break
             }

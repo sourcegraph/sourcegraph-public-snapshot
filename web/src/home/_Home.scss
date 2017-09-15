@@ -20,10 +20,87 @@
         margin-top: 4rem;
         width: 52rem;
         max-width: 90%;
+        position: relative;
 
         // Make chips multi-line on the homepage
         .search-box__chips {
             flex-wrap: wrap;
+        }
+    }
+
+    &__help-button {
+        position: absolute;
+        top: 1rem;
+        right: -2rem;
+        cursor: pointer;
+        border: none;
+        padding: 0;
+        outline: none;
+        background: transparent;
+        color: inherit;
+        transition: color 100ms ease-out;
+
+        &:hover, &--active {
+            color: white;
+        }
+
+        .icon, svg {
+            fill: currentColor;
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+    }
+
+    &__instructions {
+        background: #1C2736;
+        border-radius: 0.25rem;
+        width: 100%;
+        margin-top: 1rem;
+        padding: 0.5rem 1.25rem;
+        position: relative;
+        transition: opacity 100ms ease-in-out;
+        will-change: opacity;
+        opacity: 0;
+
+        &--open {
+            opacity: 1;
+        }
+
+        &-close-button {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            outline: none;
+            background: transparent;
+            color: inherit;
+
+            &:hover {
+                color: white;
+            }
+
+            .icon, svg {
+                fill: currentColor;
+                width: 1.5rem;
+                height: 1.5rem;
+            }
+        }
+    }
+
+    &__instruction-row {
+        width: 100%;
+        padding: 0.5rem 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    &__instruction, &__explanation {
+        flex: none;
+        width: 50%;
+        @media (max-width: $media-md) {
+            width: 100%;
         }
     }
 }
