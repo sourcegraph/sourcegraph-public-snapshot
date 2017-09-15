@@ -265,9 +265,9 @@ type Installation {
 type User {
 	githubInstallations: [Installation!]!
 	id: String!
-	handle: String
 	avatarURL: String
 	email: String
+	orgs: [Org!]!
 }
 
 type CompanyProfile {
@@ -311,6 +311,7 @@ type CompanyCategory {
 type Org {
 	id: Int!
 	name: String!
+	members: [OrgMember!]!
 }
 
 type OrgMember {

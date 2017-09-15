@@ -242,20 +242,6 @@ type CommitterList struct {
 	StreamResponse `json:""`
 }
 
-// EmailAddr is an email address associated with a user.
-type EmailAddr struct {
-	// the email address (case-insensitively compared in the DB and API)
-	Email string `json:"Email,omitempty"`
-	// whether this email address has been verified
-	Verified bool `json:"Verified,omitempty"`
-	// indicates this is the user's primary email (only 1 email can be primary per user)
-	Primary bool `json:"Primary,omitempty"`
-	// whether Sourcegraph inferred via public data that this is an email for the user
-	Guessed bool `json:"Guessed,omitempty"`
-	// indicates that this email should not be associated with the user (even if guessed in the future)
-	Blacklisted bool `json:"Blacklisted,omitempty"`
-}
-
 type UserList struct {
 	Users []*User `json:"Users,omitempty"`
 }
@@ -266,8 +252,12 @@ type User struct {
 	UID string `json:"UID"`
 	// Login is the user's username.
 	Login string `json:"Login"`
+	// Email is the (possibly empty) primary email of the user.
+	Email string `json:"Email,omitempty"`
 	// Name is the (possibly empty) full name of the user.
 	Name string `json:"Name,omitempty"`
+	// Orgs is the (possibly empty) list of organizations the user is a member of.
+	Orgs []*Org `json:"Orgs,omitempty"`
 	// IsOrganization is whether this user represents an organization.
 	IsOrganization bool `json:"IsOrganization,omitempty"`
 	// AvatarURL is the URL to an avatar image specified by the user.
@@ -302,18 +292,6 @@ type User struct {
 type UserSpec struct {
 	// UID is a user's UID.
 	UID string `json:"UID,omitempty"`
-}
-
-type EmailAddrList struct {
-	EmailAddrs []*EmailAddr `json:"EmailAddrs,omitempty"`
-}
-
-// UpdateEmailsOp represents options for updating a user's email addresses.
-type UpdateEmailsOp struct {
-	// UserSpec is the user whose email addresses are to be updated.
-	UserSpec UserSpec `json:"UserSpec"`
-	// Add is a list of email addresses to add, if they do not already exist.
-	Add *EmailAddrList `json:"Add,omitempty"`
 }
 
 // SubmitFormResponse is a response to a user submitting a form (such

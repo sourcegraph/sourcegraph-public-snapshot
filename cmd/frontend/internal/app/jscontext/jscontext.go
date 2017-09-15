@@ -40,7 +40,6 @@ type JSContext struct {
 	Version             string                     `json:"version"`
 	Features            interface{}                `json:"features"`
 	User                *sourcegraph.User          `json:"user"`
-	Emails              *sourcegraph.EmailAddrList `json:"emails"`
 	GitHubToken         *sourcegraph.ExternalToken `json:"gitHubToken"`
 	GitHubAppURL        string                     `json:"gitHubAppURL"`
 	SentryDSN           string                     `json:"sentryDSN"`
@@ -87,16 +86,13 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	return JSContext{
-		XHRHeaders:     headers,
-		CSRFToken:      csrfToken,
-		UserAgentIsBot: isBot(req.UserAgent()),
-		AssetsRoot:     assets.URL("/").String(),
-		Version:        env.Version,
-		Features:       feature.Features,
-		User:           actor.User(),
-		Emails: &sourcegraph.EmailAddrList{
-			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
-		},
+		XHRHeaders:          headers,
+		CSRFToken:           csrfToken,
+		UserAgentIsBot:      isBot(req.UserAgent()),
+		AssetsRoot:          assets.URL("/").String(),
+		Version:             env.Version,
+		Features:            feature.Features,
+		User:                actor.User(),
 		GitHubToken:         gitHubToken,
 		GitHubAppURL:        gitHubAppURL,
 		SentryDSN:           sentryDSNFrontend,

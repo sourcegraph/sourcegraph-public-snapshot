@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
@@ -35,30 +36,30 @@ func (r *currentUserResolver) GitHubInstallations(ctx context.Context) ([]*insta
 	return installs, nil
 }
 
-func (r *currentUserResolver) ID(ctx context.Context) (string, error) {
-	if r.actor != nil {
-		return r.actor.UID, nil
-	}
-	return "", errors.New("no current user")
+func (r *currentUserResolver) ID(ctx context.Context) string {
+	return r.actor.UID
 }
 
-func (r *currentUserResolver) Handle(ctx context.Context) (*string, error) {
-	if r.actor != nil {
-		return &r.actor.Login, nil
-	}
-	return nil, errors.New("no current user")
+// TODO(Dan): since this will likely be a mutable property on the webapp
+// frontend, don't just return the actor's value (set at sign up/sign in)
+func (r *currentUserResolver) AvatarURL(ctx context.Context) *string {
+	return &r.actor.AvatarURL
 }
 
-func (r *currentUserResolver) AvatarURL(ctx context.Context) (*string, error) {
-	if r.actor != nil {
-		return &r.actor.AvatarURL, nil
-	}
-	return nil, errors.New("no current user")
+// TODO(Dan): since this will likely be a mutable property on the webapp
+// frontend, don't just return the actor's value (set at sign up/sign in)
+func (r *currentUserResolver) Email(ctx context.Context) *string {
+	return &r.actor.Email
 }
 
-func (r *currentUserResolver) Email(ctx context.Context) (*string, error) {
-	if r.actor != nil {
-		return &r.actor.Email, nil
+func (r *currentUserResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
+	orgs, err := localstore.Orgs.AllOrgsFromUID(r.actor.UID)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("no current user")
+	orgResolvers := []*orgResolver{}
+	for _, org := range orgs {
+		orgResolvers = append(orgResolvers, &orgResolver{org})
+	}
+	return orgResolvers, nil
 }

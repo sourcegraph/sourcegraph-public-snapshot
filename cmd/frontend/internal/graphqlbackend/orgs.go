@@ -29,6 +29,20 @@ func (o *orgResolver) Name() string {
 	return o.org.Name
 }
 
+func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error) {
+	sgMembers, err := store.OrgMembers.GetByOrgID(ctx, o.org.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	members := []*orgMemberResolver{}
+	for _, sgMember := range sgMembers {
+		member := &orgMemberResolver{sgMember}
+		members = append(members, member)
+	}
+	return members, err
+}
+
 func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	Name      string
 	UserName  string
@@ -91,16 +105,16 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		return nil, errors.New("no current user")
 	}
 
-	inviteID, err := orgInviteIDFromToken(args.InviteToken)
+	orgID, err := orgIDFromInviteToken(args.InviteToken)
 	if err != nil {
 		return nil, err
 	}
-	_, err = store.Orgs.GetByID(ctx, int(inviteID))
+	_, err = store.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := store.OrgMembers.Create(ctx, int(inviteID), actor.UID, args.UserName, args.UserEmail)
+	m, err := store.OrgMembers.Create(ctx, int(orgID), actor.UID, args.UserName, args.UserEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +129,7 @@ func createOrgInviteToken(orgID store.OrgID) (string, error) {
 	return payload.SignedString(conf.AppSecretKey)
 }
 
-func orgInviteIDFromToken(tokenString string) (int32, error) {
+func orgIDFromInviteToken(tokenString string) (int32, error) {
 	payload, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return 0, fmt.Errorf("error parsing org invite: unexpected signing method %v", token.Header["alg"])
