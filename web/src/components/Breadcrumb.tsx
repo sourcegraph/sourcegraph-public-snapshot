@@ -25,9 +25,8 @@ export class Breadcrumb extends React.Component<Props, {}> {
             }
         }
         return (
-            <span className='breadcrumb'>
-                {...spans}
-            </span>
+            // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
+            <span className='breadcrumb'>{...spans}</span>
         )
     }
 }
