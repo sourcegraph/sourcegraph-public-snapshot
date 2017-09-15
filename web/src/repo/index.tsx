@@ -1,4 +1,5 @@
 import * as url from 'sourcegraph/util/url'
+import { Position, Range } from 'vscode-languageserver-types'
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -10,16 +11,6 @@ import * as url from 'sourcegraph/util/url'
  *   - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
  */
 export type RepoURI = string
-
-export interface Position {
-    line: number
-    char?: number
-}
-
-export interface Range {
-    start: Position
-    end: Position
-}
 
 export interface RepoSpec {
     /**
@@ -103,10 +94,10 @@ export interface AbsoluteRepoFilePosition extends RepoSpec, Partial<RevSpec>, Re
 const parsePosition = (str: string): Position => {
     const split = str.split('.')
     if (split.length === 1) {
-        return { line: parseInt(str, 10) }
+        return { line: parseInt(str, 10), character: 0 }
     }
     if (split.length === 2) {
-        return { line: parseInt(split[0], 10), char: parseInt(split[1], 10) }
+        return { line: parseInt(split[0], 10), character: parseInt(split[1], 10) }
     }
     throw new Error('unexpected position: ' + str)
 }
@@ -181,8 +172,8 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
         const parsedHash = url.parseHash(loc.hash.substr('#'.length))
         if (parsedHash.line) {
             position = {
-                line: parsedHash.line!,
-                char: parsedHash.char
+                line: parsedHash.line,
+                character: parsedHash.character || 0
             }
         }
     }
@@ -190,7 +181,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     return { repoPath, rev, commitID, filePath, position }
 }
 
-const positionStr = (pos: Position) => pos.line + '' + (pos.char ? ',' + pos.char : '')
+const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + pos.character : '')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.

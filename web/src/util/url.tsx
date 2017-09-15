@@ -1,11 +1,12 @@
-import { AbsoluteRepoFilePosition, Position, RepoFile, RepoFilePosition } from 'sourcegraph/repo'
+import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, RepoFile } from 'sourcegraph/repo'
+import { Position } from 'vscode-languageserver-types'
 
 type Modal = 'references'
 type ModalMode = 'local' | 'external'
 
-export function parseHash(hash: string): { line?: number, char?: number, modal?: Modal, modalMode?: ModalMode } {
+export function parseHash(hash: string): { line?: number, character?: number, modal?: Modal, modalMode?: ModalMode } {
     let line: number | undefined
-    let char: number | undefined
+    let character: number | undefined
     let modal: Modal | undefined
     let modalMode: ModalMode | undefined
 
@@ -15,7 +16,7 @@ export function parseHash(hash: string): { line?: number, char?: number, modal?:
         if (lineChar[1]) {
             const coords = lineChar[1].split(':')
             line = parseInt(coords[0], 10) // 17
-            char = parseInt(coords[1], 10) // 19
+            character = parseInt(coords[1], 10) // 19
         }
     }
     if (lineCharModalInfo[1]) {
@@ -24,27 +25,30 @@ export function parseHash(hash: string): { line?: number, char?: number, modal?:
         modal = modalInfo[0] as Modal // "references"
         modalMode = modalInfo[1] as ModalMode || 'local' // "external"
     }
-    return { line, char, modal, modalMode }
+    return { line, character, modal, modalMode }
 }
 
-export function toPositionHash(position: Position): string {
-    return '#L' + position.line + (position.char ? ':' + position.char : '')
+function toPositionHash(position?: Position): string {
+    if (!position) {
+        return ''
+    }
+    return '#L' + position.line + (position.character ? ':' + position.character : '')
 }
 
-export function toReferencesHash(group: 'local' | 'external' | undefined): string {
+function toReferencesHash(group: 'local' | 'external' | undefined): string {
     return group ? (group === 'local' ? '$references' : '$references:external') : ''
 }
 
-export function toBlobURL(ctx: RepoFile): string {
+export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
     const rev = ctx.commitID || ctx.rev || ''
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}`
 }
 
-export function toPrettyBlobPositionURL(ctx: RepoFilePosition): string {
+export function toPrettyBlobURL(ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
     return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionHash(ctx.position)}${toReferencesHash(ctx.referencesMode)}`
 }
 
-export function toBlobPositionURL(ctx: AbsoluteRepoFilePosition): string {
+export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(ctx.position)}${toReferencesHash(ctx.referencesMode)}`
 }

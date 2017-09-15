@@ -18,7 +18,7 @@ export function parseRouteProps<T extends string | {[key: string]: string} | str
     const uriPathSplit = props.match.params[0].split('/-/')
     const repoRevSplit = uriPathSplit[0].split('@')
     const hash = parseHash(props.location.hash)
-    const position = hash.line ? { line: hash.line, char: hash.char } : undefined
+    const position = hash.line ? { line: hash.line, character: hash.character || 0 } : undefined
     const repoParams = { ...props, routeName: 'repository' as 'repository', repoPath: repoRevSplit[0], rev: repoRevSplit[1], position }
     if (uriPathSplit.length === 1) {
         return {...repoParams, uri: makeRepoURI(repoParams)}

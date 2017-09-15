@@ -14,25 +14,19 @@ import 'rxjs/add/operator/takeUntil'
 import 'rxjs/add/operator/zip'
 import { Observable } from 'rxjs/Observable'
 import { Subscription } from 'rxjs/Subscription'
-import { EEMPTYTOOLTIP, fetchJumpURL, getTooltip } from 'sourcegraph/backend/lsp'
+import { fetchHover, fetchJumpURL, isEmptyHover } from 'sourcegraph/backend/lsp'
 import { triggerBlame } from 'sourcegraph/blame'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, getCodeCell } from 'sourcegraph/repo'
 import { convertNode, createTooltips, getTableDataCell, getTargetLineAndOffset, hideTooltip, TooltipData, updateTooltip } from 'sourcegraph/repo/tooltips'
 import { events } from 'sourcegraph/tracking/events'
 import { getPathExtension, supportedExtensions } from 'sourcegraph/util'
-import { parseHash, toBlobPositionURL, toPrettyBlobPositionURL } from 'sourcegraph/util/url'
+import { parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from 'sourcegraph/util/url'
 
 /**
  * Highlights a <td> element and updates the page URL if necessary.
  */
 function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, userTriggered?: React.MouseEvent<HTMLDivElement>): void {
-    triggerBlame({
-        time: new Date(),
-        repoURI: ctx.repoPath,
-        commitID: ctx.commitID,
-        path: ctx.filePath,
-        line: ctx.position.line
-    }, userTriggered)
+    triggerBlame(ctx, userTriggered)
 
     const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>
     for (const cellElem of currentlyHighlighted) {
@@ -45,13 +39,13 @@ function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFile
 
     // Check URL change first, since this function can be called in response to
     // onhashchange.
-    const newUrl = toPrettyBlobPositionURL(ctx)
+    const newUrl = toPrettyBlobURL(ctx)
     if (newUrl === (window.location.pathname + window.location.hash)) {
         // Avoid double-pushing the same URL
         return
     }
 
-    history.push(toPrettyBlobPositionURL(ctx))
+    history.push(toPrettyBlobURL(ctx))
 }
 
 /**
@@ -60,6 +54,11 @@ function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFile
 function updateAndScrollToLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, userTriggered?: React.MouseEvent<HTMLDivElement>): void {
     updateLine(cell, history, ctx, userTriggered)
 
+    // Scroll to the line.
+    scrollToCell(cell)
+}
+
+function scrollToCell(cell: HTMLElement): void {
     // Scroll to the line.
     const scrollingElement = document.querySelector('.blob')!
     const viewportBound = scrollingElement.getBoundingClientRect()
@@ -92,6 +91,13 @@ export class Blob extends React.Component<Props, State> {
             if (this.blobElement) {
                 this.blobElement.scrollTop = 0
             }
+        }
+        const thisHash = parseHash(this.props.location.hash)
+        const nextHash = parseHash(nextProps.location.hash)
+        if (thisHash.modal !== nextHash.modal && this.props.location.pathname === nextProps.location.pathname) {
+            // When updating references mode in the same file, scroll. Wait just a moment to make sure the references
+            // panel is shown, since the scroll offset is calculated based on the height of the blob.
+            setTimeout(() => this.scrollToLine(nextProps), 10)
         }
 
         if (this.props.html !== nextProps.html) {
@@ -129,6 +135,12 @@ export class Blob extends React.Component<Props, State> {
         if (this.props.history.action === 'POP') {
             // The contents were updated on a mounted component and we did a 'back' or 'forward' event;
             // scroll to the appropariate line after the new table is created.
+            this.scrollToLine(this.props)
+        } else if (this.props.location.state.referencesClick) {
+            // We do not want to scroll on all 'PUSH' events (otherwise every time a user clicks
+            // a line the page would scroll). However, to allow some <Link>'s in external components
+            // to trigger a scroll, we let those <Link> components set push state. The references
+            // panel results are one such example, and set the `referencesClick` value on location state.
             this.scrollToLine(this.props)
         }
     }
@@ -176,22 +188,12 @@ export class Blob extends React.Component<Props, State> {
                         .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
                     const loading = this.getLoadingTooltip(target, ctx, tooltip)
                     return Observable.merge(loading, tooltip, tooltipWithJ2D).catch(e => {
-                        if (e.code !== EEMPTYTOOLTIP) {
-                            console.error(e)
-                        }
                         const data: TooltipData = { target, ctx }
                         return [data]
                     })
                 })
                 .subscribe(data => {
-                    const lastTooltip = this.tooltip
-                    if (lastTooltip && lastTooltip.target.classList.contains('selection-highlight')) {
-                        lastTooltip.target.classList.remove('selection-highlight')
-                    }
                     this.tooltip = data
-                    if (data.title) {
-                        data.target.classList.add('selection-highlight')
-                    }
                     if (!this.state.fixedTooltip) {
                         updateTooltip(data, false, this.tooltipActions(data.ctx))
                     }
@@ -238,20 +240,22 @@ export class Blob extends React.Component<Props, State> {
                         .zip(this.getDefinition(ctx))
                         .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
                     return tooltipWithJ2D.catch(e => {
-                        if (e.code !== EEMPTYTOOLTIP) {
-                            console.error(e)
-                        }
                         const data: TooltipData = { target, ctx }
                         return [data]
                     })
                 })
                 .subscribe(data => {
                     this.tooltip = data
-                    if (!data || !data.title) {
-                        this.setState({ fixedTooltip: undefined }, hideTooltip)
-                    } else {
-                        this.setState({ fixedTooltip: data }, () => updateTooltip(data, true, this.tooltipActions(data.ctx)))
+                    if (!data) {
+                        return this.setState({ fixedTooltip: undefined }, hideTooltip)
                     }
+
+                    const contents = data.contents
+                    if (!contents || isEmptyHover({ contents })) {
+                        return this.setState({ fixedTooltip: undefined }, hideTooltip)
+                    }
+
+                    this.setState({ fixedTooltip: data }, () => updateTooltip(data, true, this.tooltipActions(data.ctx)))
                 })
         )
     }
@@ -267,19 +271,20 @@ export class Blob extends React.Component<Props, State> {
             rev: this.props.rev,
             commitID: this.props.commitID,
             filePath: this.props.filePath,
-            position: { line }
+            position: { line, character: 0 }
         }, e)
     }
 
     private scrollToLine = (props: Props) => {
-        const { line, char, modalMode } = parseHash(props.location.hash)
+        const parsed = parseHash(props.location.hash)
+        const { line, character, modalMode } = parsed
         if (line) {
             updateAndScrollToLine(getCodeCell(line), props.history, {
                 repoPath: props.repoPath,
                 rev: props.rev,
                 commitID: props.commitID,
                 filePath: props.filePath,
-                position: { line, char },
+                position: { line, character: character || 0 },
                 referencesMode: modalMode
             })
         }
@@ -291,11 +296,14 @@ export class Blob extends React.Component<Props, State> {
      * tooltip is defined, it will update the target styling.
      */
     private getTooltip(target: HTMLElement, ctx: AbsoluteRepoFilePosition): Observable<TooltipData> {
-        return Observable.fromPromise(getTooltip(ctx))
+        return Observable.fromPromise(fetchHover(ctx))
             .do(data => {
-                if (data && data.title) {
-                    target.style.cursor = 'pointer'
+                if (isEmptyHover(data)) {
+                    // short-cirtuit, no tooltip data
+                    return
                 }
+                target.style.cursor = 'pointer'
+                target.classList.add('selection-highlight')
             })
             .map(data => ({ target, ctx, ...data }))
     }
@@ -331,16 +339,20 @@ export class Blob extends React.Component<Props, State> {
                 // Handles URL update + scroll to file (for j2d within same file)
                 updateAndScrollToLine(getCodeCell(defCtx.position.line), this.props.history, defCtx)
             } else {
-                this.setState({ fixedTooltip: undefined }, () => this.props.history.push(toBlobPositionURL(defCtx)))
+                this.setState({ fixedTooltip: undefined }, () => this.props.history.push(toAbsoluteBlobURL(defCtx)))
             }
         }
 
     private handleFindReferences = (ctx: AbsoluteRepoFilePosition) =>
         (e: MouseEvent) => {
             events.FindRefsClicked.log()
+            if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
+                return
+            }
             e.preventDefault()
-            this.props.history.push(toBlobPositionURL({ ...ctx, referencesMode: 'local' }))
+            this.props.history.push(toPrettyBlobURL({ ...ctx, rev: this.props.rev, referencesMode: 'local' }))
             hideTooltip()
+            scrollToCell(getCodeCell(ctx.position.line))
         }
 
     private handleDismiss = () => {

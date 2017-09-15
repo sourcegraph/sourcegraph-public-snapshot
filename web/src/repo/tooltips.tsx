@@ -1,9 +1,10 @@
 import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import unescape from 'lodash/unescape'
 import marked from 'marked'
-import { Tooltip } from 'sourcegraph/backend/lsp'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from 'sourcegraph/repo'
 import { getModeFromExtension } from 'sourcegraph/util'
+import { Hover, MarkedString } from 'vscode-languageserver-types'
+import { toAbsoluteBlobURL } from 'sourcegraph/util/url';
 
 registerLanguage('go', require('highlight.js/lib/languages/go'))
 registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
@@ -25,7 +26,7 @@ const closeIconSVG = '<svg width="10px" height="10px"><path fill="#93A9C8"  xmln
 const referencesIconSVG = '<svg width="12px" height="8px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path15_fill" d="M 6.00625 8C 2.33125 8 0.50625 5.075 0.05625 4.225C -0.01875 4.075 -0.01875 3.9 0.05625 3.775C 0.50625 2.925 2.33125 0 6.00625 0C 9.68125 0 11.5063 2.925 11.9563 3.775C 12.0312 3.925 12.0312 4.1 11.9563 4.225C 11.5063 5.075 9.68125 8 6.00625 8ZM 6.00625 1.25C 4.48125 1.25 3.25625 2.475 3.25625 4C 3.25625 5.525 4.48125 6.75 6.00625 6.75C 7.53125 6.75 8.75625 5.525 8.75625 4C 8.75625 2.475 7.53125 1.25 6.00625 1.25ZM 6.00625 5.75C 5.03125 5.75 4.25625 4.975 4.25625 4C 4.25625 3.025 5.03125 2.25 6.00625 2.25C 6.98125 2.25 7.75625 3.025 7.75625 4C 7.75625 4.975 6.98125 5.75 6.00625 5.75Z"/></svg>'
 const definitionIconSVG = '<svg width="11px" height="9px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path10_fill" d="M 6.325 8.4C 6.125 8.575 5.8 8.55 5.625 8.325C 5.55 8.25 5.5 8.125 5.5 8L 5.5 6C 2.95 6 1.4 6.875 0.825 8.7C 0.775 8.875 0.6 9 0.425 9C 0.2 9 -4.44089e-16 8.8 -4.44089e-16 8.575C -4.44089e-16 8.575 -4.44089e-16 8.575 -4.44089e-16 8.55C 0.125 4.825 1.925 2.675 5.5 2.5L 5.5 0.5C 5.5 0.225 5.725 8.88178e-16 6 8.88178e-16C 6.125 8.88178e-16 6.225 0.05 6.325 0.125L 10.825 3.875C 11.025 4.05 11.075 4.375 10.9 4.575C 10.875 4.6 10.85 4.625 10.825 4.65L 6.325 8.4Z"/></svg>'
 
-export interface TooltipData extends Tooltip {
+export interface TooltipData extends Partial<Hover> {
     target: HTMLElement
     ctx: AbsoluteRepoFilePosition
     defUrl?: string
@@ -142,7 +143,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         if (ctx.commitID) {
             revString = `@${ctx.commitID}`
         }
-        findRefsAction.href = `/${ctx.repoPath}${revString}/-/blob/${ctx.filePath}#L${ctx.position.line}:${ctx.position.char}$references`
+        findRefsAction.href = toAbsoluteBlobURL({ ...ctx, referencesMode: 'local' })
     } else {
         findRefsAction.href = ''
     }
@@ -150,7 +151,24 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     if (!loading) {
         loadingTooltip.style.visibility = 'hidden'
 
-        if (!data.title) {
+        if (!data.contents) {
+            return
+        }
+        const contentsArray: MarkedString[] = Array.isArray(data.contents) ? data.contents : [data.contents]
+        if (contentsArray.length === 0) {
+            return
+        }
+        const firstContent = contentsArray[0]
+        const title: string = typeof firstContent === 'string' ? firstContent : firstContent.value
+        let doc: string | undefined
+        for (const markedString of contentsArray.slice(1)) {
+            if (typeof markedString === 'string') {
+                doc = markedString
+            } else if (markedString.language === 'markdown') {
+                doc = markedString.value
+            }
+        }
+        if (!title) {
             // no tooltip text / search context; tooltip is hidden
             return
         }
@@ -161,7 +179,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         const tooltipText = document.createElement('DIV')
         tooltipText.className = `${getModeFromExtension(ctx.filePath)}`
         tooltipText.className = 'tooltip__title'
-        tooltipText.appendChild(document.createTextNode(data.title))
+        tooltipText.appendChild(document.createTextNode(title))
 
         container.appendChild(tooltipText)
         tooltip.insertBefore(container, moreContext)
@@ -179,10 +197,10 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 
         highlightBlock(tooltipText)
 
-        if (data.doc) {
+        if (doc) {
             const tooltipDoc = document.createElement('DIV')
             tooltipDoc.className = 'tooltip__doc'
-            tooltipDoc.innerHTML = marked(data.doc, { gfm: true, breaks: true, sanitize: true })
+            tooltipDoc.innerHTML = marked(doc, { gfm: true, breaks: true, sanitize: true })
             tooltip.insertBefore(tooltipDoc, moreContext)
 
             // Handle scrolling ourselves so that scrolling to the bottom of
@@ -361,7 +379,7 @@ export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement 
  * @param target The element to compute line & character offset for.
  * @param ignoreFirstChar Whether to ignore the first character on a line when computing character offset.
  */
-export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = false): { line: number, char: number, word: string } | undefined {
+export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = false): { line: number, character: number, word: string } | undefined {
     const origTarget = target
     if (target.tagName === 'TD') {
         // Short-circuit; we are hovering over a line of code, but no token in particular.
@@ -377,7 +395,7 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
     }
     const line = parseInt(target.getAttribute('data-sg-line-number')!, 10)
 
-    let char = 1
+    let character = 1
     // Iterate recursively over the current target's children until we find the original target;
     // count characters along the way. Return true if the original target is found.
     function findOrigTarget(root: HTMLElement): boolean {
@@ -388,7 +406,7 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
                 return true
             }
             if (child.children === undefined) {
-                char += child.textContent!.length
+                character += child.textContent!.length
                 continue
             }
             if (child.children.length > 0 && findOrigTarget(child)) {
@@ -397,9 +415,9 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
             }
             if (child.children.length === 0) {
                 // Child is not the original target, but has no chidren to recurse on. Add to character offset.
-                char += (child.textContent as string).length // TODO(john): I think this needs to be escaped before we add its length...
+                character += (child.textContent as string).length // TODO(john): I think this needs to be escaped before we add its length...
                 if (ignoreFirstChar) {
-                    char -= 1 // make sure not to count weird diff prefix
+                    character -= 1 // make sure not to count weird diff prefix
                     ignoreFirstChar = false
                 }
             }
@@ -408,6 +426,6 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
     }
     // Start recursion.
     if (findOrigTarget(target)) {
-        return { line, char, word: origTarget.innerText }
+        return { line, character, word: origTarget.innerText }
     }
 }

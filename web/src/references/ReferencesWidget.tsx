@@ -19,17 +19,17 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { fetchReferences } from 'sourcegraph/backend/lsp'
 import { CodeExcerpt } from 'sourcegraph/components/CodeExcerpt'
-import { Reference } from 'sourcegraph/references'
 import { fetchExternalReferences } from 'sourcegraph/references/backend'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from 'sourcegraph/repo'
 import { events } from 'sourcegraph/tracking/events'
 import * as url from 'sourcegraph/util/url'
 import { parseHash } from 'sourcegraph/util/url'
+import { Location } from 'vscode-languageserver-types'
 
 interface ReferenceGroupProps {
     uri: string
     path: string
-    refs: Reference[]
+    refs: Location[]
     isLocal: boolean
     localRev?: string
     hidden?: boolean
@@ -74,10 +74,16 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                             })
                             .map((ref, i) => {
                                 const uri = new URL(ref.uri)
-                                const href = this.getRefURL(ref)
+                                const rev = this.props.isLocal && this.props.localRev ?
+                                    this.props.localRev :
+                                    uri.search.substr('?'.length)
                                 return (
                                     <Link
-                                        to={href}
+                                        to={{
+                                            pathname: `/${uri.hostname + uri.pathname}${rev ? '@' + rev : ''}/-/blob/${uri.hash.substr('#'.length)}`,
+                                            hash: 'L' + (ref.range.start.line + 1),
+                                            state: { referencesClick: true } /* The Blob component will only scroll on PUSH state events with this state. */
+                                        }}
                                         key={i}
                                         className='references-group__reference'
                                         onClick={this.logEvent}
@@ -86,7 +92,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                             repoPath={uri.hostname + uri.pathname}
                                             commitID={uri.search.substr('?'.length)}
                                             filePath={uri.hash.substr('#'.length)}
-                                            position={{ line: ref.range.start.line, char: ref.range.start.character }}
+                                            position={{ line: ref.range.start.line, character: ref.range.start.character }}
                                             highlightLength={ref.range.end.character - ref.range.start.character}
                                             previewWindowExtraLines={1}
                                         />
@@ -119,14 +125,6 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
     private logEvent = (): void => {
         (this.props.isLocal ? events.GoToLocalRefClicked : events.GoToExternalRefClicked).log()
     }
-
-    private getRefURL(ref: Reference): string {
-        const uri = new URL(ref.uri)
-        const rev = this.props.isLocal && this.props.localRev ?
-            this.props.localRev :
-            uri.search.substr('?'.length)
-        return `/${uri.hostname + uri.pathname}${rev ? '@' + rev : ''}/-/blob/${uri.hash.substr('#'.length)}#L${ref.range.start.line + 1}`
-    }
 }
 
 interface Props extends AbsoluteRepoFilePosition {
@@ -136,7 +134,7 @@ interface Props extends AbsoluteRepoFilePosition {
 
 interface State {
     group: 'local' | 'external'
-    references: Reference[]
+    references: Location[]
     loadingLocal: boolean
     loadingExternal: boolean
 }
@@ -246,13 +244,13 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 <div className='references-widget__title-bar'>
                     <Link
                         className={'references-widget__title-bar-group' + (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')}
-                        to={url.toPrettyBlobPositionURL({ ...ctx, referencesMode: 'local' })}
+                        to={url.toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
                         onClick={this.onLocalRefsButtonClick}>
                         This repository
                     </Link>
                     <div className='references-widget__badge'>{localRefCount}</div>
                     <Link className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
-                        to={url.toPrettyBlobPositionURL({ ...ctx, referencesMode: 'external' })}
+                        to={url.toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
                         onClick={this.onShowExternalRefsButtonClick}>
                         Other repositories
                     </Link>
@@ -300,7 +298,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
     }
 
     private onDismiss = (): void => {
-        this.props.history.push(url.toPrettyBlobPositionURL(this.props))
+        this.props.history.push(url.toPrettyBlobURL(this.props))
     }
     private onLocalRefsButtonClick = () => events.ShowLocalRefsButtonClicked.log()
     private onShowExternalRefsButtonClick = () => events.ShowExternalRefsButtonClicked.log()

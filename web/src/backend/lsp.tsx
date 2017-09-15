@@ -1,12 +1,17 @@
 import { memoizedFetch } from 'sourcegraph/backend'
 import { doFetch as fetch } from 'sourcegraph/backend/xhr'
-import { Reference } from 'sourcegraph/references'
-import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI } from 'sourcegraph/repo'
+import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from 'sourcegraph/repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from 'sourcegraph/util'
+import { toAbsoluteBlobURL, toPrettyBlobURL } from 'sourcegraph/util/url'
+import { Definition, Hover, Location } from 'vscode-languageserver-types'
 
 interface LSPRequest {
     method: string
     params: any
+}
+
+export function isEmptyHover(hover: Hover): boolean {
+    return !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
 }
 
 function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
@@ -38,17 +43,10 @@ function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
     ]
 }
 
-export interface Tooltip {
-    title?: string
-    doc?: string
-}
-
-export const EEMPTYTOOLTIP = 'EEMPTYTOOLTIP'
-
-export const getTooltip = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<Tooltip> => {
+export const fetchHover = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<Hover> => {
     const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
-        return Promise.resolve({})
+        return Promise.resolve({ contents: [] })
     }
 
     const body = wrapLSP({
@@ -58,7 +56,7 @@ export const getTooltip = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise
                 uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
             },
             position: {
-                character: pos.position.char! - 1,
+                character: pos.position.character! - 1,
                 line: pos.position.line - 1
             }
         }
@@ -67,29 +65,17 @@ export const getTooltip = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise
     return fetch(`/.api/xlang/textDocument/hover`, { method: 'POST', body: JSON.stringify(body) })
         .then(resp => resp.json())
         .then(json => {
-            if (!json[1] ||
-                !json[1].result ||
-                !json[1].result.contents ||
-                json[1].result.contents.length === 0) {
-                throw Object.assign(new Error('empty tooltip'), { code: EEMPTYTOOLTIP })
+            if (!json || !json[1] || !json[1].result) {
+                return []
             }
-            const title: string = json[1].result.contents[0].value
-            let doc: string | undefined
-            for (const markedString of json[1].result.contents) {
-                if (typeof markedString === 'string') {
-                    doc = markedString
-                } else if (markedString.language === 'markdown') {
-                    doc = markedString.value
-                }
-            }
-            return { title, doc }
+            return json[1].result
         })
 }, makeRepoURI)
 
-export const fetchJumpURL = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<string | null> => {
+export const fetchDefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<Definition> => {
     const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
-        return Promise.resolve(null)
+        return Promise.resolve([])
     }
 
     const body = wrapLSP({
@@ -99,7 +85,7 @@ export const fetchJumpURL = memoizedFetch((pos: AbsoluteRepoFilePosition): Promi
                 uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
             },
             position: {
-                character: pos.position.char! - 1,
+                character: pos.position.character! - 1,
                 line: pos.position.line - 1
             }
         }
@@ -108,37 +94,32 @@ export const fetchJumpURL = memoizedFetch((pos: AbsoluteRepoFilePosition): Promi
     return fetch(`/.api/xlang/textDocument/definition`, { method: 'POST', body: JSON.stringify(body) })
         .then(resp => resp.json())
         .then(json => {
-            if (!json ||
-                !json[1] ||
-                !json[1].result ||
-                !json[1].result[0] ||
-                !json[1].result[0].uri) {
-                // TODO(john): better error handling.
-                return null
+            if (!json || !json[1] || !json[1].result) {
+                return []
             }
-            const respUri = json[1].result[0].uri.split('git://')[1]
-            const prt0Uri = respUri.split('?')
-            const prt1Uri = prt0Uri[1].split('#')
-
-            const repoUri = prt0Uri[0]
-            let frevUri = repoUri === pos.repoPath ? pos.rev || pos.commitID : prt1Uri[0]
-            if (frevUri) {
-                frevUri = `@${frevUri}`
-            }
-            const pathUri = prt1Uri[1]
-            const startLine = parseInt(json[1].result[0].range.start.line, 10) + 1
-            const startChar = parseInt(json[1].result[0].range.start.character, 10) + 1
-
-            let lineAndCharEnding = ''
-            if (startLine && startChar) {
-                lineAndCharEnding = `#L${startLine}:${startChar}`
-            } else if (startLine) {
-                lineAndCharEnding = `#L${startLine}`
-            }
-
-            return `/${repoUri}${frevUri || ''}/-/blob/${pathUri}${lineAndCharEnding}`
+            return json[1].result
         })
 }, makeRepoURI)
+
+export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | null> {
+    return fetchDefinition(pos)
+        .then(def => {
+            const defArray = Array.isArray(def) ? def : [def]
+            def = defArray[0]
+            if (!def) {
+                return null
+            }
+
+            const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
+            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            if (uri.repoPath === pos.repoPath && uri.commitID === pos.commitID) {
+                // Use pretty rev from the current context for same-repo J2D.
+                uri.rev = pos.rev
+                return toPrettyBlobURL(uri)
+            }
+            return toAbsoluteBlobURL(uri)
+        })
+}
 
 export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<{ location: any, symbol: any } | null> => {
     const body = wrapLSP({
@@ -148,7 +129,7 @@ export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): P
                 uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
             },
             position: {
-                character: pos.position.char! - 1,
+                character: pos.position.character! - 1,
                 line: pos.position.line - 1
             }
         }
@@ -163,12 +144,11 @@ export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): P
                 !json[1].result[0]) {
                 return null
             }
-
             return json[1].result[0]
         })
 }, makeRepoURI)
 
-export const fetchReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Promise<Reference[]> => {
+export const fetchReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Promise<Location[]> => {
     const ext = getPathExtension(ctx.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve([])
@@ -180,7 +160,7 @@ export const fetchReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Pr
                 uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
             },
             position: {
-                character: ctx.position.char! - 1,
+                character: ctx.position.character! - 1,
                 line: ctx.position.line - 1
             },
             context: {
@@ -192,18 +172,10 @@ export const fetchReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Pr
     return fetch(`/.api/xlang/textDocument/references`, { method: 'POST', body: JSON.stringify(body) })
         .then(resp => resp.json())
         .then(json => {
-            if (!json ||
-                !json[1] ||
-                !json[1].result) {
-                return []
+            if (!json || !json[1] || !json[1].result) {
+                throw new Error('empty references response')
             }
-
-            const result = json[1].result
-            for (const ref of result) {
-                const parsed = new URL(ref.uri)
-                ref.repoURI = parsed.hostname + parsed.pathname
-            }
-            return result
+            return json[1].result
         })
 }, makeRepoURI)
 
@@ -213,7 +185,7 @@ interface XReferencesParams extends AbsoluteRepoFile {
     limit: number
 }
 
-export const fetchXreferences = memoizedFetch((ctx: XReferencesParams): Promise<Reference[]> => {
+export const fetchXreferences = memoizedFetch((ctx: XReferencesParams): Promise<Location[]> => {
     const ext = getPathExtension(ctx.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve([])
@@ -231,17 +203,9 @@ export const fetchXreferences = memoizedFetch((ctx: XReferencesParams): Promise<
     return fetch(`/.api/xlang/workspace/xreferences`, { method: 'POST', body: JSON.stringify(body) })
         .then(resp => resp.json())
         .then(json => {
-            if (!json ||
-                !json[1] ||
-                !json[1].result) {
-                return []
+            if (!json || !json[1] || !json[1].result) {
+                throw new Error('empty xreferences responses')
             }
-
-            return json[1].result.map(res => {
-                const ref = res.reference
-                const parsed = new URL(ref.uri)
-                ref.repoURI = parsed.hostname + parsed.pathname
-                return ref
-            })
+            return json[1].result.map(data => data.reference)
         })
 }, ctx => makeRepoURI(ctx) + '___' + ctx.query + '___' + ctx.limit)

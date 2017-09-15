@@ -10,7 +10,7 @@ import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { fetchXdefinition, fetchXreferences } from 'sourcegraph/backend/lsp'
 import { AbsoluteRepoFilePosition, makeRepoURI } from 'sourcegraph/repo'
 import * as util from 'sourcegraph/util'
-import { Reference } from '.'
+import { Location } from 'vscode-languageserver-types'
 
 export const fetchDependencyReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Promise<GQL.IDependencyReferences | null> => {
     const mode = util.getModeFromExtension(util.getPathExtension(ctx.filePath))
@@ -52,7 +52,7 @@ export const fetchDependencyReferences = memoizedFetch((ctx: AbsoluteRepoFilePos
                 }
             }
         }
-    `, { repoPath: ctx.repoPath, commitID: ctx.commitID, mode, filePath: ctx.filePath, line: ctx.position.line - 1, character: ctx.position.char! - 1 })
+    `, { repoPath: ctx.repoPath, commitID: ctx.commitID, mode, filePath: ctx.filePath, line: ctx.position.line - 1, character: ctx.position.character! - 1 })
         .toPromise()
         .then(result => {
             if (!result.data ||
@@ -72,7 +72,7 @@ export const fetchDependencyReferences = memoizedFetch((ctx: AbsoluteRepoFilePos
         })
 }, makeRepoURI)
 
-export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observable<Reference[]> => {
+export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observable<Location[]> => {
     // Memoization is not done at the top level (b/c we only support Promise fetching memoization ATM).
     // In this case, memoization is achieved at a lower level since this function simply calls out to
     // other memoized fetchers.

@@ -20,7 +20,7 @@ import { Tree } from 'sourcegraph/tree/Tree'
 import { TreeHeader } from 'sourcegraph/tree/TreeHeader'
 import * as url from 'sourcegraph/util/url'
 import { parseHash } from 'sourcegraph/util/url'
-import { Position } from '.'
+import { Position } from 'vscode-languageserver-types'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
 import { RevSwitcher } from './RevSwitcher'
@@ -79,7 +79,7 @@ export class Repository extends React.Component<Props, State> {
         super(props)
         const parsedHash = parseHash(this.props.location.hash)
         this.state.showRefs = parsedHash.modal === 'references'
-        this.state.position = parsedHash.line ? { line: parsedHash.line!, char: parsedHash.char } : undefined
+        this.state.position = parsedHash.line ? { line: parsedHash.line!, character: parsedHash.character || 0 } : undefined
         this.subscriptions.add(
             this.componentUpdates
                 .switchMap(props =>
@@ -138,7 +138,7 @@ export class Repository extends React.Component<Props, State> {
 
         const parsedHash = parseHash(nextProps.location.hash)
         const showRefs = parsedHash.modal === 'references'
-        const position = parsedHash.line ? { line: parsedHash.line!, char: parsedHash.char } : undefined
+        const position = parsedHash.line ? { line: parsedHash.line, character: parsedHash.character || 0 } : undefined
         this.setState({ showRefs, position })
     }
 

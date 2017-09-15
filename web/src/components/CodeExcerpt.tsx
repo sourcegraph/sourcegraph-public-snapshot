@@ -37,7 +37,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
                 const line = row.firstChild as HTMLTableDataCellElement
                 const code = row.lastChild as HTMLTableDataCellElement
                 if (line.getAttribute('data-line') === '' + (this.props.position.line + 1)) {
-                    highlightNode(code, this.props.position.char!, this.props.highlightLength)
+                    highlightNode(code, this.props.position.character!, this.props.highlightLength)
                 }
             }
         }

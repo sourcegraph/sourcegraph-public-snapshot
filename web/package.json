@@ -62,6 +62,7 @@
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.10.1",
     "rxjs": "^5.4.2",
+    "vscode-languageserver-types": "^3.4.0",
     "whatwg-url": "^6.1.0"
   }
 }

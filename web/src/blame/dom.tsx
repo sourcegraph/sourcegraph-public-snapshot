@@ -1,5 +1,5 @@
 import distanceInWords from 'date-fns/distance_in_words'
-import { BlameState, contextKey, store } from 'sourcegraph/blame/store'
+import { BlameData } from 'sourcegraph/blame'
 import { limitString } from 'sourcegraph/util'
 
 /**
@@ -39,31 +39,26 @@ function setLineBlameContent(line: number, blameContent: string, rev?: string): 
     }
 }
 
-store.subscribe((state: BlameState) => {
-    state = store.getValue()
-
-    // Clear the blame content on whatever line it was already on.
+function clearLineBlameContent(): void {
     setLineBlameContent(-1, '')
+}
 
-    if (!state.context) {
-        return
-    }
-    const hunks = state.hunksByLoc.get(contextKey(state.context))
-    if (!hunks) {
-        if (state.displayLoading) {
-            setLineBlameContent(state.context.line, 'loading ◌')
+export function setLineBlame(data: BlameData): void {
+    clearLineBlameContent()
+
+    if (!data.hunks) {
+        if (data.loading) {
+            setLineBlameContent(data.ctx.position.line, 'loading ◌')
         }
         return
     }
-    const hunk = hunks[0]
-    if (!hunk.author || !hunk.author.person) {
-        // Clear the blame content on whatever line it was already on.
-        setLineBlameContent(-1, '')
-        return
+    const hunk = data.hunks[0]
+    if (!hunk || !hunk.author || !hunk.author.person) {
+        return clearLineBlameContent()
     }
 
     const timeSince = distanceInWords(hunk.author.date, new Date(), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
 
-    setLineBlameContent(state.context.line, blameContent, hunk.rev)
-})
+    setLineBlameContent(data.ctx.position.line, blameContent, hunk.rev)
+}
