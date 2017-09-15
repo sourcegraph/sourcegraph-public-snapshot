@@ -372,22 +372,29 @@ export class SearchBox extends React.Component<Props, State> {
                 this.moveSelection(-1)
                 break
             }
-            case 'Enter':
-            case 'Tab': {
-                if (this.state.selectedSuggestion > -1) {
-                    event.preventDefault()
-                    this.setState({
-                        filters: this.state.filters.concat(this.state.suggestions[this.state.selectedSuggestion]),
-                        suggestions: [],
-                        selectedSuggestion: -1,
-                        query: ''
-                    }, () => {
-                        // Scroll chips so search input stays visible
-                        if (this.chipsElement) {
-                            this.chipsElement!.scrollLeft = this.chipsElement!.scrollWidth
-                        }
-                    })
+            case 'Enter': {
+                if (this.state.selectedSuggestion === -1) {
+                    // Submit form
+                    break
                 }
+                // fall through
+            }
+            case 'Tab': {
+                event.preventDefault()
+                if (this.state.suggestions.length === 0) {
+                    break
+                }
+                this.setState({
+                    filters: this.state.filters.concat(this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)]),
+                    suggestions: [],
+                    selectedSuggestion: -1,
+                    query: ''
+                }, () => {
+                    // Scroll chips so search input stays visible
+                    if (this.chipsElement) {
+                        this.chipsElement.scrollLeft = this.chipsElement.scrollWidth
+                    }
+                })
                 break
             }
             case 'Backspace': {
@@ -411,7 +418,10 @@ export class SearchBox extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         this.setState({ suggestionsVisible: false })
-        if (this.state.query && this.state.filters.length > 0) {
+        if (this.state.filters.length === 0) {
+            return
+        }
+        if (this.state.query) {
             // Go to search results
             const path = '/search?' + buildSearchURLQuery(this.state)
             events.SearchSubmitted.log({
