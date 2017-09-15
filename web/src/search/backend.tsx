@@ -45,11 +45,11 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
         // From repo filters
         Observable.from(params.filters)
             .filter((filter: Filter): filter is RepoFilter => filter.type === FilterType.Repo)
-            .map(filter => filter.repoPath),
+            .map(filter => filter.value),
         // From search profiles
         Observable.from(params.filters)
             .filter((filter: Filter): filter is RepoGroupFilter => filter.type === FilterType.RepoGroup)
-            .map(filter => filter.name)
+            .map(filter => filter.value)
             // Try to expand the search profile from the cache
             .mergeMap(name => searchProfileRepos.get(name) ||
                 // If not found, subscribe to the fetch and try again
@@ -70,8 +70,8 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
             repositories,
             isCaseSensitive: params.matchCase,
             includePattern: [
-                ...params.filters.filter(f => f.type === FilterType.File).map((f: FileFilter) => f.filePath),
-                ...params.filters.filter(f => f.type === FilterType.FileGlob).map((f: FileGlobFilter) => f.glob)
+                ...params.filters.filter(f => f.type === FilterType.File).map((f: FileFilter) => f.value),
+                ...params.filters.filter(f => f.type === FilterType.FileGlob).map((f: FileGlobFilter) => f.value)
             ].join(','),
             excludePattern: '{.git,**/.git,.svn,**/.svn,.hg,**/.hg,CVS,**/CVS,.DS_Store,**/.DS_Store,node_modules,bower_components,vendor,dist,out,Godeps,third_party}'
         }))
@@ -165,7 +165,7 @@ export function fetchSuggestions(query: string, filters: Filter[]): Observable<G
         }
     `, {
         query,
-        repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.repoPath)
+        repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value)
     })
         .mergeMap(({ data, errors }) => {
             if (!data || !data.root.search) {

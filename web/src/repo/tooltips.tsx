@@ -3,8 +3,8 @@ import unescape from 'lodash/unescape'
 import marked from 'marked'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from 'sourcegraph/repo'
 import { getModeFromExtension } from 'sourcegraph/util'
+import { toAbsoluteBlobURL } from 'sourcegraph/util/url'
 import { Hover, MarkedString } from 'vscode-languageserver-types'
-import { toAbsoluteBlobURL } from 'sourcegraph/util/url';
 
 registerLanguage('go', require('highlight.js/lib/languages/go'))
 registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
