@@ -214,7 +214,7 @@ export class Repository extends React.Component<Props, State> {
         if (!isDir) {
             this.props.history.push(url.toBlobURL({
                 repoPath: this.props.repoPath,
-                commitID: this.props.commitID,
+                rev: this.props.rev,
                 filePath: path
             }))
         }
