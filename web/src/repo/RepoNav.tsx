@@ -51,7 +51,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 }
                 {
                     this.props.repoPath &&
-                        <a href={toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath)} target='_blank' className='repo-nav__action'>
+                        <a href={toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))} target='_blank' className='repo-nav__action'>
                             <ComputerIcon />
                             <span>Open on desktop</span>
                         </a>
