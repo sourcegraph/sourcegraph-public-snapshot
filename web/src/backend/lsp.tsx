@@ -182,10 +182,10 @@ export const fetchReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Pr
             position: {
                 character: ctx.position.char! - 1,
                 line: ctx.position.line - 1
+            },
+            context: {
+                includeDeclaration: true
             }
-        },
-        context: {
-            includeDeclaration: true
         }
     } as any, ctx, ctx.filePath)
 
