@@ -161,11 +161,11 @@ export class RevSwitcher extends React.Component<Props, State> {
                             // Sort by sort value.
                             .sort((a, b) => {
                                 if (a.score !== b.score) {
-                                    return a.score > b.score ? -1 : 1
+                                    return b.score - a.score
                                 }
 
                                 // Scores are identical so prefer shorter length strings.
-                                return a.rev.length < b.rev.length ? -1 : 1
+                                return a.rev.length - b.rev.length
                             })
 
                         return { visible, query } as State
