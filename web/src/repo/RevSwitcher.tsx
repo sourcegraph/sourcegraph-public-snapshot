@@ -16,6 +16,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { parseBrowserRepoURL } from 'sourcegraph/repo'
 import { EREVNOTFOUND, fetchRepoRevisions, RepoRevisions, resolveRev } from 'sourcegraph/repo/backend'
 import { scrollIntoView } from 'sourcegraph/util'
+import { score } from 'sourcegraph/util/scorer'
 
 /**
  * Component props.
@@ -69,6 +70,10 @@ interface Item {
      */
     rev: string
     type: 'commit' | 'branch' | 'tag'
+    /**
+     * score used for sorting
+     */
+    score?: number
 }
 
 export class RevSwitcher extends React.Component<Props, State> {
@@ -150,6 +155,19 @@ export class RevSwitcher extends React.Component<Props, State> {
                             return {} as State
                         }
                         const visible = this.state.repoRevisions.filter(i => i.rev.includes(query))
+                            // Assign score to each item.
+                            .map(i => ({ ...i, score: score(i.rev, query)}))
+                            // Remove items with zero zero (no match).
+                            .filter(i => i.score > 0 )
+                            // Sort by sort value.
+                            .sort((a, b) => {
+                                if (a.score !== b.score) {
+                                    return a.score > b.score ? -1 : 1
+                                }
+
+                                // Scores are identical so prefer shorter length strings.
+                                return a.rev.length < b.rev.length ? -1 : 1
+                            })
 
                         return { visible, query } as State
                     })
