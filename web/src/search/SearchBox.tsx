@@ -38,10 +38,10 @@ const SUGGESTION_ICONS = {
 
 function getFilterLabel(filter: Filter): string {
     switch (filter.type) {
-        case FilterType.Repo:      return filter.repoPath
+        case FilterType.Repo: return filter.repoPath
         case FilterType.RepoGroup: return filter.name
-        case FilterType.File:      return filter.filePath
-        case FilterType.FileGlob:  return filter.glob
+        case FilterType.File: return filter.filePath
+        case FilterType.FileGlob: return filter.glob
     }
 }
 
@@ -166,9 +166,30 @@ export class SearchBox extends React.Component<Props, State> {
                     // Cmd/Ctrl+Shift+F shortcut
                     || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
                 )
-                .subscribe(event => {
+                .switchMap(event => {
                     event.preventDefault()
-                    this.focusInput()
+                    // For Cmd+Shift+F, use selection as query
+                    if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f') {
+                        const selection = window.getSelection().toString()
+                        if (selection) {
+                            return new Observable<void>(observer => this.setState({
+                                query: selection,
+                                suggestions: [],
+                                selectedSuggestion: -1
+                            }, () => {
+                                observer.next()
+                                observer.complete()
+                            }))
+                        }
+                    }
+                    return [undefined]
+                })
+                .subscribe(() => {
+                    if (this.inputElement) {
+                        // Select all input
+                        this.inputElement.focus()
+                        this.inputElement.setSelectionRange(0, this.inputElement.value.length)
+                    }
                 })
         )
     }
@@ -185,7 +206,7 @@ export class SearchBox extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
         // Check if selected suggestion is out of view
         scrollIntoView(this.suggestionListElement, this.selectedSuggestionElement)
     }
