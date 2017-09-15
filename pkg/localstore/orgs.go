@@ -14,7 +14,7 @@ import (
 
 type orgs struct{}
 
-type OrgID int
+type OrgID int32
 
 const NoOrg OrgID = 0
 

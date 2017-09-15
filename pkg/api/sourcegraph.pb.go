@@ -468,6 +468,7 @@ const (
 type LocalRepo struct {
 	ID          int32
 	RemoteURI   string
+	OrgID       int32
 	AccessToken string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

@@ -11,6 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -77,8 +78,8 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	Limit       *int32
 }) ([]*threadResolver, error) {
 	threads := []*threadResolver{}
-
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	actor := actor.FromContext(ctx)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, actor.OrgID)
 	if err == store.ErrRepoNotFound {
 		// Datastore is lazily populated when comments are created
 		// so it isn't an error for a repo to not exist yet.
@@ -134,11 +135,13 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	AuthorName     string
 	AuthorEmail    string
 }) (*threadResolver, error) {
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	actor := actor.FromContext(ctx)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, actor.OrgID)
 	if err == store.ErrRepoNotFound {
 		repo, err = store.LocalRepos.Create(ctx, &sourcegraph.LocalRepo{
 			RemoteURI:   args.RemoteURI,
 			AccessToken: args.AccessToken,
+			OrgID:       actor.OrgID,
 		})
 		if err != nil {
 			return nil, err
@@ -181,7 +184,8 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	actor := actor.FromContext(ctx)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, actor.OrgID)
 	if err != nil {
 		return nil, err
 	}

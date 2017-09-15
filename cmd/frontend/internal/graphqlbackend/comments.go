@@ -13,6 +13,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
@@ -56,7 +57,8 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	actor := actor.FromContext(ctx)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, actor.OrgID)
 	if err != nil {
 		return nil, err
 	}

@@ -27,7 +27,7 @@ type Actor struct {
 	Email string
 
 	// OrgID is the ID of the Sourcegraph org the user is currently signed in under.
-	OrgID int
+	OrgID int32
 
 	// AvatarURL is the URL to an avatar image for the user.
 	AvatarURL string

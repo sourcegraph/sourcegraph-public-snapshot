@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"regexp"
@@ -20,24 +21,29 @@ func validateLocalRepo(repo *sourcegraph.LocalRepo) error {
 	}
 	matched := validRemoteURI.MatchString(repo.RemoteURI)
 	if !matched {
-		return fmt.Errorf("not a valid remote URI: %s", repo.RemoteURI)
+		return fmt.Errorf("error creating local repo %s: not a valid remote uri", repo.RemoteURI)
 	}
-	if repo.AccessToken == "" {
-		return fmt.Errorf("error creating local repo %s: AccessToken required", repo.RemoteURI)
+	if repo.AccessToken == "" && repo.OrgID == 0 {
+		return fmt.Errorf("error creating local repo %s: AccessToken or OrgID required", repo.RemoteURI)
 	}
 	return nil
 }
 
 type localRepos struct{}
 
-func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.LocalRepo, error) {
+func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string, orgID int32) (*sourcegraph.LocalRepo, error) {
 	if Mocks.LocalRepos.Get != nil {
-		return Mocks.LocalRepos.Get(ctx, remoteURI, accessToken)
+		return Mocks.LocalRepos.Get(ctx, remoteURI, accessToken, orgID)
 	}
 
-	// 🚨 SECURITY: must include access_token field in query as a permissions 🚨
-	// check. Note other functions may rely on this method to verify repo permissions
-	repos, err := l.getBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
+	var repos []*sourcegraph.LocalRepo
+	var err error
+	if orgID > 0 {
+		repos, err = l.getBySQL(ctx, "WHERE (remote_uri=$1 AND org_id=$2 AND access_token IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, orgID)
+	} else {
+		// Legacy access method.
+		repos, err = l.getBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND org_id IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -59,9 +65,19 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 	if err != nil {
 		return nil, err
 	}
+
+	// orgID is temporarily nullable while we support both orgs and access tokens.
+	// TODO(nick): make org_id non-null when dropping support for access tokens.
+	var orgID *int32
+	var accessToken *string
+	if newRepo.OrgID > 0 {
+		orgID = &newRepo.OrgID
+	} else {
+		accessToken = &newRepo.AccessToken
+	}
 	err = globalDB.QueryRow(
-		"INSERT INTO local_repos(remote_uri, access_token, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
-		newRepo.RemoteURI, newRepo.AccessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
+		"INSERT INTO local_repos(remote_uri, org_id, access_token, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
+		newRepo.RemoteURI, orgID, accessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +87,7 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 
 // getBySQL returns localRepos matching the SQL query, if any exist.
 func (*localRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.LocalRepo, error) {
-	rows, err := globalDB.Query("SELECT id, remote_uri, access_token, created_at, updated_at FROM local_repos "+query, args...)
+	rows, err := globalDB.Query("SELECT id, remote_uri, org_id, access_token, created_at, updated_at FROM local_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +96,18 @@ func (*localRepos) getBySQL(ctx context.Context, query string, args ...interface
 	defer rows.Close()
 	for rows.Next() {
 		var l sourcegraph.LocalRepo
-		err := rows.Scan(&l.ID, &l.RemoteURI, &l.AccessToken, &l.CreatedAt, &l.UpdatedAt)
+		// orgID is temporarily nullable while we support both orgs and access tokens.
+		// TODO(nick): make org_id non-null when dropping support for access tokens.
+		var orgID sql.NullInt64
+		var accessToken sql.NullString
+		err := rows.Scan(&l.ID, &l.RemoteURI, &orgID, &accessToken, &l.CreatedAt, &l.UpdatedAt)
 		if err != nil {
 			return nil, err
+		}
+		if orgID.Valid {
+			l.OrgID = int32(orgID.Int64)
+		} else if accessToken.Valid {
+			l.AccessToken = accessToken.String
 		}
 		localRepos = append(localRepos, &l)
 	}

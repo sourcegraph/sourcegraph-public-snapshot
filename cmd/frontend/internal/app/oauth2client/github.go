@@ -196,7 +196,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		Email:           info.Email,
 		AvatarURL:       info.Picture,
 		GitHubConnected: true,
-		OrgID:           int(currentOrgID),
+		OrgID:           int32(currentOrgID),
 	}
 
 	if info.AppMetadata.GitHubAccessTokenOverride == "" {

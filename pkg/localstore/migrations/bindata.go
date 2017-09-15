@@ -16,6 +16,8 @@
 // ../../../migrations/1504637681_orgs.up.sql
 // ../../../migrations/1504821553_add_org_constraints.down.sql
 // ../../../migrations/1504821553_add_org_constraints.up.sql
+// ../../../migrations/1505422473_local_repo_org_id.down.sql
+// ../../../migrations/1505422473_local_repo_org_id.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -403,6 +405,46 @@ func _1504821553_add_org_constraintsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1505422473_local_repo_org_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\xc9\x4f\x4e\xcc\x89\x2f\x4a\x2d\xc8\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\x2f\x4a\x8f\xcf\x4c\xb1\xe6\xc2\xa5\xd6\xd1\xc5\x45\xc1\xd9\xdf\x2f\x38\x24\xc8\xd1\xd3\x2f\x04\x59\x2a\xbe\x28\x35\x37\xbf\x24\x35\xbe\xb4\x28\x33\x3e\x31\x39\x39\xb5\xb8\x38\xbe\x24\x3f\x3b\x35\x2f\x3e\x3b\xb5\x52\x21\xd4\xcf\x33\x30\xd4\x55\x41\x03\xa1\x46\x47\x01\x59\x91\xa6\x35\x20\x00\x00\xff\xff\xe6\x03\xb1\xfe\x9d\x00\x00\x00")
+
+func _1505422473_local_repo_org_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1505422473_local_repo_org_idDownSql,
+		"1505422473_local_repo_org_id.down.sql",
+	)
+}
+
+func _1505422473_local_repo_org_idDownSql() (*asset, error) {
+	bytes, err := _1505422473_local_repo_org_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1505422473_local_repo_org_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1505422473_local_repo_org_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcb\xc1\x0a\xc2\x30\x0c\x00\xd0\xbb\x5f\x91\xff\xd8\xa9\xae\x45\x06\x35\x95\x18\xcf\x61\xd4\x20\x63\xd3\x48\x5a\x0f\xfe\xbd\x57\x2f\x3b\x3f\x5e\xc8\x9c\x08\x38\x1c\x73\x82\xcd\xea\xbc\x89\xeb\xdb\x1a\x84\x18\x61\x2c\xf9\x76\x46\x30\x7f\xc8\x72\x87\x09\x39\x9d\x12\x0d\x87\xbd\x12\xa9\x5c\x60\x2c\x78\x65\x0a\x13\xf2\xbf\x89\xeb\xd3\xba\xca\xc7\x17\x99\x6b\xd5\xd6\xa4\xdb\xaa\x2f\x59\xf5\x3b\xfc\x02\x00\x00\xff\xff\xfd\x96\xb6\xb6\x83\x00\x00\x00")
+
+func _1505422473_local_repo_org_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1505422473_local_repo_org_idUpSql,
+		"1505422473_local_repo_org_id.up.sql",
+	)
+}
+
+func _1505422473_local_repo_org_idUpSql() (*asset, error) {
+	bytes, err := _1505422473_local_repo_org_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1505422473_local_repo_org_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -471,6 +513,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1504637681_orgs.up.sql":                     _1504637681_orgsUpSql,
 	"1504821553_add_org_constraints.down.sql":    _1504821553_add_org_constraintsDownSql,
 	"1504821553_add_org_constraints.up.sql":      _1504821553_add_org_constraintsUpSql,
+	"1505422473_local_repo_org_id.down.sql":      _1505422473_local_repo_org_idDownSql,
+	"1505422473_local_repo_org_id.up.sql":        _1505422473_local_repo_org_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -530,6 +574,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1504637681_orgs.up.sql":                     &bintree{_1504637681_orgsUpSql, map[string]*bintree{}},
 	"1504821553_add_org_constraints.down.sql":    &bintree{_1504821553_add_org_constraintsDownSql, map[string]*bintree{}},
 	"1504821553_add_org_constraints.up.sql":      &bintree{_1504821553_add_org_constraintsUpSql, map[string]*bintree{}},
+	"1505422473_local_repo_org_id.down.sql":      &bintree{_1505422473_local_repo_org_idDownSql, map[string]*bintree{}},
+	"1505422473_local_repo_org_id.up.sql":        &bintree{_1505422473_local_repo_org_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
