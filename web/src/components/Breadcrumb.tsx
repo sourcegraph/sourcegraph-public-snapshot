@@ -16,9 +16,9 @@ export class Breadcrumb extends React.Component<Props, {}> {
             const link = this.props.partToUrl(i)
             const className = `part ${this.props.partToClassName ? this.props.partToClassName(i) : ''}`
             if (link) {
-                spans.push(<Link key={i} className={className} to={link}>{part}</Link>)
+                spans.push(<Link key={i} className={className} to={link} title={part}>{part}</Link>)
             } else {
-                spans.push(<span key={i} className={className}>{part}</span>)
+                spans.push(<span key={i} className={className} title={part}>{part}</span>)
             }
             if (i < parts.length - 1) {
                 spans.push(<span key={'sep' + i} className='breadcrumb__separator'>/</span>)

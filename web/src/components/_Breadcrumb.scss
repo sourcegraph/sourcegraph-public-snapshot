@@ -1,5 +1,17 @@
 
 .breadcrumb {
+    display: flex;
+    overflow: hidden;
+    white-space: nowrap;
+
+    .part-directory {
+        flex: 1 1 1em;
+        max-width: fit-content;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
+
     &__separator {
         padding: 0 0.25rem;
     }

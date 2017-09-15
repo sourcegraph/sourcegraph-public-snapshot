@@ -109,6 +109,7 @@
         vertical-align: top;
         width: 49%;
         max-width: fit-content;
+        min-width: 10rem;
         white-space: nowrap;
         &-text {
             flex: 0 1 auto;

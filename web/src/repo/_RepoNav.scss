@@ -23,6 +23,7 @@
 
     &__rev {
         flex: none;
+        margin-left: 0.25rem;
         margin-right: 1rem;
 
         display: flex;
@@ -48,9 +49,11 @@
     }
 
     &__path {
-        flex: 1;
+        flex: 1 1 auto;
         display: flex;
         align-items: center;
+        overflow: hidden;
+        min-width: 0;
     }
 
     &__action {
@@ -64,6 +67,12 @@
 
         .icon {
             margin-right: 0.25rem;
+        }
+
+        &-text {
+            @media (max-width: $media-lg) {
+                display: none;
+            }
         }
     }
 }

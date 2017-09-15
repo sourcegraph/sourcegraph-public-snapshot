@@ -36,7 +36,8 @@
     }
 
     &__search-box-container {
-        width: 52rem;
+        max-width: 52rem;
+        min-width: 0;
         align-self: flex-start;
     }
 

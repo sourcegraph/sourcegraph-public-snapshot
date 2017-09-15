@@ -23,7 +23,6 @@ $media-xl: 1200px;
 @import './components/CodeExcerpt';
 @import './components/HeroPage';
 
-
 // Define the 'system' font family
 //
 // See https://css-tricks.com/snippets/css/system-font-stack/
@@ -32,6 +31,32 @@ $media-xl: 1200px;
     font-style: normal;
     font-weight: 300;
     src: local('.SFNSText-Light'), local('.HelveticaNeueDeskInterface-Light'), local('.LucidaGrandeUI'), local('Ubuntu Light'), local('Segoe UI Light'), local('Roboto-Light'), local('DroidSans'), local('Tahoma');
+}
+
+// Responsive Container
+
+@media (min-width: $media-sm) {
+    .container {
+        width: 540px;
+    }
+}
+
+@media (min-width: $media-md) {
+    .container {
+        width: 720px;
+    }
+}
+
+@media (min-width: $media-lg) {
+    .container {
+        width: 960px;
+    }
+}
+
+@media (min-width: $media-xl) {
+    .container {
+        width: 1140px;
+    }
 }
 
 * {
@@ -84,12 +109,17 @@ body {
     display: flex;
     width: 100%;
     flex-direction: column;
+    align-items: center;
     &__app-router-container {
         @extend .container;
         flex: 1 1 auto;
-        width: 100%;
         min-height: 0;
         display: flex;
+        padding: 0 2.5rem;
+        @media (max-width: $media-lg) {
+            width: 100%;
+            padding: 0;
+        }
     }
 }
 
@@ -118,40 +148,9 @@ kbd {
 a {
     outline: 0;
     color: #93A9C8;
-    transition: all 100ms ease-out;
+    transition: color 100ms ease-out;
     &:hover {
         color: white;
-    }
-}
-
-// Responsive Container
-
-.container {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-@media (min-width: $media-sm) {
-    .container {
-        max-width: 540px;
-    }
-}
-
-@media (min-width: $media-md) {
-    .container {
-        max-width: 720px;
-    }
-}
-
-@media (min-width: $media-lg) {
-    .container {
-        max-width: 960px;
-    }
-}
-
-@media (min-width: $media-xl) {
-    .container {
-        max-width: 1140px;
     }
 }
 

@@ -75,7 +75,7 @@
         outline: none;
         cursor: pointer;
 
-        @media (max-width: $media-sm) {
+        @media (max-width: $media-lg) {
             // Make toggle float over code and file tree instead of off to the right
             left: inherit;
             right: -2.5rem;
@@ -101,6 +101,7 @@
         flex-direction: column;
         min-height: 0;
         min-width: 0;
+        overflow: hidden;
 
         background-color: #151D28;
         border-top-right-radius: 0.25rem;

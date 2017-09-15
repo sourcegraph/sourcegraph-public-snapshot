@@ -28,6 +28,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     }
 
     public render(): JSX.Element | null {
+        const editorUrl = toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))
         return (
             <div className='repo-nav'>
                 <span className='repo-nav__rev' onMouseDown={this.preventDefault} onClick={this.props.onClickRevision}>
@@ -38,22 +39,22 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 <span className='repo-nav__path'>
                     <RepoBreadcrumb {...this.props} />
                 </span>
-                <a href='' className='repo-nav__action' onClick={this.onShareButtonClick}>
+                <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
                     <CopyIcon />
-                    {this.state.copiedLink ? 'Copied!' : 'Copy link'}
+                    <span className='repo-nav__action-text'>{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
                 </a>
                 {
                     this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
-                        <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action'>
+                        <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub'>
                             <GitHub />
-                            View on GitHub
+                            <span className='repo-nav__action-text'>View on GitHub</span>
                         </a>
                 }
                 {
                     this.props.repoPath &&
-                        <a href={toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))} target='_blank' className='repo-nav__action'>
+                        <a href={editorUrl} target='_blank' className='repo-nav__action' title='Open on desktop'>
                             <ComputerIcon />
-                            <span>Open on desktop</span>
+                            <span className='repo-nav__action-text'>Open on desktop</span>
                         </a>
                 }
             </div>
