@@ -182,7 +182,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                     key={item.rev}
                     title={item.rev}
                     ref={index === this.state.selection ? this.setSelectedElement : undefined}
-                    onClick={() => this.chooseIndex(index)}
+                    onMouseDown={() => this.chooseIndex(index)}
                 >
                 {item.type === 'commit' && <CommitIcon />}
                 {item.type === 'branch' && <BranchIcon />}
