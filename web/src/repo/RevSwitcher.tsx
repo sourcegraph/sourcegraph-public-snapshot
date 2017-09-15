@@ -106,8 +106,6 @@ export class RevSwitcher extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.onDocumentClick = this.onDocumentClick.bind(this)
-
         // Fetch all revisions for repo whenever component props change.
         this.subscriptions.add(
             Observable.merge(
@@ -182,7 +180,13 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
-        document.addEventListener('click', this.onDocumentClick)
+        this.subscriptions.add(Observable.fromEvent(document, 'click')
+            .subscribe((e: MouseEvent) => {
+                if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
+                    // Click outside of our component.
+                    this.props.onClose()
+                }
+            }))
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -191,7 +195,6 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-        document.removeEventListener('click', this.onDocumentClick)
     }
 
     public componentDidUpdate(): void {
@@ -228,13 +231,6 @@ export class RevSwitcher extends React.Component<Props, State> {
                 </div>
             </div>
         </div>
-    }
-
-    private onDocumentClick(e: MouseEvent): void {
-        if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
-            // Click outside of our component.
-            this.props.onClose()
-        }
     }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = e => {
