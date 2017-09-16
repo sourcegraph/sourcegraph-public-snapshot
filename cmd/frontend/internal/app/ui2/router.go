@@ -99,7 +99,7 @@ func newRouter() *mux.Router {
 func init() {
 	// basic pages with static titles
 	router = newRouter()
-	router.Get(routeHome).Handler(handler(serveBasicPageString("Sourcegraph")))
+	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
 

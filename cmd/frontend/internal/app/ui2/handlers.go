@@ -3,12 +3,15 @@ package ui2
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -106,4 +109,37 @@ func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 		common.Title = title(common, r)
 		return renderTemplate(w, "app.html", common)
 	}
+}
+
+func serveHome(w http.ResponseWriter, r *http.Request) error {
+	common, err := newCommon(w, r, "Sourcegraph", serveError)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
+
+	if !envvar.DeploymentOnPrem() && !actor.FromContext(r.Context()).IsAuthenticated() {
+		// The user is not signed in and we are not on-prem so we are going to
+		// redirect to about.sourcegraph.com.
+		u, err := url.Parse(aboutRedirectScheme + "://" + aboutRedirectHost)
+		if err != nil {
+			return err
+		}
+		q := url.Values{}
+		if r.Host != "sourcegraph.com" {
+			// This allows about.sourcegraph.com to properly redirect back to
+			// dev or staging environment after sign in.
+			q.Set("host", r.Host)
+		}
+		u.RawQuery = q.Encode()
+		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
+		return nil
+	}
+
+	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
+	r.URL.Path = "/search"
+	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+	return nil
 }
