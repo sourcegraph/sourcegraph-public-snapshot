@@ -1,0 +1,4 @@
+--require ts-node/register
+--require tsconfig-paths/register
+--watch-extensions tsx
+src/**/*.test.tsx

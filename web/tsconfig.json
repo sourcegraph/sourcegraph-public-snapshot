@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "./out",
     "target": "es2015",
     "module": "commonjs",
     "allowSyntheticDefaultImports": true,
@@ -24,7 +25,6 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "experimentalDecorators": true,
-    "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": false,
     "downlevelIteration": true,
@@ -35,8 +35,5 @@
         "configFile": "./tslint.json"
       }
     ]
-  },
-  "exclude": [
-    "node_modules"
-  ]
+  }
 }

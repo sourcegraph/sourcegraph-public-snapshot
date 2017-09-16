@@ -5,26 +5,24 @@ type Modal = 'references'
 type ModalMode = 'local' | 'external'
 
 export function parseHash(hash: string): { line?: number, character?: number, modal?: Modal, modalMode?: ModalMode } {
-    let line: number | undefined
-    let character: number | undefined
-    let modal: Modal | undefined
-    let modalMode: ModalMode | undefined
+    if (!/^L[0-9]+($|(:[0-9]+($|(\$references($|(:(local|external)$))))))/.test(hash)) {
+        // invalid hash
+        return {}
+    }
 
     const lineCharModalInfo = hash.split('$') // e.g. "L17:19$references:external"
-    if (lineCharModalInfo[0]) {
-        const lineChar = lineCharModalInfo[0].split('L')
-        if (lineChar[1]) {
-            const coords = lineChar[1].split(':')
-            line = parseInt(coords[0], 10) // 17
-            character = parseInt(coords[1], 10) // 19
-        }
+    const lineChar = lineCharModalInfo[0].split('L')
+    const coords = lineChar[1].split(':')
+    const line = parseInt(coords[0], 10) // 17
+    const character = coords[1] ? parseInt(coords[1], 10) : undefined // 19
+
+    if (!lineCharModalInfo[1]) {
+        return { line, character }
     }
-    if (lineCharModalInfo[1]) {
-        const modalInfo = lineCharModalInfo[1].split(':')
-        // TODO(john): validation
-        modal = modalInfo[0] as Modal // "references"
-        modalMode = modalInfo[1] as ModalMode || 'local' // "external"
-    }
+
+    const modalInfo = lineCharModalInfo[1].split(':')
+    const modal = modalInfo[0] as Modal // "references"
+    const modalMode = modalInfo[1] as ModalMode || 'local' // "external"
     return { line, character, modal, modalMode }
 }
 

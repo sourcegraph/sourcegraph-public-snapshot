@@ -20,12 +20,15 @@ export function isMouseEventWithModifierKey(e: MouseEvent): boolean {
  * @param start the current character position (starts at 0).
  * @param lenght the number of characters to highlight.
  */
-export function highlightNode(node: HTMLElement, start: number, length: number): void {
+export function highlightNode(node: HTMLElement, start: number, length: number, w: Window = window): void {
+    if (start < 0 || length <= 0 || start >= node.textContent!.length) {
+        return
+    }
     if (node.classList.contains('annotated-selection-match')) {
         return
     }
     node.classList.add('annotated-selection-match')
-    highlightNodeHelper(node, 0, start, length)
+    highlightNodeHelper(node, 0, start, length, w)
 }
 
 interface HighlightResult {
@@ -42,7 +45,10 @@ interface HighlightResult {
  * @param start the offset character where highlting starts.
  * @param lenght the number of characters to highlight.
  */
-function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: number, length: number): HighlightResult {
+function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: number, length: number, w: Window): HighlightResult {
+    // typescript doesn't define Node on the Window, although it exists (and must be used e.g. when we are passed a Window from jsdom)
+    const Node = (w as any).Node as Node
+
     if (length === 0) {
         return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0}
     }
@@ -70,22 +76,22 @@ function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: n
                     // The characters beginning at the start of highlighting and extending to the end of the node.
                     const rest = nodeText.substr(start - currOffset)
 
-                    const containerNode = document.createElement('span')
+                    const containerNode = w.document.createElement('span')
                     if (nodeText.substr(0, start - currOffset) !== '') {
                         // If characters were consumed leading up to the start of highlighting, add them to the parent.
-                        containerNode.appendChild(document.createTextNode(nodeText.substr(0, start - currOffset)))
+                        containerNode.appendChild(w.document.createTextNode(nodeText.substr(0, start - currOffset)))
                     }
 
                     if (rest.length >= length) {
                         // The highligted range is fully contained within the node.
                         const text = rest.substr(0, length)
-                        const highlight = document.createElement('span')
+                        const highlight = w.document.createElement('span')
                         highlight.className = 'selection-highlight'
-                        highlight.appendChild(document.createTextNode(text))
+                        highlight.appendChild(w.document.createTextNode(text))
                         containerNode.appendChild(highlight)
                         if (rest.length > length) {
                             // There is more in the span than the highlighted chars.
-                            containerNode.appendChild(document.createTextNode(rest.substr(length)))
+                            containerNode.appendChild(w.document.createTextNode(rest.substr(length)))
                         }
 
                         if (currNode.childNodes.length === 0 || isLastNode) {
@@ -100,9 +106,9 @@ function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: n
                     // Else the highlighted range spans multiple nodes.
                     charsHighlighted += rest.length
 
-                    const highlight = document.createElement('span')
+                    const highlight = w.document.createElement('span')
                     highlight.className = 'selection-highlight'
-                    highlight.appendChild(document.createTextNode(rest))
+                    highlight.appendChild(w.document.createTextNode(rest))
                     containerNode.appendChild(highlight)
 
                     if (currNode.childNodes.length === 0 || isLastNode) {
@@ -118,7 +124,7 @@ function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: n
 
             case Node.ELEMENT_NODE: {
                 const elementNode = child as HTMLElement
-                const res = highlightNodeHelper(elementNode, currOffset, start + charsHighlighted, length - charsHighlighted)
+                const res = highlightNodeHelper(elementNode, currOffset, start + charsHighlighted, length - charsHighlighted, w)
                 if (res.highlightingCompleted) {
                     return res
                 } else {

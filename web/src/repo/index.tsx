@@ -97,7 +97,7 @@ export interface RepoFilePosition extends RepoSpec, Partial<RevSpec>, Partial<Re
 export interface AbsoluteRepoFilePosition extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec, FileSpec, PositionSpec, Partial<ReferencesModeSpec> {}
 
 const parsePosition = (str: string): Position => {
-    const split = str.split('.')
+    const split = str.split(',')
     if (split.length === 1) {
         return { line: parseInt(str, 10), character: 0 }
     }
@@ -144,13 +144,13 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         throw new Error('unexpected fragment: ' + parsed.hash)
     }
 
-    return { repoPath, rev, commitID, filePath, position, range }
+    return { repoPath, rev, commitID, filePath: filePath || undefined, position, range }
 }
 
 /**
- * Parses the properties a blob URL.
+ * Parses the properties of a blob URL.
  */
-export function parseBrowserRepoURL(href: string): ParsedRepoURI {
+export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRepoURI {
     const loc = new URL(href, window.location.href)
     let pathname = loc.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
@@ -211,6 +211,7 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     let uri = `git://${parsed.repoPath}`
     uri += rev ? '?' + rev : ''
     uri += parsed.filePath ? '#' + parsed.filePath : ''
+    uri += parsed.position || parsed.range ? ':' : ''
     uri += parsed.position ? positionStr(parsed.position) : ''
     uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
     return uri
