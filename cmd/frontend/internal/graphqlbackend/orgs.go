@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -16,6 +18,34 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
+
+func (r *rootResolver) Org(ctx context.Context, args *struct {
+	ID int32
+}) (*orgResolver, error) {
+	// 🚨 SECURITY: Check that the current user is a member of the org.
+	actor := actor.FromContext(ctx)
+	if _, err := localstore.OrgMembers.GetByUserID(ctx, args.ID, actor.UID); err != nil {
+		return nil, err
+	}
+	org, err := localstore.Orgs.GetByID(ctx, args.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &orgResolver{org}, nil
+}
+
+func (r *rootResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
+	actor := actor.FromContext(ctx)
+	orgs, err := localstore.Orgs.GetByUserID(actor.UID)
+	if err != nil {
+		return nil, err
+	}
+	orgResolvers := []*orgResolver{}
+	for _, org := range orgs {
+		orgResolvers = append(orgResolvers, &orgResolver{org})
+	}
+	return orgResolvers, nil
+}
 
 type orgResolver struct {
 	org *sourcegraph.Org
@@ -40,7 +70,7 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 		member := &orgMemberResolver{sgMember}
 		members = append(members, member)
 	}
-	return members, err
+	return members, nil
 }
 
 func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {

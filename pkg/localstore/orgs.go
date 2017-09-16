@@ -12,10 +12,10 @@ import (
 
 type orgs struct{}
 
-// AllOrgsFromUID returns a list of all organizations for the user represented by a UID. An empty slice is
+// GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
-func (*orgs) AllOrgsFromUID(UID string) ([]*sourcegraph.Org, error) {
-	rows, err := globalDB.Query("SELECT orgs.id, orgs.name, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1", UID)
+func (*orgs) GetByUserID(userID string) ([]*sourcegraph.Org, error) {
+	rows, err := globalDB.Query("SELECT orgs.id, orgs.name, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1", userID)
 	if err != nil {
 		return []*sourcegraph.Org{}, err
 	}

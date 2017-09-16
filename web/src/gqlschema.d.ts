@@ -44,6 +44,8 @@ declare namespace GQL {
     searchProfiles: Array<ISearchProfile>;
     revealCustomerCompany: ICompanyProfile | null;
     threads: Array<IThread>;
+    orgs: Array<IOrg>;
+    org: IOrg;
   }
 
   /*
@@ -288,7 +290,6 @@ declare namespace GQL {
     __typename: "User";
     githubInstallations: Array<IInstallation>;
     id: string;
-    handle: string | null;
     avatarURL: string | null;
     email: string | null;
   }
@@ -467,6 +468,33 @@ declare namespace GQL {
     updatedAt: string;
     authorName: string;
     authorEmail: string;
+    author: IOrgMember;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgMember {
+    __typename: "OrgMember";
+    id: number;
+    orgID: number;
+    userID: string;
+    username: string;
+    email: string;
+    displayName: string;
+    avatarURL: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrg {
+    __typename: "Org";
+    id: number;
+    name: string;
+    members: Array<IOrgMember>;
   }
 
   /*
@@ -486,32 +514,9 @@ declare namespace GQL {
   /*
     description: null
   */
-  interface IOrg {
-    __typename: "Org";
-    id: number;
-    name: string;
-  }
-
-  /*
-    description: null
-  */
   interface IEmptyResponse {
     __typename: "EmptyResponse";
     alwaysNil: string | null;
-  }
-
-  /*
-    description: null
-  */
-  interface IOrgMember {
-    __typename: "OrgMember";
-    id: number;
-    orgID: number;
-    userID: string;
-    username: string;
-    email: string;
-    createdAt: string;
-    updatedAt: string;
   }
 
   /*

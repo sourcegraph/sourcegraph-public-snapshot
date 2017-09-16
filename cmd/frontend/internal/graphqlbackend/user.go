@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
@@ -50,16 +49,4 @@ func (r *currentUserResolver) AvatarURL(ctx context.Context) *string {
 // frontend, don't just return the actor's value (set at sign up/sign in)
 func (r *currentUserResolver) Email(ctx context.Context) *string {
 	return &r.actor.Email
-}
-
-func (r *currentUserResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
-	orgs, err := localstore.Orgs.AllOrgsFromUID(r.actor.UID)
-	if err != nil {
-		return nil, err
-	}
-	orgResolvers := []*orgResolver{}
-	for _, org := range orgs {
-		orgResolvers = append(orgResolvers, &orgResolver{org})
-	}
-	return orgResolvers, nil
 }
