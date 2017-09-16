@@ -114,10 +114,7 @@ func init() {
 	})))
 
 	// repo or main pages
-	serveRepoHandler := handler(serveBasicPage(func(c *Common, r *http.Request) string {
-		// e.g. "gorilla/mux - Sourcegraph"
-		return fmt.Sprintf("%s - Sourcegraph", repoShortName(c.Repo.URI))
-	}))
+	serveRepoHandler := handler(serveRepo)
 	router.Get(routeRepoOrMain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if handlerutil.DebugMode && r.URL.Path == "/__errorTest" {
