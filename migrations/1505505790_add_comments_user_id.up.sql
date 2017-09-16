@@ -1,0 +1,1 @@
+ALTER TABLE comments ADD COLUMN author_user_id TEXT;

@@ -474,8 +474,9 @@ type Comment struct {
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 	// Author fields are temporary, will be replaced with author id once we have
 	// accounts.
-	AuthorName  string `json:"AuthorName,omitempty"`
-	AuthorEmail string `json:"AuthorEmail,omitempty"`
+	AuthorName   string `json:"AuthorName,omitempty"`
+	AuthorEmail  string `json:"AuthorEmail,omitempty"`
+	AuthorUserID string `json:"AuthorUserID,omitempty"`
 }
 
 type Org struct {
@@ -486,11 +487,13 @@ type Org struct {
 }
 
 type OrgMember struct {
-	ID        int32     `json:"ID"`
-	OrgID     int32     `json:"OrgID"`
-	UserID    string    `json:"UserID"`
-	Username  string    `json:"Username,omitempty"`
-	Email     string    `json:"Email,omitempty"`
-	CreatedAt time.Time `json:"CreatedAt,omitempty"`
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+	ID          int32     `json:"ID"`
+	OrgID       int32     `json:"OrgID"`
+	UserID      string    `json:"UserID"`
+	Username    string    `json:"Username,omitempty"`
+	Email       string    `json:"Email,omitempty"`
+	DisplayName string    `json:"DisplayName,omitempty"`
+	AvatarURL   string    `json:"AvatarURL,omitempty"`
+	CreatedAt   time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt   time.Time `json:"UpdatedAt,omitempty"`
 }

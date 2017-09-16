@@ -22,9 +22,9 @@ type Mutation {
 	createThread(remoteURI: String!, accessToken: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!, authorName: String!, authorEmail: String!): Thread!
 	updateThread(remoteURI: String!, accessToken: String!, threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
-	createOrg(name: String!, username: String!, userEmail: String!): Org!
-	inviteUser(userEmail: String!, orgID: Int!): EmptyResponse
-	acceptUserInvite(inviteToken: String!, username: String!, userEmail: String!): OrgMember!
+	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String!): Org!
+	inviteUser(email: String!, orgID: Int!): EmptyResponse
+	acceptUserInvite(inviteToken: String!, username: String!, email: String!, displayName: String!, avatarUrl: String!): OrgMember!
 	removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
 }
 
@@ -320,6 +320,8 @@ type OrgMember {
 	userID: String!
 	username: String!
 	email: String!
+	displayName: String!
+	avatarURL: String!
 	createdAt: String!
 	updatedAt: String!
 }
@@ -345,5 +347,6 @@ type Comment {
 	updatedAt: String!
 	authorName: String!
 	authorEmail: String!
+	author: OrgMember!
 }
 `

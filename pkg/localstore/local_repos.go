@@ -31,6 +31,17 @@ func validateLocalRepo(repo *sourcegraph.LocalRepo) error {
 
 type localRepos struct{}
 
+func (l *localRepos) GetByID(ctx context.Context, id int64) (*sourcegraph.LocalRepo, error) {
+	repos, err := l.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	if err != nil {
+		return nil, err
+	}
+	if len(repos) != 1 {
+		return nil, ErrRepoNotFound
+	}
+	return repos[0], nil
+}
+
 func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string, orgID int32) (*sourcegraph.LocalRepo, error) {
 	if Mocks.LocalRepos.Get != nil {
 		return Mocks.LocalRepos.Get(ctx, remoteURI, accessToken, orgID)

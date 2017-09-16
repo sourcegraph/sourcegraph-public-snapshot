@@ -12,7 +12,7 @@ import (
 // For a detailed overview of the schema, see schema.txt.
 type comments struct{}
 
-func (*comments) Create(ctx context.Context, threadID int32, contents string, authorName, authorEmail string) (*sourcegraph.Comment, error) {
+func (*comments) Create(ctx context.Context, threadID int32, contents string, authorName, authorEmail string, authorUserID string) (*sourcegraph.Comment, error) {
 	if Mocks.Comments.Create != nil {
 		return Mocks.Comments.Create(ctx, threadID, contents, authorName, authorEmail)
 	}
@@ -20,21 +20,29 @@ func (*comments) Create(ctx context.Context, threadID int32, contents string, au
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int64
-	err := globalDB.QueryRow(
-		"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
+	var err error
+	if authorUserID != "" {
+		err = globalDB.QueryRow(
+			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id) VALUES($1, $2, $3, $4, $5) RETURNING id",
+			threadID, contents, createdAt, updatedAt, authorUserID).Scan(&id)
+	} else {
+		err = globalDB.QueryRow(
+			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
+			threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	return &sourcegraph.Comment{
-		ID:          int32(id),
-		ThreadID:    threadID,
-		Contents:    contents,
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
-		AuthorName:  authorName,
-		AuthorEmail: authorEmail,
+		ID:           int32(id),
+		ThreadID:     threadID,
+		Contents:     contents,
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
+		AuthorName:   authorName,
+		AuthorEmail:  authorEmail,
+		AuthorUserID: authorUserID,
 	}, nil
 }
 

@@ -30,6 +30,14 @@ func (m *orgMemberResolver) Username() string {
 	return m.member.Username
 }
 
+func (m *orgMemberResolver) DisplayName() string {
+	return m.member.DisplayName
+}
+
+func (m *orgMemberResolver) AvatarURL() string {
+	return m.member.AvatarURL
+}
+
 func (m *orgMemberResolver) CreatedAt() string {
 	return m.member.CreatedAt.Format(time.RFC3339) // ISO
 }

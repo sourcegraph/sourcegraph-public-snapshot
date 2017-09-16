@@ -11,6 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -116,7 +117,7 @@ func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, erro
 	}
 	comments := []*commentResolver{}
 	for _, c := range cs {
-		comments = append(comments, &commentResolver{comment: c})
+		comments = append(comments, &commentResolver{comment: c, thread: t.thread})
 	}
 	return comments, nil
 }
@@ -134,6 +135,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	AuthorName     string
 	AuthorEmail    string
 }) (*threadResolver, error) {
+	actor := actor.FromContext(ctx)
 	// TODO(Nick): add orgId parameter
 	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, 0)
 	if err == store.ErrRepoNotFound {
@@ -162,7 +164,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, args.AuthorName, args.AuthorEmail)
+	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, args.AuthorName, args.AuthorEmail, actor.UID)
 	if err != nil {
 		return nil, err
 	}

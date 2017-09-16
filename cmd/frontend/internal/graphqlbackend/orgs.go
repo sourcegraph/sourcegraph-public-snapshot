@@ -44,9 +44,11 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
-	Name      string
-	UserName  string
-	UserEmail string
+	Name        string
+	Username    string
+	Email       string
+	DisplayName string
+	AvatarURL   string
 }) (*orgResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
@@ -57,12 +59,12 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+
 	// Add the current user as the first member of the new org.
-	_, err = store.OrgMembers.Create(ctx, int(newOrg.ID), actor.UID, args.UserName, args.UserEmail)
+	_, err = store.OrgMembers.Create(ctx, newOrg.ID, actor.UID, args.Username, args.Email, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
-
 	return &orgResolver{org: newOrg}, nil
 }
 
@@ -70,35 +72,52 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	UserID string
 	OrgID  int32
 }) (*EmptyResponse, error) {
-	if isMember, err := store.Orgs.CurrentUserIsMember(ctx, store.OrgID(args.OrgID)); !isMember || err != nil {
+	// 🚨 SECURITY: Check that the current user is a member
+	// of the org that is being modified.
+	actor := actor.FromContext(ctx)
+	if _, err := store.OrgMembers.GetByUserID(ctx, args.OrgID, actor.UID); err != nil {
 		return nil, err
 	}
 	log15.Info("removing user from org", "user", args.UserID, "org", args.OrgID)
-	return nil, store.OrgMembers.Remove(ctx, int(args.OrgID), args.UserID)
+	return nil, store.OrgMembers.Remove(ctx, args.OrgID, args.UserID)
 }
 
 func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
-	UserEmail string
-	OrgID     int32
+	OrgID int32
+	Email string
 }) (*EmptyResponse, error) {
-	if isMember, err := store.Orgs.CurrentUserIsMember(ctx, store.OrgID(args.OrgID)); !isMember || err != nil {
+	// 🚨 SECURITY: Check that the current user is a member
+	// of the org that is being modified.
+	actor := actor.FromContext(ctx)
+	if _, err := store.OrgMembers.GetByUserID(ctx, args.OrgID, actor.UID); err != nil {
 		return nil, err
 	}
-	token, err := createOrgInviteToken(store.OrgID(args.OrgID))
+
+	// Don't invite the user if they are already a member.
+	_, err := store.OrgMembers.GetByEmail(ctx, args.OrgID, args.Email)
+	if err == nil {
+		return nil, fmt.Errorf("user %s is already a member of org %d", args.Email, args.OrgID)
+	}
+	if err != store.ErrOrgMemberNotFound {
+		return nil, err
+	}
+
+	token, err := createOrgInviteToken(args.OrgID)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: send email
 	log.Println(token)
-
 	return nil, nil
 }
 
 func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	InviteToken string
-	UserName    string
-	UserEmail   string
+	Username    string
+	Email       string
+	DisplayName string
+	AvatarURL   string
 }) (*orgMemberResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
@@ -114,16 +133,16 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	m, err := store.OrgMembers.Create(ctx, int(orgID), actor.UID, args.UserName, args.UserEmail)
+	m, err := store.OrgMembers.Create(ctx, orgID, actor.UID, args.Username, args.Email, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
 	return &orgMemberResolver{member: m}, nil
 }
 
-func createOrgInviteToken(orgID store.OrgID) (string, error) {
+func createOrgInviteToken(orgID int32) (string, error) {
 	payload := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"orgID": int(orgID),
+		"orgID": orgID,
 		"exp":   time.Now().Add(time.Hour * 24 * 7).Unix(),
 	})
 	return payload.SignedString(conf.AppSecretKey)

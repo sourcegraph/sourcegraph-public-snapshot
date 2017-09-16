@@ -2,30 +2,21 @@ package localstore
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type orgs struct{}
-
-type OrgID int32
-
-const NoOrg OrgID = 0
 
 // AllOrgsFromUID returns a list of all organizations for the user represented by a UID. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (*orgs) AllOrgsFromUID(UID string) ([]*sourcegraph.Org, error) {
 	rows, err := globalDB.Query("SELECT orgs.id, orgs.name, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1", UID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return []*sourcegraph.Org{}, nil
-		}
 		return []*sourcegraph.Org{}, err
 	}
 
@@ -45,24 +36,6 @@ func (*orgs) AllOrgsFromUID(UID string) ([]*sourcegraph.Org, error) {
 	}
 
 	return orgs, nil
-}
-
-// CurrentUserIsMember returns a boolean indicating if the current user is member of the given
-// organization.
-func (*orgs) CurrentUserIsMember(ctx context.Context, org OrgID) (bool, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return false, nil
-	}
-
-	if err := globalDB.QueryRow("SELECT FROM org_members WHERE user_id=$1 AND org_id=$2 LIMIT 1", a.UID, org).Scan(); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
 }
 
 func validateOrg(org sourcegraph.Org) error {
@@ -86,9 +59,6 @@ func (o *orgs) GetByID(ctx context.Context, OrgID int32) (*sourcegraph.Org, erro
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Org, error) {
 	rows, err := globalDB.Query("SELECT id, name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
 		return nil, err
 	}
 

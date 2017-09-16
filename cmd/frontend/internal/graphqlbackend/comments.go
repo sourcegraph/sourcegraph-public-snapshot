@@ -13,6 +13,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
@@ -20,6 +21,7 @@ import (
 
 type commentResolver struct {
 	comment *sourcegraph.Comment
+	thread  *sourcegraph.Thread
 }
 
 func (c *commentResolver) ID() int32 {
@@ -30,10 +32,12 @@ func (c *commentResolver) Contents() string {
 	return c.comment.Contents
 }
 
+// deprecated
 func (c *commentResolver) AuthorName() string {
 	return c.comment.AuthorName
 }
 
+// deprecated
 func (c *commentResolver) AuthorEmail() string {
 	return c.comment.AuthorEmail
 }
@@ -46,6 +50,18 @@ func (c *commentResolver) UpdatedAt() string {
 	return c.comment.UpdatedAt.Format(time.RFC3339) // ISO
 }
 
+func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
+	repo, err := store.LocalRepos.GetByID(ctx, int64(c.thread.LocalRepoID))
+	if err != nil {
+		return nil, err
+	}
+	orgMember, err := store.OrgMembers.GetByUserID(ctx, repo.OrgID, c.comment.AuthorUserID)
+	if err != nil {
+		return nil, err
+	}
+	return &orgMemberResolver{orgMember}, nil
+}
+
 func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	RemoteURI   string
 	AccessToken string
@@ -56,6 +72,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
+	actor := actor.FromContext(ctx)
 
 	// TODO(Nick): add orgId parameter
 	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, 0)
@@ -74,7 +91,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, args.AuthorName, args.AuthorEmail)
+	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, args.AuthorName, args.AuthorEmail, actor.UID)
 	if err != nil {
 		return nil, err
 	}
