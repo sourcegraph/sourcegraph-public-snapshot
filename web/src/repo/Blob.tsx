@@ -136,7 +136,7 @@ export class Blob extends React.Component<Props, State> {
             // The contents were updated on a mounted component and we did a 'back' or 'forward' event;
             // scroll to the appropariate line after the new table is created.
             this.scrollToLine(this.props)
-        } else if (this.props.location.state.referencesClick) {
+        } else if (this.props.location.state && this.props.location.state.referencesClick) {
             // We do not want to scroll on all 'PUSH' events (otherwise every time a user clicks
             // a line the page would scroll). However, to allow some <Link>'s in external components
             // to trigger a scroll, we let those <Link> components set push state. The references
