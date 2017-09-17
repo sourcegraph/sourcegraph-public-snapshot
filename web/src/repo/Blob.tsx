@@ -336,8 +336,11 @@ export class Blob extends React.Component<Props, State> {
             const lastHash = parseHash(this.props.location.hash)
             hideTooltip()
             if (defCtx.position.line && this.props.repoPath === defCtx.repoPath && this.props.rev === defCtx.rev && lastHash.line !== defCtx.position.line) {
-                // Handles URL update + scroll to file (for j2d within same file)
-                updateAndScrollToLine(getCodeCell(defCtx.position.line), this.props.history, defCtx)
+                // Handles URL update + scroll to file (for j2d within same file).
+                // Since the defCtx rev/commitID may be undefined, use the resolved rev
+                // for the current file.
+                const ctx = { ...defCtx, commitID: this.props.commitID }
+                updateAndScrollToLine(getCodeCell(ctx.position.line), this.props.history, ctx)
             } else {
                 this.setState({ fixedTooltip: undefined }, () => this.props.history.push(toAbsoluteBlobURL(defCtx)))
             }
