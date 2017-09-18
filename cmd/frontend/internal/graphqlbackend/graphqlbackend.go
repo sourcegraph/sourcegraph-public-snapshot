@@ -299,3 +299,40 @@ func (r *rootResolver) RevealCustomerCompany(ctx context.Context, args *struct{ 
 		},
 	}, nil
 }
+
+func (r *rootResolver) Packages(ctx context.Context, args *struct {
+	Lang    string
+	ID      *string
+	Type    *string
+	Name    *string
+	Commit  *string
+	BaseDir *string
+	RepoURL *string
+	Version *string
+	Offset  *int
+	Limit   *int
+}) ([]*packageResolver, error) {
+	limit := 10
+	if args.Limit != nil {
+		limit = *args.Limit
+	}
+	pkgQuery := packageMetadata{
+		id:      args.ID,
+		typ:     args.Type,
+		name:    args.Name,
+		commit:  args.Commit,
+		baseDir: args.BaseDir,
+		repoURL: args.RepoURL,
+		version: args.Version,
+	}.toPkgQuery()
+
+	pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: args.Lang, PkgQuery: pkgQuery, Limit: limit})
+	if err != nil {
+		return nil, err
+	}
+	pkgResolvers := make([]*packageResolver, len(pkgs))
+	for i, pkg := range pkgs {
+		pkgResolvers[i] = &packageResolver{&pkg}
+	}
+	return pkgResolvers, nil
+}

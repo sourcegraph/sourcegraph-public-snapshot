@@ -44,6 +44,7 @@ type Root {
 	revealCustomerCompany(ip: String!): CompanyProfile
 	threads(remoteURI: String!, accessToken: String!, file: String, limit: Int): [Thread!]!
 	org(id: Int!): Org!
+	packages(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, limit: Int): [Package]!
 }
 
 union SearchResult = Repository | File | SearchProfile
@@ -353,5 +354,17 @@ type Comment {
 	authorName: String!
 	authorEmail: String!
 	author: OrgMember!
+}
+
+type Package {
+	lang: String!
+	id: String
+	type: String
+	name: String
+	commit: String
+	baseDir: String
+	repoURL: String
+	version: String
+	repo(): Repository
 }
 `
