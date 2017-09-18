@@ -165,10 +165,10 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
  */
 class App extends React.Component<{}, {}> {
     public render(): JSX.Element | null {
-        if (window.pageError && window.pageError.StatusCode !== 404) {
-            const statusText = window.pageError.StatusText
-            const errorMessage = window.pageError.Error
-            const errorID = window.pageError.ErrorID
+        if (window.pageError && window.pageError.statusCode !== 404) {
+            const statusText = window.pageError.statusText
+            const errorMessage = window.pageError.error
+            const errorID = window.pageError.errorID
 
             let subtitle: JSX.Element | undefined
             if (errorID) {

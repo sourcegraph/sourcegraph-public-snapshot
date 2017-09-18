@@ -205,8 +205,10 @@ func serveError(w http.ResponseWriter, r *http.Request, err error, statusCode in
 }
 
 type pageError struct {
-	StatusCode                 int
-	StatusText, Error, ErrorID string
+	StatusCode int    `json:"statusCode"`
+	StatusText string `json:"statusText"`
+	Error      string `json:"error"`
+	ErrorID    string `json:"errorID"`
 }
 
 // serveErrorNoDebug should not be called by anyone except serveErrorTest.

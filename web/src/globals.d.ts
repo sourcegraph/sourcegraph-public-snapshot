@@ -1,8 +1,8 @@
 interface PageError {
-    StatusCode: number
-    StatusText: string
-    Error: string
-    ErrorID: string
+    statusCode: number
+    statusText: string
+    error: string
+    errorID: string
 }
 
 interface Window {
