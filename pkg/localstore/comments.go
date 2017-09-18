@@ -2,7 +2,10 @@ package localstore
 
 import (
 	"context"
+	"database/sql"
 	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -26,6 +29,7 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id) VALUES($1, $2, $3, $4, $5) RETURNING id",
 			threadID, contents, createdAt, updatedAt, authorUserID).Scan(&id)
 	} else {
+		// deprecated code path
 		err = globalDB.QueryRow(
 			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
 			threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
@@ -52,7 +56,7 @@ func (c *comments) GetAllForThread(ctx context.Context, threadID int32) ([]*sour
 
 // getBySQL returns comments matching the SQL query, if any exist.
 func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Comment, error) {
-	rows, err := globalDB.Query("SELECT id, thread_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
+	rows, err := globalDB.Query("SELECT id, thread_id, author_user_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +65,21 @@ func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}
 	defer rows.Close()
 	for rows.Next() {
 		var c sourcegraph.Comment
-		err := rows.Scan(&c.ID, &c.ThreadID, &c.Contents, &c.CreatedAt, &c.UpdatedAt, &c.AuthorName, &c.AuthorEmail)
+		var authorUserID, authorName, authorEmail sql.NullString
+		err := rows.Scan(&c.ID, &c.ThreadID, &authorUserID, &c.Contents, &c.CreatedAt, &c.UpdatedAt, &authorName, &authorEmail)
 		if err != nil {
 			return nil, err
+		}
+		if authorUserID.Valid {
+			c.AuthorUserID = authorUserID.String
+		} else if authorName.Valid && authorEmail.Valid {
+			// deprecated code path
+			c.AuthorName = authorName.String
+			c.AuthorEmail = authorEmail.String
+		} else {
+			// Skip invalid db row
+			log15.Warn("invalid comment in database", "id", c.ID)
+			continue
 		}
 		comments = append(comments, &c)
 	}
