@@ -213,12 +213,12 @@ export class Blob extends React.Component<Props, State> {
                 .filter(props => {
                     const parsed = parseHash(props.location.hash)
                     if (parsed.line && parsed.character) {
+                        const td = getCodeCell(parsed.line).childNodes[1] as HTMLTableDataCellElement
+                        if (td && !td.classList.contains('annotated')) {
+                            td.classList.add('annotated')
+                            convertNode(td)
+                        }
                         if (!parsed.modal) {
-                            const td = getCodeCell(parsed.line).childNodes[1] as HTMLTableDataCellElement
-                            if (td && !td.classList.contains('annotated')) {
-                                td.classList.add('annotated')
-                                convertNode(td)
-                            }
                             return true
                         }
                         // Don't show a tooltip when there is a modal (but do highlight the token)
