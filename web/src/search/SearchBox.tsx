@@ -119,7 +119,7 @@ export class SearchBox extends React.Component<Props, State> {
                     // TODO suggest repo glob filter (needs server implementation)
                     // TODO verify that the glob matches something server-side,
                     //      only suggest if it does and show number of matches
-                    if (/\*|\?/.exec(this.state.query)) {
+                    if (/^!|\*|\?/.exec(this.state.query)) {
                         const fileGlobFilter: FileGlobFilter = {
                             type: FilterType.FileGlob,
                             value: this.state.query

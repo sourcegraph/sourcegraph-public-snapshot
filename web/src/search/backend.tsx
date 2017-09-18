@@ -1,3 +1,4 @@
+import { partition } from 'lodash'
 import 'rxjs/add/observable/defer'
 import 'rxjs/add/observable/from'
 import 'rxjs/add/observable/merge'
@@ -11,7 +12,7 @@ import 'rxjs/add/operator/toArray'
 import 'rxjs/add/operator/toPromise'
 import { Observable } from 'rxjs/Observable'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
-import { FileFilter, FileGlobFilter, Filter, FilterType, RepoFilter, RepoGroupFilter, SearchOptions } from 'sourcegraph/search'
+import { Filter, FilterType, RepoFilter, RepoGroupFilter, SearchOptions } from 'sourcegraph/search'
 
 /** Map from search profile name to repo "URIs" */
 const searchProfileRepos = new Map<string, string[]>()
@@ -62,19 +63,22 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
     )
         .map(repo => ({ repo }))
         .toArray()
-        .map(repositories => ({
-            pattern: params.query,
-            fileMatchLimit: 500,
-            isRegExp: params.matchRegex,
-            isWordMatch: params.matchWord,
-            repositories,
-            isCaseSensitive: params.matchCase,
-            includePattern: [
-                ...params.filters.filter(f => f.type === FilterType.File).map((f: FileFilter) => f.value),
-                ...params.filters.filter(f => f.type === FilterType.FileGlob).map((f: FileGlobFilter) => f.value)
-            ].join(','),
-            excludePattern: '{.git,**/.git,.svn,**/.svn,.hg,**/.hg,CVS,**/CVS,.DS_Store,**/.DS_Store,node_modules,bower_components,vendor,dist,out,Godeps,third_party}'
-        }))
+        .map(repositories => {
+            const filePatterns = params.filters.filter(f => f.type === FilterType.File || f.type === FilterType.FileGlob).map(f => f.value)
+            const [excludePatterns, includePatterns] = partition(filePatterns, pattern => pattern[0] === '!')
+            const includePattern = includePatterns.length > 0 ? '{' + includePatterns.join(',') + '}' : ''
+            const excludePattern = excludePatterns.length > 0 ? '{' + excludePatterns.map(p => p.substr(1)).join(',') + '}' : ''
+            return {
+                pattern: params.query,
+                fileMatchLimit: 500,
+                isRegExp: params.matchRegex,
+                isWordMatch: params.matchWord,
+                repositories,
+                isCaseSensitive: params.matchCase,
+                includePattern,
+                excludePattern
+            }
+        })
         .mergeMap(variables => queryGraphQL(`
             query SearchText(
                 $pattern: String!,

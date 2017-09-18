@@ -91,6 +91,14 @@ export class Home extends React.Component<Props, State> {
                         </div>
                         <div className='home__instruction-row'>
                             <div className='home__explanation'>
+                                Search all files except the vendor/ directory for "session"
+                            </div>
+                            <div className='home__instruction'>
+                                aws/aws-sdk-go <kbd>tab</kbd> !vendor/** <kbd>tab</kbd> session <kbd>enter</kbd>
+                            </div>
+                        </div>
+                        <div className='home__instruction-row'>
+                            <div className='home__explanation'>
                                 Search for the regular expression "type .+ struct"
                             </div>
                             <div className='home__instruction'>
