@@ -1,4 +1,4 @@
-.home {
+.search {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -22,7 +22,7 @@
         max-width: 90%;
         position: relative;
 
-        // Make chips multi-line on the homepage
+        // Make chips multi-line on the search page
         .search-box__chips {
             flex-wrap: wrap;
         }
