@@ -446,6 +446,7 @@ declare namespace GQL {
   interface IThread {
     __typename: "Thread";
     id: number;
+    repo: IOrgRepo;
     file: string;
     revision: string;
     title: string;
@@ -456,6 +457,46 @@ declare namespace GQL {
     createdAt: string;
     archivedAt: string | null;
     comments: Array<IComment>;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgRepo {
+    __typename: "OrgRepo";
+    id: number;
+    org: IOrg;
+    remoteUri: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrg {
+    __typename: "Org";
+    id: number;
+    name: string;
+    members: Array<IOrgMember>;
+    repos: Array<IOrgRepo>;
+    threads: Array<IThread>;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgMember {
+    __typename: "OrgMember";
+    id: number;
+    org: IOrg;
+    userID: string;
+    username: string;
+    email: string;
+    displayName: string;
+    avatarURL: string;
+    createdAt: string;
+    updatedAt: string;
   }
 
   /*
@@ -475,37 +516,14 @@ declare namespace GQL {
   /*
     description: null
   */
-  interface IOrgMember {
-    __typename: "OrgMember";
-    id: number;
-    orgID: number;
-    userID: string;
-    username: string;
-    email: string;
-    displayName: string;
-    avatarURL: string;
-    createdAt: string;
-    updatedAt: string;
-  }
-
-  /*
-    description: null
-  */
-  interface IOrg {
-    __typename: "Org";
-    id: number;
-    name: string;
-    members: Array<IOrgMember>;
-  }
-
-  /*
-    description: null
-  */
   interface IMutation {
     __typename: "Mutation";
     createThread: IThread;
+    createThread2: IThread;
     updateThread: IThread;
+    updateThread2: IThread;
     addCommentToThread: IThread;
+    addCommentToThread2: IThread;
     createOrg: IOrg;
     inviteUser: IEmptyResponse | null;
     acceptUserInvite: IOrgMember;
