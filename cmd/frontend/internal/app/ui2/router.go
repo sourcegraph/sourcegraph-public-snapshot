@@ -105,10 +105,7 @@ func init() {
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
-		shortQuery := r.URL.Query().Get("q")
-		if len(shortQuery) > 8 {
-			shortQuery = shortQuery[:8]
-		}
+		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
 		// e.g. "myquery - Sourcegraph"
 		return fmt.Sprintf("%s - Sourcegraph", shortQuery)
 	})))
@@ -163,6 +160,18 @@ func init() {
 		fileName := path.Base(mux.Vars(r)["Path"])
 		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.URI))
 	})))
+}
+
+// limitString limits the given string to at most N characters, optionally
+// adding an ellipsis (…) at the end.
+func limitString(s string, n int, ellipsis bool) string {
+	if len(s) < n {
+		return s
+	}
+	if ellipsis {
+		return s[:n-1] + "…"
+	}
+	return s[:n-1]
 }
 
 // handler wraps an HTTP handler that returns potential errors. If any error is
