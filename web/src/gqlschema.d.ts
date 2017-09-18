@@ -44,7 +44,6 @@ declare namespace GQL {
     searchProfiles: Array<ISearchProfile>;
     revealCustomerCompany: ICompanyProfile | null;
     threads: Array<IThread>;
-    orgs: Array<IOrg>;
     org: IOrg;
   }
 
@@ -293,6 +292,7 @@ declare namespace GQL {
     id: string;
     avatarURL: string | null;
     email: string | null;
+    orgs: Array<IOrg>;
   }
 
   /*
@@ -305,6 +305,79 @@ declare namespace GQL {
     installId: number;
     type: string;
     avatarURL: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrg {
+    __typename: "Org";
+    id: number;
+    name: string;
+    members: Array<IOrgMember>;
+    repos: Array<IOrgRepo>;
+    threads: Array<IThread>;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgMember {
+    __typename: "OrgMember";
+    id: number;
+    org: IOrg;
+    userID: string;
+    username: string;
+    email: string;
+    displayName: string;
+    avatarURL: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgRepo {
+    __typename: "OrgRepo";
+    id: number;
+    org: IOrg;
+    remoteUri: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IThread {
+    __typename: "Thread";
+    id: number;
+    repo: IOrgRepo;
+    file: string;
+    revision: string;
+    title: string;
+    startLine: number;
+    endLine: number;
+    startCharacter: number;
+    endCharacter: number;
+    createdAt: string;
+    archivedAt: string | null;
+    comments: Array<IComment>;
+  }
+
+  /*
+    description: null
+  */
+  interface IComment {
+    __typename: "Comment";
+    id: number;
+    contents: string;
+    createdAt: string;
+    updatedAt: string;
+    authorName: string;
+    authorEmail: string;
+    author: IOrgMember;
   }
 
   /*
@@ -438,79 +511,6 @@ declare namespace GQL {
     industryGroup: string;
     industry: string;
     subIndustry: string;
-  }
-
-  /*
-    description: null
-  */
-  interface IThread {
-    __typename: "Thread";
-    id: number;
-    repo: IOrgRepo;
-    file: string;
-    revision: string;
-    title: string;
-    startLine: number;
-    endLine: number;
-    startCharacter: number;
-    endCharacter: number;
-    createdAt: string;
-    archivedAt: string | null;
-    comments: Array<IComment>;
-  }
-
-  /*
-    description: null
-  */
-  interface IOrgRepo {
-    __typename: "OrgRepo";
-    id: number;
-    org: IOrg;
-    remoteUri: string;
-    createdAt: string;
-    updatedAt: string;
-  }
-
-  /*
-    description: null
-  */
-  interface IOrg {
-    __typename: "Org";
-    id: number;
-    name: string;
-    members: Array<IOrgMember>;
-    repos: Array<IOrgRepo>;
-    threads: Array<IThread>;
-  }
-
-  /*
-    description: null
-  */
-  interface IOrgMember {
-    __typename: "OrgMember";
-    id: number;
-    org: IOrg;
-    userID: string;
-    username: string;
-    email: string;
-    displayName: string;
-    avatarURL: string;
-    createdAt: string;
-    updatedAt: string;
-  }
-
-  /*
-    description: null
-  */
-  interface IComment {
-    __typename: "Comment";
-    id: number;
-    contents: string;
-    createdAt: string;
-    updatedAt: string;
-    authorName: string;
-    authorEmail: string;
-    author: IOrgMember;
   }
 
   /*

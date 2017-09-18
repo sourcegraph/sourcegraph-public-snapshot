@@ -45,7 +45,6 @@ type Root {
 	searchProfiles: [SearchProfile!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
 	threads(remoteURI: String!, accessToken: String!, file: String, limit: Int): [Thread!]!
-	orgs: [Org!]!
 	org(id: Int!): Org!
 }
 
@@ -273,6 +272,7 @@ type User {
 	id: String!
 	avatarURL: String
 	email: String
+	orgs: [Org!]!
 }
 
 type CompanyProfile {

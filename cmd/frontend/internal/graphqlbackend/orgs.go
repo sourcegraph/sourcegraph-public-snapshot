@@ -34,19 +34,6 @@ func (r *rootResolver) Org(ctx context.Context, args *struct {
 	return &orgResolver{org}, nil
 }
 
-func (r *rootResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
-	actor := actor.FromContext(ctx)
-	orgs, err := localstore.Orgs.GetByUserID(actor.UID)
-	if err != nil {
-		return nil, err
-	}
-	orgResolvers := []*orgResolver{}
-	for _, org := range orgs {
-		orgResolvers = append(orgResolvers, &orgResolver{org})
-	}
-	return orgResolvers, nil
-}
-
 type orgResolver struct {
 	org *sourcegraph.Org
 }

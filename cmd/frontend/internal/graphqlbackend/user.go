@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
@@ -21,6 +22,19 @@ func currentUser(ctx context.Context) (*currentUserResolver, error) {
 	return &currentUserResolver{
 		actor: actor,
 	}, nil
+}
+
+func (r *currentUserResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
+	actor := actor.FromContext(ctx)
+	orgs, err := localstore.Orgs.GetByUserID(actor.UID)
+	if err != nil {
+		return nil, err
+	}
+	orgResolvers := []*orgResolver{}
+	for _, org := range orgs {
+		orgResolvers = append(orgResolvers, &orgResolver{org})
+	}
+	return orgResolvers, nil
 }
 
 func (r *currentUserResolver) GitHubInstallations(ctx context.Context) ([]*installationResolver, error) {
