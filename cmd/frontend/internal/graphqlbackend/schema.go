@@ -20,8 +20,11 @@ type Query {
 
 type Mutation {
 	createThread(remoteURI: String!, accessToken: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!, authorName: String!, authorEmail: String!): Thread!
+	createThread2(orgRepoID: Int!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!): Thread!
 	updateThread(remoteURI: String!, accessToken: String!, threadID: Int!, archived: Boolean): Thread!
+	updateThread2(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
+	addCommentToThread2(threadID: Int!, contents: String!): Thread!
 	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String!): Org!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
 	acceptUserInvite(inviteToken: String!, username: String!, email: String!, displayName: String!, avatarUrl: String!): OrgMember!
@@ -314,11 +317,13 @@ type Org {
 	id: Int!
 	name: String!
 	members: [OrgMember!]!
+	repos: [OrgRepo!]!
+	threads(limit: Int): [Thread!]!
 }
 
 type OrgMember {
 	id: Int!
-	orgID: Int!
+	org: Org!
 	userID: String!
 	username: String!
 	email: String!
@@ -328,8 +333,17 @@ type OrgMember {
 	updatedAt: String!
 }
 
+type OrgRepo {
+	id: Int!
+	org: Org!
+	remoteUri: String!
+	createdAt: String!
+	updatedAt: String!
+}
+
 type Thread {
 	id: Int!
+	repo: OrgRepo!
 	file: String!
 	revision: String!
 	title: String!

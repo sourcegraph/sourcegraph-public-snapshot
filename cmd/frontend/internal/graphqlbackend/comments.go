@@ -51,15 +51,19 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
-	repo, err := store.LocalRepos.GetByID(ctx, int64(c.thread.LocalRepoID))
+	repo, err := store.LocalRepos.GetByID(ctx, c.thread.LocalRepoID)
 	if err != nil {
 		return nil, err
 	}
-	orgMember, err := store.OrgMembers.GetByUserID(ctx, repo.OrgID, c.comment.AuthorUserID)
+	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return nil, err
 	}
-	return &orgMemberResolver{orgMember}, nil
+	member, err := store.OrgMembers.GetByUserID(ctx, repo.OrgID, c.comment.AuthorUserID)
+	if err != nil {
+		return nil, err
+	}
+	return &orgMemberResolver{org, member}, nil
 }
 
 func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
@@ -72,25 +76,23 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	actor := actor.FromContext(ctx)
-
-	// TODO(Nick): add orgId parameter
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, 0)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}
 
-	thread, err := store.Threads.Get(ctx, int64(args.ThreadID))
+	thread, err := store.Threads.Get(ctx, args.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Query all comments so we can send a notification to all participants.
-	comments, err := store.Comments.GetAllForThread(ctx, int64(args.ThreadID))
+	comments, err := store.Comments.GetAllForThread(ctx, args.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 
+	actor := actor.FromContext(ctx)
 	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, args.AuthorName, args.AuthorEmail, actor.UID)
 	if err != nil {
 		return nil, err
@@ -101,7 +103,52 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		log15.Error("slack.NotifyOnComment failed", "error", err)
 	}
 
-	return &threadResolver{thread: thread}, nil
+	return &threadResolver{nil, repo, thread}, nil
+}
+
+func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
+	ThreadID int32
+	Contents string
+}) (*threadResolver, error) {
+	thread, err := store.Threads.Get(ctx, args.ThreadID)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := store.LocalRepos.GetByID(ctx, thread.LocalRepoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: verify that the user is in the org.
+	actor := actor.FromContext(ctx)
+	member, err := store.OrgMembers.GetByUserID(ctx, repo.OrgID, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query all comments so we can send a notification to all participants.
+	comments, err := store.Comments.GetAllForThread(ctx, args.ThreadID)
+	if err != nil {
+		return nil, err
+	}
+
+	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, "", "", actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	emails := notifyThreadParticipants(repo, thread, comments, comment)
+	err = slack.NotifyOnComment(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
+	if err != nil {
+		log15.Error("slack.NotifyOnComment failed", "error", err)
+	}
+	return &threadResolver{org, repo, thread}, nil
 }
 
 // notifyThreadParticipants sends email notifications to the participants in the comment thread.

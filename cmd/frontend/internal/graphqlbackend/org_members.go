@@ -7,6 +7,7 @@ import (
 )
 
 type orgMemberResolver struct {
+	org    *sourcegraph.Org
 	member *sourcegraph.OrgMember
 }
 
@@ -14,8 +15,8 @@ func (m *orgMemberResolver) ID() int32 {
 	return m.member.ID
 }
 
-func (m *orgMemberResolver) OrgID() int32 {
-	return m.member.OrgID
+func (m *orgMemberResolver) Org() *orgResolver {
+	return &orgResolver{m.org}
 }
 
 func (m *orgMemberResolver) UserID() string {

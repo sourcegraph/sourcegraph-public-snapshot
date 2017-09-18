@@ -17,11 +17,24 @@ import (
 )
 
 type threadResolver struct {
+	org    *sourcegraph.Org
+	repo   *sourcegraph.LocalRepo
 	thread *sourcegraph.Thread
 }
 
 func (t *threadResolver) ID() int32 {
 	return t.thread.ID
+}
+
+func (t *threadResolver) Repo(ctx context.Context) (*orgRepoResolver, error) {
+	var err error
+	if t.repo == nil {
+		t.repo, err = store.LocalRepos.GetByID(ctx, t.thread.LocalRepoID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &orgRepoResolver{t.org, t.repo}, nil
 }
 
 func (t *threadResolver) File() string {
@@ -71,6 +84,7 @@ func (t *threadResolver) Title(ctx context.Context) (string, error) {
 	return titleFromContents(cs[0].Contents()), nil
 }
 
+// Deprecated root resolver.
 func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	RemoteURI   string
 	AccessToken string
@@ -78,8 +92,7 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	Limit       *int32
 }) ([]*threadResolver, error) {
 	threads := []*threadResolver{}
-	// TODO(Nick): add orgId parameter
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, 0)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err == store.ErrRepoNotFound {
 		// Datastore is lazily populated when comments are created
 		// so it isn't an error for a repo to not exist yet.
@@ -89,29 +102,29 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	limit := int64(1000)
-	if args.Limit != nil && int64(*args.Limit) < limit {
-		limit = int64(*args.Limit)
+	limit := int32(1000)
+	if args.Limit != nil && *args.Limit < limit {
+		limit = *args.Limit
 	}
 
 	var ts []*sourcegraph.Thread
 	if args.File != nil {
-		ts, err = store.Threads.GetAllForFile(ctx, int64(repo.ID), *args.File, limit)
+		ts, err = store.Threads.GetAllForFile(ctx, repo.ID, *args.File, limit)
 	} else {
-		ts, err = store.Threads.GetAllForRepo(ctx, int64(repo.ID), limit)
+		ts, err = store.Threads.GetAllForRepo(ctx, repo.ID, limit)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	for _, t := range ts {
-		threads = append(threads, &threadResolver{thread: t})
+	for _, thread := range ts {
+		threads = append(threads, &threadResolver{nil, repo, thread})
 	}
 	return threads, nil
 }
 
 func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, error) {
-	cs, err := store.Comments.GetAllForThread(ctx, int64(t.thread.ID))
+	cs, err := store.Comments.GetAllForThread(ctx, t.thread.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -136,18 +149,14 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	AuthorEmail    string
 }) (*threadResolver, error) {
 	actor := actor.FromContext(ctx)
-	// TODO(Nick): add orgId parameter
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, 0)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err == store.ErrRepoNotFound {
 		repo, err = store.LocalRepos.Create(ctx, &sourcegraph.LocalRepo{
 			RemoteURI:   args.RemoteURI,
 			AccessToken: args.AccessToken,
-			OrgID:       0,
 		})
-		if err != nil {
-			return nil, err
-		}
-	} else if err != nil {
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -174,7 +183,61 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 		log15.Error("slack.NotifyOnThread failed", "error", err)
 	}
 
-	return &threadResolver{thread: newThread}, nil
+	return &threadResolver{nil, repo, newThread}, nil
+}
+
+func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
+	OrgRepoID      int32
+	File           string
+	Revision       string
+	StartLine      int32
+	EndLine        int32
+	StartCharacter int32
+	EndCharacter   int32
+	Contents       string
+}) (*threadResolver, error) {
+	actor := actor.FromContext(ctx)
+	repo, err := store.LocalRepos.GetByID(ctx, args.OrgRepoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: verify that the current user is in the org.
+	member, err := store.OrgMembers.GetByUserID(ctx, repo.OrgID, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	newThread, err := store.Threads.Create(ctx, &sourcegraph.Thread{
+		LocalRepoID:    repo.ID,
+		File:           args.File,
+		Revision:       args.Revision,
+		StartLine:      args.StartLine,
+		EndLine:        args.EndLine,
+		StartCharacter: args.StartCharacter,
+		EndCharacter:   args.EndCharacter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", "", actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	emails := notifyThreadParticipants(repo, newThread, nil, comment)
+	err = slack.NotifyOnThread(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
+	if err != nil {
+		log15.Error("slack.NotifyOnThread failed", "error", err)
+	}
+
+	return &threadResolver{org, repo, newThread}, nil
 }
 
 func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
@@ -185,18 +248,50 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-
-	// TODO(Nick): add orgId parameter
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken, 0)
+	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}
 
-	thread, err := store.Threads.Update(ctx, int64(args.ThreadID), int64(repo.ID), args.Archived)
+	thread, err := store.Threads.Update(ctx, args.ThreadID, repo.ID, args.Archived)
 	if err != nil {
 		return nil, err
 	}
-	return &threadResolver{thread: thread}, nil
+	return &threadResolver{nil, repo, thread}, nil
+}
+
+func (*schemaResolver) UpdateThread2(ctx context.Context, args *struct {
+	ThreadID int32
+	Archived *bool
+}) (*threadResolver, error) {
+	thread, err := store.Threads.Get(ctx, args.ThreadID)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := store.LocalRepos.GetByID(ctx, thread.LocalRepoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: verify that the current user is in the org.
+	actor := actor.FromContext(ctx)
+	_, err = store.OrgMembers.GetByUserID(ctx, repo.OrgID, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	thread, err = store.Threads.Update(ctx, args.ThreadID, repo.ID, args.Archived)
+	if err != nil {
+		return nil, err
+	}
+	// TODO: send email notification that thread has been archived?
+	return &threadResolver{org, repo, thread}, nil
 }
 
 // titleFromContents returns a title based on the first sentence or line of the content.

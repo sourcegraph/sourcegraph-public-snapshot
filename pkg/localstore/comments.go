@@ -12,14 +12,14 @@ import (
 // For a detailed overview of the schema, see schema.txt.
 type comments struct{}
 
-func (*comments) Create(ctx context.Context, threadID int32, contents string, authorName, authorEmail string, authorUserID string) (*sourcegraph.Comment, error) {
+func (*comments) Create(ctx context.Context, threadID int32, contents, authorName, authorEmail, authorUserID string) (*sourcegraph.Comment, error) {
 	if Mocks.Comments.Create != nil {
 		return Mocks.Comments.Create(ctx, threadID, contents, authorName, authorEmail)
 	}
 
 	createdAt := time.Now()
 	updatedAt := createdAt
-	var id int64
+	var id int32
 	var err error
 	if authorUserID != "" {
 		err = globalDB.QueryRow(
@@ -35,7 +35,7 @@ func (*comments) Create(ctx context.Context, threadID int32, contents string, au
 	}
 
 	return &sourcegraph.Comment{
-		ID:           int32(id),
+		ID:           id,
 		ThreadID:     threadID,
 		Contents:     contents,
 		CreatedAt:    createdAt,
@@ -46,7 +46,7 @@ func (*comments) Create(ctx context.Context, threadID int32, contents string, au
 	}, nil
 }
 
-func (c *comments) GetAllForThread(ctx context.Context, threadID int64) ([]*sourcegraph.Comment, error) {
+func (c *comments) GetAllForThread(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error) {
 	return c.getBySQL(ctx, "WHERE (thread_id=$1 AND deleted_at IS NULL)", threadID)
 }
 

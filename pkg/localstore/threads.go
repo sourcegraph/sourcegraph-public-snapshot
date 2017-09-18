@@ -37,7 +37,7 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 	return newThread, nil
 }
 
-func (t *threads) Get(ctx context.Context, id int64) (*sourcegraph.Thread, error) {
+func (t *threads) Get(ctx context.Context, id int32) (*sourcegraph.Thread, error) {
 	if Mocks.Threads.Get != nil {
 		return Mocks.Threads.Get(ctx, id)
 	}
@@ -52,7 +52,7 @@ func (t *threads) Get(ctx context.Context, id int64) (*sourcegraph.Thread, error
 	return threads[0], nil
 }
 
-func (t *threads) Update(ctx context.Context, id, repoID int64, archive *bool) (*sourcegraph.Thread, error) {
+func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (*sourcegraph.Thread, error) {
 	if Mocks.Threads.Update != nil {
 		return Mocks.Threads.Update(ctx, id, repoID, archive)
 	}
@@ -85,17 +85,21 @@ func (t *threads) Update(ctx context.Context, id, repoID int64, archive *bool) (
 	return thread, nil
 }
 
-func (t *threads) GetAllForRepo(ctx context.Context, repoID, limit int64) ([]*sourcegraph.Thread, error) {
+func (t *threads) GetByOrg(ctx context.Context, orgID, limit int32) ([]*sourcegraph.Thread, error) {
+	return t.getBySQL(ctx, "JOIN local_repos ON (local_repos.id = t.local_repo_id) WHERE local_repos.org_id=$1 and local_repos.deleted_at IS NULL AND t.deleted_at IS NULL LIMIT $2", orgID, limit)
+}
+
+func (t *threads) GetAllForRepo(ctx context.Context, repoID, limit int32) ([]*sourcegraph.Thread, error) {
 	return t.getBySQL(ctx, "WHERE (local_repo_id=$1 AND deleted_at IS NULL) LIMIT $2", repoID, limit)
 }
 
-func (t *threads) GetAllForFile(ctx context.Context, repoID int64, file string, limit int64) ([]*sourcegraph.Thread, error) {
+func (t *threads) GetAllForFile(ctx context.Context, repoID int32, file string, limit int32) ([]*sourcegraph.Thread, error) {
 	return t.getBySQL(ctx, "WHERE (local_repo_id=$1 AND file=$2 AND deleted_at IS NULL) LIMIT $3", repoID, file, limit)
 }
 
 // getBySQL returns threads matching the SQL query, if any exist.
 func (*threads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Thread, error) {
-	rows, err := globalDB.Query("SELECT id, local_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, archived_at FROM threads "+query, args...)
+	rows, err := globalDB.Query("SELECT t.id, t.local_repo_id, t.file, t.revision, t.start_line, t.end_line, t.start_character, t.end_character, t.created_at, t.archived_at FROM threads t "+query, args...)
 	if err != nil {
 		return nil, err
 	}

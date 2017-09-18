@@ -67,10 +67,40 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 
 	members := []*orgMemberResolver{}
 	for _, sgMember := range sgMembers {
-		member := &orgMemberResolver{sgMember}
+		member := &orgMemberResolver{o.org, sgMember}
 		members = append(members, member)
 	}
 	return members, nil
+}
+
+func (o *orgResolver) Threads(ctx context.Context, args *struct {
+	Limit *int32
+}) ([]*threadResolver, error) {
+	limit := int32(1000)
+	if args.Limit != nil && *args.Limit < limit {
+		limit = *args.Limit
+	}
+	threads, err := store.Threads.GetByOrg(ctx, o.org.ID, limit)
+	if err != nil {
+		return nil, err
+	}
+	threadResolvers := []*threadResolver{}
+	for _, thread := range threads {
+		threadResolvers = append(threadResolvers, &threadResolver{o.org, nil, thread})
+	}
+	return threadResolvers, nil
+}
+
+func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
+	repos, err := store.LocalRepos.GetByOrg(ctx, o.org.ID)
+	if err != nil {
+		return nil, err
+	}
+	orgRepoResolvers := []*orgRepoResolver{}
+	for _, repo := range repos {
+		orgRepoResolvers = append(orgRepoResolvers, &orgRepoResolver{o.org, repo})
+	}
+	return orgRepoResolvers, nil
 }
 
 func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
@@ -158,16 +188,16 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	_, err = store.Orgs.GetByID(ctx, orgID)
+	org, err := store.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := store.OrgMembers.Create(ctx, orgID, actor.UID, args.Username, args.Email, args.DisplayName, args.AvatarURL)
+	member, err := store.OrgMembers.Create(ctx, orgID, actor.UID, args.Username, args.Email, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
-	return &orgMemberResolver{member: m}, nil
+	return &orgMemberResolver{org, member}, nil
 }
 
 func createOrgInviteToken(orgID int32) (string, error) {

@@ -443,6 +443,7 @@ const (
 
 // LocalRepo represents a repo that exists on a native client's filesystem, but
 // does not necessarily have its contents cloned to a remote Sourcegraph server.
+// TODO(nick): rename type and table to OrgRepo and org_repos
 type LocalRepo struct {
 	ID          int32
 	RemoteURI   string

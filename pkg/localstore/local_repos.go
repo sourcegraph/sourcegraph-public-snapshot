@@ -31,30 +31,24 @@ func validateLocalRepo(repo *sourcegraph.LocalRepo) error {
 
 type localRepos struct{}
 
-func (l *localRepos) GetByID(ctx context.Context, id int64) (*sourcegraph.LocalRepo, error) {
-	repos, err := l.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
-	if err != nil {
-		return nil, err
-	}
-	if len(repos) != 1 {
-		return nil, ErrRepoNotFound
-	}
-	return repos[0], nil
+func (l *localRepos) GetByID(ctx context.Context, id int32) (*sourcegraph.LocalRepo, error) {
+	return l.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string, orgID int32) (*sourcegraph.LocalRepo, error) {
-	if Mocks.LocalRepos.Get != nil {
-		return Mocks.LocalRepos.Get(ctx, remoteURI, accessToken, orgID)
-	}
+func (l *localRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.LocalRepo, error) {
+	return l.getBySQL(ctx, "WHERE org_id=$1 AND access_token IS NULL AND deleted_at IS NULL", orgID)
+}
 
-	var repos []*sourcegraph.LocalRepo
-	var err error
-	if orgID > 0 {
-		repos, err = l.getBySQL(ctx, "WHERE (remote_uri=$1 AND org_id=$2 AND access_token IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, orgID)
-	} else {
-		// Legacy access method.
-		repos, err = l.getBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND org_id IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
+// deprecated
+func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.LocalRepo, error) {
+	if Mocks.LocalRepos.Get != nil {
+		return Mocks.LocalRepos.Get(ctx, remoteURI, accessToken)
 	}
+	return l.getOneBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND org_id IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
+}
+
+func (l *localRepos) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.LocalRepo, error) {
+	repos, err := l.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
