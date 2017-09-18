@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -73,8 +74,15 @@ func NewHandler(r *router.Router) http.Handler {
 		uiRouter.ServeHTTP(w, r)
 	}))
 
-	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate)))
-	r.Get(router.GitHubOAuth2Receive).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))
+	signInURL := "https://" + auth0.Domain + "/authorize?response_type=code&client_id=" + auth0.Config.ClientID + "&connection=Sourcegraph&redirect_uri=" + conf.AppURL.String() + "/-/auth0/sign-in"
+	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, signInURL, http.StatusSeeOther)
+	})))
+	r.Get(router.SignOut).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignOut)))
+	r.Get(router.Auth0Signin).Handler(traceutil.TraceRoute(errorutil.Handler(ServeAuth0SignIn)))
+
+	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate))) // DEPRECATED
+	r.Get(router.GitHubOAuth2Receive).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))   // DEPRECATED
 	r.Get(router.GitHubAppInstalled).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		githubutil.ClearCacheForCurrentUser(r.Context())
 		http.Redirect(w, r, "/", 301)
@@ -96,6 +104,12 @@ func NewHandler(r *router.Router) http.Handler {
 	return h
 }
 
+func serveSignOut(w http.ResponseWriter, r *http.Request) {
+	session.DeleteSession(w, r)
+	http.Redirect(w, r, "https://"+auth0.Domain+"/v2/logout?"+conf.AppURL.String(), http.StatusSeeOther)
+}
+
+// DEPRECATED
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
 	session.DeleteSession(w, r)
 	http.Redirect(w, r, "/", http.StatusFound)

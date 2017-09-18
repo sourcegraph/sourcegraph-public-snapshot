@@ -21,9 +21,13 @@ const (
 
 	Logout = "logout"
 
-	GitHubOAuth2Initiate = "github-oauth2.initiate"
-	GitHubOAuth2Receive  = "github-oauth2.receive"
-	GitHubAppInstalled   = "github.app-installed"
+	SignIn      = "sign-in"
+	SignOut     = "sign-out"
+	Auth0Signin = "auth0.sign-in"
+
+	GitHubOAuth2Initiate = "github-oauth2.initiate" // DEPRECATED
+	GitHubOAuth2Receive  = "github-oauth2.receive"  // DEPRECATED
+	GitHubAppInstalled   = "github.app-installed"   // DEPRECATED
 
 	GoogleOAuth2Initiate = "google-oauth2.initiate"
 	GoogleOAuth2Receive  = "google-oauth2.receive"
@@ -66,9 +70,13 @@ func New() *Router {
 
 	base.Path("/-/logout").Methods("GET").Name(Logout)
 
-	base.Path("/-/github-oauth/initiate").Methods("POST").Name(GitHubOAuth2Initiate)
-	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive)
-	base.Path("/-/github-app-installed").Methods("GET").Name(GitHubAppInstalled)
+	base.Path("/-/sign-in").Methods("GET").Name(SignIn)
+	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
+	base.Path("/-/auth0/sign-in").Methods("GET", "POST").Name(Auth0Signin)
+
+	base.Path("/-/github-oauth/initiate").Methods("POST").Name(GitHubOAuth2Initiate)      // DEPRECATED
+	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive) // DEPRECATED
+	base.Path("/-/github-app-installed").Methods("GET").Name(GitHubAppInstalled)          // DEPRECATED
 
 	base.Path("/-/google-oauth/initiate").Methods("POST").Name(GoogleOAuth2Initiate)
 	base.Path("/-/google-oauth/receive").Methods("GET", "POST").Name(GoogleOAuth2Receive)
