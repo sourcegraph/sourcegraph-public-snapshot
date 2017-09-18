@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
+	"path"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -97,11 +97,20 @@ func newRouter() *mux.Router {
 }
 
 func init() {
+	// basic pages with static titles
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeSearch).Handler(handler(serveSearch))
-	router.Get(routeSignIn).Handler(handler(serveHome))
-	router.Get(routeEditorAuth).Handler(handler(serveHome))
+	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
+	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
+
+	// search
+	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
+		// e.g. "myquery - Sourcegraph"
+		return fmt.Sprintf("%s - Sourcegraph", shortQuery)
+	})))
+
+	// repo or main pages
 	serveRepoHandler := handler(serveRepo)
 	router.Get(routeRepoOrMain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
@@ -137,21 +146,32 @@ func init() {
 		}
 		serveRepoHandler.ServeHTTP(w, r)
 	}))
-	router.Get(routeTree).Handler(handler(serveTree))
-	router.Get(routeBlob).Handler(handler(serveBlob))
+
+	// tree
+	router.Get(routeTree).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+		// e.g. "src - gorilla/mux - Sourcegraph"
+		dirName := path.Base(mux.Vars(r)["Path"])
+		return fmt.Sprintf("%s - %s - Sourcegraph", dirName, repoShortName(c.Repo.URI))
+	})))
+
+	// blob
+	router.Get(routeBlob).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+		// e.g. "mux.go - gorilla/mux - Sourcegraph"
+		fileName := path.Base(mux.Vars(r)["Path"])
+		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.URI))
+	})))
 }
 
-// urlTo returns a url to the named route.
-func urlTo(routeName string, params ...string) *url.URL {
-	route := Router().Get(routeName)
-	if route == nil {
-		panic(fmt.Sprintf("no such route %q (params: %v)", routeName, params))
+// limitString limits the given string to at most N characters, optionally
+// adding an ellipsis (…) at the end.
+func limitString(s string, n int, ellipsis bool) string {
+	if len(s) < n {
+		return s
 	}
-	u, err := route.URL(params...)
-	if err != nil {
-		panic(fmt.Sprintf("failed to compose URL to %q (params: %v)", routeName, params))
+	if ellipsis {
+		return s[:n-1] + "…"
 	}
-	return u
+	return s[:n-1]
 }
 
 // handler wraps an HTTP handler that returns potential errors. If any error is
@@ -193,6 +213,13 @@ func serveError(w http.ResponseWriter, r *http.Request, err error, statusCode in
 	serveErrorNoDebug(w, r, err, statusCode, false)
 }
 
+type pageError struct {
+	StatusCode int    `json:"statusCode"`
+	StatusText string `json:"statusText"`
+	Error      string `json:"error"`
+	ErrorID    string `json:"errorID"`
+}
+
 // serveErrorNoDebug should not be called by anyone except serveErrorTest.
 func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, statusCode int, nodebug bool) {
 	w.WriteHeader(statusCode)
@@ -221,29 +248,32 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 		errorIfDebug = err.Error()
 	}
 
+	pageErrorContext := &pageError{
+		StatusCode: statusCode,
+		StatusText: http.StatusText(statusCode),
+		Error:      errorIfDebug,
+		ErrorID:    errorID,
+	}
+
 	// First try to render the error fancily: this relies on *Common
 	// functionality that might always work (for example, if some services are
 	// down rather than something that is primarily a user error).
 	delete(mux.Vars(r), "Repo")
 	var commonServeErr error
-	common, commonErr := newCommon(w, r, "", func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+	title := fmt.Sprintf("%v %s - Sourcegraph", statusCode, http.StatusText(statusCode))
+	common, commonErr := newCommon(w, r, title, func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
 		// Stub out serveError to newCommon so that it is not reentrant.
 		commonServeErr = err
 	})
+	common.Error = pageErrorContext
 	if commonErr == nil && commonServeErr == nil {
 		if common == nil {
 			return // request handled by newCommon
 		}
-		fancyErr := renderTemplate(w, "fancyerror.html", &struct {
+		fancyErr := renderTemplate(w, "app.html", &struct {
 			*Common
-			StatusCode                 int
-			StatusText, Error, ErrorID string
 		}{
-			Common:     common,
-			StatusCode: statusCode,
-			StatusText: http.StatusText(statusCode),
-			Error:      errorIfDebug,
-			ErrorID:    errorID,
+			Common: common,
 		})
 		if fancyErr != nil {
 			log15.Error("ui: error while serving fancy error template", "error", fancyErr)
@@ -254,15 +284,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	}
 
 	// Fallback to ugly / reliable error template.
-	stdErr := renderTemplate(w, "error.html", &struct {
-		StatusCode                 int
-		StatusText, Error, ErrorID string
-	}{
-		StatusCode: statusCode,
-		StatusText: http.StatusText(statusCode),
-		Error:      errorIfDebug,
-		ErrorID:    errorID,
-	})
+	stdErr := renderTemplate(w, "error.html", pageErrorContext)
 	if stdErr != nil {
 		log15.Error("ui: error while serving final error template", "error", stdErr)
 	}

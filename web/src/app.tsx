@@ -165,22 +165,25 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
  */
 class App extends React.Component<{}, {}> {
     public render(): JSX.Element | null {
-        const { statusCode, statusText, pageError, pageErrorID } = window
-        if (statusCode === 500) {
+        if (window.pageError && window.pageError.statusCode !== 404) {
+            const statusText = window.pageError.statusText
+            const errorMessage = window.pageError.error
+            const errorID = window.pageError.errorID
+
             let subtitle: JSX.Element | undefined
-            if (pageErrorID) {
+            if (errorID) {
                 subtitle = (
                     <p>Sorry, there's been a problem. Please <a href='mailto:support@sourcegraph.com'>contact us</a> and include the error ID:
-                        <span className='error-id'>{pageErrorID}</span>
+                        <span className='error-id'>{errorID}</span>
                     </p>
                 )
             }
-            if (pageError) {
+            if (errorMessage) {
                 subtitle = (
                     <div className='app__error'>
                         {subtitle}
                         {subtitle && <hr />}
-                        <pre>{pageError}</pre>
+                        <pre>{errorMessage}</pre>
                     </div>
                 )
             } else {

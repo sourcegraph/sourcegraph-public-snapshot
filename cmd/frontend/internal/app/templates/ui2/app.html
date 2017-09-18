@@ -5,7 +5,7 @@
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>{{template "Title" .}}</title>
+	<title>{{.Title}}</title>
 	<link rel="stylesheet" href="{{.AssetURL}}/fonts/MenloRegular.css">
 	<link rel="stylesheet" href="{{.AssetURL}}/scripts/ui/assets/dist/style.bundle.css?{{version "scripts/ui/assets/dist/style.bundle.css"}}">
 	<!-- Start of Telligent scripts -->
@@ -15,19 +15,13 @@
 	<!-- End of Telligent scripts-->
 	<script>
 		window.context = {{.Context}}
-		window.pageVars = {{.PageVars}}
-		window.statusCode = {{.StatusCode}}
-		window.statusText = {{.StatusText}}
 		window.pageError = {{.Error}}
-		window.pageErrorID = {{.ErrorID}}
 	</script>
 </head>
 
 <body>
-	<noscript>
-		You need to enable JavaScript to run this app.
-	</noscript>
 	<div id="root"></div>
+	<noscript>You need to enable JavaScript to run this app.</noscript>
 	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
 </body>
 

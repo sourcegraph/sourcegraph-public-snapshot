@@ -1,6 +1,10 @@
-interface Window {
+interface PageError {
     statusCode: number
     statusText: string
-    pageError: string
-    pageErrorID: string
+    error: string
+    errorID: string
+}
+
+interface Window {
+    pageError?: PageError
 }
