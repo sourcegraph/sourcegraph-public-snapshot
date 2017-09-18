@@ -361,7 +361,7 @@ export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement 
         // Short-circuit; we are hovering over a line of code, but no token in particular.
         return undefined
     }
-    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && !target.getAttribute('data-sg-line-number')) {
+    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY') {
         // Find ancestor which wraps the whole line of code, not just the target token.
         target = (target.parentNode as HTMLElement)
     }
@@ -371,10 +371,42 @@ export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement 
 }
 
 /**
+ * Returns the <span> (descendent of a <td> containing code) which contains text beginning
+ * at the specified character offset (1-indexed)
+ * @param cell the <td> containing syntax highlighted code
+ * @param offset character offset
+ */
+export function findElementWithOffset(cell: HTMLElement, offset: number): HTMLElement | undefined {
+    let currOffset = 0
+    const walkNode = (currNode: HTMLElement): HTMLElement | undefined => {
+        const numChildNodes = currNode.childNodes.length
+        for (let i = 0; i < numChildNodes; ++i) {
+            const child = currNode.childNodes[i]
+            switch (child.nodeType) {
+                case Node.TEXT_NODE:
+                    if (currOffset + child.textContent!.length >= offset) {
+                        return currNode
+                    }
+                    currOffset += child.textContent!.length
+                    continue
+
+                case Node.ELEMENT_NODE:
+                    const found = walkNode(child as HTMLElement)
+                    if (found) {
+                        return found
+                    }
+                    continue
+            }
+        }
+        return undefined
+    }
+    return walkNode(cell)
+}
+
+/**
  * getTargetLineAndOffset determines the line and character offset for some source code, identified by its HTMLElement wrapper.
- * It works by traversing the DOM until the HTMLElement's ancestor with a "data-sg-line-number" attribute is found, and short-circuits
- * when a <td> ancestor is found. (We expect all "data-sg-line-number"-annotated nodes to be nested within some <td> tag.) Once the
- * ancestor is found, we traverse the DOM again (this time the opposite direction) counting characters until the original target is found.
+ * It works by traversing the DOM until the HTMLElement's TD ancestor. Once the ancestor is found, we traverse the DOM again
+ * (this time the opposite direction) counting characters until the original target is found.
  * Returns undefined if line/char cannot be determined for the provided target.
  * @param target The element to compute line & character offset for.
  * @param ignoreFirstChar Whether to ignore the first character on a line when computing character offset.
@@ -385,15 +417,20 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
         // Short-circuit; we are hovering over a line of code, but no token in particular.
         return undefined
     }
-    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && !target.getAttribute('data-sg-line-number')) {
+    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY') {
         // Find ancestor which wraps the whole line of code, not just the target token.
         target = (target.parentNode as HTMLElement)
     }
-    if (!target || !target.getAttribute('data-sg-line-number')) {
+    if (!target || target.tagName !== 'TD') {
         // Make sure we're looking at an element we've annotated line number for (otherwise we have no idea )
         return undefined
     }
-    const line = parseInt(target.getAttribute('data-sg-line-number')!, 10)
+    let line: number
+    if (target.classList.contains('line')) {
+        line = parseInt(target.getAttribute('data-line')!, 10)
+    } else {
+        line = parseInt((target.previousSibling as HTMLTableDataCellElement).getAttribute('data-line')!, 10)
+    }
 
     let character = 1
     // Iterate recursively over the current target's children until we find the original target;

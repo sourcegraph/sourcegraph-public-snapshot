@@ -87,7 +87,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                     <Link
                                         to={{
                                             pathname: `/${uri.hostname + uri.pathname}${rev ? '@' + rev : ''}/-/blob/${uri.hash.substr('#'.length)}`,
-                                            hash: 'L' + (ref.range.start.line + 1),
+                                            hash: 'L' + (ref.range.start.line + 1) + (ref.range.start.character ? ':' + (ref.range.start.character + 1) : ''),
                                             state: { referencesClick: true } /* The Blob component will only scroll on PUSH state events with this state. */
                                         }}
                                         key={i}

@@ -1,4 +1,6 @@
 import * as H from 'history'
+import isEqual from 'lodash/isEqual'
+import omit from 'lodash/omit'
 import * as React from 'react'
 import 'rxjs/add/observable/fromEvent'
 import 'rxjs/add/observable/fromPromise'
@@ -13,11 +15,12 @@ import 'rxjs/add/operator/take'
 import 'rxjs/add/operator/takeUntil'
 import 'rxjs/add/operator/zip'
 import { Observable } from 'rxjs/Observable'
+import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { fetchHover, fetchJumpURL, isEmptyHover } from 'sourcegraph/backend/lsp'
 import { triggerBlame } from 'sourcegraph/blame'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, getCodeCell } from 'sourcegraph/repo'
-import { convertNode, createTooltips, getTableDataCell, getTargetLineAndOffset, hideTooltip, TooltipData, updateTooltip } from 'sourcegraph/repo/tooltips'
+import { convertNode, createTooltips, findElementWithOffset, getTableDataCell, getTargetLineAndOffset, hideTooltip, TooltipData, updateTooltip } from 'sourcegraph/repo/tooltips'
 import { events } from 'sourcegraph/tracking/events'
 import { getPathExtension, supportedExtensions } from 'sourcegraph/util'
 import { parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from 'sourcegraph/util/url'
@@ -81,8 +84,8 @@ interface State {
 
 export class Blob extends React.Component<Props, State> {
     public state: State = {}
-    private tooltip: TooltipData | null
     private blobElement: HTMLElement | null = null
+    private fixedTooltip = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -100,6 +103,25 @@ export class Blob extends React.Component<Props, State> {
             setTimeout(() => this.scrollToLine(nextProps), 10)
         }
 
+        if (this.props.location.pathname === nextProps.location.pathname && (
+            thisHash.character !== nextHash.character ||
+            thisHash.line !== nextHash.line ||
+            thisHash.modal !== nextHash.modal
+        )) {
+            if (!nextHash.modal) {
+                this.fixedTooltip.next(nextProps)
+            } else {
+                // If showing modal, remove any tooltip then highlight the element for the given position.
+                this.setFixedTooltip()
+                if (nextHash.line && nextHash.character) {
+                    const el = findElementWithOffset(getCodeCell(nextHash.line!).childNodes[1]! as HTMLElement, nextHash.character!)
+                    if (el) {
+                        el.classList.add('selection-highlight-sticky')
+                    }
+                }
+            }
+        }
+
         if (this.props.html !== nextProps.html) {
             // Hide the previous tooltip, if it exists.
             hideTooltip()
@@ -109,7 +131,7 @@ export class Blob extends React.Component<Props, State> {
             if (this.blobElement) {
                 this.addTooltipEventListeners(this.blobElement)
             }
-            this.setState({ fixedTooltip: undefined })
+            this.setFixedTooltip()
         }
     }
 
@@ -117,6 +139,14 @@ export class Blob extends React.Component<Props, State> {
         // Only update the blob if the inner HTML content changes.
         if (this.props.html !== nextProps.html) {
             return true
+        }
+
+        if (isEqual(omit(this.props, 'rev'), omit(nextProps, 'rev'))) {
+            // nextProps is a new location, but we don't have new HTML.
+            // We *only* want lifeycle hooks when the html is changed.
+            // This prevents e.g. scrolling to a line that doesn't exist
+            // yet when file has changed but html hasn't been resolved.
+            return false
         }
 
         const prevHash = parseHash(this.props.location.hash)
@@ -132,6 +162,12 @@ export class Blob extends React.Component<Props, State> {
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         hideTooltip()
         createTooltips()
+
+        const parsedHash = parseHash(this.props.location.hash)
+        if (!parsedHash.modal) {
+            // Show fixed tooltip if necessary iff not showing a modal.
+            this.fixedTooltip.next(this.props)
+        }
         if (this.props.history.action === 'POP') {
             // The contents were updated on a mounted component and we did a 'back' or 'forward' event;
             // scroll to the appropariate line after the new table is created.
@@ -151,7 +187,7 @@ export class Blob extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='blob' onClick={this.handleBlobClick} ref={this.onBlobRef} dangerouslySetInnerHTML={{ __html: this.props.html }} />
+            <div className='blob' ref={this.onBlobRef} dangerouslySetInnerHTML={{ __html: this.props.html }} />
         )
     }
 
@@ -164,10 +200,79 @@ export class Blob extends React.Component<Props, State> {
             if (supportedExtensions.has(getPathExtension(this.props.filePath))) {
                 this.addTooltipEventListeners(ref)
             }
+            const parsedHash = parseHash(this.props.location.hash)
+            if (parsedHash.line && parsedHash.character) {
+                this.fixedTooltip.next(this.props)
+            }
         }
     }
 
     private addTooltipEventListeners = (ref: HTMLElement): void => {
+        this.subscriptions.add(
+            this.fixedTooltip
+                .filter(props => {
+                    const parsed = parseHash(props.location.hash)
+                    if (parsed.line && parsed.character) {
+                        if (!parsed.modal) {
+                            const td = getCodeCell(parsed.line).childNodes[1] as HTMLTableDataCellElement
+                            if (td && !td.classList.contains('annotated')) {
+                                td.classList.add('annotated')
+                                convertNode(td)
+                            }
+                            return true
+                        }
+                        // Don't show a tooltip when there is a modal (but do highlight the token)
+                        // TODO(john): this can probably be simplified.
+                        const el = findElementWithOffset(getCodeCell(parsed.line!).childNodes[1]! as HTMLElement, parsed.character!)
+                        if (el) {
+                            el.classList.add('selection-highlight-sticky')
+                            return false
+                        }
+                    }
+                    this.setFixedTooltip()
+                    return false
+                })
+                .map(props => parseHash(props.location.hash))
+                .map(pos => findElementWithOffset(getCodeCell(pos.line!).childNodes[1]! as HTMLElement, pos.character!))
+                .filter(el => !!el)
+                .map((target: HTMLElement) => {
+                    const data = { target, loc: getTargetLineAndOffset(target!, false) }
+                    if (!data.loc) {
+                        return null
+                    }
+                    const ctx = { ...this.props, position: data.loc! }
+                    return { target: data.target, ctx }
+                })
+                .switchMap(data => {
+                    if (data === null) {
+                        return [null]
+                    }
+                    const { target, ctx } = data
+                    return this.getTooltip(target, ctx)
+                        .zip(this.getDefinition(ctx))
+                        .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData))
+                        .catch(e => {
+                            const data: TooltipData = { target, ctx }
+                            return [data]
+                        })
+                })
+                .subscribe(data => {
+                    if (!data) {
+                        this.setFixedTooltip()
+                        return
+                    }
+
+                    const contents = data.contents
+                    if (!contents || isEmptyHover({ contents })) {
+                        this.setFixedTooltip()
+                        return
+                    }
+
+                    this.setFixedTooltip(data)
+                    updateTooltip(data, true, this.tooltipActions(data.ctx))
+                })
+        )
+
         this.subscriptions.add(
             Observable.fromEvent<MouseEvent>(ref, 'mouseover')
                 .map(e => e.target as HTMLElement)
@@ -175,7 +280,6 @@ export class Blob extends React.Component<Props, State> {
                     const td = getTableDataCell(target)
                     if (td && !td.classList.contains('annotated')) {
                         td.classList.add('annotated')
-                        td.setAttribute('data-sg-line-number', (td.previousSibling as HTMLTableDataCellElement).getAttribute('data-line') || '')
                         convertNode(td)
                     }
                 })
@@ -193,7 +297,6 @@ export class Blob extends React.Component<Props, State> {
                     })
                 })
                 .subscribe(data => {
-                    this.tooltip = data
                     if (!this.state.fixedTooltip) {
                         updateTooltip(data, false, this.tooltipActions(data.ctx))
                     }
@@ -223,56 +326,41 @@ export class Blob extends React.Component<Props, State> {
                     }
                     return true
                 })
-                .map(target => {
+                .subscribe(target => {
+                    const row = (target as Element).closest('tr') as HTMLTableRowElement | null
+                    if (!row) {
+                        return
+                    }
+                    const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
                     const data = { target, loc: getTargetLineAndOffset(target, false) }
                     if (!data.loc) {
-                        return null
+                        return updateLine(row.lastChild as HTMLElement, this.props.history, {
+                            repoPath: this.props.repoPath,
+                            rev: this.props.rev,
+                            commitID: this.props.commitID,
+                            filePath: this.props.filePath,
+                            position: { line, character: 0 }
+                        })
                     }
-                    const ctx = { ...this.props, position: data.loc! }
-                    return { target: data.target, ctx }
-                })
-                .switchMap(data => {
-                    if (data === null) {
-                        return [null]
-                    }
-                    const { target, ctx } = data
-                    const tooltipWithJ2D: Observable<TooltipData> = this.getTooltip(target, ctx)
-                        .zip(this.getDefinition(ctx))
-                        .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
-                    return tooltipWithJ2D.catch(e => {
-                        const data: TooltipData = { target, ctx }
-                        return [data]
-                    })
-                })
-                .subscribe(data => {
-                    this.tooltip = data
-                    if (!data) {
-                        return this.setState({ fixedTooltip: undefined }, hideTooltip)
-                    }
-
-                    const contents = data.contents
-                    if (!contents || isEmptyHover({ contents })) {
-                        return this.setState({ fixedTooltip: undefined }, hideTooltip)
-                    }
-
-                    this.setState({ fixedTooltip: data }, () => updateTooltip(data, true, this.tooltipActions(data.ctx)))
+                    const ctx = { ...this.props, position: { line, character: data.loc!.character } }
+                    updateLine(row.lastChild as HTMLElement, this.props.history, ctx)
                 })
         )
     }
 
-    private handleBlobClick: React.MouseEventHandler<HTMLDivElement> = e => {
-        const row = (e.target as Element).closest('tr') as HTMLTableRowElement | null
-        if (!row) {
-            return
+    private setFixedTooltip = (data?: TooltipData) => {
+        for (const el of document.querySelectorAll('.blob .selection-highlight')) {
+            el.classList.remove('selection-highlight')
         }
-        const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
-        updateLine(row.lastChild as HTMLElement, this.props.history, {
-            repoPath: this.props.repoPath,
-            rev: this.props.rev,
-            commitID: this.props.commitID,
-            filePath: this.props.filePath,
-            position: { line, character: 0 }
-        }, e)
+        for (const el of document.querySelectorAll('.blob .selection-highlight-sticky')) {
+            el.classList.remove('selection-highlight-sticky')
+        }
+        if (data) {
+            data.target.classList.add('selection-highlight-sticky')
+        } else {
+            hideTooltip()
+        }
+        this.setState({ fixedTooltip: data || undefined })
     }
 
     private scrollToLine = (props: Props) => {
@@ -342,7 +430,8 @@ export class Blob extends React.Component<Props, State> {
                 const ctx = { ...defCtx, commitID: this.props.commitID }
                 updateAndScrollToLine(getCodeCell(ctx.position.line), this.props.history, ctx)
             } else {
-                this.setState({ fixedTooltip: undefined }, () => this.props.history.push(toAbsoluteBlobURL(defCtx)))
+                this.setFixedTooltip()
+                this.props.history.push(toAbsoluteBlobURL(defCtx))
             }
         }
 
@@ -359,8 +448,15 @@ export class Blob extends React.Component<Props, State> {
         }
 
     private handleDismiss = () => {
-        this.setState({ fixedTooltip: undefined })
-        hideTooltip()
+        const parsed = parseHash(this.props.location.hash)
+        if (parsed.line) {
+            // Remove the character position so the fixed tooltip goes away.
+            const ctx = { ...this.props, position: { line: parsed.line, character: 0 } }
+            this.props.history.push(toPrettyBlobURL(ctx))
+        } else {
+            // Unset fixed tooltip if it exists (no URL update necessary).
+            this.setFixedTooltip()
+        }
     }
 
     private tooltipActions = (ctx: AbsoluteRepoFilePosition) =>
