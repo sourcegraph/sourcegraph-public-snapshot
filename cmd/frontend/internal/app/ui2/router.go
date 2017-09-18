@@ -106,6 +106,9 @@ func init() {
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
+		if shortQuery == "" {
+			return "Sourcegraph" // no query, on search homepage
+		}
 		// e.g. "myquery - Sourcegraph"
 		return fmt.Sprintf("%s - Sourcegraph", shortQuery)
 	})))
