@@ -114,8 +114,8 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
             <div className='references-group'>
                 <div className='references-group__title' onClick={this.toggle}>
                     <div className='references-group__icon'>{this.props.isLocal ? <RepoIcon /> : <GlobeIcon />}</div>
-                    <div className='references-group__uri-path-part'>{uriStr}</div>
-                    <div>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>
+                    {this.props.isLocal ? null : <div className='references-group__uri-path-part'>{uriStr}</div>}
+                    {this.props.isLocal ? null : <div>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>}
                     <div className='references-group__file-path-part'>{filePart}</div>
                     {this.state.hidden ? <RightIcon className='references-group__expand-icon' /> : <DownIcon className='references-group__expand-icon' />}
                 </div>
