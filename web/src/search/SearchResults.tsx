@@ -138,7 +138,7 @@ export class SearchResults extends React.Component<Props, State> {
                             repoURI: repoPath
                         }))
 
-                        return <ReferencesGroup hidden={prevTotal > 500} uri={repoPath} path={filePath} key={i} refs={refs} isLocal={false} />
+                        return <ReferencesGroup hidden={prevTotal > 500} repoPath={repoPath} filePath={filePath} key={i} refs={refs} isLocal={false} />
                     })
                 }
             </div>

@@ -33,8 +33,8 @@ import { parseHash } from 'sourcegraph/util/url'
 import { Location } from 'vscode-languageserver-types'
 
 interface ReferenceGroupProps {
-    uri: string
-    path: string
+    repoPath: string
+    filePath: string
     refs: Location[]
     isLocal: boolean
     localRev?: string
@@ -52,9 +52,10 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
     }
 
     public render(): JSX.Element | null {
-        const uriSplit = this.props.uri.split('/')
-        const uriStr = uriSplit.length > 1 ? uriSplit.slice(1).join('/') : this.props.uri
-        const pathSplit = this.props.path.split('/')
+        const repoPathSplit = this.props.repoPath.split('/')
+        let repoPathStr = repoPathSplit.length > 1 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
+        repoPathStr += '/'
+        const pathSplit = this.props.filePath.split('/')
         const filePart = pathSplit.pop()
 
         let refs: JSX.Element | null = null
@@ -114,7 +115,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
             <div className='references-group'>
                 <div className='references-group__title' onClick={this.toggle}>
                     <div className='references-group__icon'>{this.props.isLocal ? <RepoIcon /> : <GlobeIcon />}</div>
-                    {this.props.isLocal ? null : <div className='references-group__uri-path-part'>{uriStr}</div>}
+                    {this.props.isLocal ? null : <div className='references-group__uri-path-part'>{repoPathStr}</div>}
                     {this.props.isLocal ? null : <div>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>}
                     <div className='references-group__file-path-part'>{filePart}</div>
                     {this.state.hidden ? <RightIcon className='references-group__expand-icon' /> : <DownIcon className='references-group__expand-icon' />}
@@ -295,8 +296,8 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                 return (
                                     <ReferencesGroup
                                         key={i}
-                                        uri={parsed.hostname + parsed.pathname}
-                                        path={parsed.hash.substr('#'.length)}
+                                        repoPath={parsed.hostname + parsed.pathname}
+                                        filePath={parsed.hash.substr('#'.length)}
                                         isLocal={true}
                                         localRev={this.props.rev}
                                         refs={refsByUri[uri]} />
@@ -310,8 +311,8 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                 return (
                                     <ReferencesGroup
                                         key={i}
-                                        uri={parsed.hostname + parsed.pathname}
-                                        path={parsed.hash.substr('#'.length)}
+                                        repoPath={parsed.hostname + parsed.pathname}
+                                        filePath={parsed.hash.substr('#'.length)}
                                         isLocal={false}
                                         refs={refsByUri[uri]} />
                                 )
