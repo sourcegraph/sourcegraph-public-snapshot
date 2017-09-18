@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -212,7 +213,8 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID
 
 	log15.Info("Enqueuing dependencies for repo", "repo", repoID, "lang", lang)
 
-	deps, err := backend.Defs.Dependencies(ctx, repoID, true) // exclude private dependencies, because we don't have GitHub creds in the indexer
+	excludePrivate := !feature.Features.Sep20Auth
+	deps, err := backend.Defs.Dependencies(ctx, repoID, excludePrivate)
 	if err != nil {
 		return fmt.Errorf("Defs.DependencyReferences failed: %s", err)
 	}

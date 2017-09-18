@@ -22,7 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/clearbit"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -162,21 +161,10 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 
 func (r *rootResolver) Repositories(ctx context.Context, args *struct {
 	Query string
-	Fast  bool
 }) ([]*repositoryResolver, error) {
 	opt := &sourcegraph.RepoListOptions{Query: args.Query}
-
-	// Remote searching is slow.
-	if !args.Fast {
-		opt.RemoteSearch = true
-	}
-
 	opt.PerPage = 200
 	return listRepos(ctx, opt)
-}
-
-func (r *rootResolver) RemoteRepositories(ctx context.Context) ([]*repositoryResolver, error) {
-	return listRepos(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
 }
 
 func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*repositoryResolver, error) {
@@ -194,23 +182,6 @@ func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*reposi
 	}
 
 	return l, nil
-}
-
-func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*repositoryResolver, error) {
-	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "RemoteStarredRepositories")
-	repos, err := github.ListStarredRepos(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var s []*repositoryResolver
-	for _, repo := range repos {
-		s = append(s, &repositoryResolver{
-			repo: repo,
-		})
-	}
-
-	return s, nil
 }
 
 // Resolves symbols by a global symbol ID (use case for symbol URLs)
@@ -245,31 +216,12 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Check that the user has permission to read this repo. Calling
-	// Repos.ResolveRev will fail if the user does not have access to the
-	// specified repo.
-	//
-	// SECURITY NOTE: The LSP client proxy DOES NOT check
-	// permissions. It accesses the gitserver directly and relies on
-	// its callers to check permissions.
-	checkedUserHasReadAccessToRepo := false // safeguard to make sure we don't accidentally delete the check below
-	var rev *sourcegraph.ResolvedRev
-	{
-		// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
-		// the user has permissions to access the repository.
-		rev, err = backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-			Repo: repo.ID,
-			Rev:  "",
-		})
-		if err != nil {
-			return nil, err
-		}
-		checkedUserHasReadAccessToRepo = true
-	}
-
-	if !checkedUserHasReadAccessToRepo {
-		return nil, fmt.Errorf("authorization check failed")
-	}
+	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
+	// the user has permissions to access the repository.
+	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: repo.ID,
+		Rev:  "",
+	})
 
 	var symbols []lsp.SymbolInformation
 	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}

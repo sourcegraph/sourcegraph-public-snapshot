@@ -22,6 +22,7 @@ import (
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -362,9 +363,11 @@ func authorizeInitialize(ctx context.Context, req *jsonrpc2.Request) (*trackedIn
 		rootURI: rootURI,
 	}
 
-	// 🚨 SECURITY: Check that the the user can access the repo. 🚨
-	if _, err := backend.Repos.GetByURI(ctx, rootURI.Repo()); err != nil {
-		return t, err
+	if !feature.Features.Sep20Auth {
+		// 🚨 SECURITY: Check that the the user can access the repo. 🚨
+		if _, err := backend.Repos.GetByURI(ctx, rootURI.Repo()); err != nil {
+			return t, err
+		}
 	}
 	return t, nil
 }

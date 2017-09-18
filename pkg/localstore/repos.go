@@ -12,6 +12,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
@@ -51,9 +52,11 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	}
 	repo := repos[0]
 
-	// 🚨 SECURITY: access control check here 🚨
-	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
-		return nil, ErrRepoNotFound
+	if !feature.Features.Sep20Auth {
+		// 🚨 SECURITY: access control check here 🚨
+		if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
+			return nil, ErrRepoNotFound
+		}
 	}
 	return repo, nil
 }
@@ -125,9 +128,11 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	}
 	repo := repos[0]
 
-	// 🚨 SECURITY: access control check here 🚨
-	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
-		return nil, ErrRepoNotFound
+	if !feature.Features.Sep20Auth {
+		// 🚨 SECURITY: access control check here 🚨
+		if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
+			return nil, ErrRepoNotFound
+		}
 	}
 
 	return repo, nil
@@ -212,13 +217,21 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 
 	// fetch matching repos unordered
 	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s LIMIT 1000", sqlf.Join(conds, "AND")))
-
-	// 🚨 SECURITY: It is very important that the input list of repos (rawRepos) 🚨
-	// comes directly from the DB as verifyUserHasReadAccessAll relies directly
-	// on the accuracy of the Repo.Private field.
-	repos, err := verifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)
 	if err != nil {
 		return nil, err
+	}
+
+	var repos []*sourcegraph.Repo
+	if !feature.Features.Sep20Auth {
+		// 🚨 SECURITY: It is very important that the input list of repos (rawRepos) 🚨
+		// comes directly from the DB as verifyUserHasReadAccessAll relies directly
+		// on the accuracy of the Repo.Private field.
+		repos, err = verifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		repos = rawRepos
 	}
 
 	// sort by position of search terms

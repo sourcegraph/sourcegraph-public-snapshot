@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -85,17 +84,6 @@ func listActiveAndInactive(ctx context.Context) (active []*sourcegraph.Repo, ina
 		all, err = backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			ListOptions: sourcegraph.ListOptions{
 				PerPage: 10000, // we want every repo.
-			},
-		})
-	} else if actor.FromContext(ctx).IsAuthenticated() {
-		all, err = backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
-			RemoteOnly: true, // user's repo list
-			ListOptions: sourcegraph.ListOptions{
-				// we want every repo for the user here too, but we use one
-				// GitHub API request (which is bad because of rate limit) per
-				// repo here. So we limit to 10 (this response from this
-				// endpoint is cached on the browser client for 30m).
-				PerPage: 10,
 			},
 		})
 	} else {

@@ -22,6 +22,7 @@ import (
 
 var githubClientID = env.Get("GITHUB_CLIENT_ID", "", "client ID for GitHub")
 var githubClientSecret = env.Get("GITHUB_CLIENT_SECRET", "", "client secret for GitHub")
+var githubPersonalAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "personal access token for GitHub")
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 
@@ -69,13 +70,26 @@ func main() {
 
 		q2 := r.URL.Query()
 
+		// TODO(john): post sep 20 release, there will be no GitHub token
+		// passed through the actor context, and this override will be unnecessary.
+		if githubPersonalAccessToken != "" {
+			// override actor's authorization token (if there is one)
+			accessToken = githubPersonalAccessToken
+		}
+
 		h2 := make(http.Header)
 		h2.Set("User-Agent", r.Header.Get("User-Agent"))
 		h2.Set("Accept", r.Header.Get("Accept"))
 
 		if accessToken != "" {
+			// If access token is defined, there is an authenticated actor
+			// or a personal access token on the environment. In both cases,
+			// we want to make an authenticated request.
 			h2.Set("Authorization", "token "+accessToken)
 		} else {
+			// Currently this is for Sourcegraph.com making public API requests
+			// for unauthenticated users. Post sep 20 release, it is probably
+			// unnecessary to keep around.
 			q2.Set("client_id", githubClientID)
 			q2.Set("client_secret", githubClientSecret)
 		}

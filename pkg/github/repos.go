@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -65,11 +66,16 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 	}
 
+	// specialCasePrivate indicates whether we need special handling
+	// for private repos. After Sep 20, all repos may be treated identically
+	// for caching purposes (there should be no distinction between "public" and "private").
+	// It is still possible in an on-prem server to have private GitHub repos in the cache.
+	// In this world, the "public repo cache" contains repos which are public to the cluster.
+	specialCasePrivate := !feature.Features.Sep20Auth
+
 	if cached := getFromPublicCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
-		if cached.NotFound {
-			// The repo is in the cache but not available. If the user is authenticated,
-			// request the repo from the GitHub API (but do not add it to the cache).
+		if cached.NotFound && specialCasePrivate {
 			if HasAuthedUser(ctx) {
 				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
 				return getPrivateFromAPI(ctx, owner, repoName)
@@ -91,13 +97,21 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return nil, err
 	}
 
-	// We are only allowed to cache public repos.
-	if !remoteRepo.Private {
+	addRepoToCache := func() {
 		remoteRepoCopy := *remoteRepo
 		addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
 		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
+	}
+	if specialCasePrivate {
+		// We are only allowed to cache public repos.
+		if !remoteRepo.Private {
+			addRepoToCache()
+		} else {
+			reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
+		}
 	} else {
-		reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
+		// No special casing; always add resolved repos to the cache.
+		addRepoToCache()
 	}
 	return remoteRepo, nil
 }
@@ -124,11 +138,13 @@ func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]
 	}
 	repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
 	for _, ghrepo := range res.Repositories {
-		// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
-		// have access to within one of their installations. Filter out all private
-		// repos (private repos can be obtained with ListAllGitHubRepos)
-		if *ghrepo.Private {
-			continue
+		if !feature.Features.Sep20Auth {
+			// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
+			// have access to within one of their installations. Filter out all private
+			// repos (private repos can be obtained with ListAllGitHubRepos)
+			if *ghrepo.Private {
+				continue
+			}
 		}
 		repos = append(repos, ToRepo(&ghrepo))
 	}
@@ -176,25 +192,33 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 
 // getPrivateFromAPI attempts to fetch a repo that the currently authed user owns.
 func getPrivateFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	// The current GitHub App API only allows users to access their repos by
-	// listing them via their installations. Check each installation and find the
-	// repo we're looking for.
-	installs, err := ListAllAccessibleInstallations(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, ins := range installs {
-		repos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
+	if !feature.Features.Sep20Auth {
+		// The current GitHub App API only allows users to access their repos by
+		// listing them via their installations. Check each installation and find the
+		// repo we're looking for.
+		installs, err := ListAllAccessibleInstallations(ctx)
 		if err != nil {
 			return nil, err
 		}
-		for _, r := range repos {
-			if *r.Name == repoName && *r.Owner.Login == owner {
-				return ToRepo(r), nil
+		for _, ins := range installs {
+			repos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range repos {
+				if *r.Name == repoName && *r.Owner.Login == owner {
+					return ToRepo(r), nil
+				}
 			}
 		}
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
 	}
-	return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
+
+	ghrepo, _, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
+	if err == nil {
+		return ToRepo(ghrepo), nil
+	}
+	return nil, err
 }
 
 func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
@@ -298,12 +322,28 @@ func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOpti
 	return repos, nil
 }
 
+// TODO(john): the name of this method is now misleading. Before Sep 20,
+// this will *only* list public repos. After Sep 20, this method may list
+// private repos if the github-proxy uses a personal access token which can
+// access private repos. Rename "ListReposForUser".
 func ListPublicReposForUser(ctx context.Context, login string) ([]*sourcegraph.Repo, error) {
 	if ListPublicReposMock != nil {
 		return ListPublicReposMock(ctx, login)
 	}
 
-	ghRepos, _, err := UnauthedClient(ctx).Repositories.List(ctx, login, nil)
+	beforeSep20 := !feature.Features.Sep20Auth
+	var user string
+	if beforeSep20 {
+		// List only repos owned by the specified user.
+		user = login
+	} else {
+		// When user is empty, the GitHub API will list all repos visible to
+		// the "currently authed user" (including public, private, & org repos
+		// not owned by the user). The github-proxy will only make an authenticated
+		// request if a personal access token is provided.
+	}
+
+	ghRepos, _, err := UnauthedClient(ctx).Repositories.List(ctx, user, nil)
 	if err != nil {
 		return nil, err
 	}

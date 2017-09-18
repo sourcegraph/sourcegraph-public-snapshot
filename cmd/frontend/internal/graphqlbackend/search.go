@@ -156,7 +156,7 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 }
 
 func searchRepos(ctx context.Context, query string, repoURIs []string, limit int) (res []*searchResultResolver, err error) {
-	opt := &sourcegraph.RepoListOptions{Query: query, RemoteSearch: false}
+	opt := &sourcegraph.RepoListOptions{Query: query}
 	opt.PerPage = int32(limit)
 	reposList, err := backend.Repos.List(ctx, opt)
 	if err != nil {

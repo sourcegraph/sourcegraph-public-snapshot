@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -57,10 +58,10 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}
 
 	opt := &vcs.RemoteOpts{}
-	// 🚨 SECURITY: Only send credentials to gitserver if we know that the repository is private. This 🚨
-	// is to avoid fetching private commits while our access checks still assume that the repository
-	// is public. In that case better fail fetching those commits until the DB got updated.
-	if strings.HasPrefix(repoURI, "github.com/") && !c.client.NoCreds && c.Repo.Private {
+	if strings.HasPrefix(repoURI, "github.com/") && !c.client.NoCreds && c.Repo.Private && !feature.Features.Sep20Auth {
+		// 🚨 SECURITY: Only send credentials to gitserver if we know that the repository is private. This 🚨
+		// is to avoid fetching private commits while our access checks still assume that the repository
+		// is public. In that case better fail fetching those commits until the DB got updated.
 		actor := actor.FromContext(ctx)
 		if actor.GitHubToken != "" {
 			opt.HTTPS = &vcs.HTTPSConfig{
@@ -69,6 +70,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 			}
 		}
 	}
+
+	// TODO(john): set SSH key in dev mode
 
 	sum := md5.Sum([]byte(repoURI))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.Addrs))

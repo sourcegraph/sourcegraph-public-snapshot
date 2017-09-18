@@ -17,6 +17,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -267,11 +268,15 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		return nil, errors.Wrap(err, "rows error")
 	}
 
-	for _, pkg := range rawPkgs {
-		// 🚨 SECURITY: repository permissions are checked here 🚨
-		if _, err := Repos.Get(ctx, pkg.RepoID); err == nil {
-			pks = append(pks, pkg)
+	if !feature.Features.Sep20Auth {
+		for _, pkg := range rawPkgs {
+			// 🚨 SECURITY: repository permissions are checked here 🚨
+			if _, err := Repos.Get(ctx, pkg.RepoID); err == nil {
+				pks = append(pks, pkg)
+			}
 		}
+	} else {
+		pks = rawPkgs
 	}
 
 	return pks, nil

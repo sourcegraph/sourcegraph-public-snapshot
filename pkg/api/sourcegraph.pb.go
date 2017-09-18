@@ -142,21 +142,6 @@ type RepoListOptions struct {
 	// Query specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
 	Query string `json:"Query,omitempty" url:",omitempty"`
-	// RemoteOnly makes the endpoint return repositories hosted on
-	// GitHub that the currently authenticated user has access to.
-	//
-	// When RemoteOnly is true, the only other option field that is
-	// obeyed is Type (pagination is ignored, too), and returned
-	// repositories do not have valid IDs. If you want to get the ID of
-	// a repository, fetch it individually.
-	RemoteOnly bool `json:"RemoteOnly,omitempty" url:",omitempty"`
-	// RemoteSearch should be used in conjunction with the Query field.
-	// If true, it will issue an external query to remote code host
-	// search APIs and augment the list of returned results with
-	// repositories that exist on external hosts but not yet on
-	// Sourcegraph. RemoteSearch is ignored if there is no authenticated
-	// user.
-	RemoteSearch bool `json:"RemoteSearch,omitempty" url:",omitempty"`
 	// ListOptions controls pagination.
 	ListOptions `json:""`
 }

@@ -34,8 +34,6 @@ declare namespace GQL {
     __typename: "Root";
     repository: IRepository | null;
     repositories: Array<IRepository>;
-    remoteRepositories: Array<IRemoteRepository>;
-    remoteStarredRepositories: Array<IRemoteRepository>;
     symbols: Array<ISymbol>;
     currentUser: IUser | null;
     activeRepos: IActiveRepoResults;
@@ -256,20 +254,6 @@ declare namespace GQL {
     __typename: "TotalRefList";
     repositories: Array<IRepository>;
     total: number;
-  }
-
-  /*
-    description: null
-  */
-  interface IRemoteRepository {
-    __typename: "RemoteRepository";
-    uri: string;
-    description: string;
-    language: string;
-    fork: boolean;
-    private: boolean;
-    createdAt: string;
-    pushedAt: string;
   }
 
   /*

@@ -15,6 +15,16 @@ var Features = struct {
 	// DisableSearch disables certain parts of the search experience.
 	// This flag is intended to be used for umami deployment.
 	DisableSearch bool `json:"disableSearch"`
+	// Sep20Auth are the changes to authentication for the September 20th release.
+	// Specifically:
+	//   - on Sourcegraph.com, authenticated users do not have GitHub tokens
+	//   - on Sourcegraph.com, there is only public code
+	//   - in an on-prem server, you may add a GitHub personal access token for the github-proxy
+	//     to authenticate every request to the GitHub API; this access token may provide
+	//     permission to private repos on github.com
+	//   - in an on-prem server, you may add an SSH key which provides the privileges necessary
+	//     to clone private repositories from github.com
+	Sep20Auth bool `json:"sep20Auth"`
 }{}
 
 func init() {

@@ -34,9 +34,7 @@ type Mutation {
 
 type Root {
 	repository(uri: String!): Repository
-	repositories(query: String = "", fast: Boolean = true): [Repository!]!
-	remoteRepositories: [RemoteRepository!]!
-	remoteStarredRepositories: [RemoteRepository!]!
+	repositories(query: String = ""): [Repository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
 	activeRepos(): ActiveRepoResults!
@@ -102,16 +100,6 @@ type Symbol {
 	path: String!
 	line: Int!
 	character: Int!
-}
-
-type RemoteRepository {
-	uri: String!
-	description: String!
-	language: String!
-	fork: Boolean!
-	private: Boolean!
-	createdAt: String!
-	pushedAt: String!
 }
 
 type CommitState {

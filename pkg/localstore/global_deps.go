@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -342,6 +343,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 	// that could hint towards private repositories existing. We may decide to
 	// relax this constraint in the future, but we should be extremely careful
 	// in doing so.
+	// TODO(slimsag): allow global_dep_private after sep 20 release.
 
 	// Because global_dep only store Go package paths, not repository URIs, we
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
@@ -375,6 +377,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]in
 	// that could hint towards private repositories existing. We may decide to
 	// relax this constraint in the future, but we should be extremely careful
 	// in doing so.
+	// TODO(slimsag): allow global_dep_private after sep 20 release.
 
 	// Because global_dep only store Go package paths, not repository URIs, we
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
@@ -518,16 +521,21 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 		refs = append(refs, v...)
 	}
 
-	// 🚨 SECURITY: Verify that the user has access to the resulting dependency 🚨
-	// references. In general, this should not happen, but it can occur if e.g.
-	// a repository was once public but is now private. We simply remove them
-	// in that situation.
-	finalRefs := make([]*sourcegraph.DependencyReference, 0, len(refs))
-	for _, ref := range refs {
-		if _, err := Repos.Get(ctx, ref.RepoID); err != nil {
-			continue
+	var finalRefs []*sourcegraph.DependencyReference
+	if !feature.Features.Sep20Auth {
+		// 🚨 SECURITY: Verify that the user has access to the resulting dependency 🚨
+		// references. In general, this should not happen, but it can occur if e.g.
+		// a repository was once public but is now private. We simply remove them
+		// in that situation.
+		finalRefs = make([]*sourcegraph.DependencyReference, 0, len(refs))
+		for _, ref := range refs {
+			if _, err := Repos.Get(ctx, ref.RepoID); err != nil {
+				continue
+			}
+			finalRefs = append(finalRefs, ref)
 		}
-		finalRefs = append(finalRefs, ref)
+	} else {
+		finalRefs = refs
 	}
 	return finalRefs, nil
 }

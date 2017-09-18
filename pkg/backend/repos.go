@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -11,8 +10,6 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	gogithub "github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -90,28 +87,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	if opt.RemoteOnly {
-		// List all of the repos we can access that are associated with the current
-		// user. This includes that user's public repos and all the repos accessible
-		// via their installations.
-		repos, err := github.ListAccessibleRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// If we didn't list any repos above (e.g. if they don't have the
-		// GitHub app installed), then list their public repos. Otherwise we
-		// would end up with their public repos being in the list twice.
-		if len(repos) == 0 {
-			public, err := github.ListPublicReposForUser(ctx, actor.FromContext(ctx).Login)
-			if err != nil {
-				return nil, err
-			}
-			repos = append(repos, public...)
-		}
-		return &sourcegraph.RepoList{Repos: repos}, nil
-	}
-
 	repos, err := localstore.Repos.List(ctx, &localstore.RepoListOp{
 		Query:       opt.Query,
 		ListOptions: opt.ListOptions,
@@ -119,58 +94,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	if err != nil {
 		return nil, err
 	}
-
-	// Augment with external results if user is authenticated,
-	// RemoteSearch is true, and Query is non-empty.
-	if opt.RemoteSearch {
-		if !actor.FromContext(ctx).IsAuthenticated() {
-			// GitHub repo search API calls are subject to a strict
-			// rate limit shared by all unauthenticated users. We
-			// would quickly exceed it if we allowed this.
-			return nil, errors.New("refusing to perform remote search for unauthenticated user")
-		}
-
-		ghquery := opt.Query
-		if matches := ghRepoQueryMatcher.FindStringSubmatch(opt.Query); matches != nil {
-			// Apply query transformation to make GitHub results better.
-			ghquery = fmt.Sprintf("user:%s in:name %s", matches[1], matches[2])
-		}
-
-		var ghrepos []*sourcegraph.Repo
-		var err error
-		if ghquery == "" {
-			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{})
-			ghrepos, repos = repos, ghrepos
-		} else {
-			ghrepos, err = github.SearchRepo(ctx, ghquery, nil)
-		}
-		if err == nil {
-			existingRepos := make(map[string]*sourcegraph.Repo, len(repos))
-			for _, repo := range repos {
-				existingRepos[repo.URI] = repo
-			}
-			for _, ghrepo := range ghrepos {
-				if repo, in := existingRepos[ghrepo.URI]; in {
-					// Stars and forks counts are not yet persisted in the DB, so
-					// localstore.Repos.List repos need to have those fields set from the ghrepo.
-					if repo.StarsCount == nil {
-						repo.StarsCount = ghrepo.StarsCount
-					}
-					if repo.ForksCount == nil {
-						repo.ForksCount = ghrepo.ForksCount
-					}
-				} else {
-					repos = append(repos, ghrepo)
-				}
-			}
-		} else {
-			// Fetching results from GitHub is best-effort, as we
-			// might hit the rate limit and don't want this to kill
-			// the search experience entirely.
-			log15.Warn("Unable to fetch repo search results from GitHub", "query", opt.Query, "error", err)
-		}
-	}
-
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
