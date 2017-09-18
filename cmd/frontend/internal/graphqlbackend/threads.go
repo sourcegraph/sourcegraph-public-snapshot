@@ -124,15 +124,15 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 }
 
 func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, error) {
-	cs, err := store.Comments.GetAllForThread(ctx, t.thread.ID)
+	comments, err := store.Comments.GetAllForThread(ctx, t.thread.ID)
 	if err != nil {
 		return nil, err
 	}
-	comments := []*commentResolver{}
-	for _, c := range cs {
-		comments = append(comments, &commentResolver{comment: c, thread: t.thread})
+	commentResolvers := []*commentResolver{}
+	for _, comment := range comments {
+		commentResolvers = append(commentResolvers, &commentResolver{t.org, t.repo, t.thread, comment})
 	}
-	return comments, nil
+	return commentResolvers, nil
 }
 
 func (*schemaResolver) CreateThread(ctx context.Context, args *struct {

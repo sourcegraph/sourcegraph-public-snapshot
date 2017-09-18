@@ -20,8 +20,10 @@ import (
 )
 
 type commentResolver struct {
-	comment *sourcegraph.Comment
+	org     *sourcegraph.Org
+	repo    *sourcegraph.OrgRepo
 	thread  *sourcegraph.Thread
+	comment *sourcegraph.Comment
 }
 
 func (c *commentResolver) ID() int32 {
@@ -51,19 +53,11 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
-	repo, err := store.OrgRepos.GetByID(ctx, c.thread.OrgRepoID)
+	member, err := store.OrgMembers.GetByUserID(ctx, c.org.ID, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
-	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
-	if err != nil {
-		return nil, err
-	}
-	member, err := store.OrgMembers.GetByUserID(ctx, repo.OrgID, c.comment.AuthorUserID)
-	if err != nil {
-		return nil, err
-	}
-	return &orgMemberResolver{org, member}, nil
+	return &orgMemberResolver{c.org, member}, nil
 }
 
 func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
