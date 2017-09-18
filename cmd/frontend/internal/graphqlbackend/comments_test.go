@@ -98,14 +98,14 @@ func TestComments_Create(t *testing.T) {
 
 	ctx := context.Background()
 
-	repo := sourcegraph.LocalRepo{
+	repo := sourcegraph.OrgRepo{
 		ID:          1,
 		RemoteURI:   "github.com/foo/bar",
 		AccessToken: "1234",
 	}
 	thread := sourcegraph.Thread{
 		ID:             1,
-		LocalRepoID:    1,
+		OrgRepoID:      1,
 		File:           "foo.go",
 		Revision:       "1234",
 		StartLine:      1,
@@ -120,7 +120,7 @@ func TestComments_Create(t *testing.T) {
 		AuthorEmail: "alice@acme.com",
 	}
 
-	store.Mocks.LocalRepos.MockGet_Return(t, &repo, nil)
+	store.Mocks.OrgRepos.MockGet_Return(t, &repo, nil)
 	store.Mocks.Threads.MockGet_Return(t, &thread, nil)
 	called, calledWith := store.Mocks.Comments.MockCreate(t)
 
@@ -152,7 +152,7 @@ func TestComments_Create(t *testing.T) {
 func TestComments_CreateAccessDenied(t *testing.T) {
 	ctx := context.Background()
 
-	store.Mocks.LocalRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
+	store.Mocks.OrgRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
 	called, calledWith := store.Mocks.Comments.MockCreate(t)
 
 	r := &schemaResolver{}

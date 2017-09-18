@@ -15,7 +15,7 @@ import (
 // valid domain, e.g. "github.com/gorilla/mux".
 var validRemoteURI = regexp.MustCompile(`^[^/@]+(\.[^/]+)+(:\d+)?(/[^/]+)+$`)
 
-func validateLocalRepo(repo *sourcegraph.LocalRepo) error {
+func validateRepo(repo *sourcegraph.OrgRepo) error {
 	if repo.RemoteURI == "" {
 		return errors.New("error creating local repo: RemoteURI required")
 	}
@@ -29,26 +29,26 @@ func validateLocalRepo(repo *sourcegraph.LocalRepo) error {
 	return nil
 }
 
-type localRepos struct{}
+type orgRepos struct{}
 
-func (l *localRepos) GetByID(ctx context.Context, id int32) (*sourcegraph.LocalRepo, error) {
-	return l.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
+func (r *orgRepos) GetByID(ctx context.Context, id int32) (*sourcegraph.OrgRepo, error) {
+	return r.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (l *localRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.LocalRepo, error) {
-	return l.getBySQL(ctx, "WHERE org_id=$1 AND access_token IS NULL AND deleted_at IS NULL", orgID)
+func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.OrgRepo, error) {
+	return r.getBySQL(ctx, "WHERE org_id=$1 AND access_token IS NULL AND deleted_at IS NULL", orgID)
 }
 
 // deprecated
-func (l *localRepos) Get(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.LocalRepo, error) {
-	if Mocks.LocalRepos.Get != nil {
-		return Mocks.LocalRepos.Get(ctx, remoteURI, accessToken)
+func (r *orgRepos) Get(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error) {
+	if Mocks.OrgRepos.Get != nil {
+		return Mocks.OrgRepos.Get(ctx, remoteURI, accessToken)
 	}
-	return l.getOneBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND org_id IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
+	return r.getOneBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND org_id IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
 }
 
-func (l *localRepos) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.LocalRepo, error) {
-	repos, err := l.getBySQL(ctx, query, args...)
+func (r *orgRepos) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgRepo, error) {
+	repos, err := r.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -59,14 +59,14 @@ func (l *localRepos) getOneBySQL(ctx context.Context, query string, args ...inte
 	return repos[0], nil
 }
 
-func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (*sourcegraph.LocalRepo, error) {
-	if Mocks.LocalRepos.Create != nil {
-		return Mocks.LocalRepos.Create(ctx, newRepo)
+func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sourcegraph.OrgRepo, error) {
+	if Mocks.OrgRepos.Create != nil {
+		return Mocks.OrgRepos.Create(ctx, newRepo)
 	}
 
 	newRepo.CreatedAt = time.Now()
 	newRepo.UpdatedAt = newRepo.CreatedAt
-	err := validateLocalRepo(newRepo)
+	err := validateRepo(newRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 		accessToken = &newRepo.AccessToken
 	}
 	err = globalDB.QueryRow(
-		"INSERT INTO local_repos(remote_uri, org_id, access_token, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
+		"INSERT INTO org_repos(remote_uri, org_id, access_token, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
 		newRepo.RemoteURI, orgID, accessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
 	if err != nil {
 		return nil, err
@@ -90,35 +90,35 @@ func (*localRepos) Create(ctx context.Context, newRepo *sourcegraph.LocalRepo) (
 	return newRepo, nil
 }
 
-// getBySQL returns localRepos matching the SQL query, if any exist.
-func (*localRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.LocalRepo, error) {
-	rows, err := globalDB.Query("SELECT id, remote_uri, org_id, access_token, created_at, updated_at FROM local_repos "+query, args...)
+// getBySQL returns org repos matching the SQL query, if any exist.
+func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgRepo, error) {
+	rows, err := globalDB.Query("SELECT id, remote_uri, org_id, access_token, created_at, updated_at FROM org_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	localRepos := []*sourcegraph.LocalRepo{}
+	repos := []*sourcegraph.OrgRepo{}
 	defer rows.Close()
 	for rows.Next() {
-		var l sourcegraph.LocalRepo
+		var repo sourcegraph.OrgRepo
 		// orgID is temporarily nullable while we support both orgs and access tokens.
 		// TODO(nick): make org_id non-null when dropping support for access tokens.
 		var orgID sql.NullInt64
 		var accessToken sql.NullString
-		err := rows.Scan(&l.ID, &l.RemoteURI, &orgID, &accessToken, &l.CreatedAt, &l.UpdatedAt)
+		err := rows.Scan(&repo.ID, &repo.RemoteURI, &orgID, &accessToken, &repo.CreatedAt, &repo.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
 		if orgID.Valid {
-			l.OrgID = int32(orgID.Int64)
+			repo.OrgID = int32(orgID.Int64)
 		} else if accessToken.Valid {
-			l.AccessToken = accessToken.String
+			repo.AccessToken = accessToken.String
 		}
-		localRepos = append(localRepos, &l)
+		repos = append(repos, &repo)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return localRepos, nil
+	return repos, nil
 }

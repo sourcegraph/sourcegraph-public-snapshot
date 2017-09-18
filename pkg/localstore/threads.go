@@ -28,8 +28,8 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 	newThread.CreatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
 	err := globalDB.QueryRow(
-		"INSERT INTO threads(local_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
-		newThread.LocalRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
+		"INSERT INTO threads(org_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
+		newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,20 +86,20 @@ func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (
 }
 
 func (t *threads) GetByOrg(ctx context.Context, orgID, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "JOIN local_repos ON (local_repos.id = t.local_repo_id) WHERE local_repos.org_id=$1 and local_repos.deleted_at IS NULL AND t.deleted_at IS NULL LIMIT $2", orgID, limit)
+	return t.getBySQL(ctx, "JOIN org_repos ON (org_repos.id = t.org_repo_id) WHERE org_repos.org_id=$1 and org_repos.deleted_at IS NULL AND t.deleted_at IS NULL LIMIT $2", orgID, limit)
 }
 
 func (t *threads) GetAllForRepo(ctx context.Context, repoID, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "WHERE (local_repo_id=$1 AND deleted_at IS NULL) LIMIT $2", repoID, limit)
+	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND deleted_at IS NULL) LIMIT $2", repoID, limit)
 }
 
 func (t *threads) GetAllForFile(ctx context.Context, repoID int32, file string, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "WHERE (local_repo_id=$1 AND file=$2 AND deleted_at IS NULL) LIMIT $3", repoID, file, limit)
+	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND file=$2 AND deleted_at IS NULL) LIMIT $3", repoID, file, limit)
 }
 
 // getBySQL returns threads matching the SQL query, if any exist.
 func (*threads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Thread, error) {
-	rows, err := globalDB.Query("SELECT t.id, t.local_repo_id, t.file, t.revision, t.start_line, t.end_line, t.start_character, t.end_character, t.created_at, t.archived_at FROM threads t "+query, args...)
+	rows, err := globalDB.Query("SELECT t.id, t.org_repo_id, t.file, t.revision, t.start_line, t.end_line, t.start_character, t.end_character, t.created_at, t.archived_at FROM threads t "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 	for rows.Next() {
 		var t sourcegraph.Thread
 		var archivedAt pq.NullTime
-		err := rows.Scan(&t.ID, &t.LocalRepoID, &t.File, &t.Revision, &t.StartLine, &t.EndLine, &t.StartCharacter, &t.EndCharacter, &t.CreatedAt, &archivedAt)
+		err := rows.Scan(&t.ID, &t.OrgRepoID, &t.File, &t.Revision, &t.StartLine, &t.EndLine, &t.StartCharacter, &t.EndCharacter, &t.CreatedAt, &archivedAt)
 		if err != nil {
 			return nil, err
 		}

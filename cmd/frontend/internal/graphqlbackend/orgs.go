@@ -79,7 +79,7 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 }
 
 func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
-	repos, err := store.LocalRepos.GetByOrg(ctx, o.org.ID)
+	repos, err := store.OrgRepos.GetByOrg(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
 	}

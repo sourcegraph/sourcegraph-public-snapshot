@@ -18,7 +18,7 @@ import (
 
 type threadResolver struct {
 	org    *sourcegraph.Org
-	repo   *sourcegraph.LocalRepo
+	repo   *sourcegraph.OrgRepo
 	thread *sourcegraph.Thread
 }
 
@@ -29,7 +29,7 @@ func (t *threadResolver) ID() int32 {
 func (t *threadResolver) Repo(ctx context.Context) (*orgRepoResolver, error) {
 	var err error
 	if t.repo == nil {
-		t.repo, err = store.LocalRepos.GetByID(ctx, t.thread.LocalRepoID)
+		t.repo, err = store.OrgRepos.GetByID(ctx, t.thread.OrgRepoID)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	Limit       *int32
 }) ([]*threadResolver, error) {
 	threads := []*threadResolver{}
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err == store.ErrRepoNotFound {
 		// Datastore is lazily populated when comments are created
 		// so it isn't an error for a repo to not exist yet.
@@ -149,9 +149,9 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	AuthorEmail    string
 }) (*threadResolver, error) {
 	actor := actor.FromContext(ctx)
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err == store.ErrRepoNotFound {
-		repo, err = store.LocalRepos.Create(ctx, &sourcegraph.LocalRepo{
+		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
 			RemoteURI:   args.RemoteURI,
 			AccessToken: args.AccessToken,
 		})
@@ -161,7 +161,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	}
 
 	newThread, err := store.Threads.Create(ctx, &sourcegraph.Thread{
-		LocalRepoID:    repo.ID,
+		OrgRepoID:      repo.ID,
 		File:           args.File,
 		Revision:       args.Revision,
 		StartLine:      args.StartLine,
@@ -197,7 +197,7 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	Contents       string
 }) (*threadResolver, error) {
 	actor := actor.FromContext(ctx)
-	repo, err := store.LocalRepos.GetByID(ctx, args.OrgRepoID)
+	repo, err := store.OrgRepos.GetByID(ctx, args.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	}
 
 	newThread, err := store.Threads.Create(ctx, &sourcegraph.Thread{
-		LocalRepoID:    repo.ID,
+		OrgRepoID:      repo.ID,
 		File:           args.File,
 		Revision:       args.Revision,
 		StartLine:      args.StartLine,
@@ -248,7 +248,7 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (*schemaResolver) UpdateThread2(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	repo, err := store.LocalRepos.GetByID(ctx, thread.LocalRepoID)
+	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}

@@ -441,10 +441,9 @@ const (
 	InviteError
 )
 
-// LocalRepo represents a repo that exists on a native client's filesystem, but
+// OrgRepo represents a repo that exists on a native client's filesystem, but
 // does not necessarily have its contents cloned to a remote Sourcegraph server.
-// TODO(nick): rename type and table to OrgRepo and org_repos
-type LocalRepo struct {
+type OrgRepo struct {
 	ID          int32
 	RemoteURI   string
 	OrgID       int32
@@ -455,7 +454,7 @@ type LocalRepo struct {
 
 type Thread struct {
 	ID             int32      `json:"ID,omitempty"`
-	LocalRepoID    int32      `json:"LocalRepoID,omitempty"`
+	OrgRepoID      int32      `json:"OrgRepoID,omitempty"`
 	File           string     `json:"File,omitempty"`
 	Revision       string     `json:"Revision,omitempty"`
 	StartLine      int32      `json:"StartLine,omitempty"`

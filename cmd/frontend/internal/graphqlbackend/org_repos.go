@@ -8,7 +8,7 @@ import (
 
 type orgRepoResolver struct {
 	org  *sourcegraph.Org
-	repo *sourcegraph.LocalRepo
+	repo *sourcegraph.OrgRepo
 }
 
 func (o *orgRepoResolver) ID() int32 {

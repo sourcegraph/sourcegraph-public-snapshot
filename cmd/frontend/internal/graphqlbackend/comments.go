@@ -51,7 +51,7 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
-	repo, err := store.LocalRepos.GetByID(ctx, c.thread.LocalRepoID)
+	repo, err := store.OrgRepos.GetByID(ctx, c.thread.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	repo, err := store.LocalRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	repo, err := store.LocalRepos.GetByID(ctx, thread.LocalRepoID)
+	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
 }
 
 // notifyThreadParticipants sends email notifications to the participants in the comment thread.
-func notifyThreadParticipants(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) []string {
+func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) []string {
 	if !notif.EmailIsConfigured() {
 		return []string{}
 	}
@@ -197,7 +197,7 @@ func repoNameFromURI(remoteURI string) string {
 	return m[1]
 }
 
-func getURL(repo *sourcegraph.LocalRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment) string {
+func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment) string {
 	cloneURL := fmt.Sprintf("https://%s", repo.RemoteURI)
 	values := url.Values{}
 	values.Set("repo", cloneURL)

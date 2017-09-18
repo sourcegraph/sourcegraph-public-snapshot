@@ -22,6 +22,8 @@
 // ../../../migrations/1505505790_add_comments_user_id.up.sql
 // ../../../migrations/1505517457_rename_org_members_columns.down.sql
 // ../../../migrations/1505517457_rename_org_members_columns.up.sql
+// ../../../migrations/1505758681_org_repos.down.sql
+// ../../../migrations/1505758681_org_repos.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -529,6 +531,46 @@ func _1505517457_rename_org_members_columnsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1505758681_org_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x8f\x2f\x4a\x2d\xc8\x2f\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\xc8\xc9\x4f\x4e\xcc\x81\x88\x5a\x73\x21\x2b\x2e\xc9\x28\x4a\x4d\x4c\x81\x2b\x75\xf6\xf7\x09\xf5\xf5\x83\x1b\x11\x9f\x99\x82\xaa\x3b\x3e\x33\xc5\x1a\x10\x00\x00\xff\xff\xe8\x5e\x3a\xfb\x6c\x00\x00\x00")
+
+func _1505758681_org_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1505758681_org_reposDownSql,
+		"1505758681_org_repos.down.sql",
+	)
+}
+
+func _1505758681_org_reposDownSql() (*asset, error) {
+	bytes, err := _1505758681_org_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1505758681_org_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1505758681_org_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\xc9\x4f\x4e\xcc\x89\x2f\x4a\x2d\xc8\x2f\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\xc8\x2f\x4a\x87\x88\x59\x73\x21\x2b\x2e\xc9\x28\x4a\x4d\x4c\x81\x2b\x74\xf6\xf7\x09\xf5\xf5\x43\x32\x22\x3e\x33\x05\x59\x77\x7c\x66\x8a\x35\x20\x00\x00\xff\xff\x84\x35\x92\xf5\x6c\x00\x00\x00")
+
+func _1505758681_org_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1505758681_org_reposUpSql,
+		"1505758681_org_repos.up.sql",
+	)
+}
+
+func _1505758681_org_reposUpSql() (*asset, error) {
+	bytes, err := _1505758681_org_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1505758681_org_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -603,6 +645,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1505505790_add_comments_user_id.up.sql":         _1505505790_add_comments_user_idUpSql,
 	"1505517457_rename_org_members_columns.down.sql": _1505517457_rename_org_members_columnsDownSql,
 	"1505517457_rename_org_members_columns.up.sql":   _1505517457_rename_org_members_columnsUpSql,
+	"1505758681_org_repos.down.sql":                  _1505758681_org_reposDownSql,
+	"1505758681_org_repos.up.sql":                    _1505758681_org_reposUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -668,6 +712,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1505505790_add_comments_user_id.up.sql":         &bintree{_1505505790_add_comments_user_idUpSql, map[string]*bintree{}},
 	"1505517457_rename_org_members_columns.down.sql": &bintree{_1505517457_rename_org_members_columnsDownSql, map[string]*bintree{}},
 	"1505517457_rename_org_members_columns.up.sql":   &bintree{_1505517457_rename_org_members_columnsUpSql, map[string]*bintree{}},
+	"1505758681_org_repos.down.sql":                  &bintree{_1505758681_org_reposDownSql, map[string]*bintree{}},
+	"1505758681_org_repos.up.sql":                    &bintree{_1505758681_org_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -5,7 +5,7 @@ var (
 	Pkgs       = &pkgs{}
 	RepoVCS    = &repoVCS{}
 	Repos      = &repos{}
-	LocalRepos = &localRepos{}
+	OrgRepos   = &orgRepos{}
 	Threads    = &threads{}
 	Comments   = &comments{}
 	Orgs       = &orgs{}

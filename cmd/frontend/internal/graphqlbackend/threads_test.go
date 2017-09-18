@@ -13,12 +13,12 @@ import (
 func TestThreads_Create(t *testing.T) {
 	ctx := context.Background()
 
-	wantRepo := sourcegraph.LocalRepo{
+	wantRepo := sourcegraph.OrgRepo{
 		RemoteURI:   "test",
 		AccessToken: "1234",
 	}
-	store.Mocks.LocalRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
-	repoCreateCalled, repoCreateCalledWith := store.Mocks.LocalRepos.MockCreate_Return(t, &sourcegraph.LocalRepo{
+	store.Mocks.OrgRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
+	repoCreateCalled, repoCreateCalledWith := store.Mocks.OrgRepos.MockCreate_Return(t, &sourcegraph.OrgRepo{
 		ID:          1,
 		RemoteURI:   wantRepo.RemoteURI,
 		AccessToken: wantRepo.AccessToken,
@@ -26,10 +26,10 @@ func TestThreads_Create(t *testing.T) {
 		UpdatedAt:   time.Now(),
 	}, nil)
 	threadCreateCalled, _ := store.Mocks.Threads.MockCreate_Return(t, &sourcegraph.Thread{
-		ID:          1,
-		LocalRepoID: wantRepo.ID,
-		File:        "foo.go",
-		Revision:    "abcd",
+		ID:        1,
+		OrgRepoID: wantRepo.ID,
+		File:      "foo.go",
+		Revision:  "abcd",
 	}, nil)
 	commentCreateCalled, _ := store.Mocks.Comments.MockCreate(t)
 
@@ -73,7 +73,7 @@ func TestThreads_Create(t *testing.T) {
 func TestThreads_Get_RepoNotFound(t *testing.T) {
 	ctx := context.Background()
 
-	store.Mocks.LocalRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
+	store.Mocks.OrgRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
 
 	file := "foo.go"
 	r := &rootResolver{}
@@ -99,12 +99,12 @@ func TestThreads_Get_RepoNotFound(t *testing.T) {
 }
 
 func TestThreads_Update(t *testing.T) {
-	wantRepo := sourcegraph.LocalRepo{
+	wantRepo := sourcegraph.OrgRepo{
 		RemoteURI:   "test",
 		AccessToken: "1234",
 	}
 
-	store.Mocks.LocalRepos.MockGet_Return(t, &wantRepo, nil)
+	store.Mocks.OrgRepos.MockGet_Return(t, &wantRepo, nil)
 	called := store.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{}, nil)
 
 	r := &schemaResolver{}
