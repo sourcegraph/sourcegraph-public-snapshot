@@ -113,10 +113,14 @@ export class CodeExcerpt extends React.Component<Props, State> {
             filePath: props.filePath,
             disableTimeout: true
         })
-            .then(lines => this.setState({ blobLines: lines }))
-            .catch(err => {
-                console.error('failed to fetch blob content', err)
-            })
+            .subscribe(
+                lines => {
+                    this.setState({ blobLines: lines })
+                },
+                err => {
+                    console.error('failed to fetch blob content', err)
+                }
+            )
     }
 
     private makeTableHTML(): string {

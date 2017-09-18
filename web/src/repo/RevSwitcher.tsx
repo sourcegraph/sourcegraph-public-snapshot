@@ -4,7 +4,6 @@ import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
 import * as React from 'react'
 import 'rxjs/add/observable/fromEvent'
-import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/filter'
@@ -113,7 +112,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                 // Fetch the list of all branches/tags for the repo initially.
                 this.componentUpdates
                     .switchMap(props =>
-                        Observable.fromPromise(fetchRepoRevisions({ repoPath: props.repoPath }))
+                        fetchRepoRevisions({ repoPath: props.repoPath })
                             .catch(err => {
                                 console.error(err)
                                 return []
@@ -137,7 +136,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                     // We're only interested in query if it is a commit ID, not a branch or tag.
                     .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(item => item.rev.includes(query))))
                     .switchMap(query =>
-                        Observable.fromPromise(resolveRev({repoPath: this.props.repoPath, rev: query}))
+                        resolveRev({repoPath: this.props.repoPath, rev: query})
                             .map(query => ({ queryIsCommit: true } as State))
                             .catch(err => {
                                 if (err.code !== EREVNOTFOUND) {

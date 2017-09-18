@@ -1,4 +1,3 @@
-import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/interval'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/map'
@@ -44,10 +43,8 @@ blameEvents
         if (!ctx) {
             return []
         }
-        const fetch: Observable<BlameData> = Observable.fromPromise(fetchBlameFile({
-            ...ctx,
-            position: { line: ctx.position.line, character: 0 }
-        })).map(hunks => ({ ctx, loading: false, hunks: hunks || [] }))
+        const fetch: Observable<BlameData> = fetchBlameFile({ ...ctx, position: { line: ctx.position.line, character: 0 }})
+            .map(hunks => ({ ctx, loading: false, hunks: hunks || [] }))
         // show loading data after 250ms if the fetch has not resolved
         const loading: Observable<BlameData> = Observable.interval(250)
             .take(1)

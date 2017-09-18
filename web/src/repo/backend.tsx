@@ -1,7 +1,8 @@
-import 'rxjs/add/operator/toPromise'
-import { memoizedFetch } from 'sourcegraph/backend'
+import 'rxjs/add/operator/map'
+import { Observable } from 'rxjs/Observable'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { makeRepoURI } from 'sourcegraph/repo'
+import { memoizeObservable } from 'sourcegraph/util/memoize'
 
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
 class CloneInProgressError extends Error {
@@ -28,10 +29,10 @@ class RevNotFoundError extends Error {
 }
 
 /**
- * @return Promise that resolves to the commit ID
- *         Will reject with a `CloneInProgressError` if the repo is still being cloned.
+ * @return Observable that emits the commit ID
+ *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
-export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }): Promise<string> =>
+export const resolveRev = memoizeObservable((ctx: { repoPath: string, rev?: string }): Observable<string> =>
     queryGraphQL(`
         query ResolveRev($repoPath: String, $rev: String) {
             root {
@@ -45,7 +46,7 @@ export const resolveRev = memoizedFetch((ctx: { repoPath: string, rev?: string }
                 }
             }
         }
-    `, { ...ctx, rev: ctx.rev || 'master' }).toPromise().then(result => {
+    `, { ...ctx, rev: ctx.rev || 'master' }).map(result => {
         if (!result.data) {
             throw new Error('invalid response received from graphql endpoint')
         }
@@ -74,7 +75,7 @@ interface HighlightedFileResult {
     highlightedFile: GQL.IHighlightedFile
 }
 
-export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<HighlightedFileResult> =>
+export const fetchHighlightedFile = memoizeObservable((ctx: FetchFileCtx): Observable<HighlightedFileResult> =>
     queryGraphQL(`query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean) {
         root {
             repository(uri: $repoPath) {
@@ -91,7 +92,7 @@ export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<H
                 }
             }
         }
-    }`, ctx).toPromise().then(result => {
+    }`, ctx).map(result => {
         if (result.errors) {
             const errors = result.errors.map(e => e.message).join(', ')
             throw new Error(errors)
@@ -114,8 +115,8 @@ export const fetchHighlightedFile = memoizedFetch((ctx: FetchFileCtx): Promise<H
 /**
  * Produces a list like ['<tr>...</tr>', ...]
  */
-export const fetchHighlightedFileLines = memoizedFetch((ctx: FetchFileCtx, force?: boolean): Promise<string[]> =>
-        fetchHighlightedFile(ctx, force).then(result => {
+export const fetchHighlightedFileLines = memoizeObservable((ctx: FetchFileCtx, force?: boolean): Observable<string[]> =>
+        fetchHighlightedFile(ctx, force).map(result => {
             if (result.isDirectory) {
                 return []
             }
@@ -132,7 +133,7 @@ export const fetchHighlightedFileLines = memoizedFetch((ctx: FetchFileCtx, force
         })
     , makeRepoURI)
 
-export const listAllFiles = memoizedFetch((ctx: { repoPath: string, commitID: string }): Promise<string[]> =>
+export const listAllFiles = memoizeObservable((ctx: { repoPath: string, commitID: string }): Observable<string[]> =>
     queryGraphQL(`query FileTree($repoPath: String!, $commitID: String!) {
         root {
             repository(uri: $repoPath) {
@@ -147,7 +148,7 @@ export const listAllFiles = memoizedFetch((ctx: { repoPath: string, commitID: st
                 }
             }
         }
-    }`, ctx).toPromise().then(result => {
+    }`, ctx).map(result => {
         if (!result.data ||
             !result.data.root.repository ||
             !result.data.root.repository.commit ||
@@ -166,7 +167,7 @@ interface BlobContent {
     content: string
 }
 
-export const fetchBlobContent = memoizedFetch((ctx: FetchFileCtx): Promise<BlobContent> =>
+export const fetchBlobContent = memoizeObservable((ctx: FetchFileCtx): Observable<BlobContent> =>
     queryGraphQL(`query BlobContent($repoPath: String, $commitID: String, $filePath: String) {
         root {
             repository(uri: $repoPath) {
@@ -180,7 +181,7 @@ export const fetchBlobContent = memoizedFetch((ctx: FetchFileCtx): Promise<BlobC
                 }
             }
         }
-    }`, ctx).toPromise().then(result => {
+    }`, ctx).map(result => {
         if (
             !result.data ||
             !result.data.root ||
@@ -201,7 +202,7 @@ export interface RepoRevisions {
     tags: string[]
 }
 
-export const fetchRepoRevisions = memoizedFetch((ctx: { repoPath: string }): Promise<RepoRevisions> =>
+export const fetchRepoRevisions = memoizeObservable((ctx: { repoPath: string }): Observable<RepoRevisions> =>
     queryGraphQL(`query RepoRevisions($repoPath: String) {
         root {
             repository(uri: $repoPath) {
@@ -209,7 +210,7 @@ export const fetchRepoRevisions = memoizedFetch((ctx: { repoPath: string }): Pro
                 tags
             }
         }
-    }`, ctx).toPromise().then(result => {
+    }`, ctx).map(result => {
         if (result.errors) {
             const errors = result.errors.map(e => e.message).join(', ')
             throw new Error(errors)

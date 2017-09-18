@@ -1,7 +1,7 @@
-import { memoizedFetch } from 'sourcegraph/backend'
 import { doFetch as fetch } from 'sourcegraph/backend/xhr'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from 'sourcegraph/repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from 'sourcegraph/util'
+import { memoizeAsync } from 'sourcegraph/util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from 'sourcegraph/util/url'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
 
@@ -43,7 +43,7 @@ function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
     ]
 }
 
-export const fetchHover = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<Hover> => {
+export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<Hover> => {
     const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve({ contents: [] })
@@ -72,7 +72,7 @@ export const fetchHover = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise
         })
 }, makeRepoURI)
 
-export const fetchDefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<Definition> => {
+export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<Definition> => {
     const ext = getPathExtension(pos.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve([])
@@ -121,7 +121,7 @@ export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | nu
         })
 }
 
-export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): Promise<{ location: any, symbol: any } | null> => {
+export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<{ location: any, symbol: any } | null> => {
     const body = wrapLSP({
         method: 'textDocument/xdefinition',
         params: {
@@ -148,7 +148,7 @@ export const fetchXdefinition = memoizedFetch((pos: AbsoluteRepoFilePosition): P
         })
 }, makeRepoURI)
 
-export const fetchReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Promise<Location[]> => {
+export const fetchReferences = memoizeAsync((ctx: AbsoluteRepoFilePosition): Promise<Location[]> => {
     const ext = getPathExtension(ctx.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve([])
@@ -185,7 +185,7 @@ interface XReferencesParams extends AbsoluteRepoFile {
     limit: number
 }
 
-export const fetchXreferences = memoizedFetch((ctx: XReferencesParams): Promise<Location[]> => {
+export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<Location[]> => {
     const ext = getPathExtension(ctx.filePath)
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve([])

@@ -4,7 +4,6 @@ import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
-import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/map'
@@ -88,7 +87,7 @@ export class Repository extends React.Component<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .switchMap(props =>
-                    Observable.fromPromise(listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }))
+                    listAllFiles({ repoPath: props.repoPath, commitID: props.commitID })
                         .catch(err => {
                             console.error(err)
                             return []
@@ -109,16 +108,17 @@ export class Repository extends React.Component<Props, State> {
         this.subscriptions.add(
             contentUpdatesWithFile
                 .switchMap(props =>
-                    Observable.fromPromise(fetchHighlightedFile({
+                    fetchHighlightedFile({
                         repoPath: props.repoPath,
                         commitID: props.commitID,
                         filePath: props.filePath!,
                         disableTimeout: props.showHighlightingAnyway
-                    })).catch(err => {
-                        this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
-                        console.error(err)
-                        return []
                     })
+                        .catch(err => {
+                            this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
+                            console.error(err)
+                            return []
+                        })
                 )
                 .subscribe(
                     result => this.setState({

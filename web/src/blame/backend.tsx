@@ -1,9 +1,10 @@
-import 'rxjs/add/operator/toPromise'
-import { memoizedFetch } from 'sourcegraph/backend'
+import 'rxjs/add/operator/map'
+import { Observable } from 'rxjs/Observable'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { AbsoluteRepoFilePosition, makeRepoURI } from 'sourcegraph/repo'
+import { memoizeObservable } from 'sourcegraph/util/memoize'
 
-export const fetchBlameFile = memoizedFetch((ctx: AbsoluteRepoFilePosition): Promise<GQL.IHunk[] | null> =>
+export const fetchBlameFile = memoizeObservable((ctx: AbsoluteRepoFilePosition): Observable<GQL.IHunk[] | null> =>
     queryGraphQL(`
         query BlameFile($repoPath: String, $commitID: String, $filePath: String, $startLine: Int, $endLine: Int) {
             root {
@@ -34,8 +35,7 @@ export const fetchBlameFile = memoizedFetch((ctx: AbsoluteRepoFilePosition): Pro
             }
         }
     `, { repoPath: ctx.repoPath, commitID: ctx.commitID, filePath: ctx.filePath, startLine: ctx.position.line, endLine: ctx.position.line })
-        .toPromise()
-        .then(result => {
+        .map(result => {
             if (!result.data ||
                 !result.data.root ||
                 !result.data.root.repository ||

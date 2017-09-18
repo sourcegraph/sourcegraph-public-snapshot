@@ -3,16 +3,15 @@ import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/toPromise'
 import { Observable } from 'rxjs/Observable'
-import { memoizedFetch } from 'sourcegraph/backend'
 import { queryGraphQL } from 'sourcegraph/backend/graphql'
 import { fetchXdefinition, fetchXreferences } from 'sourcegraph/backend/lsp'
 import { AbsoluteRepoFilePosition, makeRepoURI } from 'sourcegraph/repo'
 import * as util from 'sourcegraph/util'
+import { memoizeObservable } from 'sourcegraph/util/memoize'
 import { Location } from 'vscode-languageserver-types'
 
-export const fetchDependencyReferences = memoizedFetch((ctx: AbsoluteRepoFilePosition): Promise<GQL.IDependencyReferences | null> => {
+export const fetchDependencyReferences = memoizeObservable((ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {
     const mode = util.getModeFromExtension(util.getPathExtension(ctx.filePath))
     return queryGraphQL(`
         query DependencyReferences($repoPath: String, $commitID: String, $filePath: String, $mode: String, $line: Int, $character: Int) {
@@ -53,8 +52,7 @@ export const fetchDependencyReferences = memoizedFetch((ctx: AbsoluteRepoFilePos
             }
         }
     `, { repoPath: ctx.repoPath, commitID: ctx.commitID, mode, filePath: ctx.filePath, line: ctx.position.line - 1, character: ctx.position.character! - 1 })
-        .toPromise()
-        .then(result => {
+        .map(result => {
             if (!result.data ||
                 !result.data.root ||
                 !result.data.root.repository ||
@@ -82,7 +80,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                 return []
             }
 
-            return Observable.fromPromise(fetchDependencyReferences(ctx))
+            return fetchDependencyReferences(ctx)
                 .filter(data => Boolean(data && data.repoData.repos))
                 .map(data => {
                     const refs = data! // will be defined after filter
