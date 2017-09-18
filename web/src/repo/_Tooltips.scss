@@ -9,25 +9,29 @@
     overflow: auto;
     border-radius: 3px;
     box-shadow: 0 3px 12px rgba(27,31,35,0.15);
+    font-size: 12px;
+    line-height: 20px;
 
     &__title {
+        flex: 1;
         font-family: 'Menlo';
         word-wrap: break-word;
         white-space: pre-wrap;
         margin-left: 0px;
-        margin-right: 32px;
         padding: 0px;
     }
 
     &__divider {
+        display: flex;
         border-bottom: 1px solid #2A3A51;
-        padding: 16px 8px;
-        line-height: 16px;
+        padding: .5rem;
     }
 
     &__doc {
-        padding: 16px;
-        padding-left: 8px;
+        padding-top: .5rem;
+        padding-left: .5rem;
+        padding-right: .5rem;
+        // no padding on bottom; pre-wrap whitepsace adds extra padding
         max-height: 150px;
         overflow: auto;
         margin-bottom: 0px;
@@ -46,32 +50,39 @@
         flex: 1;
         cursor: pointer;
         text-decoration: none;
-        padding: 8px;
+        padding: .5rem;
         color: #FFFFFF;
 
         &:not(:last-child) {
             border-right: 1px solid #2A3A51;
+        }
+
+        &:hover {
+            background-color: rgba(57, 77, 105, 0.2);
         }
     }
 
     &__more-actions {
         font-style: italic;
         color: #FFFFFF;
-        padding: 8px 16px;
+        padding: .5rem;
         font-family: system;
     }
 
     &__close-icon {
-        width: 12px;
-        position: absolute;
-        top: 18px;
-        right: 16px;
-        vertical-align: middle;
         cursor: pointer;
+        margin-left: 10px;
+
+        &:hover {
+            color: #FFFFFF;
+        }
+        svg {
+            fill: currentColor;
+        }
     }
 
     &__loading {
-        padding: 16px;
+        padding: .5rem;
         font-family: system;
     }
 
