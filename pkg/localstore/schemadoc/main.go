@@ -60,7 +60,7 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	docs := []string{}
 	for _, table := range tables {
 		// Get postgres "describe table" output.
-		cmd := exec.Command("psql", "-c", fmt.Sprintf("\\d %s", table))
+		cmd := exec.Command("psql", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
 		out, err := cmd.Output()
 		if err != nil {
 			log.Fatal(err)
