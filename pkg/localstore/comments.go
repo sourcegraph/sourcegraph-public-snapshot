@@ -3,6 +3,7 @@ package localstore
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -16,6 +17,10 @@ type comments struct{}
 func (*comments) Create(ctx context.Context, threadID int32, contents, authorName, authorEmail, authorUserID string) (*sourcegraph.Comment, error) {
 	if Mocks.Comments.Create != nil {
 		return Mocks.Comments.Create(ctx, threadID, contents, authorName, authorEmail)
+	}
+
+	if len(contents) > 100000 {
+		return nil, errors.New("comment too long")
 	}
 
 	createdAt := time.Now()
