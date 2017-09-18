@@ -336,3 +336,41 @@ func (r *rootResolver) Packages(ctx context.Context, args *struct {
 	}
 	return pkgResolvers, nil
 }
+
+func (r *rootResolver) Dependents(ctx context.Context, args *struct {
+	Lang    string
+	ID      *string
+	Type    *string
+	Name    *string
+	Commit  *string
+	BaseDir *string
+	RepoURL *string
+	Version *string
+	Limit   *int
+}) ([]*dependencyResolver, error) {
+	limit := 10
+	if args.Limit != nil {
+		limit = *args.Limit
+	}
+	pkgQuery := packageMetadata{
+		id:      args.ID,
+		typ:     args.Type,
+		name:    args.Name,
+		commit:  args.Commit,
+		baseDir: args.BaseDir,
+		repoURL: args.RepoURL,
+		version: args.Version,
+	}.toPkgQuery()
+
+	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, ExcludePrivate: true, Limit: limit})
+	if err != nil {
+		return nil, err
+	}
+
+	depResolvers := make([]*dependencyResolver, len(deps))
+	for i, dep := range deps {
+		depResolvers[i] = &dependencyResolver{dep}
+	}
+
+	return depResolvers, nil
+}
