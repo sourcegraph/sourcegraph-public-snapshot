@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -26,8 +24,8 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 	var err error
 	if authorUserID != "" {
 		err = globalDB.QueryRow(
-			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id) VALUES($1, $2, $3, $4, $5) RETURNING id",
-			threadID, contents, createdAt, updatedAt, authorUserID).Scan(&id)
+			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+			threadID, contents, createdAt, updatedAt, authorUserID, authorName, authorEmail).Scan(&id)
 	} else {
 		// deprecated code path
 		err = globalDB.QueryRow(
@@ -72,14 +70,12 @@ func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}
 		}
 		if authorUserID.Valid {
 			c.AuthorUserID = authorUserID.String
-		} else if authorName.Valid && authorEmail.Valid {
-			// deprecated code path
+		}
+		if authorName.Valid {
 			c.AuthorName = authorName.String
+		}
+		if authorEmail.Valid {
 			c.AuthorEmail = authorEmail.String
-		} else {
-			// Skip invalid db row
-			log15.Warn("invalid comment in database", "id", c.ID)
-			continue
 		}
 		comments = append(comments, &c)
 	}
