@@ -334,7 +334,7 @@ export class Blob extends React.Component<Props, State> {
                     const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
                     const data = { target, loc: getTargetLineAndOffset(target, false) }
                     if (!data.loc) {
-                        return updateLine(row.lastChild as HTMLElement, this.props.history, {
+                        return updateLine(row, this.props.history, {
                             repoPath: this.props.repoPath,
                             rev: this.props.rev,
                             commitID: this.props.commitID,
@@ -343,7 +343,7 @@ export class Blob extends React.Component<Props, State> {
                         })
                     }
                     const ctx = { ...this.props, position: { line, character: data.loc!.character } }
-                    updateLine(row.lastChild as HTMLElement, this.props.history, ctx)
+                    updateLine(row, this.props.history, ctx)
                 })
         )
     }
