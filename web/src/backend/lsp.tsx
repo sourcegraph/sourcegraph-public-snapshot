@@ -208,4 +208,4 @@ export const fetchXreferences = memoizedFetch((ctx: XReferencesParams): Promise<
             }
             return json[1].result.map(data => data.reference)
         })
-}, ctx => makeRepoURI(ctx) + '___' + ctx.query + '___' + ctx.limit)
+}, ctx => makeRepoURI(ctx) + '___' + JSON.stringify(ctx.query) + '___' + ctx.limit)

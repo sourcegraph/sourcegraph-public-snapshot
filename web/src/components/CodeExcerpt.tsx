@@ -16,6 +16,7 @@ interface State {
 
 export class CodeExcerpt extends React.Component<Props, State> {
     private tableContainerElement: HTMLElement | null
+    private isVisible = false
 
     constructor(props: Props) {
         super(props)
@@ -27,7 +28,9 @@ export class CodeExcerpt extends React.Component<Props, State> {
             // Redraw the component so the matched range highlighting is updated
             this.setState({ blobLines: undefined })
         }
-        this.fetchContents(nextProps)
+        if (this.isVisible) {
+            this.fetchContents(nextProps)
+        }
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -64,6 +67,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
     }
 
     public onChangeVisibility = (isVisible: boolean): void => {
+        this.isVisible = isVisible
         if (isVisible) {
             this.fetchContents(this.props)
         }

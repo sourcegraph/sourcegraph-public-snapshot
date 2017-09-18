@@ -2,6 +2,8 @@ import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import groupBy from 'lodash/groupBy'
+import isEqual from 'lodash/isEqual'
+import omit from 'lodash/omit'
 import partition from 'lodash/partition'
 import * as React from 'react'
 import DownIcon from 'react-icons/lib/fa/angle-down'
@@ -10,15 +12,19 @@ import CloseIcon from 'react-icons/lib/md/close'
 import { Link } from 'react-router-dom'
 import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/merge'
+import 'rxjs/add/operator/bufferTime'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/concat'
+import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
+import 'rxjs/add/operator/scan'
 import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { fetchReferences } from 'sourcegraph/backend/lsp'
 import { CodeExcerpt } from 'sourcegraph/components/CodeExcerpt'
+import { VirtualList } from 'sourcegraph/components/VIrtualList'
 import { fetchExternalReferences } from 'sourcegraph/references/backend'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from 'sourcegraph/repo'
 import { events } from 'sourcegraph/tracking/events'
@@ -133,7 +139,7 @@ interface Props extends AbsoluteRepoFilePosition {
 }
 
 interface State {
-    group: 'local' | 'external'
+    group?: 'local' | 'external'
     references: Location[]
     loadingLocal: boolean
     loadingExternal: boolean
@@ -157,20 +163,36 @@ export class ReferencesWidget extends React.Component<Props, State> {
             this.componentUpdates
                 .switchMap(props => Observable.merge(
                     Observable.fromPromise(fetchReferences(props))
-                        .map(refs => ({ references: this.state.references.concat(refs) } as State))
+                        .map(refs => ({ references: refs } as State))
                         .catch(e => {
                             console.error(e)
                             return []
                         })
                         .concat([{ loadingLocal: false } as State]),
                     fetchExternalReferences(props)
-                        .map(refs => ({ references: this.state.references.concat(refs) } as State))
+                        .map(refs => ({ references: refs } as State))
                         .catch(e => {
                             console.error(e)
                             return []
                         })
                         .concat([{ loadingExternal: false } as State])
                 ))
+                .bufferTime(500)
+                .filter(updates => updates.length > 0)
+                .scan(
+                    (currState, updates) => {
+                        let newState = currState
+                        for (const update of updates) {
+                            if (update.references) {
+                                newState = { ...newState, references: newState.references.concat(update.references) }
+                            } else {
+                                newState = { ...newState, ...update }
+                            }
+                        }
+                        return newState
+                    },
+                    { references: [], loadingLocal: true, loadingExternal: true } as State
+                )
                 .subscribe(state => this.setState(state))
         )
     }
@@ -181,12 +203,12 @@ export class ReferencesWidget extends React.Component<Props, State> {
 
     public componentWillReceiveProps(nextProps: Props): void {
         const parsedHash = parseHash(nextProps.location.hash)
-        let group = this.state.group
-        if (parsedHash.modalMode) {
-            group = parsedHash.modalMode
+        if ((parsedHash.modalMode && parsedHash.modalMode !== this.state.group)) {
+            this.setState({ group: parsedHash.modalMode })
         }
-        this.setState({ references: [], loadingLocal: true, loadingExternal: true, group })
-        this.componentUpdates.next(nextProps)
+        if (isEqual(omit(this.props, 'rev'), omit(nextProps, 'rev'))) {
+            this.componentUpdates.next(nextProps)
+        }
     }
 
     public getRefsGroupFromUrl(urlStr: string): 'local' | 'external' {
@@ -203,7 +225,10 @@ export class ReferencesWidget extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public isLoading(group: string): boolean {
+    public isLoading(group?: string): boolean {
+        if (!group) {
+            return this.state.loadingLocal
+        }
         switch (group) {
             case 'local':
                 return this.state.loadingLocal
@@ -265,7 +290,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 <div className='references-widget__groups'>
                     {
                         this.state.group === 'local' &&
-                            localRefs.sort().map((uri, i) => {
+                            <VirtualList initItemsToShow={3} items={localRefs.sort().map((uri, i) => {
                                 const parsed = new URL(uri)
                                 return (
                                     <ReferencesGroup
@@ -276,11 +301,11 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                         localRev={this.props.rev}
                                         refs={refsByUri[uri]} />
                                 )
-                            })
+                            })} />
                     }
                     {
                         this.state.group === 'external' &&
-                            externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+                            <VirtualList initItemsToShow={3} items={externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
                                 const parsed = new URL(uri)
                                 return (
                                     <ReferencesGroup
@@ -290,7 +315,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                         isLocal={false}
                                         refs={refsByUri[uri]} />
                                 )
-                            })
+                            })} />
                     }
                 </div>
             </div>
