@@ -2,7 +2,9 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { parseSearchURLQuery } from 'sourcegraph/search'
 import { SearchBox } from 'sourcegraph/search/SearchBox'
+import { SearchResults } from 'sourcegraph/search/SearchResults'
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
 
 interface Props extends RouteComponentProps<void> {}
@@ -25,6 +27,11 @@ export class Search extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const searchOptions = parseSearchURLQuery(this.props.location.search)
+        if (searchOptions.query) {
+            return <SearchResults {...this.props} />
+        }
+
         return (
             <div className='search'>
                 <img className='search__logo' src={`${sourcegraphContext.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`} />

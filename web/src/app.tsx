@@ -18,11 +18,10 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from 'sourcegraph/components/HeroPage'
-import { Home } from 'sourcegraph/home/Home'
 import { Navbar } from 'sourcegraph/nav/Navbar'
 import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from 'sourcegraph/repo/backend'
 import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from 'sourcegraph/repo/Repository'
-import { SearchResults } from 'sourcegraph/search/SearchResults'
+import { Search } from 'sourcegraph/search/Search'
 import { EditorAuthPage } from 'sourcegraph/user/EditorAuthPage'
 import { SignInPage } from 'sourcegraph/user/SignInPage'
 import { ParsedRouteProps, parseRouteProps } from 'sourcegraph/util/routes'
@@ -123,7 +122,7 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
     public render(): JSX.Element | null {
         switch (this.props.routeName) {
             case 'search':
-                return <SearchResults {...this.props} />
+                return <Search {...this.props} />
 
             case 'sign-in':
                 return <SignInPage showEditorFlow={false} />
@@ -195,7 +194,6 @@ class App extends React.Component<{}, {}> {
         return (
             <BrowserRouter>
                 <Switch>
-                    <Route exact={true} path='/' component={Home} />
                     <Route path='/*' component={Layout} />
                 </Switch>
             </BrowserRouter>
