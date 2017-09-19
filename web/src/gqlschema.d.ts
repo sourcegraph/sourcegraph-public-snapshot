@@ -276,7 +276,7 @@ declare namespace GQL {
     id: string;
     avatarURL: string | null;
     email: string | null;
-    orgs: Array<IOrg>;
+    orgMemberships: Array<IOrgMember>;
   }
 
   /*
@@ -294,18 +294,6 @@ declare namespace GQL {
   /*
     description: null
   */
-  interface IOrg {
-    __typename: "Org";
-    id: number;
-    name: string;
-    members: Array<IOrgMember>;
-    repos: Array<IOrgRepo>;
-    threads: Array<IThread>;
-  }
-
-  /*
-    description: null
-  */
   interface IOrgMember {
     __typename: "OrgMember";
     id: number;
@@ -317,6 +305,18 @@ declare namespace GQL {
     avatarURL: string;
     createdAt: string;
     updatedAt: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrg {
+    __typename: "Org";
+    id: number;
+    name: string;
+    members: Array<IOrgMember>;
+    repos: Array<IOrgRepo>;
+    threads: Array<IThread>;
   }
 
   /*
