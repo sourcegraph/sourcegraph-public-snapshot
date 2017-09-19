@@ -44,7 +44,6 @@ function clearLineBlameContent(): void {
 }
 
 export function setLineBlame(data: BlameData): void {
-    console.log('got blame', data)
     clearLineBlameContent()
 
     if (!data.hunks || data.hunks.length === 0) {
