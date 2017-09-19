@@ -309,10 +309,10 @@ func (r *rootResolver) Packages(ctx context.Context, args *struct {
 	BaseDir *string
 	RepoURL *string
 	Version *string
-	Offset  *int
-	Limit   *int
+	Offset  *int32
+	Limit   *int32
 }) ([]*packageResolver, error) {
-	limit := 10
+	var limit int32 = 10
 	if args.Limit != nil {
 		limit = *args.Limit
 	}
@@ -326,7 +326,7 @@ func (r *rootResolver) Packages(ctx context.Context, args *struct {
 		version: args.Version,
 	}.toPkgQuery()
 
-	pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: args.Lang, PkgQuery: pkgQuery, Limit: limit})
+	pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: args.Lang, PkgQuery: pkgQuery, Limit: int(limit)})
 	if err != nil {
 		return nil, err
 	}
@@ -347,9 +347,9 @@ func (r *rootResolver) Dependents(ctx context.Context, args *struct {
 	RepoURL *string
 	Version *string
 	Package *string
-	Limit   *int
+	Limit   *int32
 }) ([]*dependencyResolver, error) {
-	limit := 10
+	var limit int32 = 10
 	if args.Limit != nil {
 		limit = *args.Limit
 	}
@@ -364,7 +364,7 @@ func (r *rootResolver) Dependents(ctx context.Context, args *struct {
 		packag:  args.Package,
 	}.toPkgQuery()
 
-	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, ExcludePrivate: true, Limit: limit})
+	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, ExcludePrivate: true, Limit: int(limit)})
 	if err != nil {
 		return nil, err
 	}
