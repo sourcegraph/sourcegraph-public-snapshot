@@ -41,7 +41,7 @@ export const events = {
     InitiateGitHubOAuth2Flow: new LoggableEvent('InitiateGitHubOAuth2Flow', EventCategories.Auth, EventActions.Click),
     SignupCompleted: new LoggableEvent('SignupCompleted', EventCategories.Auth, EventActions.SignUp),
     SignOutClicked: new LoggableEvent('SignOutClicked', EventCategories.Auth, EventActions.Click),
-    CompletedGitHubOAuth2Flow: new LoggableEvent('CompletedGitHubOAuth2Flow', EventCategories.Auth, EventActions.SignIn),
+    CompletedAuth0SignIn: new LoggableEvent('CompletedAuth0SignIn', EventCategories.Auth, EventActions.SignIn),
     EditorAuthIdCopied: new LoggableEvent('EditorAuthIdCopied', EventCategories.Auth, EventActions.Click),
 
     // Nav bar events
