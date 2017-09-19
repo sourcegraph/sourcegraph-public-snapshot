@@ -13,6 +13,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from 'sourcegraph/components/HeroPage'
+import { PageTitle } from 'sourcegraph/components/PageTitle';
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
 import { Tree } from 'sourcegraph/tree/Tree'
@@ -23,7 +24,6 @@ import { Position } from 'vscode-languageserver-types'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
 import { RevSwitcher } from './RevSwitcher'
-import { PageTitle } from 'sourcegraph/components/PageTitle';
 
 export interface Props {
     repoPath: string
