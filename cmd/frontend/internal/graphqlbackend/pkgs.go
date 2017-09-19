@@ -20,6 +20,7 @@ type packageMetadata struct {
 	baseDir *string
 	repoURL *string
 	version *string
+	packag  *string
 }
 
 func (r *packageResolver) Lang() string { return r.pkg.Lang }
@@ -104,6 +105,9 @@ func (r packageMetadata) toPkgQuery() map[string]interface{} {
 	}
 	if r.version != nil {
 		pkgQuery["version"] = *r.version
+	}
+	if r.packag != nil {
+		pkgQuery["package"] = *r.packag
 	}
 	return pkgQuery
 }

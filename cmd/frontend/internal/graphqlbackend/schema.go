@@ -45,7 +45,7 @@ type Root {
 	threads(remoteURI: String!, accessToken: String!, file: String, limit: Int): [Thread!]!
 	org(id: Int!): Org!
 	packages(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, limit: Int): [Package]!
-	dependents(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, limit: Int): [Dependency]!
+	dependents(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, package: String, limit: Int): [Dependency]!
 }
 
 union SearchResult = Repository | File | SearchProfile
@@ -380,6 +380,7 @@ type Dependency {
 	commit: String
 	version: String
 	id: String
+	package: String
 	repo(): Repository
 }
 `

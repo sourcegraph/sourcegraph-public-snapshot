@@ -346,6 +346,7 @@ func (r *rootResolver) Dependents(ctx context.Context, args *struct {
 	BaseDir *string
 	RepoURL *string
 	Version *string
+	Package *string
 	Limit   *int
 }) ([]*dependencyResolver, error) {
 	limit := 10
@@ -360,6 +361,7 @@ func (r *rootResolver) Dependents(ctx context.Context, args *struct {
 		baseDir: args.BaseDir,
 		repoURL: args.RepoURL,
 		version: args.Version,
+		packag:  args.Package,
 	}.toPkgQuery()
 
 	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, ExcludePrivate: true, Limit: limit})
