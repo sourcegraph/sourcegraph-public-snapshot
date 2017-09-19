@@ -27,11 +27,11 @@ func (*orgMembers) Create(ctx context.Context, orgID int32, userID, username, em
 	return &m, nil
 }
 
-func (om *orgMembers) GetByUserID(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
+func (om *orgMembers) GetByOrgAndUser(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
 	return om.getOneBySQL(ctx, "WHERE org_id=$1 AND user_id=$2 LIMIT 1", orgID, userID)
 }
 
-func (om *orgMembers) GetByEmail(ctx context.Context, orgID int32, email string) (*sourcegraph.OrgMember, error) {
+func (om *orgMembers) GetByOrgAndEmail(ctx context.Context, orgID int32, email string) (*sourcegraph.OrgMember, error) {
 	return om.getOneBySQL(ctx, "WHERE org_id=$1 AND email=$2 LIMIT 1", orgID, email)
 }
 

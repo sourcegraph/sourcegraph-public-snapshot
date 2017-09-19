@@ -24,7 +24,7 @@ func (r *rootResolver) Org(ctx context.Context, args *struct {
 }) (*orgResolver, error) {
 	// 🚨 SECURITY: Check that the current user is a member of the org.
 	actor := actor.FromContext(ctx)
-	if _, err := localstore.OrgMembers.GetByUserID(ctx, args.ID, actor.UID); err != nil {
+	if _, err := localstore.OrgMembers.GetByOrgAndUser(ctx, args.ID, actor.UID); err != nil {
 		return nil, err
 	}
 	org, err := localstore.Orgs.GetByID(ctx, args.ID)
@@ -122,7 +122,7 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByUserID(ctx, args.OrgID, actor.UID); err != nil {
+	if _, err := store.OrgMembers.GetByOrgAndUser(ctx, args.OrgID, actor.UID); err != nil {
 		return nil, err
 	}
 	log15.Info("removing user from org", "user", args.UserID, "org", args.OrgID)
@@ -136,12 +136,12 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByUserID(ctx, args.OrgID, actor.UID); err != nil {
+	if _, err := store.OrgMembers.GetByOrgAndUser(ctx, args.OrgID, actor.UID); err != nil {
 		return nil, err
 	}
 
 	// Don't invite the user if they are already a member.
-	_, err := store.OrgMembers.GetByEmail(ctx, args.OrgID, args.Email)
+	_, err := store.OrgMembers.GetByOrgAndEmail(ctx, args.OrgID, args.Email)
 	if err == nil {
 		return nil, fmt.Errorf("user %s is already a member of org %d", args.Email, args.OrgID)
 	}

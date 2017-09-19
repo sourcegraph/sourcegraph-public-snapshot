@@ -53,7 +53,7 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
-	member, err := store.OrgMembers.GetByUserID(ctx, c.org.ID, c.comment.AuthorUserID)
+	member, err := store.OrgMembers.GetByOrgAndUser(ctx, c.org.ID, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: verify that the user is in the org.
 	actor := actor.FromContext(ctx)
-	member, err := store.OrgMembers.GetByUserID(ctx, repo.OrgID, actor.UID)
+	member, err := store.OrgMembers.GetByOrgAndUser(ctx, repo.OrgID, actor.UID)
 	if err != nil {
 		return nil, err
 	}
