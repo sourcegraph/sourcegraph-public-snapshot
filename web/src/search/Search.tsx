@@ -34,9 +34,7 @@ export class Search extends React.Component<Props, State> {
             <div className='search'>
                 <PageTitle title={this.getPageTitle()} />
                 <div className='search__nav'>
-                    <a href='https://about.sourcegraph.com' className='search__nav-link'>Home</a>
-                    <a href='https://about.sourcegraph.com/about/' className='search__nav-link'>About</a>
-                    <a href='https://about.sourcegraph.com/pricing/' className='search__nav-link'>Pricing</a>
+                    { !sourcegraphContext.user && <a href='https://about.sourcegraph.com' className='search__nav-link'>About</a> }
                     <div className='search__nav-auth'>
                         {
                             sourcegraphContext.user ?
