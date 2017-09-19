@@ -85,8 +85,11 @@ func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (
 	return thread, nil
 }
 
-func (t *threads) GetByOrg(ctx context.Context, orgID, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "JOIN org_repos ON (org_repos.id = t.org_repo_id) WHERE org_repos.org_id=$1 and org_repos.deleted_at IS NULL AND t.deleted_at IS NULL LIMIT $2", orgID, limit)
+func (t *threads) GetByOrg(ctx context.Context, orgID int32, file *string, limit int32) ([]*sourcegraph.Thread, error) {
+	if file != nil {
+		return t.getBySQL(ctx, "JOIN org_repos ON (org_repos.id = t.org_repo_id) WHERE org_repos.org_id=$1 AND org_repos.deleted_at IS NULL AND t.file=$2 t.deleted_at IS NULL LIMIT $3", orgID, file, limit)
+	}
+	return t.getBySQL(ctx, "JOIN org_repos ON (org_repos.id = t.org_repo_id) WHERE org_repos.org_id=$1 AND org_repos.deleted_at IS NULL AND t.deleted_at IS NULL LIMIT $2", orgID, limit)
 }
 
 func (t *threads) GetAllForRepo(ctx context.Context, repoID, limit int32) ([]*sourcegraph.Thread, error) {

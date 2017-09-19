@@ -307,7 +307,7 @@ type Org {
 	name: String!
 	members: [OrgMember!]!
 	repos: [OrgRepo!]!
-	threads(limit: Int): [Thread!]!
+	threads(file: String, limit: Int): [Thread!]!
 }
 
 type OrgMember {

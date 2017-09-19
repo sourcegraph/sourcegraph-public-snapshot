@@ -61,13 +61,14 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
+	File  *string
 	Limit *int32
 }) ([]*threadResolver, error) {
 	limit := int32(1000)
 	if args.Limit != nil && *args.Limit < limit {
 		limit = *args.Limit
 	}
-	threads, err := store.Threads.GetByOrg(ctx, o.org.ID, limit)
+	threads, err := store.Threads.GetByOrg(ctx, o.org.ID, args.File, limit)
 	if err != nil {
 		return nil, err
 	}
