@@ -23,8 +23,8 @@ $media-xl: 1200px;
 @import './components/CodeExcerpt';
 @import './components/HeroPage';
 @import './settings/SettingsPage';
-@import './settings/auth/Auth';
-@import './settings/user/User';
+@import './settings/auth/EditorAuthPage';
+@import './settings/user/UserProfilePage';
 
 // Define the 'system' font family
 //
@@ -215,7 +215,7 @@ h1 {
  * Used for user, team member, and org avatars.
  */
 .avatar {
-    vertical-align: middle;
+    display: flex;
 
     .avatar-icon,
     .icon {
