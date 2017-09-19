@@ -42,7 +42,6 @@ describe('util module', () => {
             })
 
             it('parses unexpectedly formatted hash', () => {
-                assert.deepEqual(parseHash('#L53'), {})
                 assert.deepEqual(parseHash('L-53'), {})
                 assert.deepEqual(parseHash('L53:'), {})
                 assert.deepEqual(parseHash('L53:a'), {})
@@ -51,6 +50,10 @@ describe('util module', () => {
                 assert.deepEqual(parseHash('L53:36$references:'), {})
                 assert.deepEqual(parseHash('L53:36$references:trexternal'), {})
                 assert.deepEqual(parseHash('L53:36$references:local_'), {})
+            })
+
+            it('parses hash with leading octothorpe', () => {
+                assert.deepEqual(parseHash('#L1'), linePosition)
             })
 
             it('parses hash with line', () => {

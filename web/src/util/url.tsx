@@ -5,6 +5,9 @@ type Modal = 'references'
 type ModalMode = 'local' | 'external'
 
 export function parseHash(hash: string): { line?: number, character?: number, modal?: Modal, modalMode?: ModalMode } {
+    if (hash.startsWith('#')) {
+        hash = hash.substr('#'.length)
+    }
     if (!/^L[0-9]+($|(:[0-9]+($|(\$references($|(:(local|external)$))))))/.test(hash)) {
         // invalid hash
         return {}
