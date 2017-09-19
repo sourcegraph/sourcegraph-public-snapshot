@@ -31,6 +31,7 @@ const (
 	routeTree       = "tree"
 	routeBlob       = "blob"
 	routeSignIn     = "sign-in"
+	routeLogin      = "login"
 	routeEditorAuth = "editor-auth"
 	routeSettings   = "settings"
 
@@ -69,14 +70,11 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
-	// home
+	// Top-level routes *excluding* pages that redirect to about.sourcegraph.com.
 	r.Path("/").Methods("GET").Name(routeHome)
-
-	// search
 	r.Path("/search").Methods("GET").Name(routeSearch)
-
-	// TODO(slimsag): unify routing for SPA soon.
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
+	r.Path("/login").Methods("GET").Name(routeLogin)
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
 	r.Path("/settings").Methods("GET").Name(routeSettings)
 
@@ -103,6 +101,7 @@ func init() {
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
+	router.Get(routeLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
 
@@ -169,6 +168,14 @@ func init() {
 		fileName := path.Base(mux.Vars(r)["Path"])
 		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.URI))
 	})))
+}
+
+// staticRedirectHandler returns an HTPT handler that redirects all requests to
+// the specified path with the specified status code.
+func staticRedirectHandler(path string, code int) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, path, code)
+	})
 }
 
 // limitString limits the given string to at most N characters, optionally

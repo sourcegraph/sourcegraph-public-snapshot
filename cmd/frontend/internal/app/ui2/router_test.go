@@ -87,7 +87,7 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
 		},
 
-		// We expect any about.sourcegraph.com subdomains will go to the
+		// We expect any about.sourcegraph.com subpaths will go to the
 		// routeRepoOrMain handler, because it handles all root level paths.
 		{
 			path:      "/help",
@@ -98,6 +98,34 @@ func TestRouter(t *testing.T) {
 			path:      "/foobar",
 			wantRoute: routeRepoOrMain,
 			wantVars:  map[string]string{"Repo": "foobar", "Rev": ""},
+		},
+
+		// sign-in
+		{
+			path:      "/sign-in",
+			wantRoute: routeSignIn,
+			wantVars:  map[string]string{},
+		},
+
+		// login
+		{
+			path:      "/login",
+			wantRoute: routeLogin,
+			wantVars:  map[string]string{},
+		},
+
+		// editor auth
+		{
+			path:      "/editor-auth",
+			wantRoute: routeEditorAuth,
+			wantVars:  map[string]string{},
+		},
+
+		// settings
+		{
+			path:      "/settings",
+			wantRoute: routeSettings,
+			wantVars:  map[string]string{},
 		},
 	}
 	for _, tst := range tests {
