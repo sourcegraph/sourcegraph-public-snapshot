@@ -305,6 +305,12 @@
 			"revisionTime": "2017-03-07T19:28:53Z"
 		},
 		{
+			"checksumSHA1": "jlMsQHGh6WhswTKBLmmBCQzuX64=",
+			"path": "github.com/felixfbecker/stringscore",
+			"revision": "a3405bf43c120686dab3461817b18d5937441eec",
+			"revisionTime": "2017-09-19T03:06:01Z"
+		},
+		{
 			"checksumSHA1": "Id1cft33TUg6PuCo7RmCgb3BPgA=",
 			"path": "github.com/felixge/httpsnoop",
 			"revision": "63873eeb89343025d24fa0a863d49fc425d576cf",
@@ -1412,12 +1418,6 @@
 			"path": "github.com/temoto/robotstxt-go",
 			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",
 			"revisionTime": "2015-06-26T09:08:21Z"
-		},
-		{
-			"checksumSHA1": "lqFM7OYAiAW9g7xKxY03BgHfyn8=",
-			"path": "github.com/texttheater/golang-levenshtein/levenshtein",
-			"revision": "1a14278c506abae7c17b3cb0b84ae863c7300454",
-			"revisionTime": "2017-09-06T10:46:04Z"
 		},
 		{
 			"checksumSHA1": "9+gcr3lIn3vwHhBqDZwJOC40CxY=",

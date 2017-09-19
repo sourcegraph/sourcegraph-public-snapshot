@@ -10,7 +10,7 @@ import (
 
 	"log"
 
-	"github.com/texttheater/golang-levenshtein/levenshtein"
+	"github.com/felixfbecker/stringscore"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
@@ -27,8 +27,8 @@ type searchArgs struct {
 type searchResultResolver struct {
 	// result is either a repositoryResolver or a fileResolver
 	result interface{}
-	// distance is the string distance of this item from the search query
-	distance int
+	// score defines how well this item matches the query for sorting purposes
+	score int
 }
 
 func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
@@ -55,7 +55,6 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 			limit = 1000
 		}
 	}
-	query := strings.ToLower(args.Query)
 
 	var (
 		resMu sync.Mutex
@@ -72,7 +71,7 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 				done <- nil
 			}
 		}()
-		fileResults, err := searchFiles(ctx, query, args.Repositories, limit)
+		fileResults, err := searchFiles(ctx, args.Query, args.Repositories, limit)
 		if err != nil {
 			done <- err
 			return
@@ -91,7 +90,7 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 				done <- nil
 			}
 		}()
-		repoResults, err := searchRepos(ctx, query, args.Repositories, limit)
+		repoResults, err := searchRepos(ctx, args.Query, args.Repositories, limit)
 		if err != nil {
 			done <- err
 			return
@@ -110,7 +109,7 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 				done <- nil
 			}
 		}()
-		searchProfileResults, err := searchSearchProfiles(ctx, r, query, limit)
+		searchProfileResults, err := searchSearchProfiles(ctx, r, args.Query, limit)
 		if err != nil {
 			done <- err
 			return
@@ -124,17 +123,19 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 	for i := 0; i < 3; i++ {
 		if err := <-done; err != nil {
 			// TODO collect error
-			log.Println("search error: " + err.Error())
+			log15.Error("search error", "error", err)
 		}
 	}
 
+	// Sort by score
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].score > res[j].score
+	})
+
+	// Limit
 	if len(res) > limit {
 		res = res[0:limit]
 	}
-
-	sort.Slice(res, func(i, j int) bool {
-		return res[i].distance < res[j].distance
-	})
 
 	return res, nil
 }
@@ -144,12 +145,11 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 	if err != nil {
 		return nil, err
 	}
-	queryRunes := []rune(query)
 	for _, searchProfile := range searchProfiles {
-		lowerName := strings.ToLower(searchProfile.name)
-		if strings.Contains(lowerName, query) {
-			distance := levenshtein.DistanceForStrings(queryRunes, []rune(lowerName), levenshtein.DefaultOptions)
-			res = append(res, &searchResultResolver{result: searchProfile, distance: distance})
+		score := stringscore.Score(searchProfile.name, query)
+		if score > 0 {
+			score += 100
+			res = append(res, &searchResultResolver{result: searchProfile, score: score})
 		}
 	}
 	return res, nil
@@ -157,12 +157,10 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 
 func searchRepos(ctx context.Context, query string, repoURIs []string, limit int) (res []*searchResultResolver, err error) {
 	opt := &sourcegraph.RepoListOptions{Query: query}
-	opt.PerPage = int32(limit)
 	reposList, err := backend.Repos.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
-	queryRunes := []rune(query)
 outer:
 	for _, repo := range reposList.Repos {
 		// Don't suggest repos that were already added as a filter
@@ -172,12 +170,23 @@ outer:
 			}
 		}
 		repoResolver := &repositoryResolver{repo: repo}
-		distance := levenshtein.DistanceForStrings(queryRunes, []rune(repo.URI), levenshtein.DefaultOptions)
+		score := 0
+		// Score each repo URI path individually and use the sum
+		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
+		uriParts := strings.Split(repo.URI, "/")
+		queryParts := strings.Split(query, "/")
+		for _, uriPart := range uriParts {
+			for _, queryPart := range queryParts {
+				score += stringscore.Score(uriPart, queryPart)
+			}
+		}
 		// Push forks down
 		if repo.Fork {
-			distance += 10
+			score -= 10
 		}
-		res = append(res, &searchResultResolver{result: repoResolver, distance: distance})
+		if score > 0 {
+			res = append(res, &searchResultResolver{result: repoResolver, score: score})
+		}
 	}
 	return res, nil
 }
@@ -235,15 +244,15 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 	if err != nil {
 		return nil, err
 	}
-	queryRunes := []rune(query)
 	for _, fileResolver := range treeResolver.Files() {
 		if len(res) >= limit {
 			return res, nil
 		}
-		name := strings.ToLower(fileResolver.Name())
-		if strings.Contains(name, query) {
-			distance := levenshtein.DistanceForStrings(queryRunes, []rune(name), levenshtein.DefaultOptions)
-			res = append(res, &searchResultResolver{result: fileResolver, distance: distance})
+		score := stringscore.Score(fileResolver.name, query)
+		if score > 0 {
+			// Give files a slight advantage over repos
+			score += 5
+			res = append(res, &searchResultResolver{result: fileResolver, score: score})
 		}
 	}
 	return res, nil
