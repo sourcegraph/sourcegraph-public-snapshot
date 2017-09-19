@@ -64,7 +64,7 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
         .map(repo => ({ repo }))
         .toArray()
         .map(repositories => {
-            const filePatterns = params.filters.filter(f => f.type === FilterType.File || f.type === FilterType.FileGlob).map(f => f.value)
+            const filePatterns = params.filters.filter(f => f.type === FilterType.File).map(f => f.value)
             const [excludePatterns, includePatterns] = partition(filePatterns, pattern => pattern[0] === '!')
             const includePattern = includePatterns.length > 0 ? '{' + includePatterns.join(',') + '}' : ''
             const excludePattern = excludePatterns.length > 0 ? '{' + excludePatterns.map(p => p.substr(1)).join(',') + '}' : ''
