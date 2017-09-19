@@ -12,7 +12,7 @@ export class Navbar extends React.Component<ParsedRouteProps, {}> {
         return (
             <div className='navbar'>
                 <div className='navbar__left'>
-                    <Link to='/' className='navbar__logo-link'>
+                    <Link to='/search' className='navbar__logo-link'>
                         <img className='navbar__logo' src='/.assets/img/sourcegraph-mark.svg' />
                     </Link>
                 </div>
