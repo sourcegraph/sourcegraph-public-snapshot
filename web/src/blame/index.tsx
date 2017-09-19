@@ -9,7 +9,7 @@ import { Observable } from 'rxjs/Observable'
 import { AbsoluteRepoFilePosition } from '../repo'
 import { openFromJS } from '../util/url'
 import { fetchBlameFile } from './backend'
-import { setLineBlame } from './dom'
+import { clearLineBlameContent, setLineBlame } from './dom'
 
 export interface BlameData {
     ctx: AbsoluteRepoFilePosition
@@ -100,5 +100,6 @@ function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent)
 
 export function triggerBlame(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
     maybeOpenCommit(ctx, clickEvent) // important: must come before updating subject
+    clearLineBlameContent()
     blameEvents.next(ctx)
 }

@@ -39,7 +39,7 @@ function setLineBlameContent(line: number, blameContent: string, rev?: string): 
     }
 }
 
-function clearLineBlameContent(): void {
+export function clearLineBlameContent(): void {
     setLineBlameContent(-1, '')
 }
 
