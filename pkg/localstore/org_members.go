@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -78,9 +79,16 @@ func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface
 	defer rows.Close()
 	for rows.Next() {
 		m := sourcegraph.OrgMember{}
-		err := rows.Scan(&m.ID, &m.OrgID, &m.UserID, &m.Username, &m.Email, &m.DisplayName, &m.AvatarURL, &m.CreatedAt, &m.UpdatedAt)
+		var displayName, avatarURL sql.NullString
+		err := rows.Scan(&m.ID, &m.OrgID, &m.UserID, &m.Username, &m.Email, &displayName, &avatarURL, &m.CreatedAt, &m.UpdatedAt)
 		if err != nil {
 			return nil, err
+		}
+		if displayName.Valid {
+			m.DisplayName = displayName.String
+		}
+		if avatarURL.Valid {
+			m.AvatarURL = avatarURL.String
 		}
 		members = append(members, &m)
 	}
