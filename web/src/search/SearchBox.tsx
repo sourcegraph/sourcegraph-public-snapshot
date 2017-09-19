@@ -26,18 +26,28 @@ import { events } from '../tracking/events'
 import { scrollIntoView } from '../util'
 import { ParsedRouteProps } from '../util/routes'
 import { fetchSuggestions } from './backend'
-import { buildSearchURLQuery, FileFilter, FileGlobFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
+import { buildSearchURLQuery, FileFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
 
-/** The icons used to show a suggestion for a filter */
-const SUGGESTION_ICONS = {
-    [FilterType.Repo]: RepoIcon,
-    [FilterType.RepoGroup]: RepoGroupIcon,
-    [FilterType.File]: FileIcon,
-    [FilterType.FileGlob]: FileGlobIcon
+function hasMagic(value: string): boolean {
+    return /^!|\*|\?/.test(value)
 }
 
 function getFilterLabel(filter: Filter): string {
     return filter.value
+}
+
+function getFilterIcon(filter: Filter): (props: {}) => JSX.Element {
+    switch (filter.type) {
+        case FilterType.Repo:
+            return RepoIcon
+        case FilterType.RepoGroup:
+            return RepoGroupIcon
+        case FilterType.File:
+            if (hasMagic(filter.value)) {
+                return FileGlobIcon
+            }
+            return FileIcon
+    }
 }
 
 interface Props extends ParsedRouteProps { }
@@ -122,12 +132,12 @@ export class SearchBox extends React.Component<Props, State> {
                     // TODO suggest repo glob filter (needs server implementation)
                     // TODO verify that the glob matches something server-side,
                     //      only suggest if it does and show number of matches
-                    if (/^!|\*|\?/.exec(this.state.query)) {
-                        const fileGlobFilter: FileGlobFilter = {
-                            type: FilterType.FileGlob,
+                    if (hasMagic(this.state.query)) {
+                        const fileFilter: FileFilter = {
+                            type: FilterType.File,
                             value: this.state.query
                         }
-                        return [[fileGlobFilter]]
+                        return [[fileFilter]]
                     }
                     // Search repos
                     return fetchSuggestions(query, this.state.filters)
@@ -234,7 +244,7 @@ export class SearchBox extends React.Component<Props, State> {
                     <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
                         {
                             this.state.filters.map((filter, i) => {
-                                const Icon = SUGGESTION_ICONS[filter.type]
+                                const Icon = getFilterIcon(filter)
                                 const removeFilter = () => this.removeFilter(i)
                                 return (
                                     <span key={i} className='search-box__chip'>
@@ -286,7 +296,7 @@ export class SearchBox extends React.Component<Props, State> {
                                     this.selectedSuggestionElement = ref || undefined
                                 }
                             }
-                            const Icon = SUGGESTION_ICONS[suggestion.type]
+                            const Icon = getFilterIcon(suggestion)
                             const parts = getFilterLabel(suggestion).split(splitRegexp)
                             let className = 'search-box__suggestion'
                             if (this.state.selectedSuggestion === i) {
