@@ -2,9 +2,11 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { PageTitle } from 'sourcegraph/components/PageTitle'
 import { parseSearchURLQuery } from 'sourcegraph/search'
 import { SearchBox } from 'sourcegraph/search/SearchBox'
 import { SearchResults } from 'sourcegraph/search/SearchResults'
+import { limitString } from 'sourcegraph/util'
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
 
 interface Props extends RouteComponentProps<void> {}
@@ -29,11 +31,15 @@ export class Search extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const searchOptions = parseSearchURLQuery(this.props.location.search)
         if (searchOptions.query) {
-            return <SearchResults {...this.props} />
+            return <div className='search-results'>
+                <PageTitle title={this.getPageTitle()} />
+                <SearchResults {...this.props} />
+            </div>
         }
 
         return (
             <div className='search'>
+                <PageTitle title={this.getPageTitle()} />
                 <img className='search__logo' src={`${sourcegraphContext.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`} />
                 <div className='search__search-box-container'>
                     <SearchBox {...this.props} />
@@ -121,6 +127,13 @@ export class Search extends React.Component<Props, State> {
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         if (prevState.helpVisible !== this.state.helpVisible) {
             localStorage.setItem('show-search-help', this.state.helpVisible + '')
+        }
+    }
+
+    private getPageTitle(): string | undefined {
+        const searchOptions = parseSearchURLQuery(this.props.location.search)
+        if (searchOptions.query) {
+            return `${limitString(searchOptions.query, 25, true)}`
         }
     }
 

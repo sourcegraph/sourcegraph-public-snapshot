@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { PageTitle } from 'sourcegraph/components/PageTitle'
 import { events } from 'sourcegraph/tracking/events'
 import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
 
@@ -27,6 +28,7 @@ export class SignInPage extends React.Component<Props> {
         }
         return (
             <div>
+                <PageTitle title='sign in' />
                 <a href='/-/sign-in' onClick={this.logTelemetryOnSubmit}>
                     <input type='submit' value='Sign in' />
                 </a>

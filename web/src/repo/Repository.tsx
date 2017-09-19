@@ -23,6 +23,7 @@ import { Position } from 'vscode-languageserver-types'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
 import { RevSwitcher } from './RevSwitcher'
+import { PageTitle } from 'sourcegraph/components/PageTitle';
 
 export interface Props {
     repoPath: string
@@ -160,6 +161,7 @@ export class Repository extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className='repository'>
+                <PageTitle title={this.getPageTitle()} />
                 <RepoNav {...this.props} onClickRevision={this.toggleRevSwitcher} />
                 {this.state.showRevSwitcher && <RevSwitcher {...this.props} onClose={this.toggleRevSwitcher} />}
                 <div className='repository__content'>
@@ -205,6 +207,16 @@ export class Repository extends React.Component<Props, State> {
                 </div>
             </div>
         )
+    }
+
+    private getPageTitle(): string {
+        const repoPathSplit = this.props.repoPath.split('/')
+        const repoStr = repoPathSplit.length > 2 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
+        if (this.props.filePath) {
+            const fileOrDir = this.props.filePath.split('/').pop()
+            return `${fileOrDir} - ${repoStr}`
+        }
+        return `${repoStr}`
     }
 
     private onTreeToggle = () => this.setState({ showTree: !this.state.showTree })
