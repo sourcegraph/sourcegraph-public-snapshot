@@ -44,9 +44,10 @@ function clearLineBlameContent(): void {
 }
 
 export function setLineBlame(data: BlameData): void {
+    console.log('got blame', data)
     clearLineBlameContent()
 
-    if (!data.hunks) {
+    if (!data.hunks || data.hunks.length === 0) {
         if (data.loading) {
             setLineBlameContent(data.ctx.position.line, 'loading ◌')
         }
