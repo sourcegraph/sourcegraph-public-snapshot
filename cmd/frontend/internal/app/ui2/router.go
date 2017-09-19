@@ -37,6 +37,9 @@ const (
 
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
+
+	// Legacy redirects
+	routeLegacyCareers = "careers"
 )
 
 // aboutPaths is a list of paths that should redirect from sourcegraph.com/$PATH
@@ -78,6 +81,9 @@ func newRouter() *mux.Router {
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
 	r.Path("/settings").Methods("GET").Name(routeSettings)
 
+	// Legacy redirects
+	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
+
 	// repo-or-main
 	//
 	// This handles either a repo like 'sourcegraph.com/github.com/foo/bar' OR
@@ -104,6 +110,9 @@ func init() {
 	router.Get(routeLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
+
+	// Legacy redirects
+	router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {

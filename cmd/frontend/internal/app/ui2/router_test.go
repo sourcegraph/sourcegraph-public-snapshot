@@ -127,6 +127,13 @@ func TestRouter(t *testing.T) {
 			wantRoute: routeSettings,
 			wantVars:  map[string]string{},
 		},
+
+		// legacy careers
+		{
+			path:      "/careers",
+			wantRoute: routeLegacyCareers,
+			wantVars:  map[string]string{},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.wantRoute+"/"+tst.path, func(t *testing.T) {
