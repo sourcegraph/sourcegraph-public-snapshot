@@ -60,8 +60,8 @@ blameEvents
  * @param ctx the blame context
  * @param userTriggered the click event
  */
-function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, userTriggered?: React.MouseEvent<HTMLDivElement>): void {
-    if (!userTriggered) {
+function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+    if (!clickEvent) {
         return
     }
     const prevCtx = blameEvents.getValue()
@@ -88,7 +88,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, userTriggered?: React.Mo
      * TODO(future): Let's make blame text absolutely positioned on top of the line (not a
      * child of blob view), and turn all of this into a React component.
      */
-    const x = userTriggered.clientX
+    const x = clickEvent.clientX
     const blameTextStart = currentlyBlamed.getBoundingClientRect().right
     const blameTextEnd = blameTextStart + measureTextWidth(currentlyBlamed.getAttribute('data-blame')!, '12px Menlo')
     if (x < blameTextStart || x > blameTextEnd) {
@@ -96,10 +96,10 @@ function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, userTriggered?: React.Mo
     }
 
     // TODO(future): For Umami Phabricator repos, the URL should be to Phabricator per #6487
-    openFromJS(`https://${ctx.repoPath}/commit/${rev}`, userTriggered)
+    openFromJS(`https://${ctx.repoPath}/commit/${rev}`, clickEvent)
 }
 
-export function triggerBlame(ctx: AbsoluteRepoFilePosition, userTriggered?: React.MouseEvent<HTMLDivElement>): void {
-    maybeOpenCommit(ctx, userTriggered) // important: must come before updating subject
+export function triggerBlame(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+    maybeOpenCommit(ctx, clickEvent) // important: must come before updating subject
     blameEvents.next(ctx)
 }

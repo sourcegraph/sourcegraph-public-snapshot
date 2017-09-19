@@ -28,8 +28,8 @@ import { parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from 'sourcegraph/util/
 /**
  * Highlights a <td> element and updates the page URL if necessary.
  */
-function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, userTriggered?: React.MouseEvent<HTMLDivElement>): void {
-    triggerBlame(ctx, userTriggered)
+function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+    triggerBlame(ctx, clickEvent)
 
     const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>
     for (const cellElem of currentlyHighlighted) {
@@ -54,8 +54,8 @@ function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFile
 /**
  * The same as updateLine, but also scrolls the blob.l
  */
-function updateAndScrollToLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, userTriggered?: React.MouseEvent<HTMLDivElement>): void {
-    updateLine(cell, history, ctx, userTriggered)
+function updateAndScrollToLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+    updateLine(cell, history, ctx, clickEvent)
 
     // Scroll to the line.
     scrollToCell(cell)
@@ -315,8 +315,8 @@ export class Blob extends React.Component<Props, State> {
         )
         this.subscriptions.add(
             Observable.fromEvent<MouseEvent>(ref, 'click')
-                .map(e => e.target as HTMLElement)
-                .filter(target => {
+                .filter(e => {
+                    const target = e.target as HTMLElement
                     if (!target) {
                         return false
                     }
@@ -326,7 +326,8 @@ export class Blob extends React.Component<Props, State> {
                     }
                     return true
                 })
-                .subscribe(target => {
+                .subscribe(e => {
+                    const target = e.target as HTMLElement
                     const row = (target as Element).closest('tr') as HTMLTableRowElement | null
                     if (!row) {
                         return
@@ -340,10 +341,10 @@ export class Blob extends React.Component<Props, State> {
                             commitID: this.props.commitID,
                             filePath: this.props.filePath,
                             position: { line, character: 0 }
-                        })
+                        }, e)
                     }
                     const ctx = { ...this.props, position: { line, character: data.loc!.character } }
-                    updateLine(row, this.props.history, ctx)
+                    updateLine(row, this.props.history, ctx, e)
                 })
         )
     }

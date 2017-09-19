@@ -79,7 +79,7 @@ export function toEditorURL(repoPath: string, rev?: string, filePath?: string, p
 /**
  * Correctly handle use of meta/ctrl/alt keys during onClick events that open new pages
  */
-export function openFromJS(path: string, event?: React.MouseEvent<HTMLElement>): void {
+export function openFromJS(path: string, event?: MouseEvent): void {
     if (event && (event.metaKey || event.altKey || event.ctrlKey)) {
         window.open(path, '_blank')
     } else {
