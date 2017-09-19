@@ -4,6 +4,7 @@ interface Props {
     icon: (props: {}) => JSX.Element
     title?: string | JSX.Element
     subtitle?: string | JSX.Element
+    cta?: JSX.Element
 }
 
 export class HeroPage extends React.Component<Props, {}> {
@@ -20,6 +21,7 @@ export class HeroPage extends React.Component<Props, {}> {
                     </div>
                 }
                 {this.props.subtitle && <div className='hero-page__subtitle'>{this.props.subtitle}</div>}
+                {this.props.cta && <div className='hero-page__cta'>{this.props.cta}</div>}
             </div>
         )
     }

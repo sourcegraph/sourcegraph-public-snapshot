@@ -1,4 +1,6 @@
+import KeyIcon from '@sourcegraph/icons/lib/Key'
 import * as React from 'react'
+import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { events } from '../../tracking/events'
 import { sourcegraphContext } from '../../util/sourcegraphContext'
@@ -42,10 +44,7 @@ export class SignInPage extends React.Component<Props> {
         return (
             <div className='ui-section'>
                 <PageTitle title='sign in or sign up' />
-                <h1>
-                    Sign in or sign up to Sourcegraph
-                </h1>
-                {contents}
+                <HeroPage icon={KeyIcon} title='Welcome to Sourcegraph' subtitle='Sign in or sign up to create an account' cta={contents} />
             </div>
         )
     }
