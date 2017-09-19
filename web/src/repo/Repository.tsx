@@ -13,7 +13,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from 'sourcegraph/components/HeroPage'
-import { PageTitle } from 'sourcegraph/components/PageTitle';
+import { PageTitle } from 'sourcegraph/components/PageTitle'
 import { ReferencesWidget } from 'sourcegraph/references/ReferencesWidget'
 import { fetchHighlightedFile, listAllFiles } from 'sourcegraph/repo/backend'
 import { Tree } from 'sourcegraph/tree/Tree'
