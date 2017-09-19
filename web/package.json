@@ -5,7 +5,7 @@
   "scripts": {
     "test": "mocha --opts mocha.opts",
     "build": "webpack --config webpack.config.ts --progress --profile --colors",
-    "build-tests": "tsc -p .",
+    "build-tests": "tsc -p ./tsconfig.test.json",
     "watch": "npm run build -- --watch",
     "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o src/gqlschema.d.ts",
     "lint": "npm run tslint && npm run stylelint",

@@ -27,8 +27,5 @@
         "configFile": "./tslint.json"
       }
     ]
-  },
-  "include": [
-    "src/**/*.test.tsx"
-  ]
+  }
 }
