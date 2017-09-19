@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type Common struct {
@@ -52,6 +53,8 @@ func repoShortName(uri string) string {
 // 		return nil // request was handled
 // 	}
 //
+// In the case of a repository that is cloning, a Common data structure is
+// returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	common := &Common{
 		Context:  jscontext.NewJSContextFromRequest(r),
@@ -74,6 +77,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
+			}
+			if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
+				// Repo is cloning.
+				return common, nil
 			}
 			return nil, err
 		}
