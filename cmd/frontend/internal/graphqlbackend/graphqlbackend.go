@@ -316,6 +316,10 @@ func (r *rootResolver) Packages(ctx context.Context, args *struct {
 	if args.Limit != nil {
 		limit = *args.Limit
 	}
+	if limit > 100 {
+		limit = 100
+	}
+
 	pkgQuery := packageMetadata{
 		id:      args.ID,
 		typ:     args.Type,
@@ -349,10 +353,14 @@ func (r *rootResolver) Dependents(ctx context.Context, args *struct {
 	Package *string
 	Limit   *int32
 }) ([]*dependencyResolver, error) {
-	var limit int32 = 10
+	limit := int32(10)
 	if args.Limit != nil {
 		limit = *args.Limit
 	}
+	if limit > 100 {
+		limit = 100
+	}
+
 	pkgQuery := packageMetadata{
 		id:      args.ID,
 		typ:     args.Type,

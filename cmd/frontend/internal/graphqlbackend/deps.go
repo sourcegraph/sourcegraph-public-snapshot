@@ -13,62 +13,53 @@ type dependencyResolver struct {
 }
 
 func (r *dependencyResolver) Name() *string {
-	if name, isStr := r.dep.DepData["name"].(string); isStr {
-		return &name
-	}
-	return nil
+	return r.depDataStringField("name")
 }
 func (r *dependencyResolver) RepoURL() *string {
-	if repoURL, isStr := r.dep.DepData["repoURL"].(string); isStr {
-		return &repoURL
-	}
-	return nil
+	return r.depDataStringField("repoURL")
 }
 func (r *dependencyResolver) Depth() *int32 {
-	if depth, isInt := r.dep.DepData["depth"].(int32); isInt {
-		return &depth
-	}
-	return nil
+	return r.depDataIntField("depth")
 }
 func (r *dependencyResolver) Vendor() *bool {
-	if vendor, isBool := r.dep.DepData["vendor"].(bool); isBool {
-		return &vendor
-	}
-	return nil
+	return r.depDataBoolField("vendor")
 }
 func (r *dependencyResolver) Package() *string {
-	if pkg, isStr := r.dep.DepData["package"].(string); isStr {
-		return &pkg
-	}
-	return nil
+	return r.depDataStringField("package")
 }
 func (r *dependencyResolver) Absolute() *string {
-	if absolute, isStr := r.dep.DepData["absolute"].(string); isStr {
-		return &absolute
-	}
-	return nil
+	return r.depDataStringField("absolute")
 }
 func (r *dependencyResolver) Type() *string {
-	if typ, isStr := r.dep.DepData["type"].(string); isStr {
-		return &typ
-	}
-	return nil
+	return r.depDataStringField("type")
 }
 func (r *dependencyResolver) Commit() *string {
-	if commit, isStr := r.dep.DepData["commit"].(string); isStr {
-		return &commit
-	}
-	return nil
+	return r.depDataStringField("commit")
 }
 func (r *dependencyResolver) Version() *string {
-	if version, isStr := r.dep.DepData["version"].(string); isStr {
-		return &version
+	return r.depDataStringField("version")
+}
+func (r *dependencyResolver) ID() *string {
+	return r.depDataStringField("id")
+}
+
+func (r *dependencyResolver) depDataStringField(name string) *string {
+	if value, isStr := r.dep.DepData[name].(string); isStr {
+		return &value
 	}
 	return nil
 }
-func (r *dependencyResolver) ID() *string {
-	if id, isStr := r.dep.DepData["id"].(string); isStr {
-		return &id
+
+func (r *dependencyResolver) depDataBoolField(name string) *bool {
+	if value, isStr := r.dep.DepData[name].(bool); isStr {
+		return &value
+	}
+	return nil
+}
+
+func (r *dependencyResolver) depDataIntField(name string) *int32 {
+	if value, isStr := r.dep.DepData[name].(int32); isStr {
+		return &value
 	}
 	return nil
 }
