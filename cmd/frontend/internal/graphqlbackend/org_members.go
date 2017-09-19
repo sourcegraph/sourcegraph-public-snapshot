@@ -1,9 +1,11 @@
 package graphqlbackend
 
 import (
+	"context"
 	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 type orgMemberResolver struct {
@@ -15,8 +17,15 @@ func (m *orgMemberResolver) ID() int32 {
 	return m.member.ID
 }
 
-func (m *orgMemberResolver) Org() *orgResolver {
-	return &orgResolver{m.org}
+func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
+	if m.org == nil {
+		var err error
+		m.org, err = localstore.Orgs.GetByID(ctx, m.member.OrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &orgResolver{m.org}, nil
 }
 
 func (m *orgMemberResolver) UserID() string {
