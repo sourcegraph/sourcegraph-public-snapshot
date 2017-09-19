@@ -18,7 +18,10 @@ export const viewEvents = {
     Home: new LoggableViewEvent('ViewHome'),
     SearchResults: new LoggableViewEvent('ViewSearchResults'),
     Tree: new LoggableViewEvent('ViewTree'),
-    Blob: new LoggableViewEvent('ViewBlob')
+    Blob: new LoggableViewEvent('ViewBlob'),
+    UserProfile: new LoggableViewEvent('ViewUserProfile'),
+    SignIn: new LoggableViewEvent('ViewSignIn'),
+    EditorAuth: new LoggableViewEvent('ViewEditorAuth')
 }
 
 export class LoggableEvent {
@@ -36,6 +39,10 @@ export class LoggableEvent {
 export const events = {
     // Auth
     InitiateGitHubOAuth2Flow: new LoggableEvent('InitiateGitHubOAuth2Flow', EventCategories.Auth, EventActions.Click),
+    SignupCompleted: new LoggableEvent('SignupCompleted', EventCategories.Auth, EventActions.SignUp),
+    SignOutClicked: new LoggableEvent('SignOutClicked', EventCategories.Auth, EventActions.Click),
+    CompletedGitHubOAuth2Flow: new LoggableEvent('CompletedGitHubOAuth2Flow', EventCategories.Auth, EventActions.SignIn),
+    EditorAuthIdCopied: new LoggableEvent('EditorAuthIdCopied', EventCategories.Auth, EventActions.Click),
 
     // Nav bar events
     ShareButtonClicked: new LoggableEvent('ShareButtonClicked', EventCategories.Sharing, EventActions.Click),

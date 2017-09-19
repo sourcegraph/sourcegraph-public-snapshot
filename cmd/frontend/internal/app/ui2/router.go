@@ -32,6 +32,7 @@ const (
 	routeBlob       = "blob"
 	routeSignIn     = "sign-in"
 	routeEditorAuth = "editor-auth"
+	routeSettings   = "settings"
 
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
@@ -77,6 +78,7 @@ func newRouter() *mux.Router {
 	// TODO(slimsag): unify routing for SPA soon.
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
+	r.Path("/settings").Methods("GET").Name(routeSettings)
 
 	// repo-or-main
 	//
@@ -102,6 +104,7 @@ func init() {
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
+	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {

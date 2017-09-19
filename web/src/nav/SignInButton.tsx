@@ -1,0 +1,18 @@
+import * as React from 'react'
+import { events } from '../tracking/events'
+
+export class SignInButton extends React.Component {
+    public render(): JSX.Element | null {
+        // Don't use a <Link /> element here — use an anchor that will break
+        // the user out of the single-page app to sign in
+        return (
+            <a href='/-/sign-in'>
+                <input type='button' className='ui-button' value='Sign in' onClick={this.logTelemetryOnSignIn} />
+            </a>
+        )
+    }
+
+    private logTelemetryOnSignIn(): void {
+        events.InitiateGitHubOAuth2Flow.log()
+    }
+}

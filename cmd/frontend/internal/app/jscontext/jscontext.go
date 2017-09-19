@@ -47,6 +47,7 @@ type JSContext struct {
 	TrackingAppID       string                     `json:"trackingAppID"`
 	OnPrem              bool                       `json:"onPrem"`
 	RepoHomeRegexFilter string                     `json:"repoHomeRegexFilter"`
+	SessionID           string                     `json:"sessionID"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -57,8 +58,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = conf.AppURL.String()
 	sessionCookie := session.SessionCookie(req)
+	sessionID := httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
 	if sessionCookie != "" {
-		headers["Authorization"] = httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
+		headers["Authorization"] = sessionID
 	}
 
 	// -- currently we don't associate XHR calls with the parent page's span --
@@ -100,6 +102,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		OnPrem:              envvar.DeploymentOnPrem(),
 		TrackingAppID:       TrackingAppID,
 		RepoHomeRegexFilter: repoHomeRegexFilter,
+		SessionID:           sessionID,
 	}
 }
 

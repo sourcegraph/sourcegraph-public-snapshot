@@ -1,0 +1,19 @@
+.settings-page {
+    flex: 1 1 auto;
+    display: flex;
+    margin-top: 1em;
+    color: #C9D4E3;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    
+    &__content {
+        flex: 1 1 auto;
+        background-color: #151D28;
+    }
+    
+    &__form {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+    }
+}

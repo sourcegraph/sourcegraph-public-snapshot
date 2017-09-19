@@ -2,17 +2,19 @@ import { RouteComponentProps } from 'react-router'
 import { makeRepoURI, ParsedRepoURI } from '../repo'
 import { parseHash } from './url'
 
-export interface ParsedRouteProps extends Partial<ParsedRepoURI>, RouteComponentProps<any> { // the typed parameters are not useful in the parsed props, as you shouldn't use them
-    routeName?: 'home' | 'search' | 'sign-in' | 'editor-auth' | 'repository'
+// the typed parameters are not useful in the parsed props, as you shouldn't use them
+export interface ParsedRouteProps extends Partial<ParsedRepoURI>, RouteComponentProps<any> {
+    routeName?: 'editor-auth' | 'home' | 'repository' | 'search' | 'sign-in' | 'user-profile'
     uri?: string
 }
 
 export function parseRouteProps<T extends string | {[key: string]: string} | string[]>(props: RouteComponentProps<T>): ParsedRouteProps {
     switch (props.location.pathname) {
         case '/':               return { ...props, routeName: 'home' }
-        case '/search':         return { ...props, routeName: 'search' }
-        case '/sign-in':        return { ...props, routeName: 'sign-in' }
         case '/editor-auth':    return { ...props, routeName: 'editor-auth' }
+        case '/search':         return { ...props, routeName: 'search' }
+        case '/settings':       return { ...props, routeName: 'user-profile' }
+        case '/sign-in':        return { ...props, routeName: 'sign-in' }
     }
 
     const uriPathSplit = props.match.params[0].split('/-/')
