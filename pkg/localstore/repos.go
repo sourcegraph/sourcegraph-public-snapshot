@@ -3,7 +3,6 @@ package localstore
 import (
 	"log"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -185,13 +184,33 @@ type RepoListOp struct {
 	// Query specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
 	Query string
-
 	sourcegraph.ListOptions
 }
 
-// List repositories in the Sourcegraph repository  Note:
-// this will not return any repositories from external services
-// that are not present in the Sourcegraph repository
+// makeFuzzyLikeQuery turns a string of "query" into "%q%u%e%r%y%"
+// spaces are ignored
+// special characters for LIKE are escaped
+func makeFuzzyLikeQuery(q string) string {
+	q = strings.ToLower(q)
+	q = strings.Replace(q, " ", "", -1)
+	q = strings.Replace(q, `\`, `\\`, -1)
+	q = strings.Replace(q, "%", `\%`, -1)
+	q = strings.Replace(q, "_", `\_`, -1)
+	qsize := len([]rune(q))
+	b := make([]rune, 0, (qsize*2)+1)
+	b = append(b, '%')
+	for _, r := range q {
+		b = append(b, r)
+		b = append(b, '%')
+	}
+	return string(b)
+}
+
+// List lists repositories in the Sourcegraph repository
+//
+// This will not return any repositories from external services that are not present in the Sourcegraph repository.
+// The result list is unsorted and has a fixed maximum limit of 1000 items.
+// Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
 func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo, error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
@@ -201,22 +220,14 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		opt = &RepoListOp{}
 	}
 
-	terms := strings.Fields(opt.Query)
-	if len(terms) > 10 {
-		terms = terms[:10]
-	}
-
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	for _, term := range terms {
-		term = strings.ToLower(term)
-		term = strings.Replace(term, `\`, `\\`, -1)
-		term = strings.Replace(term, "%", `\%`, -1)
-		term = strings.Replace(term, "_", `\_`, -1)
-		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", "%"+term+"%"))
+	if opt.Query != "" {
+		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeQuery(opt.Query)))
 	}
 
 	// fetch matching repos unordered
 	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s LIMIT 1000", sqlf.Join(conds, "AND")))
+
 	if err != nil {
 		return nil, err
 	}
@@ -233,24 +244,6 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	} else {
 		repos = rawRepos
 	}
-
-	// sort by position of search terms
-	sort.Slice(repos, func(i, j int) bool {
-		uri1 := strings.ToLower(repos[i].URI)
-		uri2 := strings.ToLower(repos[j].URI)
-		for _, term := range terms {
-			term = strings.ToLower(term)
-			pos1 := strings.Index(uri1, term)
-			pos2 := strings.Index(uri2, term)
-			if pos1 < pos2 {
-				return true
-			}
-			if pos2 < pos1 {
-				return false
-			}
-		}
-		return uri1 < uri2
-	})
 
 	// pagination
 	if opt.Page > 0 {

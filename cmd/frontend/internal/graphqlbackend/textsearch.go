@@ -282,11 +282,8 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		return nil, err
 	}
 	sort.Slice(flattened, func(i, j int) bool {
-		a, b := len(flattened[i].JLineMatches), len(flattened[j].JLineMatches)
-		if a != b {
-			return a > b
-		}
-		return flattened[i].uri > flattened[j].uri
+		a, b := flattened[i].uri, flattened[j].uri
+		return a > b
 	})
 	// We pass in a limit to each repository so we may end up with R*limit results
 	// where R is the number of repositories we searched.

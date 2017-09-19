@@ -166,7 +166,7 @@ func TestRepos_List_query1(t *testing.T) {
 		query string
 		want  []string
 	}{
-		{"def", []string{"def/ghi", "abc/def"}},
+		{"def", []string{"abc/def", "def/ghi"}},
 		{"ABC/DEF", []string{"abc/def"}},
 		{"xyz", []string{"github.com/abc/xyz"}},
 		{"mno/p", []string{"jkl/mno/pqr"}},
@@ -209,7 +209,7 @@ func TestRepos_List_query2(t *testing.T) {
 		query string
 		want  []string
 	}{
-		{"def", []string{"def/ghi", "def/jkl", "def/mno", "a/def", "b/def", "c/def"}},
+		{"def", []string{"a/def", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"}},
 		{"b/def", []string{"b/def"}},
 		{"def/", []string{"def/ghi", "def/jkl", "def/mno"}},
 		{"def/m", []string{"def/mno"}},
@@ -220,7 +220,7 @@ func TestRepos_List_query2(t *testing.T) {
 			t.Fatal(err)
 		}
 		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
+			t.Errorf("Unexpected repo result for query %q:\ngot:  %q\nwant: %q", test.query, got, test.want)
 		}
 	}
 }
