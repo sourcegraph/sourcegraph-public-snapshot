@@ -22,6 +22,9 @@ $media-xl: 1200px;
 @import './references/ReferencesWidget';
 @import './components/CodeExcerpt';
 @import './components/HeroPage';
+@import './settings/SettingsPage';
+@import './settings/auth/Auth';
+@import './settings/user/User';
 
 // Define the 'system' font family
 //
@@ -159,6 +162,61 @@ a {
     transition: color 100ms ease-out;
     &:hover {
         color: white;
+    }
+}
+
+p {
+    margin: 0.5rem 0;
+}
+
+h1 {
+    font-size: 1.5rem;
+    line-height: 2.0rem;
+    margin: 0 0 1rem;
+}
+
+.ui-button {
+    background-color: #1C7CD6;
+    border: 1px solid #1C7CD6;
+    border-radius: 0.25rem;
+    padding: 0.5rem 1rem;
+    color: #FFFFFF;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.ui-text-box {
+    background-color: #151D28;
+    border: 1px solid #2A3A51;
+    color: #FFFFFF;
+    font-size: 1rem;
+    border-radius: 2px;
+    padding: 0.5rem 1rem;
+    display: flex;
+}
+
+.ui-section {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.ui-section:not(:first-child) {
+    border-top: 1px solid $color-page-background;
+}
+
+/**
+ * Global style for user-defined avatars
+ * Used for user, team member, and org avatars.
+ */
+.avatar {
+    vertical-align: middle;
+
+    .avatar-icon,
+    .icon {
+        fill: currentColor;
+        border-radius: 50%;
     }
 }
 

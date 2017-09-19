@@ -1,36 +1,9 @@
-export interface EmailAddr {
-    Email?: string
-    Verified?: boolean
-    Primary?: boolean
-    Guessed?: boolean
-    Blacklisted?: boolean
-}
-
-export interface EmailAddrList {
-    EmailAddrs?: EmailAddr[]
-}
-
-export interface ExternalToken {
-    uid?: string
-    host?: string
-    token?: string
-    scope?: string
-}
-
-export interface User {
-    UID: string
-    Login: string
-    Name?: string
-    IsOrganization?: boolean
-    AvatarURL?: string
-    Location?: string
-    Company?: string
-    HomepageURL?: string
-    Disabled?: boolean
-    Admin?: boolean
-    Betas?: string[]
-    Write?: boolean
-    RegisteredAt?: any
+/**
+ * Represents user properties that are guaranteed to both (1) be set if the user is signed in,
+ * and (2) not change over a user session
+ */
+export interface ImmutableUser {
+    readonly UID: string
 }
 
 /**
@@ -45,11 +18,13 @@ export function isOnPremInstance(authEnabled: boolean): boolean {
  */
 export class SourcegraphContext {
     public xhrHeaders: { [key: string]: string }
+    public sessionID: string
     public csrfToken: string
     public userAgentIsBot: boolean
-    public user: User | null
-    public emails: EmailAddrList | null
-    public gitHubToken: ExternalToken | null
+    /**
+     * user is an ImmutableUser object, which is only non-null if the user is signed in/authenticated
+     */
+    public readonly user: ImmutableUser | null
     public sentryDSN: string
     public intercomHash: string
 
@@ -84,13 +59,6 @@ export class SourcegraphContext {
      */
     public hasBrowserExtensionInstalled(): boolean {
         return document.getElementById('sourcegraph-app-background') !== null
-    }
-
-    public primaryEmail(): string | null {
-        if (this.emails && this.emails.EmailAddrs) {
-            return (this.emails.EmailAddrs.filter(e => e.Primary).map(e => e.Email)[0]) || null
-        }
-        return null
     }
 }
 

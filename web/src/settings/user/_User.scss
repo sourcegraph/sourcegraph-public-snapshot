@@ -1,0 +1,26 @@
+.user-profile-page {
+    &__split-row {
+        display: flex;
+    }
+
+    &__avatar-column {
+        flex: 0 0 auto;
+        padding-right: 1rem;
+        border-right: 1px solid #2A3A51;
+        margin-right: 1rem;
+
+        .avatar-icon,
+        .icon {
+            width: 4rem;
+            height: 4rem;    
+        }
+    }
+
+    &__button-row {
+        margin: 2.5rem 0
+    }
+
+    &__button-spaced {
+        margin: 0 0.25rem 0 0
+    }
+}

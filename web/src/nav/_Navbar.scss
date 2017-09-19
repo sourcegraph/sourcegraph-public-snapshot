@@ -16,11 +16,23 @@
         flex: 1;
     }
 
-    &__logo-link {
+    &__right {
+        display: flex;
+        flex: 1;
+    }
+
+    &__right-contents {
+        flex: 0;
+        margin-left: auto;
+    }
+
+    &__logo-link,
+    &__right-contents a {
         outline: 0;
         margin: 0px 1rem;
         display: flex;
         width: fit-content;
+        text-decoration: none;
     }
 
     &__logo {
@@ -35,13 +47,16 @@
         }
     }
 
+    .avatar {
+        .avatar-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+    }
+
     &__search-box-container {
         width: 52rem;
         min-width: 0;
         align-self: flex-start;
-    }
-
-    &__right {
-        flex: 1;
     }
 }

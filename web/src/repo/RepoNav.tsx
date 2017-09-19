@@ -45,14 +45,14 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 </a>
                 {
                     this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
-                        <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub'>
+                        <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnGitHubButtonClicked}>
                             <GitHub />
                             <span className='repo-nav__action-text'>View on GitHub</span>
                         </a>
                 }
                 {
                     this.props.repoPath &&
-                        <a href={editorUrl} target='_blank' className='repo-nav__action' title='Open on desktop'>
+                        <a href={editorUrl} target='_blank' className='repo-nav__action' title='Open on desktop' onClick={this.onOpenOnDesktopClicked}>
                             <ComputerIcon />
                             <span className='repo-nav__action-text'>Open on desktop</span>
                         </a>
@@ -73,6 +73,14 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
         setTimeout(() => {
             this.setState({ copiedLink: false })
         }, 1000)
+    }
+
+    private onViewOnGitHubButtonClicked: React.MouseEventHandler<HTMLAnchorElement> = () => {
+        events.OpenInCodeHostClicked.log()
+    }
+
+    private onOpenOnDesktopClicked: React.MouseEventHandler<HTMLAnchorElement> = () => {
+        events.OpenInNativeAppClicked.log()
     }
 
     private urlToGitHub(): string {

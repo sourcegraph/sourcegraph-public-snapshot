@@ -29,19 +29,19 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
  */
 export function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
-    const query = parsedUrl.searchParams
-    const eventParameters = Object.keys(query)
-        .reduce<any>((r, key) => {
-            r[camelCaseToUnderscore(key)] = query.get(key)
-            return r
-        }, {})
-    const eventName = query.get('_event')
-    const isBadgeRedirect = !!query.get('badge')
-
-    // TODO(Dan): add handling for new auth scheme
+    const eventParameters: { [key: string]: string } = {}
+    for (const [key, val] of parsedUrl.searchParams.entries()) {
+        eventParameters[camelCaseToUnderscore(key)] = val
+    }
+    const eventName = parsedUrl.searchParams.get('_event')
+    const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
     if (eventName || isBadgeRedirect) {
         if (isBadgeRedirect) {
             events.RepoBadgeRedirected.log(eventParameters)
+        } else if (eventName === 'CompletedGitHubOAuth2Flow') {
+            events.CompletedGitHubOAuth2Flow.log(eventParameters)
+        } else if (eventName === 'SignupCompleted') {
+            events.SignupCompleted.log(eventParameters)
         } else if (eventName) {
             eventLogger.logEvent(EventCategories.External, EventActions.Redirect, eventName, eventParameters)
         }
@@ -64,7 +64,9 @@ export function handleQueryEvents(url: string): void {
 function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
     const parsedUrl = new URL(url)
     for (const key of paramsToRemove) {
-        parsedUrl.searchParams.delete(key)
+        if (parsedUrl.searchParams.has(key)) {
+            parsedUrl.searchParams.delete(key)
+        }
     }
     window.history.replaceState({}, window.document.title, parsedUrl.href)
 }

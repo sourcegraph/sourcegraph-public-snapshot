@@ -27,7 +27,7 @@ export interface MutationResult {
  * @return Observable That emits the result or errors if the HTTP request failed
  */
 function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IGraphQLResponseRoot> {
-    const nameMatch = request.match(/^\s*query (\w+)/)
+    const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     return Observable.ajax({
         method: 'POST',
         url: '/.api/graphql' + (nameMatch ? '?' + nameMatch[1] : ''),

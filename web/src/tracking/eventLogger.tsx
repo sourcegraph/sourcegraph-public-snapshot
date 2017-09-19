@@ -1,3 +1,4 @@
+import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
@@ -7,52 +8,57 @@ class EventLogger {
     private static PLATFORM = 'Web'
 
     constructor() {
-        this.updateUser()
-        this.updateTrackerWithIdentificationProps()
-
-        // TODO(Dan): validate that this communication is working and sufficient
-        // Because the new webapp isn't a single page app, we send a 2nd message after 1000ms,
-        // in case the injected DOM element wasn't available in time for the first call
-        setTimeout(() => this.updateTrackerWithIdentificationProps(), 1000)
+        currentUser.subscribe(
+            user => {
+                if (user) {
+                    this.updateUser(user)
+                    // Since this function checks if the Chrome ext has injected an element,
+                    // wait a few ms in case there's an unpredictable delay before checking.
+                    setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
+                }
+            },
+            error => { /* noop */ }
+        )
     }
 
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(): void {
-        const user = sourcegraphContext.user
-        if (user) {
-            this.setUserId(user.UID.toString(), user.Login)
-        }
-
-        const email = sourcegraphContext.primaryEmail()
-        if (email) {
-            this.setUserEmail(email)
+    public updateUser(user: GQL.IUser): void {
+        // TODO(dan): update with correct handle, if we want one
+        this.setUserId(user.id.toString(), user.email || '')
+        if (user.email) {
+            this.setUserEmail(user.email)
         }
     }
 
     /**
      * Function to sync our key user identification props across Telligent and user Chrome extension installations
      */
-    public updateTrackerWithIdentificationProps(): any {
+    public updateTrackerWithIdentificationProps(user: GQL.IUser): any {
         if (!telligent.isTelligentLoaded() || !sourcegraphContext.hasBrowserExtensionInstalled()) {
             return null
         }
 
         this.setUserInstalledChromeExtension('true')
 
-        const idProps = { detail: { deviceId: telligent.getTelligentDuid(), userId: sourcegraphContext.user && sourcegraphContext.user.Login } }
+        const idProps = { detail: { deviceId: telligent.getTelligentDuid(), userId: user.email } }
         setTimeout(() => document.dispatchEvent(new CustomEvent('sourcegraph:identify', idProps)), 20)
     }
 
-    public setUserId(UID: string, login: string): void {
-        telligent.setUserId(login)
-        telligent.setUserProperty('internal_user_id', UID)
-    }
-
-    public setUserRegisteredAt(registeredAt: any): void {
-        telligent.setUserProperty('registered_at_timestamp', registeredAt)
-        telligent.setUserProperty('registered_at', new Date(registeredAt).toDateString())
+    /**
+     * Set user ID in Telligent tracker script.
+     * TODO(Dan): determine whether we continue to use handles at the user level, or
+     * if they're fully replaced by org-level handles/usernames. For now, handles
+     * have been replaced with emails.
+     * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.UID from backend)
+     * @param handle Human-readable user identifier, not guaranteed to always stay the same. TODO: determine if we choose to use usernames or emails.
+     */
+    public setUserId(uniqueSourcegraphId: string, handle?: string): void {
+        if (handle) {
+            telligent.setUserId(handle)
+        }
+        telligent.setUserProperty('internal_user_id', uniqueSourcegraphId)
     }
 
     public setUserInstalledChromeExtension(installedChromeExtension: string): void {

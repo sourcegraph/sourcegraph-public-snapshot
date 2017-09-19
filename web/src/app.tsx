@@ -3,6 +3,7 @@
 // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
 import './util/polyfill'
 
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { render } from 'react-dom'
@@ -16,15 +17,16 @@ import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { currentUser, fetchCurrentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { Navbar } from './nav/Navbar'
 import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from './repo/backend'
 import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from './repo/Repository'
 import { Search } from './search/Search'
-import { EditorAuthPage } from './user/EditorAuthPage'
-import { SignInPage } from './user/SignInPage'
+import { SettingsPage } from './settings/SettingsPage'
+import { handleQueryEvents } from './tracking/analyticsUtils'
+import { viewEvents } from './tracking/events'
 import { ParsedRouteProps, parseRouteProps } from './util/routes'
-import { sourcegraphContext } from './util/sourcegraphContext'
 
 interface WithResolvedRevProps {
     component: any
@@ -121,16 +123,13 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
     public render(): JSX.Element | null {
         switch (this.props.routeName) {
             case 'search':
+                viewEvents.SearchResults.log()
                 return <Search {...this.props} />
 
             case 'sign-in':
-                return <SignInPage showEditorFlow={false} />
-
             case 'editor-auth':
-                if (sourcegraphContext.user) {
-                    return <EditorAuthPage />
-                }
-                return <SignInPage showEditorFlow={true} />
+            case 'user-profile':
+                return <SettingsPage routeName={this.props.routeName} />
 
             case 'repository':
                 return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />
@@ -158,11 +157,31 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
     }
 }
 
+interface AppState {
+    error?: Error
+}
+
 /**
  * The root component
  */
-class App extends React.Component<{}, {}> {
+class App extends React.Component<{}, AppState> {
+
+    constructor(props: {}) {
+        super(props)
+        this.state = {}
+        // Fetch current user data
+        fetchCurrentUser().subscribe(
+            state => currentUser.next(state),
+            error => this.setState({ error })
+        )
+    }
+
     public render(): JSX.Element | null {
+
+        if (this.state.error) {
+            return <HeroPage icon={ErrorIcon} title={'Something happened'} subtitle={this.state.error.message}/>
+        }
+
         if (window.pageError && window.pageError.statusCode !== 404) {
             const statusText = window.pageError.statusText
             const errorMessage = window.pageError.error
@@ -203,3 +222,5 @@ class App extends React.Component<{}, {}> {
 window.addEventListener('DOMContentLoaded', () => {
     render(<App />, document.querySelector('#root'))
 })
+
+handleQueryEvents(window.location.href)

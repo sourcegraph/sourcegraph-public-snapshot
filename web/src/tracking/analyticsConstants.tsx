@@ -151,7 +151,7 @@ export const EventActions = {
      */
     Error: 'Error',
 
-    Signup: 'Signup',
+    SignUp: 'SignUp',
     SignIn: 'SignIn',
     SignOut: 'SignOut',
 

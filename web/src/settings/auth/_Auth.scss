@@ -1,0 +1,22 @@
+.editor-auth-page {
+    &__session-id {
+        flex: 1 0 auto;
+        background-color: inherit;
+        color: inherit;
+        font-size: inherit;
+        border: 0;
+        padding: 0;
+        margin: 0 1rem 0 0;
+        overflow: hidden;
+        resize: none;
+        outline: none;
+    }
+
+    &__button-row {
+        margin: 1.5rem 0
+    }    
+
+    &__button-spaced {
+        margin: 0 0.25rem 0 0
+    }
+}
