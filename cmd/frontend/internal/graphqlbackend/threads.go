@@ -203,7 +203,7 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: verify that the current user is in the org.
-	member, err := store.OrgMembers.GetByOrgAndUser(ctx, repo.OrgID, actor.UID)
+	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +276,7 @@ func (*schemaResolver) UpdateThread2(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
-	_, err = store.OrgMembers.GetByOrgAndUser(ctx, repo.OrgID, actor.UID)
+	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
 	if err != nil {
 		return nil, err
 	}

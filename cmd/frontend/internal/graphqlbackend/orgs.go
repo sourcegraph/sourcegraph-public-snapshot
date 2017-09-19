@@ -24,7 +24,7 @@ func (r *rootResolver) Org(ctx context.Context, args *struct {
 }) (*orgResolver, error) {
 	// 🚨 SECURITY: Check that the current user is a member of the org.
 	actor := actor.FromContext(ctx)
-	if _, err := localstore.OrgMembers.GetByOrgAndUser(ctx, args.ID, actor.UID); err != nil {
+	if _, err := localstore.OrgMembers.GetByOrgIDAndUserID(ctx, args.ID, actor.UID); err != nil {
 		return nil, err
 	}
 	org, err := localstore.Orgs.GetByID(ctx, args.ID)
@@ -122,7 +122,7 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgAndUser(ctx, args.OrgID, actor.UID); err != nil {
+	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID); err != nil {
 		return nil, err
 	}
 	log15.Info("removing user from org", "user", args.UserID, "org", args.OrgID)
@@ -136,7 +136,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgAndUser(ctx, args.OrgID, actor.UID); err != nil {
+	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID); err != nil {
 		return nil, err
 	}
 
