@@ -83,7 +83,7 @@ export function toEditorURL(repoPath: string, rev?: string, filePath?: string, p
     if (position && position.line) {
         query += '&selection=' + encodeURIComponent('' + position.line)
     }
-    return 'https://about.sourcegraph.com/open-native/#open?' + query
+    return 'https://about.sourcegraph.com/open/#open?' + query
 }
 
 /**

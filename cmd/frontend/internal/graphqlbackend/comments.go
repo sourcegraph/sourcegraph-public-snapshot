@@ -199,7 +199,7 @@ func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, comment *sour
 	values.Set("revision", thread.Revision)
 	values.Set("path", thread.File)
 	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
-	return fmt.Sprintf("https://about.sourcegraph.com/open-native/#open?%s", values.Encode())
+	return fmt.Sprintf("https://about.sourcegraph.com/open/#open?%s", values.Encode())
 }
 
 // maxEmails is a limit on the number of email notifications
