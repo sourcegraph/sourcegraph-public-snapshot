@@ -29,6 +29,8 @@ type searchResultResolver struct {
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
 	score int
+	// length holds the length of the item name as a second sorting criterium
+	length int
 }
 
 func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
@@ -129,7 +131,13 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 
 	// Sort by score
 	sort.Slice(res, func(i, j int) bool {
-		return res[i].score > res[j].score
+		a, b := res[i], res[j]
+		if a.score != b.score {
+			return a.score > b.score
+		}
+		// Prefer shorter strings for the same match score
+		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
+		return a.length < b.length
 	})
 
 	// Limit
@@ -149,7 +157,7 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 		score := stringscore.Score(searchProfile.name, query)
 		if score > 0 {
 			score += 100
-			res = append(res, &searchResultResolver{result: searchProfile, score: score})
+			res = append(res, &searchResultResolver{result: searchProfile, score: score, length: len(searchProfile.name)})
 		}
 	}
 	return res, nil
@@ -185,7 +193,7 @@ outer:
 			score -= 10
 		}
 		if score > 0 {
-			res = append(res, &searchResultResolver{result: repoResolver, score: score})
+			res = append(res, &searchResultResolver{result: repoResolver, score: score, length: len(repo.URI)})
 		}
 	}
 	return res, nil
@@ -252,7 +260,7 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		if score > 0 {
 			// Give files a slight advantage over repos
 			score += 5
-			res = append(res, &searchResultResolver{result: fileResolver, score: score})
+			res = append(res, &searchResultResolver{result: fileResolver, score: score, length: len(fileResolver.name)})
 		}
 	}
 	return res, nil
