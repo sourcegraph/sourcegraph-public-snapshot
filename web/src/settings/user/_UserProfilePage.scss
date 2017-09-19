@@ -8,11 +8,13 @@
         padding-right: 1rem;
         border-right: 1px solid #2A3A51;
         margin-right: 1rem;
+        display: flex;
+        height: 4rem;
 
         .avatar-icon,
         .icon {
             width: 4rem;
-            height: 4rem;    
+            height: 4rem;
         }
     }
 

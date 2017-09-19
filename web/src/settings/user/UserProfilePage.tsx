@@ -43,7 +43,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                 <h1>Your Sourcegraph profile</h1>
                 <div className='user-profile-page__split-row'>
                     <div className='user-profile-page__avatar-column'>
-                        <UserAvatar />
+                        <UserAvatar size={64} />
                     </div>
                     <form className='settings-page__form'>
                         <input readOnly type='text' className='ui-text-box'

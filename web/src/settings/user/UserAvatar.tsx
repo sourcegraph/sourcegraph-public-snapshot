@@ -6,6 +6,7 @@ import { currentUser } from '../../auth'
 
 interface Props {
     linkUrl?: string
+    size?: number
 }
 
 interface State {
@@ -36,9 +37,16 @@ export class UserAvatar extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const avatar = this.state.user && this.state.user.avatarURL ?
-            <img className='avatar-icon' src={this.state.user.avatarURL} /> :
-            <UserWomanAlternate />
+        let avatar: JSX.Element
+        if (this.state.user && this.state.user.avatarURL) {
+            const url = new URL(this.state.user.avatarURL)
+            if (this.props.size) {
+                url.searchParams.set('s', this.props.size + '')
+            }
+            avatar = <img className='avatar-icon' src={url.href} />
+        } else {
+            avatar = <UserWomanAlternate />
+        }
 
         if (this.props.linkUrl) {
             return (
