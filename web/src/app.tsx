@@ -1,7 +1,7 @@
 
 // Polyfill URL because Chrome and Firefox are not spec-compliant
 // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
-import 'sourcegraph/util/polyfill'
+import './util/polyfill'
 
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
