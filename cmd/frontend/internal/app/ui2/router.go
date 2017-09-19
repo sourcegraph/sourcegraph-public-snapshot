@@ -58,6 +58,7 @@ var aboutPaths = []string{
 	"security",
 	"terms",
 	"jobs",
+	"beta",
 }
 
 // Router returns the router that serves pages for our web app.
