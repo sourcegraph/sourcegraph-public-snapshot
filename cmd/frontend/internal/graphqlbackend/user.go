@@ -25,6 +25,19 @@ func currentUser(ctx context.Context) (*currentUserResolver, error) {
 	}, nil
 }
 
+func (r *currentUserResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
+	actor := actor.FromContext(ctx)
+	orgs, err := localstore.Orgs.GetByUserID(actor.UID)
+	if err != nil {
+		return nil, err
+	}
+	orgResolvers := []*orgResolver{}
+	for _, org := range orgs {
+		orgResolvers = append(orgResolvers, &orgResolver{org})
+	}
+	return orgResolvers, nil
+}
+
 func (r *currentUserResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
 	actor := actor.FromContext(ctx)
 	members, err := localstore.OrgMembers.GetByUserID(ctx, actor.UID)

@@ -260,6 +260,7 @@ type User {
 	id: String!
 	avatarURL: String
 	email: String
+	orgs: [Org!]!
 	orgMemberships: [OrgMember!]!
 }
 
