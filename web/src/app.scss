@@ -177,14 +177,18 @@ h1 {
 }
 
 .ui-button {
-    background-color: #1C7CD6;
-    border: 1px solid #1C7CD6;
+    display: inline-block;
+    background: #0CA678;
     border-radius: 0.25rem;
-    padding: 0.5rem 1rem;
+    padding: 0.25rem 0.75rem;
     color: #FFFFFF;
-    font-size: 1rem;
+    font-size: inherit;
     text-decoration: none;
     cursor: pointer;
+    transition: all 100ms ease-out;
+    &:hover {
+        background: #099268;
+    }
 }
 
 .ui-text-box {

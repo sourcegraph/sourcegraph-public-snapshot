@@ -13,15 +13,16 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
+        padding: 0 1rem;
         &-link {
             display: inline-block;
             text-decoration: none;
             margin-left: 1rem;
         }
         &-auth {
-            margin: 0 2rem;
+            margin: 0 1rem;
         }
-        &-auth, .avatar {
+        .avatar {
             height: 2rem;
             width: 2rem;
         }
