@@ -25,44 +25,30 @@ type packageMetadata struct {
 
 func (r *packageResolver) Lang() string { return r.pkg.Lang }
 func (r *packageResolver) ID() *string {
-	if id, isStr := r.pkg.Pkg["id"].(string); isStr {
-		return &id
-	}
-	return nil
+	return r.pkgStringField("id")
 }
 func (r *packageResolver) Type() *string {
-	if typ, isStr := r.pkg.Pkg["typ"].(string); isStr {
-		return &typ
-	}
-	return nil
+	return r.pkgStringField("typ")
 }
 func (r *packageResolver) Name() *string {
-	if name, isStr := r.pkg.Pkg["name"].(string); isStr {
-		return &name
-	}
-	return nil
+	return r.pkgStringField("name")
 }
 func (r *packageResolver) Commit() *string {
-	if commit, isStr := r.pkg.Pkg["commit"].(string); isStr {
-		return &commit
-	}
-	return nil
+	return r.pkgStringField("commit")
 }
 func (r *packageResolver) BaseDir() *string {
-	if baseDir, isStr := r.pkg.Pkg["baseDir"].(string); isStr {
-		return &baseDir
-	}
-	return nil
+	return r.pkgStringField("baseDir")
 }
 func (r *packageResolver) RepoURL() *string {
-	if repoURL, isStr := r.pkg.Pkg["repoURL"].(string); isStr {
-		return &repoURL
-	}
-	return nil
+	return r.pkgStringField("repoURL")
 }
 func (r *packageResolver) Version() *string {
-	if version, isStr := r.pkg.Pkg["version"].(string); isStr {
-		return &version
+	return r.pkgStringField("version")
+}
+
+func (r *packageResolver) pkgStringField(name string) *string {
+	if value, isStr := r.pkg.Pkg[name].(string); isStr {
+		return &value
 	}
 	return nil
 }
