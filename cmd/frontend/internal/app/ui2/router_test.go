@@ -87,7 +87,7 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
 		},
 
-		// We expect any about.sourcegraph.com subdomains will go to the
+		// We expect any about.sourcegraph.com subpaths will go to the
 		// routeRepoOrMain handler, because it handles all root level paths.
 		{
 			path:      "/help",
