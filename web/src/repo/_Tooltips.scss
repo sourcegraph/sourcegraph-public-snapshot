@@ -1,7 +1,7 @@
 .tooltip {
     background-color: #1C2736;
-    max-width: 500px;
-    min-width: 400px;
+    max-width: 450px;
+    min-width: 275px;
     border: solid 1px #2A3A51;
     color: #93A9C8;
     z-index: 100;
@@ -16,7 +16,6 @@
         flex: 1;
         font-family: 'Menlo';
         word-wrap: break-word;
-        white-space: pre-wrap;
         margin-left: 0px;
         padding: 0px;
     }
@@ -28,16 +27,17 @@
     }
 
     &__doc {
-        padding-top: .5rem;
-        padding-left: .5rem;
-        padding-right: .5rem;
-        // no padding on bottom; pre-wrap whitepsace adds extra padding
+        padding: .5rem;
         max-height: 150px;
         overflow: auto;
         margin-bottom: 0px;
-        white-space: pre-wrap;
+
         font-family: system;
         border-bottom: 1px solid #2A3A51;
+
+        p:not(:first-child) {
+            margin-top: .5rem
+        }
     }
 
     &__actions {
