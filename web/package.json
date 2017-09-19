@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Sourcegraph",
   "scripts": {
-    "test": "mocha --opts mocha.opts",
+    "test": "npm run build-tests && mocha --opts mocha.opts",
     "build": "webpack --config webpack.config.ts --progress --profile --colors",
     "build-tests": "tsc -p ./tsconfig.test.json",
     "watch": "npm run build -- --watch",
