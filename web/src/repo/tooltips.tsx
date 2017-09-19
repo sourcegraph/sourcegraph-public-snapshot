@@ -131,8 +131,13 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 
     j2dAction.style.display = 'block'
     j2dAction.href = data.defUrl ? data.defUrl : ''
-    if (data.defUrl) {
+
+    if (data.defUrl && j2dAction.href !== window.location.href) {
+        j2dAction.style.cursor = 'pointer'
         j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrl) as AbsoluteRepoFilePosition)
+    } else {
+        j2dAction.style.cursor = 'not-allowed'
+        j2dAction.onclick = () => false
     }
 
     findRefsAction.style.display = 'block'
