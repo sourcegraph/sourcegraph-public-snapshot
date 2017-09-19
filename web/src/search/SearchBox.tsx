@@ -224,7 +224,11 @@ export class SearchBox extends React.Component<Props, State> {
         const toHighlight = this.state.query.toLowerCase()
         const splitRegexp = new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi')
         return (
-            <form className='search-box' onSubmit={this.onSubmit} ref={ref => this.containerElement = ref || undefined}>
+            <form
+                className={'search-box' + (this.state.suggestionsVisible && this.state.suggestions.length > 0 ? ' search-box--suggesting' : '')}
+                onSubmit={this.onSubmit}
+                ref={ref => this.containerElement = ref || undefined}
+            >
                 <div className='search-box__query'>
                     <div className='search-box__search-icon'><SearchIcon /></div>
                     <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
