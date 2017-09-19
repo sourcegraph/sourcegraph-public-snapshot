@@ -7,7 +7,6 @@ import { limitString } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 import { parseSearchURLQuery } from './index'
 import { SearchBox } from './SearchBox'
-import { SearchResults } from './SearchResults'
 
 interface Props extends RouteComponentProps<void> {}
 
@@ -29,14 +28,6 @@ export class Search extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const searchOptions = parseSearchURLQuery(this.props.location.search)
-        if (searchOptions.query) {
-            return <div className='search-results'>
-                <PageTitle title={this.getPageTitle()} />
-                <SearchResults {...this.props} />
-            </div>
-        }
-
         return (
             <div className='search'>
                 <PageTitle title={this.getPageTitle()} />

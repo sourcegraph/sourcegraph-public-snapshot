@@ -22,7 +22,9 @@ import { HeroPage } from './components/HeroPage'
 import { Navbar } from './nav/Navbar'
 import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from './repo/backend'
 import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from './repo/Repository'
+import { parseSearchURLQuery } from './search/index'
 import { Search } from './search/Search'
+import { SearchResults } from './search/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
 import { handleQueryEvents } from './tracking/analyticsUtils'
 import { viewEvents } from './tracking/events'
@@ -124,7 +126,7 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
         switch (this.props.routeName) {
             case 'search':
                 viewEvents.SearchResults.log()
-                return <Search {...this.props} />
+                return <SearchResults {...this.props} />
 
             case 'sign-in':
             case 'editor-auth':
@@ -159,6 +161,20 @@ class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
 
 interface AppState {
     error?: Error
+}
+
+/**
+ * handles rendering Search or SearchResults components based on whether or not
+ * the search query (e.g. '?q=foo') is in URL.
+ */
+class SearchRouter extends React.Component<ParsedRouteProps, {}> {
+    public render(): JSX.Element | null {
+        const searchOptions = parseSearchURLQuery(this.props.location.search)
+        if (searchOptions.query) {
+            return <Layout {...this.props} />
+        }
+        return <Search {...this.props} />
+    }
 }
 
 /**
@@ -212,6 +228,7 @@ class App extends React.Component<{}, AppState> {
         return (
             <BrowserRouter>
                 <Switch>
+                    <Route exact={true} path='/search' component={SearchRouter} />
                     <Route path='/*' component={Layout} />
                 </Switch>
             </BrowserRouter>
