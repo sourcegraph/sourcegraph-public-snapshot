@@ -26,8 +26,8 @@ var githubPersonalAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "per
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 
-var locks = make(map[string]*sync.Mutex)
-var locksMu sync.Mutex
+// requestMu ensures we only do one request at a time to prevent tripping abuse detection.
+var requestMu sync.Mutex
 
 var rateLimitRemainingGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -60,36 +60,17 @@ func main() {
 	}
 
 	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		accessToken := r.URL.Query().Get("access_token")
-		if auth := r.Header.Get("Authorization"); auth != "" {
-			fields := strings.Fields(auth)
-			if len(fields) == 2 && (fields[0] == "token" || fields[0] == "Bearer") {
-				accessToken = fields[1]
-			}
-		}
-
 		q2 := r.URL.Query()
-
-		// TODO(john): post sep 20 release, there will be no GitHub token
-		// passed through the actor context, and this override will be unnecessary.
-		if githubPersonalAccessToken != "" {
-			// override actor's authorization token (if there is one)
-			accessToken = githubPersonalAccessToken
-		}
 
 		h2 := make(http.Header)
 		h2.Set("User-Agent", r.Header.Get("User-Agent"))
 		h2.Set("Accept", r.Header.Get("Accept"))
 
-		if accessToken != "" {
-			// If access token is defined, there is an authenticated actor
-			// or a personal access token on the environment. In both cases,
-			// we want to make an authenticated request.
-			h2.Set("Authorization", "token "+accessToken)
+		if githubPersonalAccessToken != "" {
+			// For dogfooding servers this allows us to access private code.
+			h2.Set("Authorization", "token "+githubPersonalAccessToken)
 		} else {
-			// Currently this is for Sourcegraph.com making public API requests
-			// for unauthenticated users. Post sep 20 release, it is probably
-			// unnecessary to keep around.
+			// Otherwise set client_id for higher rate limits.
 			q2.Set("client_id", githubClientID)
 			q2.Set("client_secret", githubClientSecret)
 		}
@@ -105,32 +86,22 @@ func main() {
 			Header: h2,
 		}
 
-		locksMu.Lock()
-		lock, ok := locks[accessToken]
-		if !ok {
-			lock = new(sync.Mutex)
-			locks[accessToken] = lock
-		}
-		locksMu.Unlock()
-
-		lock.Lock()
+		requestMu.Lock()
 		resp, err := http.DefaultClient.Do(req2)
-		lock.Unlock()
+		requestMu.Unlock()
 		if err != nil {
 			log.Print(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if accessToken == "" { // do not track user rate limits
-			if limit := resp.Header.Get("X-Ratelimit-Remaining"); limit != "" {
-				limit, _ := strconv.Atoi(limit)
-				resource := "core"
-				if strings.HasPrefix(r.URL.Path, "/search/") {
-					resource = "search"
-				}
-				rateLimitRemainingGauge.WithLabelValues(resource).Set(float64(limit))
+		if limit := resp.Header.Get("X-Ratelimit-Remaining"); limit != "" {
+			limit, _ := strconv.Atoi(limit)
+			resource := "core"
+			if strings.HasPrefix(r.URL.Path, "/search/") {
+				resource = "search"
 			}
+			rateLimitRemainingGauge.WithLabelValues(resource).Set(float64(limit))
 		}
 
 		for k, v := range resp.Header {
