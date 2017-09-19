@@ -2,7 +2,6 @@ package ui2
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -145,38 +144,38 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "", serveError)
-	if err != nil {
-		return err
-	}
-	if common == nil {
-		return nil // request was handled
-	}
-	// e.g. "gorilla/mux - Sourcegraph"
-	common.Title = fmt.Sprintf("%s - Sourcegraph", repoShortName(common.Repo.URI))
+func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		common, err := newCommon(w, r, "", serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
 
-	q := r.URL.Query()
-	if search := q.Get("q"); search != "" {
-		// Redirect old search URLs:
-		//
-		// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7?q=ErrMethodMismatch&utm_source=chrome-extension
-		//
-		// To new ones:
-		//
-		// 	/search?q=route&repo=github.com/gorilla/mux&repo=github.com/kubernetes/kubernetes&matchCase=false&matchWord=false
-		//
-		r.URL.Path = "/search"
-		q.Set("repo", common.Repo.URI)
-		q.Set("matchCase", "false")
-		q.Set("matchWord", "false")
-		r.URL.RawQuery = q.Encode()
-		http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
-		return nil
+		q := r.URL.Query()
+		if search := q.Get("q"); search != "" {
+			// Redirect old search URLs:
+			//
+			// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7?q=ErrMethodMismatch&utm_source=chrome-extension
+			// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go?q=NewRouter
+			//
+			// To new ones:
+			//
+			// 	/search?q=route&repo=github.com/gorilla/mux&repo=github.com/kubernetes/kubernetes&matchCase=false&matchWord=false
+			//
+			r.URL.Path = "/search"
+			q.Set("repo", common.Repo.URI)
+			q.Set("matchCase", "false")
+			q.Set("matchWord", "false")
+			r.URL.RawQuery = q.Encode()
+			if routeName == routeTree {
+				q.Set("file", mux.Vars(r)["Path"])
+			}
+			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
+			return nil
+		}
+		return renderTemplate(w, "app.html", common)
 	}
-
-	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
-	r.URL.Path = "/search"
-	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-	return nil
 }
