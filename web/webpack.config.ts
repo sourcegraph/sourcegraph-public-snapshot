@@ -64,10 +64,7 @@ const config: webpack.Configuration = {
     devtool,
     plugins,
     resolve: {
-        extensions: ['.ts', '.tsx', '.js'],
-        alias: {
-            sourcegraph: path.resolve(__dirname, 'src')
-        }
+        extensions: ['.ts', '.tsx', '.js']
     },
     module: {
         loaders: [
