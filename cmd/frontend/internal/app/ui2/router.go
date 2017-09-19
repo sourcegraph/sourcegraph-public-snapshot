@@ -38,8 +38,12 @@ const (
 	aboutRedirectHost   = "about.sourcegraph.com"
 
 	// Legacy redirects
-	routeLegacyLogin   = "login"
-	routeLegacyCareers = "careers"
+	routeLegacyLogin                   = "login"
+	routeLegacyCareers                 = "careers"
+	routeLegacyDefLanding              = "page.def.landing"
+	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
+	routeLegacyRepoLanding             = "page.repo.landing"
+	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
 )
 
 // aboutPaths is a list of paths that should redirect from sourcegraph.com/$PATH
@@ -101,6 +105,13 @@ func newRouter() *mux.Router {
 
 	// blob
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
+
+	// legacy redirects
+	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
+	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
+	repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name(routeLegacyDefRedirectToDefLanding)
+	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding)
+	repoRev.Path("/land/" + routevar.Def).Methods("GET").Name(routeLegacyOldRouteDefLanding)
 	return r
 }
 
@@ -115,6 +126,10 @@ func init() {
 	// Legacy redirects
 	router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 	router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
+	router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
+	router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
+	router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
+	router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
