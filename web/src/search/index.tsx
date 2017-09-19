@@ -49,7 +49,7 @@ export function buildSearchURLQuery({ query, filters, matchCase, matchRegex, mat
     }
     searchParams.set('matchCase', matchCase + '')
     searchParams.set('matchWord', matchWord + '')
-    searchParams.set('matchCase', matchRegex + '')
+    searchParams.set('matchRegex', matchRegex + '')
     return searchParams.toString().replace(/%2F/g, '/')
 }
 
@@ -66,6 +66,6 @@ export function parseSearchURLQuery(query: string): SearchOptions {
         query: searchParams.get('q') || '',
         matchCase: searchParams.get('matchCase') === 'true',
         matchWord: searchParams.get('matchWord') === 'true',
-        matchRegex: searchParams.get('matchCase') === 'true'
+        matchRegex: searchParams.get('matchRegex') === 'true'
     }
 }
