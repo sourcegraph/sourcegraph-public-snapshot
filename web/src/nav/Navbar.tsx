@@ -20,13 +20,11 @@ export class Navbar extends React.Component<ParsedRouteProps, {}> {
                     <SearchBox {...this.props} />
                 </div>
                 <div className='navbar__right'>
-                    <div className='navbar__right-contents'>
-                        {
-                            sourcegraphContext.user ?
-                                <UserAvatar linkUrl='/settings' /> :
-                                <SignInButton />
-                        }
-                    </div>
+                    {
+                        sourcegraphContext.user ?
+                            <UserAvatar linkUrl='/settings' /> :
+                            <SignInButton />
+                    }
                 </div>
             </div>
         )

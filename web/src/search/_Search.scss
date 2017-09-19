@@ -6,6 +6,27 @@
     height: 100vh;
     width: 100%;
 
+    &__nav {
+        flex: none;
+        width: 100%;
+        margin-top: 2rem;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        &-link {
+            display: inline-block;
+            text-decoration: none;
+            margin-left: 1rem;
+        }
+        &-auth {
+            margin: 0 2rem;
+        }
+        &-auth, .avatar {
+            height: 2rem;
+            width: 2rem;
+        }
+    }
+
     &__logo {
         flex: 0 0 auto;
         display: flex;

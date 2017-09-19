@@ -90,6 +90,7 @@ html {
 body {
     height: 100vh;
     display: flex;
+    overflow: hidden;
 
     background-color: $color-page-background;
     color: #93A9C8;
@@ -215,6 +216,7 @@ h1 {
 
     .avatar-icon,
     .icon {
+        height: 100%;
         fill: currentColor;
         border-radius: 50%;
     }

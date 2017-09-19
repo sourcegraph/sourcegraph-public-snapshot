@@ -2,7 +2,7 @@
 
     position: sticky;
     flex: none;
-    height: 3.51rem; // +.01 to avoid the search box leaking
+    height: 3.55rem; // +.05 to avoid the search box leaking
     width: 100%;
     z-index: 9999999;
 
@@ -17,13 +17,15 @@
     }
 
     &__right {
-        display: flex;
         flex: 1;
-    }
+        display: flex;
+        padding-right: 1rem;
+        justify-content: flex-end;
 
-    &__right-contents {
-        flex: 0;
-        margin-left: auto;
+        .avatar, .avatar-icon {
+            width: 2rem;
+            height: 2rem;
+        }
     }
 
     &__logo-link,
@@ -44,13 +46,6 @@
                 50% { transform: rotate(180deg) scale(1.2) }
                 100% { transform: rotate(180deg) scale(1) }
             }
-        }
-    }
-
-    .avatar {
-        .avatar-icon {
-            width: 1.5rem;
-            height: 1.5rem;
         }
     }
 

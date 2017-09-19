@@ -3,6 +3,8 @@ import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../components/PageTitle'
+import { SignInButton } from '../settings/auth/SignInButton'
+import { UserAvatar } from '../settings/user/UserAvatar'
 import { limitString } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 import { parseSearchURLQuery } from './index'
@@ -31,6 +33,18 @@ export class Search extends React.Component<Props, State> {
         return (
             <div className='search'>
                 <PageTitle title={this.getPageTitle()} />
+                <div className='search__nav'>
+                    <a href='https://about.sourcegraph.com' className='search__nav-link'>Home</a>
+                    <a href='https://about.sourcegraph.com/about/' className='search__nav-link'>About</a>
+                    <a href='https://about.sourcegraph.com/pricing/' className='search__nav-link'>Pricing</a>
+                    <div className='search__nav-auth'>
+                        {
+                            sourcegraphContext.user ?
+                                <UserAvatar linkUrl='/settings' /> :
+                                <SignInButton />
+                        }
+                    </div>
+                </div>
                 <img className='search__logo' src={`${sourcegraphContext.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`} />
                 <div className='search__search-box-container'>
                     <SearchBox {...this.props} />
@@ -39,7 +53,6 @@ export class Search extends React.Component<Props, State> {
                         className={'search__help-button' + (this.state.helpVisible ? ' search__help-button--active' : '')}
                         title={(this.state.helpVisible ? 'Hide' : 'Show') + ' help'}
                         onClick={this.toggleHelp}
-                        style={{ color: this.state.helpVisible ? 'white' : 'inherit' }}
                     >
                         <HelpIcon />
                     </button>
