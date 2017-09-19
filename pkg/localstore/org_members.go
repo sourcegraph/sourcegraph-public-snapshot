@@ -27,12 +27,12 @@ func (*orgMembers) Create(ctx context.Context, orgID int32, userID, username, em
 	return &m, nil
 }
 
-func (om *orgMembers) GetByOrgAndUser(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
-	return om.getOneBySQL(ctx, "WHERE org_id=$1 AND user_id=$2 LIMIT 1", orgID, userID)
+func (m *orgMembers) GetByOrgAndUser(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
+	return m.getOneBySQL(ctx, "WHERE org_id=$1 AND user_id=$2 LIMIT 1", orgID, userID)
 }
 
-func (om *orgMembers) GetByOrgAndEmail(ctx context.Context, orgID int32, email string) (*sourcegraph.OrgMember, error) {
-	return om.getOneBySQL(ctx, "WHERE org_id=$1 AND email=$2 LIMIT 1", orgID, email)
+func (m *orgMembers) GetByOrgAndEmail(ctx context.Context, orgID int32, email string) (*sourcegraph.OrgMember, error) {
+	return m.getOneBySQL(ctx, "WHERE org_id=$1 AND email=$2 LIMIT 1", orgID, email)
 }
 
 func (*orgMembers) Remove(ctx context.Context, orgID int32, userID string) error {
@@ -53,8 +53,8 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.
 // a user is not in an org.
 var ErrOrgMemberNotFound = errors.New("org member not found")
 
-func (om *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgMember, error) {
-	members, err := om.getBySQL(ctx, query, args)
+func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgMember, error) {
+	members, err := m.getBySQL(ctx, query, args)
 	if err != nil {
 		return nil, err
 	}
