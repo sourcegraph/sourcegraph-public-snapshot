@@ -25,47 +25,55 @@ func Score(target string, query string) int {
 		return 0 // impossible for query to be a substring
 	}
 
-	targetRunes := []rune(target)
-	queryRunes := []rune(query)
-	targetLower := []rune(strings.ToLower(target))
-	queryLower := []rune(strings.ToLower(query))
+	var (
+		err         error
+		targetC     rune
+		targetCPrev rune
+		reader      = strings.NewReader(target)
+		score       = 0
+		firstMatch  = true
+	)
 
-	score := 0
-
-	for queryIdx := 0; queryIdx < len(queryRunes); queryIdx++ {
-		targetIdx := runeIndex(targetLower, queryLower[queryIdx])
-		if targetIdx == -1 {
-			score = 0 // This makes sure that the query is contained in the target
-			break
+	for _, queryC := range query {
+		queryCLower := unicode.ToLower(queryC)
+		consecutive := true
+		for {
+			targetCPrev = targetC
+			targetC, _, err = reader.ReadRune()
+			if err != nil {
+				// EOF, so query is not contained in target
+				return 0
+			}
+			if unicode.ToLower(targetC) == queryCLower {
+				break
+			}
+			consecutive = false
 		}
 
 		// Character match bonus
 		score++
 
 		// Consecutive match bonus
-		if targetIdx == 0 {
+		if consecutive {
 			score += 5
 		}
 
 		// Same case bonus
-		if targetRunes[targetIdx] == queryRunes[queryIdx] {
+		if targetC == queryC {
 			score++
 		}
 
 		// Start of word bonus
-		if targetIdx == 0 {
+		if firstMatch && consecutive {
 			score += 8
-		} else if isWordSeparator(targetRunes[targetIdx-1]) {
+		} else if isWordSeparator(targetCPrev) {
 			// After separator bonus
 			score += 7
-		} else if unicode.IsUpper(targetRunes[targetIdx]) {
+		} else if unicode.IsUpper(targetC) {
 			// Inside word upper case bonus
 			score++
 		}
-
-		// Remove one rune from the start of target strings.
-		targetLower = targetLower[targetIdx+1:]
-		targetRunes = targetRunes[targetIdx+1:]
+		firstMatch = false
 	}
 	return score
 }
@@ -74,13 +82,4 @@ const wordPathBoundary = "-_ /\\."
 
 func isWordSeparator(r rune) bool {
 	return strings.IndexRune(wordPathBoundary, r) >= 0
-}
-
-func runeIndex(s []rune, r rune) int {
-	for i, s := range s {
-		if s == r {
-			return i
-		}
-	}
-	return -1
 }
