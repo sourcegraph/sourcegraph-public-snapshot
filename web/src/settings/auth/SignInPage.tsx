@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { PageTitle } from '../../components/PageTitle'
-import { SignInButton } from '../../nav/SignInButton'
 import { events } from '../../tracking/events'
 import { sourcegraphContext } from '../../util/sourcegraphContext'
+import { SignInButton } from './SignInButton'
 
 interface Props {
     showEditorFlow: boolean

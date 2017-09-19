@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { events } from '../tracking/events'
+import { events } from '../../tracking/events'
 
 export class SignInButton extends React.Component {
     public render(): JSX.Element | null {

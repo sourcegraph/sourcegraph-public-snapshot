@@ -2,10 +2,10 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { SearchBox } from '../search/SearchBox'
+import { SignInButton } from '../settings/auth/SignInButton'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { ParsedRouteProps } from '../util/routes'
 import { sourcegraphContext } from '../util/sourcegraphContext'
-import { SignInButton } from './SignInButton'
 
 export class Navbar extends React.Component<ParsedRouteProps, {}> {
     public render(): JSX.Element | null {
