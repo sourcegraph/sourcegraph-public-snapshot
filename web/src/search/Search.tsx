@@ -40,7 +40,7 @@ export class Search extends React.Component<Props, State> {
                     <div className='search__nav-auth'>
                         {
                             sourcegraphContext.user ?
-                                <UserAvatar linkUrl='/settings' /> :
+                                <UserAvatar linkUrl='/settings' size={32} /> :
                                 <SignInButton />
                         }
                     </div>

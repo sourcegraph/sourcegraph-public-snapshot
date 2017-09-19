@@ -22,7 +22,7 @@ export class Navbar extends React.Component<ParsedRouteProps, {}> {
                 <div className='navbar__right'>
                     {
                         sourcegraphContext.user ?
-                            <UserAvatar linkUrl='/settings' /> :
+                            <UserAvatar linkUrl='/settings' size={32} /> :
                             <SignInButton />
                     }
                 </div>
