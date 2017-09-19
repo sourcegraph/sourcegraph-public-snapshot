@@ -152,13 +152,23 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
  */
 export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const loc = new URL(href, window.location.href)
+    let pathname = loc.pathname.slice(1) // trim leading '/'
+    if (pathname.endsWith('/')) {
+        pathname = pathname.substr(0, pathname.length - 1) // trim triling '/'
+    }
 
-    const urlsplit = loc.pathname.slice(1).split('/')
+    const urlsplit = pathname.split('/')
     if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
         throw new Error('unexpected repo url: ' + href)
     }
 
-    const repoRev = urlsplit.slice(0, 3).join('/')
+    const indexOfSep = pathname.indexOf('/-/')
+    let repoRev: string // e.g. 'github.com/gorilla/mux' or 'github.com/gorilla/mux@revision'
+    if (indexOfSep === -1) {
+        repoRev = pathname // the whole string
+    } else {
+        repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
+    }
     const repoRevSplit = repoRev.split('@')
     const repoPath = repoRevSplit[0]
     if (!repoPath) {
@@ -168,8 +178,13 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const commitID = rev && rev.match(/^[a-f0-9]{40}$/i) ? rev : undefined
 
     let filePath: string | undefined
-    if (loc.pathname.indexOf('/-/tree/') !== -1 || loc.pathname.indexOf('/-/blob/') !== -1) {
-        filePath = urlsplit.slice(5).join('/')
+    const treeSep = pathname.indexOf('/-/tree/')
+    const blobSep = pathname.indexOf('/-/blob/')
+    if (treeSep !== -1) {
+        filePath = pathname.substr(treeSep + '/-/tree/'.length)
+    }
+    if (blobSep !== -1) {
+        filePath = pathname.substr(blobSep + '/-/blob/'.length)
     }
 
     let position: Position | undefined
