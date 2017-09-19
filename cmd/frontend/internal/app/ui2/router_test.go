@@ -99,6 +99,34 @@ func TestRouter(t *testing.T) {
 			wantRoute: routeRepoOrMain,
 			wantVars:  map[string]string{"Repo": "foobar", "Rev": ""},
 		},
+
+		// sign-in
+		{
+			path:      "/sign-in",
+			wantRoute: routeSignIn,
+			wantVars:  map[string]string{},
+		},
+
+		// login
+		{
+			path:      "/login",
+			wantRoute: routeLogin,
+			wantVars:  map[string]string{},
+		},
+
+		// editor auth
+		{
+			path:      "/editor-auth",
+			wantRoute: routeEditorAuth,
+			wantVars:  map[string]string{},
+		},
+
+		// settings
+		{
+			path:      "/settings",
+			wantRoute: routeSettings,
+			wantVars:  map[string]string{},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.wantRoute+"/"+tst.path, func(t *testing.T) {
