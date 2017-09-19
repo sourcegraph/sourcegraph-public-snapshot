@@ -30,27 +30,29 @@ function pluralize(str: string, n: number): string {
 
 export class SearchResults extends React.Component<Props, State> {
 
+    public state: State = {
+        results: [],
+        loading: true
+    }
+
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            results: [],
-            loading: true
-        }
+    public componentDidMount(): void {
         this.subscriptions.add(
             this.componentUpdates
-                .startWith(props)
+                .startWith(this.props)
                 .switchMap(props => {
                     const start = Date.now()
                     const searchOptions = parseSearchURLQuery(props.location.search)
                     return searchText(searchOptions)
-                        .map((res: GQL.ISearchResults): State => ({ results: res.results, loading: false, searchDuration: Date.now() - start, error: undefined }))
-                        .catch(error => {
+                        .map((res: GQL.ISearchResults): State => ({ results: res.results, error: undefined, loading: false, searchDuration: Date.now() - start }))
+                        .catch((error): State[] => {
                             console.error(error)
                             return [{ results: [], error, loading: false, searchDuration: undefined }]
                         })
+                        // Reset to loading state
+                        .startWith<State>({ results: [], error: undefined, loading: true, searchDuration: undefined })
                 })
                 .subscribe(
                     newState => this.setState(newState),
