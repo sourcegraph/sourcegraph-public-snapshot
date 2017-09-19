@@ -174,9 +174,5 @@ func serveRepo(w http.ResponseWriter, r *http.Request) error {
 		http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 		return nil
 	}
-
-	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
-	r.URL.Path = "/search"
-	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-	return nil
+	return renderTemplate(w, "app.html", common)
 }
