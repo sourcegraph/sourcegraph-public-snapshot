@@ -70,13 +70,9 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
-	// home
+	// Top-level routes *excluding* pages that redirect to about.sourcegraph.com.
 	r.Path("/").Methods("GET").Name(routeHome)
-
-	// search
 	r.Path("/search").Methods("GET").Name(routeSearch)
-
-	// TODO(slimsag): unify routing for SPA soon.
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
 	r.Path("/login").Methods("GET").Name(routeLogin)
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
