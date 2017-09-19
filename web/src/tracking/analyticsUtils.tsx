@@ -39,7 +39,7 @@ export function handleQueryEvents(url: string): void {
         if (isBadgeRedirect) {
             events.RepoBadgeRedirected.log(eventParameters)
         } else if (eventName === 'CompletedGitHubOAuth2Flow') {
-            events.CompletedGitHubOAuth2Flow.log(eventParameters)
+            events.CompletedAuth0SignIn.log(eventParameters)
         } else if (eventName === 'SignupCompleted') {
             events.SignupCompleted.log(eventParameters)
         } else if (eventName) {
