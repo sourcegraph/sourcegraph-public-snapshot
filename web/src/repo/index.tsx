@@ -67,6 +67,11 @@ export interface ReferencesModeSpec {
 export interface ParsedRepoURI extends RepoSpec, Partial<RevSpec>, Partial<ResolvedRevSpec>, Partial<FileSpec>, Partial<PositionSpec>, Partial<RangeSpec> {}
 
 /**
+ * A repo
+ */
+export interface Repo extends RepoSpec, Partial<RevSpec> {}
+
+/**
  * A repo resolved to an exact commit
  */
 export interface AbsoluteRepo extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec {}

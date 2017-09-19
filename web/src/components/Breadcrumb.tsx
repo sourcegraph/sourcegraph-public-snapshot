@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { toBlobURL, toTreeURL } from 'sourcegraph/util/url'
+import { toBlobURL, toPrettyRepoURL, toTreeURL } from 'sourcegraph/util/url'
 
 export interface Props {
     path: string
@@ -50,7 +50,7 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
             return undefined
         }
         if (i === uriParts.length - 1) {
-            return '/' + this.props.repoPath
+            return toPrettyRepoURL(this.props)
         }
         if (this.props.filePath) {
             const j = i - uriParts.length

@@ -1,4 +1,4 @@
-import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, RepoFile } from 'sourcegraph/repo'
+import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from 'sourcegraph/repo'
 import { Position } from 'vscode-languageserver-types'
 
 type Modal = 'references'
@@ -37,6 +37,15 @@ function toPositionHash(position?: Position): string {
 
 function toReferencesHash(group: 'local' | 'external' | undefined): string {
     return group ? (group === 'local' ? '$references' : '$references:external') : ''
+}
+
+export function toRepoURL(ctx: Repo & Partial<ResolvedRevSpec>): string {
+    const rev = ctx.commitID || ctx.rev || ''
+    return `/${ctx.repoPath}${rev ? '@' + rev : ''}`
+}
+
+export function toPrettyRepoURL(ctx: Repo): string {
+    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}`
 }
 
 export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
