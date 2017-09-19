@@ -44,6 +44,8 @@ type Root {
 	revealCustomerCompany(ip: String!): CompanyProfile
 	threads(remoteURI: String!, accessToken: String!, file: String, limit: Int): [Thread!]!
 	org(id: Int!): Org!
+	packages(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, limit: Int): [Package!]!
+	dependents(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, package: String, limit: Int): [Dependency!]!
 }
 
 union SearchResult = Repository | File | SearchProfile
@@ -353,5 +355,36 @@ type Comment {
 	authorName: String!
 	authorEmail: String!
 	author: OrgMember!
+}
+
+type Package {
+	lang: String!
+	repo: Repository
+
+	# The following fields are properties of build package configuration as returned by the workspace/xpackages LSP endpoint.
+	id: String
+	type: String
+	name: String
+	commit: String
+	baseDir: String
+	repoURL: String
+	version: String
+}
+
+type Dependency {
+	repo: Repository
+
+	# The following fields are properties of build package configuration as returned by the workspace/xpackages LSP endpoint.
+	name: String
+	repoURL: String
+	depth: Int
+	vendor: Boolean
+	package: String
+	absolute: String
+	type: String
+	commit: String
+	version: String
+	id: String
+	package: String
 }
 `

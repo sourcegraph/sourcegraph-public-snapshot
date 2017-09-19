@@ -199,6 +199,10 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language
 }
 
 func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pks []sourcegraph.PackageInfo, err error) {
+	if Mocks.Pkgs.ListPackages != nil {
+		return Mocks.Pkgs.ListPackages(ctx, op)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.ListPackages")
 	defer func() {
 		if err != nil {

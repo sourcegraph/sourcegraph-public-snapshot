@@ -503,6 +503,10 @@ func listUserPrivateRepoIDs(ctx context.Context) (accessible []int32, err error)
 }
 
 func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
+	if Mocks.GlobalDeps.Dependencies != nil {
+		return Mocks.GlobalDeps.Dependencies(ctx, op)
+	}
+
 	var privateRepoIDs []int32
 	if !op.ExcludePrivate {
 		privateRepoIDs, err = listUserPrivateRepoIDs(ctx)

@@ -299,3 +299,88 @@ func (r *rootResolver) RevealCustomerCompany(ctx context.Context, args *struct{ 
 		},
 	}, nil
 }
+
+func (r *rootResolver) Packages(ctx context.Context, args *struct {
+	Lang    string
+	ID      *string
+	Type    *string
+	Name    *string
+	Commit  *string
+	BaseDir *string
+	RepoURL *string
+	Version *string
+	Offset  *int32
+	Limit   *int32
+}) ([]*packageResolver, error) {
+	var limit int32 = 10
+	if args.Limit != nil {
+		limit = *args.Limit
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	pkgQuery := packageMetadata{
+		id:      args.ID,
+		typ:     args.Type,
+		name:    args.Name,
+		commit:  args.Commit,
+		baseDir: args.BaseDir,
+		repoURL: args.RepoURL,
+		version: args.Version,
+	}.toPkgQuery()
+
+	pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: args.Lang, PkgQuery: pkgQuery, Limit: int(limit)})
+	if err != nil {
+		return nil, err
+	}
+	pkgResolvers := make([]*packageResolver, len(pkgs))
+	for i, pkg := range pkgs {
+		pkgResolvers[i] = &packageResolver{&pkg}
+	}
+	return pkgResolvers, nil
+}
+
+func (r *rootResolver) Dependents(ctx context.Context, args *struct {
+	Lang    string
+	ID      *string
+	Type    *string
+	Name    *string
+	Commit  *string
+	BaseDir *string
+	RepoURL *string
+	Version *string
+	Package *string
+	Limit   *int32
+}) ([]*dependencyResolver, error) {
+	limit := int32(10)
+	if args.Limit != nil {
+		limit = *args.Limit
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	pkgQuery := packageMetadata{
+		id:      args.ID,
+		typ:     args.Type,
+		name:    args.Name,
+		commit:  args.Commit,
+		baseDir: args.BaseDir,
+		repoURL: args.RepoURL,
+		version: args.Version,
+		packag:  args.Package,
+	}.toPkgQuery()
+
+	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, ExcludePrivate: true, Limit: int(limit)})
+	if err != nil {
+		return nil, err
+	}
+
+	depResolvers := make([]*dependencyResolver, len(deps))
+	for i, dep := range deps {
+		depResolvers[i] = &dependencyResolver{dep}
+	}
+
+	return depResolvers, nil
+}
