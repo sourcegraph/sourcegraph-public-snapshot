@@ -17,7 +17,6 @@ export class LoggableViewEvent {
 export const viewEvents = {
     Home: new LoggableViewEvent('ViewHome'),
     SearchResults: new LoggableViewEvent('ViewSearchResults'),
-    Tree: new LoggableViewEvent('ViewTree'),
     Blob: new LoggableViewEvent('ViewBlob'),
     UserProfile: new LoggableViewEvent('ViewUserProfile'),
     SignIn: new LoggableViewEvent('ViewSignIn'),

@@ -29,6 +29,7 @@ import { SettingsPage } from './settings/SettingsPage'
 import { handleQueryEvents } from './tracking/analyticsUtils'
 import { viewEvents } from './tracking/events'
 import { ParsedRouteProps, parseRouteProps } from './util/routes'
+import { parseHash } from './util/url'
 
 interface WithResolvedRevProps {
     component: any
@@ -122,10 +123,24 @@ class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolved
 }
 
 class AppRouter extends React.Component<ParsedRouteProps, {}> {
+    public componentDidMount(): void {
+        this.logPageView(this.props)
+    }
+
+    public componentWillReceiveProps(nextProps: ParsedRouteProps): void {
+        const thisHash = parseHash(nextProps.location.hash)
+        const nextHash = parseHash(nextProps.location.hash)
+        if (this.props.location.pathname !== nextProps.location.pathname ||
+            this.props.location.search !== nextProps.location.search ||
+            thisHash.modal !== nextHash.modal) {
+                // Skip logging page view when only line/character is updated.
+                this.logPageView(nextProps)
+        }
+    }
+
     public render(): JSX.Element | null {
         switch (this.props.routeName) {
             case 'search':
-                viewEvents.SearchResults.log()
                 return <SearchResults {...this.props} />
 
             case 'sign-in':
@@ -138,6 +153,22 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
 
             default:
                 return null
+        }
+    }
+
+    private logPageView(props: ParsedRouteProps): void {
+        const nextHash = parseHash(props.location.hash)
+        switch (props.routeName) {
+            case 'search':
+                return viewEvents.SearchResults.log()
+            case 'user-profile':
+                return viewEvents.UserProfile.log()
+            case 'editor-auth':
+                return viewEvents.EditorAuth.log()
+            case 'sign-in':
+                return viewEvents.SignIn.log()
+            case 'repository':
+                return viewEvents.Blob.log({ fileShown: Boolean(props.filePath), referencesShown: nextHash.modal === 'references' })
         }
     }
 }
@@ -168,12 +199,30 @@ interface AppState {
  * the search query (e.g. '?q=foo') is in URL.
  */
 class SearchRouter extends React.Component<ParsedRouteProps, {}> {
+    public componentDidMount(): void {
+        this.logPageView(this.props)
+    }
+
+    public componentWillReceiveProps(nextProps: ParsedRouteProps): void {
+        if (this.props.location.search !== nextProps.location.search) {
+            this.logPageView(nextProps)
+        }
+    }
+
     public render(): JSX.Element | null {
         const searchOptions = parseSearchURLQuery(this.props.location.search)
         if (searchOptions.query) {
             return <Layout {...this.props} />
         }
         return <Search {...this.props} />
+    }
+
+    private logPageView(props: ParsedRouteProps): void {
+        const searchOptions = parseSearchURLQuery(props.location.search)
+        if (!searchOptions.query) {
+            return viewEvents.Home.log()
+        }
+        // Other page views are logged by `Layout`.
     }
 }
 
