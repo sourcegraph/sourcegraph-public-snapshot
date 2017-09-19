@@ -31,7 +31,6 @@ const (
 	routeTree       = "tree"
 	routeBlob       = "blob"
 	routeSignIn     = "sign-in"
-	routeLogin      = "login"
 	routeEditorAuth = "editor-auth"
 	routeSettings   = "settings"
 
@@ -39,6 +38,7 @@ const (
 	aboutRedirectHost   = "about.sourcegraph.com"
 
 	// Legacy redirects
+	routeLegacyLogin   = "login"
 	routeLegacyCareers = "careers"
 )
 
@@ -79,11 +79,11 @@ func newRouter() *mux.Router {
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
-	r.Path("/login").Methods("GET").Name(routeLogin)
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
 	r.Path("/settings").Methods("GET").Name(routeSettings)
 
 	// Legacy redirects
+	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
 
 	// repo-or-main
@@ -109,11 +109,11 @@ func init() {
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
-	router.Get(routeLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
 
 	// Legacy redirects
+	router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 	router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
 
 	// search
