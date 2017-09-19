@@ -82,7 +82,6 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 		Opt:            opt,
-		NoAutoUpdate:   c.Repo.Private && c.client.NoCreds,
 	}
 	reqJSON, err := json.Marshal(req)
 	if err != nil {

@@ -9,8 +9,6 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type Test struct {
@@ -79,7 +77,7 @@ func TestRequest(t *testing.T) {
 		return dir == "/testroot/github.com/gorilla/mux"
 	}
 
-	testRepoExists = func(ctx context.Context, origin string, opt *vcs.RemoteOpts) bool {
+	testRepoExists = func(ctx context.Context, origin string, repo string) bool {
 		return origin == "https://github.com/nicksnyder/go-i18n.git"
 	}
 	defer func() {

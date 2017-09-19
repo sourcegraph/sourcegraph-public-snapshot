@@ -5,42 +5,23 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
 // runWithRemoteOpts runs the command after applying the remote options.
-func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) ([]byte, error) {
+func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, repoURI string) ([]byte, error) {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 
-	if opt != nil && opt.SSH != nil {
-		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := s.makeGitSSHWrapper(opt.SSH.PrivateKey)
-		defer func() {
-			if keyFile != "" {
-				if err := os.Remove(keyFile); err != nil {
-					log.Fatalf("Error removing SSH key file %s: %s.", keyFile, err)
-				}
-			}
-		}()
-		if err != nil {
-			return nil, err
-		}
-		defer os.Remove(gitSSHWrapper)
-		if gitSSHWrapperDir != "" {
-			defer os.RemoveAll(gitSSHWrapperDir)
-		}
-		cmd.Env = append(cmd.Env, "GIT_SSH="+gitSSHWrapper)
-	}
-
-	if opt != nil && opt.HTTPS != nil {
-		gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.User, opt.HTTPS.Pass)
+	// Add github creds if we have them configured. This should never run for
+	// Sourcegraph.com, but does run on our dogfood server.
+	if s.GithubAccessToken != "" && strings.HasPrefix(repoURI, "github.com/") {
+		gitPassHelperDir, err := makeGitPassHelper("x-oauth-token", s.GithubAccessToken)
 		if err != nil {
 			return nil, err
 		}

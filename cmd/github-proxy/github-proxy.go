@@ -22,7 +22,7 @@ import (
 
 var githubClientID = env.Get("GITHUB_CLIENT_ID", "", "client ID for GitHub")
 var githubClientSecret = env.Get("GITHUB_CLIENT_SECRET", "", "client secret for GitHub")
-var githubPersonalAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "personal access token for GitHub")
+var githubPersonalAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "personal access token for GitHub. All requests will use this token to access the Github API. Used give access to private Github code on a private server.")
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 

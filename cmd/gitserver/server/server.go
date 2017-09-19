@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 var runCommand = func(cmd *exec.Cmd) (error, int) { // mocked by tests
@@ -37,6 +36,11 @@ var skipCloneForTests = false // set by tests
 type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
+
+	// GithubAccessToken if set will be used for all fetches and clones to
+	// Github. This allows gitserver to access private code. Should only
+	// be used on private servers, not Sourcegraph.com
+	GithubAccessToken string
 
 	// InsecureSkipCheckVerifySSH controls whether the client verifies the
 	// SSH server's certificate or host key. If InsecureSkipCheckVerifySSH
@@ -61,7 +65,6 @@ type locks struct {
 
 type updateRepoRequest struct {
 	repo string
-	opt  *vcs.RemoteOpts
 }
 
 // This is a timeout for git commands that should not take a long time.
@@ -174,7 +177,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
-		if origin := OriginMap(req.Repo); origin != "" && !req.NoAutoUpdate && s.repoExists(ctx, origin, req.Opt) {
+		if origin := OriginMap(req.Repo); origin != "" && s.repoExists(ctx, origin, req.Repo) {
 			// Mark this repo as currently being cloned. We have to check again if someone else isn't already
 			// cloning since we released the lock. We released the lock since repoExists is a potentially
 			// slow operation.
@@ -199,7 +202,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 					}
 
 					cmd := cloneCmd(ctx, origin, dir)
-					if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
+					if output, err := s.runWithRemoteOpts(cmd, req.Repo); err != nil {
 						log15.Error("clone failed", "error", err, "output", string(output))
 						return
 					}
@@ -223,7 +226,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		cmd.Dir = dir
 		if err := cmd.Run(); err != nil {
 			// Revision not found, update before running actual command.
-			s.doRepoUpdate(ctx, req.Repo, req.Opt)
+			s.doRepoUpdate(ctx, req.Repo)
 		}
 	}
 
@@ -259,22 +262,22 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", string(stderr))
 
-	if !req.NoAutoUpdate && !skipCloneForTests {
-		s.updateRepo <- updateRepoRequest{req.Repo, req.Opt}
+	if !skipCloneForTests {
+		s.updateRepo <- updateRepoRequest{req.Repo}
 	}
 }
 
 // testRepoExists is a test fixture that overrides the return value
 // for repoExists when it is set.
-var testRepoExists func(ctx context.Context, origin string, opt *vcs.RemoteOpts) bool
+var testRepoExists func(ctx context.Context, origin string, repoURI string) bool
 
 // repoExists returns true if the repo is cloneable.
-func (s *Server) repoExists(ctx context.Context, origin string, opt *vcs.RemoteOpts) bool {
+func (s *Server) repoExists(ctx context.Context, origin string, repoURI string) bool {
 	if testRepoExists != nil {
-		return testRepoExists(ctx, origin, opt)
+		return testRepoExists(ctx, origin, repoURI)
 	}
 	cmd := exec.CommandContext(ctx, "git", "ls-remote", origin, "HEAD")
-	_, err := s.runWithRemoteOpts(cmd, opt)
+	_, err := s.runWithRemoteOpts(cmd, repoURI)
 	return err == nil
 }
 
@@ -312,7 +315,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
 				ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 				defer cancel()
-				s.doRepoUpdate(ctx, req.repo, req.opt)
+				s.doRepoUpdate(ctx, req.repo)
 			}(req)
 		}
 	}()
@@ -322,7 +325,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 
 var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo string, opt *vcs.RemoteOpts) {
+func (s *Server) doRepoUpdate(ctx context.Context, repo string) {
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
 	if !ok {
@@ -344,14 +347,14 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo string, opt *vcs.RemoteO
 		l.once = new(sync.Once) // Make new requests wait for next update.
 		s.repoUpdateLocksMu.Unlock()
 
-		s.doRepoUpdate2(ctx, repo, opt)
+		s.doRepoUpdate2(ctx, repo)
 	})
 }
 
-func (s *Server) doRepoUpdate2(ctx context.Context, repo string, opt *vcs.RemoteOpts) {
+func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 	cmd := exec.CommandContext(ctx, "git", "remote", "update", "--prune")
 	cmd.Dir = path.Join(s.ReposDir, repo)
-	if output, err := s.runWithRemoteOpts(cmd, opt); err != nil {
+	if output, err := s.runWithRemoteOpts(cmd, repo); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return
 	}
@@ -361,7 +364,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string, opt *vcs.Remote
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", "origin")
 	cmd.Dir = path.Join(s.ReposDir, repo)
-	output, err := s.runWithRemoteOpts(cmd, opt)
+	output, err := s.runWithRemoteOpts(cmd, repo)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
 		return
