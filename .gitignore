@@ -84,7 +84,5 @@ cmd/src/debug
 cmd/gitserver/debug
 cmd/indexer/debug
 
-/dev/local-installer/sourcegraph/.env
-/dev/local-installer/sourcegraph/.data
 /dev/e2e/log.html
 /.gtm/
