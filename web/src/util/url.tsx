@@ -59,7 +59,7 @@ export function toTreeURL(ctx: RepoFile): string {
 }
 
 export function toEditorURL(repoPath: string, rev?: string, filePath?: string, position?: { line?: number }): string {
-    let query = 'repo=' + encodeURIComponent('ssh://' + repoPath + '.git')
+    let query = 'repo=' + encodeURIComponent('ssh://git@' + repoPath + '.git')
     query += '&vcs=git'
     if (rev) {
         query += '&revision=' + encodeURIComponent(rev)
