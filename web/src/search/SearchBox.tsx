@@ -70,6 +70,9 @@ export class SearchBox extends React.Component<Props, State> {
     /** Emits on componentWillReceiveProps */
     private componentUpdates = new Subject<Props>()
 
+    /** Only used for focus management */
+    private containerElement?: HTMLElement
+
     /** Only used for selection and focus management */
     private inputElement?: HTMLInputElement
 
@@ -189,6 +192,15 @@ export class SearchBox extends React.Component<Props, State> {
                     }
                 })
         )
+
+        this.subscriptions.add(
+            Observable.fromEvent<MouseEvent>(document, 'click')
+                .subscribe(e => {
+                    if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
+                        this.setState({ suggestionsVisible: false })
+                    }
+                })
+        )
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -212,7 +224,7 @@ export class SearchBox extends React.Component<Props, State> {
         const toHighlight = this.state.query.toLowerCase()
         const splitRegexp = new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi')
         return (
-            <form className='search-box' onSubmit={this.onSubmit}>
+            <form className='search-box' onSubmit={this.onSubmit} ref={ref => this.containerElement = ref || undefined}>
                 <div className='search-box__query'>
                     <div className='search-box__search-icon'><SearchIcon /></div>
                     <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
@@ -237,7 +249,6 @@ export class SearchBox extends React.Component<Props, State> {
                             value={this.state.query}
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
-                            onBlur={this.onInputBlur}
                             onClick={this.onInputClick}
                             spellCheck={false}
                             autoCapitalize='off'
@@ -259,12 +270,12 @@ export class SearchBox extends React.Component<Props, State> {
                     {
                         this.state.suggestions.map((suggestion, i) => {
                             const onClick = () => {
-                                this.setState({
-                                    filters: this.state.filters.concat(suggestion),
+                                this.setState(prevState => ({
+                                    filters: prevState.filters.concat(suggestion),
                                     suggestions: [],
                                     selectedSuggestion: -1,
                                     query: ''
-                                })
+                                }))
                             }
                             const onRef = ref => {
                                 if (this.state.selectedSuggestion === i) {
@@ -278,12 +289,7 @@ export class SearchBox extends React.Component<Props, State> {
                                 className += ' search-box__suggestion--selected'
                             }
                             return (
-                                <li
-                                    key={i}
-                                    className={className}
-                                    onClick={onClick}
-                                    ref={onRef}
-                                >
+                                <li key={i} className={className} onClick={onClick} ref={onRef}>
                                     <Icon />
                                     <div className='search-box__suggestion-label'>
                                         {parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box__highlighted-query' : ''}>{part}</span>)}
@@ -347,10 +353,6 @@ export class SearchBox extends React.Component<Props, State> {
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.inputValues.next(event.currentTarget.value)
-    }
-
-    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
-        this.setState({ suggestionsVisible: false })
     }
 
     private onInputClick: React.MouseEventHandler<HTMLInputElement> = event => {

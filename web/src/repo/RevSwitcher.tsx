@@ -181,13 +181,15 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
-        this.subscriptions.add(Observable.fromEvent(document, 'click')
-            .subscribe((e: MouseEvent) => {
-                if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
-                    // Click outside of our component.
-                    this.props.onClose()
-                }
-            }))
+        this.subscriptions.add(
+            Observable.fromEvent<MouseEvent>(document, 'click')
+                .subscribe(e => {
+                    if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
+                        // Click outside of our component.
+                        this.props.onClose()
+                    }
+                })
+        )
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
