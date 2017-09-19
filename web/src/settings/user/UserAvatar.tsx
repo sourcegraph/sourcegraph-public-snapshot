@@ -1,11 +1,10 @@
 import { UserWomanAlternate } from '@sourcegraph/icons/lib/UserWomanAlternate'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../../auth'
 
 interface Props {
-    linkUrl?: string
+    onClick: () => void
     size?: number
 }
 
@@ -48,13 +47,8 @@ export class UserAvatar extends React.Component<Props, State> {
             avatar = <UserWomanAlternate />
         }
 
-        if (this.props.linkUrl) {
-            return (
-                <Link to={this.props.linkUrl} className='avatar'>{avatar}</Link>
-            )
-        }
         return (
-            <div className='avatar'>{avatar}</div>
+            <div onClick={this.props.onClick} className='avatar'>{avatar}</div>
         )
     }
 }

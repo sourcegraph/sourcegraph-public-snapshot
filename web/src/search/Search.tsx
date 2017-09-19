@@ -5,6 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../components/PageTitle'
 import { SignInButton } from '../settings/auth/SignInButton'
 import { UserAvatar } from '../settings/user/UserAvatar'
+import { events } from '../tracking/events'
 import { limitString } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 import { parseSearchURLQuery } from './index'
@@ -14,6 +15,7 @@ interface Props extends RouteComponentProps<void> {}
 
 interface State {
     helpVisible: boolean
+    showSignOut: boolean
 }
 
 const shortcutMofidier = navigator.platform.startsWith('Mac') ? 'ctrl' : 'cmd'
@@ -25,6 +27,7 @@ export class Search extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
+            showSignOut: false,
             helpVisible: localStorage.getItem('show-search-help') !== 'false'
         }
     }
@@ -38,8 +41,14 @@ export class Search extends React.Component<Props, State> {
                     <div className='search__nav-auth'>
                         {
                             sourcegraphContext.user ?
-                                <UserAvatar linkUrl='/settings' size={64} /> :
+                                <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
                                 <SignInButton />
+                        }
+                        {
+                            this.state.showSignOut &&
+                                <a href='/-/sign-out' onClick={events.SignOutClicked.log} className='ui-button'>
+                                    Sign out
+                                </a>
                         }
                     </div>
                 </div>

@@ -20,9 +20,12 @@
             margin-left: 1rem;
         }
         &-auth {
+            display: flex;
+            align-items: center;
             margin: 0 1rem;
         }
         .avatar {
+            margin-right: 1rem;
             height: 2rem;
             width: 2rem;
         }
