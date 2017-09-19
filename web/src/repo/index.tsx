@@ -151,7 +151,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
  * Parses the properties of a blob URL.
  */
 export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRepoURI {
-    const loc = new URL(href, window.location.href)
+    const loc = new URL(href, w.location.href)
     let pathname = loc.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
         pathname = pathname.substr(0, pathname.length - 1) // trim triling '/'
