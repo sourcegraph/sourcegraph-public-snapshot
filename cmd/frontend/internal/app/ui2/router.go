@@ -114,7 +114,10 @@ func init() {
 	})))
 
 	// repo or main pages
-	serveRepoHandler := handler(serveRepo)
+	serveRepoHandler := handler(serveRepoOrBlob(routeRepoOrMain, func(c *Common, r *http.Request) string {
+		// e.g. "gorilla/mux - Sourcegraph"
+		return fmt.Sprintf("%s - Sourcegraph", repoShortName(c.Repo.URI))
+	}))
 	router.Get(routeRepoOrMain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if handlerutil.DebugMode && r.URL.Path == "/__errorTest" {
@@ -158,7 +161,7 @@ func init() {
 	})))
 
 	// blob
-	router.Get(routeBlob).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+	router.Get(routeBlob).Handler(handler(serveRepoOrBlob(routeBlob, func(c *Common, r *http.Request) string {
 		// e.g. "mux.go - gorilla/mux - Sourcegraph"
 		fileName := path.Base(mux.Vars(r)["Path"])
 		return fmt.Sprintf("%s - %s - Sourcegraph", fileName, repoShortName(c.Repo.URI))
