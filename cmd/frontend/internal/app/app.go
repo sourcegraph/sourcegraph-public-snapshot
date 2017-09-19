@@ -8,7 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/oauth2client"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/redirects"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
@@ -53,26 +52,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.GoSymbolURL).Handler(traceutil.TraceRoute(errorutil.Handler(serveGoSymbolURL)))
 
-	// Our top level UI handler chooses between our legacy UI and our new
-	// "streamlined web app" UI. A user can opt in via:
-	//
-	//  document.cookie="streamlined=true;path=/"
-	//
-	// And opt out via:
-	//
-	//  document.cookie="streamlined=false;path=/"
-	//
-	uiRouter := ui.Router()
-	ui2Router := ui2.Router()
-	r.Get(router.UI).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("streamlined")
-		if err == nil && cookie.Value == "true" {
-			// User wants beta streamlined interface.
-			ui2Router.ServeHTTP(w, r)
-			return
-		}
-		uiRouter.ServeHTTP(w, r)
-	}))
+	r.Get(router.UI).Handler(ui2.Router())
 
 	signInURL := "https://" + auth0.Domain + "/authorize?response_type=code&client_id=" + auth0.Config.ClientID + "&connection=Sourcegraph&redirect_uri=" + conf.AppURL.String() + "/-/auth0/sign-in"
 	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
