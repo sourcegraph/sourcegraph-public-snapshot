@@ -1,8 +1,8 @@
 import * as assert from 'assert'
 import { JSDOM } from 'jsdom'
 const pickBy = require('lodash/pickBy')
-import { makeRepoURI, parseBrowserRepoURL, parseRepoURI } from 'sourcegraph/repo'
-import 'sourcegraph/util/polyfill'
+import '../util/polyfill'
+import { makeRepoURI, parseBrowserRepoURL, parseRepoURI } from './index'
 
 describe('repo module', () => {
     // remove undefined values from an object

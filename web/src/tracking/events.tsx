@@ -1,6 +1,6 @@
-import { EventActions, EventCategories } from 'sourcegraph/tracking/analyticsConstants'
-import { pageViewQueryParameters } from 'sourcegraph/tracking/analyticsUtils'
-import { eventLogger } from 'sourcegraph/tracking/eventLogger'
+import { EventActions, EventCategories } from './analyticsConstants'
+import { pageViewQueryParameters } from './analyticsUtils'
+import { eventLogger } from './eventLogger'
 
 export class LoggableViewEvent {
     constructor(private title: string) { }

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { toBlobURL, toPrettyRepoURL, toTreeURL } from 'sourcegraph/util/url'
+import { toBlobURL, toPrettyRepoURL, toTreeURL } from '../util/url'
 
 export interface Props {
     path: string

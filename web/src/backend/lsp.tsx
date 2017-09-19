@@ -1,9 +1,9 @@
-import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from 'sourcegraph/repo'
-import { getModeFromExtension, getPathExtension, supportedExtensions } from 'sourcegraph/util'
-import { memoizeAsync } from 'sourcegraph/util/memoize'
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
-import { toAbsoluteBlobURL, toPrettyBlobURL } from 'sourcegraph/util/url'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
+import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
+import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
+import { memoizeAsync } from '../util/memoize'
+import { sourcegraphContext } from '../util/sourcegraphContext'
+import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 
 interface LSPRequest {
     method: string

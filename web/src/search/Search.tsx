@@ -2,12 +2,12 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { PageTitle } from 'sourcegraph/components/PageTitle'
-import { parseSearchURLQuery } from 'sourcegraph/search'
-import { SearchBox } from 'sourcegraph/search/SearchBox'
-import { SearchResults } from 'sourcegraph/search/SearchResults'
-import { limitString } from 'sourcegraph/util'
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
+import { PageTitle } from '../components/PageTitle'
+import { limitString } from '../util'
+import { sourcegraphContext } from '../util/sourcegraphContext'
+import { parseSearchURLQuery } from './index'
+import { SearchBox } from './SearchBox'
+import { SearchResults } from './SearchResults'
 
 interface Props extends RouteComponentProps<void> {}
 

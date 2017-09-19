@@ -1,7 +1,7 @@
-import { parseBrowserRepoURL } from 'sourcegraph/repo'
-import { telligent } from 'sourcegraph/tracking/services/telligentWrapper'
-import { getPathExtension } from 'sourcegraph/util'
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
+import { parseBrowserRepoURL } from '../repo'
+import { getPathExtension } from '../util'
+import { sourcegraphContext } from '../util/sourcegraphContext'
+import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
     private static PLATFORM = 'Web'

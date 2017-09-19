@@ -1,6 +1,6 @@
-import { EventActions, EventCategories } from 'sourcegraph/tracking/analyticsConstants'
-import { eventLogger } from 'sourcegraph/tracking/eventLogger'
-import { events } from 'sourcegraph/tracking/events'
+import { EventActions, EventCategories } from './analyticsConstants'
+import { eventLogger } from './eventLogger'
+import { events } from './events'
 
 export interface EventQueryParameters {
     utm_campaign?: string

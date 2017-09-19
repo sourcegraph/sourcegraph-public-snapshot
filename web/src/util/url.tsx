@@ -1,5 +1,5 @@
-import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from 'sourcegraph/repo'
 import { Position } from 'vscode-languageserver-types'
+import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from '../repo'
 
 type Modal = 'references'
 type ModalMode = 'local' | 'external'

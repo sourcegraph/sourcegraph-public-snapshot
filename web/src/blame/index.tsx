@@ -6,11 +6,10 @@ import 'rxjs/add/operator/take'
 import 'rxjs/add/operator/takeUntil'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { Observable } from 'rxjs/Observable'
-import 'sourcegraph/blame/dom'
-import { setLineBlame } from 'sourcegraph/blame/dom'
-import { AbsoluteRepoFilePosition } from 'sourcegraph/repo'
-import { openFromJS } from 'sourcegraph/util/url'
+import { AbsoluteRepoFilePosition } from '../repo'
+import { openFromJS } from '../util/url'
 import { fetchBlameFile } from './backend'
+import { setLineBlame } from './dom'
 
 export interface BlameData {
     ctx: AbsoluteRepoFilePosition

@@ -1,6 +1,6 @@
 import { RouteComponentProps } from 'react-router'
-import { makeRepoURI, ParsedRepoURI } from 'sourcegraph/repo'
-import { parseHash } from 'sourcegraph/util/url'
+import { makeRepoURI, ParsedRepoURI } from '../repo'
+import { parseHash } from './url'
 
 export interface ParsedRouteProps extends Partial<ParsedRepoURI>, RouteComponentProps<any> { // the typed parameters are not useful in the parsed props, as you shouldn't use them
     routeName?: 'home' | 'search' | 'sign-in' | 'editor-auth' | 'repository'

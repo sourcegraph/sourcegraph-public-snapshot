@@ -9,9 +9,8 @@ import DownIcon from 'react-icons/lib/fa/angle-down'
 import RightIcon from 'react-icons/lib/fa/angle-right'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Subscription } from 'rxjs/Subscription'
-import { createTreeStore, TreeStore } from 'sourcegraph/tree/store'
-import { getParentDir } from 'sourcegraph/tree/util'
-import { scrollIntoView } from 'sourcegraph/tree/util'
+import { createTreeStore, TreeStore } from './store'
+import { getParentDir, scrollIntoView } from './util'
 
 export interface Props {
     paths: string[]

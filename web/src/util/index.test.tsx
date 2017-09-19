@@ -1,8 +1,8 @@
 import * as assert from 'assert'
 import { JSDOM } from 'jsdom'
-import { getPathExtension } from 'sourcegraph/util'
-import { highlightNode } from 'sourcegraph/util/dom'
-import { parseHash, toBlobURL, toPrettyBlobURL, toTreeURL } from 'sourcegraph/util/url'
+import { highlightNode } from './dom'
+import { getPathExtension } from './index'
+import { parseHash, toBlobURL, toPrettyBlobURL, toTreeURL } from './url'
 
 describe('util module', () => {
 

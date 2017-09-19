@@ -1,8 +1,8 @@
 import * as React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
-import { AbsoluteRepoFilePosition } from 'sourcegraph/repo'
-import { fetchHighlightedFileLines } from 'sourcegraph/repo/backend'
-import { highlightNode } from 'sourcegraph/util/dom'
+import { AbsoluteRepoFilePosition } from '../repo'
+import { fetchHighlightedFileLines } from '../repo/backend'
+import { highlightNode } from '../util/dom'
 
 interface Props extends AbsoluteRepoFilePosition {
     // How many extra lines to show in the excerpt before/after the ref.

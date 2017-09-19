@@ -6,10 +6,10 @@ import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { ReferencesGroup } from 'sourcegraph/references/ReferencesWidget'
-import { parseSearchURLQuery } from 'sourcegraph/search'
-import { ParsedRouteProps } from 'sourcegraph/util/routes'
+import { ReferencesGroup } from '../references/ReferencesWidget'
+import { ParsedRouteProps } from '../util/routes'
 import { searchText } from './backend'
+import { parseSearchURLQuery } from './index'
 
 interface Props extends ParsedRouteProps { }
 

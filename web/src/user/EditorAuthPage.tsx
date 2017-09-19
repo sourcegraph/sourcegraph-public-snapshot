@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { PageTitle } from 'sourcegraph/components/PageTitle'
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
+import { PageTitle } from '../components/PageTitle'
+import { sourcegraphContext } from '../util/sourcegraphContext'
 
 /**
  * Page to enable users to authenticate/link to their editors

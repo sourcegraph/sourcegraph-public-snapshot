@@ -5,9 +5,9 @@ import GitHub from '@sourcegraph/icons/lib/GitHub'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
-import { RepoBreadcrumb } from 'sourcegraph/components/Breadcrumb'
-import { events } from 'sourcegraph/tracking/events'
-import { parseHash, toEditorURL } from 'sourcegraph/util/url'
+import { RepoBreadcrumb } from '../components/Breadcrumb'
+import { events } from '../tracking/events'
+import { parseHash, toEditorURL } from '../util/url'
 
 interface RepoSubnavProps {
     repoPath: string

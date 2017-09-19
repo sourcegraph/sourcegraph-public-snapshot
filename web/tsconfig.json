@@ -6,14 +6,6 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "baseUrl": "./",
-    "paths": {
-      "sourcegraph/*": [
-        "src/*"
-      ],
-      "@sourcegraph/components/lib/*": [
-        "node_modules/@sourcegraph/components/lib/*"
-      ]
-    },
     "lib": [
       "es2017",
       "dom",
@@ -35,5 +27,8 @@
         "configFile": "./tslint.json"
       }
     ]
-  }
+  },
+  "include": [
+    "src/**/*.test.tsx"
+  ]
 }

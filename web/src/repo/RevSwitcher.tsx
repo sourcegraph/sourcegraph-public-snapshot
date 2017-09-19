@@ -13,10 +13,10 @@ import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { parseBrowserRepoURL } from 'sourcegraph/repo'
-import { EREVNOTFOUND, fetchRepoRevisions, RepoRevisions, resolveRev } from 'sourcegraph/repo/backend'
-import { scrollIntoView } from 'sourcegraph/util'
-import { score } from 'sourcegraph/util/scorer'
+import { scrollIntoView } from '../util'
+import { score } from '../util/scorer'
+import { EREVNOTFOUND, fetchRepoRevisions, RepoRevisions, resolveRev } from './backend'
+import { parseBrowserRepoURL } from './index'
 
 /**
  * Component props.

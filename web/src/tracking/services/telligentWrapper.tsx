@@ -1,4 +1,4 @@
-import { isOnPremInstance, sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
+import { isOnPremInstance, sourcegraphContext } from '../../util/sourcegraphContext'
 
 declare global {
     interface Window {

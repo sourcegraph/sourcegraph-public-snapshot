@@ -4,12 +4,12 @@ import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
 import { Observable } from 'rxjs/Observable'
-import { queryGraphQL } from 'sourcegraph/backend/graphql'
-import { fetchXdefinition, fetchXreferences } from 'sourcegraph/backend/lsp'
-import { AbsoluteRepoFilePosition, makeRepoURI } from 'sourcegraph/repo'
-import * as util from 'sourcegraph/util'
-import { memoizeObservable } from 'sourcegraph/util/memoize'
 import { Location } from 'vscode-languageserver-types'
+import { queryGraphQL } from '../backend/graphql'
+import { fetchXdefinition, fetchXreferences } from '../backend/lsp'
+import { AbsoluteRepoFilePosition, makeRepoURI } from '../repo'
+import * as util from '../util'
+import { memoizeObservable } from '../util/memoize'
 
 export const fetchDependencyReferences = memoizeObservable((ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {
     const mode = util.getModeFromExtension(util.getPathExtension(ctx.filePath))

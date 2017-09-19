@@ -1,6 +1,6 @@
 import distanceInWords from 'date-fns/distance_in_words'
-import { BlameData } from 'sourcegraph/blame'
-import { limitString } from 'sourcegraph/util'
+import { limitString } from '../util'
+import { BlameData } from './index'
 
 /**
  * setLineBlameContent sets the given line's blame content.

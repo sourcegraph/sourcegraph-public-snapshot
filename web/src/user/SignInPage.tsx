@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { PageTitle } from 'sourcegraph/components/PageTitle'
-import { events } from 'sourcegraph/tracking/events'
-import { sourcegraphContext } from 'sourcegraph/util/sourcegraphContext'
+import { PageTitle } from '../components/PageTitle'
+import { events } from '../tracking/events'
+import { sourcegraphContext } from '../util/sourcegraphContext'
 
 interface Props {
     showEditorFlow: boolean

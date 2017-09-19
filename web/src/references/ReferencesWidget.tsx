@@ -22,15 +22,14 @@ import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { fetchReferences } from 'sourcegraph/backend/lsp'
-import { CodeExcerpt } from 'sourcegraph/components/CodeExcerpt'
-import { VirtualList } from 'sourcegraph/components/VIrtualList'
-import { fetchExternalReferences } from 'sourcegraph/references/backend'
-import { AbsoluteRepoFilePosition, RepoFilePosition } from 'sourcegraph/repo'
-import { events } from 'sourcegraph/tracking/events'
-import * as url from 'sourcegraph/util/url'
-import { parseHash } from 'sourcegraph/util/url'
 import { Location } from 'vscode-languageserver-types'
+import { fetchReferences } from '../backend/lsp'
+import { CodeExcerpt } from '../components/CodeExcerpt'
+import { VirtualList } from '../components/VIrtualList'
+import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
+import { events } from '../tracking/events'
+import { parseHash, toPrettyBlobURL } from '../util/url'
+import { fetchExternalReferences } from './backend'
 
 interface ReferenceGroupProps {
     repoPath: string
@@ -270,13 +269,13 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 <div className='references-widget__title-bar'>
                     <Link
                         className={'references-widget__title-bar-group' + (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')}
-                        to={url.toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
+                        to={toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
                         onClick={this.onLocalRefsButtonClick}>
                         This repository
                     </Link>
                     <div className='references-widget__badge'>{localRefCount}</div>
                     <Link className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
-                        to={url.toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
+                        to={toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
                         onClick={this.onShowExternalRefsButtonClick}>
                         Other repositories
                     </Link>
@@ -324,7 +323,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
     }
 
     private onDismiss = (): void => {
-        this.props.history.push(url.toPrettyBlobURL(this.props))
+        this.props.history.push(toPrettyBlobURL(this.props))
     }
     private onLocalRefsButtonClick = () => events.ShowLocalRefsButtonClicked.log()
     private onShowExternalRefsButtonClick = () => events.ShowExternalRefsButtonClicked.log()

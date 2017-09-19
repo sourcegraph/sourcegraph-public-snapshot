@@ -11,8 +11,8 @@ import 'rxjs/add/operator/publishReplay'
 import 'rxjs/add/operator/toArray'
 import 'rxjs/add/operator/toPromise'
 import { Observable } from 'rxjs/Observable'
-import { queryGraphQL } from 'sourcegraph/backend/graphql'
-import { Filter, FilterType, RepoFilter, RepoGroupFilter, SearchOptions } from 'sourcegraph/search'
+import { queryGraphQL } from '../backend/graphql'
+import { Filter, FilterType, RepoFilter, RepoGroupFilter, SearchOptions } from './index'
 
 /** Map from search profile name to repo "URIs" */
 const searchProfileRepos = new Map<string, string[]>()

@@ -1,8 +1,8 @@
 import 'rxjs/add/operator/map'
 import { Observable } from 'rxjs/Observable'
-import { queryGraphQL } from 'sourcegraph/backend/graphql'
-import { makeRepoURI } from 'sourcegraph/repo'
-import { memoizeObservable } from 'sourcegraph/util/memoize'
+import { queryGraphQL } from '../backend/graphql'
+import { makeRepoURI } from '../repo'
+import { memoizeObservable } from '../util/memoize'
 
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
 class CloneInProgressError extends Error {

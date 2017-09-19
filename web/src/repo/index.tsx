@@ -1,5 +1,5 @@
-import * as url from 'sourcegraph/util/url'
 import { Position, Range } from 'vscode-languageserver-types'
+import * as url from '../util/url'
 
 /**
  * RepoURI is a URI identifing a repository resource, like

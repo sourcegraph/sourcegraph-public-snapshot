@@ -1,8 +1,8 @@
 import 'rxjs/add/operator/map'
 import { Observable } from 'rxjs/Observable'
-import { queryGraphQL } from 'sourcegraph/backend/graphql'
-import { AbsoluteRepoFilePosition, makeRepoURI } from 'sourcegraph/repo'
-import { memoizeObservable } from 'sourcegraph/util/memoize'
+import { queryGraphQL } from '../backend/graphql'
+import { AbsoluteRepoFilePosition, makeRepoURI } from '../repo'
+import { memoizeObservable } from '../util/memoize'
 
 export const fetchBlameFile = memoizeObservable((ctx: AbsoluteRepoFilePosition): Observable<GQL.IHunk[] | null> =>
     queryGraphQL(`

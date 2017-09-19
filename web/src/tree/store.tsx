@@ -4,7 +4,7 @@ import 'rxjs/add/operator/startWith'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { getParentDir } from 'sourcegraph/tree/util'
+import { getParentDir } from './util'
 
 export interface TreeState {
     shownSubpaths: immutable.Set<string>
