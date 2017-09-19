@@ -18,7 +18,7 @@ import { queryGraphQL } from './backend/graphql'
 export const currentUser = new BehaviorSubject<GQL.IUser | null>(null)
 
 /**
- * fetchRemote can be called to fetch the current user and orgs
+ * fetchCurrentUser can be called to fetch the current user and orgs
  * state from the remote.
  */
 export function fetchCurrentUser(): Observable<GQL.IUser | null> {

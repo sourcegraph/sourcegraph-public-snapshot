@@ -16,7 +16,7 @@ interface State {
  * A landing page for the user to sign in or register, if not authed
  */
 export class UserProfilePage extends React.Component<Props, State> {
-    private _userSubscription?: Subscription
+    private subscriptions = new Subscription()
 
     constructor() {
         super()
@@ -26,16 +26,14 @@ export class UserProfilePage extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        this._userSubscription = currentUser.subscribe(
+        this.subscriptions.add(currentUser.subscribe(
             user => this.setState({ user }),
             error => this.setState({ error })
-        )
+        ))
     }
 
     public componentWillUnmount(): void {
-        if (this._userSubscription) {
-            this._userSubscription.unsubscribe()
-        }
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
