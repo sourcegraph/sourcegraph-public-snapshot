@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"context"
 
@@ -187,23 +188,16 @@ type RepoListOp struct {
 	sourcegraph.ListOptions
 }
 
-// makeFuzzyLikeQuery turns a string of "query" into "%q%u%e%r%y%"
-// spaces are ignored
-// special characters for LIKE are escaped
+// makeFuzzyLikeQuery turns a string of "foo/bar" into "%foo%bar%".
+// Anything that is not a letter or digit is turned into %.
 func makeFuzzyLikeQuery(q string) string {
-	q = strings.ToLower(q)
-	q = strings.Replace(q, " ", "", -1)
-	q = strings.Replace(q, `\`, `\\`, -1)
-	q = strings.Replace(q, "%", `\%`, -1)
-	q = strings.Replace(q, "_", `\_`, -1)
-	qsize := len([]rune(q))
-	b := make([]rune, 0, (qsize*2)+1)
-	b = append(b, '%')
-	for _, r := range q {
-		b = append(b, r)
-		b = append(b, '%')
+	parts := strings.FieldsFunc(q, func(c rune) bool {
+		return !(unicode.IsLetter(c) || unicode.IsDigit(c))
+	})
+	if len(parts) == 0 {
+		return "%"
 	}
-	return string(b)
+	return "%" + strings.Join(parts, "%") + "%"
 }
 
 // List lists repositories in the Sourcegraph repository
@@ -222,7 +216,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Query != "" {
-		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeQuery(opt.Query)))
+		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeQuery(strings.ToLower(opt.Query))))
 	}
 
 	// fetch matching repos unordered
