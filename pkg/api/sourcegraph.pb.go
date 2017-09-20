@@ -478,7 +478,7 @@ type OrgMember struct {
 	Username    string    `json:"Username,omitempty"`
 	Email       string    `json:"Email,omitempty"`
 	DisplayName string    `json:"DisplayName,omitempty"`
-	AvatarURL   string    `json:"AvatarURL,omitempty"`
+	AvatarURL   *string   `json:"AvatarURL,omitempty"`
 	CreatedAt   time.Time `json:"CreatedAt,omitempty"`
 	UpdatedAt   time.Time `json:"UpdatedAt,omitempty"`
 }

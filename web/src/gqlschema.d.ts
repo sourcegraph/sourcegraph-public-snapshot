@@ -43,6 +43,8 @@ declare namespace GQL {
     revealCustomerCompany: ICompanyProfile | null;
     threads: Array<IThread>;
     org: IOrg;
+    packages: Array<IPackage>;
+    dependents: Array<IDependency>;
   }
 
   /*
@@ -315,7 +317,7 @@ declare namespace GQL {
     username: string;
     email: string;
     displayName: string;
-    avatarURL: string;
+    avatarURL: string | null;
     createdAt: string;
     updatedAt: string;
   }
@@ -496,6 +498,40 @@ declare namespace GQL {
     industryGroup: string;
     industry: string;
     subIndustry: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IPackage {
+    __typename: "Package";
+    lang: string;
+    repo: IRepository | null;
+    id: string | null;
+    type: string | null;
+    name: string | null;
+    commit: string | null;
+    baseDir: string | null;
+    repoURL: string | null;
+    version: string | null;
+  }
+
+  /*
+    description: null
+  */
+  interface IDependency {
+    __typename: "Dependency";
+    repo: IRepository | null;
+    name: string | null;
+    repoURL: string | null;
+    depth: number | null;
+    vendor: boolean | null;
+    package: string | null;
+    absolute: string | null;
+    type: string | null;
+    commit: string | null;
+    version: string | null;
+    id: string | null;
   }
 
   /*

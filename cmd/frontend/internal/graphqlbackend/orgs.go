@@ -96,7 +96,7 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	Username    string
 	Email       string
 	DisplayName string
-	AvatarURL   string
+	AvatarURL   *string
 }) (*orgResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
@@ -165,7 +165,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	Username    string
 	Email       string
 	DisplayName string
-	AvatarURL   string
+	AvatarURL   *string
 }) (*orgMemberResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {

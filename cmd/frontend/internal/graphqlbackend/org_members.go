@@ -44,7 +44,7 @@ func (m *orgMemberResolver) DisplayName() string {
 	return m.member.DisplayName
 }
 
-func (m *orgMemberResolver) AvatarURL() string {
+func (m *orgMemberResolver) AvatarURL() *string {
 	return m.member.AvatarURL
 }
 

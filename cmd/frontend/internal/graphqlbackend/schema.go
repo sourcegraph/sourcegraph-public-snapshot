@@ -25,9 +25,9 @@ type Mutation {
 	updateThread2(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
 	addCommentToThread2(threadID: Int!, contents: String!): Thread!
-	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String!): Org!
+	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): Org!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
-	acceptUserInvite(inviteToken: String!, username: String!, email: String!, displayName: String!, avatarUrl: String!): OrgMember!
+	acceptUserInvite(inviteToken: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): OrgMember!
 	removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
 }
 
@@ -319,7 +319,7 @@ type OrgMember {
 	username: String!
 	email: String!
 	displayName: String!
-	avatarURL: String!
+	avatarURL: String
 	createdAt: String!
 	updatedAt: String!
 }
