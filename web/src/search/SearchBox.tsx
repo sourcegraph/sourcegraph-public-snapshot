@@ -15,6 +15,7 @@ import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
+import 'rxjs/add/operator/observeOn'
 import 'rxjs/add/operator/repeat'
 import 'rxjs/add/operator/skip'
 import 'rxjs/add/operator/startWith'
@@ -23,6 +24,7 @@ import 'rxjs/add/operator/switchMap'
 import 'rxjs/add/operator/takeUntil'
 import 'rxjs/add/operator/toArray'
 import { Observable } from 'rxjs/Observable'
+import { asap } from 'rxjs/scheduler/asap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { events } from '../tracking/events'
@@ -73,6 +75,9 @@ export class SearchBox extends React.Component<Props, State> {
 
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
+
+    /** Emits on keydown events in the input field */
+    private inputKeyDowns = new Subject<React.KeyboardEvent<HTMLInputElement>>()
 
     /** Emits new input values */
     private inputValues = new Subject<string>()
@@ -126,8 +131,14 @@ export class SearchBox extends React.Component<Props, State> {
                     .debounceTime(200),
                 // Trigger new suggestions every time the input field is clicked
                 this.inputClicks
-                    .map(() => this.inputElement!.value)
+                    .map(() => this.inputElement!.value),
+                this.inputKeyDowns
+                    // Defer to next tick to get the selection _after_ any selection change was dipatched (e.g. arrow keys)
+                    .observeOn(asap)
+                    .map(() => this.state.query)
             )
+                // Only use query up to the cursor
+                .map(query => query.substring(0, this.inputElement!.selectionEnd))
                 .switchMap(query => {
                     if (query.length <= 1) {
                         this.setState({ suggestions: [], selectedSuggestion: -1 })
@@ -137,10 +148,10 @@ export class SearchBox extends React.Component<Props, State> {
                     // TODO suggest repo glob filter (needs server implementation)
                     // TODO verify that the glob matches something server-side,
                     //      only suggest if it does and show number of matches
-                    if (hasMagic(this.state.query)) {
+                    if (hasMagic(query)) {
                         const fileFilter: FileFilter = {
                             type: FilterType.File,
-                            value: this.state.query
+                            value: query
                         }
                         return [[fileFilter]]
                     }
@@ -234,7 +245,8 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const toHighlight = this.state.query.toLowerCase()
+        const query = this.inputElement ? this.state.query.substring(0, this.inputElement.selectionEnd) : this.state.query
+        const toHighlight = query.toLowerCase()
         const splitRegexp = new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi')
         return (
             <form
@@ -377,6 +389,8 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     private onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
+        event.persist()
+        this.inputKeyDowns.next(event)
         switch (event.key) {
             case 'ArrowDown': {
                 event.preventDefault()
@@ -404,7 +418,7 @@ export class SearchBox extends React.Component<Props, State> {
                     filters: this.state.filters.concat(this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)]),
                     suggestions: [],
                     selectedSuggestion: -1,
-                    query: ''
+                    query: this.state.query.substr(event.currentTarget.selectionEnd)
                 }, () => {
                     // Scroll chips so search input stays visible
                     if (this.chipsElement) {
