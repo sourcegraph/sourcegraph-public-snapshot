@@ -16,6 +16,9 @@ import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/repeat'
+import 'rxjs/add/operator/skip'
+import 'rxjs/add/operator/startWith'
+import 'rxjs/add/operator/switchMap'
 import 'rxjs/add/operator/switchMap'
 import 'rxjs/add/operator/takeUntil'
 import 'rxjs/add/operator/toArray'
@@ -102,7 +105,9 @@ export class SearchBox extends React.Component<Props, State> {
 
         /** Emits whenever the route changes */
         const routeChanges = this.componentUpdates
+            .startWith(props)
             .distinctUntilChanged((a, b) => a.location === b.location)
+            .skip(1)
 
         // Reset SearchBox on route changes
         this.subscriptions.add(
