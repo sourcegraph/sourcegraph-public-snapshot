@@ -37,7 +37,7 @@ export class LoggableEvent {
  */
 export const events = {
     // Auth
-    InitiateGitHubOAuth2Flow: new LoggableEvent('InitiateGitHubOAuth2Flow', EventCategories.Auth, EventActions.Click),
+    InitiateAuth0SignIn: new LoggableEvent('InitiateAuth0SignIn', EventCategories.Auth, EventActions.Click),
     SignupCompleted: new LoggableEvent('SignupCompleted', EventCategories.Auth, EventActions.SignUp),
     SignOutClicked: new LoggableEvent('SignOutClicked', EventCategories.Auth, EventActions.Click),
     CompletedAuth0SignIn: new LoggableEvent('CompletedAuth0SignIn', EventCategories.Auth, EventActions.SignIn),

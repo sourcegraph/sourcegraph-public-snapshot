@@ -11,6 +11,6 @@ export class SignInButton extends React.Component {
     }
 
     private logTelemetryOnSignIn(): void {
-        events.InitiateGitHubOAuth2Flow.log()
+        events.InitiateAuth0SignIn.log()
     }
 }

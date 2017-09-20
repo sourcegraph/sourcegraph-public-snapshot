@@ -3,8 +3,8 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { SearchBox } from '../search/SearchBox'
 import { SignInButton } from '../settings/auth/SignInButton'
+import { SignOutButton } from '../settings/auth/SignOutButton'
 import { UserAvatar } from '../settings/user/UserAvatar'
-import { events } from '../tracking/events'
 import { ParsedRouteProps } from '../util/routes'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 
@@ -35,10 +35,7 @@ export class Navbar extends React.Component<ParsedRouteProps, State> {
                             <SignInButton />
                     }
                     {
-                        this.state.showSignOut &&
-                            <a href='/-/sign-out' onClick={events.SignOutClicked.log} className='ui-button'>
-                                Sign out
-                            </a>
+                        this.state.showSignOut && <SignOutButton />
                     }
                 </div>
             </div>
