@@ -169,6 +169,7 @@ func searchRepos(ctx context.Context, query string, repoURIs []string, limit int
 	if err != nil {
 		return nil, err
 	}
+	queryParts := strings.Split(query, "/")
 outer:
 	for _, repo := range reposList.Repos {
 		// Don't suggest repos that were already added as a filter
@@ -178,14 +179,13 @@ outer:
 			}
 		}
 		repoResolver := &repositoryResolver{repo: repo}
-		score := 0
-		// Score each repo URI path individually and use the sum
+		score := stringscore.Score(repo.URI, query)
+		// Assume the query is written to match the postfix of the paths.
 		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
-		uriParts := strings.Split(repo.URI, "/")
-		queryParts := strings.Split(query, "/")
-		for _, uriPart := range uriParts {
-			for _, queryPart := range queryParts {
-				score += stringscore.Score(uriPart, queryPart)
+		if len(queryParts) > 0 {
+			repoParts := strings.Split(repo.URI, "/")
+			for i := 1; len(queryParts)-i >= 0 && len(repoParts)-i >= 0; i++ {
+				score += stringscore.Score(repoParts[len(repoParts)-i], queryParts[len(queryParts)-i])
 			}
 		}
 		// Push forks down

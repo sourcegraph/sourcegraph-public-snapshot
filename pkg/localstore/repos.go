@@ -1,6 +1,7 @@
 package localstore
 
 import (
+	"bytes"
 	"log"
 	"regexp"
 	"strings"
@@ -188,16 +189,55 @@ type RepoListOp struct {
 	sourcegraph.ListOptions
 }
 
-// makeFuzzyLikeQuery turns a string of "foo/bar" into "%foo%bar%".
-// Anything that is not a letter or digit is turned into %.
-func makeFuzzyLikeQuery(q string) string {
-	parts := strings.FieldsFunc(q, func(c rune) bool {
-		return !(unicode.IsLetter(c) || unicode.IsDigit(c))
-	})
-	if len(parts) == 0 {
-		return "%"
+// makeFuzzyLikeRepoQuery turns a string of "foo/bar" into "%foo%/%bar%".
+// Anything that is not a letter or digit is turned turned surrounded by %.
+// Except for space, which is just turned into %.
+func makeFuzzyLikeRepoQuery(q string) string {
+	var last rune
+	var b bytes.Buffer
+	b.Grow(len(q) + 4) // most queries will add around 4 wildcards (prefix, postfix and around separator)
+	writeRune := func(r rune) {
+		if r == '%' && last == '%' {
+			return
+		}
+		last = r
+		b.WriteRune(r)
 	}
-	return "%" + strings.Join(parts, "%") + "%"
+	writeEscaped := func(r rune) {
+		if last != '%' {
+			b.WriteRune('%')
+		}
+		b.WriteRune('\\')
+		b.WriteRune(r)
+		b.WriteRune('%')
+		last = '%'
+	}
+
+	writeRune('%') // prefix
+	for _, r := range q {
+		switch r {
+		case ' ':
+			// Ignore space, since repo URI can't contain it. Just add a wildcard
+			writeRune('%')
+		case '\\':
+			writeEscaped(r)
+		case '%':
+			writeEscaped(r)
+		case '_':
+			writeEscaped(r)
+		default:
+			if unicode.IsLetter(r) || unicode.IsDigit(r) {
+				writeRune(r)
+			} else {
+				writeRune('%')
+				writeRune(r)
+				writeRune('%')
+			}
+		}
+	}
+	writeRune('%') // postfix
+
+	return b.String()
 }
 
 // List lists repositories in the Sourcegraph repository
@@ -216,7 +256,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Query != "" {
-		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeQuery(strings.ToLower(opt.Query))))
+		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeRepoQuery(strings.ToLower(opt.Query))))
 	}
 
 	// fetch matching repos unordered

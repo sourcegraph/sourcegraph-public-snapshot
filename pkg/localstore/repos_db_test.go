@@ -209,7 +209,7 @@ func TestRepos_List_query2(t *testing.T) {
 	}{
 		{"def", []string{"a/def", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"}},
 		{"b/def", []string{"b/def"}},
-		{"def/", []string{"a/def", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"}},
+		{"def/", []string{"def/ghi", "def/jkl", "def/mno"}},
 		{"def/m", []string{"def/mno"}},
 	}
 	for _, test := range tests {
@@ -325,19 +325,22 @@ func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
 	check("other updates")
 }
 
-func TestMakeFuzzyLikeQuery(t *testing.T) {
+func TestMakeFuzzyLikeRepoQuery(t *testing.T) {
 	cases := map[string]string{
-		"":          "%",
-		"/":         "%",
-		"foo":       "%foo%",
-		"/foo":      "%foo%",
-		"foo/":      "%foo%",
-		"/foo/":     "%foo%",
-		"foo/bar":   "%foo%bar%",
-		"/foo/bar/": "%foo%bar%",
+		"":           "%",
+		"/":          "%/%",
+		"foo":        "%foo%",
+		"/foo":       "%/%foo%",
+		"foo/":       "%foo%/%",
+		"//foo":      "%/%/%foo%",
+		"foo//":      "%foo%/%/%",
+		"/foo/":      "%/%foo%/%",
+		"foo/bar":    "%foo%/%bar%",
+		"/foo/bar/":  "%/%foo%/%bar%/%",
+		"/foo%/bar/": "%/%foo%\\%%/%bar%/%",
 	}
 	for query, want := range cases {
-		got := makeFuzzyLikeQuery(query)
+		got := makeFuzzyLikeRepoQuery(query)
 		if want != got {
 			t.Errorf("makeFuzzyLikeQuery(%q) == %q != %q", query, got, want)
 		}
