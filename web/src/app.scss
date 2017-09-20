@@ -33,7 +33,7 @@ $media-xl: 1200px;
     font-family: system;
     font-style: normal;
     font-weight: 300;
-    src: local('.SFNSText-Light'), local('.HelveticaNeueDeskInterface-Light'), local('.LucidaGrandeUI'), local('Ubuntu Light'), local('Segoe UI Light'), local('Roboto-Light'), local('DroidSans'), local('Tahoma');
+    src: local(-apple-system), local(BlinkMacSystemFont), local("Segoe UI"), local(Helvetica), local(Arial), local(sans-serif), local("Apple Color Emoji"), local("Segoe UI Emoji"), local("Segoe UI Symbol");
 }
 
 // Responsive Container
