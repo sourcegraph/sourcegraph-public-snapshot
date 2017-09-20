@@ -39,10 +39,14 @@ func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.Or
 	return r.getBySQL(ctx, "WHERE org_id=$1 AND access_token IS NULL AND deleted_at IS NULL", orgID)
 }
 
+func (r *orgRepos) GetByRemoteURI(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error) {
+	return r.getOneBySQL(ctx, "WHERE org_id=$1 AND remote_uri=$2 AND deleted_at IS NULL LIMIT 1", orgID, remoteURI)
+}
+
 // deprecated
-func (r *orgRepos) Get(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error) {
-	if Mocks.OrgRepos.Get != nil {
-		return Mocks.OrgRepos.Get(ctx, remoteURI, accessToken)
+func (r *orgRepos) GetByAccessToken(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error) {
+	if Mocks.OrgRepos.GetByAccessToken != nil {
+		return Mocks.OrgRepos.GetByAccessToken(ctx, remoteURI, accessToken)
 	}
 	return r.getOneBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND org_id IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
 }

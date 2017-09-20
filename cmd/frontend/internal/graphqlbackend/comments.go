@@ -70,7 +70,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}

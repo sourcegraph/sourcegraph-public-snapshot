@@ -92,7 +92,7 @@ func (r *rootResolver) Threads(ctx context.Context, args *struct {
 	Limit       *int32
 }) ([]*threadResolver, error) {
 	threads := []*threadResolver{}
-	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
 	if err == store.ErrRepoNotFound {
 		// Datastore is lazily populated when comments are created
 		// so it isn't an error for a repo to not exist yet.
@@ -149,7 +149,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	AuthorEmail    string
 }) (*threadResolver, error) {
 	actor := actor.FromContext(ctx)
-	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
 	if err == store.ErrRepoNotFound {
 		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
 			RemoteURI:   args.RemoteURI,
@@ -187,7 +187,8 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
-	OrgRepoID      int32
+	OrgID          int32
+	RemoteURI      string
 	File           string
 	Revision       string
 	StartLine      int32
@@ -196,14 +197,21 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	EndCharacter   int32
 	Contents       string
 }) (*threadResolver, error) {
+	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
-	repo, err := store.OrgRepos.GetByID(ctx, args.OrgRepoID)
+	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
+	fmt.Println(err)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: verify that the current user is in the org.
-	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+	repo, err := store.OrgRepos.GetByRemoteURI(ctx, args.OrgID, args.RemoteURI)
+	if err == store.ErrRepoNotFound {
+		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
+			RemoteURI: args.RemoteURI,
+			OrgID:     args.OrgID,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -213,6 +221,7 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	// TODO(nick): transaction
 	newThread, err := store.Threads.Create(ctx, &sourcegraph.Thread{
 		OrgRepoID:      repo.ID,
 		File:           args.File,
@@ -248,7 +257,7 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
 	// ensuring the user has permissions to access the repository.
-	repo, err := store.OrgRepos.Get(ctx, args.RemoteURI, args.AccessToken)
+	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}

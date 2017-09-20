@@ -9,13 +9,13 @@ import (
 )
 
 type MockOrgRepos struct {
-	Get    func(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error)
-	Create func(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sourcegraph.OrgRepo, error)
+	GetByAccessToken func(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error)
+	Create           func(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sourcegraph.OrgRepo, error)
 }
 
 func (s *MockOrgRepos) MockGet_Return(t *testing.T, returns *sourcegraph.OrgRepo, returnsErr error) (called *bool) {
 	called = new(bool)
-	s.Get = func(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error) {
+	s.GetByAccessToken = func(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error) {
 		*called = true
 		return returns, returnsErr
 	}

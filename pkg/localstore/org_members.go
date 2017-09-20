@@ -59,7 +59,7 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.
 var ErrOrgMemberNotFound = errors.New("org member not found")
 
 func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgMember, error) {
-	members, err := m.getBySQL(ctx, query, args)
+	members, err := m.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
