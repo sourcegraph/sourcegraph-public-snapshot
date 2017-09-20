@@ -2,6 +2,7 @@
 
 import * as immutable from 'immutable'
 import { Dictionary } from 'lodash'
+import flatten from 'lodash/flatten'
 import groupBy from 'lodash/groupBy'
 import partition from 'lodash/partition'
 import * as React from 'react'
@@ -434,42 +435,46 @@ class LayerTile extends React.Component<TileProps, {}> {
         return <table className='tile' style={{ width: '100%' }}>
             <tbody>
                 {
-                    Object.keys(this.props.subfilesByDir).map((dir, i) => {
-                        return <tr key={i}>
-                            <td className={this.currentDirectory(dir) === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}
-                                onClick={() => {
-                                    const state = this.props.store.getValue()
-                                    const path = this.currentDirectory(dir)
-                                    const isShown = state.shownSubpaths.contains(path)
-                                    if (isShown) {
-                                        closeDirectory(this.props.store, path)
-                                    } else {
-                                        this.props.store.setState({ ...state, shownSubpaths: state.shownSubpaths.add(path), selectedPath: path, selectedDir: path })
-                                        this.props.onSelectPath(path, true)
-                                    }
-                                }} >
-                                <div className='tree__row-contents' style={treePadding(this.props.depth, true)}>
-                                    {
-                                        this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
-                                            <DownIcon className='tree__row-icon' /> :
-                                            <RightIcon className='tree__row-icon' />
-                                    }
-                                    <div
-                                        className='tree-item'
-                                        data-tree-directory='true'
-                                        data-tree-path={this.currentDirectory(dir)}>{dir}</div>
-                                </div>
-                            </td>
-                            {
-                                this.showSubpath(dir) &&
-                                <TreeLayer
-                                    onSelectPath={(path, isDir) => this.props.onSelectPath(path, isDir)}
-                                    store={this.props.store}
-                                    pathSplits={this.props.pathSplits.filter(split => split[this.props.depth] === dir)}
-                                    currSubpath={this.currentDirectory(dir)} />
-                            }
-                        </tr>
-                    })
+                    flatten(Object.keys(this.props.subfilesByDir).map((dir, i) => {
+                        return [
+                            <tr key={i}>
+                                <td className={this.currentDirectory(dir) === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}
+                                    onClick={() => {
+                                        const state = this.props.store.getValue()
+                                        const path = this.currentDirectory(dir)
+                                        const isShown = state.shownSubpaths.contains(path)
+                                        if (isShown) {
+                                            closeDirectory(this.props.store, path)
+                                        } else {
+                                            this.props.store.setState({ ...state, shownSubpaths: state.shownSubpaths.add(path), selectedPath: path, selectedDir: path })
+                                            this.props.onSelectPath(path, true)
+                                        }
+                                    }} >
+                                    <div className='tree__row-contents' style={treePadding(this.props.depth, true)}>
+                                        {
+                                            this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
+                                                <DownIcon className='tree__row-icon' /> :
+                                                <RightIcon className='tree__row-icon' />
+                                        }
+                                        <div
+                                            className='tree-item'
+                                            data-tree-directory='true'
+                                            data-tree-path={this.currentDirectory(dir)}>{dir}</div>
+                                    </div>
+                                </td>
+                            </tr>,
+                            this.showSubpath(dir) &&
+                                <tr key={'layer-' + i}>
+                                    <td>
+                                        <TreeLayer key={'layer-' + i}
+                                            onSelectPath={(path, isDir) => this.props.onSelectPath(path, isDir)}
+                                            store={this.props.store}
+                                            pathSplits={this.props.pathSplits.filter(split => split[this.props.depth] === dir)}
+                                            currSubpath={this.currentDirectory(dir)} />
+                                    </td>
+                                </tr>
+                        ]
+                    }))
                 }
                 {
                     this.props.files.map((file, i) => {
