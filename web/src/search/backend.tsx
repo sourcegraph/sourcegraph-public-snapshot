@@ -34,6 +34,10 @@ function fetchSearchProfiles(): Observable<GQL.ISearchProfile> {
             if (!data || !data.root || !data.root.searchProfiles) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
+            // Save in the cache
+            for (const profile of data.root.searchProfiles) {
+                searchProfileRepos.set(profile.name, profile.repositories.map(repo => repo.uri))
+            }
             return data!.root.searchProfiles
         })
 }
@@ -53,12 +57,12 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
             .map(filter => filter.value)
             // Try to expand the search profile from the cache
             .mergeMap(name => searchProfileRepos.get(name) ||
-                // If not found, subscribe to the fetch and try again
-                searchProfilesFetch
-                    .concat(Observable.defer(() =>
-                        // If still not found, ignore
-                        Observable.from(searchProfileRepos.get(name) || [])
-                    ))
+                    // If not found, subscribe to the fetch and try again
+                    searchProfilesFetch
+                        .concat(Observable.defer(() =>
+                            // If still not found, ignore
+                            Observable.from(searchProfileRepos.get(name) || [])
+                        ))
             )
     )
         .map(repo => ({ repo }))
