@@ -31,6 +31,7 @@
     }
 
     &__row-contents {
+        color: #FFFFFF !important; // override link color
         display: flex;
         align-items: center;
         padding-top: .5rem;

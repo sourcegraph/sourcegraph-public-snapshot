@@ -19,7 +19,6 @@ import { ReferencesWidget } from '../references/ReferencesWidget'
 import { Tree } from '../tree/Tree'
 import { TreeHeader } from '../tree/TreeHeader'
 import { parseHash } from '../util/url'
-import * as url from '../util/url'
 import { fetchHighlightedFile, listAllFiles } from './backend'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
@@ -169,9 +168,11 @@ export class Repository extends React.Component<Props, State> {
                         <button type='button' className='repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon /></button>
                         <TreeHeader title='File Explorer' onDismiss={this.onTreeToggle} />
                         <Tree
+                            repoPath={this.props.repoPath}
+                            rev={this.props.rev}
+                            history={this.props.history}
                             scrollRootSelector='#explorer'
                             selectedPath={this.props.filePath || ''}
-                            onSelectPath={this.selectTreePath}
                             paths={this.state.files || []}
                         />
                     </div>
@@ -231,16 +232,6 @@ export class Repository extends React.Component<Props, State> {
     private handleShowAnywayButtonClick = e => {
         e.preventDefault()
         this.showAnywayButtonClicks.next()
-    }
-
-    private selectTreePath = (path: string, isDir: boolean) => {
-        if (!isDir) {
-            this.props.history.push(url.toBlobURL({
-                repoPath: this.props.repoPath,
-                rev: this.props.rev,
-                filePath: path
-            }))
-        }
     }
 }
 

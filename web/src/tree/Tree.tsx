@@ -1,5 +1,6 @@
 // tslint:disable:no-use-before-declare
 
+import * as H from 'history'
 import * as immutable from 'immutable'
 import { Dictionary } from 'lodash'
 import flatten from 'lodash/flatten'
@@ -8,14 +9,17 @@ import partition from 'lodash/partition'
 import * as React from 'react'
 import DownIcon from 'react-icons/lib/fa/angle-down'
 import RightIcon from 'react-icons/lib/fa/angle-right'
+import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Subscription } from 'rxjs/Subscription'
+import { Repo } from '../repo/index'
+import { toBlobURL, toTreeURL } from '../util/url'
 import { createTreeStore, TreeStore } from './store'
 import { getParentDir, scrollIntoView } from './util'
 
-export interface Props {
+export interface Props extends Repo {
+    history: H.History
     paths: string[]
-    onSelectPath: (path: string, isDir: boolean) => void
     scrollRootSelector?: string
     selectedPath: string
 }
@@ -141,7 +145,12 @@ export class Tree extends React.PureComponent<Props, {}> {
                 }
             }
             this.store.setState({ ...state, shownSubpaths: state.shownSubpaths.add(selectedPath) })
-            this.props.onSelectPath(selectedPath, isDir)
+            const urlProps = {
+                repoPath: this.props.repoPath,
+                rev: this.props.rev,
+                filePath: selectedPath
+            }
+            this.props.history.push(isDir ? toTreeURL(urlProps) : toBlobURL(urlProps))
         }
     }
 
@@ -153,11 +162,11 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public locateDomNode(path: string): HTMLElement | undefined {
-        return document.querySelector(`div[data-tree-path="${path}"]`) as any
+        return document.querySelector(`a[data-tree-path="${path}"]`) as any
     }
 
     public locateDomNodeInCollection(path: string): { items: HTMLElement[], i: number } | undefined {
-        const items = document.querySelectorAll('.tree-item') as any
+        const items = document.querySelectorAll('.tree__row-contents') as any
         let i = 0
         for (i; i < items.length; ++i) {
             if (items[i].getAttribute('data-tree-path') === path) {
@@ -223,16 +232,23 @@ export class Tree extends React.PureComponent<Props, {}> {
 
     public render(): JSX.Element | null {
         return <div className='tree' tabIndex={1} onKeyDown={e => this.onKeyDown(e)}>
-            <TreeLayer onSelectPath={this.props.onSelectPath} pathSplits={this.pathSplits} store={this.store} currSubpath='' />
+            <TreeLayer
+                history={this.props.history}
+                repoPath={this.props.repoPath}
+                rev={this.props.rev}
+                pathSplits={this.pathSplits}
+                store={this.store}
+                currSubpath=''
+            />
         </div>
     }
 }
 
-interface TreeLayerProps {
+interface TreeLayerProps extends Repo {
+    history: H.History
     pathSplits: string[][] // assume only given paths nested at (or below) the current layer
     currSubpath: string
     store: TreeStore
-    onSelectPath: (path: string, isDir: boolean) => void
 }
 
 interface TreeLayerState {
@@ -437,8 +453,8 @@ class LayerTile extends React.Component<TileProps, {}> {
                 {
                     flatten(Object.keys(this.props.subfilesByDir).map((dir, i) => {
                         return [
-                            <tr key={i}>
-                                <td className={this.currentDirectory(dir) === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}
+                            <tr key={i} className={this.currentDirectory(dir) === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}>
+                                <td
                                     onClick={() => {
                                         const state = this.props.store.getValue()
                                         const path = this.currentDirectory(dir)
@@ -447,27 +463,40 @@ class LayerTile extends React.Component<TileProps, {}> {
                                             closeDirectory(this.props.store, path)
                                         } else {
                                             this.props.store.setState({ ...state, shownSubpaths: state.shownSubpaths.add(path), selectedPath: path, selectedDir: path })
-                                            this.props.onSelectPath(path, true)
                                         }
-                                    }} >
-                                    <div className='tree__row-contents' style={treePadding(this.props.depth, true)}>
+                                    }}
+                                >
+                                    <a
+                                        className='tree__row-contents'
+                                        data-tree-directory='true'
+                                        data-tree-path={this.currentDirectory(dir)}
+                                        onClick={e => {
+                                            if (!e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                                                // Unless modifier key selected, clicking on a directory
+                                                // should not update URL. The anchor makes it possible
+                                                // to copy a link, or open a link to the directory in a new tab/window.
+                                                e.preventDefault()
+                                            }
+                                        }}
+                                        href={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir)})}
+                                        style={treePadding(this.props.depth, true)}>
                                         {
                                             this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
                                                 <DownIcon className='tree__row-icon' /> :
                                                 <RightIcon className='tree__row-icon' />
                                         }
-                                        <div
-                                            className='tree-item'
-                                            data-tree-directory='true'
-                                            data-tree-path={this.currentDirectory(dir)}>{dir}</div>
-                                    </div>
+                                        {dir}
+                                    </a>
                                 </td>
                             </tr>,
                             this.showSubpath(dir) &&
                                 <tr key={'layer-' + i}>
                                     <td>
-                                        <TreeLayer key={'layer-' + i}
-                                            onSelectPath={(path, isDir) => this.props.onSelectPath(path, isDir)}
+                                        <TreeLayer
+                                            key={'layer-' + i}
+                                            history={this.props.history}
+                                            repoPath={this.props.repoPath}
+                                            rev={this.props.rev}
                                             store={this.props.store}
                                             pathSplits={this.props.pathSplits.filter(split => split[this.props.depth] === dir)}
                                             currSubpath={this.currentDirectory(dir)} />
@@ -479,15 +508,15 @@ class LayerTile extends React.Component<TileProps, {}> {
                 {
                     this.props.files.map((file, i) => {
                         const path = file.join('/')
-                        return <tr key={i} className={path === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'} onClick={() => {
-                            const state = this.props.store.getValue()
-                            this.props.store.setState({ ...state, selectedPath: path, selectedDir: getParentDir(path) })
-                            this.props.onSelectPath(path, false)
-                        }}>
-                            <td className='tree__row-contents' style={treePadding(this.props.depth, false)}>
-                                <div className='tree-item' data-tree-path={path}>
+                        return <tr key={i} className={path === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}>
+                            <td style={treePadding(this.props.depth, false)}>
+                                <Link
+                                    className='tree__row-contents'
+                                    to={toBlobURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: path})}
+                                    data-tree-path={path}
+                                >
                                     {file[file.length - 1]}
-                                </div>
+                                </Link>
                             </td>
                         </tr>
                     })
