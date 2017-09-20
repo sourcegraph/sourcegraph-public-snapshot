@@ -145,8 +145,9 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 	if err != nil {
 		return nil, err
 	}
+	scorer := newScorer(query)
 	for _, searchProfile := range searchProfiles {
-		score := calcScore(query, searchProfile)
+		score := scorer.calcScore(searchProfile)
 		if score > 0 {
 			res = append(res, &searchResultResolver{result: searchProfile, score: score, length: len(searchProfile.name)})
 		}
@@ -160,6 +161,7 @@ func searchRepos(ctx context.Context, query string, repoURIs []string, limit int
 	if err != nil {
 		return nil, err
 	}
+	scorer := newScorer(query)
 outer:
 	for _, repo := range reposList.Repos {
 		// Don't suggest repos that were already added as a filter
@@ -170,7 +172,7 @@ outer:
 		}
 		repoResolver := &repositoryResolver{repo: repo}
 
-		score := calcScore(query, repoResolver)
+		score := scorer.calcScore(repoResolver)
 		if score > 0 {
 			res = append(res, &searchResultResolver{result: repoResolver, score: score, length: len(repo.URI)})
 		}
@@ -231,11 +233,12 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 	if err != nil {
 		return nil, err
 	}
+	scorer := newScorer(query)
 	for _, fileResolver := range treeResolver.Files() {
 		if len(res) >= limit {
 			return res, nil
 		}
-		score := calcScore(query, fileResolver)
+		score := scorer.calcScore(fileResolver)
 		if score > 0 {
 			res = append(res, &searchResultResolver{result: fileResolver, score: score, length: len(fileResolver.name)})
 		}
@@ -243,18 +246,33 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 	return res, nil
 }
 
+// scorer is a structure for holding some scorer state that can be shared
+// across calcScore calls for the same query string.
+type scorer struct {
+	query      string
+	queryParts []string
+}
+
+// newScorer returns a scorer to be used for calculating sort scores of results
+// against the specified query.
+func newScorer(query string) *scorer {
+	return &scorer{
+		query:      query,
+		queryParts: strings.Split(query, "/"),
+	}
+}
+
 // calcScore calculates and assigns the sorting score to the given result.
-func calcScore(query string, result interface{}) int {
+func (s *scorer) calcScore(result interface{}) int {
 	switch r := result.(type) {
 	case *repositoryResolver:
-		score := stringscore.Score(r.repo.URI, query)
+		score := stringscore.Score(r.repo.URI, s.query)
 		// Assume the query is written to match the postfix of the paths.
 		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
-		queryParts := strings.Split(query, "/")
-		if len(queryParts) > 0 {
+		if len(s.queryParts) > 0 {
 			repoParts := strings.Split(r.repo.URI, "/")
-			for i := 1; len(queryParts)-i >= 0 && len(repoParts)-i >= 0; i++ {
-				score += stringscore.Score(repoParts[len(repoParts)-i], queryParts[len(queryParts)-i])
+			for i := 1; len(s.queryParts)-i >= 0 && len(repoParts)-i >= 0; i++ {
+				score += stringscore.Score(repoParts[len(repoParts)-i], s.queryParts[len(s.queryParts)-i])
 			}
 		}
 		// Push forks down
@@ -271,9 +289,8 @@ func calcScore(query string, result interface{}) int {
 		// with a higher score than
 		//   src/vs/platform/opener/browser/openerService.ts
 		pathParts := strings.Split(r.name, "/")
-		queryParts := strings.Split(query, "/")
 		for _, pathPart := range pathParts {
-			for _, queryPart := range queryParts {
+			for _, queryPart := range s.queryParts {
 				score += stringscore.Score(pathPart, queryPart)
 			}
 		}
@@ -284,11 +301,12 @@ func calcScore(query string, result interface{}) int {
 		return score
 
 	case *searchProfile:
-		score := stringscore.Score(r.name, query)
+		score := stringscore.Score(r.name, s.query)
 		if score > 0 {
 			score += 100
 		}
 		return score
+
 	default:
 		panic("never here")
 	}
