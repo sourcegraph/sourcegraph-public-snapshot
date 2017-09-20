@@ -107,7 +107,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                     // repositories at once. Instead, we batch xrererences requests to 20 repos at a time and wait
                     // to receive xreferences responses for each repo in the batch before requesting the next.
                     return Observable.from(dependents)
-                        .bufferCount(20) // batch dependents into groups of 20
+                        .bufferCount(10) // batch dependents into groups of 10
                         .concatMap(batch => { // wait for the previous batch to complete before fetching the next
                             if (numRefsFetched >= 50) { // abort when we've fetched at least 50 refs
                                 return []
