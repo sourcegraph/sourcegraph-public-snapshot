@@ -306,16 +306,15 @@ func (*schemaResolver) UpdateThread2(ctx context.Context, args *struct {
 // titleFromContents returns a title based on the first sentence or line of the content.
 func titleFromContents(contents string) string {
 	matchEndpoint := regexp.MustCompile(`[.!?]\s`)
-	var title string
 	if idxs := matchEndpoint.FindStringSubmatchIndex(contents); len(idxs) > 0 {
-		title = contents[:idxs[0]+1]
-	} else if i := strings.Index(contents, "\n"); i != -1 {
-		title = contents[:i]
-	} else {
-		title = contents
+		contents = contents[:idxs[0]+1]
 	}
-	if len(title) > 140 {
-		title = title[:140] + "..."
+	if i := strings.Index(contents, "\n"); i != -1 {
+		contents = contents[:i]
 	}
-	return title
+	contents = strings.TrimSpace(contents)
+	if len(contents) > 140 {
+		contents = contents[:137] + "..."
+	}
+	return contents
 }
