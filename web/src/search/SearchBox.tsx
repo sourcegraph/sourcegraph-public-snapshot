@@ -178,19 +178,17 @@ export class SearchBox extends React.Component<Props, State> {
                 )
                 .switchMap(event => {
                     event.preventDefault()
-                    // For Cmd+Shift+F, use selection as query
-                    if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f') {
-                        const selection = window.getSelection().toString()
-                        if (selection) {
-                            return new Observable<void>(observer => this.setState({
-                                query: selection,
-                                suggestions: [],
-                                selectedSuggestion: -1
-                            }, () => {
-                                observer.next()
-                                observer.complete()
-                            }))
-                        }
+                    // Use selection as query
+                    const selection = window.getSelection().toString()
+                    if (selection) {
+                        return new Observable<void>(observer => this.setState({
+                            query: selection,
+                            suggestions: [],
+                            selectedSuggestion: -1
+                        }, () => {
+                            observer.next()
+                            observer.complete()
+                        }))
                     }
                     return [undefined]
                 })
