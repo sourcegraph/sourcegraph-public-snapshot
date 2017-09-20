@@ -3,6 +3,7 @@ package github
 import (
 	"encoding/json"
 	"math"
+	"net/http"
 
 	"context"
 
@@ -75,8 +76,8 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 
 	if cached := getFromPublicCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
-		if cached.NotFound && specialCasePrivate {
-			if HasAuthedUser(ctx) {
+		if cached.NotFound {
+			if specialCasePrivate && HasAuthedUser(ctx) {
 				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
 				return getPrivateFromAPI(ctx, owner, repoName)
 			}
@@ -214,9 +215,12 @@ func getPrivateFromAPI(ctx context.Context, owner, repoName string) (*sourcegrap
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
 	}
 
-	ghrepo, _, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
+	ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
 	if err == nil {
 		return ToRepo(ghrepo), nil
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
 	}
 	return nil, err
 }
