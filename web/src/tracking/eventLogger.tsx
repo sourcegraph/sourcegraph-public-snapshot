@@ -17,7 +17,7 @@ class EventLogger {
             user => {
                 if (user) {
                     this.updateUser(user)
-                    this.logEvent('UserProfileFetched', EventCategories.Auth, EventActions.Passive)
+                    this.logEvent(EventCategories.Auth, EventActions.Passive, 'UserProfileFetched')
                     // Since this function checks if the Chrome ext has injected an element,
                     // wait a few ms in case there's an unpredictable delay before checking.
                     setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
