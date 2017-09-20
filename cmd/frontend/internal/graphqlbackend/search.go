@@ -129,16 +129,8 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 		}
 	}
 
-	// Sort by score
-	sort.Slice(res, func(i, j int) bool {
-		a, b := res[i], res[j]
-		if a.score != b.score {
-			return a.score > b.score
-		}
-		// Prefer shorter strings for the same match score
-		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
-		return a.length < b.length
-	})
+	// Sort search results.
+	sortSearchResults(res)
 
 	// Limit
 	if len(res) > limit {
@@ -154,9 +146,8 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 		return nil, err
 	}
 	for _, searchProfile := range searchProfiles {
-		score := stringscore.Score(searchProfile.name, query)
+		score := calcScore(query, searchProfile)
 		if score > 0 {
-			score += 100
 			res = append(res, &searchResultResolver{result: searchProfile, score: score, length: len(searchProfile.name)})
 		}
 	}
@@ -169,7 +160,6 @@ func searchRepos(ctx context.Context, query string, repoURIs []string, limit int
 	if err != nil {
 		return nil, err
 	}
-	queryParts := strings.Split(query, "/")
 outer:
 	for _, repo := range reposList.Repos {
 		// Don't suggest repos that were already added as a filter
@@ -179,19 +169,8 @@ outer:
 			}
 		}
 		repoResolver := &repositoryResolver{repo: repo}
-		score := stringscore.Score(repo.URI, query)
-		// Assume the query is written to match the postfix of the paths.
-		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
-		if len(queryParts) > 0 {
-			repoParts := strings.Split(repo.URI, "/")
-			for i := 1; len(queryParts)-i >= 0 && len(repoParts)-i >= 0; i++ {
-				score += stringscore.Score(repoParts[len(repoParts)-i], queryParts[len(queryParts)-i])
-			}
-		}
-		// Push forks down
-		if repo.Fork {
-			score -= 10
-		}
+
+		score := calcScore(query, repoResolver)
 		if score > 0 {
 			res = append(res, &searchResultResolver{result: repoResolver, score: score, length: len(repo.URI)})
 		}
@@ -256,13 +235,42 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		if len(res) >= limit {
 			return res, nil
 		}
+		score := calcScore(query, fileResolver)
+		if score > 0 {
+			res = append(res, &searchResultResolver{result: fileResolver, score: score, length: len(fileResolver.name)})
+		}
+	}
+	return res, nil
+}
+
+// calcScore calculates and assigns the sorting score to the given result.
+func calcScore(query string, result interface{}) int {
+	switch r := result.(type) {
+	case *repositoryResolver:
+		score := stringscore.Score(r.repo.URI, query)
+		// Assume the query is written to match the postfix of the paths.
+		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
+		queryParts := strings.Split(query, "/")
+		if len(queryParts) > 0 {
+			repoParts := strings.Split(r.repo.URI, "/")
+			for i := 1; len(queryParts)-i >= 0 && len(repoParts)-i >= 0; i++ {
+				score += stringscore.Score(repoParts[len(repoParts)-i], queryParts[len(queryParts)-i])
+			}
+		}
+		// Push forks down
+		if r.repo.Fork {
+			score -= 10
+		}
+		return score
+
+	case *fileResolver:
 		score := 0
 		// Score each path component individually and use the sum
 		// We don't want the query "openerService" to match
 		//   src/vs/workbench/parts/execution/electron-browser/terminalService.ts
 		// with a higher score than
 		//   src/vs/platform/opener/browser/openerService.ts
-		pathParts := strings.Split(fileResolver.name, "/")
+		pathParts := strings.Split(r.name, "/")
 		queryParts := strings.Split(query, "/")
 		for _, pathPart := range pathParts {
 			for _, queryPart := range queryParts {
@@ -272,8 +280,30 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		if score > 0 {
 			// Give files a slight advantage over repos
 			score += 5
-			res = append(res, &searchResultResolver{result: fileResolver, score: score, length: len(fileResolver.name)})
 		}
+		return score
+
+	case *searchProfile:
+		score := stringscore.Score(r.name, query)
+		if score > 0 {
+			score += 100
+		}
+		return score
+	default:
+		panic("never here")
 	}
-	return res, nil
+}
+
+// sortSearchResults handles sorting of the given search results.
+func sortSearchResults(res []*searchResultResolver) {
+	// Sort by score
+	sort.Slice(res, func(i, j int) bool {
+		a, b := res[i], res[j]
+		if a.score != b.score {
+			return a.score > b.score
+		}
+		// Prefer shorter strings for the same match score
+		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
+		return a.length < b.length
+	})
 }
