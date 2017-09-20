@@ -31,12 +31,19 @@ const (
 	routeTree       = "tree"
 	routeBlob       = "blob"
 	routeSignIn     = "sign-in"
-	routeLogin      = "login"
 	routeEditorAuth = "editor-auth"
 	routeSettings   = "settings"
 
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
+
+	// Legacy redirects
+	routeLegacyLogin                   = "login"
+	routeLegacyCareers                 = "careers"
+	routeLegacyDefLanding              = "page.def.landing"
+	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
+	routeLegacyRepoLanding             = "page.repo.landing"
+	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
 )
 
 // aboutPaths is a list of paths that should redirect from sourcegraph.com/$PATH
@@ -54,6 +61,8 @@ var aboutPaths = []string{
 	"privacy",
 	"security",
 	"terms",
+	"jobs",
+	"beta",
 }
 
 // Router returns the router that serves pages for our web app.
@@ -74,9 +83,12 @@ func newRouter() *mux.Router {
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
-	r.Path("/login").Methods("GET").Name(routeLogin)
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
 	r.Path("/settings").Methods("GET").Name(routeSettings)
+
+	// Legacy redirects
+	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
+	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
 
 	// repo-or-main
 	//
@@ -93,6 +105,13 @@ func newRouter() *mux.Router {
 
 	// blob
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
+
+	// legacy redirects
+	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
+	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
+	repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name(routeLegacyDefRedirectToDefLanding)
+	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding)
+	repoRev.Path("/land/" + routevar.Def).Methods("GET").Name(routeLegacyOldRouteDefLanding)
 	return r
 }
 
@@ -101,9 +120,16 @@ func init() {
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
-	router.Get(routeLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
+
+	// Legacy redirects
+	router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
+	router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
+	router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
+	router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
+	router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
+	router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {

@@ -107,13 +107,6 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
-		// login
-		{
-			path:      "/login",
-			wantRoute: routeLogin,
-			wantVars:  map[string]string{},
-		},
-
 		// editor auth
 		{
 			path:      "/editor-auth",
@@ -125,6 +118,20 @@ func TestRouter(t *testing.T) {
 		{
 			path:      "/settings",
 			wantRoute: routeSettings,
+			wantVars:  map[string]string{},
+		},
+
+		// legacy login
+		{
+			path:      "/login",
+			wantRoute: routeLegacyLogin,
+			wantVars:  map[string]string{},
+		},
+
+		// legacy careers
+		{
+			path:      "/careers",
+			wantRoute: routeLegacyCareers,
 			wantVars:  map[string]string{},
 		},
 	}
