@@ -2,16 +2,22 @@ import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
+import { EventActions, EventCategories } from './analyticsConstants'
 import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
     private static PLATFORM = 'Web'
 
     constructor() {
+        if (sourcegraphContext.user) {
+            this.updateUser({ id: sourcegraphContext.user.UID })
+        }
+
         currentUser.subscribe(
             user => {
                 if (user) {
                     this.updateUser(user)
+                    this.logEvent('UserProfileFetched', EventCategories.Auth, EventActions.Passive)
                     // Since this function checks if the Chrome ext has injected an element,
                     // wait a few ms in case there's an unpredictable delay before checking.
                     setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
@@ -24,7 +30,7 @@ class EventLogger {
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(user: GQL.IUser): void {
+    public updateUser(user: GQL.IUser | { id: string, email?: string }): void {
         // TODO(dan): update with correct handle, if we want one
         this.setUserId(user.id.toString(), user.email || '')
         if (user.email) {

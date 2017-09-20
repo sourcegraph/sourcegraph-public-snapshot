@@ -47,7 +47,7 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        this.telligent('addStaticMetadata', property, value)
+        this.telligent('addStaticMetadata', property, value, 'userInfo')
     }
 
     public track(eventAction: string, eventProps: any): void {
