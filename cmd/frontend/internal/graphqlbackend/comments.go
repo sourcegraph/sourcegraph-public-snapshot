@@ -34,12 +34,12 @@ func (c *commentResolver) Contents() string {
 	return c.comment.Contents
 }
 
-// deprecated
+// TODO(nick): remove deprecated field
 func (c *commentResolver) AuthorName() string {
 	return c.comment.AuthorName
 }
 
-// deprecated
+// TODO(nick): remove deprecated field
 func (c *commentResolver) AuthorEmail() string {
 	return c.comment.AuthorEmail
 }
@@ -53,6 +53,13 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
+	if c.org == nil {
+		// TODO(nick): remove this deprecated code path
+		return &orgMemberResolver{c.org, &sourcegraph.OrgMember{
+			DisplayName: c.comment.AuthorName,
+			Email:       c.comment.AuthorEmail,
+		}}, nil
+	}
 	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, c.org.ID, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
@@ -60,6 +67,7 @@ func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error
 	return &orgMemberResolver{c.org, member}, nil
 }
 
+// TODO(nick): remove this deprecated code path
 func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	RemoteURI   string
 	AccessToken string
