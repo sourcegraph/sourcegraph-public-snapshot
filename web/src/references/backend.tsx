@@ -1,5 +1,7 @@
 import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/merge'
+import 'rxjs/add/operator/bufferCount'
+import 'rxjs/add/operator/concatMap'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
@@ -98,18 +100,31 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                         .filter(dep => Boolean(dep.workspace)) // slice to MAX_DEPENDENT_REPOS (10)?
                 })
                 .mergeMap(dependents => {
-                    return Observable.merge(...dependents.map(dependent => {
-                        if (!dependent.workspace) {
-                            return []
-                        }
-                        return Observable.fromPromise(fetchXreferences({
-                            ...dependent.workspace,
-                            filePath: ctx.filePath,
-                            query: defInfo.symbol,
-                            hints: dependent.hints,
-                            limit: 50
-                        }))
-                    }))
+                    let numRefsFetched = 0
+                    // Dependents is a (possibly quite long) list of candidate repos where xreferences may exist.
+                    // It is prohibitively costly (to the xlang servers) to calculate xreferences for hundreds of
+                    // repositories at once. Instead, we batch xrererences requests to 20 repos at a time and wait
+                    // to receive xreferences responses for each repo in the batch before requesting the next.
+                    return Observable.from(dependents)
+                        .bufferCount(20) // batch dependents into groups of 20
+                        .concatMap(batch => { // wait for the previous batch to complete before fetching the next
+                            if (numRefsFetched >= 50) { // abort when we've fetched at least 100 refs
+                                return []
+                            }
+                            return Observable.from(batch)
+                                .mergeMap(dependent => {
+                                    if (!dependent.workspace) {
+                                        return []
+                                    }
+                                    return Observable.fromPromise(fetchXreferences({
+                                        ...dependent.workspace,
+                                        filePath: ctx.filePath,
+                                        query: defInfo.symbol,
+                                        hints: dependent.hints,
+                                        limit: 50
+                                    })).do(refs => numRefsFetched += refs.length)
+                                })
+                        })
                 })
         })
 }
