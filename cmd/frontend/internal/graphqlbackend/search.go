@@ -256,7 +256,19 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		if len(res) >= limit {
 			return res, nil
 		}
-		score := stringscore.Score(fileResolver.name, query)
+		score := 0
+		// Score each path component individually and use the sum
+		// We don't want the query "openerService" to match
+		//   src/vs/workbench/parts/execution/electron-browser/terminalService.ts
+		// with a higher score than
+		//   src/vs/platform/opener/browser/openerService.ts
+		pathParts := strings.Split(fileResolver.name, "/")
+		queryParts := strings.Split(query, "/")
+		for _, pathPart := range pathParts {
+			for _, queryPart := range queryParts {
+				score += stringscore.Score(pathPart, queryPart)
+			}
+		}
 		if score > 0 {
 			// Give files a slight advantage over repos
 			score += 5
