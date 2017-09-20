@@ -108,7 +108,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                     return Observable.from(dependents)
                         .bufferCount(20) // batch dependents into groups of 20
                         .concatMap(batch => { // wait for the previous batch to complete before fetching the next
-                            if (numRefsFetched >= 50) { // abort when we've fetched at least 100 refs
+                            if (numRefsFetched >= 50) { // abort when we've fetched at least 50 refs
                                 return []
                             }
                             return Observable.from(batch)
