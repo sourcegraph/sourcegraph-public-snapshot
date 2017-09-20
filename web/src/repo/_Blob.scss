@@ -43,6 +43,8 @@
             &::before {
                 content: attr(data-blame);
                 cursor: pointer;
+                background-color: rgb(34, 44, 58); // extends background color for highlighted code to overflown blame content
+                display: inline-block;
             }
             color: #464d57;
             padding-left: 4em;
