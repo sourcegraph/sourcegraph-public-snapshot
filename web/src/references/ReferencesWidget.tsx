@@ -24,6 +24,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Location } from 'vscode-languageserver-types'
 import { fetchReferences } from '../backend/lsp'
+import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
 import { VirtualList } from '../components/VIrtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
@@ -51,12 +52,6 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
     }
 
     public render(): JSX.Element | null {
-        const repoPathSplit = this.props.repoPath.split('/')
-        let repoPathStr = repoPathSplit.length > 1 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
-        repoPathStr += '/'
-        const pathSplit = this.props.filePath.split('/')
-        const filePart = pathSplit.pop()
-
         let refs: JSX.Element | null = null
         if (!this.state.hidden) {
             refs = (
@@ -114,9 +109,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
             <div className='references-group'>
                 <div className='references-group__title' onClick={this.toggle}>
                     <div className='references-group__icon'>{this.props.isLocal ? <RepoIcon /> : <GlobeIcon />}</div>
-                    {this.props.isLocal ? null : <div className='references-group__uri-path-part'>{repoPathStr}</div>}
-                    {this.props.isLocal ? null : <div>{pathSplit.join('/')}{pathSplit.length > 0 ? '/' : ''}</div>}
-                    <div className='references-group__file-path-part'>{filePart}</div>
+                    <RepoBreadcrumb repoPath={this.props.repoPath} filePath={this.props.filePath} />
                     {this.state.hidden ? <RightIcon className='references-group__expand-icon' /> : <DownIcon className='references-group__expand-icon' />}
                 </div>
                 {refs}

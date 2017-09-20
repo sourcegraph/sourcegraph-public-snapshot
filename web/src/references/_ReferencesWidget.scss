@@ -18,6 +18,7 @@
 
         display: flex;
         align-items: center;
+        white-space: nowrap;
 
         cursor: pointer;
         $background-color: #1C2736;
@@ -26,17 +27,11 @@
         &:hover {
             background-color: darken($background-color, 0.05);
         }
-    }
 
-    &__uri-path-part {
-        padding-left: 0.5rem;
-    }
-
-    &__file-path-part {
-        color: white;
-        font-weight: bold;
-        padding-left: 0.5rem;
-        padding-right: 15px;
+        .breadcrumb {
+            flex: 1 1 auto;
+            margin: 0 1rem;
+        }
     }
 
     &__expand-icon {
