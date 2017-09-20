@@ -50,10 +50,6 @@ func main() {
 		log.Printf("Profiler available on %s/pprof", profBindAddr)
 	}
 
-	if err := server.InitializeSSH(); err != nil {
-		log.Printf("SSH initialization error: %s", err)
-	}
-
 	if runRepoCleanup {
 		go func() {
 			for {
