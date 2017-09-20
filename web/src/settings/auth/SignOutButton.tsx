@@ -6,7 +6,7 @@ export class SignOutButton extends React.Component {
         // Don't use a <Link /> element here — use an anchor that will break
         // the user out of the single-page app to sign out
         return (
-            <a href='/-/sign-out' className='ui-button' onClick={this.logTelemetryOnSignOut}>Sign out</a>
+            <a href='/-/sign-out' className='ui-button sign-out-button' onClick={this.logTelemetryOnSignOut}>Sign out</a>
         )
     }
 

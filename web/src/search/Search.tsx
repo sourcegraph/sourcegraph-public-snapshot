@@ -4,8 +4,8 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../components/PageTitle'
 import { SignInButton } from '../settings/auth/SignInButton'
+import { SignOutButton } from '../settings/auth/SignOutButton'
 import { UserAvatar } from '../settings/user/UserAvatar'
-import { events } from '../tracking/events'
 import { limitString } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 import { parseSearchURLQuery } from './index'
@@ -45,10 +45,7 @@ export class Search extends React.Component<Props, State> {
                                 <SignInButton />
                         }
                         {
-                            this.state.showSignOut &&
-                                <a href='/-/sign-out' onClick={events.SignOutClicked.log} className='ui-button'>
-                                    Sign out
-                                </a>
+                            this.state.showSignOut && <SignOutButton />
                         }
                     </div>
                 </div>
