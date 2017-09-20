@@ -357,6 +357,7 @@ export class Blob extends React.Component<Props, State> {
             el.classList.remove('selection-highlight-sticky')
         }
         if (data) {
+            events.TooltipDocked.log()
             data.target.classList.add('selection-highlight-sticky')
         } else {
             hideTooltip()
