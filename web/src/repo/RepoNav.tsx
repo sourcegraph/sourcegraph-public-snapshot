@@ -51,7 +51,8 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                         </a>
                 }
                 {
-                    this.props.repoPath &&
+                    /* TODO(john): remove false condition below when we're ready to show desktop to users (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
+                    this.props.repoPath && false &&
                         <a href={editorUrl} target='_blank' className='repo-nav__action' title='Open on desktop' onClick={this.onOpenOnDesktopClicked}>
                             <ComputerIcon />
                             <span className='repo-nav__action-text'>Open on desktop</span>
