@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 
 	"golang.org/x/oauth2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -18,11 +19,10 @@ import (
 )
 
 type oauthCookie struct {
-	Nonce        string
-	RedirectURL  string
-	ReturnTo     string
-	ReturnToNew  string
-	WebSessionID string
+	Nonce       string
+	RedirectURL string
+	ReturnTo    string
+	ReturnToNew string
 }
 
 func auth0ConfigWithRedirectURL(redirectURL string) *oauth2.Config {
@@ -101,6 +101,11 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	eventLabel := "CompletedAuth0SignIn"
 	if !info.AppMetadata.DidLoginBefore {
 		eventLabel = "SignupCompleted"
+	}
+
+	// Track user data in GCS
+	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+		go tracking.TrackUser(actor, eventLabel)
 	}
 
 	if !info.AppMetadata.DidLoginBefore {

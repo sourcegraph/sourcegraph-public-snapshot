@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-github/github"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
@@ -41,7 +40,7 @@ type field struct {
 
 // NotifyOnSignup posts a message to the Slack channel #bot-signups
 // when a user signs up for Sourcegraph
-func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse, tos *gcstracker.TrackedObjects) error {
+func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse) error {
 	if SignupsWebhookURL == "" {
 		return errors.New("g Webhook URL not defined")
 	}
@@ -96,23 +95,6 @@ func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties,
 				},
 			},
 		},
-	}
-
-	orgsList := make([]string, 0)
-	for _, obj := range tos.Objects {
-		if orgCtx, ok := obj.Ctx.(*gcstracker.OrgWithDetailsContext); ok {
-			orgsList = append(orgsList, fmt.Sprintf("%s (<https://github.com/%s|GitHub>, <https://sourcegraph.looker.com/dashboards/11?Org%%20Name=%s|Looker>)", orgCtx.OrgName, orgCtx.OrgName, orgCtx.OrgName))
-		} else {
-			break
-		}
-	}
-
-	if len(orgsList) > 0 {
-		payload.Attachments[0].Fields = append(payload.Attachments[0].Fields, &field{
-			Title: "GitHub organizations",
-			Value: strings.Join(orgsList, ", "),
-			Short: false,
-		})
 	}
 
 	return post(payload, SignupsWebhookURL)

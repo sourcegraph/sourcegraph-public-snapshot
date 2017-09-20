@@ -1,7 +1,6 @@
 package tracking
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
@@ -29,15 +27,13 @@ import (
 // errors do we want to give up
 var maxOrgMemberErrors = 1
 
-// TrackUserGitHubData handles user data logging during auth flows
+// TrackUser handles user data logging during auth flows
 //
-// Specifically, fetching limited information about
-// a user's GitHub profile and sending it to Google Cloud Storage
-// for analytics, as well as updating user data properties in HubSpot
-func TrackUserGitHubData(a *actor.Actor, event string, name string, company string, location string, webSessionID string) {
+// Specifically, updating user data properties in HubSpot
+func TrackUser(a *actor.Actor, event string) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("panic in tracking.TrackUserGitHubData: %s", err)
+			log.Printf("panic in tracking.TrackUser: %s", err)
 		}
 	}()
 
@@ -48,13 +44,8 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 
 	// Generate a single set of user parameters for HubSpot and Slack exports
 	contactParams := &hubspot.ContactProperties{
-		UserID:         a.Login,
-		UID:            a.UID,
-		GitHubLink:     gitHubLink(a.Login),
-		LookerLink:     lookerUserLink(a.Login),
-		GitHubName:     name,
-		GitHubCompany:  company,
-		GitHubLocation: location,
+		UserID: a.Email,
+		UID:    a.UID,
 	}
 
 	// Update or create user contact information in HubSpot
@@ -63,56 +54,9 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 		log15.Warn("trackHubSpotContact: failed to create or update HubSpot contact on auth", "source", "HubSpot", "error", err)
 	}
 
-	gcsClient, err := gcstracker.New(a, webSessionID)
-	if err != nil {
-		log15.Error("Error creating a new GCS client", "error", err)
-		return
-	}
-
-	// Since the newly-authenticated actor (and their GitHubToken) has
-	// not yet been associated with the request's context, we need to
-	// create a temporary Context object that contains that linkage in
-	// order to pull data from the GitHub API
-	tempCtx := actor.WithActor(context.Background(), a)
-
-	// Fetch orgs and org members data
-	// ListAllOrgs may return partial results
-	orgList, err := listAllOrgs(tempCtx, &sourcegraph.ListOptions{})
-	if err != nil {
-		log15.Warn("listAllOrgs: failed to fetch some user organizations", "source", "GitHub", "error", err)
-	}
-
-	orgMembersErrCounter := 0
-	owd := make(map[string]([]*github.User))
-	for _, org := range orgList.Orgs {
-		members, err := listAllOrgMembers(tempCtx, org.Login, &sourcegraph.ListOptions{})
-		if err != nil {
-			// ListAllOrgMembers may return partial results
-			// Don't give up unless maxOrgMemberErrors errors are caught
-			orgMembersErrCounter = orgMembersErrCounter + 1
-			if orgMembersErrCounter > maxOrgMemberErrors {
-				log15.Warn("listAllOrgMembers: failed to fetch some user org members (max errors exceeded)", "source", "GitHub", "error", err)
-				break
-			} else {
-				log15.Warn("listAllOrgMembers: failed to fetch some user org members", "source", "GitHub", "error", err)
-			}
-		}
-		owd[org.Login] = members
-	}
-
-	// Add new TrackedObject
-	tos := gcsClient.NewTrackedObjects(event)
-
-	tos.AddOrgsWithDetailsObjects(owd)
-	err = gcsClient.Write(tos)
-	if err != nil {
-		log15.Error("Error writing to GCS", "error", err)
-		return
-	}
-
 	// Finally, post signup notification to Slack
 	if event == "SignupCompleted" {
-		err = slack.NotifyOnSignup(a, contactParams, hsResponse, tos)
+		err = slack.NotifyOnSignup(a, contactParams, hsResponse)
 		if err != nil {
 			log15.Error("Error sending new signup details to Slack", "error", err)
 			return
