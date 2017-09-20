@@ -314,7 +314,7 @@ func titleFromContents(contents string) string {
 	}
 	contents = strings.TrimSpace(contents)
 	if len(contents) > 140 {
-		contents = contents[:140] + "..."
+		contents = contents[:137] + "..."
 	}
 	return contents
 }

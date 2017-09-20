@@ -154,7 +154,7 @@ func TestTitleFromContents(t *testing.T) {
 		{In: "What does foo.bar do?", Out: "What does foo.bar do?"},
 		{In: "It should be 1 != 2\nFYI 1 != 1 is wrong.", Out: "It should be 1 != 2"},
 		{In: "This\nis\na\nweird\ncomment. With two sentences.", Out: "This"},
-		{In: strings.Repeat("a", 141), Out: strings.Repeat("a", 140) + "..."},
+		{In: strings.Repeat("a", 141), Out: strings.Repeat("a", 137) + "..."},
 	}
 
 	for _, test := range tests {
