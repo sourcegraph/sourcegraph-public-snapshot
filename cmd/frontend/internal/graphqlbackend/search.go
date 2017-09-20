@@ -149,7 +149,7 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 	for _, searchProfile := range searchProfiles {
 		score := scorer.calcScore(searchProfile)
 		if score > 0 {
-			res = append(res, &searchResultResolver{result: searchProfile, score: score, length: len(searchProfile.name)})
+			res = append(res, newSearchResultResolver(searchProfile, score))
 		}
 	}
 	return res, nil
@@ -174,7 +174,7 @@ outer:
 
 		score := scorer.calcScore(repoResolver)
 		if score > 0 {
-			res = append(res, &searchResultResolver{result: repoResolver, score: score, length: len(repo.URI)})
+			res = append(res, newSearchResultResolver(repoResolver, score))
 		}
 	}
 	return res, nil
@@ -240,10 +240,31 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		}
 		score := scorer.calcScore(fileResolver)
 		if score > 0 {
-			res = append(res, &searchResultResolver{result: fileResolver, score: score, length: len(fileResolver.name)})
+			res = append(res, newSearchResultResolver(fileResolver, score))
 		}
 	}
 	return res, nil
+}
+
+// newSearchResultResolver returns a new searchResultResolver wrapping the
+// given result.
+//
+// A panic occurs if the type of result is not a *repositoryResolver,
+// *fileResolver, or *searchProfile.
+func newSearchResultResolver(result interface{}, score int) *searchResultResolver {
+	switch r := result.(type) {
+	case *repositoryResolver:
+		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI)}
+
+	case *fileResolver:
+		return &searchResultResolver{result: r, score: score, length: len(r.name)}
+
+	case *searchProfile:
+		return &searchResultResolver{result: r, score: score, length: len(r.name)}
+
+	default:
+		panic("never here")
+	}
 }
 
 // scorer is a structure for holding some scorer state that can be shared
@@ -263,6 +284,9 @@ func newScorer(query string) *scorer {
 }
 
 // calcScore calculates and assigns the sorting score to the given result.
+//
+// A panic occurs if the type of result is not a *repositoryResolver,
+// *fileResolver, or *searchProfile.
 func (s *scorer) calcScore(result interface{}) int {
 	switch r := result.(type) {
 	case *repositoryResolver:
