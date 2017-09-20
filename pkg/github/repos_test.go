@@ -154,26 +154,6 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		t.Fatal("should have hit cache")
 	}
 
-	// Now if we call as an authed user, we will hit the cache but not use
-	// it since the repo may not 404 for us
-	ListAllAccessibleInstallationsMock_Return([]*github.Installation{&github.Installation{ID: github.Int(1)}})
-	ListAllAccessibleReposForInstallationMock_Return([]*github.Repository{&github.Repository{
-		ID:       github.Int(123),
-		Name:     github.String("repo"),
-		FullName: github.String("owner/repo"),
-		Owner:    &github.User{ID: github.Int(1), Login: github.String("owner")},
-		CloneURL: github.String("https://github.com/owner/repo.git"),
-		Private:  github.Bool(true),
-	}})
-	ctx = actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-	repo, err := GetRepo(ctx, privateRepo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo == nil {
-		t.Fatal("repo is nil")
-	}
-
 	// Ensure the repo is still missing for unauthed users
 	calledGetMissing = false
 	MockRoundTripper = mockGetMissing
@@ -183,21 +163,6 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	}
 	if calledGetMissing {
 		t.Fatal("should have hit cache")
-	}
-
-	// Authed user should never use public cache. Do twice to ensure we do not
-	// use the cached 404 response.
-	for i := 0; i < 2; i++ {
-		ListAllAccessibleInstallationsMock_Return([]*github.Installation{&github.Installation{ID: github.Int(1)}})
-		// Pretend that privateRepo is deleted now, so even authed user can't see it. Do this to ensure cached 405 value isn't used by authed user.
-		calledListAll := ListAllAccessibleReposForInstallationMock_Return([]*github.Repository{})
-		ctx = actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-		if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
-			t.Fatal(err)
-		}
-		if !*calledListAll {
-			t.Fatal("should not hit cache")
-		}
 	}
 }
 

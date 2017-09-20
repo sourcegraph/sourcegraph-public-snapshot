@@ -1,7 +1,6 @@
 package localstore
 
 import (
-	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -9,7 +8,6 @@ import (
 
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
@@ -222,118 +220,6 @@ func TestRepos_List_query2(t *testing.T) {
 		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
 			t.Errorf("Unexpected repo result for query %q:\ngot:  %q\nwant: %q", test.query, got, test.want)
 		}
-	}
-}
-
-func TestRepos_List_GitHub_Authenticated(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-
-	calledListAccessible := github.MockListAccessibleRepos_Return([]*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master"},
-	})
-	github.GetRepoMock = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-		if uri == "github.com/is/privateButAccessible" {
-			return &sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master"}, nil
-		} else if uri == "github.com/is/public" {
-			return &sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master"}, nil
-		}
-		return nil, fmt.Errorf("unauthorized")
-	}
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-
-	createRepos := []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "a/local", Private: false, DefaultBranch: "master"},
-		&sourcegraph.Repo{URI: "a/localPrivate", DefaultBranch: "master", Private: true},
-		&sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master"},
-		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master"},
-		&sourcegraph.Repo{URI: "github.com/is/inaccessibleBecausePrivate", Private: true, DefaultBranch: "master"},
-	}
-	for _, repo := range createRepos {
-		createRepo(ctx, t, repo)
-	}
-
-	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
-
-	repoList, err := Repos.List(ctx, &RepoListOp{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []string{"a/local", "github.com/is/privateButAccessible", "github.com/is/public"}
-	if got := sortedRepoURIs(repoList); !reflect.DeepEqual(got, want) {
-		t.Fatalf("got repos %q, want %q", got, want)
-	}
-	if !*calledListAccessible {
-		t.Error("!calledListAccessible")
-	}
-}
-
-func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
-
-	calledListAccessible := github.MockListAccessibleRepos_Return(nil)
-	github.GetRepoMock = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-		return nil, fmt.Errorf("unauthorized")
-	}
-
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-
-	createRepos := []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Private: true},
-	}
-	for _, repo := range createRepos {
-		createRepo(ctx, t, repo)
-	}
-
-	repoList, err := Repos.List(ctx, &RepoListOp{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(repoList) != 0 {
-		t.Errorf("got repos %v, want empty", repoList)
-	}
-	if !*calledListAccessible {
-		t.Error("!calledListAccessible")
-	}
-}
-
-func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
-
-	calledListAccessible := github.MockListAccessibleRepos_Return(nil)
-	ctx = actor.WithActor(ctx, &actor.Actor{})
-	github.GetRepoMock = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-		return nil, fmt.Errorf("unauthorized")
-	}
-
-	createRepo(ctx, t, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master"})
-
-	repoList, err := Repos.List(ctx, &RepoListOp{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if got := sortedRepoURIs(repoList); len(got) != 0 {
-		t.Fatal("List should not have returned any repos, got:", got)
-	}
-
-	if *calledListAccessible {
-		t.Error("calledListAccessible, but wanted not called since there is no authed user")
 	}
 }
 

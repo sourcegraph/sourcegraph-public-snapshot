@@ -11,7 +11,6 @@ import (
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -50,12 +49,7 @@ func Client(ctx context.Context) *github.Client {
 		})
 	}
 
-	a := actor.FromContext(ctx)
 	ghConf := githubConf(ctx)
-	if a.GitHubToken != "" {
-		return ghConf.AuthedClient(a.GitHubToken)
-	}
-
 	return ghConf.UnauthedClient()
 }
 
@@ -133,7 +127,7 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 // HasAuthedUser reports whether the context has an authenticated
 // GitHub user's credentials.
 func HasAuthedUser(ctx context.Context) bool {
-	return actor.FromContext(ctx).GitHubToken != ""
+	return false
 }
 
 func IsRateLimitError(err error) bool {

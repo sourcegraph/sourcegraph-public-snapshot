@@ -2,7 +2,6 @@ package localstore
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -20,118 +19,6 @@ func authTestContext() context.Context {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 	return ctx
-}
-
-func TestUserHasReadAccessAll(t *testing.T) {
-	ctx := authTestContext()
-
-	type testcase struct {
-		title                     string
-		inputRepos                []*sourcegraph.Repo
-		shouldCallGitHub          bool
-		mockGitHubAccessibleRepos []*sourcegraph.Repo
-		expRepos                  []*sourcegraph.Repo
-	}
-	testRepos_ := map[string]*sourcegraph.Repo{
-		"a": {URI: "a"},
-		"b": {URI: "b", Private: true},
-		"c": {URI: "c", Private: true},
-		"d": {URI: "d", Private: true},
-		"e": {URI: "e", Private: true},
-	}
-	testRepos := func(uris ...string) (r []*sourcegraph.Repo) {
-		for _, uri := range uris {
-			r = append(r, testRepos_[uri])
-		}
-		return
-	}
-
-	testcases := []testcase{{
-		title:                     "allow public repo access",
-		inputRepos:                testRepos("a"),
-		shouldCallGitHub:          false,
-		mockGitHubAccessibleRepos: nil,
-		expRepos:                  testRepos("a"),
-	}, {
-		title:                     "allow private repo access",
-		inputRepos:                testRepos("b"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: testRepos("b"),
-		expRepos:                  testRepos("b"),
-	}, {
-		title:                     "private repo denied",
-		inputRepos:                testRepos("b"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: nil,
-		expRepos:                  nil,
-	}, {
-		title:                     "public repo access, selected private repo access, inaccessible private repo denied",
-		inputRepos:                testRepos("a", "b", "c"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: testRepos("b"),
-		expRepos:                  testRepos("a", "b"),
-	}, {
-		title:                     "edge case: no input repos",
-		inputRepos:                nil,
-		shouldCallGitHub:          false,
-		mockGitHubAccessibleRepos: nil,
-		expRepos:                  nil,
-	}, {
-		title:                     "private not in list of accessible",
-		inputRepos:                testRepos("b"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: testRepos("c"),
-		expRepos:                  nil,
-	}, {
-		title:                     "public not in list of accessible (still allowed)",
-		inputRepos:                testRepos("a"),
-		shouldCallGitHub:          false,
-		mockGitHubAccessibleRepos: testRepos("c"),
-		expRepos:                  testRepos("a"),
-	}, {
-		title:                     "public not in list of accessible (still allowed) and private not either",
-		inputRepos:                testRepos("a", "b"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: testRepos("c"),
-		expRepos:                  testRepos("a"),
-	}, {
-		title:                     "public and private repos accessible, one private denied",
-		inputRepos:                testRepos("a", "b", "c", "d"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: testRepos("c", "b"),
-		expRepos:                  testRepos("a", "b", "c"),
-	}, {
-		title:                     "preserve input order",
-		inputRepos:                testRepos("b", "a"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: testRepos("b"),
-		expRepos:                  testRepos("b", "a"),
-	}, {
-		title:                     "preserve input order with some denied",
-		inputRepos:                testRepos("c", "b", "d", "a"),
-		shouldCallGitHub:          true,
-		mockGitHubAccessibleRepos: testRepos("c", "d"),
-		expRepos:                  testRepos("c", "d", "a"),
-	}}
-
-	for _, test := range testcases {
-		calledListAccessible := github.MockListAccessibleRepos_Return(test.mockGitHubAccessibleRepos)
-
-		gotRepos, err := verifyUserHasReadAccessAll(ctx, "Repos.List", test.inputRepos)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if *calledListAccessible != test.shouldCallGitHub {
-			if test.shouldCallGitHub {
-				t.Errorf("expected GitHub API to be called for permissions check, but it wasn't")
-			} else {
-				t.Errorf("did not expect GitHub API to be called for permissions check, but it was")
-			}
-		}
-		if !reflect.DeepEqual(gotRepos, test.expRepos) {
-			t.Errorf("in test case %s, expected %+v, got %+v", test.title, test.expRepos, gotRepos)
-		}
-	}
 }
 
 func TestVerifyUserHasRepoURIAccess(t *testing.T) {
