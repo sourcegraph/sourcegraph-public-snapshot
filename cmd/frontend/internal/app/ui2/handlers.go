@@ -78,9 +78,14 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if e, ok := err.(vcs.RepoNotExistError); ok && e.CloneInProgress {
-				// Repo is cloning.
-				return common, nil
+			if e, ok := err.(vcs.RepoNotExistError); ok {
+				if e.CloneInProgress {
+					// Repo is cloning.
+					return common, nil
+				}
+				// Repo does not exist.
+				serveError(w, r, err, http.StatusNotFound)
+				return nil, nil
 			}
 			return nil, err
 		}
