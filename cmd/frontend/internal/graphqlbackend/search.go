@@ -130,7 +130,7 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 	}
 
 	// Sort search results.
-	sortSearchResults(res)
+	sort.Sort(searchResultSorter(res))
 
 	// Limit
 	if len(res) > limit {
@@ -294,16 +294,19 @@ func calcScore(query string, result interface{}) int {
 	}
 }
 
-// sortSearchResults handles sorting of the given search results.
-func sortSearchResults(res []*searchResultResolver) {
+// searchResultSorter implements the sort.Interface interface to sort a list of
+// searchResultResolvers.
+type searchResultSorter []*searchResultResolver
+
+func (s searchResultSorter) Len() int      { return len(s) }
+func (s searchResultSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s searchResultSorter) Less(i, j int) bool {
 	// Sort by score
-	sort.Slice(res, func(i, j int) bool {
-		a, b := res[i], res[j]
-		if a.score != b.score {
-			return a.score > b.score
-		}
-		// Prefer shorter strings for the same match score
-		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
-		return a.length < b.length
-	})
+	a, b := s[i], s[j]
+	if a.score != b.score {
+		return a.score > b.score
+	}
+	// Prefer shorter strings for the same match score
+	// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
+	return a.length < b.length
 }
