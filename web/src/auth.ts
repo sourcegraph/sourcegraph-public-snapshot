@@ -22,7 +22,7 @@ export const currentUser = new BehaviorSubject<GQL.IUser | null>(null)
  * state from the remote.
  */
 export function fetchCurrentUser(): Observable<GQL.IUser | null> {
-     return queryGraphQL(`
+    return queryGraphQL(`
         query CurrentAuthState {
             root {
                 currentUser {

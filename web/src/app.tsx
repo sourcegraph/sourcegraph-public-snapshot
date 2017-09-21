@@ -7,7 +7,7 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
+import { BrowserRouter, Redirect, Route, RouteComponentProps, Switch } from 'react-router-dom'
 import 'rxjs/add/observable/defer'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/delay'
@@ -29,6 +29,7 @@ import { SettingsPage } from './settings/SettingsPage'
 import { handleQueryEvents } from './tracking/analyticsUtils'
 import { viewEvents } from './tracking/events'
 import { ParsedRouteProps, parseRouteProps } from './util/routes'
+import { sourcegraphContext } from './util/sourcegraphContext'
 import { parseHash } from './util/url'
 
 interface WithResolvedRevProps {
@@ -146,6 +147,10 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
             case 'sign-in':
             case 'editor-auth':
             case 'user-profile':
+                // if on-prem, never show a settings page
+                if (sourcegraphContext.onPrem) {
+                    return <Redirect to='/search' />
+                }
                 return <SettingsPage routeName={this.props.routeName} />
 
             case 'repository':

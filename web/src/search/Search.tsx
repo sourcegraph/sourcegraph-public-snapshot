@@ -40,9 +40,12 @@ export class Search extends React.Component<Props, State> {
                     {!sourcegraphContext.user && <a href='https://about.sourcegraph.com' className='search__nav-link'>About</a>}
                     <div className='search__nav-auth'>
                         {
-                            sourcegraphContext.user ?
-                                <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
-                                <Link to='/sign-in' className='ui-button'>Sign in</Link>
+                            // if on-prem, never show a user avatar or sign-in button
+                            sourcegraphContext.onPrem ?
+                                null :
+                                sourcegraphContext.user ?
+                                    <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
+                                    <Link to='/sign-in' className='ui-button'>Sign in</Link>
                         }
                         {
                             this.state.showSignOut && <SignOutButton />

@@ -1,4 +1,4 @@
-import { isOnPremInstance, sourcegraphContext } from '../../util/sourcegraphContext'
+import { sourcegraphContext } from '../../util/sourcegraphContext'
 
 declare global {
     interface Window {
@@ -83,7 +83,7 @@ class TelligentWrapper {
         let telligentUrl = 'sourcegraph-logging.telligentdata.com'
         // for an on-prem trial, we want to send information directly telligent.
         // for clients like umami, we use a bi-logger
-        if (isOnPremInstance(sourcegraphContext.authEnabled) && sourcegraphContext.trackingAppID === 'UmamiWeb') {
+        if (sourcegraphContext.onPrem && sourcegraphContext.trackingAppID === 'UmamiWeb') {
             telligentUrl = `${window.location.host}`.concat('/.bi-logger')
         }
         this.telligent('newTracker', 'sg', telligentUrl, {
@@ -93,7 +93,12 @@ class TelligentWrapper {
             env,
             configUseCookies: true,
             useCookies: true,
-            cookieDomain: 'sourcegraph.com',
+            /**
+             * NOTE: do not use window.location.hostname (which includes subdomains) as the cookieDomain
+             * on sourcegraph.com subdomains (such as about.sourcegraph.com). Subdomains should be removed
+             * from the cookieDomain property to ensure analytics user profiles sync across all Sourcegraph sites.
+             */
+            cookieDomain: window.location.hostname,
             metadata: {
                 gaCookies: true,
                 performanceTiming: true,

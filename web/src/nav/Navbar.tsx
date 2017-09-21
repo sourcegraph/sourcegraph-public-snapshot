@@ -29,9 +29,12 @@ export class Navbar extends React.Component<ParsedRouteProps, State> {
                 </div>
                 <div className='navbar__right'>
                     {
-                        sourcegraphContext.user ?
-                            <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
-                            <Link to='/sign-in' className='ui-button'>Sign in</Link>
+                        // If on-prem, never show a user avatar or sign-in button
+                        sourcegraphContext.onPrem ?
+                            null :
+                            sourcegraphContext.user ?
+                                <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
+                                <Link to='/sign-in' className='ui-button'>Sign in</Link>
                     }
                     {
                         this.state.showSignOut && <SignOutButton />

@@ -7,13 +7,6 @@ export interface ImmutableUser {
 }
 
 /**
- * exported because webworkers need to be able to use it, and methods not transferred with context object
- */
-export function isOnPremInstance(authEnabled: boolean): boolean {
-    return !authEnabled
-}
-
-/**
  * SourcegraphContext is defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
 export class SourcegraphContext {
@@ -38,6 +31,11 @@ export class SourcegraphContext {
      * With authEnabled set to false, no sign in is required or possible, and repositories are pulled from local disk. Used for on-prem.
      */
     public authEnabled: boolean
+    /**
+     * onPrem is defined as the env var DEPLOYMENT_ON_PREM. True if the server is a privately hosted instance, as opposed
+     * to the public sourcegraph.com.
+     */
+    public onPrem: boolean
     /**
      * trackingAppID, set as "" by default server side, is required for the telligent environment to be set to production.
      * For Sourcegraph.com, it is SourcegraphWeb. For the node.aws.sgdev.org deployment, it might be something like SgdevWeb.
