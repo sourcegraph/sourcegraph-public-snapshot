@@ -201,6 +201,9 @@ h1 {
     font-size: inherit;
     text-decoration: none;
     border: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     cursor: pointer;
     transition: all 100ms ease-out;
     &:hover {
