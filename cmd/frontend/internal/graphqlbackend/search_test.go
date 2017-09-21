@@ -134,6 +134,14 @@ func TestSearchSorting(t *testing.T) {
 				{filePath: "pkg/backend/repos_test.go"},
 			},
 		},
+		{
+			name:  "opener service",
+			query: "openerService.ts",
+			expect: []searchTestItem{
+				{filePath: "src/vs/platform/opener/browser/openerService.ts"},
+				{filePath: "src/vs/workbench/parts/execution/electron-browser/terminalService.ts", removed: true},
+			},
+		},
 	}
 
 	for _, test := range tests {
