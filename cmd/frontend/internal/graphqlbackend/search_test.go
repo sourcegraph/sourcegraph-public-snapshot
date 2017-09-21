@@ -187,7 +187,7 @@ func TestSearchSorting(t *testing.T) {
 
 				// Print diff.
 				for i, e := range test.expect {
-					got := tStringResult(got[i])
+					got := testStringResult(got[i])
 					want := e.String()
 					eq := "=="
 					if got != want {
@@ -198,7 +198,7 @@ func TestSearchSorting(t *testing.T) {
 			}
 
 			for i, e := range test.expect {
-				if e.String() != tStringResult(got[i]) {
+				if e.String() != testStringResult(got[i]) {
 					// test failure.
 					printDiff()
 					t.FailNow()
@@ -253,7 +253,7 @@ func itemsToSearchResultResolvers(scorer *scorer, items []searchTestItem) []*sea
 	return res
 }
 
-func tStringResult(result *searchResultResolver) string {
+func testStringResult(result *searchResultResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *repositoryResolver:
