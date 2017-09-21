@@ -16,6 +16,7 @@
   "license": "MIT",
   "devDependencies": {
     "@sourcegraph/tslint-config": "^1.0.1",
+    "@types/auth0-js": "^8.6.3",
     "@types/jsdom": "^11.0.2",
     "@types/lodash": "^4.14.38",
     "@types/marked": "^0.0.28",
@@ -53,6 +54,7 @@
   },
   "dependencies": {
     "@sourcegraph/icons": "^1.4.1",
+    "auth0-js": "^8.10.1",
     "copy-to-clipboard": "^3.0.7",
     "date-fns": "^1.28.5",
     "escape-string-regexp": "^1.0.5",

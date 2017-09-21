@@ -12,6 +12,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -33,6 +34,7 @@ var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app lan
 // "sourcegraph/app/context" module.
 type JSContext struct {
 	AppRoot             string                     `json:"appRoot,omitempty"`
+	AppURL              string                     `json:"appURL,omitempty"`
 	XHRHeaders          map[string]string          `json:"xhrHeaders"`
 	CSRFToken           string                     `json:"csrfToken"`
 	UserAgentIsBot      bool                       `json:"userAgentIsBot"`
@@ -48,6 +50,8 @@ type JSContext struct {
 	OnPrem              bool                       `json:"onPrem"`
 	RepoHomeRegexFilter string                     `json:"repoHomeRegexFilter"`
 	SessionID           string                     `json:"sessionID"`
+	Auth0Domain         string                     `json:"auth0Domain"`
+	Auth0ClientID       string                     `json:"auth0ClientID"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -88,6 +92,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	return JSContext{
+		AppURL:              conf.AppURL.String(),
 		XHRHeaders:          headers,
 		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),
@@ -103,6 +108,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		TrackingAppID:       TrackingAppID,
 		RepoHomeRegexFilter: repoHomeRegexFilter,
 		SessionID:           sessionID,
+		Auth0Domain:         auth0.Domain,
+		Auth0ClientID:       auth0.Config.ClientID,
 	}
 }
 

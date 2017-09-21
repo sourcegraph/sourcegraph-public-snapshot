@@ -1,0 +1,22 @@
+.sign-in-page {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+
+    &__mode {
+        color: #93A9C8;
+        font-size: inherit;
+        cursor: pointer;
+        &:hover {
+            color: #FFFFFF;
+        }
+
+        &--active {
+            color: #FFFFFF;
+        }
+    }
+
+    &__mode-divider {
+        padding: 0 1rem;
+    }
+}

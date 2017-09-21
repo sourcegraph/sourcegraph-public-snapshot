@@ -2,8 +2,8 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
-import { SignInButton } from '../settings/auth/SignInButton'
 import { SignOutButton } from '../settings/auth/SignOutButton'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { limitString } from '../util'
@@ -11,7 +11,7 @@ import { sourcegraphContext } from '../util/sourcegraphContext'
 import { parseSearchURLQuery } from './index'
 import { SearchBox } from './SearchBox'
 
-interface Props extends RouteComponentProps<void> {}
+interface Props extends RouteComponentProps<void> { }
 
 interface State {
     helpVisible: boolean
@@ -37,12 +37,12 @@ export class Search extends React.Component<Props, State> {
             <div className='search'>
                 <PageTitle title={this.getPageTitle()} />
                 <div className='search__nav'>
-                    { !sourcegraphContext.user && <a href='https://about.sourcegraph.com' className='search__nav-link'>About</a> }
+                    {!sourcegraphContext.user && <a href='https://about.sourcegraph.com' className='search__nav-link'>About</a>}
                     <div className='search__nav-auth'>
                         {
                             sourcegraphContext.user ?
                                 <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
-                                <SignInButton />
+                                <Link to='/sign-in' className='ui-button'>Sign in</Link>
                         }
                         {
                             this.state.showSignOut && <SignOutButton />

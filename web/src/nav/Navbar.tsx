@@ -2,7 +2,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { SearchBox } from '../search/SearchBox'
-import { SignInButton } from '../settings/auth/SignInButton'
 import { SignOutButton } from '../settings/auth/SignOutButton'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { ParsedRouteProps } from '../util/routes'
@@ -32,7 +31,7 @@ export class Navbar extends React.Component<ParsedRouteProps, State> {
                     {
                         sourcegraphContext.user ?
                             <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
-                            <SignInButton />
+                            <Link to='/sign-in' className='ui-button'>Sign in</Link>
                     }
                     {
                         this.state.showSignOut && <SignOutButton />

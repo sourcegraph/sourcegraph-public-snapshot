@@ -24,6 +24,7 @@ $media-xl: 1200px;
 @import './components/HeroPage';
 @import './settings/SettingsPage';
 @import './settings/auth/EditorAuthPage';
+@import './settings/auth/SignInPage';
 @import './settings/user/UserProfilePage';
 
 // Define the 'system' font family
@@ -176,6 +177,21 @@ h1 {
     margin: 0 0 1rem;
 }
 
+.ui-text-input {
+    display: block;
+    margin: .5rem;
+    padding: .5rem;
+    border: none;
+    outline: none;
+    background: #333a44;
+    color: white;
+    font-size: inherit;
+    line-height: 1.5rem;
+    &::placeholder {
+        color: #93A9C8;
+    }
+}
+
 .ui-button {
     display: inline-block;
     background: #0CA678;
@@ -184,6 +200,7 @@ h1 {
     color: #FFFFFF;
     font-size: inherit;
     text-decoration: none;
+    border: none;
     cursor: pointer;
     transition: all 100ms ease-out;
     &:hover {

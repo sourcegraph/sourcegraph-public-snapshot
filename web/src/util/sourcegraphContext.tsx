@@ -31,6 +31,8 @@ export class SourcegraphContext {
     public appURL: string // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)
     public assetsRoot: string // URL path to image/font/etc. assets on server
     public version: string
+    public auth0Domain: string
+    public auth0ClientID: string
     /**
      * authEnabled, set as AUTH_ENABLED as an env var and enabled by default, causes Sourcegraph to require GitHub.com authentication.
      * With authEnabled set to false, no sign in is required or possible, and repositories are pulled from local disk. Used for on-prem.
