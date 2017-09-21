@@ -307,10 +307,7 @@ func (s *scorer) calcScore(result interface{}) int {
 		// Assume the query is written to match the postfix of the paths.
 		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
 		if len(s.queryParts) > 0 {
-			repoParts := strings.Split(r.repo.URI, "/")
-			for i := 1; len(s.queryParts)-i >= 0 && len(repoParts)-i >= 0; i++ {
-				score += stringscore.Score(repoParts[len(repoParts)-i], s.queryParts[len(s.queryParts)-i])
-			}
+			score += postfixAlignScore(strings.Split(r.repo.URI, "/"), s.queryParts)
 		}
 		// Push forks down
 		if r.repo.Fork {
@@ -366,6 +363,27 @@ func (s *scorer) calcScore(result interface{}) int {
 	default:
 		panic("never here")
 	}
+}
+
+// postfixAlignScore is used to calculate how well the end of a target aligns with a query.
+// targetParts and queryParts are the original target and query split into components.
+//
+// For example a query "b" or "a/b" will score higher to strings _ending_ with
+// that instead of simply _containing_ it. i.e., this ordering:
+//
+// 	/a/b
+// 	/x/a/b/y
+//
+// not:
+//
+// 	/x/a/b/y
+// 	/a/b
+func postfixAlignScore(targetParts, queryParts []string) int {
+	score := 0
+	for i := 1; len(targetParts)-i >= 0 && len(queryParts)-i >= 0; i++ {
+		score += stringscore.Score(targetParts[len(targetParts)-i], queryParts[len(queryParts)-i])
+	}
+	return score
 }
 
 // searchResultSorter implements the sort.Interface interface to sort a list of
