@@ -96,29 +96,25 @@ func TestSearchSorting(t *testing.T) {
 			},
 		},
 		{
-			// TODO: we always want sort order profiles -> repos -> files; this
-			// is not currently the case.
 			name:  "profiles then repos then files",
 			query: "code",
 			expect: []searchTestItem{
 				{searchProfile: "code"},
-				{repoURI: "github.com/muxuezi/code"},
 				{filePath: "some/src/code"},
+				{repoURI: "github.com/muxuezi/code"},
 			},
 		},
 		{
 			// See first image of https://github.com/sourcegraph/sourcegraph/issues/7233#issuecomment-330976509
-			//
-			// TODO: we always want files to ba above repos!
 			name:  "issue 7233 files above repos",
 			query: "mux.g",
 			expect: []searchTestItem{
+				{filePath: "mux.go"},
+				{filePath: "mux_test.go"},
 				{repoURI: "github.com/muxuezi/muxuezi.github.io"},
 				{repoURI: "github.com/kcparashar/tmux.github.io"},
 				{repoURI: "github.com/tmux/tmux.github.io"},
 				{repoURI: "github.com/termux/termux.github.io"},
-				{filePath: "mux.go"},
-				{filePath: "mux_test.go"},
 				{repoURI: "github.com/nacimux/vuejs.org"},
 			},
 		},

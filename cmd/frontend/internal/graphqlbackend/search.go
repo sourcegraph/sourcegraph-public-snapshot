@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -288,9 +289,11 @@ func newScorer(query string) *scorer {
 // score values to add to different types of results to e.g. get forks lower in
 // search results, etc.
 const (
+	// Search Profiles > Files > Repos > Forks
+	scoreBumpSearchProfile = 2 * (math.MaxInt32 / 16)
+	scoreBumpFile          = 1 * (math.MaxInt32 / 16)
+	scoreBumpRepo          = 0 * (math.MaxInt32 / 16)
 	scoreBumpFork          = -50
-	scoreBumpFile          = 5
-	scoreBumpSearchProfile = 100
 )
 
 // calcScore calculates and assigns the sorting score to the given result.
@@ -312,6 +315,9 @@ func (s *scorer) calcScore(result interface{}) int {
 		// Push forks down
 		if r.repo.Fork {
 			score += scoreBumpFork
+		}
+		if score > 0 {
+			score += scoreBumpRepo
 		}
 		return score
 
