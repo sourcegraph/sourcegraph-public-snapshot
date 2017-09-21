@@ -322,14 +322,31 @@ func (s *scorer) calcScore(result interface{}) int {
 		return score
 
 	case *fileResolver:
+		// example query: "bar/baz.go"
+		// example r.path: "a/b/foo/bar/baz.go"
 		score := 0
-		// Score each path component individually and use the sum
-		// We don't want the query "openerService" to match
-		//   src/vs/workbench/parts/execution/electron-browser/terminalService.ts
-		// with a higher score than
-		//   src/vs/platform/opener/browser/openerService.ts
 		pathParts := strings.Split(r.path, "/")
-		for _, pathPart := range pathParts {
+		for i, pathPart := range pathParts {
+			if i >= len(pathParts)-len(s.queryParts) {
+				// match query parts "bar" and "baz.go" against r.path parts "bar" and "baz.go"
+				//
+				// aligned query matches like this get a 4x multiplier so that e.g.
+				// a query "b" or "a/b" gives more weight to strings _ending_ with
+				// that instead of simply _containing_ it. i.e., this ordering:
+				//
+				// 	/a/b
+				// 	/x/a/b/y
+				//
+				// not:
+				//
+				// 	/x/a/b/y
+				// 	/a/b
+				//
+				queryPart := s.queryParts[i-(len(pathParts)-len(s.queryParts))]
+				score += stringscore.Score(pathPart, queryPart) * 3
+			}
+			// For all path parts (including aligned ones like above), match
+			// against every query part.
 			for _, queryPart := range s.queryParts {
 				score += stringscore.Score(pathPart, queryPart)
 			}

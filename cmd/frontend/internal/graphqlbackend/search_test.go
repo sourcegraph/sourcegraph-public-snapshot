@@ -121,6 +121,7 @@ func TestSearchSorting(t *testing.T) {
 			name:  "issue 7233 file name above dir",
 			query: "backend",
 			expect: []searchTestItem{
+				{filePath: "web/src/backend.tsx"},
 				{filePath: "cmd/frontend/internal/graphqlbackend/graphqlbackend.go"},
 				{filePath: "cmd/frontend/internal/graphqlbackend/graphqlbackend_test.go"},
 				{filePath: "web/src/backend/lsp.tsx"},
@@ -128,7 +129,6 @@ func TestSearchSorting(t *testing.T) {
 				{filePath: "pkg/backend/mocks.go"},
 				{filePath: "pkg/backend/repos.go"},
 				{filePath: "pkg/backend/trace.go"},
-				{filePath: "web/src/backend.tsx"}, // TODO: We'd prefer that this is ranked first
 				{filePath: "pkg/backend/defs_refs.go"},
 				{filePath: "pkg/backend/repos_vcs.go"},
 				{filePath: "pkg/backend/repos_test.go"},
@@ -140,6 +140,22 @@ func TestSearchSorting(t *testing.T) {
 			expect: []searchTestItem{
 				{filePath: "src/vs/platform/opener/browser/openerService.ts"},
 				{filePath: "src/vs/workbench/parts/execution/electron-browser/terminalService.ts", removed: true},
+			},
+		},
+		{
+			name:  "file single aligned query multiplier",
+			query: "a",
+			expect: []searchTestItem{
+				{filePath: "/a/b"},
+				{filePath: "/x/a/b/y"},
+			},
+		},
+		{
+			name:  "file dual aligned query multiplier",
+			query: "a/b",
+			expect: []searchTestItem{
+				{filePath: "/a/b"},
+				{filePath: "/x/a/b/y"},
 			},
 		},
 	}
