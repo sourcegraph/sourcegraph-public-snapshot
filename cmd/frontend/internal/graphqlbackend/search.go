@@ -285,7 +285,7 @@ type scorer struct {
 func newScorer(query string) *scorer {
 	return &scorer{
 		query:      query,
-		queryParts: strings.Split(query, "/"),
+		queryParts: splitNoEmpty(query, "/"),
 	}
 }
 
@@ -310,7 +310,7 @@ func (s *scorer) calcScore(result interface{}) int {
 		// Assume the query is written to match the postfix of the paths.
 		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
 		if len(s.queryParts) > 0 {
-			score += postfixAlignScore(strings.Split(r.repo.URI, "/"), s.queryParts)
+			score += postfixAlignScore(splitNoEmpty(r.repo.URI, "/"), s.queryParts)
 		}
 		// Push forks down
 		if r.repo.Fork {
@@ -325,7 +325,7 @@ func (s *scorer) calcScore(result interface{}) int {
 		// example query: "bar/baz.go"
 		// example r.path: "a/b/foo/bar/baz.go"
 		score := 0
-		pathParts := strings.Split(r.path, "/")
+		pathParts := splitNoEmpty(r.path, "/")
 		// aligned query matches get 4x multiplier (3x here, 1x in the next loop)
 		score += 3 * postfixAlignScore(pathParts, s.queryParts)
 		for _, pathPart := range pathParts {
@@ -371,6 +371,18 @@ func postfixAlignScore(targetParts, queryParts []string) int {
 		score += stringscore.Score(targetParts[len(targetParts)-i], queryParts[len(queryParts)-i])
 	}
 	return score
+}
+
+// splitNoEmpty is like strings.Split except empty strings are removed.
+func splitNoEmpty(s, sep string) []string {
+	split := strings.Split(s, sep)
+	res := make([]string, 0, len(split))
+	for _, part := range split {
+		if part != "" {
+			res = append(res, part)
+		}
+	}
+	return res
 }
 
 // searchResultSorter implements the sort.Interface interface to sort a list of
