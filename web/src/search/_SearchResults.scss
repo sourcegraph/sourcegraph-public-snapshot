@@ -1,6 +1,7 @@
 
 .search-results {
     width: 100%;
+    padding-top: 1rem;
 
     &__alert {
         width: 100%;
@@ -17,8 +18,8 @@
     &__header {
         display: flex;
         align-items: baseline;
-        padding: 1rem 0;
         color: #93A9C8;
+        margin-bottom: 1rem;
     }
 
     &__badge {

@@ -33,12 +33,30 @@ import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
 
 interface ReferenceGroupProps {
+
     repoPath: string
-    filePath: string
-    refs: Location[]
+
+    /**
+     * The file path to show in the title.
+     * If not given, only the repoPath is shown.
+     */
+    filePath?: string
+
+    /**
+     * The references to show when expanded.
+     * Defaults to empty array.
+     * When empty, will not render a caret icon and not make the list clickable.
+     */
+    refs?: Location[]
+
     isLocal: boolean
     localRev?: string
     hidden?: boolean
+
+    /**
+     * The icon to show left to the title.
+     */
+    icon: (props: {}) => JSX.Element
 }
 
 interface ReferenceGroupState {
@@ -57,7 +75,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
             refs = (
                 <div className='references-group__list'>
                     {
-                        this.props.refs
+                        (this.props.refs || [])
                             .sort((a, b) => {
                                 if (a.range.start.line < b.range.start.line) {
                                     return -1
@@ -107,10 +125,16 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
 
         return (
             <div className='references-group'>
-                <div className='references-group__title' onClick={this.toggle}>
-                    <div className='references-group__icon'>{this.props.isLocal ? <RepoIcon /> : <GlobeIcon />}</div>
+                <div className={'references-group__title' + ((this.props.refs || []).length > 0 ? ' references-group__title--expandable' : '')} onClick={this.toggle}>
+                    <div className='references-group__icon'><this.props.icon /></div>
                     <RepoBreadcrumb repoPath={this.props.repoPath} filePath={this.props.filePath} />
-                    {this.state.hidden ? <RightIcon className='references-group__expand-icon' /> : <DownIcon className='references-group__expand-icon' />}
+                    {
+                        (this.props.refs || []).length > 0 && (
+                            this.state.hidden
+                                ? <RightIcon className='references-group__expand-icon' />
+                                : <DownIcon className='references-group__expand-icon' />
+                        )
+                    }
                 </div>
                 {refs}
             </div>
@@ -292,7 +316,8 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                         filePath={parsed.hash.substr('#'.length)}
                                         isLocal={true}
                                         localRev={this.props.rev}
-                                        refs={refsByUri[uri]} />
+                                        refs={refsByUri[uri]}
+                                        icon={RepoIcon}/>
                                 )
                             })} />
                     }
@@ -306,7 +331,8 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                         repoPath={parsed.hostname + parsed.pathname}
                                         filePath={parsed.hash.substr('#'.length)}
                                         isLocal={false}
-                                        refs={refsByUri[uri]} />
+                                        refs={refsByUri[uri]}
+                                        icon={GlobeIcon}/>
                                 )
                             })} />
                     }

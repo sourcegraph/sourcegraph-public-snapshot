@@ -49,7 +49,7 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
     return Observable.merge(
         // From repo filters
         Observable.from(params.filters)
-            .filter((filter: Filter): filter is RepoFilter => filter.type === FilterType.Repo)
+            .filter((filter: Filter): filter is RepoFilter => filter.type === FilterType.Repo || filter.type === FilterType.UnknownRepo)
             .map(filter => filter.value),
         // From search profiles
         Observable.from(params.filters)
@@ -107,6 +107,8 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
                             excludePattern: $excludePattern,
                     }) {
                         limitHit
+                        missing
+                        cloning
                         results {
                             resource
                             limitHit

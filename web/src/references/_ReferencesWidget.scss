@@ -9,6 +9,9 @@
             fill: currentColor;
             vertical-align: middle;
         }
+        .icon-loader {
+            stroke: currentColor;
+        }
     }
 
     &__title {
@@ -19,10 +22,12 @@
         display: flex;
         align-items: center;
         white-space: nowrap;
-
-        cursor: pointer;
         $background-color: #1C2736;
         background-color: $background-color;
+
+        &--expandable {
+            cursor: pointer;
+        }
 
         &:hover {
             background-color: darken($background-color, 0.05);

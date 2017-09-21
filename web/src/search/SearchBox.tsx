@@ -2,20 +2,26 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import FileIcon from '@sourcegraph/icons/lib/File'
 import FileGlobIcon from '@sourcegraph/icons/lib/FileGlob'
+import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import RepoGroupIcon from '@sourcegraph/icons/lib/RepoGroup'
+import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
+import ReportIcon from '@sourcegraph/icons/lib/Report'
 import SearchIcon from '@sourcegraph/icons/lib/Search'
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import 'rxjs/add/observable/fromEvent'
 import 'rxjs/add/observable/merge'
+import 'rxjs/add/observable/of'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/debounceTime'
+import 'rxjs/add/operator/delay'
 import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/observeOn'
+import 'rxjs/add/operator/publishReplay'
 import 'rxjs/add/operator/repeat'
 import 'rxjs/add/operator/skip'
 import 'rxjs/add/operator/startWith'
@@ -43,6 +49,8 @@ function getFilterLabel(filter: Filter): string {
 
 function getFilterIcon(filter: Filter): (props: {}) => JSX.Element {
     switch (filter.type) {
+        case FilterType.UnknownRepo:
+            return RepoQuestionIcon
         case FilterType.Repo:
             return RepoIcon
         case FilterType.RepoGroup:
@@ -67,6 +75,9 @@ interface State extends SearchOptions {
 
     /** Index of the currently selected suggestion (-1 if none selected) */
     selectedSuggestion: number
+
+    /** Whether suggestions are currently being fetched */
+    loading: boolean
 }
 
 const shortcutModifier = navigator.platform.startsWith('Mac') ? 'Ctrl' : 'Cmd'
@@ -127,8 +138,7 @@ export class SearchBox extends React.Component<Props, State> {
             Observable.merge(
                 // Trigger new suggestions every time the input field is typed into
                 this.inputValues
-                    .do(query => this.setState({ query }))
-                    .debounceTime(200),
+                    .do(query => this.setState({ query })),
                 // Trigger new suggestions every time the input field is clicked
                 this.inputClicks
                     .map(() => this.inputElement!.value),
@@ -140,43 +150,66 @@ export class SearchBox extends React.Component<Props, State> {
             )
                 // Only use query up to the cursor
                 .map(query => query.substring(0, this.inputElement!.selectionEnd))
+                .distinctUntilChanged()
+                .debounceTime(200)
                 .switchMap(query => {
                     if (query.length <= 1) {
-                        this.setState({ suggestions: [], selectedSuggestion: -1 })
-                        return []
+                        return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
                     }
-                    // If query includes a wildcard, suggest a file glob filter
-                    // TODO suggest repo glob filter (needs server implementation)
-                    // TODO verify that the glob matches something server-side,
-                    //      only suggest if it does and show number of matches
-                    if (hasMagic(query)) {
-                        const fileFilter: FileFilter = {
-                            type: FilterType.File,
-                            value: query
-                        }
-                        return [[fileFilter]]
-                    }
-                    // Search repos
-                    return fetchSuggestions(query, this.state.filters)
-                        .map((item: GQL.SearchResult): Filter => {
-                            switch (item.__typename) {
-                                case 'Repository':    return { type: FilterType.Repo, value: item.uri }
-                                case 'SearchProfile': return { type: FilterType.RepoGroup, value: item.name }
-                                case 'File':          return { type: FilterType.File, value: item.name }
+                    const suggestionsFetch = (() => {
+                        // If query includes a wildcard, suggest a file glob filter
+                        // TODO suggest repo glob filter (needs server implementation)
+                        // TODO verify that the glob matches something server-side,
+                        //      only suggest if it does and show number of matches
+                        if (hasMagic(query)) {
+                            const fileFilter: FileFilter = {
+                                type: FilterType.File,
+                                value: query
                             }
-                        })
+                            return Observable.of(fileFilter)
+                        }
+                        return fetchSuggestions(query, this.state.filters)
+                            .map((item: GQL.SearchResult): Filter => {
+                                switch (item.__typename) {
+                                    case 'Repository':    return { type: FilterType.Repo, value: item.uri }
+                                    case 'SearchProfile': return { type: FilterType.RepoGroup, value: item.name }
+                                    case 'File':          return { type: FilterType.File, value: item.name }
+                                }
+                            })
+                    })()
                         .toArray()
+                        .map(suggestions => {
+                            // If no results were found, but the query looks like a repo slug (e.g. sourcegraph/icons), suggest to add it as an "unknown repo"
+                            // This is meant as an escape hatch when we don't have a repo in our database so the user can still navigate to it
+                            if (suggestions.length === 0 && query.includes('/')) {
+                                const filter: Filter = { type: FilterType.UnknownRepo, value: query }
+                                // Don't require typing github.com/
+                                if (!window.context.onPrem && !query.startsWith('github.com/')) {
+                                    filter.value = 'github.com/' + filter.value
+                                }
+                                return [filter]
+                            }
+                            return suggestions
+                        })
+                        .map(suggestions => ({ suggestions, selectedSuggestion: -1, suggestionsVisible: true, loading: false }))
                         .catch(err => {
                             console.error(err)
                             return []
                         })
+                        .publishReplay()
+                        .refCount()
+                    return Observable.merge(
+                        suggestionsFetch,
+                        // Show a loader if the fetch takes longer than 100ms
+                        Observable.of({ loading: true }).delay(100).takeUntil(suggestionsFetch)
+                    )
                 })
                 // Abort suggestion display on route change
                 .takeUntil(routeChanges)
                 // But resubscribe afterwards
                 .repeat()
-                .subscribe(suggestions => {
-                    this.setState({ suggestions, selectedSuggestion: -1, suggestionsVisible: true })
+                .subscribe(state => {
+                    this.setState(state as State)
                 }, err => {
                     console.error(err)
                 })
@@ -249,14 +282,29 @@ export class SearchBox extends React.Component<Props, State> {
         const query = this.inputElement ? this.state.query.substring(0, this.inputElement.selectionEnd) : this.state.query
         const toHighlight = query.toLowerCase()
         const splitRegexp = new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi')
+
+        const showNoMatches = this.state.query.length > 1
+            && !!this.state.suggestionsVisible
+            && this.state.suggestions.length === 0
+            && this.state.filters.length === 0
+            && !this.state.loading
+
+        const showSuggestions = this.state.query.length > 1
+            && !!this.state.suggestionsVisible
+            && this.state.suggestions.length !== 0
+
+        const showSpacer = !showNoMatches && !showSuggestions
+
         return (
             <form
-                className={'search-box' + (this.state.suggestionsVisible && this.state.suggestions.length > 0 ? ' search-box--suggesting' : '')}
+                className={'search-box' + (this.state.suggestionsVisible && (this.state.query || this.state.filters.length > 0) ? ' search-box--suggesting' : '')}
                 onSubmit={this.onSubmit}
                 ref={ref => this.containerElement = ref || undefined}
             >
                 <div className='search-box__query'>
-                    <div className='search-box__search-icon'><SearchIcon /></div>
+                    <div className='search-box__search-icon'>
+                        { this.state.loading ? <Loader /> : <SearchIcon /> }
+                    </div>
                     <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
                         {
                             this.state.filters.map((filter, i) => {
@@ -296,40 +344,60 @@ export class SearchBox extends React.Component<Props, State> {
                         <input type='checkbox' checked={this.state.matchRegex} onChange={this.toggleMatchRegex} /><span>.*</span>
                     </label>
                 </div>
-                <ul className='search-box__suggestions' style={this.state.suggestionsVisible ? {} : { height: 0 }} ref={this.setSuggestionListElement}>
-                    {
-                        this.state.suggestions.map((suggestion, i) => {
-                            const onClick = () => {
-                                this.setState(prevState => ({
-                                    filters: prevState.filters.concat(suggestion),
-                                    suggestions: [],
-                                    selectedSuggestion: -1,
-                                    query: ''
-                                }))
+                {
+                    showSpacer &&
+                        <div className='search-box__spacer'></div>
+                }
+                {
+                    showNoMatches &&
+                        <div className='search-box__no-matches'><ReportIcon /> No matches</div>
+                }
+                {
+                    showSuggestions &&
+                        <ul className='search-box__suggestions' ref={this.setSuggestionListElement}>
+                            {
+                                this.state.suggestions.map((suggestion, i) => {
+                                    const onClick = () => {
+                                        this.setState(prevState => ({
+                                            filters: prevState.filters.concat(suggestion),
+                                            suggestions: [],
+                                            selectedSuggestion: -1,
+                                            query: ''
+                                        }))
+                                    }
+                                    const onRef = ref => {
+                                        if (this.state.selectedSuggestion === i) {
+                                            this.selectedSuggestionElement = ref || undefined
+                                        }
+                                    }
+                                    const Icon = getFilterIcon(suggestion)
+                                    const parts = getFilterLabel(suggestion).split(splitRegexp)
+                                    let className = 'search-box__suggestion'
+                                    if (this.state.selectedSuggestion === i) {
+                                        className += ' search-box__suggestion--selected'
+                                    }
+                                    return (
+                                        <li key={i} className={className} onClick={onClick} ref={onRef}>
+                                            <Icon />
+                                            <div className='search-box__suggestion-label'>
+                                                {
+                                                    parts.map((part, i) =>
+                                                        <span
+                                                            key={i}
+                                                            className={part.toLowerCase() === toHighlight ? 'search-box__highlighted-query' : ''}
+                                                        >
+                                                            {part}
+                                                        </span>
+                                                    )
+                                                }
+                                            </div>
+                                            <div className='search-box__suggestion-tip' hidden={this.state.selectedSuggestion !== i}><kbd>enter</kbd> to add as filter</div>
+                                        </li>
+                                    )
+                                })
                             }
-                            const onRef = ref => {
-                                if (this.state.selectedSuggestion === i) {
-                                    this.selectedSuggestionElement = ref || undefined
-                                }
-                            }
-                            const Icon = getFilterIcon(suggestion)
-                            const parts = getFilterLabel(suggestion).split(splitRegexp)
-                            let className = 'search-box__suggestion'
-                            if (this.state.selectedSuggestion === i) {
-                                className += ' search-box__suggestion--selected'
-                            }
-                            return (
-                                <li key={i} className={className} onClick={onClick} ref={onRef}>
-                                    <Icon />
-                                    <div className='search-box__suggestion-label'>
-                                        {parts.map((part, i) => <span key={i} className={part.toLowerCase() === toHighlight ? 'search-box__highlighted-query' : ''}>{part}</span>)}
-                                    </div>
-                                    <div className='search-box__suggestion-tip' hidden={this.state.selectedSuggestion !== i}><kbd>enter</kbd> to add as filter</div>
-                                </li>
-                            )
-                        })
-                    }
-                </ul>
+                        </ul>
+                }
             </form>
         )
     }
@@ -372,7 +440,7 @@ export class SearchBox extends React.Component<Props, State> {
                 searchOptions.filters.push({ type: FilterType.File, value: props.filePath })
             }
         }
-        return { ...searchOptions, suggestions: [], selectedSuggestion: -1, suggestionsVisible: false }
+        return { ...searchOptions, suggestions: [], selectedSuggestion: -1, suggestionsVisible: false, loading: false }
     }
 
     private removeFilter(index: number): void {

@@ -1,9 +1,20 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import ReportIcon from '@sourcegraph/icons/lib/Report'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
+import 'rxjs/add/observable/timer'
 import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/concat'
 import 'rxjs/add/operator/map'
+import 'rxjs/add/operator/mergeMap'
+import 'rxjs/add/operator/multicast'
 import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/switchMap'
+import 'rxjs/add/operator/take'
+import 'rxjs/add/operator/takeWhile'
+import { Observable } from 'rxjs/Observable'
+import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
@@ -18,6 +29,9 @@ interface State {
     loading: boolean
     searchDuration?: number
     error?: Error
+    limitHit: boolean
+    cloning: string[]
+    missing: string[]
 }
 
 function numberWithCommas(x: any): string {
@@ -32,7 +46,10 @@ export class SearchResults extends React.Component<Props, State> {
 
     public state: State = {
         results: [],
-        loading: true
+        loading: true,
+        limitHit: false,
+        cloning: [],
+        missing: []
     }
 
     private componentUpdates = new Subject<Props>()
@@ -45,17 +62,25 @@ export class SearchResults extends React.Component<Props, State> {
                 .switchMap(props => {
                     const start = Date.now()
                     const searchOptions = parseSearchURLQuery(props.location.search)
-                    return searchText(searchOptions)
-                        .map((res: GQL.ISearchResults): State => ({ results: res.results, error: undefined, loading: false, searchDuration: Date.now() - start }))
-                        .catch((error): State[] => {
+                    // Repeat the search every 1s until no more repos are clone in progress
+                    return Observable.timer(0, 1000)
+                        .mergeMap(() => searchText(searchOptions))
+                        // Make sure that last item is still included
+                        // Can't use takeWhile here because it would omit the last element (the first which the predicate returns false for)
+                        .multicast<GQL.ISearchResults>(
+                            () => new ReplaySubject<GQL.ISearchResults>(1),
+                            textSearch => textSearch.takeWhile(res => res.cloning.length > 0).concat(textSearch.take(1))
+                        )
+                        .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
+                        .catch(error => {
                             console.error(error)
-                            return [{ results: [], error, loading: false, searchDuration: undefined }]
+                            return [{ results: [], missing: [], cloning: [], limitHit: false, error, loading: false, searchDuration: undefined }]
                         })
                         // Reset to loading state
-                        .startWith<State>({ results: [], error: undefined, loading: true, searchDuration: undefined })
+                        .startWith({ results: [], missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined })
                 })
                 .subscribe(
-                    newState => this.setState(newState),
+                    newState => this.setState(newState as State),
                     err => console.error(err)
                 )
         )
@@ -71,14 +96,14 @@ export class SearchResults extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
 
-        let alertTitle: string | undefined
+        let alertTitle: string | JSX.Element | undefined
         let alertDetails: string | undefined
         if (this.state.error) {
             alertTitle = 'Something went wrong!'
             alertDetails = upperFirst(this.state.error.message)
         } else if (this.state.loading) {
-            alertTitle = 'Working...'
-        } else if (this.state.results.length === 0) {
+            alertTitle = <Loader />
+        } else if (this.state.results.length === 0 && this.state.missing.length === 0 && this.state.cloning.length === 0) {
             alertTitle = 'No results'
         }
 
@@ -100,13 +125,6 @@ export class SearchResults extends React.Component<Props, State> {
         return (
            <div className='search-results'>
                 {
-                    (alertTitle || alertDetails) &&
-                        <div className='search-results__alert'>
-                            {alertTitle && <h1 className='search-results__alert-title'>{alertTitle}</h1>}
-                            {alertDetails && <p className='search-results__alert-details'>{alertDetails}</p>}
-                        </div>
-                }
-                {
                     this.state.results.length > 0 &&
                         <div className='search-results__header'>
                             <div className='search-results__badge'>{numberWithCommas(totalResults)}</div>
@@ -116,6 +134,23 @@ export class SearchResults extends React.Component<Props, State> {
                             <div className='search-results__badge'>{numberWithCommas(totalRepos)}</div>
                             <div className='search-results__label'>{pluralize('repo', totalRepos)} </div>
                             <div className='search-results__duration'>{this.state.searchDuration! / 1000} seconds</div>
+                        </div>
+                }
+                {
+                    this.state.cloning.map((repoPath, i) =>
+                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />
+                    )
+                }
+                {
+                    this.state.missing.map((repoPath, i) =>
+                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon}/>
+                    )
+                }
+                {
+                    (alertTitle || alertDetails) &&
+                        <div className='search-results__alert'>
+                            {alertTitle && <h1 className='search-results__alert-title'>{alertTitle}</h1>}
+                            {alertDetails && <p className='search-results__alert-details'>{alertDetails}</p>}
                         </div>
                 }
                 {
@@ -140,7 +175,7 @@ export class SearchResults extends React.Component<Props, State> {
                             repoURI: repoPath
                         }))
 
-                        return <ReferencesGroup hidden={prevTotal > 500} repoPath={repoPath} filePath={filePath} key={i} refs={refs} isLocal={false} />
+                        return <ReferencesGroup hidden={prevTotal > 500} repoPath={repoPath} filePath={filePath} key={i} refs={refs} isLocal={false} icon={RepoIcon} />
                     })
                 }
             </div>

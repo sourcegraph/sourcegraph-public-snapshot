@@ -6,6 +6,7 @@
     background-color: #1C2736;
     padding-top: 0.5rem;
     width: 100%;
+    overflow: hidden;
 
     &--suggesting {
         box-shadow: 0px 0.25rem 0.5rem rgba(0, 0, 0, 0.32);
@@ -19,6 +20,9 @@
         display: inline-block;
         > svg {
             height: 100%;
+        }
+        .icon-loader {
+            stroke: currentColor;
         }
     }
 
@@ -140,17 +144,19 @@
         }
     }
 
-    &__suggestions {
+    &__spacer {
         padding-top: 0.5rem;
+    }
+
+    &__suggestions {
         max-height: 25rem;
+        margin-top: 0.5rem;
         overflow-y: auto;
     }
 
-    &__suggestion {
+    &__suggestion, &__no-matches {
         display: flex;
-        border-top: 1px solid #2A3A51;
         background-color: #1C2736;
-        cursor: pointer;
         padding: 0 1rem;
         height: 2.5rem;
         line-height: 2.5rem;
@@ -158,12 +164,19 @@
         white-space: nowrap;
         overflow: hidden;
 
+        .icon {
+            flex: 0 1 auto;
+            margin-right: 0.5rem;
+            height: 100%;
+        }
+    }
+
+    &__suggestion {
+        border-top: 1px solid #2A3A51;
+        cursor: pointer;
+
         &--selected {
             background-color: #2A3A51;
-            &:last-child {
-                border-bottom-left-radius: 0.25rem;
-                border-bottom-right-radius: 0.25rem;
-            }
         }
 
         &-tip {
@@ -174,11 +187,6 @@
             flex: 1 0 auto;
         }
 
-        .icon {
-            flex: 0 1 auto;
-            margin-right: 0.5rem;
-            height: 100%;
-        }
     }
 
     &__highlighted-query {

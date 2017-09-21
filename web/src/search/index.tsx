@@ -1,13 +1,14 @@
 
 export enum FilterType {
     Repo = 'repo',
+    UnknownRepo = 'unknownrepo',
     RepoGroup = 'repogroup',
     File = 'file'
 }
 
 const filterTypes = new Set(Object.values(FilterType))
 
-export type Filter = RepoGroupFilter | RepoFilter | FileFilter
+export type Filter = RepoGroupFilter | RepoFilter | FileFilter | UnknownRepoFilter
 
 interface BaseFilter {
     value: string
@@ -15,6 +16,10 @@ interface BaseFilter {
 
 export interface RepoFilter extends BaseFilter {
     type: FilterType.Repo
+}
+
+export interface UnknownRepoFilter extends BaseFilter {
+    type: FilterType.UnknownRepo
 }
 
 export interface FileFilter extends BaseFilter {
