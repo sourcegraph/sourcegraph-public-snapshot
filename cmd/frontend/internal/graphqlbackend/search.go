@@ -31,6 +31,8 @@ type searchResultResolver struct {
 	score int
 	// length holds the length of the item name as a second sorting criterium
 	length int
+	// label to sort alphabetically by when all else is equal.
+	label string
 }
 
 func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
@@ -254,13 +256,13 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 func newSearchResultResolver(result interface{}, score int) *searchResultResolver {
 	switch r := result.(type) {
 	case *repositoryResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI)}
+		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI), label: r.repo.URI}
 
 	case *fileResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.name)}
+		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
 
 	case *searchProfile:
-		return &searchResultResolver{result: r, score: score, length: len(r.name)}
+		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
 
 	default:
 		panic("never here")
@@ -350,5 +352,10 @@ func (s searchResultSorter) Less(i, j int) bool {
 	}
 	// Prefer shorter strings for the same match score
 	// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
-	return a.length < b.length
+	if a.length != b.length {
+		return a.length < b.length
+	}
+
+	// All else equal, sort alphabetically.
+	return a.label < b.label
 }
