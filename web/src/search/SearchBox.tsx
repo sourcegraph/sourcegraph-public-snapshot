@@ -135,6 +135,7 @@ export class SearchBox extends React.Component<Props, State> {
                 this.inputKeyDowns
                     // Defer to next tick to get the selection _after_ any selection change was dipatched (e.g. arrow keys)
                     .observeOn(asap)
+                    .filter(event => event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
                     .map(() => this.state.query)
             )
                 // Only use query up to the cursor
