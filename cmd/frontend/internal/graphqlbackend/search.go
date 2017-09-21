@@ -285,6 +285,14 @@ func newScorer(query string) *scorer {
 	}
 }
 
+// score values to add to different types of results to e.g. get forks lower in
+// search results, etc.
+const (
+	scoreBumpFork          = -50
+	scoreBumpFile          = 5
+	scoreBumpSearchProfile = 100
+)
+
 // calcScore calculates and assigns the sorting score to the given result.
 //
 // A panic occurs if the type of result is not a *repositoryResolver,
@@ -303,7 +311,7 @@ func (s *scorer) calcScore(result interface{}) int {
 		}
 		// Push forks down
 		if r.repo.Fork {
-			score -= 10
+			score += scoreBumpFork
 		}
 		return score
 
@@ -321,15 +329,14 @@ func (s *scorer) calcScore(result interface{}) int {
 			}
 		}
 		if score > 0 {
-			// Give files a slight advantage over repos
-			score += 5
+			score += scoreBumpFile
 		}
 		return score
 
 	case *searchProfile:
 		score := stringscore.Score(r.name, s.query)
 		if score > 0 {
-			score += 100
+			score += scoreBumpSearchProfile
 		}
 		return score
 
