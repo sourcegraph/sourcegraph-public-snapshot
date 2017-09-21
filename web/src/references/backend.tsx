@@ -123,7 +123,12 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                                         query: defInfo.symbol,
                                         hints: dependent.hints,
                                         limit: 50
-                                    })).do(refs => numRefsFetched += refs.length)
+                                    }))
+                                        .do(refs => numRefsFetched += refs.length)
+                                        .catch(e => {
+                                            console.error(e)
+                                            return []
+                                        })
                                 })
                         })
                 })
