@@ -328,7 +328,7 @@ func (s *scorer) calcScore(result interface{}) int {
 		//   src/vs/workbench/parts/execution/electron-browser/terminalService.ts
 		// with a higher score than
 		//   src/vs/platform/opener/browser/openerService.ts
-		pathParts := strings.Split(r.name, "/")
+		pathParts := strings.Split(r.path, "/")
 		for _, pathPart := range pathParts {
 			for _, queryPart := range s.queryParts {
 				score += stringscore.Score(pathPart, queryPart)
