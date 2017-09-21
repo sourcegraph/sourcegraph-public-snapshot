@@ -158,6 +158,59 @@ func TestSearchSorting(t *testing.T) {
 				{filePath: "/x/a/b/y"},
 			},
 		},
+		{
+			name:  "slash query comparison standard",
+			query: "encoding/json",
+			expect: []searchTestItem{
+				{filePath: "src/encoding/encoding.go"},
+				{filePath: "src/encoding/json/testdata/code.json.tgz"},
+				{filePath: "docs/progs/json1.go"},
+				{filePath: "docs/progs/json2.go"},
+				{filePath: "docs/progs/json3.go"},
+				{filePath: "docs/progs/json4.go"},
+				{filePath: "docs/progs/json5.go"},
+				{filePath: "test/bench/go1/json_test.go"},
+				{filePath: "test/bench/go1/jsondata_test.go"},
+				{filePath: "src/cmd/vendor/vendor.json"},
+				{filePath: "src/encoding/json/stream.go"}, // TODO: Ideally this would higher
+			},
+		},
+		{
+			// expecting same result order as with one slash.
+			name:  "slash query comparison erroneous",
+			query: "encoding///json",
+			expect: []searchTestItem{
+				{filePath: "src/encoding/encoding.go"},
+				{filePath: "src/encoding/json/testdata/code.json.tgz"},
+				{filePath: "docs/progs/json1.go"},
+				{filePath: "docs/progs/json2.go"},
+				{filePath: "docs/progs/json3.go"},
+				{filePath: "docs/progs/json4.go"},
+				{filePath: "docs/progs/json5.go"},
+				{filePath: "test/bench/go1/json_test.go"},
+				{filePath: "test/bench/go1/jsondata_test.go"},
+				{filePath: "src/cmd/vendor/vendor.json"},
+				{filePath: "src/encoding/json/stream.go"}, // TODO: Ideally this would higher
+			},
+		},
+		{
+			// expecting same result order as with no trailing slash.
+			name:  "slash query comparison trailing",
+			query: "encoding/json/",
+			expect: []searchTestItem{
+				{filePath: "src/encoding/encoding.go"},
+				{filePath: "src/encoding/json/testdata/code.json.tgz"},
+				{filePath: "docs/progs/json1.go"},
+				{filePath: "docs/progs/json2.go"},
+				{filePath: "docs/progs/json3.go"},
+				{filePath: "docs/progs/json4.go"},
+				{filePath: "docs/progs/json5.go"},
+				{filePath: "test/bench/go1/json_test.go"},
+				{filePath: "test/bench/go1/jsondata_test.go"},
+				{filePath: "src/cmd/vendor/vendor.json"},
+				{filePath: "src/encoding/json/stream.go"}, // TODO: Ideally this would higher
+			},
+		},
 	}
 
 	for _, test := range tests {
