@@ -238,14 +238,17 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 	}
 	scorer := newScorer(query)
 	for _, fileResolver := range treeResolver.Files() {
-		if len(res) >= limit {
-			return res, nil
-		}
 		score := scorer.calcScore(fileResolver)
 		if score > 0 {
 			res = append(res, newSearchResultResolver(fileResolver, score))
 		}
 	}
+
+	sort.Sort(searchResultSorter(res))
+	if len(res) > limit {
+		res = res[:limit]
+	}
+
 	return res, nil
 }
 
