@@ -296,7 +296,7 @@ const (
 	scoreBumpSearchProfile = 2 * (math.MaxInt32 / 16)
 	scoreBumpFile          = 1 * (math.MaxInt32 / 16)
 	scoreBumpRepo          = 0 * (math.MaxInt32 / 16)
-	scoreBumpFork          = -50
+	scoreBumpFork          = -10
 )
 
 // calcScore calculates and assigns the sorting score to the given result.
