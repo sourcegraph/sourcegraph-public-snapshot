@@ -1,6 +1,7 @@
 import 'rxjs/add/observable/from'
 import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/operator/bufferCount'
+import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/concatMap'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
