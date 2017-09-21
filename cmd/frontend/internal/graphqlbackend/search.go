@@ -323,25 +323,9 @@ func (s *scorer) calcScore(result interface{}) int {
 		// example r.path: "a/b/foo/bar/baz.go"
 		score := 0
 		pathParts := strings.Split(r.path, "/")
-		for i, pathPart := range pathParts {
-			if i >= len(pathParts)-len(s.queryParts) {
-				// match query parts "bar" and "baz.go" against r.path parts "bar" and "baz.go"
-				//
-				// aligned query matches like this get a 4x multiplier so that e.g.
-				// a query "b" or "a/b" gives more weight to strings _ending_ with
-				// that instead of simply _containing_ it. i.e., this ordering:
-				//
-				// 	/a/b
-				// 	/x/a/b/y
-				//
-				// not:
-				//
-				// 	/x/a/b/y
-				// 	/a/b
-				//
-				queryPart := s.queryParts[i-(len(pathParts)-len(s.queryParts))]
-				score += stringscore.Score(pathPart, queryPart) * 3
-			}
+		// aligned query matches get 4x multiplier (3x here, 1x in the next loop)
+		score += 3 * postfixAlignScore(pathParts, s.queryParts)
+		for _, pathPart := range pathParts {
 			// For all path parts (including aligned ones like above), match
 			// against every query part.
 			for _, queryPart := range s.queryParts {
