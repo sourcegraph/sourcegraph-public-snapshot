@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -31,6 +32,8 @@ type searchResultResolver struct {
 	score int
 	// length holds the length of the item name as a second sorting criterium
 	length int
+	// label to sort alphabetically by when all else is equal.
+	label string
 }
 
 func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
@@ -129,16 +132,8 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 		}
 	}
 
-	// Sort by score
-	sort.Slice(res, func(i, j int) bool {
-		a, b := res[i], res[j]
-		if a.score != b.score {
-			return a.score > b.score
-		}
-		// Prefer shorter strings for the same match score
-		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
-		return a.length < b.length
-	})
+	// Sort search results.
+	sort.Sort(searchResultSorter(res))
 
 	// Limit
 	if len(res) > limit {
@@ -153,11 +148,11 @@ func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query
 	if err != nil {
 		return nil, err
 	}
+	scorer := newScorer(query)
 	for _, searchProfile := range searchProfiles {
-		score := stringscore.Score(searchProfile.name, query)
+		score := scorer.calcScore(searchProfile)
 		if score > 0 {
-			score += 100
-			res = append(res, &searchResultResolver{result: searchProfile, score: score, length: len(searchProfile.name)})
+			res = append(res, newSearchResultResolver(searchProfile, score))
 		}
 	}
 	return res, nil
@@ -169,7 +164,7 @@ func searchRepos(ctx context.Context, query string, repoURIs []string, limit int
 	if err != nil {
 		return nil, err
 	}
-	queryParts := strings.Split(query, "/")
+	scorer := newScorer(query)
 outer:
 	for _, repo := range reposList.Repos {
 		// Don't suggest repos that were already added as a filter
@@ -179,21 +174,10 @@ outer:
 			}
 		}
 		repoResolver := &repositoryResolver{repo: repo}
-		score := stringscore.Score(repo.URI, query)
-		// Assume the query is written to match the postfix of the paths.
-		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
-		if len(queryParts) > 0 {
-			repoParts := strings.Split(repo.URI, "/")
-			for i := 1; len(queryParts)-i >= 0 && len(repoParts)-i >= 0; i++ {
-				score += stringscore.Score(repoParts[len(repoParts)-i], queryParts[len(queryParts)-i])
-			}
-		}
-		// Push forks down
-		if repo.Fork {
-			score -= 10
-		}
+
+		score := scorer.calcScore(repoResolver)
 		if score > 0 {
-			res = append(res, &searchResultResolver{result: repoResolver, score: score, length: len(repo.URI)})
+			res = append(res, newSearchResultResolver(repoResolver, score))
 		}
 	}
 	return res, nil
@@ -252,28 +236,161 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 	if err != nil {
 		return nil, err
 	}
+	scorer := newScorer(query)
 	for _, fileResolver := range treeResolver.Files() {
-		if len(res) >= limit {
-			return res, nil
+		score := scorer.calcScore(fileResolver)
+		if score > 0 {
+			res = append(res, newSearchResultResolver(fileResolver, score))
 		}
+	}
+
+	sort.Sort(searchResultSorter(res))
+	if len(res) > limit {
+		res = res[:limit]
+	}
+
+	return res, nil
+}
+
+// newSearchResultResolver returns a new searchResultResolver wrapping the
+// given result.
+//
+// A panic occurs if the type of result is not a *repositoryResolver,
+// *fileResolver, or *searchProfile.
+func newSearchResultResolver(result interface{}, score int) *searchResultResolver {
+	switch r := result.(type) {
+	case *repositoryResolver:
+		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI), label: r.repo.URI}
+
+	case *fileResolver:
+		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
+
+	case *searchProfile:
+		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
+
+	default:
+		panic("never here")
+	}
+}
+
+// scorer is a structure for holding some scorer state that can be shared
+// across calcScore calls for the same query string.
+type scorer struct {
+	query      string
+	queryParts []string
+}
+
+// newScorer returns a scorer to be used for calculating sort scores of results
+// against the specified query.
+func newScorer(query string) *scorer {
+	return &scorer{
+		query:      query,
+		queryParts: strings.Split(query, "/"),
+	}
+}
+
+// score values to add to different types of results to e.g. get forks lower in
+// search results, etc.
+const (
+	// Search Profiles > Files > Repos > Forks
+	scoreBumpSearchProfile = 2 * (math.MaxInt32 / 16)
+	scoreBumpFile          = 1 * (math.MaxInt32 / 16)
+	scoreBumpRepo          = 0 * (math.MaxInt32 / 16)
+	scoreBumpFork          = -10
+)
+
+// calcScore calculates and assigns the sorting score to the given result.
+//
+// A panic occurs if the type of result is not a *repositoryResolver,
+// *fileResolver, or *searchProfile.
+func (s *scorer) calcScore(result interface{}) int {
+	switch r := result.(type) {
+	case *repositoryResolver:
+		score := stringscore.Score(r.repo.URI, s.query)
+		// Assume the query is written to match the postfix of the paths.
+		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
+		if len(s.queryParts) > 0 {
+			score += postfixAlignScore(strings.Split(r.repo.URI, "/"), s.queryParts)
+		}
+		// Push forks down
+		if r.repo.Fork {
+			score += scoreBumpFork
+		}
+		if score > 0 {
+			score += scoreBumpRepo
+		}
+		return score
+
+	case *fileResolver:
+		// example query: "bar/baz.go"
+		// example r.path: "a/b/foo/bar/baz.go"
 		score := 0
-		// Score each path component individually and use the sum
-		// We don't want the query "openerService" to match
-		//   src/vs/workbench/parts/execution/electron-browser/terminalService.ts
-		// with a higher score than
-		//   src/vs/platform/opener/browser/openerService.ts
-		pathParts := strings.Split(fileResolver.name, "/")
-		queryParts := strings.Split(query, "/")
+		pathParts := strings.Split(r.path, "/")
+		// aligned query matches get 4x multiplier (3x here, 1x in the next loop)
+		score += 3 * postfixAlignScore(pathParts, s.queryParts)
 		for _, pathPart := range pathParts {
-			for _, queryPart := range queryParts {
+			// For all path parts (including aligned ones like above), match
+			// against every query part.
+			for _, queryPart := range s.queryParts {
 				score += stringscore.Score(pathPart, queryPart)
 			}
 		}
 		if score > 0 {
-			// Give files a slight advantage over repos
-			score += 5
-			res = append(res, &searchResultResolver{result: fileResolver, score: score, length: len(fileResolver.name)})
+			score += scoreBumpFile
 		}
+		return score
+
+	case *searchProfile:
+		score := stringscore.Score(r.name, s.query)
+		if score > 0 {
+			score += scoreBumpSearchProfile
+		}
+		return score
+
+	default:
+		panic("never here")
 	}
-	return res, nil
+}
+
+// postfixAlignScore is used to calculate how well the end of a target aligns with a query.
+// targetParts and queryParts are the original target and query split into components.
+//
+// For example a query "b" or "a/b" will score higher to strings _ending_ with
+// that instead of simply _containing_ it. i.e., this ordering:
+//
+// 	/a/b
+// 	/x/a/b/y
+//
+// not:
+//
+// 	/x/a/b/y
+// 	/a/b
+func postfixAlignScore(targetParts, queryParts []string) int {
+	score := 0
+	for i := 1; len(targetParts)-i >= 0 && len(queryParts)-i >= 0; i++ {
+		score += stringscore.Score(targetParts[len(targetParts)-i], queryParts[len(queryParts)-i])
+	}
+	return score
+}
+
+// searchResultSorter implements the sort.Interface interface to sort a list of
+// searchResultResolvers.
+type searchResultSorter []*searchResultResolver
+
+func (s searchResultSorter) Len() int      { return len(s) }
+func (s searchResultSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s searchResultSorter) Less(i, j int) bool {
+	// Sort by score
+	a, b := s[i], s[j]
+	if a.score != b.score {
+		return a.score > b.score
+	}
+	// Prefer shorter strings for the same match score
+	// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
+	if a.length != b.length {
+		return a.length < b.length
+	}
+
+	// All else equal, sort alphabetically.
+	return a.label < b.label
 }
