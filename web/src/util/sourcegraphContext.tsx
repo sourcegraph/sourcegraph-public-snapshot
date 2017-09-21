@@ -51,15 +51,6 @@ export class SourcegraphContext {
     constructor(ctx: any) {
         Object.assign(this, ctx)
     }
-
-    /**
-     * the browser extension is detected when it creates a div with id `sourcegraph-app-background` on page.
-     * for on-premise or testing instances of Sourcegraph, the browser extension never runs, so this will return false.
-     * proceed with caution.
-     */
-    public hasBrowserExtensionInstalled(): boolean {
-        return document.getElementById('sourcegraph-app-background') !== null
-    }
 }
 
 declare global {

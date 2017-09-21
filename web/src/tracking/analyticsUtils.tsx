@@ -10,6 +10,15 @@ export interface EventQueryParameters {
 }
 
 /**
+ * the browser extension is detected when it creates a div with id `sourcegraph-app-background` on page.
+ * for on-premise or testing instances of Sourcegraph, the browser extension never runs, so this will return false.
+ * proceed with caution.
+ */
+export function hasBrowserExtensionInstalled(): boolean {
+    return document.getElementById('sourcegraph-app-background') !== null
+}
+
+/**
  * Get pageview-specific event properties from URL query string parameters
  */
 export function pageViewQueryParameters(url: string): EventQueryParameters {

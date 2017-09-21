@@ -3,6 +3,7 @@ import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 import { EventActions, EventCategories } from './analyticsConstants'
+import { hasBrowserExtensionInstalled } from './analyticsUtils'
 import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
@@ -42,7 +43,7 @@ class EventLogger {
      * Function to sync our key user identification props across Telligent and user Chrome extension installations
      */
     public updateTrackerWithIdentificationProps(user: GQL.IUser): any {
-        if (!telligent.isTelligentLoaded() || !sourcegraphContext.hasBrowserExtensionInstalled()) {
+        if (!telligent.isTelligentLoaded() || !hasBrowserExtensionInstalled()) {
             return null
         }
 
