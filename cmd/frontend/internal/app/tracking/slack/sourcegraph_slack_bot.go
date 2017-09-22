@@ -116,7 +116,7 @@ func notifyOnComments(actionText string, authorName string, authorEmail string, 
 					&field{
 						Title: "All recipients",
 						Value: recipients,
-						Short: false,
+						Short: true,
 					},
 				},
 			},
@@ -125,8 +125,8 @@ func notifyOnComments(actionText string, authorName string, authorEmail string, 
 	if strings.HasPrefix(repoRemoteURI, "github.com/sourcegraph") {
 		payload.Attachments[0].Fields = append(payload.Attachments[0].Fields, &field{
 			Title: "Deep link (SG only)",
-			Value: commentURL,
-			Short: false,
+			Value: fmt.Sprintf("<%s|View in Sourcegraph>", commentURL),
+			Short: true,
 		})
 	}
 
