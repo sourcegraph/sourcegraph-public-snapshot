@@ -18,7 +18,6 @@ var signupsWebhookURL = env.Get("SLACK_SIGNUPS_BOT_HOOK", "", "Webhook for posti
 var commentsWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook for posting comment notifications to the Slack #comments channel.")
 
 type payload struct {
-	Text        string        `json:"text,omitempty"`
 	Attachments []*attachment `json:"attachments,omitempty"`
 }
 type attachment struct {
@@ -51,7 +50,21 @@ func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties,
 	}
 
 	payload := &payload{
-		Text: fmt.Sprintf("%s just signed up! %s", hubSpotProps.UserID, strings.Join(links, ",")),
+		Attachments: []*attachment{
+			&attachment{
+				Fallback: fmt.Sprintf("%s just signed up!", actor.Email),
+				Title:    fmt.Sprintf("%s just signed up!", actor.Email),
+				Color:    "good",
+				ThumbURL: actor.AvatarURL,
+				Fields: []*field{
+					&field{
+						Title: "User profile links",
+						Value: strings.Join(links, ", "),
+						Short: false,
+					},
+				},
+			},
+		},
 	}
 
 	return post(payload, signupsWebhookURL)
