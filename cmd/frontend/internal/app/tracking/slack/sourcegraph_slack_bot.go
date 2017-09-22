@@ -14,14 +14,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 )
 
-// SignupsWebhookURL and CommentsWebhookURL are the Slack endpoints
-// that receive signup messages and publish them to the appropriate channels
-// https://sourcegraph.slack.com/services/
-var SignupsWebhookURL = env.Get("SLACK_SIGNUPS_BOT_HOOK", "", "Webhook for posting signup notifications to the Slack #bot-signups channel.")
-var CommentsWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook for posting comment notifications to the Slack #comments channel.")
+var signupsWebhookURL = env.Get("SLACK_SIGNUPS_BOT_HOOK", "", "Webhook for posting signup notifications to the Slack #bot-signups channel.")
+var commentsWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook for posting comment notifications to the Slack #comments channel.")
 
 type payload struct {
-	Attachments []*attachment `json:"attachments"`
+	Text        string        `json:"text,omitempty"`
+	Attachments []*attachment `json:"attachments,omitempty"`
 }
 type attachment struct {
 	Fallback  string   `json:"fallback"`
@@ -40,43 +38,23 @@ type field struct {
 // NotifyOnSignup posts a message to the Slack channel #bot-signups
 // when a user signs up for Sourcegraph
 func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse) error {
-	if SignupsWebhookURL == "" {
+	if signupsWebhookURL == "" {
 		return errors.New("Slack Webhook URL not defined")
 	}
 
-	color := "good"
-
-	links := ""
+	var links []string
+	if hubSpotProps.LookerLink != "" {
+		links = append(links, fmt.Sprintf("<%s|View on Looker>", hubSpotProps.LookerLink))
+	}
 	if response != nil {
-		links = fmt.Sprintf("<%s|View on Looker>, <%s|View on HubSpot>", hubSpotProps.LookerLink, fmt.Sprintf("https://app.hubspot.com/contacts/2762526/contact/%v", response.VID))
-	} else {
-		links = fmt.Sprintf("<%s|View on Looker>", hubSpotProps.LookerLink)
+		links = append(links, fmt.Sprintf("<https://app.hubspot.com/contacts/2762526/contact/%v|View on HubSpot>", response.VID))
 	}
 
 	payload := &payload{
-		Attachments: []*attachment{
-			&attachment{
-				Fallback: fmt.Sprintf("%s just signed up!", actor.Email),
-				Title:    fmt.Sprintf("%s just signed up!", actor.Email),
-				Color:    color,
-				ThumbURL: actor.AvatarURL,
-				Fields: []*field{
-					&field{
-						Title: "User Email",
-						Value: actor.Email,
-						Short: true,
-					},
-					&field{
-						Title: "User profile links",
-						Value: links,
-						Short: false,
-					},
-				},
-			},
-		},
+		Text: fmt.Sprintf("%s just signed up! %s", hubSpotProps.UserID, strings.Join(links, ",")),
 	}
 
-	return post(payload, SignupsWebhookURL)
+	return post(payload, signupsWebhookURL)
 }
 
 // NotifyOnComment posts a message to the Slack channel #comments
@@ -92,7 +70,7 @@ func NotifyOnThread(authorName string, authorEmail string, repoRemoteURI string,
 }
 
 func notifyOnComments(actionText string, authorName string, authorEmail string, repoRemoteURI string, recipients string, commentURL string) error {
-	if CommentsWebhookURL == "" {
+	if commentsWebhookURL == "" {
 		return errors.New("Slack Webhook URL not defined")
 	}
 
@@ -130,7 +108,7 @@ func notifyOnComments(actionText string, authorName string, authorEmail string, 
 		})
 	}
 
-	return post(payload, CommentsWebhookURL)
+	return post(payload, commentsWebhookURL)
 }
 
 func post(payload *payload, webhookURL string) error {
