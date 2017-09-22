@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-github/github"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -42,93 +41,33 @@ type field struct {
 // when a user signs up for Sourcegraph
 func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse) error {
 	if SignupsWebhookURL == "" {
-		return errors.New("g Webhook URL not defined")
+		return errors.New("Slack Webhook URL not defined")
 	}
 
-	color := "danger"
+	color := "good"
 
 	links := ""
 	if response != nil {
-		links = fmt.Sprintf("<%s|View on GitHub>, <%s|View on Looker>, <%s|View on HubSpot>", hubSpotProps.GitHubLink, hubSpotProps.LookerLink, fmt.Sprintf("https://app.hubspot.com/contacts/2762526/contact/%v", response.VID))
+		links = fmt.Sprintf("<%s|View on Looker>, <%s|View on HubSpot>", hubSpotProps.LookerLink, fmt.Sprintf("https://app.hubspot.com/contacts/2762526/contact/%v", response.VID))
 	} else {
-		links = fmt.Sprintf("<%s|View on GitHub>, <%s|View on Looker>", hubSpotProps.GitHubLink, hubSpotProps.LookerLink)
+		links = fmt.Sprintf("<%s|View on Looker>", hubSpotProps.LookerLink)
 	}
 
 	payload := &payload{
 		Attachments: []*attachment{
 			&attachment{
-				Fallback: fmt.Sprintf("%s just signed up!", hubSpotProps.GitHubName),
-				Title:    fmt.Sprintf("%s just signed up!", hubSpotProps.GitHubName),
+				Fallback: fmt.Sprintf("%s just signed up!", actor.Email),
+				Title:    fmt.Sprintf("%s just signed up!", actor.Email),
 				Color:    color,
 				ThumbURL: actor.AvatarURL,
 				Fields: []*field{
 					&field{
-						Title: "User login",
-						Value: hubSpotProps.UserID,
-						Short: true,
-					},
-					&field{
-						Title: "GitHub Name",
-						Value: hubSpotProps.GitHubName,
-						Short: true,
-					},
-					&field{
-						Title: "GitHub Email",
+						Title: "User Email",
 						Value: actor.Email,
 						Short: true,
 					},
 					&field{
-						Title: "GitHub Company",
-						Value: hubSpotProps.GitHubCompany,
-						Short: true,
-					},
-					&field{
-						Title: "GitHub Location",
-						Value: hubSpotProps.GitHubLocation,
-						Short: true,
-					},
-					&field{
 						Title: "User profile links",
-						Value: links,
-						Short: false,
-					},
-				},
-			},
-		},
-	}
-
-	return post(payload, SignupsWebhookURL)
-}
-
-// NotifyOnAppInstall posts a message to the Slack channel #bot-signups
-// when a user installs Sourcegraph on their GitHub org
-func NotifyOnAppInstall(senderLogin string, actorGitHubLink string, actorLookerLink string, org *github.User, orgGitHubLink string) error {
-	if SignupsWebhookURL == "" {
-		return errors.New("Slack Webhook URL not defined")
-	}
-	color := "good"
-	links := fmt.Sprintf("<%s|View user on GitHub>, <%s|View user on Looker>, <%s|View org on GitHub>", actorGitHubLink, actorLookerLink, orgGitHubLink)
-
-	payload := &payload{
-		Attachments: []*attachment{
-			&attachment{
-				Fallback: fmt.Sprintf("%s just installed Sourcegraph on their org %s!", senderLogin, *org.Login),
-				Title:    fmt.Sprintf("%s just installed Sourcegraph on their org %s!", senderLogin, *org.Login),
-				Color:    color,
-				ThumbURL: *org.AvatarURL,
-				Fields: []*field{
-					&field{
-						Title: "User login",
-						Value: senderLogin,
-						Short: true,
-					},
-					&field{
-						Title: "Org name",
-						Value: *org.Login,
-						Short: true,
-					},
-					&field{
-						Title: "Links",
 						Value: links,
 						Short: false,
 					},

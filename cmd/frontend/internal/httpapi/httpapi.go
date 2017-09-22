@@ -35,7 +35,6 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.SubmitForm).Handler(traceutil.TraceRoute(handler(serveSubmitForm)))
 
-	m.Get(apirouter.GitHubWebhooks).Handler(traceutil.TraceRoute(handler(serveReceiveGitHubWebhooks)))
 	m.Get(apirouter.Telemetry).Handler(traceutil.TraceRoute(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "https"

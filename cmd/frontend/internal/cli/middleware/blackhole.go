@@ -22,7 +22,7 @@ func BlackHole(next http.Handler) http.Handler {
 
 func isBlackhole(r *http.Request) bool {
 	// We no longer support github webhooks
-	if r.URL.Path == "/api/ext/github/webhook" {
+	if r.URL.Path == "/api/ext/github/webhook" || r.URL.Path == "/.api/github-webhooks" {
 		return true
 	}
 

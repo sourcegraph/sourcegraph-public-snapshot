@@ -37,17 +37,12 @@ func (c *Client) baseContactURL(email string) *url.URL {
 // ContactProperties represent HubSpot user properties updated on
 // signup or login
 type ContactProperties struct {
-	UserID         string `json:"user_id"`
-	UID            string `json:"uid"`
-	GitHubLink     string `json:"github_link"`
-	LookerLink     string `json:"looker_link"`
-	GitHubName     string `json:"github_name"`
-	GitHubCompany  string `json:"github_company"`
-	GitHubLocation string `json:"location"`
+	UserID     string `json:"user_id"`
+	UID        string `json:"uid"`
+	LookerLink string `json:"looker_link"`
 	// Per HubSpot API, dates should be formatted in milliseconds, in UTC
 	// http://developers.hubspot.com/docs/faq/how-should-timestamps-be-formatted-for-hubspots-apis
-	RegisteredAt      int64 `json:"registered_at"`
-	IsPrivateCodeUser bool  `json:"is_private_code_user"`
+	RegisteredAt int64 `json:"registered_at"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -63,11 +58,7 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps := &apiProperties{}
 	apiProps.set("user_id", h.UserID)
 	apiProps.set("uid", h.UID)
-	apiProps.set("github_link", h.GitHubLink)
 	apiProps.set("looker_link", h.LookerLink)
-	apiProps.set("github_name", h.GitHubName)
-	apiProps.set("github_company", h.GitHubCompany)
-	apiProps.set("location", h.GitHubLocation)
 	apiProps.set("registered_at", h.RegisteredAt)
 	return apiProps
 }

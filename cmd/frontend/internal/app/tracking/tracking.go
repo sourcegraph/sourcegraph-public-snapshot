@@ -3,15 +3,14 @@ package tracking
 import (
 	"encoding/json"
 	"log"
+	"net/url"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-github/github"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
@@ -44,8 +43,9 @@ func TrackUser(a *actor.Actor, event string) {
 
 	// Generate a single set of user parameters for HubSpot and Slack exports
 	contactParams := &hubspot.ContactProperties{
-		UserID: a.Email,
-		UID:    a.UID,
+		UserID:     a.Email,
+		UID:        a.UID,
+		LookerLink: lookerUserLink(a.Email),
 	}
 
 	// Update or create user contact information in HubSpot
@@ -104,81 +104,6 @@ func trackHubSpotContact(email string, eventLabel string, params *hubspot.Contac
 	return hsResponse, nil
 }
 
-// TrackGitHubWebhook handles webhooks received from GitHub.com regarding Sourcegraph
-// installations on GitHub orgs
-func TrackGitHubWebhook(eventType string, event interface{}) error {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Printf("panic in tracking.TrackGitHubWebhook: %s", err)
-		}
-	}()
-
-	switch event := event.(type) {
-	case *github.InstallationEvent:
-		return trackInstallationEvent(event)
-	case *github.InstallationRepositoriesEvent:
-		return trackInstallationRepositoriesEvent(event)
-	}
-
-	log15.Warn("Unhandled GitHub webhook received", "type", eventType)
-	return nil
-}
-
-func trackInstallationEvent(event *github.InstallationEvent) error {
-	if event.Sender.Login == nil {
-		return errors.New("Installing user must have a Login")
-	}
-	var senderEmail string
-	if event.Sender.Email != nil {
-		senderEmail = *event.Sender.Email
-	}
-
-	gcsClient, err := gcstracker.NewFromUserProperties(*event.Sender.Login, senderEmail, "")
-	if err != nil {
-		return errors.Wrap(err, "Error creating a new GCS client")
-	}
-	tos := gcsClient.NewTrackedObjects("GitHubAppInstallationCompleted")
-	tos.AddGitHubInstallationEvent(event)
-	err = gcsClient.Write(tos)
-	if err != nil {
-		return errors.Wrap(err, "Error writing to GCS")
-	}
-
-	err = slack.NotifyOnAppInstall(*event.Sender.Login, gitHubLink(*event.Sender.Login), lookerUserLink(*event.Sender.Login), event.Installation.Account, gitHubLink(*event.Installation.Account.Login))
-	if err != nil {
-		return errors.Wrap(err, "Error sending new app install details to Slack")
-	}
-	return nil
-}
-
-func trackInstallationRepositoriesEvent(event *github.InstallationRepositoriesEvent) error {
-	if event.Sender.Login == nil {
-		return errors.New("Installing user must have a Login")
-	}
-	var senderEmail string
-	if event.Sender.Email != nil {
-		senderEmail = *event.Sender.Email
-	}
-
-	gcsClient, err := gcstracker.NewFromUserProperties(*event.Sender.Login, senderEmail, "")
-	if err != nil {
-		return errors.Wrap(err, "Error creating a new GCS client")
-	}
-
-	tos := gcsClient.NewTrackedObjects("GitHubAppRepositoriesUpdated")
-	tos.AddGitHubRepositoriesEvent(event)
-	err = gcsClient.Write(tos)
-	if err != nil {
-		return errors.Wrap(err, "Error writing to GCS")
-	}
-
-	return nil
-}
-
-func gitHubLink(login string) string {
-	return "https://github.com/" + login
-}
-
-func lookerUserLink(login string) string {
-	return "https://sourcegraph.looker.com/dashboards/9?User%20ID=" + login
+func lookerUserLink(email string) string {
+	return "https://sourcegraph.looker.com/dashboards/9?Email=" + url.QueryEscape(email)
 }
