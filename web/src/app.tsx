@@ -157,7 +157,7 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
                 return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />
 
             default:
-                return null
+                return <WithResolvedRev {...this.props} component={RepositoryNotFound} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />
         }
     }
 
