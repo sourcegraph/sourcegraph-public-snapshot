@@ -43,8 +43,8 @@ class LoginSignupForm extends React.Component<{}, State> {
                     <span className='sign-in-page__mode-divider'>|</span>
                     <span className={`sign-in-page__mode${this.state.mode === 'signup' ? '--active' : ''}`} onClick={this.setModeSignUp}>Sign up</span>
                 </div>
-                <input className='ui-text-input' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
-                <input className='ui-text-input' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
+                <input className='ui-text-box' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
+                <input className='ui-text-box' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
                 <button className='ui-button' type='submit'>
                     {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
                 </button>

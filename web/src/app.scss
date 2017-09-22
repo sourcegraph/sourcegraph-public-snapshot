@@ -177,21 +177,6 @@ h1 {
     margin: 0 0 1rem;
 }
 
-.ui-text-input {
-    display: block;
-    margin: .5rem;
-    padding: .5rem;
-    border: none;
-    outline: none;
-    background: #333a44;
-    color: white;
-    font-size: inherit;
-    line-height: 1.5rem;
-    &::placeholder {
-        color: #93A9C8;
-    }
-}
-
 .ui-button {
     display: inline-block;
     background: #0CA678;
@@ -200,6 +185,8 @@ h1 {
     color: #FFFFFF;
     font-size: inherit;
     text-decoration: none;
+    line-height: inherit;
+    font-family: inherit;
     border: none;
     white-space: nowrap;
     overflow: hidden;
@@ -215,10 +202,14 @@ h1 {
     background-color: #151D28;
     border: 1px solid #2A3A51;
     color: #FFFFFF;
-    font-size: 1rem;
+    font-size: inherit;
+    margin: .5rem;
     border-radius: 2px;
     padding: 0.5rem 1rem;
     display: flex;
+    &::placeholder {
+        color: #93A9C8;
+    }
 }
 
 .ui-section {
