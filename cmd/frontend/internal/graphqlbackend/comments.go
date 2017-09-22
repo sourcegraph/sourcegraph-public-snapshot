@@ -99,8 +99,8 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	emails := notifyThreadParticipants(repo, thread, comments, comment)
-	err = slack.NotifyOnComment(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
+	results := notifyThreadParticipants(repo, thread, comments, comment)
+	err = slack.NotifyOnComment(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
 	if err != nil {
 		log15.Error("slack.NotifyOnComment failed", "error", err)
 	}
@@ -145,18 +145,24 @@ func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	emails := notifyThreadParticipants(repo, thread, comments, comment)
-	err = slack.NotifyOnComment(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(emails, ", "))
+	results := notifyThreadParticipants(repo, thread, comments, comment)
+	err = slack.NotifyOnComment(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
 	if err != nil {
 		log15.Error("slack.NotifyOnComment failed", "error", err)
 	}
 	return &threadResolver{org, repo, thread}, nil
 }
 
+type commentResults struct {
+	emails     []string
+	commentURL string
+}
+
 // notifyThreadParticipants sends email notifications to the participants in the comment thread.
-func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) []string {
+func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) *commentResults {
+	commentURL := getURL(repo, thread, comment)
 	if !notif.EmailIsConfigured() {
-		return []string{}
+		return &commentResults{emails: []string{}, commentURL: commentURL}
 	}
 
 	var first *sourcegraph.Comment
@@ -184,11 +190,11 @@ func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thr
 
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
 			gochimp.Var{Name: "CONTENTS", Content: contents},
-			gochimp.Var{Name: "COMMENT_URL", Content: getURL(repo, thread, comment)},
+			gochimp.Var{Name: "COMMENT_URL", Content: commentURL},
 			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
 		})
 	}
-	return emails
+	return &commentResults{emails: emails, commentURL: commentURL}
 }
 
 func repoNameFromURI(remoteURI string) string {

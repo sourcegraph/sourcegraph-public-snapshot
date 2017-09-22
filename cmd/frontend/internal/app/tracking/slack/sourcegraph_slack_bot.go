@@ -142,20 +142,21 @@ func NotifyOnAppInstall(senderLogin string, actorGitHubLink string, actorLookerL
 
 // NotifyOnComment posts a message to the Slack channel #comments
 // when a user posts a reply to a thread
-func NotifyOnComment(authorName string, authorEmail string, repoRemoteURI string, recipients string) error {
-	return notifyOnComments("replied to a thread", authorName, authorEmail, repoRemoteURI, recipients)
+func NotifyOnComment(authorName string, authorEmail string, repoRemoteURI string, recipients string, commentURL string) error {
+	return notifyOnComments("replied to a thread", authorName, authorEmail, repoRemoteURI, recipients, commentURL)
 }
 
 // NotifyOnThread posts a message to the Slack channel #comments
 // when a user creates a thread
-func NotifyOnThread(authorName string, authorEmail string, repoRemoteURI string, recipients string) error {
-	return notifyOnComments("created a thread", authorName, authorEmail, repoRemoteURI, recipients)
+func NotifyOnThread(authorName string, authorEmail string, repoRemoteURI string, recipients string, commentURL string) error {
+	return notifyOnComments("created a thread", authorName, authorEmail, repoRemoteURI, recipients, commentURL)
 }
 
-func notifyOnComments(actionText string, authorName string, authorEmail string, repoRemoteURI string, recipients string) error {
+func notifyOnComments(actionText string, authorName string, authorEmail string, repoRemoteURI string, recipients string, commentURL string) error {
 	if CommentsWebhookURL == "" {
 		return errors.New("Slack Webhook URL not defined")
 	}
+
 	payload := &payload{
 		Attachments: []*attachment{
 			&attachment{
@@ -182,6 +183,14 @@ func notifyOnComments(actionText string, authorName string, authorEmail string, 
 			},
 		},
 	}
+	if strings.HasPrefix(repoRemoteURI, "github.com/sourcegraph") {
+		payload.Attachments[0].Fields = append(payload.Attachments[0].Fields, &field{
+			Title: "Deep link (SG only)",
+			Value: commentURL,
+			Short: false,
+		})
+	}
+
 	return post(payload, CommentsWebhookURL)
 }
 
