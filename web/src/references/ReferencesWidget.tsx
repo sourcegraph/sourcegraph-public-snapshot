@@ -93,9 +93,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                             })
                             .map((ref, i) => {
                                 const uri = new URL(ref.uri)
-                                const rev = this.props.isLocal && this.props.localRev ?
-                                    this.props.localRev :
-                                    uri.search.substr('?'.length)
+                                const rev = this.props.isLocal ? this.props.localRev : uri.search.substr('?'.length)
                                 return (
                                     <Link
                                         to={{
