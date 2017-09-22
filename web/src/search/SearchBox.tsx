@@ -1,5 +1,4 @@
 
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import FileIcon from '@sourcegraph/icons/lib/File'
 import FileGlobIcon from '@sourcegraph/icons/lib/FileGlob'
 import Loader from '@sourcegraph/icons/lib/Loader'
@@ -8,7 +7,6 @@ import RepoGroupIcon from '@sourcegraph/icons/lib/RepoGroup'
 import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
 import SearchIcon from '@sourcegraph/icons/lib/Search'
-import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import 'rxjs/add/observable/fromEvent'
 import 'rxjs/add/observable/merge'
@@ -37,7 +35,9 @@ import { events } from '../tracking/events'
 import { scrollIntoView } from '../util'
 import { ParsedRouteProps } from '../util/routes'
 import { fetchSuggestions } from './backend'
+import { Chip } from './Chip'
 import { buildSearchURLQuery, FileFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
+import { Suggestion } from './Suggestion'
 
 function hasMagic(value: string): boolean {
     return /^!|\*|\?/.test(value)
@@ -279,9 +279,7 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const query = this.inputElement ? this.state.query.substring(0, this.inputElement.selectionEnd) : this.state.query
-        const toHighlight = query.toLowerCase()
-        const splitRegexp = new RegExp(`(${escapeRegexp(toHighlight)})`, 'gi')
+        const queryToCursor = this.inputElement ? this.state.query.substring(0, this.inputElement.selectionEnd) : this.state.query
 
         const showNoMatches = this.state.query.length > 1
             && !!this.state.suggestionsVisible
@@ -302,24 +300,18 @@ export class SearchBox extends React.Component<Props, State> {
                 ref={ref => this.containerElement = ref || undefined}
             >
                 <div className='search-box__query'>
+
+                    {/* Search icon / Loader */}
                     <div className='search-box__search-icon'>
                         { this.state.loading ? <Loader /> : <SearchIcon /> }
                     </div>
+
+                    {/* Chips */}
                     <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
                         {
-                            this.state.filters.map((filter, i) => {
-                                const Icon = getFilterIcon(filter)
-                                const removeFilter = () => this.removeFilter(i)
-                                return (
-                                    <span key={i} className='search-box__chip'>
-                                        <Icon />
-                                        <span className='search-box__chip-text'>{getFilterLabel(filter)}</span>
-                                        <button type='button' className='search-box__chip-remove-button' onClick={removeFilter}>
-                                            <CloseIcon />
-                                        </button>
-                                    </span>
-                                )
-                            })
+                            this.state.filters.map((filter, i) =>
+                                <Chip key={i} icon={getFilterIcon(filter)} label={getFilterLabel(filter)} onDelete={() => this.removeFilter(i)} />
+                            )
                         }
                         <input
                             type='search'
@@ -352,6 +344,8 @@ export class SearchBox extends React.Component<Props, State> {
                     showNoMatches &&
                         <div className='search-box__no-matches'><ReportIcon /> No matches</div>
                 }
+
+                {/* Suggestions */}
                 {
                     showSuggestions &&
                         <ul className='search-box__suggestions' ref={this.setSuggestionListElement}>
@@ -365,34 +359,22 @@ export class SearchBox extends React.Component<Props, State> {
                                             query: ''
                                         }))
                                     }
+                                    const isSelected = this.state.selectedSuggestion === i
                                     const onRef = ref => {
-                                        if (this.state.selectedSuggestion === i) {
+                                        if (isSelected) {
                                             this.selectedSuggestionElement = ref || undefined
                                         }
                                     }
-                                    const Icon = getFilterIcon(suggestion)
-                                    const parts = getFilterLabel(suggestion).split(splitRegexp)
-                                    let className = 'search-box__suggestion'
-                                    if (this.state.selectedSuggestion === i) {
-                                        className += ' search-box__suggestion--selected'
-                                    }
                                     return (
-                                        <li key={i} className={className} onClick={onClick} ref={onRef}>
-                                            <Icon />
-                                            <div className='search-box__suggestion-label'>
-                                                {
-                                                    parts.map((part, i) =>
-                                                        <span
-                                                            key={i}
-                                                            className={part.toLowerCase() === toHighlight ? 'search-box__highlighted-query' : ''}
-                                                        >
-                                                            {part}
-                                                        </span>
-                                                    )
-                                                }
-                                            </div>
-                                            <div className='search-box__suggestion-tip' hidden={this.state.selectedSuggestion !== i}><kbd>enter</kbd> to add as filter</div>
-                                        </li>
+                                        <Suggestion
+                                            key={i}
+                                            icon={getFilterIcon(suggestion)}
+                                            label={getFilterLabel(suggestion)}
+                                            query={queryToCursor}
+                                            isSelected={isSelected}
+                                            onClick={onClick}
+                                            ref={onRef}
+                                        />
                                     )
                                 })
                             }

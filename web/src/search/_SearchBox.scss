@@ -1,4 +1,7 @@
 
+@import './Chip';
+@import './Suggestion';
+
 .search-box {
     color: #93A9C8;
     padding: 0;
@@ -80,7 +83,7 @@
         }
     }
 
-    &__input, &__chip {
+    &__input {
         flex: 1 0 auto;
         margin-top: 0.25rem;
         margin-right: 0.25rem;
@@ -107,44 +110,6 @@
         }
     }
 
-    &__chip {
-        flex: 0 1 auto;
-        display: flex;
-        background-color: #2A3A51;
-        border-radius: 2px;
-        padding: 0.25rem 0.5rem;
-        color: white;
-        vertical-align: top;
-        width: 15rem;
-        max-width: fit-content;
-        white-space: nowrap;
-        &-text {
-            flex: 0 1 auto;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            direction: rtl;
-            unicode-bidi: plaintext;
-            display: inline-block;
-            vertical-align: top;
-            margin-left: 0.5rem;
-            &::after {
-                content: '\200E';
-            }
-        }
-        &-remove-button {
-            border: none;
-            outline: none;
-            background-color: transparent;
-            padding: 0;
-            margin-left: 0.25rem;
-            color: #93A9C8;
-            cursor: pointer;
-            &:hover {
-                color: white;
-            }
-        }
-    }
-
     &__spacer {
         padding-top: 0.5rem;
     }
@@ -155,7 +120,7 @@
         overflow-y: auto;
     }
 
-    &__suggestion, &__no-matches {
+    &__no-matches {
         display: flex;
         background-color: #1C2736;
         padding: 0 1rem;
@@ -170,27 +135,5 @@
             margin-right: 0.5rem;
             height: 100%;
         }
-    }
-
-    &__suggestion {
-        border-top: 1px solid #2A3A51;
-        cursor: pointer;
-
-        &--selected {
-            background-color: #2A3A51;
-        }
-
-        &-tip {
-            flex: 0 1 auto;
-        }
-
-        &-label {
-            flex: 1 0 auto;
-        }
-
-    }
-
-    &__highlighted-query {
-        color: white;
     }
 }

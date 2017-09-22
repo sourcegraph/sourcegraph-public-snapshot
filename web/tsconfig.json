@@ -20,6 +20,7 @@
     "noUnusedParameters": false,
     "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,
+    "noImplicitThis": true,
     "plugins": [
       {
         "name": "tslint-language-service",

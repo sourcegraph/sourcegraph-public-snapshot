@@ -1,0 +1,54 @@
+
+.chip {
+
+    flex: 1 0 auto;
+    margin-top: 0.25rem;
+    margin-right: 0.25rem;
+    height: 2rem;
+    width: 15rem;
+    max-width: fit-content;
+
+    display: flex;
+    padding: 0.25rem 0.5rem;
+    line-height: 1.5rem;
+    vertical-align: top;
+    white-space: nowrap;
+
+    background-color: #2A3A51;
+    border-radius: 2px;
+    color: white;
+
+    &__label {
+
+        flex: 0 1 auto;
+        margin-left: 0.5rem;
+        display: inline-block;
+
+        vertical-align: top;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        direction: rtl;
+        unicode-bidi: plaintext;
+
+        &::after {
+            content: '\200E';
+        }
+    }
+
+    &__delete-button {
+
+        padding: 0;
+        margin-left: 0.25rem;
+
+        border: none;
+        background-color: transparent;
+        color: #93A9C8;
+
+        cursor: pointer;
+        outline: none;
+
+        &:hover {
+            color: white;
+        }
+    }
+}
