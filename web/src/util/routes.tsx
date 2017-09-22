@@ -21,11 +21,16 @@ export function parseRouteProps<T extends string | {[key: string]: string} | str
     const repoRevSplit = uriPathSplit[0].split('@')
     const hash = parseHash(props.location.hash)
     const position = hash.line ? { line: hash.line, character: hash.character || 0 } : undefined
-    const repoParams = { ...props, routeName: 'repository' as 'repository', repoPath: repoRevSplit[0], rev: repoRevSplit[1], position }
+    const repoParams = { ...props, repoPath: repoRevSplit[0], rev: repoRevSplit[1], position }
     if (uriPathSplit.length === 1) {
-        return {...repoParams, uri: makeRepoURI(repoParams)}
+        return {...repoParams, routeName: 'repository' as 'repository', uri: makeRepoURI(repoParams)}
     }
-    const filePath = uriPathSplit[1].split('/').slice(1).join('/')
+    const repoSubPaths = uriPathSplit[1].split('/')
+    const repoSubRoute = repoSubPaths[0]
+    const filePath = repoSubPaths.slice(1).join('/')
     const repoParamsWithPath = { ...repoParams, filePath }
-    return {...repoParamsWithPath, uri: makeRepoURI(repoParams)}
+    if (repoSubRoute !== 'blob' && repoSubRoute !== 'tree') {
+        return {...repoParamsWithPath, uri: makeRepoURI(repoParams)}
+    }
+    return {...repoParamsWithPath, routeName: 'repository' as 'repository', uri: makeRepoURI(repoParams)}
 }
