@@ -1,0 +1,1 @@
+ALTER TABLE threads ADD COLUMN range_length INTEGER;

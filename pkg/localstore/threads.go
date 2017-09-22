@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -28,8 +29,8 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 	newThread.CreatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
 	err := globalDB.QueryRow(
-		"INSERT INTO threads(org_repo_id, file, revision, start_line, end_line, start_character, end_character, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
-		newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
+		"INSERT INTO threads(org_repo_id, file, revision, start_line, end_line, start_character, end_character, range_length, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+		newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.RangeLength, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +103,7 @@ func (t *threads) GetAllForFile(ctx context.Context, repoID int32, file string, 
 
 // getBySQL returns threads matching the SQL query, if any exist.
 func (*threads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Thread, error) {
-	rows, err := globalDB.Query("SELECT t.id, t.org_repo_id, t.file, t.revision, t.start_line, t.end_line, t.start_character, t.end_character, t.created_at, t.archived_at FROM threads t "+query, args...)
+	rows, err := globalDB.Query("SELECT t.id, t.org_repo_id, t.file, t.revision, t.start_line, t.end_line, t.start_character, t.end_character, t.range_length, t.created_at, t.archived_at FROM threads t "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,11 +113,16 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 	for rows.Next() {
 		var t sourcegraph.Thread
 		var archivedAt pq.NullTime
-		err := rows.Scan(&t.ID, &t.OrgRepoID, &t.File, &t.Revision, &t.StartLine, &t.EndLine, &t.StartCharacter, &t.EndCharacter, &t.CreatedAt, &archivedAt)
+		var rangeLength sql.NullInt64
+		err := rows.Scan(&t.ID, &t.OrgRepoID, &t.File, &t.Revision, &t.StartLine, &t.EndLine, &t.StartCharacter, &t.EndCharacter, &rangeLength, &t.CreatedAt, &archivedAt)
 		if err != nil {
 			return nil, err
 		}
-
+		if rangeLength.Valid {
+			t.RangeLength = int32(rangeLength.Int64)
+		} else {
+			t.RangeLength = -1
+		}
 		if archivedAt.Valid {
 			t.ArchivedAt = &archivedAt.Time
 		} else {

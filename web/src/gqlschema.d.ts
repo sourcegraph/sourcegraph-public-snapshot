@@ -348,6 +348,7 @@ declare namespace GQL {
     endLine: number;
     startCharacter: number;
     endCharacter: number;
+    rangeLength: number;
     createdAt: string;
     archivedAt: string | null;
     comments: Array<IComment>;

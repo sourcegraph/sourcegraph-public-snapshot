@@ -61,6 +61,10 @@ func (t *threadResolver) EndCharacter() int32 {
 	return t.thread.EndCharacter
 }
 
+func (t *threadResolver) RangeLength() int32 {
+	return t.thread.RangeLength
+}
+
 func (t *threadResolver) CreatedAt() string {
 	return t.thread.CreatedAt.Format(time.RFC3339) // ISO
 }
@@ -195,6 +199,7 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	EndLine        int32
 	StartCharacter int32
 	EndCharacter   int32
+	RangeLength    int32
 	Contents       string
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: verify that the current user is in the org.
@@ -230,6 +235,7 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 		EndLine:        args.EndLine,
 		StartCharacter: args.StartCharacter,
 		EndCharacter:   args.EndCharacter,
+		RangeLength:    args.RangeLength,
 	})
 	if err != nil {
 		return nil, err

@@ -446,6 +446,7 @@ type Thread struct {
 	EndLine        int32      `json:"EndLine,omitempty"`
 	StartCharacter int32      `json:"StartCharacter,omitempty"`
 	EndCharacter   int32      `json:"EndCharacter,omitempty"`
+	RangeLength    int32      `json:"RangeLength,omitempty"`
 	CreatedAt      time.Time  `json:"CreatedAt,omitempty"`
 	UpdatedAt      time.Time  `json:"UpdatedAt,omitempty"`
 	ArchivedAt     *time.Time `json:"ArchivedAt,omitempty"`
