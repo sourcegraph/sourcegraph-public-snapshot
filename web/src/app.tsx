@@ -25,6 +25,7 @@ import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from './rep
 import { parseSearchURLQuery } from './search/index'
 import { Search } from './search/Search'
 import { SearchResults } from './search/SearchResults'
+import { PasswordResetPage } from './settings/auth/PasswordResetPage'
 import { SettingsPage } from './settings/SettingsPage'
 import { handleQueryEvents } from './tracking/analyticsUtils'
 import { viewEvents } from './tracking/events'
@@ -134,8 +135,8 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
         if (this.props.location.pathname !== nextProps.location.pathname ||
             this.props.location.search !== nextProps.location.search ||
             thisHash.modal !== nextHash.modal) {
-                // Skip logging page view when only line/character is updated.
-                this.logPageView(nextProps)
+            // Skip logging page view when only line/character is updated.
+            this.logPageView(nextProps)
         }
     }
 
@@ -152,7 +153,8 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
                     return <Redirect to='/search' />
                 }
                 return <SettingsPage routeName={this.props.routeName} />
-
+            case 'password-reset':
+                return <PasswordResetPage />
             case 'repository':
                 return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />
 
@@ -249,7 +251,7 @@ class App extends React.Component<{}, AppState> {
     public render(): JSX.Element | null {
 
         if (this.state.error) {
-            return <HeroPage icon={ErrorIcon} title={'Something happened'} subtitle={this.state.error.message}/>
+            return <HeroPage icon={ErrorIcon} title={'Something happened'} subtitle={this.state.error.message} />
         }
 
         if (window.pageError && window.pageError.statusCode !== 404) {

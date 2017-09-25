@@ -23,6 +23,7 @@ $media-xl: 1200px;
 @import './components/CodeExcerpt';
 @import './components/HeroPage';
 @import './settings/SettingsPage';
+@import './settings/auth/PasswordResetPage';
 @import './settings/auth/EditorAuthPage';
 @import './settings/auth/SignInPage';
 @import './settings/user/UserProfilePage';
