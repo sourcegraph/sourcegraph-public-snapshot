@@ -288,6 +288,7 @@ export class Blob extends React.Component<Props, State> {
                 .map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } }))
                 .switchMap(({ target, ctx }) => {
                     const tooltip = this.getTooltip(target, ctx)
+                    tooltip.subscribe(this.logTelemetryOnTooltip)
                     const tooltipWithJ2D: Observable<TooltipData> = tooltip.zip(this.getDefinition(ctx))
                         .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
                     const loading = this.getLoadingTooltip(target, ctx, tooltip)
@@ -458,6 +459,14 @@ export class Blob extends React.Component<Props, State> {
         } else {
             // Unset fixed tooltip if it exists (no URL update necessary).
             this.setFixedTooltip()
+        }
+    }
+
+    private logTelemetryOnTooltip = (data: TooltipData) => {
+        // Only log an event if there is no fixed tooltip docked, we have a
+        // target element, and we have tooltip contents
+        if (!this.state.fixedTooltip && !!data.target && !!data.contents) {
+            events.SymbolHovered.log()
         }
     }
 
