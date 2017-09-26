@@ -3,7 +3,7 @@ set -ex
 cd $(dirname "${BASH_SOURCE[0]}")
 
 export IMAGE=us.gcr.io/sourcegraph-dev/xlang-java
-export TAG=${TAG}
+export TAG=${TAG-latest}
 
 SKINNY_MODE=false;
 if [ -z ${SKINNY+x} ]; then
@@ -42,3 +42,4 @@ if [ "$SKINNY_MODE" = false ]; then
 fi
 
 docker build -t $IMAGE:$TAG .
+gcloud docker -- push $IMAGE:$TAG
