@@ -34,6 +34,9 @@ const (
 	routeEditorAuth = "editor-auth"
 	routeSettings   = "settings"
 
+	routeAcceptInvite  = "accept-invite"
+	routePasswordReset = "password-reset"
+
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
 
@@ -84,7 +87,9 @@ func newRouter() *mux.Router {
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
-	r.Path("/settings").Methods("GET").Name(routeSettings)
+	r.Path("/join").Methods("GET").Name(routeAcceptInvite)
+	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
+	r.Path("/settings{Path:.*}").Methods("GET").Name(routeSettings)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -122,6 +127,8 @@ func init() {
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
+	router.Get(routeAcceptInvite).Handler(handler(serveBasicPageString("join - Sourcegraph")))
+	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("reset password - Sourcegraph")))
 
 	// Legacy redirects
 	router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))

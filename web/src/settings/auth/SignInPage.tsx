@@ -14,42 +14,42 @@ const webAuth = new WebAuth({
     responseType: 'code'
 })
 
-interface Props {
-    showEditorFlow: boolean
-}
+interface LoginSignupFormProps {}
 
-interface State {
+interface LoginSignupFormState {
     mode: 'signin' | 'signup'
     email: string
     password: string
-    error: string
+    errorDescription: string
 }
 
-class LoginSignupForm extends React.Component<{}, State> {
-    public state: State = {
+class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupFormState> {
+    public state: LoginSignupFormState = {
         mode: 'signin',
         email: '',
         password: '',
-        error: ''
+        errorDescription: ''
     }
 
     public render(): JSX.Element | null {
         return (
             <form className='sign-in-page__form' onSubmit={this.handleSubmit}>
-                {this.state.error !== '' &&
-                    <p className='sign-in-page__error'>{this.state.error}</p>
+                {this.state.errorDescription !== '' &&
+                    <p className='sign-in-page__error'>{this.state.errorDescription}</p>
                 }
-                <div>
+                <div className='sign-in-page__modes'>
                     <span className={`sign-in-page__mode${this.state.mode === 'signin' ? '--active' : ''}`} onClick={this.setModeSignIn}>Sign in</span>
                     <span className='sign-in-page__mode-divider'>|</span>
                     <span className={`sign-in-page__mode${this.state.mode === 'signup' ? '--active' : ''}`} onClick={this.setModeSignUp}>Sign up</span>
                 </div>
-                <input className='ui-text-box' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
-                <input className='ui-text-box' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
+                <input className='ui-text-box sign-in-page__input' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
+                <input className='ui-text-box sign-in-page__input' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
                 <Link to='/password-reset' className='sign-in-page__pass-reset-link'><small>Forgot password?</small></Link>
-                <button className='ui-button sign-in-page__submit-button' type='submit'>
-                    {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
-                </button>
+                <div className='form-group sign-in-page__submit-button'>
+                    <button className='btn btn-primary' type='submit'>
+                        {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
+                    </button>
+                </div>
             </form>
         )
     }
@@ -89,7 +89,7 @@ class LoginSignupForm extends React.Component<{}, State> {
                 }, (err, authResult) => {
                     if (err) {
                         console.error('auth error: ', err)
-                        this.setState({ error: (err as any).description })
+                        this.setState({ errorDescription: err.description || 'Unknown Error' })
                     }
                 })
                 break
@@ -109,7 +109,7 @@ class LoginSignupForm extends React.Component<{}, State> {
                 }, (err, authResult) => {
                     if (err) {
                         console.error('auth error: ', err)
-                        this.setState({ error: (err as any).description })
+                        this.setState({ errorDescription: err.description || 'Unknown Error' })
                     }
                 })
                 break
@@ -117,10 +117,12 @@ class LoginSignupForm extends React.Component<{}, State> {
     }
 }
 
+interface SignInPageProps {}
+
 /**
  * A landing page for the user to sign in or register, if not authed
  */
-export class SignInPage extends React.Component<Props> {
+export class SignInPage extends React.Component<SignInPageProps> {
 
     public render(): JSX.Element | null {
         return (

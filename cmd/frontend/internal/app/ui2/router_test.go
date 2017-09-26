@@ -118,6 +118,30 @@ func TestRouter(t *testing.T) {
 		{
 			path:      "/settings",
 			wantRoute: routeSettings,
+			wantVars:  map[string]string{"Path": ""},
+		},
+		{
+			path:      "/settings/teams/new",
+			wantRoute: routeSettings,
+			wantVars:  map[string]string{"Path": "/teams/new"},
+		},
+		{
+			path:      "/settings/team/sourcegraph",
+			wantRoute: routeSettings,
+			wantVars:  map[string]string{"Path": "/team/sourcegraph"},
+		},
+
+		// accept invite
+		{
+			path:      "/join",
+			wantRoute: routeAcceptInvite,
+			wantVars:  map[string]string{},
+		},
+
+		// accept invite
+		{
+			path:      "/password-reset",
+			wantRoute: routePasswordReset,
 			wantVars:  map[string]string{},
 		},
 

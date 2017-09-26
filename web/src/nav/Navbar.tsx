@@ -2,19 +2,14 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { SearchBox } from '../search/SearchBox'
-import { SignOutButton } from '../settings/auth/SignOutButton'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { ParsedRouteProps } from '../util/routes'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 
-interface State {
-    showSignOut: boolean
-}
+interface State {}
 
 export class Navbar extends React.Component<ParsedRouteProps, State> {
-    public state = {
-        showSignOut: false
-    }
+    public state: State = {}
 
     public render(): JSX.Element | null {
         return (
@@ -33,11 +28,8 @@ export class Navbar extends React.Component<ParsedRouteProps, State> {
                         sourcegraphContext.onPrem ?
                             null :
                             sourcegraphContext.user ?
-                                <UserAvatar size={64} onClick={() => this.setState({ showSignOut: !this.state.showSignOut })} /> :
-                                <Link to='/sign-in' className='ui-button'>Sign in</Link>
-                    }
-                    {
-                        this.state.showSignOut && <SignOutButton />
+                                <Link to='/settings'><UserAvatar size={64} /></Link> :
+                                <Link to='/sign-in' className='btn btn-primary'>Sign in</Link>
                     }
                 </div>
             </div>

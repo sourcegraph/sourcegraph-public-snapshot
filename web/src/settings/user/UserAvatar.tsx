@@ -3,15 +3,23 @@ import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../../auth'
 
+export interface Avatarable {
+    avatarURL: string | null
+}
+
 interface Props {
-    onClick: () => void
+    onClick?: () => void
     size?: number
+    user?: Avatarable
 }
 
 interface State {
-    user: GQL.IUser | null
+    user: Avatarable | null
 }
 
+/**
+ * UserAvatar displays the avatar of an Avatarable object
+ */
 export class UserAvatar extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
@@ -23,12 +31,22 @@ export class UserAvatar extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            currentUser.subscribe(
-                user => this.setState({ user }),
-                error => console.error(error)
+        if (this.props.user) {
+            this.setState({ user: this.props.user })
+        } else {
+            this.subscriptions.add(
+                currentUser.subscribe(
+                    user => this.setState({ user }),
+                    error => console.error(error)
+                )
             )
-        )
+        }
+    }
+
+    public componentWillReceiveProps(nextProps: Props): void {
+        if (nextProps.user) {
+            this.setState({ user: nextProps.user })
+        }
     }
 
     public componentWillUnmount(): void {

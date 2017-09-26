@@ -4,13 +4,23 @@ It should import all component stylesheets
 */
 
 $color-page-background: #233043;
-$color-text: #93A9C8;
+$color-text:      #C9D4E3;
+$color-secondary: #93A9C8;
+$color-success:   #0CA678;
+$color-primary:   #1C7CD6;
+$color-error:     #f03e3e;
 
 // Media breakpoints
 $media-sm: 576px;
 $media-md: 768px;
 $media-lg: 992px;
 $media-xl: 1200px;
+
+// Include only Reboot of Bootstrap v4 as a foundation for our own styles
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/reboot';
 
 @import './highlight';
 @import './search/Search';
@@ -94,7 +104,7 @@ body {
     display: flex;
 
     background-color: $color-page-background;
-    color: #93A9C8;
+    color: $color-text;
     // Actual base font size
     font-size: 14px;
     line-height: 1.5rem;
@@ -164,6 +174,7 @@ a {
     transition: color 100ms ease-out;
     text-decoration: none;
     &:hover {
+        text-decoration: none;
         color: white;
     }
 }
@@ -178,12 +189,11 @@ h1 {
     margin: 0 0 1rem;
 }
 
-.ui-button {
+.btn {
     display: inline-block;
-    background: #0CA678;
     border-radius: 0.25rem;
-    padding: 0.25rem 0.75rem;
-    color: #FFFFFF;
+    padding: 0.5rem 1rem;
+    color: white;
     font-size: inherit;
     text-decoration: none;
     line-height: inherit;
@@ -194,9 +204,40 @@ h1 {
     text-overflow: ellipsis;
     cursor: pointer;
     transition: all 100ms ease-out;
-    &:hover {
-        background: #099268;
+    outline: none;
+}
+
+.btn-icon {
+    // Increase clickable area
+    padding: 0.5rem;
+    margin: -0.5rem;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    .icon, svg {
+        width: 1.5em;
+        height: 1.5em;
+        fill: currentColor;
     }
+    &:hover {
+        color: white;
+    }
+}
+
+.btn-primary {
+    background: $color-primary;
+    &:hover {
+        background: darken($color-primary, 5%);
+    }
+    &:focus {
+        outline: darken($color-primary, 5%);
+    }
+}
+
+// Class used for feedback on invalid input fields
+// Use it next to the input it shoud give feedback for
+.invalid-feedback {
+    color: $color-error;
 }
 
 .ui-text-box {
@@ -204,13 +245,47 @@ h1 {
     border: 1px solid #2A3A51;
     color: #FFFFFF;
     font-size: inherit;
-    margin: .5rem;
     border-radius: 2px;
     padding: 0.5rem 1rem;
-    display: flex;
+    outline: none;
+    transition: all 100ms ease-out;
+    width: 100%;
     &::placeholder {
-        color: #93A9C8;
+        color: $color-secondary;
     }
+    &:focus {
+        border-color: $color-primary;
+    }
+    &:valid, &:placeholder-shown {
+        + .invalid-feedback {
+            display: none;
+        }
+    }
+    &:invalid:not(:placeholder-shown) {
+        border-color: $color-error;
+        + .invalid-feedback {
+            display: block;
+        }
+    }
+}
+
+.form-inline {
+    .ui-text-box {
+        width: auto;
+    }
+}
+
+// Group for e.g. a label, an input, form-text and invalid-feedback
+.form-group {
+    width: 100%;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+// Used for help texts below inputs in forms
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
 }
 
 .ui-section {
@@ -223,13 +298,31 @@ h1 {
     border-top: 1px solid $color-page-background;
 }
 
+.table {
+    width: 100%;
+
+    &.table-hover {
+        > tbody > tr:hover > td {
+            background: rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    tr {
+        border-bottom: 1px solid #2A3A51;
+        transition: background 100ms ease-out;
+    }
+
+    th, td {
+        padding: .25rem .5rem;
+    }
+}
+
 /**
  * Global style for user-defined avatars
  * Used for user, team member, and org avatars.
  */
 .avatar {
     display: flex;
-    cursor: pointer;
 
     .avatar-icon,
     .icon {

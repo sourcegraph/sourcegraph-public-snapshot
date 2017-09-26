@@ -17,7 +17,7 @@ import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser, fetchCurrentUser } from './auth'
+import { fetchCurrentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { Navbar } from './nav/Navbar'
 import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from './repo/backend'
@@ -26,6 +26,7 @@ import { parseSearchURLQuery } from './search/index'
 import { Search } from './search/Search'
 import { SearchResults } from './search/SearchResults'
 import { PasswordResetPage } from './settings/auth/PasswordResetPage'
+import { SignInPage } from './settings/auth/SignInPage'
 import { SettingsPage } from './settings/SettingsPage'
 import { handleQueryEvents } from './tracking/analyticsUtils'
 import { viewEvents } from './tracking/events'
@@ -146,13 +147,19 @@ class AppRouter extends React.Component<ParsedRouteProps, {}> {
                 return <SearchResults {...this.props} />
 
             case 'sign-in':
+                return <SignInPage />
+
             case 'editor-auth':
+            case 'settings-error':
+            case 'team-profile':
+            case 'teams-new':
             case 'user-profile':
+            case 'accept-invite':
                 // if on-prem, never show a settings page
                 if (sourcegraphContext.onPrem) {
                     return <Redirect to='/search' />
                 }
-                return <SettingsPage routeName={this.props.routeName} />
+                return <SettingsPage {...this.props} />
             case 'password-reset':
                 return <PasswordResetPage />
             case 'repository':
@@ -242,10 +249,10 @@ class App extends React.Component<{}, AppState> {
         super(props)
         this.state = {}
         // Fetch current user data
-        fetchCurrentUser().subscribe(
-            state => currentUser.next(state),
-            error => this.setState({ error })
-        )
+        fetchCurrentUser().subscribe(undefined, error => {
+            console.error(error)
+            this.setState({ error })
+        })
     }
 
     public render(): JSX.Element | null {

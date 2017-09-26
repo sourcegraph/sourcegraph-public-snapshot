@@ -1,0 +1,16 @@
+
+@import './InviteForm';
+
+.team {
+
+    &__avatar-cell {
+        width: 1px;
+        .avatar {
+            height: 2rem;
+        }
+    }
+
+    &__actions-cell {
+        width: 1px;
+    }
+}

@@ -85,7 +85,16 @@ const config: webpack.Configuration = {
             {
                 // sass / scss loader for webpack
                 test: /\.(css|sass|scss)$/,
-                loader: ExtractTextPlugin.extract(['css-loader', 'postcss-loader', 'sass-loader'])
+                loader: ExtractTextPlugin.extract([
+                    'css-loader',
+                    'postcss-loader',
+                    {
+                        loader: 'sass-loader',
+                        options: {
+                            includePaths: [__dirname + '/node_modules']
+                        }
+                    }
+                ])
             }
         ]
     }

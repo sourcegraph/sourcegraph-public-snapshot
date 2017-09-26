@@ -20,7 +20,9 @@ export const viewEvents = {
     Blob: new LoggableViewEvent('ViewBlob'),
     UserProfile: new LoggableViewEvent('ViewUserProfile'),
     SignIn: new LoggableViewEvent('ViewSignIn'),
-    EditorAuth: new LoggableViewEvent('ViewEditorAuth')
+    EditorAuth: new LoggableViewEvent('ViewEditorAuth'),
+    AddNewOrg: new LoggableViewEvent('ViewAddNewOrg'),
+    OrgProfile: new LoggableViewEvent('ViewOrgProfile')
 }
 
 export class LoggableEvent {
@@ -43,6 +45,15 @@ export const events = {
     SignOutClicked: new LoggableEvent('SignOutClicked', EventCategories.Auth, EventActions.Click),
     CompletedAuth0SignIn: new LoggableEvent('CompletedAuth0SignIn', EventCategories.Auth, EventActions.SignIn),
     EditorAuthIdCopied: new LoggableEvent('EditorAuthIdCopied', EventCategories.Auth, EventActions.Click),
+
+    // Settings events
+    CreateNewTeamClicked: new LoggableEvent('CreateNewTeamClicked', EventCategories.Settings, EventActions.Click),
+    NewTeamFailed: new LoggableEvent('NewTeamFailed', EventCategories.Settings, EventActions.Error),
+    NewTeamCreated: new LoggableEvent('NewTeamCreated', EventCategories.Settings, EventActions.Success),
+
+    InviteTeamMemberClicked: new LoggableEvent('InviteTeamMemberClicked', EventCategories.Settings, EventActions.Click),
+    InviteTeamMemberFailed: new LoggableEvent('InviteTeamMemberFailed', EventCategories.Settings, EventActions.Error),
+    TeamMemberInvited: new LoggableEvent('TeamMemberInvited', EventCategories.Settings, EventActions.Success),
 
     // Nav bar events
     ShareButtonClicked: new LoggableEvent('ShareButtonClicked', EventCategories.Sharing, EventActions.Click),

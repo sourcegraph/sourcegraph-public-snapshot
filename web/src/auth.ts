@@ -1,10 +1,11 @@
-import 'rxjs/add/operator/map'
-import { BehaviorSubject } from 'rxjs/BehaviorSubject'
+import 'rxjs/add/operator/do'
+import 'rxjs/add/operator/mergeMap'
 import { Observable } from 'rxjs/Observable'
+import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { queryGraphQL } from './backend/graphql'
 
 /**
- * currentUser is a BehaviorSubject object that always represents the latest
+ * Always represents the latest
  * state of the currently authenticated user.
  *
  * Unlike sourcegraphContext.user, the global currentUser object contains
@@ -15,13 +16,13 @@ import { queryGraphQL } from './backend/graphql'
  * currently authenicated user. Sign in, sign out, and account changes are
  * all expected to refresh the app.
  */
-export const currentUser = new BehaviorSubject<GQL.IUser | null>(null)
+export const currentUser = new ReplaySubject<GQL.IUser | null>(1)
 
 /**
- * fetchCurrentUser can be called to fetch the current user and orgs
- * state from the remote.
+ * fetchCurrentUser can be called to fetch the current user and orgs state from the remote.
+ * Emits no items, completes when done.
  */
-export function fetchCurrentUser(): Observable<GQL.IUser | null> {
+export function fetchCurrentUser(): Observable<never> {
     return queryGraphQL(`
         query CurrentAuthState {
             root {
@@ -46,10 +47,11 @@ export function fetchCurrentUser(): Observable<GQL.IUser | null> {
             }
         }
     `)
-        .map(result => {
+        .do(result => {
             if (!result.data) {
                 throw new Error('invalid response received from graphql endpoint')
             }
-            return result.data.root.currentUser
+            currentUser.next(result.data.root.currentUser)
         })
+        .mergeMap(() => [])
 }

@@ -1,0 +1,17 @@
+.invite-form {
+    width: 100%;
+    margin-bottom: 1rem;
+    text-align: right;
+
+    &__submit-button {
+        margin-left: .5rem;
+    }
+
+    &__invited-text {
+        opacity: 0;
+        transition: opacity 500ms ease-out;
+        &__visible {
+            opacity: 1;
+        }
+    }
+}

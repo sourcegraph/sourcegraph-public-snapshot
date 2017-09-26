@@ -47,7 +47,7 @@
     "tslint": "^5.7.0",
     "tslint-language-service": "^0.9.6",
     "tslint-webpack-plugin": "^0.5.0",
-    "typescript": "^2.4.2",
+    "typescript": "^2.5.2",
     "webpack": "^3.5.6",
     "webpack-bundle-analyzer": "^2.9.0",
     "webpack-shell-plugin": "^0.5.0"
@@ -55,6 +55,7 @@
   "dependencies": {
     "@sourcegraph/icons": "^1.6.0",
     "auth0-js": "^8.10.1",
+    "bootstrap": "^4.0.0-beta",
     "copy-to-clipboard": "^3.0.7",
     "date-fns": "^1.28.5",
     "escape-string-regexp": "^1.0.5",
@@ -68,7 +69,8 @@
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.10.1",
-    "rxjs": "^5.4.2",
+    "rx-component": "0.0.5",
+    "rxjs": "^5.4.3",
     "vscode-languageserver-types": "^3.4.0",
     "whatwg-url": "^6.2.1"
   }

@@ -4,18 +4,28 @@ import { parseHash } from './url'
 
 // the typed parameters are not useful in the parsed props, as you shouldn't use them
 export interface ParsedRouteProps extends Partial<ParsedRepoURI>, RouteComponentProps<any> {
-    routeName?: 'editor-auth' | 'home' | 'repository' | 'search' | 'sign-in' | 'user-profile' | 'password-reset'
+    routeName?: 'editor-auth' | 'home' | 'repository' | 'search' | 'settings-error' | 'sign-in' | 'team-profile' | 'teams-new' | 'user-profile' | 'password-reset' | 'accept-invite'
     uri?: string
 }
 
+// TODO use React router for all this
 export function parseRouteProps<T extends string | { [key: string]: string } | string[]>(props: RouteComponentProps<T>): ParsedRouteProps {
     switch (props.location.pathname) {
-        case '/': return { ...props, routeName: 'home' }
-        case '/editor-auth': return { ...props, routeName: 'editor-auth' }
-        case '/search': return { ...props, routeName: 'search' }
-        case '/settings': return { ...props, routeName: 'user-profile' }
-        case '/sign-in': return { ...props, routeName: 'sign-in' }
-        case '/password-reset': return { ...props, routeName: 'password-reset' }
+        case '/':                   return { ...props, routeName: 'home' }
+        case '/editor-auth':        return { ...props, routeName: 'editor-auth' }
+        case '/join':               return { ...props, routeName: 'accept-invite' }
+        case '/search':             return { ...props, routeName: 'search' }
+        case '/settings':           return { ...props, routeName: 'user-profile' }
+        case '/settings/teams/new': return { ...props, routeName: 'teams-new' }
+        case '/sign-in':            return { ...props, routeName: 'sign-in' }
+        case '/password-reset':     return { ...props, routeName: 'password-reset' }
+    }
+    if (props.location.pathname.startsWith('/settings/team/')) {
+        return { ...props, routeName: 'team-profile' }
+    }
+    // If no /settings route match was found, direct the user to their settings error page
+    if (props.location.pathname.startsWith('/settings')) {
+        return { ...props, routeName: 'settings-error' }
     }
 
     const uriPathSplit = props.match.params[0].split('/-/')

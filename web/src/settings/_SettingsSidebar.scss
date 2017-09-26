@@ -1,0 +1,64 @@
+.settings-sidebar {
+    flex: 0 0 auto;
+    width: 15.75rem;
+    background-color: #1C2736;
+
+    display: flex;
+    flex-direction: column;
+
+    &__header {
+        @extend .ui-title;
+        color: #93A9C8;
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+
+    &__header-title {
+        flex: 0 1 auto;
+    }
+
+    &__header-icon {
+        flex: 0 0 auto;
+        margin-right: 0.5rem;
+        display: flex;
+        .icon {
+            fill: currentColor;
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+    }
+
+    &__item {
+
+        width: 100%;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+
+        &:hover {
+            background-color: rgba(42,58,81,0.7);
+        }
+
+        &--active {
+            color: white;
+        }
+
+        &-text {
+            width: 100%;
+            padding: .25rem 1rem;
+
+            display: flex;
+            align-items: center;
+
+            .icon {
+                width: 1.5em;
+                height: 1.5em;
+                fill: currentColor;
+                margin-right: 0.25rem;
+            }
+        }
+    }
+}

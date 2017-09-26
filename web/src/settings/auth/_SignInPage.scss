@@ -1,10 +1,18 @@
 .sign-in-page {
-    padding: 1.5rem;
+    width: 100%;
+
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    margin-top: 1.5rem;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+
+    &__modes {
+        margin-bottom: 0.5rem;
+    }
 
     &__mode {
-        color: #93A9C8;
         font-size: inherit;
         cursor: pointer;
         &:hover {
@@ -21,7 +29,15 @@
     }
 
     &__error {
-        color: red;
+        color: $color-error;
+    }
+
+    &__form {
+        max-width: 18rem;
+    }
+
+    &__input {
+        margin-bottom: 0.5rem;
     }
 
     &__pass-reset-link {
