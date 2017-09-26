@@ -29,7 +29,7 @@ import { CodeExcerpt } from '../components/CodeExcerpt'
 import { VirtualList } from '../components/VIrtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
 import { events } from '../tracking/events'
-import { parseHash, toPrettyBlobURL } from '../util/url'
+import { parseHash, toBlobURL, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
 
 interface ReferenceGroupProps {
@@ -96,11 +96,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                 const rev = this.props.isLocal ? this.props.localRev : uri.search.substr('?'.length)
                                 return (
                                     <Link
-                                        to={{
-                                            pathname: `/${uri.hostname + uri.pathname}${rev ? '@' + rev : ''}/-/blob/${uri.hash.substr('#'.length)}`,
-                                            hash: 'L' + (ref.range.start.line + 1) + (ref.range.start.character ? ':' + (ref.range.start.character + 1) : ''),
-                                            state: { referencesClick: true } /* The Blob component will only scroll on PUSH state events with this state. */
-                                        }}
+                                        to={toBlobURL({ repoPath: uri.hostname + uri.pathname, rev, filePath: uri.hash.substr('#'.length), position: ref.range.start})}
                                         key={i}
                                         className='references-group__reference'
                                         onClick={this.logEvent}

@@ -168,17 +168,9 @@ export class Blob extends React.Component<Props, State> {
             // Show fixed tooltip if necessary iff not showing a modal.
             this.fixedTooltip.next(this.props)
         }
-        if (this.props.history.action === 'POP') {
-            // The contents were updated on a mounted component and we did a 'back' or 'forward' event;
-            // scroll to the appropariate line after the new table is created.
-            this.scrollToLine(this.props)
-        } else if (this.props.location.state && this.props.location.state.referencesClick) {
-            // We do not want to scroll on all 'PUSH' events (otherwise every time a user clicks
-            // a line the page would scroll). However, to allow some <Link>'s in external components
-            // to trigger a scroll, we let those <Link> components set push state. The references
-            // panel results are one such example, and set the `referencesClick` value on location state.
-            this.scrollToLine(this.props)
-        }
+        // The HTML contents were updated on a mounted component, e.g. from a 'back' or 'forward' event,
+        // or a jump-to-def.
+        this.scrollToLine(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -426,7 +418,11 @@ export class Blob extends React.Component<Props, State> {
             e.preventDefault()
             const lastHash = parseHash(this.props.location.hash)
             hideTooltip()
-            if (defCtx.position.line && this.props.repoPath === defCtx.repoPath && this.props.rev === defCtx.rev && lastHash.line !== defCtx.position.line) {
+            if (defCtx.position.line &&
+                this.props.repoPath === defCtx.repoPath &&
+                (this.props.rev === defCtx.rev || this.props.commitID === defCtx.commitID) &&
+                this.props.filePath === defCtx.filePath &&
+                lastHash.line !== defCtx.position.line) {
                 // Handles URL update + scroll to file (for j2d within same file).
                 // Since the defCtx rev/commitID may be undefined, use the resolved rev
                 // for the current file.
