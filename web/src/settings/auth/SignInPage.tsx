@@ -42,11 +42,15 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     <span className='sign-in-page__mode-divider'>|</span>
                     <span className={`sign-in-page__mode${this.state.mode === 'signup' ? '--active' : ''}`} onClick={this.setModeSignUp}>Sign up</span>
                 </div>
-                <input className='ui-text-box sign-in-page__input' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
-                <input className='ui-text-box sign-in-page__input' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
-                <Link to='/password-reset' className='sign-in-page__pass-reset-link'><small>Forgot password?</small></Link>
-                <div className='form-group sign-in-page__submit-button'>
-                    <button className='btn btn-primary' type='submit'>
+                <div className='form-group'>
+                    <input className='ui-text-box sign-in-page__input' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
+                </div>
+                <div className='form-group'>
+                    <input className='ui-text-box sign-in-page__input' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
+                    <small className='form-text'><Link to='/password-reset'>Forgot password?</Link></small>
+                </div>
+                <div className='form-group'>
+                    <button className='btn btn-primary btn-block' type='submit'>
                         {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
                     </button>
                 </div>

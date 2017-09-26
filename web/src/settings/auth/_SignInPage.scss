@@ -33,21 +33,11 @@
     }
 
     &__form {
-        max-width: 18rem;
-    }
-
-    &__input {
-        margin-bottom: 0.5rem;
-    }
-
-    &__pass-reset-link {
-        padding-top: 0.25rem;
-        margin-left: .5rem;
-        float: left;
+        width: 18rem;
+        max-width: calc(100vw - 2rem);
     }
 
     &__submit-button {
-        float: right;
-        margin-right: .5rem;
+        width: 100%;
     }
 }

@@ -207,6 +207,10 @@ h1 {
     outline: none;
 }
 
+.btn-block {
+    width: 100%;
+}
+
 .btn-icon {
     // Increase clickable area
     padding: 0.5rem;
@@ -278,7 +282,6 @@ h1 {
 // Group for e.g. a label, an input, form-text and invalid-feedback
 .form-group {
     width: 100%;
-    display: block;
     margin-bottom: 1rem;
 }
 
