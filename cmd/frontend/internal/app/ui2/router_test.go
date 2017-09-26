@@ -133,7 +133,7 @@ func TestRouter(t *testing.T) {
 
 		// accept invite
 		{
-			path:      "/join",
+			path:      "/accept-invite",
 			wantRoute: routeAcceptInvite,
 			wantVars:  map[string]string{},
 		},

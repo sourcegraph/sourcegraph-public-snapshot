@@ -87,7 +87,7 @@ func newRouter() *mux.Router {
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
 	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
-	r.Path("/join").Methods("GET").Name(routeAcceptInvite)
+	r.Path("/accept-invite").Methods("GET").Name(routeAcceptInvite)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
 	r.Path("/settings{Path:.*}").Methods("GET").Name(routeSettings)
 
@@ -127,7 +127,7 @@ func init() {
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
 	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
-	router.Get(routeAcceptInvite).Handler(handler(serveBasicPageString("join - Sourcegraph")))
+	router.Get(routeAcceptInvite).Handler(handler(serveBasicPageString("accept invite - Sourcegraph")))
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("reset password - Sourcegraph")))
 
 	// Legacy redirects
