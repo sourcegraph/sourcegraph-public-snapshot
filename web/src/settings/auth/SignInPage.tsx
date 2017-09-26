@@ -1,6 +1,7 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import { WebAuth } from 'auth0-js'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { events } from '../../tracking/events'
@@ -45,7 +46,8 @@ class LoginSignupForm extends React.Component<{}, State> {
                 </div>
                 <input className='ui-text-box' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
                 <input className='ui-text-box' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
-                <button className='ui-button' type='submit'>
+                <Link to='/password-reset' className='sign-in-page__pass-reset-link'><small>Forgot password?</small></Link>
+                <button className='ui-button sign-in-page__submit-button' type='submit'>
                     {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
                 </button>
             </form>

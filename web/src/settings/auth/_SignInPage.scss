@@ -23,4 +23,15 @@
     &__error {
         color: red;
     }
+
+    &__pass-reset-link {
+        padding-top: 0.25rem;
+        margin-left: .5rem;
+        float: left;
+    }
+
+    &__submit-button {
+        float: right;
+        margin-right: .5rem;
+    }
 }
