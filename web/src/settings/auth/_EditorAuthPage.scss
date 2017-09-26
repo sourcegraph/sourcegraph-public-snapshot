@@ -1,4 +1,8 @@
 .editor-auth-page {
+    &__session-id-container {
+        display: flex;
+    }
+
     &__session-id {
         flex: 1 0 auto;
         background-color: inherit;

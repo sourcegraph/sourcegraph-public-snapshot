@@ -2,6 +2,7 @@ import AddIcon from '@sourcegraph/icons/lib/Add'
 import FriendsIcon from '@sourcegraph/icons/lib/Friends'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
+import SignOut from '@sourcegraph/icons/lib/SignOut'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -61,6 +62,18 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     {/* <li className='settings-sidebar__item'>
                         <Link to='/settings' className='settings-sidebar__item-text'>Profile</Link>
                     </li> */}
+                    <li className='settings-sidebar__item'>
+                        <div className='settings-sidebar__item-text'>Your profile</div>
+                        <ul>
+                            <li className='settings-sidebar__item'>
+                                <Link to='/editor-auth' className='settings-sidebar__item-text'><KeyIcon /> Authenticate your editor</Link>
+                            </li>
+
+                            <li className='settings-sidebar__item'>
+                                <a href='/-/sign-out' className='settings-sidebar__item-text' onClick={this.logTelemetryOnSignOut}><SignOut /> Sign out</a>
+                            </li>
+                        </ul>
+                    </li>
 
                     <li className='settings-sidebar__item'>
                         <div className='settings-sidebar__item-text'>Your teams</div>
@@ -80,10 +93,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 </Link>
                             </li>
                         </ul>
-                    </li>
-
-                    <li className='settings-sidebar__item'>
-                        <a href='/-/sign-out' className='settings-sidebar__item-text' onClick={this.logTelemetryOnSignOut}><KeyIcon /> Sign out</a>
                     </li>
                 </ul>
             </div>
