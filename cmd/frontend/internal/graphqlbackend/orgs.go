@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/conf"
+	appconf "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/mattbaird/gochimp"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -137,16 +139,22 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID); err != nil {
+	orgMember, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
+	if err != nil {
 		return nil, err
 	}
 
 	// Don't invite the user if they are already a member.
-	_, err := store.OrgMembers.GetByOrgAndEmail(ctx, args.OrgID, args.Email)
+	_, err = store.OrgMembers.GetByOrgAndEmail(ctx, args.OrgID, args.Email)
 	if err == nil {
 		return nil, fmt.Errorf("user %s is already a member of org %d", args.Email, args.OrgID)
 	}
 	if err != store.ErrOrgMemberNotFound {
+		return nil, err
+	}
+
+	org, err := localstore.Orgs.GetByID(ctx, args.OrgID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -155,8 +163,11 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// TODO: send email
-	log.Println(token)
+	sendInviteEmail(args.Email, orgMember.DisplayName, org.Name, token)
+	if err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
@@ -215,4 +226,21 @@ func orgIDFromInviteToken(tokenString string) (int32, error) {
 		return 0, errors.New("error parsing org invite: invalid type for field orgID")
 	}
 	return int32(id), nil
+}
+
+func sendInviteEmail(inviteEmail, fromName, orgName, token string) {
+	config := &notif.EmailConfig{
+		Template:  "invite-user",
+		FromName:  fromName,
+		FromEmail: "noreply@sourcegraph.com",
+		ToEmail:   inviteEmail,
+		Subject:   fmt.Sprintf("%s has invited you to join %s on Sourcegraph", fromName, orgName),
+	}
+
+	inviteURL := appconf.AppURL.String() + "/accept-invite?token=" + token
+	notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
+		gochimp.Var{Name: "INVITE_URL", Content: inviteURL},
+		gochimp.Var{Name: "ORG", Content: orgName},
+		gochimp.Var{Name: "FROM_USER", Content: fromName},
+	})
 }
