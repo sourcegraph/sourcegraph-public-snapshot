@@ -13,7 +13,7 @@ export function parseRouteProps<T extends string | { [key: string]: string } | s
     switch (props.location.pathname) {
         case '/':                   return { ...props, routeName: 'home' }
         case '/editor-auth':        return { ...props, routeName: 'editor-auth' }
-        case '/join':               return { ...props, routeName: 'accept-invite' }
+        case '/accept-invite':      return { ...props, routeName: 'accept-invite' }
         case '/search':             return { ...props, routeName: 'search' }
         case '/settings':           return { ...props, routeName: 'user-profile' }
         case '/settings/teams/new': return { ...props, routeName: 'teams-new' }
