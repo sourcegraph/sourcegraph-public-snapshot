@@ -81,9 +81,8 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
             `, variables)
         })
         .mergeMap(({ data, errors }) => {
-            if (!data) {
-                console.error(errors)
-                throw new Error(`Failed to create org`)
+            if (!data || !data.createOrg) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return fetchCurrentUser().concat([data.createOrg])
         })
@@ -116,10 +115,9 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
                 }
             `, variables)
         })
-        .map(result => {
-            if (!result.data) {
-                console.error(result.errors)
-                throw new Error(`Failed to invite user`)
+        .map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return
         })
