@@ -35,8 +35,8 @@ export class EditorAuthPage extends React.Component<Props, State> {
                     Paste this value into the input box in your editor, and click 'Save.'
                 </p>
                 <p>
-                    This will allow you to sync your favorite editor settings across devices,
-                    join a team, make inline comments, and share your workspace with teammates!
+                    Learn more about <a href='https://about.sourcegraph.com/products/editor' target='_blank'>Sourcegraph Editor</a>,
+                    and <a href='https://about.sourcegraph.com/products/editor#beta' target='_blank'>sign up for beta access</a> today.
                 </p>
             </div>
         )

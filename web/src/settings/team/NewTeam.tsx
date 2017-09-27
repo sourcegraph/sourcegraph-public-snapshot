@@ -118,8 +118,8 @@ export class NewTeam extends React.Component<Props, State> {
                     <h1>Create a new team</h1>
 
                     <p>
-                        Create a Sourcegraph team to bring collaboration into your editor.
-                        Do in-editor code reviews without clobbering your local workspace and leave in-line comments for teammates to communicate with context.
+                        Create a Sourcegraph team to bring the discussion to the code.
+                        Learn more about <a href='https://about.sourcegraph.com/products/editor' target='_blank'>collaboration in Sourcegraph</a>.
                     </p>
 
                     <div className='form-group'>
