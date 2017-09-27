@@ -32,7 +32,7 @@ interface State {
     username: string
     displayName: string
     loading: boolean
-    accepted: boolean
+    newOrgName?: string
     error?: Error
 }
 
@@ -98,15 +98,17 @@ export const AcceptInvitePage = reactive<Props>(props => {
                 Observable.of<Update>(state => ({ ...state, loading: true }))
                     .concat(
                         acceptUserInvite({ inviteToken, username, email, displayName })
-                            // Reload user
-                            .concat(fetchCurrentUser())
+                            .mergeMap(orgMember =>
+                                // Reload user
+                                fetchCurrentUser()
+                                    // Redirect
+                                    .concat([(state: State): State => ({ ...state, loading: false, newOrgName: orgMember.org.name })])
+                            )
                             // Show error
                             .catch(error => {
                                 console.error(error)
-                                return [(state: State): State => ({ ...state, error })]
+                                return [(state: State): State => ({ ...state, loading: false, error })]
                             })
-                            // Redirect
-                            .concat([(state: State): State => ({ ...state, loading: false, accepted: true })])
                     )
             )
     )
@@ -115,12 +117,14 @@ export const AcceptInvitePage = reactive<Props>(props => {
         .filter(updates => updates.length > 0)
         .map(updates => (state: State): State => updates.reduce((state, update) => update(state), state))
 
-        .scan<Update, State>((state: State, update: Update) => update(state), { username: '', email: '', displayName: '', loading: false, accepted: false })
+        .scan<Update, State>((state: State, update: Update) => update(state), { username: '', email: '', displayName: '', loading: false })
         .do(console.log.bind(console))
-        .map(({ email, username, displayName, loading, error, accepted }) => (
+        .map(({ email, username, displayName, loading, error, newOrgName }) => (
             <form className='accept-invite-page' onSubmit={nextSubmitEvent}>
-                { accepted && <Redirect to='/settings' /> }
+                { newOrgName && <Redirect to={`/settings/team/${newOrgName}`} /> }
                 <h1>You were invited to join a Sourcegraph team!</h1>
+
+                { error && <p className='form-text text-error'>{error.message}</p> }
 
                 <div className='form-group'>
                     <label>Your new username</label>
@@ -166,9 +170,10 @@ export const AcceptInvitePage = reactive<Props>(props => {
                     />
                 </div>
 
-                <button type='submit' className='btn btn-primary' disabled={loading}>Accept Invite</button>
-                { loading && <LoaderIcon /> }
-                { error && <div>{error.message}</div> }
+                <div className='form-group accept-invite-page__actions'>
+                    <button type='submit' className='btn btn-primary' disabled={loading}>Accept Invite</button>
+                    { loading && <LoaderIcon /> }
+                </div>
 
             </form>
         ))

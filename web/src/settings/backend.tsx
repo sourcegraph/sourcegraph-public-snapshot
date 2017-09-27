@@ -111,7 +111,7 @@ export interface AcceptUserInviteOptions {
  *
  * @return An Observable that does not emit items and completes when done
  */
-export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<never> {
+export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<GQL.IOrgMember> {
     return currentUser
         .take(1)
         .mergeMap(user => {
@@ -125,12 +125,24 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<n
                         username: $username,
                         email: $email,
                         displayName: $displayName,
-                        avatarURL: $avatarURL
-                    )
+                        avatarUrl: $avatarURL
+                    ) {
+                        org {
+                            name
+                        }
+                    }
                 }
-            `, options)
+            `, {
+                ...options,
+                avatarURL: user.avatarURL
+            })
         })
-        .mergeMap(() => [])
+        .map(({ data, errors }) => {
+            if (!data || !data.acceptUserInvite) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.acceptUserInvite
+        })
 }
 
 /**
@@ -143,11 +155,18 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<n
 export function removeUserFromOrg(orgID: number, userID: string): Observable<void> {
     return mutateGraphQL(`
         mutation removeUserFromOrg {
-            removeUserFromOrg(userID: $userID, orgID: $orgID)
+            removeUserFromOrg(userID: $userID, orgID: $orgID) {
+                alwaysNil
+            }
         }
     `, {
         userID,
         orgID
     })
-        .map(() => undefined)
+        .map(({ data, errors }) => {
+            if (errors && errors.length > 0) {
+                throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
+            }
+            return
+        })
 }
