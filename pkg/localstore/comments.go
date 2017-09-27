@@ -54,7 +54,7 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 }
 
 func (c *comments) GetAllForThread(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error) {
-	return c.getBySQL(ctx, "WHERE (thread_id=$1 AND deleted_at IS NULL)", threadID)
+	return c.getBySQL(ctx, "WHERE thread_id=$1 AND deleted_at IS NULL ORDER BY id ASC", threadID)
 }
 
 // getBySQL returns comments matching the SQL query, if any exist.
