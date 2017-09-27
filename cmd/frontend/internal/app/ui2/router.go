@@ -131,12 +131,14 @@ func init() {
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("reset password - Sourcegraph")))
 
 	// Legacy redirects
-	router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
-	router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
-	router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
-	router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
-	router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
-	router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
+	if !envvar.DeploymentOnPrem() {
+		router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
+		router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
+		router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
+		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
+		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
+		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
+	}
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
