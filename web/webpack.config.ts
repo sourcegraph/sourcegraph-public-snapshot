@@ -92,7 +92,7 @@ const config: webpack.Configuration = {
                 ])
             }
         ]
-    }
+    } as webpack.OldModule
 }
 
 export default config

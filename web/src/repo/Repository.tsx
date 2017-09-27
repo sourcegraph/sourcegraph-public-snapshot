@@ -229,7 +229,7 @@ export class Repository extends React.Component<Props, State> {
         this.setState({ showRevSwitcher: !this.state.showRevSwitcher })
     }
 
-    private handleShowAnywayButtonClick = e => {
+    private handleShowAnywayButtonClick = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault()
         this.showAnywayButtonClicks.next()
     }

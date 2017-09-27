@@ -92,7 +92,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         this.setState({ mode: 'signup' })
     }
 
-    private handleSubmit = event => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         if (this.state.loading) {
             return
