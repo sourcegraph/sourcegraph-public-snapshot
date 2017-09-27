@@ -360,7 +360,7 @@ export class SearchBox extends React.Component<Props, State> {
                                         }))
                                     }
                                     const isSelected = this.state.selectedSuggestion === i
-                                    const onRef = (ref: HTMLElement) => {
+                                    const onRef = (ref: HTMLLIElement) => {
                                         if (isSelected) {
                                             this.selectedSuggestionElement = ref || undefined
                                         }
@@ -373,7 +373,7 @@ export class SearchBox extends React.Component<Props, State> {
                                             query={queryToCursor}
                                             isSelected={isSelected}
                                             onClick={onClick}
-                                            ref={onRef}
+                                            liRef={onRef}
                                         />
                                     )
                                 })

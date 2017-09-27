@@ -16,14 +16,14 @@ export interface SuggestionProps {
     onClick?: () => void
 
     /** Get a reference to the HTML element for scroll management */
-    ref?: (ref: HTMLElement) => void
+    liRef?: (ref: HTMLLIElement | null) => void
 }
 
 export const Suggestion = (props: SuggestionProps) => {
     const splitRegexp = new RegExp(`(${escapeRegexp(props.query)})`, 'gi')
     const parts = props.label.split(splitRegexp)
     return (
-        <li className={'suggestion' + (props.isSelected ? ' suggestion--selected' : '')} onClick={props.onClick}>
+        <li className={'suggestion' + (props.isSelected ? ' suggestion--selected' : '')} onClick={props.onClick} ref={props.liRef}>
             <props.icon />
             <div className='suggestion__label'>
                 {
