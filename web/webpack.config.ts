@@ -1,7 +1,6 @@
 import ExtractTextPlugin = require('extract-text-webpack-plugin')
 import * as path from 'path'
 import Tapable = require('tapable')
-import TSLintPlugin = require('tslint-webpack-plugin')
 import * as webpack from 'webpack'
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
@@ -36,10 +35,6 @@ if (process.env.NODE_ENV === 'production') {
             'process.env': {
                 NODE_ENV: JSON.stringify('development')
             }
-        }),
-        new TSLintPlugin({
-            files: ['**/*.tsx'],
-            exclude: ['node_modules/**']
         })
     )
 }
