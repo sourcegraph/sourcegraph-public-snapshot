@@ -33,15 +33,6 @@ export function fetchCurrentUser(): Observable<never> {
                     orgs {
                         id
                         name
-                        members {
-                            id
-                            userID
-                            username
-                            email
-                            displayName
-                            avatarURL
-                            createdAt
-                        }
                     }
                 }
             }

@@ -4,7 +4,40 @@ import 'rxjs/add/operator/mergeMap'
 import 'rxjs/add/operator/take'
 import { Observable } from 'rxjs/Observable'
 import { currentUser, fetchCurrentUser } from '../auth'
-import { mutateGraphQL } from '../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+
+/**
+ * Fetches an org by ID
+ *
+ * @return Observable that emits the org or `null` if it doesn't exist
+ */
+export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
+    return queryGraphQL(`
+        query Org($id: Int!) {
+            root {
+                org(id: $id) {
+                    id
+                    name
+                    members {
+                        id
+                        userID
+                        username
+                        email
+                        displayName
+                        avatarURL
+                        createdAt
+                    }
+                }
+            }
+        }
+    `, { id })
+        .map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.org) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.org
+        })
+}
 
 export interface CreateOrgOptions {
     /** The name of the org */

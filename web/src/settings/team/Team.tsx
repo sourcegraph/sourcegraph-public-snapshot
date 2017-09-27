@@ -14,7 +14,7 @@ import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
-import { removeUserFromOrg } from '../backend'
+import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 import { InviteForm } from './InviteForm'
 
@@ -45,11 +45,21 @@ export const Team = reactive<Props>(props => {
                 .map(props => props.teamName)
                 .distinctUntilChanged()
         )
-            .map(([user, teamName]) => (state: State): State => ({
-                ...state,
-                org: user && user.orgs.find(org => org.name === teamName) || undefined,
-                user: user || undefined
-            })),
+            .mergeMap(([user, teamName]) => {
+                if (!user) {
+                    return [(state: State): State => ({ ...state, user: undefined })]
+                }
+                // Find org ID from user auth state
+                const org = user.orgs.find(org => org.name === teamName)
+                if (!org) {
+                    return [(state: State): State => ({ ...state, user, org })]
+                }
+                // Fetch the org by ID by ID
+                return fetchOrg(org.id)
+                    .map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
+                }
+            ),
+
         memberRemoves
             .withLatestFrom(currentUser)
             .filter(([member, user]) => !!user && confirm(
