@@ -60,7 +60,7 @@ type ErrOrgMemberNotFound struct {
 }
 
 func (err ErrOrgMemberNotFound) Error() string {
-	return fmt.Sprintf("org member not found: %q", err.args)
+	return fmt.Sprintf("org member not found: %v", err.args)
 }
 
 func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgMember, error) {
