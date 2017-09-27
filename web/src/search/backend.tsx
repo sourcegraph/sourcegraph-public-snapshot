@@ -130,26 +130,6 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
         })
 }
 
-export function fetchActiveRepos(): Promise<GQL.IActiveRepoResults | null> {
-    return queryGraphQL(`
-        query ActiveRepos() {
-            root {
-                activeRepos() {
-                    active
-                    inactive
-                }
-            }
-        }
-    `).toPromise().then(result => {
-        if (!result.data ||
-            !result.data.root ||
-            !result.data.root.activeRepos) {
-            return null
-        }
-        return result.data.root.activeRepos
-    })
-}
-
 export function fetchSuggestions(query: string, filters: Filter[]): Observable<GQL.SearchResult> {
    return queryGraphQL(`
         query SearchRepos($query: String!) {
