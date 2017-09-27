@@ -2,7 +2,7 @@ package localstore
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -55,7 +55,13 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.
 
 // ErrOrgMemberNotFound is the error that is returned when
 // a user is not in an org.
-var ErrOrgMemberNotFound = errors.New("org member not found")
+type ErrOrgMemberNotFound struct {
+	args []interface{}
+}
+
+func (err ErrOrgMemberNotFound) Error() string {
+	return fmt.Sprintf("org member not found: %q", err.args)
+}
 
 func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgMember, error) {
 	members, err := m.getBySQL(ctx, query, args...)
@@ -63,7 +69,7 @@ func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...inte
 		return nil, err
 	}
 	if len(members) != 1 {
-		return nil, ErrOrgMemberNotFound
+		return nil, &ErrOrgMemberNotFound{args}
 	}
 	return members[0], nil
 }

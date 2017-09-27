@@ -149,7 +149,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	if err == nil {
 		return nil, fmt.Errorf("user %s is already a member of org %d", args.Email, args.OrgID)
 	}
-	if err != store.ErrOrgMemberNotFound {
+	if _, ok := err.(store.ErrOrgMemberNotFound); !ok {
 		return nil, err
 	}
 
