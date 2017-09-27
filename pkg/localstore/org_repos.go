@@ -36,7 +36,7 @@ func (r *orgRepos) GetByID(ctx context.Context, id int32) (*sourcegraph.OrgRepo,
 }
 
 func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.OrgRepo, error) {
-	return r.getBySQL(ctx, "WHERE org_id=$1 AND access_token IS NULL AND deleted_at IS NULL", orgID)
+	return r.getBySQL(ctx, "WHERE org_id=$1 AND deleted_at IS NULL", orgID)
 }
 
 func (r *orgRepos) GetByRemoteURI(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error) {
