@@ -29,7 +29,7 @@ import { CodeExcerpt } from '../components/CodeExcerpt'
 import { VirtualList } from '../components/VIrtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
 import { events } from '../tracking/events'
-import { parseHash, toBlobURL, toPrettyBlobURL } from '../util/url'
+import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
 
 interface ReferenceGroupProps {
@@ -94,9 +94,13 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                             .map((ref, i) => {
                                 const uri = new URL(ref.uri)
                                 const rev = this.props.isLocal ? this.props.localRev : uri.search.substr('?'.length)
+                                const position = {
+                                    line: ref.range.start.line + 1,
+                                    character: ref.range.start.character + 1
+                                }
                                 return (
                                     <Link
-                                        to={toBlobURL({ repoPath: uri.hostname + uri.pathname, rev, filePath: uri.hash.substr('#'.length), position: ref.range.start})}
+                                        to={toPrettyBlobURL({ repoPath: uri.hostname + uri.pathname, rev, filePath: uri.hash.substr('#'.length), position })}
                                         key={i}
                                         className='references-group__reference'
                                         onClick={this.logEvent}
