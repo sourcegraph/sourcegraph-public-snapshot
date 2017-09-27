@@ -99,7 +99,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	results := notifyThreadParticipants(repo, thread, comments, comment)
+	results := notifyThreadParticipants(repo, thread, comments, comment, comment.AuthorName)
 	err = slack.NotifyOnComment(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
 	if err != nil {
 		log15.Error("slack.NotifyOnComment failed", "error", err)
@@ -145,7 +145,7 @@ func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	results := notifyThreadParticipants(repo, thread, comments, comment)
+	results := notifyThreadParticipants(repo, thread, comments, comment, member.DisplayName)
 	err = slack.NotifyOnComment(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
 	if err != nil {
 		log15.Error("slack.NotifyOnComment failed", "error", err)
@@ -159,7 +159,7 @@ type commentResults struct {
 }
 
 // notifyThreadParticipants sends email notifications to the participants in the comment thread.
-func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment) *commentResults {
+func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment, commentAuthorName string) *commentResults {
 	commentURL := getURL(repo, thread, comment)
 	if !notif.EmailIsConfigured() {
 		return &commentResults{emails: []string{}, commentURL: commentURL}
@@ -181,7 +181,7 @@ func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thr
 		}
 		config := &notif.EmailConfig{
 			Template:  "new-comment",
-			FromName:  comment.AuthorName,
+			FromName:  commentAuthorName,
 			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
 			ToName:    "",                        // We don't know names right now.
 			ToEmail:   email,

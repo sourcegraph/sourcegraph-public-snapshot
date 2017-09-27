@@ -181,7 +181,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	results := notifyThreadParticipants(repo, newThread, nil, comment)
+	results := notifyThreadParticipants(repo, newThread, nil, comment, comment.AuthorName)
 	err = slack.NotifyOnThread(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
 	if err != nil {
 		log15.Error("slack.NotifyOnThread failed", "error", err)
@@ -246,7 +246,7 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	results := notifyThreadParticipants(repo, newThread, nil, comment)
+	results := notifyThreadParticipants(repo, newThread, nil, comment, member.DisplayName)
 	err = slack.NotifyOnThread(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
 	if err != nil {
 		log15.Error("slack.NotifyOnThread failed", "error", err)
