@@ -129,7 +129,7 @@ export class Blob extends React.Component<Props, State> {
             this.subscriptions.unsubscribe()
             this.subscriptions = new Subscription()
             if (this.blobElement) {
-                this.addLineEventListeners(this.blobElement)
+                this.addEventListeners(this.blobElement)
             }
             this.setFixedTooltip()
         }
@@ -189,7 +189,7 @@ export class Blob extends React.Component<Props, State> {
             // This is the first time the component is ever mounted. We need to set initial scroll.
             this.scrollToLine(this.props)
             createTooltips()
-            this.addLineEventListeners(ref)
+            this.addEventListeners(ref)
             const parsedHash = parseHash(this.props.location.hash)
             if (parsedHash.line && parsedHash.character) {
                 this.fixedTooltip.next(this.props)
@@ -197,7 +197,7 @@ export class Blob extends React.Component<Props, State> {
         }
     }
 
-    private addLineEventListeners = (ref: HTMLElement): void => {
+    private addEventListeners = (ref: HTMLElement): void => {
         const isSupportedExtension = supportedExtensions.has(getPathExtension(this.props.filePath))
         this.subscriptions.add(
             this.fixedTooltip
