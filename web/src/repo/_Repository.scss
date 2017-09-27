@@ -67,6 +67,9 @@
         height: 2.5rem;
         z-index: 20;
 
+        display: flex;
+        justify-content: center;
+
         background: #1C2736;
         border-radius: 0.25rem 0 0 0.25rem;
         border: none;
