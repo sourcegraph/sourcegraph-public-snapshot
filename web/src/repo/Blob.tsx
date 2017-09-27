@@ -129,7 +129,7 @@ export class Blob extends React.Component<Props, State> {
             this.subscriptions.unsubscribe()
             this.subscriptions = new Subscription()
             if (this.blobElement) {
-                this.addTooltipEventListeners(this.blobElement)
+                this.addLineEventListeners(this.blobElement)
             }
             this.setFixedTooltip()
         }
@@ -189,9 +189,7 @@ export class Blob extends React.Component<Props, State> {
             // This is the first time the component is ever mounted. We need to set initial scroll.
             this.scrollToLine(this.props)
             createTooltips()
-            if (supportedExtensions.has(getPathExtension(this.props.filePath))) {
-                this.addTooltipEventListeners(ref)
-            }
+            this.addLineEventListeners(ref)
             const parsedHash = parseHash(this.props.location.hash)
             if (parsedHash.line && parsedHash.character) {
                 this.fixedTooltip.next(this.props)
@@ -199,9 +197,11 @@ export class Blob extends React.Component<Props, State> {
         }
     }
 
-    private addTooltipEventListeners = (ref: HTMLElement): void => {
+    private addLineEventListeners = (ref: HTMLElement): void => {
+        const isSupportedExtension = supportedExtensions.has(getPathExtension(this.props.filePath))
         this.subscriptions.add(
             this.fixedTooltip
+                .filter(props => isSupportedExtension )
                 .filter(props => {
                     const parsed = parseHash(props.location.hash)
                     if (parsed.line && parsed.character) {
@@ -267,6 +267,7 @@ export class Blob extends React.Component<Props, State> {
 
         this.subscriptions.add(
             Observable.fromEvent<MouseEvent>(ref, 'mouseover')
+                .filter(e => isSupportedExtension)
                 .map(e => e.target as HTMLElement)
                 .do(target => {
                     const td = getTableDataCell(target)
@@ -301,7 +302,7 @@ export class Blob extends React.Component<Props, State> {
                     for (const el of document.querySelectorAll('.blob .selection-highlight')) {
                         el.classList.remove('selection-highlight')
                     }
-                    if (!this.state.fixedTooltip) {
+                    if (isSupportedExtension && !this.state.fixedTooltip) {
                         hideTooltip()
                     }
                 })
