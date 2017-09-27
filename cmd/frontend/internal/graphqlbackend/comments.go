@@ -140,7 +140,7 @@ func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, "", "", actor.UID)
+	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, "", actor.Email, actor.UID)
 	if err != nil {
 		return nil, err
 	}
