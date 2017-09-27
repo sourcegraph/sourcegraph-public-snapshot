@@ -7,6 +7,11 @@
     margin-top: 1.5rem;
     border-top-left-radius: 0.25rem;
     border-top-right-radius: 0.25rem;
+}
+
+.login-signup-form {
+    width: 18rem;
+    max-width: calc(100vw - 2rem);
 
     &__modes {
         margin-bottom: 0.5rem;
@@ -32,12 +37,16 @@
         color: $color-error;
     }
 
-    &__form {
-        width: 18rem;
-        max-width: calc(100vw - 2rem);
-    }
-
-    &__submit-button {
+    &__loader {
         width: 100%;
+        display: flex;
+        justify-content: center;
+
+        .icon-loader, .icon-loader svg {
+            display: flex;
+            width: 1.5rem;
+            height: 1.5rem;
+            stroke: currentColor;
+        }
     }
 }

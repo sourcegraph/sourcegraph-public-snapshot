@@ -1,5 +1,6 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
-import { WebAuth } from 'auth0-js'
+import Loader from '@sourcegraph/icons/lib/Loader'
+import { Auth0Error, WebAuth } from 'auth0-js'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { HeroPage } from '../../components/HeroPage'
@@ -21,6 +22,7 @@ interface LoginSignupFormState {
     email: string
     password: string
     errorDescription: string
+    loading: boolean
 }
 
 class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupFormState> {
@@ -28,32 +30,48 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         mode: 'signin',
         email: '',
         password: '',
-        errorDescription: ''
+        errorDescription: '',
+        loading: false
     }
 
     public render(): JSX.Element | null {
         return (
-            <form className='sign-in-page__form' onSubmit={this.handleSubmit}>
+            <form className='login-signup-form' onSubmit={this.handleSubmit}>
                 {this.state.errorDescription !== '' &&
-                    <p className='sign-in-page__error'>{this.state.errorDescription}</p>
+                    <p className='login-signup-form__error'>{this.state.errorDescription}</p>
                 }
-                <div className='sign-in-page__modes'>
-                    <span className={`sign-in-page__mode${this.state.mode === 'signin' ? '--active' : ''}`} onClick={this.setModeSignIn}>Sign in</span>
-                    <span className='sign-in-page__mode-divider'>|</span>
-                    <span className={`sign-in-page__mode${this.state.mode === 'signup' ? '--active' : ''}`} onClick={this.setModeSignUp}>Sign up</span>
+                <div className='login-signup-form__modes'>
+                    <span className={`login-signup-form__mode${this.state.mode === 'signin' ? '--active' : ''}`} onClick={this.setModeSignIn}>Sign in</span>
+                    <span className='login-signup-form__mode-divider'>|</span>
+                    <span className={`login-signup-form__mode${this.state.mode === 'signup' ? '--active' : ''}`} onClick={this.setModeSignUp}>Sign up</span>
                 </div>
                 <div className='form-group'>
-                    <input className='ui-text-box sign-in-page__input' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' />
+                    <input
+                        className='ui-text-box login-signup-form__input'
+                        onChange={this.onEmailFieldChange}
+                        value={this.state.email}
+                        type='email'
+                        placeholder='Email'
+                        disabled={this.state.loading}
+                    />
                 </div>
                 <div className='form-group'>
-                    <input className='ui-text-box sign-in-page__input' onChange={this.onPasswordFieldChange} value={this.state.password} type='password' placeholder='Password' />
+                    <input
+                        className='ui-text-box login-signup-form__input'
+                        onChange={this.onPasswordFieldChange}
+                        value={this.state.password}
+                        type='password'
+                        placeholder='Password'
+                        disabled={this.state.loading}
+                    />
                     <small className='form-text'><Link to='/password-reset'>Forgot password?</Link></small>
                 </div>
                 <div className='form-group'>
-                    <button className='btn btn-primary btn-block' type='submit'>
+                    <button className='btn btn-primary btn-block' type='submit' disabled={this.state.loading}>
                         {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
                     </button>
                 </div>
+                {this.state.loading && <div className='login-signup-form__loader'><Loader /></div>}
             </form>
         )
     }
@@ -76,6 +94,17 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
 
     private handleSubmit = event => {
         event.preventDefault()
+        if (this.state.loading) {
+            return
+        }
+        this.setState({ loading: true })
+        const authCallback = (err: Auth0Error) => {
+            this.setState({ loading: false })
+            if (err) {
+                console.error('auth error: ', err)
+                this.setState({ errorDescription: err.description || 'Unknown Error' })
+            }
+        }
         switch (this.state.mode) {
             case 'signin':
                 events.InitiateSignIn.log({
@@ -90,12 +119,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     responseType: 'code',
                     username: this.state.email,
                     password: this.state.password
-                }, (err, authResult) => {
-                    if (err) {
-                        console.error('auth error: ', err)
-                        this.setState({ errorDescription: err.description || 'Unknown Error' })
-                    }
-                })
+                }, authCallback)
                 break
             case 'signup':
                 events.InitiateSignUp.log({
@@ -110,12 +134,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     responseType: 'code',
                     email: this.state.email,
                     password: this.state.password
-                }, (err, authResult) => {
-                    if (err) {
-                        console.error('auth error: ', err)
-                        this.setState({ errorDescription: err.description || 'Unknown Error' })
-                    }
-                })
+                }, authCallback)
                 break
         }
     }
