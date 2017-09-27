@@ -33,14 +33,10 @@ var repoLargeSubstr = strings.Fields(env.Get("REPO_LARGE_SUBSTR", "", "repo subs
 // lang/build server.
 type serverID struct {
 	contextID
-	pathPrefix string // path to subdirectory, if lang/build server should run in subdirectory (otherwise empty)
 }
 
 func (id serverID) String() string {
-	if id.pathPrefix == "" {
-		return fmt.Sprintf("server(%s)", id.contextID)
-	}
-	return fmt.Sprintf("server(%s prefix=%q)", id.contextID, id.pathPrefix)
+	return fmt.Sprintf("server(%s)", id.contextID)
 }
 
 type serverProxyConn struct {
@@ -370,7 +366,6 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 		// TODO(sqs): some clients will have already received these
 		p.mu.Lock()
 		for cc := range p.clients {
-			// TODO(sqs): equality match omits pathPrefix
 			if cc.context == id {
 				// Ignore errors for forwarding diagnostics.
 				go cc.handleFromServer(ctx, cc.conn, req)

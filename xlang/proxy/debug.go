@@ -156,7 +156,7 @@ func recordClosedServerConn(id serverID, stats serverProxyConnStats) {
 
 func newServerSummary(id serverID, stats serverProxyConnStats) *serverSummary {
 	return &serverSummary{
-		ID:         fmt.Sprintf("%s %s", id.rootURI.String(), id.pathPrefix),
+		ID:         id.rootURI.String(),
 		TotalCount: stats.TotalCount,
 		Age:        time.Since(stats.Created),
 		Idle:       time.Since(stats.Last),

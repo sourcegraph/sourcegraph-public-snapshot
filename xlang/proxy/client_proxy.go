@@ -414,7 +414,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// goroutine and before initializing the server to avoid a
 		// race condition where the message is sent twice to the
 		// client.)
-		savedMsgs := c.proxy.getSavedMessages(serverID{contextID: c.context, pathPrefix: ""})
+		savedMsgs := c.proxy.getSavedMessages(serverID{contextID: c.context})
 		go func() {
 			for _, msg := range savedMsgs {
 				if err := conn.Notify(ctx, "window/showMessage", msg); err != nil {
@@ -489,7 +489,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if strings.HasSuffix(c.context.mode, "_bg") {
 			defer func() {
 				go func() {
-					id := serverID{contextID: c.context, pathPrefix: ""}
+					id := serverID{contextID: c.context}
 					err := c.proxy.shutDownServer(context.Background(), id)
 					if err != nil {
 						logError("Shutting down background server failed: "+err.Error(), c.context, "method", req.Method, "id", req.ID)
@@ -525,7 +525,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			if err != nil {
 				return nil, err
 			}
-			if diags := c.proxy.getSavedDiagnostics(serverID{contextID: c.context, pathPrefix: ""}, lsp.DocumentURI(relURI.String())); diags != nil {
+			if diags := c.proxy.getSavedDiagnostics(serverID{contextID: c.context}, lsp.DocumentURI(relURI.String())); diags != nil {
 				diagnosticsParams := lsp.PublishDiagnosticsParams{
 					URI:         params.TextDocument.URI,
 					Diagnostics: diags,
@@ -830,7 +830,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 		return walkErr
 	}
 
-	id := serverID{contextID: c.context, pathPrefix: ""}
+	id := serverID{contextID: c.context}
 	crid := clientRequestID{RID: rid, CID: c.id}
 
 	// We try upto 3 times if we encounter ephemeral errors
