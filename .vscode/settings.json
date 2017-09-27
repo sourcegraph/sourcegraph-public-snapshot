@@ -1,4 +1,9 @@
 {
 	"typescript.tsdk": "./web/node_modules/typescript/lib",
-	"tslint.nodePath": "./web/node_modules"
+  "tslint.nodePath": "./web/node_modules",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "ui/assets": true
+  }
 }
