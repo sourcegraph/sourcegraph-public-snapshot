@@ -152,7 +152,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
  * @param userID The user's ID to remove
  * @return An Observable that does emits `undefined` when done, then completes
  */
-export function removeUserFromOrg(orgID: number, userID: string): Observable<void> {
+export function removeUserFromOrg(orgID: number, userID: string): Observable<never> {
     return mutateGraphQL(`
         mutation removeUserFromOrg {
             removeUserFromOrg(userID: $userID, orgID: $orgID) {
@@ -163,10 +163,11 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<voi
         userID,
         orgID
     })
-        .map(({ data, errors }) => {
+        .mergeMap(({ data, errors }) => {
             if (errors && errors.length > 0) {
                 throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
             }
-            return
+            // Reload user data
+            return fetchCurrentUser()
         })
 }

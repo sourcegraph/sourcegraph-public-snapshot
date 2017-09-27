@@ -2,14 +2,15 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import reactive from 'rx-component'
+import 'rxjs/add/observable/combineLatest'
 import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/combineLatest'
-import 'rxjs/add/operator/combineLatest'
+import 'rxjs/add/operator/concat'
 import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
 import 'rxjs/add/operator/scan'
+import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
@@ -24,6 +25,8 @@ export interface Props {
 interface State {
     org?: GQL.IOrg
     user?: GQL.IUser
+    /** Whether the user just left the org */
+    left: boolean
 }
 
 type Update = (s: State) => State
@@ -36,35 +39,42 @@ export const Team = reactive<Props>(props => {
     const memberRemoves = new Subject<GQL.IOrgMember>()
 
     return Observable.merge<Update>(
-        props
-            .map(props => props.teamName)
-            .distinctUntilChanged()
-            .combineLatest(currentUser)
-            .map(([teamName, user]) => (state: State): State => ({
+        Observable.combineLatest(
+            currentUser,
+            props
+                .map(props => props.teamName)
+                .distinctUntilChanged()
+        )
+            .map(([user, teamName]) => (state: State): State => ({
                 ...state,
                 org: user && user.orgs.find(org => org.name === teamName) || undefined,
                 user: user || undefined
             })),
         memberRemoves
-            .combineLatest(currentUser)
+            .withLatestFrom(currentUser)
             .filter(([member, user]) => !!user && confirm(
                 user.id === member.userID
                     ? `Leave this team?`
                     : `Remove ${member.displayName} from this team?`
             ))
-            .mergeMap(([memberToRemove]) =>
+            .mergeMap(([memberToRemove, user]) =>
                 removeUserFromOrg(memberToRemove.org.id, memberToRemove.userID)
-                    .map(() => (state: State): State => ({
+                    .concat([(state: State): State => ({
                         ...state,
+                        left: memberToRemove.userID === user!.id,
                         org: state.org && {
                             ...state.org,
-                            members: state.org.members.filter(member => member.userID === memberToRemove.userID)
+                            members: state.org.members.filter(member => member.userID !== memberToRemove.userID)
                         }
-                    }))
+                    })])
             )
     )
-        .scan<Update, State>((state: State, update: Update) => update(state), {})
-        .map(({ user, org }: State): JSX.Element | null => {
+        .scan<Update, State>((state: State, update: Update) => update(state), { left: false })
+        .map(({ user, org, left }: State): JSX.Element | null => {
+            // If the current user just left the org, redirect to settings start page
+            if (left) {
+                return <Redirect to='/settings' />
+            }
             if (!user) {
                 return <Redirect to='/sign-in' />
             }
