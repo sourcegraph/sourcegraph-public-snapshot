@@ -222,6 +222,9 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 		Repo: repo.ID,
 		Rev:  "",
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	var symbols []lsp.SymbolInformation
 	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}

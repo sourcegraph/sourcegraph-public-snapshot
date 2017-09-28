@@ -24,6 +24,9 @@ func TestCachedFetch(t *testing.T) {
 			t.Fatal(err)
 		}
 		got, err := ioutil.ReadAll(f.File)
+		if err != nil {
+			t.Fatal(err)
+		}
 		f.File.Close()
 		if string(got) != want {
 			t.Fatalf("did not return fetcher output. got %q, want %q", string(got), want)

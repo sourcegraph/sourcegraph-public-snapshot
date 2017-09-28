@@ -253,7 +253,7 @@ func TestReadAll(t *testing.T) {
 
 	// If we are too small it should fail
 	b = make([]byte, 1)
-	n, err = readAll(bytes.NewReader(input), b)
+	_, err = readAll(bytes.NewReader(input), b)
 	if err == nil {
 		t.Fatal("expected to fail on small buffer")
 	}
@@ -331,6 +331,9 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zr, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !limitHit {
 		t.Fatalf("expected limitHit on concurrentFind")
 	}
