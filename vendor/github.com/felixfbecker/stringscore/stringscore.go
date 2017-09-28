@@ -13,6 +13,7 @@ import (
 // Character score: 1
 // Same case bonus: 1
 // Upper case bonus: 1
+// End of string bonus: 1
 // Consecutive match bonus: 5
 // Start of word/path bonus: 7
 // Start of string bonus: 8
@@ -63,7 +64,7 @@ func Score(target string, query string) int {
 			score++
 		}
 
-		// Start of word bonus
+		// Start of string bonus
 		if firstMatch && consecutive {
 			score += 8
 		} else if isWordSeparator(targetCPrev) {
@@ -75,6 +76,13 @@ func Score(target string, query string) int {
 		}
 		firstMatch = false
 	}
+
+	// End of string bonus
+	_, _, err = reader.ReadRune()
+	if err != nil {
+		score++
+	}
+
 	return score
 }
 
