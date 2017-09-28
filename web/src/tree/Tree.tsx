@@ -1,5 +1,7 @@
 // tslint:disable:no-use-before-declare
 
+import ChevronDown from '@sourcegraph/icons/lib/ChevronDown'
+import ChevronRight from '@sourcegraph/icons/lib/ChevronRight'
 import * as H from 'history'
 import * as immutable from 'immutable'
 import { Dictionary } from 'lodash'
@@ -7,8 +9,6 @@ import flatten from 'lodash/flatten'
 import groupBy from 'lodash/groupBy'
 import partition from 'lodash/partition'
 import * as React from 'react'
-import DownIcon from 'react-icons/lib/fa/angle-down'
-import RightIcon from 'react-icons/lib/fa/angle-right'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Subscription } from 'rxjs/Subscription'
@@ -176,7 +176,7 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public onKeyDown(event: any): void {
-        const handler = this[event.key]
+        const handler = (this as any)[event.key]
         if (handler) {
             event.preventDefault()
             handler.call(this, event)
@@ -336,7 +336,7 @@ class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     }
 
     public render(): JSX.Element | null {
-        return <VisibilitySensor onChange={isVisible => this.onChangeVisibility(isVisible)} partialVisibility={true}><table style={{ width: '100%' }}>
+        return <VisibilitySensor onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible)} partialVisibility={true}><table style={{ width: '100%' }}>
             <tbody>
                 <tr>
                     <td>
@@ -480,11 +480,13 @@ class LayerTile extends React.Component<TileProps, {}> {
                                         }}
                                         href={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir)})}
                                         style={treePadding(this.props.depth, true)}>
-                                        {
-                                            this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
-                                                <DownIcon className='tree__row-icon' /> :
-                                                <RightIcon className='tree__row-icon' />
-                                        }
+                                        <span className='tree__row-icon'>
+                                            {
+                                                this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
+                                                    <ChevronDown /> :
+                                                    <ChevronRight />
+                                            }
+                                        </span>
                                         {dir}
                                     </a>
                                 </td>

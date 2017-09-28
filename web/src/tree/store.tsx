@@ -18,6 +18,11 @@ export interface TreeStore {
     subscribe: (cb: ((s: TreeState) => void)) => Subscription
 }
 
+interface Action {
+    type: string
+    payload: TreeState
+}
+
 export function createTreeStore(initSelectedPath?: string): TreeStore {
     let shownSubpaths = immutable.Set<string>()
     let selectedPath = ''
@@ -37,10 +42,10 @@ export function createTreeStore(initSelectedPath?: string): TreeStore {
         selectedDir = getParentDir(initSelectedPath)
     }
     const initState: TreeState = { shownSubpaths, selectedPath, selectedDir }
-    const actionSubject = new Subject<TreeState>()
-    const actionDispatcher = func => (...args) => actionSubject.next(func(...args))
+    const actionSubject = new Subject<Action>()
+    const actionDispatcher = (func: (action: TreeState) => Action) => (state: TreeState) => actionSubject.next(func(state))
 
-    const reducer = (state, action) => { // TODO(john): use immutable data structure
+    const reducer = (state: TreeState, action: Action) => { // TODO(john): use immutable data structure
         switch (action.type) {
             case 'SET':
                 return action.payload
@@ -54,7 +59,7 @@ export function createTreeStore(initSelectedPath?: string): TreeStore {
     }))
 
     const store: BehaviorSubject<TreeState> = new BehaviorSubject<TreeState>(initState)
-    actionSubject.startWith(initState).scan(reducer).subscribe(store)
+    actionSubject.startWith(initState as any).scan(reducer).subscribe(store)
 
     return { getValue: () => store.getValue(), setState, subscribe: cb => store.subscribe(cb) }
 }

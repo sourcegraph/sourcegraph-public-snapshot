@@ -185,6 +185,71 @@ interface XReferencesParams extends AbsoluteRepoFile {
     limit: number
 }
 
+export interface PackageDescriptor {
+    name: string
+    version?: string
+    repoURL?: string
+}
+
+/**
+ * Represents information about a programming construct that can be used to identify and locate the
+ * construct's symbol. The identification does not have to be unique, but it should be as unique as
+ * possible. It is up to the language server to define the schema of this object.
+ *
+ * In contrast to `SymbolInformation`, `SymbolDescriptor` includes more concrete, language-specific,
+ * metadata about the symbol.
+ */
+export interface SymbolDescriptor {
+    /**
+     * The kind of the symbol as a ts.ScriptElementKind
+     */
+    kind: string
+
+    /**
+     * The name of the symbol as returned from TS
+     */
+    name: string
+
+    /**
+     * The kind of the symbol the symbol is contained in, as a ts.ScriptElementKind.
+     * Is an empty string if the symbol has no container.
+     */
+    containerKind: string
+
+    /**
+     * The name of the symbol the symbol is contained in, as returned from TS.
+     * Is an empty string if the symbol has no container.
+     */
+    containerName: string
+
+    /**
+     * The file path of the file where the symbol is defined in, relative to the workspace rootPath.
+     */
+    filePath: string
+
+    /**
+     * A PackageDescriptor describing the package this symbol belongs to.
+     * Is `undefined` if the symbol does not belong to a package.
+     */
+    package?: PackageDescriptor
+}
+
+/**
+ * Represents information about a reference to programming constructs like variables, classes,
+ * interfaces, etc.
+ */
+export interface ReferenceInformation {
+    /**
+     * The location in the workspace where the `symbol` is referenced.
+     */
+    reference: Location
+
+    /**
+     * Metadata about the symbol that can be used to identify or locate its definition.
+     */
+    symbol: SymbolDescriptor
+}
+
 export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<Location[]> => {
     const ext = getPathExtension(ctx.filePath)
     if (!supportedExtensions.has(ext)) {
@@ -206,6 +271,6 @@ export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<L
             if (!json || !json[1] || !json[1].result) {
                 throw new Error('empty xreferences responses')
             }
-            return json[1].result.map(data => data.reference)
+            return json[1].result.map((data: ReferenceInformation) => data.reference)
         })
 }, ctx => makeRepoURI(ctx) + '___' + JSON.stringify(ctx.query) + '___' + ctx.limit)

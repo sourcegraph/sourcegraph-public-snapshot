@@ -47,8 +47,8 @@ class PasswordResetForm extends React.Component<{}, State> {
         this.setState({ email: e.target.value })
     }
 
-    private handleSubmit = event => {
-        event.preventDefault()
+    private handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
 
         webAuth.changePassword({
             connection: 'Sourcegraph',

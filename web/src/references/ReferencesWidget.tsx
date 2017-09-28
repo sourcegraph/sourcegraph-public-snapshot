@@ -1,3 +1,6 @@
+import ChevronDown from '@sourcegraph/icons/lib/ChevronDown'
+import ChevronRight from '@sourcegraph/icons/lib/ChevronRight'
+import CloseIcon from '@sourcegraph/icons/lib/Close'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
@@ -6,9 +9,6 @@ import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import partition from 'lodash/partition'
 import * as React from 'react'
-import DownIcon from 'react-icons/lib/fa/angle-down'
-import RightIcon from 'react-icons/lib/fa/angle-right'
-import CloseIcon from 'react-icons/lib/md/close'
 import { Link } from 'react-router-dom'
 import 'rxjs/add/observable/fromPromise'
 import 'rxjs/add/observable/merge'
@@ -126,13 +126,13 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                 <div className={'references-group__title' + ((this.props.refs || []).length > 0 ? ' references-group__title--expandable' : '')} onClick={this.toggle}>
                     <div className='references-group__icon'><this.props.icon /></div>
                     <RepoBreadcrumb repoPath={this.props.repoPath} filePath={this.props.filePath} />
-                    {
-                        (this.props.refs || []).length > 0 && (
-                            this.state.hidden
-                                ? <RightIcon className='references-group__expand-icon' />
-                                : <DownIcon className='references-group__expand-icon' />
-                        )
-                    }
+                    <span className='references-group__expand-icon'>
+                        {
+                            (this.props.refs || []).length > 0 && (
+                                this.state.hidden ? <ChevronRight /> : <ChevronDown />
+                            )
+                        }
+                    </span>
                 </div>
                 {refs}
             </div>
@@ -295,7 +295,9 @@ export class ReferencesWidget extends React.Component<Props, State> {
                         Other repositories
                     </Link>
                     <div className='references-widget__badge'>{externalRefCount}</div>
-                    <CloseIcon className='references-widget__close-icon' onClick={this.onDismiss} />
+                    <span className='references-widget__close-icon' onClick={this.onDismiss}>
+                        <CloseIcon />
+                    </span>
                 </div>
                 {
                     isEmptyGroup() && <div className='references-widget__placeholder'>

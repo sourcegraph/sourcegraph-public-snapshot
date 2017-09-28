@@ -39,7 +39,7 @@ export class VirtualList extends React.Component<Props, State> {
             <div>
             {
                 this.props.items.slice(0, this.state.itemsToShow).map((item, i) =>
-                    <VisibilitySensor key={i} onChange={isVisible => this.onChangeVisibility(isVisible, i)} partialVisibility={true}>
+                    <VisibilitySensor key={i} onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, i)} partialVisibility={true}>
                         {item}
                     </VisibilitySensor>
                 )

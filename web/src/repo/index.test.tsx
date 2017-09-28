@@ -6,7 +6,7 @@ import { makeRepoURI, parseBrowserRepoURL, parseRepoURI } from './index'
 
 describe('repo module', () => {
     // remove undefined values from an object
-    const compact = (obj: any) => pickBy(obj, val => val !== undefined)
+    const compact = (obj: any) => pickBy(obj, (val: any) => val !== undefined)
 
     describe('parseRepoURI', () => {
         it('should parse repo', () => {
