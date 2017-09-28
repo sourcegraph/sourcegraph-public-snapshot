@@ -300,6 +300,10 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 			return err
 		}
 
+		// We only care about files
+		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
+			continue
+		}
 		// We do not search large files
 		if hdr.Size > maxFileSize {
 			continue

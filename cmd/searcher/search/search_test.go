@@ -262,6 +262,24 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 			return nil, nil, err
 		}
 	}
+	// git-archive usually includes a pax header we should ignore
+	{
+		// a body which matches a test case. Ensures we don't return this
+		// false entry as a result.
+		body := "Hello World\n"
+		hdr := &tar.Header{
+			Name:     "pax_global_header",
+			Size:     int64(len(body)),
+			Typeflag: tar.TypeXGlobalHeader,
+		}
+		if err := w.WriteHeader(hdr); err != nil {
+			return nil, nil, err
+		}
+		if _, err := w.Write([]byte(body)); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	err := w.Close()
 	if err != nil {
 		return nil, nil, err
