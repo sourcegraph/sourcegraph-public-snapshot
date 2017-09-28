@@ -125,7 +125,8 @@ func main() {
 		Cmd("cd web"),
 		Cmd("npm install"),
 		Cmd("NODE_ENV=production npm run build"),
-		Cmd("npm run lint"))
+		Cmd("npm run lint"),
+		Cmd("npm test"))
 
 	for _, path := range pkgs {
 		coverageFile := path + "/coverage.txt"
