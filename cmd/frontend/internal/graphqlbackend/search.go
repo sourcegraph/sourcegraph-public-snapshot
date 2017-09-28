@@ -317,19 +317,8 @@ func (s *scorer) calcScore(result interface{}) int {
 		return score
 
 	case *fileResolver:
-		// example query: "bar/baz.go"
-		// example r.path: "a/b/foo/bar/baz.go"
-		score := 0
 		pathParts := splitNoEmpty(r.path, "/")
-		// aligned query matches get 4x multiplier (3x here, 1x in the next loop)
-		score += 3 * postfixAlignScore(pathParts, s.queryParts)
-		for _, pathPart := range pathParts {
-			// For all path parts (including aligned ones like above), match
-			// against every query part.
-			for _, queryPart := range s.queryParts {
-				score += stringscore.Score(pathPart, queryPart)
-			}
-		}
+		score := postfixFuzzyAlignScore(pathParts, s.queryParts)
 		if score > 0 {
 			score += scoreBumpFile
 		}
@@ -347,30 +336,10 @@ func (s *scorer) calcScore(result interface{}) int {
 	}
 }
 
-// postfixAlignScore is used to calculate how well the end of a target aligns with a query.
-// targetParts and queryParts are the original target and query split into components.
-//
-// For example a query "b" or "a/b" will score higher to strings _ending_ with
-// that instead of simply _containing_ it. i.e., this ordering:
-//
-// 	/a/b
-// 	/x/a/b/y
-//
-// not:
-//
-// 	/x/a/b/y
-// 	/a/b
-func postfixAlignScore(targetParts, queryParts []string) int {
-	score := 0
-	for i := 1; len(targetParts)-i >= 0 && len(queryParts)-i >= 0; i++ {
-		score += stringscore.Score(targetParts[len(targetParts)-i], queryParts[len(queryParts)-i])
-	}
-	return score
-}
-
-// postfixFuzzyAlignScore is like postfixAlignScore, but doesn't check for
-// exact alignment. It rewards consecutive alignment as well as aligning to
-// the right. For example for the query "a/b" we get the following ranking:
+// postfixFuzzyAlignScore is used to calculate how well a targets component
+// matches a query from the back. It rewards consecutive alignment as well as
+// aligning to the right. For example for the query "a/b" we get the
+// following ranking:
 //
 //   /a/b == /x/a/b
 //   /a/b/x

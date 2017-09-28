@@ -161,17 +161,8 @@ func TestSearchSorting(t *testing.T) {
 			name:  "slash query comparison standard",
 			query: "encoding/json",
 			expect: []searchTestItem{
-				{filePath: "src/encoding/encoding.go"},
+				{filePath: "src/encoding/json/stream.go"},
 				{filePath: "src/encoding/json/testdata/code.json.tgz"},
-				{filePath: "docs/progs/json1.go"},
-				{filePath: "docs/progs/json2.go"},
-				{filePath: "docs/progs/json3.go"},
-				{filePath: "docs/progs/json4.go"},
-				{filePath: "docs/progs/json5.go"},
-				{filePath: "test/bench/go1/json_test.go"},
-				{filePath: "test/bench/go1/jsondata_test.go"},
-				{filePath: "src/cmd/vendor/vendor.json"},
-				{filePath: "src/encoding/json/stream.go"}, // TODO: Ideally this would higher
 			},
 		},
 		{
@@ -179,17 +170,8 @@ func TestSearchSorting(t *testing.T) {
 			name:  "slash query comparison erroneous",
 			query: "encoding///json",
 			expect: []searchTestItem{
-				{filePath: "src/encoding/encoding.go"},
+				{filePath: "src/encoding/json/stream.go"},
 				{filePath: "src/encoding/json/testdata/code.json.tgz"},
-				{filePath: "docs/progs/json1.go"},
-				{filePath: "docs/progs/json2.go"},
-				{filePath: "docs/progs/json3.go"},
-				{filePath: "docs/progs/json4.go"},
-				{filePath: "docs/progs/json5.go"},
-				{filePath: "test/bench/go1/json_test.go"},
-				{filePath: "test/bench/go1/jsondata_test.go"},
-				{filePath: "src/cmd/vendor/vendor.json"},
-				{filePath: "src/encoding/json/stream.go"}, // TODO: Ideally this would higher
 			},
 		},
 		{
@@ -197,17 +179,8 @@ func TestSearchSorting(t *testing.T) {
 			name:  "slash query comparison trailing",
 			query: "encoding/json/",
 			expect: []searchTestItem{
-				{filePath: "src/encoding/encoding.go"},
+				{filePath: "src/encoding/json/stream.go"},
 				{filePath: "src/encoding/json/testdata/code.json.tgz"},
-				{filePath: "docs/progs/json1.go"},
-				{filePath: "docs/progs/json2.go"},
-				{filePath: "docs/progs/json3.go"},
-				{filePath: "docs/progs/json4.go"},
-				{filePath: "docs/progs/json5.go"},
-				{filePath: "test/bench/go1/json_test.go"},
-				{filePath: "test/bench/go1/jsondata_test.go"},
-				{filePath: "src/cmd/vendor/vendor.json"},
-				{filePath: "src/encoding/json/stream.go"}, // TODO: Ideally this would higher
 			},
 		},
 		{
@@ -248,6 +221,7 @@ func TestSearchSorting(t *testing.T) {
 				padding += 4
 
 				// Print diff.
+				t.Logf("query = %q", test.query)
 				for i, e := range test.expect {
 					got := testStringResult(got[i])
 					want := e.String()
