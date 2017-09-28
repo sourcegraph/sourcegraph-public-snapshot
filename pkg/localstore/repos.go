@@ -20,6 +20,11 @@ import (
 
 var autoRepoWhitelist []*regexp.Regexp
 
+// RestrictAutoAddToGitHubDotCom restricts the repository auto-add mechanism to valid
+// repositories from github.com (verified through the GitHub API0). If set to false,
+// we'll add every missing requested URI as a repository in the database.
+var RestrictAutoAddToGitHubDotCom = true
+
 func init() {
 	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
 		expr, err := regexp.Compile("^" + pattern + "$")
@@ -90,28 +95,34 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			return nil, err
 		}
 
-		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
-			// Repo does not exist in DB, create new entry.
-			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
-			ghRepo, err := github.GetRepo(ctx, uri)
-			if err != nil {
-				return nil, err
-			}
-			if ghRepo.URI != uri {
-				// not canonical name (the GitHub api will redirect from the old name to
-				// the results for the new name if the repo got renamed on GitHub)
-				if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
-					return repo, nil
+		if RestrictAutoAddToGitHubDotCom {
+			if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
+				// Repo does not exist in DB, create new entry.
+				ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
+				ghRepo, err := github.GetRepo(ctx, uri)
+				if err != nil {
+					return nil, err
 				}
-			}
+				if ghRepo.URI != uri {
+					// not canonical name (the GitHub api will redirect from the old name to
+					// the results for the new name if the repo got renamed on GitHub)
+					if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
+						return repo, nil
+					}
+				}
 
-			if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
+				if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
+					return nil, err
+				}
+
+				return s.getByURI(ctx, ghRepo.URI)
+			}
+		} else {
+			if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
 				return nil, err
 			}
-
-			return s.getByURI(ctx, ghRepo.URI)
+			return s.getByURI(ctx, uri)
 		}
-
 		return nil, err
 	}
 
