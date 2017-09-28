@@ -77,10 +77,6 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	if cached := getFromPublicCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
-			if specialCasePrivate && HasAuthedUser(ctx) {
-				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
-				return getPrivateFromAPI(ctx, owner, repoName)
-			}
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 		}
 		return &cached.Repo, nil
@@ -184,42 +180,11 @@ var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
 	// Attempt directly accessing the repo first. If it is a public repo this will
 	// succeed, otherwise attempt fetching it from the private endpoints below.
-	ghrepo, _, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
+	ghrepo, resp, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
 	if err == nil {
 		return ToRepo(ghrepo), nil
 	}
-	return getPrivateFromAPI(ctx, owner, repoName)
-}
-
-// getPrivateFromAPI attempts to fetch a repo that the currently authed user owns.
-func getPrivateFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	if !feature.Features.Sep20Auth {
-		// The current GitHub App API only allows users to access their repos by
-		// listing them via their installations. Check each installation and find the
-		// repo we're looking for.
-		installs, err := ListAllAccessibleInstallations(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, ins := range installs {
-			repos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
-			if err != nil {
-				return nil, err
-			}
-			for _, r := range repos {
-				if *r.Name == repoName && *r.Owner.Login == owner {
-					return ToRepo(r), nil
-				}
-			}
-		}
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
-	}
-
-	ghrepo, resp, err := Client(ctx).Repositories.Get(ctx, owner, repoName)
-	if err == nil {
-		return ToRepo(ghrepo), nil
-	}
-	if resp.StatusCode == http.StatusNotFound {
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
 	}
 	return nil, err
