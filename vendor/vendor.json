@@ -1414,6 +1414,12 @@
 			"revisionTime": "2017-08-08T06:49:59Z"
 		},
 		{
+			"checksumSHA1": "L6QPpAO5USnGF3FJvFDr9P84Rw4=",
+			"path": "github.com/sqs/rego",
+			"revision": "cd7aca0c2e5a4eb4407d5b72089e603a47131ddb",
+			"revisionTime": "2017-09-27T21:03:10Z"
+		},
+		{
 			"checksumSHA1": "EXXAM9hs2jsOgED5aJBfAe5HWvI=",
 			"path": "github.com/temoto/robotstxt-go",
 			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",
@@ -2673,12 +2679,6 @@
 			"path": "sourcegraph.com/sourcegraph/go-template-lint/tmplwalk",
 			"revision": "17cde5e36859a47336e707acd943627178ab4349",
 			"revisionTime": "2015-08-28T08:55:01Z"
-		},
-		{
-			"checksumSHA1": "x7qM+8UIB4Z/pYYqHIFN/BJ975c=",
-			"path": "sourcegraph.com/sqs/rego",
-			"revision": "999ca1088d6f22bbb55f853b786a0ed70a666c5b",
-			"revisionTime": "2017-06-14T17:27:50Z"
 		}
 	],
 	"rootPath": "sourcegraph.com/sourcegraph/sourcegraph"

@@ -89,6 +89,7 @@ func main() {
 		}
 	}
 
+	extraPaths := map[string]bool{}
 	if *extra != "" {
 		for _, pat := range strings.Split(*extra, ",") {
 			matches, err := filepath.Glob(pat)
@@ -96,12 +97,17 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, path := range matches {
+				path, err = filepath.Abs(path)
+				if err != nil {
+					log.Fatal(err)
+				}
 				if *verbose {
 					log.Printf("Watch (extra) %s", path)
 				}
 				if err := w.Add(path); err != nil {
 					log.Fatal(err)
 				}
+				extraPaths[path] = true
 			}
 		}
 	}
@@ -205,7 +211,7 @@ func main() {
 	install <- struct{}{}
 
 	matchFile := func(name string) bool {
-		return filepath.Ext(name) == ".go" && !strings.HasPrefix(filepath.Base(name), ".")
+		return (filepath.Ext(name) == ".go" && !strings.HasPrefix(filepath.Base(name), ".")) || extraPaths[name]
 	}
 
 	for {
