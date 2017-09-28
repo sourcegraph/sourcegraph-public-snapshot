@@ -110,10 +110,9 @@ func TestSearchSorting(t *testing.T) {
 				{filePath: "mux.go"},
 				{filePath: "mux_test.go"},
 				{repoURI: "github.com/muxuezi/muxuezi.github.io"},
-				{repoURI: "github.com/kcparashar/tmux.github.io"},
 				{repoURI: "github.com/tmux/tmux.github.io"},
 				{repoURI: "github.com/termux/termux.github.io"},
-				{repoURI: "github.com/nacimux/vuejs.org"},
+				{repoURI: "github.com/kcparashar/tmux.github.io"},
 			},
 		},
 		{
@@ -209,6 +208,16 @@ func TestSearchSorting(t *testing.T) {
 				{filePath: "test/bench/go1/jsondata_test.go"},
 				{filePath: "src/cmd/vendor/vendor.json"},
 				{filePath: "src/encoding/json/stream.go"}, // TODO: Ideally this would higher
+			},
+		},
+		{
+			// https://github.com/sourcegraph/sourcegraph/issues/7467
+			name:  "rank exact repo path component match higher",
+			query: "react-router",
+			expect: []searchTestItem{
+				{repoURI: "github.com/ReactTraining/react-router"},
+				{repoURI: "github.com/panw/react-router-cdn"},
+				{repoURI: "github.com/react-router/foo"},
 			},
 		},
 	}

@@ -306,12 +306,7 @@ const (
 func (s *scorer) calcScore(result interface{}) int {
 	switch r := result.(type) {
 	case *repositoryResolver:
-		score := stringscore.Score(r.repo.URI, s.query)
-		// Assume the query is written to match the postfix of the paths.
-		// For the query "kubernetes" github.com/kubernetes/kubernetes should be higher than github.com/kubernetes/helm
-		if len(s.queryParts) > 0 {
-			score += postfixAlignScore(splitNoEmpty(r.repo.URI, "/"), s.queryParts)
-		}
+		score := postfixFuzzyAlignScore(splitNoEmpty(r.repo.URI, "/"), s.queryParts)
 		// Push forks down
 		if r.repo.Fork {
 			score += scoreBumpFork
@@ -371,6 +366,43 @@ func postfixAlignScore(targetParts, queryParts []string) int {
 		score += stringscore.Score(targetParts[len(targetParts)-i], queryParts[len(queryParts)-i])
 	}
 	return score
+}
+
+// postfixFuzzyAlignScore is like postfixAlignScore, but doesn't check for
+// exact alignment. It rewards consecutive alignment as well as aligning to
+// the right. For example for the query "a/b" we get the following ranking:
+//
+//   /a/b == /x/a/b
+//   /a/b/x
+//   /a/x/b
+//
+// The following will get zero score
+//
+//   /x/b
+//   /ab/
+func postfixFuzzyAlignScore(targetParts, queryParts []string) int {
+	total := 0
+	consecutive := true
+	queryIdx := len(queryParts) - 1
+	for targetIdx := len(targetParts) - 1; targetIdx >= 0 && queryIdx >= 0; targetIdx-- {
+		score := stringscore.Score(targetParts[targetIdx], queryParts[queryIdx])
+		if score <= 0 {
+			consecutive = false
+			continue
+		}
+		// Consecutive and align bonus
+		if consecutive {
+			score *= 2
+		}
+		consecutive = true
+		total += score
+		queryIdx--
+	}
+	// Did not match whole of queryIdx
+	if queryIdx >= 0 {
+		return 0
+	}
+	return total
 }
 
 // splitNoEmpty is like strings.Split except empty strings are removed.
