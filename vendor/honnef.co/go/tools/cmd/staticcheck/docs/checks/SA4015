@@ -1,0 +1,1 @@
+Calling functions like `math.Ceil` on floats converted from integers doesn't do anything useful

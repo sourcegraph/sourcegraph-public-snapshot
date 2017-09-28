@@ -1,0 +1,21 @@
+Simplify returning final error
+
+**Before:**
+
+```
+if err != nil {
+  return err
+}
+return nil
+```
+
+**After:**
+
+```
+return err
+```
+
+**Note:**
+
+This simplification is only valid if `err` is an interface value and
+not of a concrete type.

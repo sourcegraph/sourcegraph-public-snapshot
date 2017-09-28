@@ -1,0 +1,35 @@
+Don't use `fmt.Sprintf("%s", x)` unnecessarily
+
+In many instances, there are easier and more efficient ways of getting
+a value's string representation. Whenever a value's underlying type is
+a string already, or the type has a `String` method, they should be
+used directly.
+
+Given the following shared definitions
+
+```
+type T1 string
+type T2 int
+
+func (T2) String() string { return "Hello, world" }
+
+var x string
+var y T1
+var z T2
+```
+
+we can simplify the following
+
+```
+fmt.Sprintf("%s", x)
+fmt.Sprintf("%s", y)
+fmt.Sprintf("%s", z)
+```
+
+to
+
+```
+x
+string(y)
+z.String()
+```

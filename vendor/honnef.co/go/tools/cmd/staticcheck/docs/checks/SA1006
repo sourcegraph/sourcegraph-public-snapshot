@@ -1,0 +1,13 @@
+Printf with dynamic first argument and no further arguments
+
+Using `fmt.Printf` with a dynamic first argument can lead to
+unexpected output. The first argument is a format string, where
+certain character combinations have special meaning. If, for example,
+a user were to enter a string such as `Interest rate: 5%` and you
+printed it with `fmt.Printf(s)`, it would lead to the following
+output: `Interest rate: 5%!(NOVERB)`.
+
+Similarly, forming the first parameyer via string concatenation with
+user input should be avoided for the same reason. When printing user
+input, either use a variant of `fmt.Print`, or use the `%s` Printf
+verb and pass the string as an argument.

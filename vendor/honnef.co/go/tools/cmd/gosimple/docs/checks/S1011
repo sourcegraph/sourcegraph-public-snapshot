@@ -1,0 +1,15 @@
+Use a single append to concatenate two slices
+
+**Before:**
+
+```
+for _, e := range y {
+  x = append(x, e)
+}
+```
+
+**After:**
+
+```
+x = append(x, y...)
+```

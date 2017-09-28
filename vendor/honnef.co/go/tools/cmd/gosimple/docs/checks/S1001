@@ -1,0 +1,17 @@
+Replace with `copy()`
+
+Use `copy()` for copying elements from one slice to another.
+
+**Before:**
+
+```
+for i, x := range src {
+  dst[i] = x
+}
+```
+
+**After:**
+
+```
+copy(dst, src)
+```

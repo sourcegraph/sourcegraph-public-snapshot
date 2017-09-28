@@ -1,0 +1,16 @@
+Simplify returning boolean expression
+
+**Before:**
+
+```
+if <expr> {
+  return true
+}
+return false
+```
+
+**After:**
+
+```
+return <expr>
+```

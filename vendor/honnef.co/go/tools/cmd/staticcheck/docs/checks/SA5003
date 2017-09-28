@@ -1,0 +1,1 @@
+Defers in infinite loops will never execute

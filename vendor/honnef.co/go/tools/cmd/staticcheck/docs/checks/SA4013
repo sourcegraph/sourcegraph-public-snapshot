@@ -1,0 +1,1 @@
+Negating a boolean twice (`!!b`) is the same as writing `b`. This is either redundant, or a typo.

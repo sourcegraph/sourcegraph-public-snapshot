@@ -1,0 +1,12 @@
+Infinite recursive call
+
+A function that calls itself recursively needs to have an exit
+condition. Otherwise it will recurse forever, until the system runs
+out of memory.
+
+This issue can be caused by simple bugs such as forgetting adding an
+exit condition. It can also happen "on purpose". Some languages have
+[tail call optimization](https://en.wikipedia.org/wiki/Tail_call)
+which makes certain infinite recursive calls safe to use. Go, however,
+does not implement TCO, and as such a loop should be used instead.
+

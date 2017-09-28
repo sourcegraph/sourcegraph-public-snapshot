@@ -1,0 +1,9 @@
+package pkg
+
+import "strings"
+
+func fn() {
+	strings.Replace("", "", "", 0) // MATCH /calling strings.Replace with n == 0/
+	strings.Replace("", "", "", -1)
+	strings.Replace("", "", "", 1)
+}

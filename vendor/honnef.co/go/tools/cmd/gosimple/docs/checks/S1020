@@ -1,0 +1,7 @@
+Omit redundant nil check in type assertion
+
+**Before:**
+if _, ok := i.(T); ok && i != nil {}
+
+**After:**
+if _, ok := i.(T); ok {}

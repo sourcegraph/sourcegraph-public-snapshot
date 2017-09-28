@@ -1,0 +1,16 @@
+Replace with `time.Since(x)`
+
+The `time.Since` helper has the same effect as using
+`time.Now().Sub(x)` but is easier to read.
+
+**Before:**
+
+```
+time.Now().Sub(x)
+```
+
+**After:**
+
+```
+time.Since(x)
+```

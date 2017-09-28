@@ -1,0 +1,24 @@
+Use a type conversion
+
+Two struct types with identical fields can be converted between each
+other. In older versions of Go, the fields had to have identical
+struct tags. Since Go 1.8, however, struct tags are ignored during
+conversions. It is thus not necessary to manually copy every field
+individually.
+
+**Before:**
+
+```
+var x T1
+y := T2{
+  Field1: x.Field1,
+  Field2: x.Field2,
+}
+```
+
+**After:**
+
+```
+var x T1
+y := T2(x)
+```

@@ -1,0 +1,14 @@
+The finalizer references the finalized object, preventing garbage collection
+
+A finalizer is a function associated with an object that runs when the
+garbage collector is ready to collect said object, that is when the
+object is no longer referenced by anything.
+
+If the finalizer references the object, however, it will always remain
+as the final reference to that object, preventing the garbage
+collector from collecting the object. The finalizer will never run,
+and the object will never be collected, leading to a memory leak. That
+is why the finalizer should instead use its first argument to operate
+on the object. That way, the number of references can temporarily go
+to zero before the object is being passed to the finalizer.
+

@@ -1,0 +1,1 @@
+`io.Seeker.Seek` is being called with the `whence` constant as the first argument, but it should be the second

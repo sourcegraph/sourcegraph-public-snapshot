@@ -1,0 +1,13 @@
+Replace with `strings.Contains`
+
+**Before:**
+
+```
+if strings.Index(x, y) != -1 {}
+```
+
+**After:**
+
+```
+if strings.Contains(x, y) {}
+```

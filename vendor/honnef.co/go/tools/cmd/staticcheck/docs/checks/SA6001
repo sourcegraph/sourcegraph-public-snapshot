@@ -1,0 +1,31 @@
+Missing an optimization opportunity when indexing maps by byte slices
+
+Map keys must be comparable, which precludes the use of []byte. This
+usually leads to using string keys and converting []bytes to
+strings.
+
+Normally, a conversion of []byte to string needs to copy the data and
+causes allocations. The compiler, however, recognizes `m[string(b)]`
+and uses the data of `b` directly, without copying it, because it
+knows that the data can't change during the map lookup. This leads
+to the counter-intuitive situation that
+
+```
+k := string(b)
+println(m[k])
+println(m[k])
+```
+
+will be less efficient than
+
+```
+println(m[string(b)])
+println(m[string(b)])
+```
+
+because the first version needs to copy and allocate, while the second
+one does not.
+
+For some history on this optimization, check out commit
+[f5f5a8b6209f84961687d993b93ea0d397f5d5bf](https://github.com/golang/go/commit/f5f5a8b6209f84961687d993b93ea0d397f5d5bf).
+

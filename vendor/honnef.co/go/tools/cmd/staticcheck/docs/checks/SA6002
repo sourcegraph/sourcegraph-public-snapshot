@@ -1,0 +1,17 @@
+Storing non-pointer values in `sync.Pool` allocates memory
+
+A `sync.Pool` is used to avoid unnecessary allocations and reduce the
+amount of work the garbage collector has to do.
+
+When passing a value that is not a pointer
+to a function that accepts an interface, the value
+needs to be placed on the heap, which means an additional allocation.
+Slices are a common thing to put in `sync.Pool`s, and they're structs
+with 3 fields (length, capacity, and a pointer to an array). In order to avoid
+the extra allocation, one should store a pointer to the slice instead.
+
+See the
+[comments on a Go CL](https://go-review.googlesource.com/#/c/24371/)
+that discuss this problem.
+
+

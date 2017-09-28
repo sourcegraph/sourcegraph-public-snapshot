@@ -1,0 +1,19 @@
+Drop unnecessary use of the blank identifier
+
+In many cases, assigning to the blank identifier is unnecessary.
+
+**Before:**
+
+```
+for _ = range s {}
+x, _ = someMap[key]
+_ = <-ch
+```
+
+**After:**
+
+```
+for range s{}
+x = someMap[key]
+<-ch
+```

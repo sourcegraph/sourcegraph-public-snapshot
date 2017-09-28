@@ -1,0 +1,19 @@
+Invalid first argument to `exec.Command`
+
+`os/exec` runs programs directly (using variants of the
+[fork](https://en.wikipedia.org/wiki/Fork_(system_call)) and
+[exec](https://en.wikipedia.org/wiki/Exec_(system_call)) system calls
+on Unix systems). This shouldn't be confused with running a command in
+a shell. The shell will allow for features such as input redirection,
+pipes, and general scripting. The
+shell is also responsible for splitting the user's input into a
+program name and its arguments. For example, the equivalent to `ls /
+/tmp` would be `exec.Command("ls", "/", "/tmp")`.
+
+If you want to run a command in a shell, consider using something like
+the following – but be aware that not all systems, particularly
+Windows, will have a `/bin/sh` program:
+
+```
+exec.Command("/bin/sh", "-c", "ls | grep Awesome")
+```

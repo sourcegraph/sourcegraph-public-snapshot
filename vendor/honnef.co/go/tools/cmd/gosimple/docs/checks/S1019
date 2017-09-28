@@ -1,0 +1,5 @@
+Simplify `make` call
+
+The `make` function has default values for the length and capacity
+arguments. For channels and maps, the length defaults to zero.
+Additionally, for slices the capacity defaults to the length.
