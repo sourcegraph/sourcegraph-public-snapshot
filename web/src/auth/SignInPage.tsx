@@ -3,10 +3,10 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import { Auth0Error, WebAuth } from 'auth0-js'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { HeroPage } from '../../components/HeroPage'
-import { PageTitle } from '../../components/PageTitle'
-import { events } from '../../tracking/events'
-import { sourcegraphContext } from '../../util/sourcegraphContext'
+import { HeroPage } from '../components/HeroPage'
+import { PageTitle } from '../components/PageTitle'
+import { events, viewEvents } from '../tracking/events'
+import { sourcegraphContext } from '../util/sourcegraphContext'
 
 const webAuth = new WebAuth({
     domain: sourcegraphContext.auth0Domain,
@@ -148,10 +148,14 @@ interface SignInPageProps {}
  */
 export class SignInPage extends React.Component<SignInPageProps> {
 
+    public componentDidMount(): void {
+        viewEvents.SignIn.log()
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className='sign-in-page'>
-                <PageTitle title='sign in or sign up' />
+                <PageTitle title='Sign in or sign up' />
                 <HeroPage icon={KeyIcon} title='Welcome to Sourcegraph' subtitle='Sign in or sign up to create an account' cta={<LoginSignupForm />} />
             </div>
         )

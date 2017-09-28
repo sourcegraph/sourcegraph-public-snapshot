@@ -1,16 +1,20 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import HelpIcon from '@sourcegraph/icons/lib/Help'
+import * as H from 'history'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { UserAvatar } from '../settings/user/UserAvatar'
+import { viewEvents } from '../tracking/events'
 import { limitString } from '../util'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 import { parseSearchURLQuery } from './index'
 import { SearchBox } from './SearchBox'
 
-interface Props extends RouteComponentProps<void> { }
+interface Props {
+    location: H.Location
+    history: H.History
+}
 
 interface State {
     helpVisible: boolean
@@ -27,6 +31,10 @@ export class Search extends React.Component<Props, State> {
         this.state = {
             helpVisible: localStorage.getItem('show-search-help') !== 'false'
         }
+    }
+
+    public componentDidMount(): void {
+        viewEvents.Home.log()
     }
 
     public render(): JSX.Element | null {

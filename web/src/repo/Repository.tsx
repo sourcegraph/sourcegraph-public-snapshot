@@ -1,4 +1,3 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -16,6 +15,7 @@ import { Position } from 'vscode-languageserver-types'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { ReferencesWidget } from '../references/ReferencesWidget'
+import { viewEvents } from '../tracking/events'
 import { Tree } from '../tree/Tree'
 import { TreeHeader } from '../tree/TreeHeader'
 import { parseHash } from '../util/url'
@@ -147,9 +147,17 @@ export class Repository extends React.Component<Props, State> {
     public componentWillReceiveProps(nextProps: Props): void {
         this.componentUpdates.next(nextProps)
 
-        const parsedHash = parseHash(nextProps.location.hash)
-        const showRefs = parsedHash.modal === 'references'
-        const position = parsedHash.line ? { line: parsedHash.line, character: parsedHash.character || 0 } : undefined
+        const thisHash = parseHash(nextProps.location.hash)
+        const nextHash = parseHash(nextProps.location.hash)
+        const showRefs = nextHash.modal === 'references'
+        const position = nextHash.line ? { line: nextHash.line, character: nextHash.character || 0 } : undefined
+        if (
+            this.props.location.pathname !== nextProps.location.pathname ||
+            this.props.location.search !== nextProps.location.search ||
+            thisHash.modal !== nextHash.modal
+        ) {
+            viewEvents.Blob.log({ fileShown: Boolean(nextProps.filePath), referencesShown: showRefs })
+        }
         this.setState({ showRefs, position })
     }
 
@@ -232,27 +240,5 @@ export class Repository extends React.Component<Props, State> {
     private handleShowAnywayButtonClick = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault()
         this.showAnywayButtonClicks.next()
-    }
-}
-
-export class RepositoryCloneInProgress extends React.Component<Props, {}> {
-    public render(): JSX.Element | null {
-        return (
-            <div className='repository'>
-                <RepoNav {...this.props} />
-                <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Cloning in progress' />
-            </div>
-        )
-    }
-}
-
-export class RepositoryNotFound extends React.Component<Props, {}> {
-    public render(): JSX.Element | null {
-        return (
-            <div className='repository'>
-                <RepoNav {...this.props} />
-                <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested URL was not found.' />
-            </div>
-        )
     }
 }

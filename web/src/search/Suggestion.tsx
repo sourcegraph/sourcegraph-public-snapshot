@@ -4,7 +4,8 @@ import * as React from 'react'
 
 export interface SuggestionProps {
 
-    icon: any
+    icon: React.ComponentType
+
     label: string
 
     /** The query to highlight */

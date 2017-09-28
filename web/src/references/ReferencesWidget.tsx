@@ -56,7 +56,7 @@ interface ReferenceGroupProps {
     /**
      * The icon to show left to the title.
      */
-    icon: (props: {}) => JSX.Element
+    icon: React.ComponentType
 }
 
 interface ReferenceGroupState {

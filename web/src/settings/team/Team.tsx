@@ -1,6 +1,7 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
+import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
-import { Redirect } from 'react-router'
+import { match, Redirect } from 'react-router'
 import reactive from 'rx-component'
 import 'rxjs/add/observable/combineLatest'
 import 'rxjs/add/observable/merge'
@@ -15,13 +16,16 @@ import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
+import { HeroPage } from '../../components/HeroPage'
 import { events } from '../../tracking/events'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 import { InviteForm } from './InviteForm'
 
+const TeamNotFound = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested team was not found.' />
+
 export interface Props {
-    teamName: string
+    match: match<{ teamName: string }>
 }
 
 interface State {
@@ -44,7 +48,7 @@ export const Team = reactive<Props>(props => {
         Observable.combineLatest(
             currentUser,
             props
-                .map(props => props.teamName)
+                .map(props => props.match.params.teamName)
                 .distinctUntilChanged()
         )
             .mergeMap(([user, teamName]) => {
@@ -99,8 +103,7 @@ export const Team = reactive<Props>(props => {
                 return <Redirect to='/sign-in' />
             }
             if (!org) {
-                // TODO make prettier
-                return <span>Team not found</span>
+                return <TeamNotFound />
             }
             return (
                 <div className='team'>

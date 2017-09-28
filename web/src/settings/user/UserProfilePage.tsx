@@ -40,7 +40,7 @@
 //         return (
 //             <div className='user-profile-page'>
 //                 <div className='ui-section'>
-//                     <PageTitle title='profile' />
+//                     <PageTitle title='Profile' />
 //                     <h1>Your Sourcegraph profile</h1>
 //                     <div className='user-profile-page__split-row'>
 //                         <div className='user-profile-page__avatar-column'>

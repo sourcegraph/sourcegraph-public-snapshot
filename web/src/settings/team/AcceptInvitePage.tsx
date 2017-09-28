@@ -21,7 +21,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { currentUser, fetchCurrentUser } from '../../auth'
 import { acceptUserInvite } from '../backend'
-import { VALID_USERNAME_REGEXP } from '../index'
+import { VALID_USERNAME_REGEXP } from '../validation'
 
 export interface Props {
     location: H.Location

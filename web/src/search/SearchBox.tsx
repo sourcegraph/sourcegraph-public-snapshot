@@ -7,7 +7,9 @@ import RepoGroupIcon from '@sourcegraph/icons/lib/RepoGroup'
 import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
 import SearchIcon from '@sourcegraph/icons/lib/Search'
+import * as H from 'history'
 import * as React from 'react'
+import { matchPath } from 'react-router'
 import 'rxjs/add/observable/fromEvent'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/observable/of'
@@ -31,9 +33,9 @@ import { Observable } from 'rxjs/Observable'
 import { asap } from 'rxjs/scheduler/asap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { routes } from '../routes'
 import { events } from '../tracking/events'
 import { scrollIntoView } from '../util'
-import { ParsedRouteProps } from '../util/routes'
 import { fetchSuggestions } from './backend'
 import { Chip } from './Chip'
 import { buildSearchURLQuery, FileFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
@@ -63,7 +65,10 @@ function getFilterIcon(filter: Filter): (props: {}) => JSX.Element {
     }
 }
 
-interface Props extends ParsedRouteProps { }
+interface Props {
+    history: H.History
+    location: H.Location
+}
 
 interface State extends SearchOptions {
 
@@ -411,17 +416,36 @@ export class SearchBox extends React.Component<Props, State> {
             matchWord: false,
             matchRegex: false
         }
-        if (props.routeName === 'search') {
-            // Search results page, show query
-            searchOptions = parseSearchURLQuery(props.location.search)
-        } else if (props.repoPath) {
-            // Repo page, add repo filter
-            searchOptions.filters.push({ type: FilterType.Repo, value: props.repoPath })
-            if (props.filePath) {
-                // Blob page, add file filter
-                searchOptions.filters.push({ type: FilterType.File, value: props.filePath })
+        // This is basically a programmatical <Switch> with <Route>s
+        // see https://reacttraining.com/react-router/web/api/matchPath
+        // and https://reacttraining.com/react-router/web/example/sidebar
+        for (const route of routes) {
+            const match = matchPath<{ repoRev?: string, filePath?: string }>(props.location.pathname, route)
+            if (match) {
+                switch (match.path) {
+                    case '/search': {
+                        // Search results page, show query
+                        searchOptions = parseSearchURLQuery(props.location.search)
+                        break
+                    }
+                    case '/:repoRev+': {
+                        // Repo page, add repo filter
+                        const [repoPath] = match.params.repoRev!.split('@')
+                        searchOptions.filters.push({ type: FilterType.Repo, value: repoPath })
+                        break
+                    }
+                    case '/:repoRev+/-/blob/:filePath+': {
+                        // Blob page, add file filter
+                        const [repoPath] = match.params.repoRev!.split('@')
+                        searchOptions.filters.push({ type: FilterType.Repo, value: repoPath! })
+                        searchOptions.filters.push({ type: FilterType.File, value: match.params.filePath! })
+                        break
+                    }
+                }
+                break
             }
         }
+
         return { ...searchOptions, suggestions: [], selectedSuggestion: -1, suggestionsVisible: false, loading: false }
     }
 

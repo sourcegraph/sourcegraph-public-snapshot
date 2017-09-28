@@ -9,9 +9,8 @@ import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { events } from '../tracking/events'
-import { ParsedRouteProps } from '../util/routes'
 
-interface Props extends ParsedRouteProps {
+interface Props {
     history: H.History
 }
 
@@ -66,7 +65,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         <div className='settings-sidebar__item-text'>Your profile</div>
                         <ul>
                             <li className='settings-sidebar__item'>
-                                <Link to='/editor-auth' className='settings-sidebar__item-text'><KeyIcon /> Authenticate your editor</Link>
+                                <Link to='/settings/editor-auth' className='settings-sidebar__item-text'><KeyIcon /> Authenticate your editor</Link>
                             </li>
 
                             <li className='settings-sidebar__item'>
@@ -81,7 +80,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             {
                                 this.state.orgs && this.state.orgs.map(org => (
                                     <li className='settings-sidebar__item' key={org.id}>
-                                        <Link to={`/settings/team/${org.name}`} className='settings-sidebar__item-text'>
+                                        <Link to={`/settings/teams/${org.name}`} className='settings-sidebar__item-text'>
                                             <FriendsIcon /> {org.name}
                                         </Link>
                                     </li>

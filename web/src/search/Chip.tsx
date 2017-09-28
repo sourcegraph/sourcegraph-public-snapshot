@@ -2,7 +2,7 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import * as React from 'react'
 
 export interface ChipProps {
-    icon: any
+    icon: React.ComponentType
     label: string
     onDelete: () => void
 }

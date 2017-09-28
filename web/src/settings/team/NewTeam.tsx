@@ -11,10 +11,10 @@ import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { VALID_ORG_NAME_REGEXP, VALID_USERNAME_REGEXP } from '../'
 import { currentUser, fetchCurrentUser } from '../../auth'
 import { events } from '../../tracking/events'
 import { createOrg } from '../backend'
+import { VALID_ORG_NAME_REGEXP, VALID_USERNAME_REGEXP } from '../validation'
 
 export interface Props {
     history: H.History

@@ -1,14 +1,18 @@
-
+import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { SearchBox } from '../search/SearchBox'
 import { UserAvatar } from '../settings/user/UserAvatar'
-import { ParsedRouteProps } from '../util/routes'
 import { sourcegraphContext } from '../util/sourcegraphContext'
+
+interface Props {
+    history: H.History
+    location: H.Location
+}
 
 interface State {}
 
-export class Navbar extends React.Component<ParsedRouteProps, State> {
+export class Navbar extends React.Component<Props, State> {
     public state: State = {}
 
     public render(): JSX.Element | null {
@@ -20,7 +24,7 @@ export class Navbar extends React.Component<ParsedRouteProps, State> {
                     </Link>
                 </div>
                 <div className='navbar__search-box-container'>
-                    <SearchBox {...this.props} />
+                    <SearchBox history={this.props.history} location={this.props.location} />
                 </div>
                 <div className='navbar__right'>
                     {

@@ -1,4 +1,8 @@
+import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import * as H from 'history'
 import * as React from 'react'
+import { match } from 'react-router'
 import 'rxjs/add/observable/defer'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/delay'
@@ -8,36 +12,40 @@ import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from './repo/backend'
+import { HeroPage } from '../components/HeroPage'
+import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from './backend'
+import { Repository } from './Repository'
 
-interface WithResolvedRevProps {
-    component: any
-    cloningComponent?: any
-    notFoundComponent?: any // for 404s
-    repoPath?: string
-    rev?: string
-    [key: string]: any
+interface Props {
+    location: H.Location
+    history: H.History
+    match: match<{ repoRev: string, filePath?: string }>
 }
 
-interface WithResolvedRevState {
+interface State {
     commitID?: string
     cloneInProgress: boolean
     notFound: boolean
 }
 
-export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithResolvedRevState> {
-    public state: WithResolvedRevState = { cloneInProgress: false, notFound: false }
-    private componentUpdates = new Subject<WithResolvedRevProps>()
+/**
+ * Takes repo and rev from the matched URL route, resolves it to a commit ID and passes it to the Repository component.
+ * Renders 404 if the repo or rev was not found, clone in progress while the repo is being cloned.
+ */
+export class RepositoryResolver extends React.Component<Props, State> {
+    public state: State = { cloneInProgress: false, notFound: false }
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
-    constructor(props: WithResolvedRevProps) {
+    constructor(props: Props) {
         super(props)
         this.subscriptions.add(
             this.componentUpdates
-                .switchMap(({ repoPath, rev }) => {
-                    if (!repoPath) {
+                .switchMap(props => {
+                    if (!props.match.params.repoRev) {
                         return [undefined]
                     }
+                    const [repoPath, rev] = props.match.params.repoRev.split('@')
                     // Defer Observable so it retries the request on resubscription
                     return Observable.defer(() => resolveRev({ repoPath, rev }))
                         // On a CloneInProgress error, retry after 5s
@@ -73,8 +81,8 @@ export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithR
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: WithResolvedRevProps): void {
-        if (this.props.repoPath !== nextProps.repoPath || this.props.rev !== nextProps.rev) {
+    public componentWillReceiveProps(nextProps: Props): void {
+        if (this.props.match.params.repoRev !== nextProps.match.params.repoRev) {
             // clear state so the child won't render until the revision is resolved for new props
             this.state = { cloneInProgress: false, notFound: false }
             this.componentUpdates.next(nextProps)
@@ -86,17 +94,27 @@ export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithR
     }
 
     public render(): JSX.Element | null {
-        if (this.props.notFoundComponent && this.state.notFound) {
-            return <this.props.notFoundComponent {...this.props} />
+        const [repoPath, rev] = this.props.match.params.repoRev.split('@')
+        if (this.state.notFound) {
+            return <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested URL was not found.' />
         }
-        if (this.props.cloningComponent && this.state.cloneInProgress) {
-            return <this.props.cloningComponent {...this.props} />
+        if (this.state.cloneInProgress) {
+            return <HeroPage icon={RepoIcon} title={repoPath.split('/').slice(1).join('/')} subtitle='Cloning in progress' />
         }
-        if (this.props.repoPath && !this.state.commitID) {
+        if (this.props.match.params.repoRev && !this.state.commitID) {
             // commit not yet resolved but required if repoPath prop is provided;
             // render empty until commit resolved
             return null
         }
-        return <this.props.component {...this.props} commitID={this.state.commitID} />
+        return (
+            <Repository
+                repoPath={repoPath}
+                rev={rev}
+                filePath={this.props.match.params.filePath}
+                commitID={this.state.commitID!}
+                location={this.props.location}
+                history={this.props.history}
+            />
+        )
     }
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"path"
 	"runtime/debug"
 	"strconv"
@@ -25,17 +26,18 @@ import (
 )
 
 const (
-	routeHome       = "home"
-	routeSearch     = "search"
-	routeRepoOrMain = "repo-or-main" // see newRouter comment for details
-	routeTree       = "tree"
-	routeBlob       = "blob"
-	routeSignIn     = "sign-in"
-	routeEditorAuth = "editor-auth"
-	routeSettings   = "settings"
-
-	routeAcceptInvite  = "accept-invite"
-	routePasswordReset = "password-reset"
+	routeHome                 = "home"
+	routeSearch               = "search"
+	routeRepoOrMain           = "repo-or-main" // see newRouter comment for details
+	routeTree                 = "tree"
+	routeBlob                 = "blob"
+	routeSignIn               = "sign-in"
+	routeSettings             = "settings"
+	routeSettingsAcceptInvite = "settings.accept-invite"
+	routeSettingsEditorAuth   = "settings.editor-auth"
+	routeSettingsTeamsNew     = "settings.teams.new"
+	routeSettingsTeamsTeam    = "settings.teams.team"
+	routePasswordReset        = "password-reset"
 
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
@@ -47,6 +49,9 @@ const (
 	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
+	routeLegacyAcceptInvite            = "legacy.accept-invite"
+	routeLegacySettingsTeam            = "legacy.settings.team"
+	routeLegacyEditorAuth              = "legacy.editor-auth"
 )
 
 // aboutPaths is a list of paths that should redirect from sourcegraph.com/$PATH
@@ -86,14 +91,19 @@ func newRouter() *mux.Router {
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
-	r.Path("/editor-auth").Methods("GET").Name(routeEditorAuth)
-	r.Path("/accept-invite").Methods("GET").Name(routeAcceptInvite)
+	r.Path("/settings").Methods("GET").Name(routeSettings)
+	r.Path("/settings/accept-invite").Methods("GET").Name(routeSettingsAcceptInvite)
+	r.Path("/settings/editor-auth").Methods("GET").Name(routeSettingsEditorAuth)
+	r.Path("/settings/teams/new").Methods("GET").Name(routeSettingsTeamsNew)
+	r.Path("/settings/teams/{team}").Methods("GET").Name(routeSettingsTeamsTeam)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
-	r.Path("/settings{Path:.*}").Methods("GET").Name(routeSettings)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
+	r.Path("/accept-invite").Methods("GET").Name(routeLegacyAcceptInvite)
+	r.Path("/settings/team/{team}").Methods("GET").Name(routeLegacySettingsTeam)
+	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
 
 	// repo-or-main
 	//
@@ -124,11 +134,16 @@ func init() {
 	// basic pages with static titles
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeSignIn).Handler(handler(serveBasicPageString("sign in - Sourcegraph")))
-	router.Get(routeEditorAuth).Handler(handler(serveBasicPageString("authenticate editor - Sourcegraph")))
-	router.Get(routeSettings).Handler(handler(serveBasicPageString("profile - Sourcegraph")))
-	router.Get(routeAcceptInvite).Handler(handler(serveBasicPageString("accept invite - Sourcegraph")))
-	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("reset password - Sourcegraph")))
+	router.Get(routeSignIn).Handler(handler(serveBasicPageString("Sign in or sign up - Sourcegraph")))
+	router.Get(routeSettings).Handler(handler(serveBasicPageString("Profile - Sourcegraph")))
+	router.Get(routeSettingsAcceptInvite).Handler(handler(serveBasicPageString("Accept invite - Sourcegraph")))
+	router.Get(routeSettingsEditorAuth).Handler(handler(serveBasicPageString("Authenticate editor - Sourcegraph")))
+	router.Get(routeSettingsTeamsNew).Handler(handler(serveBasicPageString("New team - Sourcegraph")))
+	router.Get(routeSettingsTeamsTeam).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+		// e.g. "myteam - Sourcegraph"
+		return fmt.Sprintf("%s - Sourcegraph", mux.Vars(r)["team"])
+	})))
+	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
 
 	// Legacy redirects
 	if !envvar.DeploymentOnPrem() {
@@ -138,6 +153,9 @@ func init() {
 		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
+		router.Get(routeLegacyAcceptInvite).Handler(staticRedirectHandler("/settings/accept-invite", http.StatusMovedPermanently))
+		router.Get(routeLegacySettingsTeam).Handler(handler(serveLegacySettingsTeam))
+		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/editor-auth", http.StatusMovedPermanently))
 	}
 
 	// search
@@ -211,11 +229,33 @@ func init() {
 	})
 }
 
-// staticRedirectHandler returns an HTPT handler that redirects all requests to
-// the specified path with the specified status code.
-func staticRedirectHandler(path string, code int) http.Handler {
+// staticRedirectHandler returns an HTTP handler that redirects all requests to
+// the specified url or relative path with the specified status code.
+//
+// The scheme, host, and path in the specified url override ones in the incoming
+// request. For example:
+//
+// 	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
+// 	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
+//
+func staticRedirectHandler(u string, code int) http.Handler {
+	target, err := url.Parse(u)
+	if err != nil {
+		// panic is OK here because staticRedirectHandler is called only inside
+		// init / crash would be on server startup.
+		panic(err)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, path, code)
+		if target.Scheme != "" {
+			r.URL.Scheme = target.Scheme
+		}
+		if target.Host != "" {
+			r.URL.Host = target.Host
+		}
+		if target.Path != "" {
+			r.URL.Path = target.Path
+		}
+		http.Redirect(w, r, r.URL.String(), code)
 	})
 }
 

@@ -237,7 +237,7 @@ func sendInviteEmail(inviteEmail, fromName, orgName, token string) {
 		Subject:   fmt.Sprintf("%s has invited you to join %s on Sourcegraph", fromName, orgName),
 	}
 
-	inviteURL := appconf.AppURL.String() + "/accept-invite?token=" + token
+	inviteURL := appconf.AppURL.String() + "/settings/accept-invite?token=" + token
 	notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
 		gochimp.Var{Name: "INVITE_URL", Content: inviteURL},
 		gochimp.Var{Name: "ORG", Content: orgName},

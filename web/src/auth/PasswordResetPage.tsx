@@ -1,9 +1,9 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import { WebAuth } from 'auth0-js'
 import * as React from 'react'
-import { HeroPage } from '../../components/HeroPage'
-import { PageTitle } from '../../components/PageTitle'
-import { sourcegraphContext } from '../../util/sourcegraphContext'
+import { HeroPage } from '../components/HeroPage'
+import { PageTitle } from '../components/PageTitle'
+import { sourcegraphContext } from '../util/sourcegraphContext'
 
 const webAuth = new WebAuth({
     domain: sourcegraphContext.auth0Domain,
@@ -72,7 +72,7 @@ export class PasswordResetPage extends React.Component {
     public render(): JSX.Element | null {
         return (
             <div className='password-reset-page'>
-                <PageTitle title='reset password' />
+                <PageTitle title='Reset password' />
                 <HeroPage icon={KeyIcon} title='Sourcegraph' subtitle='Sign in or sign up to create an account' cta={<PasswordResetForm />} />
             </div>
         )

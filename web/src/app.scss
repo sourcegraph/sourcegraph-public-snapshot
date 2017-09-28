@@ -25,6 +25,8 @@ $media-xl: 1200px;
 @import './highlight';
 @import './search/Search';
 @import './nav/Navbar';
+@import './auth/PasswordResetPage';
+@import './auth/SignInPage';
 @import './search/SearchBox';
 @import './search/SearchResults';
 @import './repo/Repository';
@@ -33,10 +35,6 @@ $media-xl: 1200px;
 @import './components/CodeExcerpt';
 @import './components/HeroPage';
 @import './settings/SettingsPage';
-@import './settings/auth/PasswordResetPage';
-@import './settings/auth/EditorAuthPage';
-@import './settings/auth/SignInPage';
-@import './settings/user/UserProfilePage';
 
 // Define the 'system' font family
 //

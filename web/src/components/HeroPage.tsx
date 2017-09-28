@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 interface Props {
-    icon: (props: {}) => JSX.Element
+    icon: React.ComponentType
     title?: string | JSX.Element
     subtitle?: string | JSX.Element
     cta?: JSX.Element

@@ -107,41 +107,66 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
-		// editor auth
-		{
-			path:      "/editor-auth",
-			wantRoute: routeEditorAuth,
-			wantVars:  map[string]string{},
-		},
-
 		// settings
 		{
 			path:      "/settings",
 			wantRoute: routeSettings,
-			wantVars:  map[string]string{"Path": ""},
-		},
-		{
-			path:      "/settings/teams/new",
-			wantRoute: routeSettings,
-			wantVars:  map[string]string{"Path": "/teams/new"},
-		},
-		{
-			path:      "/settings/team/sourcegraph",
-			wantRoute: routeSettings,
-			wantVars:  map[string]string{"Path": "/team/sourcegraph"},
-		},
-
-		// accept invite
-		{
-			path:      "/accept-invite",
-			wantRoute: routeAcceptInvite,
 			wantVars:  map[string]string{},
 		},
 
-		// accept invite
+		// settings/accept-invite
+		{
+			path:      "/settings/accept-invite",
+			wantRoute: routeSettingsAcceptInvite,
+			wantVars:  map[string]string{},
+		},
+
+		// settings/editor-auth
+		{
+			path:      "/settings/editor-auth",
+			wantRoute: routeSettingsEditorAuth,
+			wantVars:  map[string]string{},
+		},
+
+		// settings/teams/new
+		{
+			path:      "/settings/teams/new",
+			wantRoute: routeSettingsTeamsNew,
+			wantVars:  map[string]string{},
+		},
+
+		// settings/teams/{team}
+		{
+			path:      "/settings/teams/sourcegraph",
+			wantRoute: routeSettingsTeamsTeam,
+			wantVars:  map[string]string{"team": "sourcegraph"},
+		},
+
+		// password invite
 		{
 			path:      "/password-reset",
 			wantRoute: routePasswordReset,
+			wantVars:  map[string]string{},
+		},
+
+		// legacy accept invite
+		{
+			path:      "/accept-invite",
+			wantRoute: routeLegacyAcceptInvite,
+			wantVars:  map[string]string{},
+		},
+
+		// legacy settings/team/{team}
+		{
+			path:      "/settings/team/sourcegraph",
+			wantRoute: routeLegacySettingsTeam,
+			wantVars:  map[string]string{"team": "sourcegraph"},
+		},
+
+		// legacy editor auth
+		{
+			path:      "/editor-auth",
+			wantRoute: routeLegacyEditorAuth,
 			wantVars:  map[string]string{},
 		},
 

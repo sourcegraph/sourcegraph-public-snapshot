@@ -5,139 +5,56 @@ import './util/polyfill'
 
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
+import * as H from 'history'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { BrowserRouter, Redirect, Route, RouteComponentProps, Switch } from 'react-router-dom'
+import { Route, RouteComponentProps, Switch } from 'react-router'
+import { BrowserRouter } from 'react-router-dom'
 import { fetchCurrentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { Navbar } from './nav/Navbar'
-import { Repository, RepositoryCloneInProgress, RepositoryNotFound } from './repo/Repository'
+import { routes } from './routes'
 import { parseSearchURLQuery } from './search/index'
 import { Search } from './search/Search'
-import { SearchResults } from './search/SearchResults'
-import { PasswordResetPage } from './settings/auth/PasswordResetPage'
-import { SignInPage } from './settings/auth/SignInPage'
-import { SettingsPage } from './settings/SettingsPage'
 import { handleQueryEvents } from './tracking/analyticsUtils'
-import { viewEvents } from './tracking/events'
-import { ParsedRouteProps, parseRouteProps } from './util/routes'
-import { sourcegraphContext } from './util/sourcegraphContext'
-import { parseHash } from './util/url'
-import { WithResolvedRev } from './WithResolvedRev'
 
-class AppRouter extends React.Component<ParsedRouteProps, {}> {
-    public componentDidMount(): void {
-        this.logPageView(this.props)
-    }
-
-    public componentWillReceiveProps(nextProps: ParsedRouteProps): void {
-        const thisHash = parseHash(nextProps.location.hash)
-        const nextHash = parseHash(nextProps.location.hash)
-        if (this.props.location.pathname !== nextProps.location.pathname ||
-            this.props.location.search !== nextProps.location.search ||
-            thisHash.modal !== nextHash.modal) {
-            // Skip logging page view when only line/character is updated.
-            this.logPageView(nextProps)
-        }
-    }
-
-    public render(): JSX.Element | null {
-        switch (this.props.routeName) {
-            case 'search':
-                return <SearchResults {...this.props} />
-
-            case 'sign-in':
-                return <SignInPage />
-
-            case 'editor-auth':
-            case 'settings-error':
-            case 'team-profile':
-            case 'teams-new':
-            case 'user-profile':
-            case 'accept-invite':
-                // if on-prem, never show a settings page
-                if (sourcegraphContext.onPrem) {
-                    return <Redirect to='/search' />
-                }
-                return <SettingsPage {...this.props} />
-            case 'password-reset':
-                return <PasswordResetPage />
-            case 'repository':
-                return <WithResolvedRev {...this.props} component={Repository} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />
-
-            default:
-                return <WithResolvedRev {...this.props} component={RepositoryNotFound} cloningComponent={RepositoryCloneInProgress} notFoundComponent={RepositoryNotFound} />
-        }
-    }
-
-    private logPageView(props: ParsedRouteProps): void {
-        const nextHash = parseHash(props.location.hash)
-        switch (props.routeName) {
-            case 'search':
-                return viewEvents.SearchResults.log()
-            case 'user-profile':
-                return viewEvents.UserProfile.log()
-            case 'editor-auth':
-                return viewEvents.EditorAuth.log()
-            case 'sign-in':
-                return viewEvents.SignIn.log()
-            case 'repository':
-                return viewEvents.Blob.log({ fileShown: Boolean(props.filePath), referencesShown: nextHash.modal === 'references' })
-        }
-    }
+interface LayoutProps {
+    location: H.Location
+    history: H.History
 }
 
 /**
  * Defines the layout of all pages that have a navbar
  */
-class Layout extends React.Component<RouteComponentProps<string[]>, {}> {
+class Layout extends React.Component<LayoutProps, {}> {
     public render(): JSX.Element | null {
-        const props = parseRouteProps(this.props)
         return (
             <div className='layout'>
-                <WithResolvedRev {...props} component={Navbar} cloningComponent={Navbar} notFoundComponent={Navbar} />
+                <Navbar location={this.props.location} history={this.props.history} />
                 <div className='layout__app-router-container'>
-                    <AppRouter {...props} />
+                    <Switch>
+                        { routes.map((route, i) => <Route key={i} {...route} />) }
+                    </Switch>
                 </div>
             </div>
         )
     }
 }
 
-interface AppState {
-    error?: Error
-}
-
 /**
  * handles rendering Search or SearchResults components based on whether or not
  * the search query (e.g. '?q=foo') is in URL.
  */
-class SearchRouter extends React.Component<ParsedRouteProps, {}> {
-    public componentDidMount(): void {
-        this.logPageView(this.props)
+const SearchRouter = (props: RouteComponentProps<{}>): JSX.Element | null => {
+    const searchOptions = parseSearchURLQuery(props.location.search)
+    if (searchOptions.query) {
+        return <Layout {...props} />
     }
+    return <Search {...props} />
+}
 
-    public componentWillReceiveProps(nextProps: ParsedRouteProps): void {
-        if (this.props.location.search !== nextProps.location.search) {
-            this.logPageView(nextProps)
-        }
-    }
-
-    public render(): JSX.Element | null {
-        const searchOptions = parseSearchURLQuery(this.props.location.search)
-        if (searchOptions.query) {
-            return <Layout {...this.props} />
-        }
-        return <Search {...this.props} />
-    }
-
-    private logPageView(props: ParsedRouteProps): void {
-        const searchOptions = parseSearchURLQuery(props.location.search)
-        if (!searchOptions.query) {
-            return viewEvents.Home.log()
-        }
-        // Other page views are logged by `Layout`.
-    }
+interface AppState {
+    error?: Error
 }
 
 /**
@@ -191,8 +108,8 @@ class App extends React.Component<{}, AppState> {
         return (
             <BrowserRouter>
                 <Switch>
-                    <Route exact={true} path='/search' component={SearchRouter} />
-                    <Route path='/*' component={Layout} />
+                    <Route path='/search' exact={true} component={SearchRouter} />
+                    <Route component={Layout} />
                 </Switch>
             </BrowserRouter>
         )

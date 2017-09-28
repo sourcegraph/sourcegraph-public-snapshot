@@ -1,6 +1,7 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
+import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import 'rxjs/add/observable/timer'
@@ -18,11 +19,13 @@ import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
-import { ParsedRouteProps } from '../util/routes'
+import { viewEvents } from '../tracking/events'
 import { searchText } from './backend'
 import { parseSearchURLQuery } from './index'
 
-interface Props extends ParsedRouteProps { }
+interface Props {
+    location: H.Location
+}
 
 interface State {
     results: GQL.IFileMatch[]
@@ -56,6 +59,7 @@ export class SearchResults extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        viewEvents.SearchResults.log()
         this.subscriptions.add(
             this.componentUpdates
                 .startWith(this.props)

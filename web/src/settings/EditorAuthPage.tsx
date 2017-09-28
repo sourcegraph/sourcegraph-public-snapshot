@@ -1,8 +1,8 @@
 import copy from 'copy-to-clipboard'
 import * as React from 'react'
-import { PageTitle } from '../../components/PageTitle'
-import { events } from '../../tracking/events'
-import { sourcegraphContext } from '../../util/sourcegraphContext'
+import { PageTitle } from '../components/PageTitle'
+import { events, viewEvents } from '../tracking/events'
+import { sourcegraphContext } from '../util/sourcegraphContext'
 
 interface Props { }
 interface State {
@@ -16,10 +16,14 @@ export class EditorAuthPage extends React.Component<Props, State> {
     public state: State = { copiedLink: false }
     private sessionId = sourcegraphContext.sessionID.slice(sourcegraphContext.sessionID.indexOf(' ') + 1)
 
+    public componentDidMount(): void {
+        viewEvents.EditorAuth.log()
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className='ui-section'>
-                <PageTitle title='authenticate editor' />
+                <PageTitle title='Authenticate editor' />
                 <h1>
                     Authenticate your editor
                 </h1>
