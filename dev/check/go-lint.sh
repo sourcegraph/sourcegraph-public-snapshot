@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 export GOBIN="$PWD/vendor/.bin"
 export PATH=$GOBIN:$PATH
 
-go install sourcegraph.com/sourcegraph/sourcegraph/vendor/honnef.co/go/staticcheck/cmd/staticcheck
+go install sourcegraph.com/sourcegraph/sourcegraph/vendor/honnef.co/go/tools/cmd/staticcheck
 
 echo go list...
 PKGS=$(go list ./... | grep -v /vendor/)
