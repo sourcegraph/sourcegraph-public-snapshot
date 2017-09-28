@@ -340,12 +340,11 @@ func ListPublicReposForUser(ctx context.Context, login string) ([]*sourcegraph.R
 	if beforeSep20 {
 		// List only repos owned by the specified user.
 		user = login
-	} else {
-		// When user is empty, the GitHub API will list all repos visible to
-		// the "currently authed user" (including public, private, & org repos
-		// not owned by the user). The github-proxy will only make an authenticated
-		// request if a personal access token is provided.
 	}
+	// Else, when user is empty, the GitHub API will list all repos visible to
+	// the "currently authed user" (including public, private, & org repos
+	// not owned by the user). The github-proxy will only make an authenticated
+	// request if a personal access token is provided.
 
 	ghRepos, _, err := UnauthedClient(ctx).Repositories.List(ctx, user, nil)
 	if err != nil {
