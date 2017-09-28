@@ -1,4 +1,4 @@
-import { partition } from 'lodash'
+import partition from 'lodash/partition'
 import 'rxjs/add/observable/defer'
 import 'rxjs/add/observable/from'
 import 'rxjs/add/observable/merge'
