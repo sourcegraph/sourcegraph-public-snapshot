@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build go1.5
-
 package loader
 
 // This file handles cgo preprocessing of files containing `import "C"`.
@@ -39,7 +37,7 @@ package loader
 // The benefit of this approach would have been that source-level
 // syntax information would correspond exactly to the original cgo
 // file, with no preprocessing involved, making source tools like
-// godoc, oracle, and eg happy.  However, the approach was rejected
+// godoc, guru, and eg happy.  However, the approach was rejected
 // due to the additional complexity it would impose on go/types.  (It
 // made for a beautiful demo, though.)
 //

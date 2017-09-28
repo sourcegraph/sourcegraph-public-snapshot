@@ -1731,10 +1731,10 @@
 			"revisionTime": "2016-09-27T13:58:56Z"
 		},
 		{
-			"checksumSHA1": "oP1vuCE1PtUjnt+HMX+SvIUG4II=",
+			"checksumSHA1": "ZpAR2KupZto/mWf9zu5e6IKDWt0=",
 			"path": "golang.org/x/tools/go/loader",
-			"revision": "fc2b74b64ef08c618146ebc92062f6499db5314c",
-			"revisionTime": "2016-09-27T13:58:56Z"
+			"revision": "68e087e2a5786de2c035ed544b1c5a42e31f1933",
+			"revisionTime": "2017-07-19T04:03:19Z"
 		},
 		{
 			"checksumSHA1": "QKvPv3TJ+ZnOLkUeUkT8Wm8eCV0=",
