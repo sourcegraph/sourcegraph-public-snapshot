@@ -71,6 +71,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
                     </button>
                 </div>
+                <small className='form-text'>Existing users who signed in via GitHub: please sign up for a Sourcegraph account.</small>
                 {this.state.loading && <div className='login-signup-form__loader'><Loader /></div>}
             </form>
         )
