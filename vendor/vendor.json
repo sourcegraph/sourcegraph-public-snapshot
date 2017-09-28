@@ -1059,10 +1059,10 @@
 			"revisionTime": "2017-08-11T16:56:20Z"
 		},
 		{
-			"checksumSHA1": "JiXMrnzq2TXDAcOAkgl46xMvseE=",
+			"checksumSHA1": "Xe767JGU0kFzRBki569Z+wWNpyE=",
 			"path": "github.com/neelance/graphql-go",
-			"revision": "67e6f91d3f998c19d0a23d292852af2589a03d15",
-			"revisionTime": "2017-04-05T14:28:08Z"
+			"revision": "10eb949b8f4439212ef19d5d924c47c10c110cc7",
+			"revisionTime": "2017-09-08T06:27:19Z"
 		},
 		{
 			"checksumSHA1": "Pc+bre5xi93915xjl4YTpJiDt9s=",
