@@ -185,7 +185,8 @@ export class NewTeam extends React.Component<Props, State> {
     }
 
     private onNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.setState({ name: event.currentTarget.value })
+        const hyphenatedName = event.currentTarget.value.replace(/\s/g, '-')
+        this.setState({ name: hyphenatedName })
     }
 
     private onUserNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
