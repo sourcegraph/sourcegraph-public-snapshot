@@ -9,17 +9,17 @@ import (
 	"runtime"
 )
 
-var Schema string
+var Schema = readSchemaFromDisk()
 
-func init() {
+func readSchemaFromDisk() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
-		panic("No caller information")
+		log.Fatal("No caller information")
 	}
 	path := filepath.Join(filepath.Dir(filename), "schema.graphql")
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	Schema = string(raw)
+	return string(raw)
 }
