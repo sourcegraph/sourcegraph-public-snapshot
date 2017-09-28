@@ -80,27 +80,19 @@ export class NewTeam extends React.Component<Props, State> {
         )
         this.subscriptions.add(
             this.submits
-                .mergeMap(event => {
+                .do(event => {
                     event.preventDefault()
-
-                    events.CreateNewTeamClicked.log()
-
-                    if (!event.currentTarget.checkValidity()) {
-                        events.NewTeamFailed.log()
-                        return []
-                    }
-
-                    return createOrg(this.state)
+                    events.CreateNewOrgClicked.log()
+                })
+                .filter(event => event.currentTarget.checkValidity())
+                .mergeMap(event =>
+                    createOrg(this.state)
                         .catch(error => {
                             console.error(error)
-                            events.NewTeamFailed.log()
                             this.setState({ error })
                             return []
                         })
-                })
-                .do(team => {
-                    events.NewTeamCreated.log({ team })
-                })
+                )
                 .mergeMap(team => fetchCurrentUser().concat([team]))
                 .subscribe(team => {
                     this.props.history.push(`/settings/team/${team.name}`)

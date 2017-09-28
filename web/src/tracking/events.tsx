@@ -47,13 +47,19 @@ export const events = {
     EditorAuthIdCopied: new LoggableEvent('EditorAuthIdCopied', EventCategories.Auth, EventActions.Click),
 
     // Settings events
-    CreateNewTeamClicked: new LoggableEvent('CreateNewTeamClicked', EventCategories.Settings, EventActions.Click),
-    NewTeamFailed: new LoggableEvent('NewTeamFailed', EventCategories.Settings, EventActions.Error),
-    NewTeamCreated: new LoggableEvent('NewTeamCreated', EventCategories.Settings, EventActions.Success),
+    CreateNewOrgClicked: new LoggableEvent('CreateNewOrgClicked', EventCategories.Settings, EventActions.Click),
+    NewOrgFailed: new LoggableEvent('NewOrgFailed', EventCategories.Settings, EventActions.Error),
+    NewOrgCreated: new LoggableEvent('NewOrgCreated', EventCategories.Settings, EventActions.Success),
 
-    InviteTeamMemberClicked: new LoggableEvent('InviteTeamMemberClicked', EventCategories.Settings, EventActions.Click),
-    InviteTeamMemberFailed: new LoggableEvent('InviteTeamMemberFailed', EventCategories.Settings, EventActions.Error),
-    TeamMemberInvited: new LoggableEvent('TeamMemberInvited', EventCategories.Settings, EventActions.Success),
+    InviteOrgMemberClicked: new LoggableEvent('InviteOrgMemberClicked', EventCategories.Settings, EventActions.Click),
+    InviteOrgMemberFailed: new LoggableEvent('InviteOrgMemberFailed', EventCategories.Settings, EventActions.Error),
+    OrgMemberInvited: new LoggableEvent('OrgMemberInvited', EventCategories.Settings, EventActions.Success),
+    AcceptInviteFailed: new LoggableEvent('AcceptInviteFailed', EventCategories.Settings, EventActions.Error),
+    InviteAccepted: new LoggableEvent('InviteAccepted', EventCategories.Settings, EventActions.Success),
+
+    RemoveOrgMemberClicked: new LoggableEvent('RemoveOrgMemberClicked', EventCategories.Settings, EventActions.Click),
+    RemoveOrgMemberFailed: new LoggableEvent('RemoveOrgMemberFailed', EventCategories.Settings, EventActions.Error),
+    OrgMemberRemoved: new LoggableEvent('OrgMemberRemoved', EventCategories.Settings, EventActions.Success),
 
     // Nav bar events
     ShareButtonClicked: new LoggableEvent('ShareButtonClicked', EventCategories.Sharing, EventActions.Click),

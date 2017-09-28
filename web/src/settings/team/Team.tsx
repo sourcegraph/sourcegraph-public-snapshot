@@ -6,6 +6,7 @@ import 'rxjs/add/observable/combineLatest'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/concat'
 import 'rxjs/add/operator/distinctUntilChanged'
+import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
@@ -14,6 +15,7 @@ import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
+import { events } from '../../tracking/events'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 import { InviteForm } from './InviteForm'
@@ -61,6 +63,14 @@ export const Team = reactive<Props>(props => {
             ),
 
         memberRemoves
+            .do(member => events.RemoveOrgMemberClicked.log({
+                organization: {
+                    remove: {
+                        user_id: member.userID
+                    },
+                    org_id: member.org.id
+                }
+            }))
             .withLatestFrom(currentUser)
             .filter(([member, user]) => !!user && confirm(
                 user.id === member.userID
@@ -133,4 +143,5 @@ export const Team = reactive<Props>(props => {
                 </div>
             )
         })
+
 })

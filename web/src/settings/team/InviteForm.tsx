@@ -14,6 +14,7 @@ import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
+import { events } from '../../tracking/events'
 import { inviteUser } from '../backend'
 
 export interface Props {
@@ -50,6 +51,14 @@ export const InviteForm = reactive<Props>(props => {
         submits
             .do(e => e.preventDefault())
             .withLatestFrom(orgID, emailChanges)
+            .do(([, orgId, email]) => events.InviteOrgMemberClicked.log({
+                organization: {
+                    invite: {
+                        user_email: email
+                    },
+                    org_id: orgId
+                }
+            }))
             .mergeMap(([, orgID, email]) =>
                 inviteUser(email, orgID)
                     .mergeMap(() =>

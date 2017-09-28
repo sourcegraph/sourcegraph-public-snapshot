@@ -5,6 +5,7 @@ import 'rxjs/add/operator/take'
 import { Observable } from 'rxjs/Observable'
 import { currentUser, fetchCurrentUser } from '../auth'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { events } from '../tracking/events'
 
 /**
  * Fetches an org by ID
@@ -82,8 +83,15 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
         })
         .mergeMap(({ data, errors }) => {
             if (!data || !data.createOrg) {
+                events.NewOrgFailed.log()
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
+            events.NewOrgCreated.log({
+                organization: {
+                    org_id: data.createOrg.id,
+                    org_name: data.createOrg.name
+                }
+            })
             return fetchCurrentUser().concat([data.createOrg])
         })
 }
@@ -116,9 +124,19 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
             `, variables)
         })
         .map(({ data, errors }) => {
+            const eventData = {
+                organization: {
+                    invite: {
+                        user_email: email
+                    },
+                    org_id: orgID
+                }
+            }
             if (!data || (errors && errors.length > 0)) {
+                events.InviteOrgMemberFailed.log(eventData)
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
+            events.OrgMemberInvited.log(eventData)
             return
         })
     // For now, no need to re-fetch auth state after this fetch completes. The
@@ -170,8 +188,19 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
         })
         .map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {
+                events.AcceptInviteFailed.log()
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
+            events.InviteAccepted.log({
+                organization: {
+                    invite: {
+                        user_email: data.acceptUserInvite.email,
+                        user_id: data.acceptUserInvite.userID
+                    },
+                    org_id: data.acceptUserInvite.org.id,
+                    org_name: data.acceptUserInvite.org.name
+                }
+            })
             return data.acceptUserInvite
         })
 }
@@ -195,9 +224,19 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
         orgID
     })
         .mergeMap(({ data, errors }) => {
+            const eventData = {
+                organization: {
+                    remove: {
+                        user_id: userID
+                    },
+                    org_id: orgID
+                }
+            }
             if (errors && errors.length > 0) {
+                events.RemoveOrgMemberFailed.log(eventData)
                 throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
             }
+            events.OrgMemberRemoved.log(eventData)
             // Reload user data
             return fetchCurrentUser()
         })
