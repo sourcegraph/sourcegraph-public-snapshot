@@ -205,7 +205,6 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
 	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
-	fmt.Println(err)
 	if err != nil {
 		return nil, err
 	}
