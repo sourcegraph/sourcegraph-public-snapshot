@@ -95,38 +95,47 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			return nil, err
 		}
 
-		if RestrictAutoAddToGitHubDotCom {
-			if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
-				// Repo does not exist in DB, create new entry.
-				ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
-				ghRepo, err := github.GetRepo(ctx, uri)
-				if err != nil {
-					return nil, err
-				}
-				if ghRepo.URI != uri {
-					// not canonical name (the GitHub api will redirect from the old name to
-					// the results for the new name if the repo got renamed on GitHub)
-					if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
-						return repo, nil
-					}
-				}
-
-				if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
-					return nil, err
-				}
-
-				return s.getByURI(ctx, ghRepo.URI)
+		// Auto-add repository if possible
+		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
+			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
+				return ghRepo, nil
+			} else if RestrictAutoAddToGitHubDotCom {
+				return nil, err
 			}
-		} else {
+		}
+		if !RestrictAutoAddToGitHubDotCom {
 			if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
 				return nil, err
 			}
 			return s.getByURI(ctx, uri)
 		}
+
 		return nil, err
 	}
 
 	return repo, nil
+}
+
+func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	// Repo does not exist in DB, create new entry.
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
+	ghRepo, err := github.GetRepo(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+	if ghRepo.URI != uri {
+		// not canonical name (the GitHub api will redirect from the old name to
+		// the results for the new name if the repo got renamed on GitHub)
+		if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
+			return repo, nil
+		}
+	}
+
+	if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
+		return nil, err
+	}
+
+	return s.getByURI(ctx, ghRepo.URI)
 }
 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
