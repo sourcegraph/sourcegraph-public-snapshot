@@ -30,6 +30,8 @@
 // ../../../migrations/1506060483_range_length.up.sql
 // ../../../migrations/1506466653_add_users.down.sql
 // ../../../migrations/1506466653_add_users.up.sql
+// ../../../migrations/1506646657_alter_orgs_citext.down.sql
+// ../../../migrations/1506646657_alter_orgs_citext.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -697,6 +699,46 @@ func _1506466653_add_usersUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1506646657_alter_orgs_citextDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\x56\x80\x08\x38\xfb\xfb\x84\xfa\xfa\x29\xe4\x25\xe6\xa6\x2a\x04\xbb\x86\x28\xb8\x38\x86\x38\x2a\x84\x44\x06\xb8\x2a\x94\xa4\x56\x94\x58\x73\x01\x02\x00\x00\xff\xff\xba\x08\xd9\x04\x37\x00\x00\x00")
+
+func _1506646657_alter_orgs_citextDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1506646657_alter_orgs_citextDownSql,
+		"1506646657_alter_orgs_citext.down.sql",
+	)
+}
+
+func _1506646657_alter_orgs_citextDownSql() (*asset, error) {
+	bytes, err := _1506646657_alter_orgs_citextDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1506646657_alter_orgs_citext.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1506646657_alter_orgs_citextUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\x56\x80\x08\x38\xfb\xfb\x84\xfa\xfa\x29\xe4\x25\xe6\xa6\x2a\x04\xbb\x86\x28\xb8\x38\x86\x38\x2a\x84\x44\x06\xb8\x2a\x24\x67\x96\xa4\x56\x94\x58\x73\x01\x02\x00\x00\xff\xff\x86\x40\x1d\xc1\x39\x00\x00\x00")
+
+func _1506646657_alter_orgs_citextUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1506646657_alter_orgs_citextUpSql,
+		"1506646657_alter_orgs_citext.up.sql",
+	)
+}
+
+func _1506646657_alter_orgs_citextUpSql() (*asset, error) {
+	bytes, err := _1506646657_alter_orgs_citextUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1506646657_alter_orgs_citext.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -779,6 +821,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1506060483_range_length.up.sql":                 _1506060483_range_lengthUpSql,
 	"1506466653_add_users.down.sql":                  _1506466653_add_usersDownSql,
 	"1506466653_add_users.up.sql":                    _1506466653_add_usersUpSql,
+	"1506646657_alter_orgs_citext.down.sql":          _1506646657_alter_orgs_citextDownSql,
+	"1506646657_alter_orgs_citext.up.sql":            _1506646657_alter_orgs_citextUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -852,6 +896,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1506060483_range_length.up.sql":                 &bintree{_1506060483_range_lengthUpSql, map[string]*bintree{}},
 	"1506466653_add_users.down.sql":                  &bintree{_1506466653_add_usersDownSql, map[string]*bintree{}},
 	"1506466653_add_users.up.sql":                    &bintree{_1506466653_add_usersUpSql, map[string]*bintree{}},
+	"1506646657_alter_orgs_citext.down.sql":          &bintree{_1506646657_alter_orgs_citextDownSql, map[string]*bintree{}},
+	"1506646657_alter_orgs_citext.up.sql":            &bintree{_1506646657_alter_orgs_citextUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
