@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/conf"
 	appconf "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mattbaird/gochimp"

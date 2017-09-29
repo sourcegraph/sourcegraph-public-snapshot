@@ -1,5 +1,6 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import upperFirst = require('lodash/upperFirst')
 import * as React from 'react'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/catch'
@@ -113,7 +114,7 @@ export class NewTeam extends React.Component<Props, State> {
                         Create a Sourcegraph team to bring the discussion to the code.
                         Learn more about <a href='https://about.sourcegraph.com/products/editor' target='_blank'>collaboration in Sourcegraph</a>.
                     </p>
-
+                    { this.state.error && <p className='form-text text-error'>{upperFirst(this.state.error.message)}</p>}
                     <div className='form-group'>
                         <label>Team name</label>
                         <input

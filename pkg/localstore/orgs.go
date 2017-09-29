@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
+
+	"github.com/lib/pq"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -96,9 +97,15 @@ func (*orgs) Create(ctx context.Context, name string) (*sourcegraph.Org, error) 
 		"INSERT INTO orgs(name, created_at, updated_at) VALUES($1, $2, $3) RETURNING id",
 		newOrg.Name, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
 	if err != nil {
-		if strings.Contains(err.Error(), "org_name_valid_chars") {
-			return nil, errors.New(`error creating org: name must only contain alphanumeric characters, "_", and "-"`)
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Constraint == "org_name_valid_chars" {
+				return nil, errors.New(`org name invalid`)
+			}
+			if pqErr.Constraint == "org_name_unique" {
+				return nil, errors.New(`org name already exists`)
+			}
 		}
+
 		return nil, err
 	}
 
