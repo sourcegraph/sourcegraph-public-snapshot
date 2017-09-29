@@ -28,6 +28,8 @@
 // ../../../migrations/1505882864_update_org_members.up.sql
 // ../../../migrations/1506060483_range_length.down.sql
 // ../../../migrations/1506060483_range_length.up.sql
+// ../../../migrations/1506466653_add_users.down.sql
+// ../../../migrations/1506466653_add_users.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -655,6 +657,46 @@ func _1506060483_range_lengthUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1506466653_add_usersDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x50\x2a\x2d\x4e\x2d\x2a\x56\xb2\xe6\x02\x04\x00\x00\xff\xff\x2c\xe4\x75\x47\x14\x00\x00\x00")
+
+func _1506466653_add_usersDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1506466653_add_usersDownSql,
+		"1506466653_add_users.down.sql",
+	)
+}
+
+func _1506466653_add_usersDownSql() (*asset, error) {
+	bytes, err := _1506466653_add_usersDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1506466653_add_users.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1506466653_add_usersUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x8f\x41\x4b\xf3\x40\x10\x86\xcf\xcd\xaf\x18\x96\x0f\x9a\x40\x03\x85\xef\x20\xe2\x41\xd6\xb8\x62\x68\x4c\x35\x6e\x0e\x55\xeb\x32\x74\x07\xba\xb0\x49\x43\xb2\x69\xb5\xa2\xbf\x5d\x92\x52\x5a\x29\x5e\xbc\xed\xce\x3c\x2f\xf3\xbc\x51\x26\xb8\x14\x20\xf9\x55\x22\x80\xb5\x0d\xd5\x0d\x03\xdf\x1b\x30\xa3\x19\x34\x54\x1b\xb4\x90\x4e\x25\xa4\x79\x92\xc0\x7d\x16\xdf\xf1\x6c\x06\x13\x31\x1b\x79\x03\x86\xad\x5b\x8e\x55\x07\x3a\x7a\x73\x07\x2c\x4f\xe3\x87\x5c\x74\x04\x15\x68\x2c\x83\x85\xf9\x0d\xe8\x0e\x96\x58\xd0\x29\x13\x4d\xd3\x47\x99\xf1\x38\x95\xd0\x5b\xa9\x3d\xaa\xd6\x68\x8d\x86\xe8\x56\x44\x13\xf0\xf7\x53\xf8\x82\xe1\xeb\x33\x86\x5b\x1e\x3e\x8d\xc3\xf3\xb9\x7f\x78\xbf\x84\xf3\x8f\xf1\xe8\xff\xd9\xe7\xd1\x3a\xb8\xfc\x37\x0c\x8e\x3c\xb4\x69\x2a\x8b\xef\x6a\xe7\xf2\xc3\xa4\x6f\xba\x46\x87\xb5\x6a\x6b\xbb\x5b\x76\xb3\x45\x4d\xe8\x48\x2b\x74\x0c\x9c\x29\xa8\x71\x58\x54\xb0\x31\x6e\xd9\x7f\x61\xbb\x2a\x09\xae\xc5\x0d\xcf\x13\x09\xe5\x6a\xe3\x07\x7d\xe1\x4a\xff\x21\xa5\xc9\xd2\x49\xca\x0b\x2e\xbc\xef\x00\x00\x00\xff\xff\xeb\x83\xf2\x9c\xbf\x01\x00\x00")
+
+func _1506466653_add_usersUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1506466653_add_usersUpSql,
+		"1506466653_add_users.up.sql",
+	)
+}
+
+func _1506466653_add_usersUpSql() (*asset, error) {
+	bytes, err := _1506466653_add_usersUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1506466653_add_users.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -735,6 +777,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1505882864_update_org_members.up.sql":           _1505882864_update_org_membersUpSql,
 	"1506060483_range_length.down.sql":               _1506060483_range_lengthDownSql,
 	"1506060483_range_length.up.sql":                 _1506060483_range_lengthUpSql,
+	"1506466653_add_users.down.sql":                  _1506466653_add_usersDownSql,
+	"1506466653_add_users.up.sql":                    _1506466653_add_usersUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -806,6 +850,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1505882864_update_org_members.up.sql":           &bintree{_1505882864_update_org_membersUpSql, map[string]*bintree{}},
 	"1506060483_range_length.down.sql":               &bintree{_1506060483_range_lengthDownSql, map[string]*bintree{}},
 	"1506060483_range_length.up.sql":                 &bintree{_1506060483_range_lengthUpSql, map[string]*bintree{}},
+	"1506466653_add_users.down.sql":                  &bintree{_1506466653_add_usersDownSql, map[string]*bintree{}},
+	"1506466653_add_users.up.sql":                    &bintree{_1506466653_add_usersUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

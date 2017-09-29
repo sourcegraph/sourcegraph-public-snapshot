@@ -26,6 +26,7 @@ type Query {
 }
 
 type Mutation {
+	createUser(username: String!, displayName: String!, avatarURL: String): User!
 	createThread(remoteURI: String!, accessToken: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!, authorName: String!, authorEmail: String!): Thread!
 	createThread2(orgID: Int!, remoteURI: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!): Thread!
 	updateThread(remoteURI: String!, accessToken: String!, threadID: Int!, archived: Boolean): Thread!
@@ -265,12 +266,17 @@ type Installation {
 }
 
 type User {
-	githubInstallations: [Installation!]!
 	id: String!
+	sourcegraphID: Int
+	email: String!
+	displayName: String
+	username: String
 	avatarURL: String
-	email: String
+	createdAt: String
+	updatedAt: String
 	orgs: [Org!]!
 	orgMemberships: [OrgMember!]!
+	hasSourcegraphUser: Boolean!
 }
 
 type CompanyProfile {

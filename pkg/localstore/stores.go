@@ -10,4 +10,5 @@ var (
 	Comments   = &comments{}
 	Orgs       = &orgs{}
 	OrgMembers = &orgMembers{}
+	Users      = &users{}
 )

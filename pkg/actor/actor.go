@@ -62,18 +62,6 @@ func (a *Actor) UserSpec() *sourcegraph.UserSpec {
 	}
 }
 
-func (a *Actor) User() *sourcegraph.User {
-	if a.UID == "" {
-		return nil
-	}
-	return &sourcegraph.User{
-		UID:       a.UID,
-		Login:     a.Login,
-		AvatarURL: a.AvatarURL,
-		Email:     a.Email,
-	}
-}
-
 func (a *Actor) AuthInfo() *sourcegraph.AuthInfo {
 	return &sourcegraph.AuthInfo{
 		UID:   a.UID,

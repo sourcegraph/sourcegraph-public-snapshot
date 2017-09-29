@@ -251,7 +251,7 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	return resolvers, nil
 }
 
-func (r *rootResolver) CurrentUser(ctx context.Context) (*currentUserResolver, error) {
+func (r *rootResolver) CurrentUser(ctx context.Context) (*userResolver, error) {
 	return currentUser(ctx)
 }
 

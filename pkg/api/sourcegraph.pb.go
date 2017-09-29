@@ -227,51 +227,6 @@ type CommitterList struct {
 	StreamResponse `json:""`
 }
 
-type UserList struct {
-	Users []*User `json:"Users,omitempty"`
-}
-
-// User represents a registered user.
-type User struct {
-	// UID is the numeric primary key for a user.
-	UID string `json:"UID"`
-	// Login is the user's username.
-	Login string `json:"Login"`
-	// Email is the (possibly empty) primary email of the user.
-	Email string `json:"Email,omitempty"`
-	// Name is the (possibly empty) full name of the user.
-	Name string `json:"Name,omitempty"`
-	// Orgs is the (possibly empty) list of organizations the user is a member of.
-	Orgs []*Org `json:"Orgs,omitempty"`
-	// IsOrganization is whether this user represents an organization.
-	IsOrganization bool `json:"IsOrganization,omitempty"`
-	// AvatarURL is the URL to an avatar image specified by the user.
-	AvatarURL string `json:"AvatarURL,omitempty"`
-	// Location is the user's physical location.
-	Location string `json:"Location,omitempty"`
-	// Company is the user's company.
-	Company string `json:"Company,omitempty"`
-	// HomepageURL is the user's homepage or blog URL.
-	HomepageURL string `json:"HomepageURL,omitempty"`
-	// Disabled is whether the user account is disabled.
-	Disabled bool `json:"Disabled,omitempty"`
-	// Admin is whether the user is a site admin for the site.
-	Admin bool `json:"Admin,omitempty"`
-	// Betas is a list of betas which the user is enrolled in. A user may be
-	// granted access to any beta string listed in:
-	//
-	//  pkg/betautil/betautil.go
-	//
-	// Only admin users may set this field.
-	Betas []string `json:"Betas,omitempty"`
-	// Write is whether the user has write access for the site.
-	Write bool `json:"Write,omitempty"`
-	// RegisteredAt is the date that the user registered. If the user has not
-	// registered (i.e., we have processed their repos but they haven't signed into
-	// Sourcegraph), it is null.
-	RegisteredAt *time.Time `json:"RegisteredAt,omitempty"`
-}
-
 // UserSpec specifies a user. At least one of Login and UID must be
 // nonempty.
 type UserSpec struct {
@@ -425,6 +380,18 @@ const (
 	InviteMissingEmail
 	InviteError
 )
+
+// User represents a registered user.
+type User struct {
+	ID          int32     `json:"ID,omitempty"`
+	Auth0ID     string    `json:"auth0ID,omitempty"`
+	Email       string    `json:"email,omitempty"`
+	Username    string    `json:"username,omitempty"`
+	DisplayName string    `json:"displayName,omitempty"`
+	AvatarURL   *string   `json:"avatarURL,omitempty"`
+	CreatedAt   time.Time `json:"createdAt,omitempty"`
+	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
+}
 
 // OrgRepo represents a repo that exists on a native client's filesystem, but
 // does not necessarily have its contents cloned to a remote Sourcegraph server.

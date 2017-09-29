@@ -3,31 +3,122 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-type currentUserResolver struct {
+// userResolver resolves a graphql user using an actor and optionally a
+// sourcegraph user. Sourcegraph users should contain a superset of the data
+// stored in actors, but it is possible for a user to have an Auth0 account (and
+// thus and actor) and not a User for backwards compatibility reasons we must
+// support an actor-only userResolver as well.
+type userResolver struct {
+	user  *sourcegraph.User
 	actor *actor.Actor
 }
 
-func currentUser(ctx context.Context) (*currentUserResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("no current user")
+func (r *userResolver) ID() string {
+	if r.user == nil {
+		return r.actor.UID
 	}
-	return &currentUserResolver{
-		actor: actor,
-	}, nil
+	return r.user.Auth0ID
 }
 
-func (r *currentUserResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
+func (r *userResolver) SourcegraphID() *int32 {
+	if r.user == nil {
+		return nil
+	}
+	return &r.user.ID
+}
+
+func (r *userResolver) Email() string {
+	if r.user == nil {
+		return r.actor.Email
+	}
+	return r.user.Email
+}
+
+func (r *userResolver) Username() *string {
+	if r.user == nil {
+		return nil
+	}
+	return &r.user.Username
+}
+
+func (r *userResolver) DisplayName() *string {
+	if r.user == nil {
+		return nil
+	}
+	return &r.user.DisplayName
+}
+
+func (r *userResolver) AvatarURL() *string {
+	if r.user == nil {
+		return &r.actor.AvatarURL
+	}
+	return r.user.AvatarURL
+}
+
+func (u *userResolver) CreatedAt() *string {
+	if u.user == nil {
+		return nil
+	}
+	t := u.user.CreatedAt.Format(time.RFC3339) // ISO
+	return &t
+}
+
+func (u *userResolver) UpdatedAt() *string {
+	if u.user == nil {
+		return nil
+	}
+	t := u.user.CreatedAt.Format(time.RFC3339) // ISO
+	return &t
+}
+
+// HasSourcegraphUser indicates whether the current user has a Sourcegraph user
+// associated with their account, as opposed to only having a registered Auth0 user.
+func (r *userResolver) HasSourcegraphUser() bool {
+	if r.user == nil {
+		return false
+	}
+	return true
+}
+
+func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
+	Username    string
+	DisplayName string
+	AvatarURL   *string
+}) (*userResolver, error) {
 	actor := actor.FromContext(ctx)
-	orgs, err := localstore.Orgs.GetByUserID(actor.UID)
+	if !actor.IsAuthenticated() {
+		// For now, we are creating users from an existing Auth0 user. An active login
+		// must exist to create a new Sourcegraph user.
+		return nil, errors.New("no current user")
+	}
+
+	newUser, err := store.Users.Create(actor.UID, actor.Email, args.Username, args.DisplayName, args.AvatarURL)
+	if err != nil {
+		return nil, err
+	}
+	return &userResolver{actor: actor, user: newUser}, nil
+}
+
+func currentUser(ctx context.Context) (*userResolver, error) {
+	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &userResolver{actor: actor.FromContext(ctx), user: user}, nil
+}
+
+func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
+	actor := actor.FromContext(ctx)
+	orgs, err := store.Orgs.GetByUserID(actor.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,9 +129,9 @@ func (r *currentUserResolver) Orgs(ctx context.Context) ([]*orgResolver, error) 
 	return orgResolvers, nil
 }
 
-func (r *currentUserResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
+func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
 	actor := actor.FromContext(ctx)
-	members, err := localstore.OrgMembers.GetByUserID(ctx, actor.UID)
+	members, err := store.OrgMembers.GetByUserID(ctx, actor.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,32 +140,4 @@ func (r *currentUserResolver) OrgMemberships(ctx context.Context) ([]*orgMemberR
 		orgMemberResolvers = append(orgMemberResolvers, &orgMemberResolver{nil, member})
 	}
 	return orgMemberResolvers, nil
-}
-
-func (r *currentUserResolver) GitHubInstallations(ctx context.Context) ([]*installationResolver, error) {
-	ghInstalls, err := github.ListAllAccessibleInstallations(ctx)
-	if err != nil {
-		return nil, err
-	}
-	installs := make([]*installationResolver, len(ghInstalls))
-	for i, v := range ghInstalls {
-		installs[i] = &installationResolver{v}
-	}
-	return installs, nil
-}
-
-func (r *currentUserResolver) ID(ctx context.Context) string {
-	return r.actor.UID
-}
-
-// TODO(Dan): since this will likely be a mutable property on the webapp
-// frontend, don't just return the actor's value (set at sign up/sign in)
-func (r *currentUserResolver) AvatarURL(ctx context.Context) *string {
-	return &r.actor.AvatarURL
-}
-
-// TODO(Dan): since this will likely be a mutable property on the webapp
-// frontend, don't just return the actor's value (set at sign up/sign in)
-func (r *currentUserResolver) Email(ctx context.Context) *string {
-	return &r.actor.Email
 }

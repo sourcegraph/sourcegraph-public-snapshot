@@ -30,6 +30,11 @@ var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute 
 
 var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
 
+// immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
+type immutableUser struct {
+	UID string
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
@@ -41,7 +46,7 @@ type JSContext struct {
 	AssetsRoot          string                     `json:"assetsRoot"`
 	Version             string                     `json:"version"`
 	Features            interface{}                `json:"features"`
-	User                *sourcegraph.User          `json:"user"`
+	User                *immutableUser             `json:"user"`
 	GitHubToken         *sourcegraph.ExternalToken `json:"gitHubToken"`
 	GitHubAppURL        string                     `json:"gitHubAppURL"`
 	SentryDSN           string                     `json:"sentryDSN"`
@@ -91,6 +96,11 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		}
 	}
 
+	var user *immutableUser
+	if actor != nil {
+		user = &immutableUser{UID: actor.UID}
+	}
+
 	return JSContext{
 		AppURL:              conf.AppURL.String(),
 		XHRHeaders:          headers,
@@ -99,7 +109,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AssetsRoot:          assets.URL("/").String(),
 		Version:             env.Version,
 		Features:            feature.Features,
-		User:                actor.User(),
+		User:                user,
 		GitHubToken:         gitHubToken,
 		GitHubAppURL:        gitHubAppURL,
 		SentryDSN:           sentryDSNFrontend,
