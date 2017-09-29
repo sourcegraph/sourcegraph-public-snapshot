@@ -303,6 +303,7 @@ declare namespace GQL {
     name: string;
     members: Array<IOrgMember>;
     repos: Array<IOrgRepo>;
+    repo: IOrgRepo;
     threads: Array<IThread>;
   }
 
@@ -332,6 +333,7 @@ declare namespace GQL {
     remoteUri: string;
     createdAt: string;
     updatedAt: string;
+    threads: Array<IThread>;
   }
 
   /*

@@ -322,6 +322,7 @@ type Org {
 	name: String!
 	members: [OrgMember!]!
 	repos: [OrgRepo!]!
+	repo(remoteURI: String!): OrgRepo!
 	threads(file: String, limit: Int): [Thread!]!
 }
 
@@ -343,6 +344,7 @@ type OrgRepo {
 	remoteUri: String!
 	createdAt: String!
 	updatedAt: String!
+	threads(file: String, limit: Int): [Thread!]!
 }
 
 type Thread {
