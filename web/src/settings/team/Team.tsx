@@ -133,6 +133,7 @@ export const Team = reactive<Props>(props => {
                                             <button
                                                 className='btn btn-icon'
                                                 title={user.id === member.userID ? 'Leave' : 'Remove'}
+                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => memberRemoves.next({ ...member, org })}
                                             >
                                                 <CloseIcon className='icon-inline' />

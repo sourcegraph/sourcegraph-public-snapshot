@@ -114,7 +114,7 @@ export class NewTeam extends React.Component<Props, State> {
                         Create a Sourcegraph team to bring the discussion to the code.
                         Learn more about <a href='https://about.sourcegraph.com/products/editor' target='_blank'>collaboration in Sourcegraph</a>.
                     </p>
-                    { this.state.error && <p className='form-text text-error'>{upperFirst(this.state.error.message)}</p>}
+                    {this.state.error && <p className='form-text text-error'>{upperFirst(this.state.error.message)}</p>}
                     <div className='form-group'>
                         <label>Team name</label>
                         <input
@@ -122,10 +122,10 @@ export class NewTeam extends React.Component<Props, State> {
                             className='ui-text-box'
                             placeholder='your-team'
                             pattern={VALID_ORG_NAME_REGEXP.toString().slice(1, -1)}
-                            required
+                            required={true}
                             autoCorrect='off'
                             autoComplete='off'
-                            autoFocus
+                            autoFocus={true}
                             value={this.state.name}
                             onChange={this.onNameChange}
                             disabled={this.state.loading}
@@ -140,7 +140,7 @@ export class NewTeam extends React.Component<Props, State> {
                             className='ui-text-box'
                             placeholder='yourusername'
                             pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
-                            required
+                            required={true}
                             autoCorrect='off'
                             value={this.state.username}
                             onChange={this.onUserNameChange}
@@ -155,7 +155,7 @@ export class NewTeam extends React.Component<Props, State> {
                             type='text'
                             className='ui-text-box'
                             placeholder='Your Name'
-                            required
+                            required={true}
                             autoCorrect='off'
                             value={this.state.displayName}
                             onChange={this.onDisplayNameChange}
@@ -169,7 +169,7 @@ export class NewTeam extends React.Component<Props, State> {
                             type='email'
                             className='ui-text-box'
                             placeholder='you@yourcompany.com'
-                            required
+                            required={true}
                             autoCorrect='off'
                             value={this.state.email}
                             onChange={this.onEmailChange}
@@ -178,7 +178,7 @@ export class NewTeam extends React.Component<Props, State> {
                     </div>
 
                     <button type='submit' className='btn btn-primary' disabled={this.state.loading}>Create Team</button>
-                    { this.state.loading && <LoaderIcon className='icon-inline' /> }
+                    {this.state.loading && <LoaderIcon className='icon-inline' />}
 
                 </form>
             </div>

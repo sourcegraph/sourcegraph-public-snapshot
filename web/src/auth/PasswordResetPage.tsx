@@ -36,7 +36,7 @@ class PasswordResetForm extends React.Component<{}, State> {
                 }
                 <p>Enter your email address and we will send you a link to reset your password.</p>
                 <div className='form-group'>
-                    <input className='ui-text-box' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' required />
+                    <input className='ui-text-box' onChange={this.onEmailFieldChange} value={this.state.email} type='email' placeholder='Email' required={true} />
                 </div>
                 <button className='btn btn-primary btn-block' type='submit'>Reset Password</button>
             </form>

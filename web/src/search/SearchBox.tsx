@@ -308,13 +308,14 @@ export class SearchBox extends React.Component<Props, State> {
 
                     {/* Search icon / Loader */}
                     <div className='search-box__search-icon'>
-                        { this.state.loading ? <Loader className='icon-inline' /> : <SearchIcon className='icon-inline' /> }
+                        {this.state.loading ? <Loader className='icon-inline' /> : <SearchIcon className='icon-inline' />}
                     </div>
 
                     {/* Chips */}
                     <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
                         {
                             this.state.filters.map((filter, i) =>
+                                // tslint:disable-next-line:jsx-no-lambda
                                 <Chip key={i} icon={getFilterIcon(filter)} label={getFilterLabel(filter)} onDelete={() => this.removeFilter(i)} />
                             )
                         }

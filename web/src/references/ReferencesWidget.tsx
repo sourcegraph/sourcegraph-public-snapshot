@@ -284,13 +284,16 @@ export class ReferencesWidget extends React.Component<Props, State> {
                     <Link
                         className={'references-widget__title-bar-group' + (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')}
                         to={toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
-                        onClick={this.onLocalRefsButtonClick}>
+                        onClick={this.onLocalRefsButtonClick}
+                    >
                         This repository
                     </Link>
                     <div className='references-widget__badge'>{localRefCount}</div>
-                    <Link className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
+                    <Link
+                        className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
                         to={toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
-                        onClick={this.onShowExternalRefsButtonClick}>
+                        onClick={this.onShowExternalRefsButtonClick}
+                    >
                         Other repositories
                     </Link>
                     <div className='references-widget__badge'>{externalRefCount}</div>
@@ -306,34 +309,42 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 <div className='references-widget__groups'>
                     {
                         this.state.group === 'local' &&
-                            <VirtualList initItemsToShow={3} items={localRefs.sort().map((uri, i) => {
-                                const parsed = new URL(uri)
-                                return (
-                                    <ReferencesGroup
-                                        key={i}
-                                        repoPath={parsed.hostname + parsed.pathname}
-                                        filePath={parsed.hash.substr('#'.length)}
-                                        isLocal={true}
-                                        localRev={this.props.rev}
-                                        refs={refsByUri[uri]}
-                                        icon={RepoIcon}/>
-                                )
-                            })} />
+                            <VirtualList
+                                initItemsToShow={3}
+                                items={localRefs.sort().map((uri, i) => {
+                                    const parsed = new URL(uri)
+                                    return (
+                                        <ReferencesGroup
+                                            key={i}
+                                            repoPath={parsed.hostname + parsed.pathname}
+                                            filePath={parsed.hash.substr('#'.length)}
+                                            isLocal={true}
+                                            localRev={this.props.rev}
+                                            refs={refsByUri[uri]}
+                                            icon={RepoIcon}
+                                        />
+                                    )
+                                })}
+                            />
                     }
                     {
                         this.state.group === 'external' &&
-                            <VirtualList initItemsToShow={3} items={externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
-                                const parsed = new URL(uri)
-                                return (
-                                    <ReferencesGroup
-                                        key={i}
-                                        repoPath={parsed.hostname + parsed.pathname}
-                                        filePath={parsed.hash.substr('#'.length)}
-                                        isLocal={false}
-                                        refs={refsByUri[uri]}
-                                        icon={GlobeIcon}/>
-                                )
-                            })} />
+                            <VirtualList
+                                initItemsToShow={3}
+                                items={externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+                                    const parsed = new URL(uri)
+                                    return (
+                                        <ReferencesGroup
+                                            key={i}
+                                            repoPath={parsed.hostname + parsed.pathname}
+                                            filePath={parsed.hash.substr('#'.length)}
+                                            isLocal={false}
+                                            refs={refsByUri[uri]}
+                                            icon={GlobeIcon}
+                                        />
+                                    )
+                                })}
+                            />
                     }
                 </div>
             </div>

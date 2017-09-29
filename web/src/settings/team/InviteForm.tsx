@@ -80,11 +80,11 @@ export const InviteForm = reactive<Props>(props => {
                     placeholder='newmember@yourcompany.com'
                     onChange={nextEmailChange}
                     value={email}
-                    required
+                    required={true}
                     size={30}
                 />
                 <button type='submit' disabled={loading} className='btn btn-primary invite-form__submit-button'>Invite</button>
-                { loading && <LoaderIcon className='icon-inline' /> }
+                {loading && <LoaderIcon className='icon-inline' />}
                 <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-test--visible' : '')}><small>Invited!</small></div>
             </form>
         ))

@@ -225,7 +225,8 @@ export class RevSwitcher extends React.Component<Props, State> {
                     <CaretDownIcon className='icon-inline rev-switcher__dropdown-icon'/>
                 </div>
                 {
-                    this.state.showSwitcher && <ul className='rev-switcher__revs' ref={this.setListElement}>
+                    this.state.showSwitcher &&
+                        <ul className='rev-switcher__revs' ref={this.setListElement}>
                             {
                                 this.getVisible().map((item, index) => (
                                     <li
@@ -233,6 +234,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                                         key={item.rev}
                                         title={item.rev}
                                         ref={index === this.state.selection ? this.setSelectedElement : undefined}
+                                        // tslint:disable-next-line:jsx-no-lambda
                                         onClick={() => this.chooseIndex(index)}
                                     >
                                         {item.type === 'commit' && <CommitIcon className='icon-inline rev-switcher__rev-icon' />}

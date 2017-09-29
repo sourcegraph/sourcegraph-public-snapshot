@@ -15,7 +15,7 @@
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
   "devDependencies": {
-    "@sourcegraph/tslint-config": "^1.0.1",
+    "@sourcegraph/tslint-config": "^2.0.0",
     "@types/auth0-js": "^8.6.3",
     "@types/escape-string-regexp": "0.0.31",
     "@types/extract-text-webpack-plugin": "^2.1.0",

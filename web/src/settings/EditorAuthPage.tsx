@@ -31,9 +31,13 @@ export class EditorAuthPage extends React.Component<Props, State> {
                     Your session ID is:
                 </p>
                 <p className='ui-text-box editor-auth-page__session-id-container'>
-                    <textarea readOnly className='editor-auth-page__session-id' value={this.sessionId} />
-                    <input type='button' className='btn btn-primary' onClick={this.copySessionId}
-                        value={this.state.copiedLink ? 'Copied to clipboard!' : 'Copy to clipboard'} />
+                    <textarea readOnly={true} className='editor-auth-page__session-id' value={this.sessionId} />
+                    <input
+                        type='button'
+                        className='btn btn-primary'
+                        onClick={this.copySessionId}
+                        value={this.state.copiedLink ? 'Copied to clipboard!' : 'Copy to clipboard'}
+                    />
                 </p>
                 <p>
                     Paste this value into the input box in your editor, and click 'Save.'

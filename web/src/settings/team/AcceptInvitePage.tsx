@@ -121,10 +121,10 @@ export const AcceptInvitePage = reactive<Props>(props => {
         .do(console.log.bind(console))
         .map(({ email, username, displayName, loading, error, newOrgName }) => (
             <form className='accept-invite-page' onSubmit={nextSubmitEvent}>
-                { newOrgName && <Redirect to={`/settings/team/${newOrgName}`} /> }
+                {newOrgName && <Redirect to={`/settings/team/${newOrgName}`} />}
                 <h1>You were invited to join a Sourcegraph team!</h1>
 
-                { error && <p className='form-text text-error'>{error.message}</p> }
+                {error && <p className='form-text text-error'>{error.message}</p>}
 
                 <div className='form-group'>
                     <label>Your new username</label>
@@ -133,7 +133,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                         className='ui-text-box'
                         placeholder='yourusername'
                         pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
-                        required
+                        required={true}
                         autoCorrect='off'
                         value={username}
                         onChange={nextUsernameChangeEvent}
@@ -148,7 +148,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                         type='text'
                         className='ui-text-box'
                         placeholder='Your Name'
-                        required
+                        required={true}
                         autoCorrect='off'
                         value={displayName}
                         onChange={nextDisplayNameChangeEvent}
@@ -162,7 +162,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                         type='email'
                         className='ui-text-box'
                         placeholder='you@yourcompany.com'
-                        required
+                        required={true}
                         autoCorrect='off'
                         value={email}
                         onChange={nextEmailChangeEvent}
@@ -172,7 +172,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
 
                 <div className='form-group accept-invite-page__actions'>
                     <button type='submit' className='btn btn-primary' disabled={loading}>Accept Invite</button>
-                    { loading && <LoaderIcon className='icon-inline' /> }
+                    {loading && <LoaderIcon className='icon-inline' />}
                 </div>
 
             </form>

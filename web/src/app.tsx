@@ -33,7 +33,7 @@ class Layout extends React.Component<LayoutProps, {}> {
                 <Navbar location={this.props.location} history={this.props.history} />
                 <div className='layout__app-router-container'>
                     <Switch>
-                        { routes.map((route, i) => <Route key={i} {...route} />) }
+                        {routes.map((route, i) => <Route key={i} {...route} />)}
                     </Switch>
                 </div>
             </div>
