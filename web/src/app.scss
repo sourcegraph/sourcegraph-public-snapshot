@@ -105,7 +105,8 @@ body {
     color: $color-text;
     // Actual base font size
     font-size: 14px;
-    line-height: 1.5;
+    // 14px font size -> 24px line height
+    line-height: 1.7142857143;
 }
 
 // React root element
