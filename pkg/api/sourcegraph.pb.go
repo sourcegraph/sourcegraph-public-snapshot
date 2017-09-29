@@ -396,12 +396,11 @@ type User struct {
 // OrgRepo represents a repo that exists on a native client's filesystem, but
 // does not necessarily have its contents cloned to a remote Sourcegraph server.
 type OrgRepo struct {
-	ID          int32
-	RemoteURI   string
-	OrgID       int32
-	AccessToken string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID        int32
+	RemoteURI string
+	OrgID     int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Thread struct {
@@ -425,8 +424,7 @@ type Comment struct {
 	Contents  string    `json:"Contents,omitempty"`
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
-	// Author fields are temporary, will be replaced with author id once we have
-	// accounts.
+	// TODO(nick): remove author fields and resolve data using author id instead
 	AuthorName   string `json:"AuthorName,omitempty"`
 	AuthorEmail  string `json:"AuthorEmail,omitempty"`
 	AuthorUserID string `json:"AuthorUserID,omitempty"`

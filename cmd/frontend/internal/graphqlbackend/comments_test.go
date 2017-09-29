@@ -99,9 +99,8 @@ func TestComments_Create(t *testing.T) {
 	ctx := context.Background()
 
 	repo := sourcegraph.OrgRepo{
-		ID:          1,
-		RemoteURI:   "github.com/foo/bar",
-		AccessToken: "1234",
+		ID:        1,
+		RemoteURI: "github.com/foo/bar",
 	}
 	thread := sourcegraph.Thread{
 		ID:             1,
@@ -120,25 +119,17 @@ func TestComments_Create(t *testing.T) {
 		AuthorEmail: "alice@acme.com",
 	}
 
-	store.Mocks.OrgRepos.MockGet_Return(t, &repo, nil)
+	store.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)
 	store.Mocks.Threads.MockGet_Return(t, &thread, nil)
 	called, calledWith := store.Mocks.Comments.MockCreate(t)
 
 	r := &schemaResolver{}
 	_, err := r.AddCommentToThread(ctx, &struct {
-		RemoteURI   string
-		AccessToken string
-		ThreadID    int32
-		Contents    string
-		AuthorName  string
-		AuthorEmail string
+		ThreadID int32
+		Contents string
 	}{
-		RemoteURI:   repo.RemoteURI,
-		AccessToken: repo.AccessToken,
-		ThreadID:    thread.ID,
-		Contents:    wantComment.Contents,
-		AuthorName:  wantComment.AuthorName,
-		AuthorEmail: wantComment.AuthorEmail,
+		ThreadID: thread.ID,
+		Contents: wantComment.Contents,
 	})
 
 	if err != nil {
@@ -152,17 +143,14 @@ func TestComments_Create(t *testing.T) {
 func TestComments_CreateAccessDenied(t *testing.T) {
 	ctx := context.Background()
 
-	store.Mocks.OrgRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
+	store.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
+	store.Mocks.OrgRepos.MockGetByID_Return(t, nil, store.ErrRepoNotFound)
 	called, calledWith := store.Mocks.Comments.MockCreate(t)
 
 	r := &schemaResolver{}
 	comment, err := r.AddCommentToThread(ctx, &struct {
-		RemoteURI   string
-		AccessToken string
-		ThreadID    int32
-		Contents    string
-		AuthorName  string
-		AuthorEmail string
+		ThreadID int32
+		Contents string
 	}{})
 
 	if *called {

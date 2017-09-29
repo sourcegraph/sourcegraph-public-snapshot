@@ -32,6 +32,9 @@ func (m *orgMembers) GetByUserID(ctx context.Context, userID string) ([]*sourceg
 }
 
 func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
+	if Mocks.OrgMembers.GetByOrgIDAndUserID != nil {
+		return Mocks.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
+	}
 	return m.getOneBySQL(ctx, "WHERE org_id=$1 AND user_id=$2 LIMIT 1", orgID, userID)
 }
 

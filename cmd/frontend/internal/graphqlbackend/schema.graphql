@@ -21,11 +21,11 @@ type Query {
 
 type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
-	createThread(remoteURI: String!, accessToken: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, contents: String!, authorName: String!, authorEmail: String!): Thread!
+	createThread(orgID: Int!, remoteURI: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!): Thread!
 	createThread2(orgID: Int!, remoteURI: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!): Thread!
-	updateThread(remoteURI: String!, accessToken: String!, threadID: Int!, archived: Boolean): Thread!
+	updateThread(threadID: Int!, archived: Boolean): Thread!
 	updateThread2(threadID: Int!, archived: Boolean): Thread!
-	addCommentToThread(threadID: Int!, remoteURI: String!, accessToken: String!, contents: String!, authorName: String!, authorEmail: String!): Thread!
+	addCommentToThread(threadID: Int!, contents: String!): Thread!
 	addCommentToThread2(threadID: Int!, contents: String!): Thread!
 	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): Org!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
@@ -44,7 +44,6 @@ type Root {
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	searchProfiles: [SearchProfile!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
-	threads(remoteURI: String!, accessToken: String!, file: String, limit: Int): [Thread!]!
 	org(id: Int!): Org!
 	packages(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, limit: Int): [Package!]!
 	dependents(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, package: String, limit: Int): [Dependency!]!
@@ -362,8 +361,6 @@ type Comment {
 	contents: String!
 	createdAt: String!
 	updatedAt: String!
-	authorName: String!
-	authorEmail: String!
 	author: OrgMember!
 }
 

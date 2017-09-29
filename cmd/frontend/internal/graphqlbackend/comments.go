@@ -34,16 +34,6 @@ func (c *commentResolver) Contents() string {
 	return c.comment.Contents
 }
 
-// TODO(nick): remove deprecated field
-func (c *commentResolver) AuthorName() string {
-	return c.comment.AuthorName
-}
-
-// TODO(nick): remove deprecated field
-func (c *commentResolver) AuthorEmail() string {
-	return c.comment.AuthorEmail
-}
-
 func (c *commentResolver) CreatedAt() string {
 	return c.comment.CreatedAt.Format(time.RFC3339) // ISO
 }
@@ -53,13 +43,6 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
-	if c.org == nil {
-		// TODO(nick): remove this deprecated code path
-		return &orgMemberResolver{c.org, &sourcegraph.OrgMember{
-			DisplayName: c.comment.AuthorName,
-			Email:       c.comment.AuthorEmail,
-		}}, nil
-	}
 	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, c.org.ID, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
@@ -68,47 +51,14 @@ func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error
 }
 
 // TODO(nick): remove this deprecated code path
-func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
-	RemoteURI   string
-	AccessToken string
-	ThreadID    int32
-	Contents    string
-	AuthorName  string
-	AuthorEmail string
+func (s *schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
+	ThreadID int32
+	Contents string
 }) (*threadResolver, error) {
-	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
-	// ensuring the user has permissions to access the repository.
-	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
-	if err != nil {
-		return nil, err
-	}
-
-	thread, err := store.Threads.Get(ctx, args.ThreadID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Query all comments so we can send a notification to all participants.
-	comments, err := store.Comments.GetAllForThread(ctx, args.ThreadID)
-	if err != nil {
-		return nil, err
-	}
-
-	actor := actor.FromContext(ctx)
-	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, args.AuthorName, args.AuthorEmail, actor.UID)
-	if err != nil {
-		return nil, err
-	}
-	results := notifyThreadParticipants(repo, thread, comments, comment, comment.AuthorName)
-	err = slack.NotifyOnComment(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
-	if err != nil {
-		log15.Error("slack.NotifyOnComment failed", "error", err)
-	}
-
-	return &threadResolver{nil, repo, thread}, nil
+	return s.AddCommentToThread(ctx, args)
 }
 
-func (*schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
+func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	ThreadID int32
 	Contents string
 }) (*threadResolver, error) {

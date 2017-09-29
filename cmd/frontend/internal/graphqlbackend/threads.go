@@ -88,45 +88,6 @@ func (t *threadResolver) Title(ctx context.Context) (string, error) {
 	return titleFromContents(cs[0].Contents()), nil
 }
 
-// Deprecated root resolver.
-func (r *rootResolver) Threads(ctx context.Context, args *struct {
-	RemoteURI   string
-	AccessToken string
-	File        *string
-	Limit       *int32
-}) ([]*threadResolver, error) {
-	threads := []*threadResolver{}
-	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
-	if err == store.ErrRepoNotFound {
-		// Datastore is lazily populated when comments are created
-		// so it isn't an error for a repo to not exist yet.
-		return threads, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	limit := int32(1000)
-	if args.Limit != nil && *args.Limit < limit {
-		limit = *args.Limit
-	}
-
-	var ts []*sourcegraph.Thread
-	if args.File != nil {
-		ts, err = store.Threads.GetAllForFile(ctx, repo.ID, *args.File, limit)
-	} else {
-		ts, err = store.Threads.GetAllForRepo(ctx, repo.ID, limit)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	for _, thread := range ts {
-		threads = append(threads, &threadResolver{nil, repo, thread})
-	}
-	return threads, nil
-}
-
 func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, error) {
 	comments, err := store.Comments.GetAllForThread(ctx, t.thread.ID)
 	if err != nil {
@@ -139,58 +100,23 @@ func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, erro
 	return commentResolvers, nil
 }
 
-func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
+// TODO(nick): remove deprecated code path
+func (s *schemaResolver) CreateThread2(ctx context.Context, args *struct {
+	OrgID          int32
 	RemoteURI      string
-	AccessToken    string
 	File           string
 	Revision       string
 	StartLine      int32
 	EndLine        int32
 	StartCharacter int32
 	EndCharacter   int32
+	RangeLength    int32
 	Contents       string
-	AuthorName     string
-	AuthorEmail    string
 }) (*threadResolver, error) {
-	actor := actor.FromContext(ctx)
-	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
-	if err == store.ErrRepoNotFound {
-		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
-			RemoteURI:   args.RemoteURI,
-			AccessToken: args.AccessToken,
-		})
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	newThread, err := store.Threads.Create(ctx, &sourcegraph.Thread{
-		OrgRepoID:      repo.ID,
-		File:           args.File,
-		Revision:       args.Revision,
-		StartLine:      args.StartLine,
-		EndLine:        args.EndLine,
-		StartCharacter: args.StartCharacter,
-		EndCharacter:   args.EndCharacter,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, args.AuthorName, args.AuthorEmail, actor.UID)
-	if err != nil {
-		return nil, err
-	}
-	results := notifyThreadParticipants(repo, newThread, nil, comment, comment.AuthorName)
-	err = slack.NotifyOnThread(args.AuthorName, args.AuthorEmail, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
-	if err != nil {
-		log15.Error("slack.NotifyOnThread failed", "error", err)
-	}
-
-	return &threadResolver{nil, repo, newThread}, nil
+	return s.CreateThread(ctx, args)
 }
 
-func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
+func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	OrgID          int32
 	RemoteURI      string
 	File           string
@@ -254,27 +180,15 @@ func (*schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	return &threadResolver{org, repo, newThread}, nil
 }
 
-func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
-	RemoteURI   string
-	AccessToken string
-	ThreadID    int32
-	Archived    *bool
+// TODO(nick): remove deprecated code path
+func (s *schemaResolver) UpdateThread2(ctx context.Context, args *struct {
+	ThreadID int32
+	Archived *bool
 }) (*threadResolver, error) {
-	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! LocalRepos.Get is responsible for 🚨
-	// ensuring the user has permissions to access the repository.
-	repo, err := store.OrgRepos.GetByAccessToken(ctx, args.RemoteURI, args.AccessToken)
-	if err != nil {
-		return nil, err
-	}
-
-	thread, err := store.Threads.Update(ctx, args.ThreadID, repo.ID, args.Archived)
-	if err != nil {
-		return nil, err
-	}
-	return &threadResolver{nil, repo, thread}, nil
+	return s.UpdateThread(ctx, args)
 }
 
-func (*schemaResolver) UpdateThread2(ctx context.Context, args *struct {
+func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	ThreadID int32
 	Archived *bool
 }) (*threadResolver, error) {

@@ -23,8 +23,8 @@ func validateRepo(repo *sourcegraph.OrgRepo) error {
 	if !matched {
 		return fmt.Errorf("error creating local repo %s: not a valid remote uri", repo.RemoteURI)
 	}
-	if repo.AccessToken == "" && repo.OrgID == 0 {
-		return fmt.Errorf("error creating local repo %s: AccessToken or OrgID required", repo.RemoteURI)
+	if repo.OrgID == 0 {
+		return fmt.Errorf("error creating local repo %s: OrgID required", repo.RemoteURI)
 	}
 	return nil
 }
@@ -32,6 +32,9 @@ func validateRepo(repo *sourcegraph.OrgRepo) error {
 type orgRepos struct{}
 
 func (r *orgRepos) GetByID(ctx context.Context, id int32) (*sourcegraph.OrgRepo, error) {
+	if Mocks.OrgRepos.GetByID != nil {
+		return Mocks.OrgRepos.GetByID(ctx, id)
+	}
 	return r.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
@@ -40,15 +43,10 @@ func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.Or
 }
 
 func (r *orgRepos) GetByRemoteURI(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error) {
-	return r.getOneBySQL(ctx, "WHERE org_id=$1 AND remote_uri=$2 AND deleted_at IS NULL LIMIT 1", orgID, remoteURI)
-}
-
-// deprecated
-func (r *orgRepos) GetByAccessToken(ctx context.Context, remoteURI, accessToken string) (*sourcegraph.OrgRepo, error) {
-	if Mocks.OrgRepos.GetByAccessToken != nil {
-		return Mocks.OrgRepos.GetByAccessToken(ctx, remoteURI, accessToken)
+	if Mocks.OrgRepos.GetByRemoteURI != nil {
+		return Mocks.OrgRepos.GetByRemoteURI(ctx, orgID, remoteURI)
 	}
-	return r.getOneBySQL(ctx, "WHERE (remote_uri=$1 AND access_token=$2 AND org_id IS NULL AND deleted_at IS NULL) LIMIT 1", remoteURI, accessToken)
+	return r.getOneBySQL(ctx, "WHERE org_id=$1 AND remote_uri=$2 AND deleted_at IS NULL LIMIT 1", orgID, remoteURI)
 }
 
 func (r *orgRepos) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgRepo, error) {
@@ -77,16 +75,9 @@ func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sou
 
 	// orgID is temporarily nullable while we support both orgs and access tokens.
 	// TODO(nick): make org_id non-null when dropping support for access tokens.
-	var orgID *int32
-	var accessToken *string
-	if newRepo.OrgID > 0 {
-		orgID = &newRepo.OrgID
-	} else {
-		accessToken = &newRepo.AccessToken
-	}
 	err = globalDB.QueryRow(
-		"INSERT INTO org_repos(remote_uri, org_id, access_token, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
-		newRepo.RemoteURI, orgID, accessToken, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
+		"INSERT INTO org_repos(remote_uri, org_id, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
+		newRepo.RemoteURI, newRepo.OrgID, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +87,7 @@ func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sou
 
 // getBySQL returns org repos matching the SQL query, if any exist.
 func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgRepo, error) {
-	rows, err := globalDB.Query("SELECT id, remote_uri, org_id, access_token, created_at, updated_at FROM org_repos "+query, args...)
+	rows, err := globalDB.Query("SELECT id, remote_uri, org_id, created_at, updated_at FROM org_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,15 +99,12 @@ func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}
 		// orgID is temporarily nullable while we support both orgs and access tokens.
 		// TODO(nick): make org_id non-null when dropping support for access tokens.
 		var orgID sql.NullInt64
-		var accessToken sql.NullString
-		err := rows.Scan(&repo.ID, &repo.RemoteURI, &orgID, &accessToken, &repo.CreatedAt, &repo.UpdatedAt)
+		err := rows.Scan(&repo.ID, &repo.RemoteURI, &orgID, &repo.CreatedAt, &repo.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
 		if orgID.Valid {
 			repo.OrgID = int32(orgID.Int64)
-		} else if accessToken.Valid {
-			repo.AccessToken = accessToken.String
 		}
 		repos = append(repos, &repo)
 	}

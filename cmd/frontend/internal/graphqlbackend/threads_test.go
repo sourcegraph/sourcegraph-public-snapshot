@@ -15,17 +15,18 @@ func TestThreads_Create(t *testing.T) {
 	ctx := context.Background()
 
 	wantRepo := sourcegraph.OrgRepo{
-		RemoteURI:   "test",
-		AccessToken: "1234",
+		RemoteURI: "test",
 	}
-	store.Mocks.OrgRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
+	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
+	store.Mocks.OrgRepos.MockGetByRemoteURI_Return(t, nil, store.ErrRepoNotFound)
 	repoCreateCalled, repoCreateCalledWith := store.Mocks.OrgRepos.MockCreate_Return(t, &sourcegraph.OrgRepo{
-		ID:          1,
-		RemoteURI:   wantRepo.RemoteURI,
-		AccessToken: wantRepo.AccessToken,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:        1,
+		RemoteURI: wantRepo.RemoteURI,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, nil)
+
+	store.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
 	threadCreateCalled, _ := store.Mocks.Threads.MockCreate_Return(t, &sourcegraph.Thread{
 		ID:        1,
 		OrgRepoID: wantRepo.ID,
@@ -36,25 +37,21 @@ func TestThreads_Create(t *testing.T) {
 
 	r := &schemaResolver{}
 	_, err := r.CreateThread(ctx, &struct {
+		OrgID          int32
 		RemoteURI      string
-		AccessToken    string
 		File           string
 		Revision       string
 		StartLine      int32
 		EndLine        int32
 		StartCharacter int32
 		EndCharacter   int32
+		RangeLength    int32
 		Contents       string
-		AuthorName     string
-		AuthorEmail    string
 	}{
-		RemoteURI:   wantRepo.RemoteURI,
-		AccessToken: wantRepo.AccessToken,
-		File:        "foo.go",
-		Revision:    "abcd",
-		Contents:    "Hello",
-		AuthorName:  "Alice",
-		AuthorEmail: "alice@acme.com",
+		RemoteURI: wantRepo.RemoteURI,
+		File:      "foo.go",
+		Revision:  "abcd",
+		Contents:  "Hello",
 	})
 
 	if err != nil {
@@ -71,55 +68,25 @@ func TestThreads_Create(t *testing.T) {
 	}
 }
 
-func TestThreads_Get_RepoNotFound(t *testing.T) {
-	ctx := context.Background()
-
-	store.Mocks.OrgRepos.MockGet_Return(t, nil, store.ErrRepoNotFound)
-
-	file := "foo.go"
-	r := &rootResolver{}
-	threads, err := r.Threads(ctx, &struct {
-		RemoteURI   string
-		AccessToken string
-		File        *string
-		Limit       *int32
-	}{
-		RemoteURI:   "test",
-		AccessToken: "1234",
-		File:        &file,
-		Limit:       nil,
-	})
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	if len(threads) != 0 {
-		t.Errorf("expected threads to have length 0; got %#v", threads)
-	}
-}
-
 func TestThreads_Update(t *testing.T) {
 	wantRepo := sourcegraph.OrgRepo{
-		RemoteURI:   "test",
-		AccessToken: "1234",
+		RemoteURI: "test",
 	}
 
-	store.Mocks.OrgRepos.MockGet_Return(t, &wantRepo, nil)
-	called := store.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{}, nil)
+	store.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
+	store.Mocks.OrgRepos.MockGetByID_Return(t, &wantRepo, nil)
+	called := store.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
+	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, nil, nil)
+	store.Mocks.Orgs.MockGetByID_Return(t, nil, nil)
 
 	r := &schemaResolver{}
 	archived := true
 	_, err := r.UpdateThread(context.Background(), &struct {
-		RemoteURI   string
-		AccessToken string
-		ThreadID    int32
-		Archived    *bool
+		ThreadID int32
+		Archived *bool
 	}{
-		RemoteURI:   wantRepo.RemoteURI,
-		AccessToken: wantRepo.AccessToken,
-		ThreadID:    1,
-		Archived:    &archived,
+		ThreadID: 1,
+		Archived: &archived,
 	})
 
 	if err != nil {

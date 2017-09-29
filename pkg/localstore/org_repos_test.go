@@ -9,10 +9,9 @@ import (
 
 func TestLocalRepos_Validate(t *testing.T) {
 	testRepo := &sourcegraph.OrgRepo{
-		ID:          1,
-		AccessToken: "1234",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:        1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	tests := []struct {
@@ -36,6 +35,7 @@ func TestLocalRepos_Validate(t *testing.T) {
 
 	for _, test := range tests {
 		testRepo.RemoteURI = test.uri
+		testRepo.OrgID = 1
 		err := validateRepo(testRepo)
 		if test.isValid && err != nil {
 			t.Errorf("expected URI %s to be valid", test.uri)

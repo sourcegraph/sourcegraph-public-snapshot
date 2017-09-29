@@ -8,7 +8,9 @@ type MockStores struct {
 	Pkgs       MockPkgs
 	RepoVCS    MockRepoVCS
 	Repos      MockRepos
+	Orgs       MockOrgs
 	OrgRepos   MockOrgRepos
+	OrgMembers MockOrgMembers
 	Threads    MockThreads
 	Comments   MockComments
 }

@@ -41,7 +41,6 @@ declare namespace GQL {
     searchRepos: ISearchResults;
     searchProfiles: Array<ISearchProfile>;
     revealCustomerCompany: ICompanyProfile | null;
-    threads: Array<IThread>;
     org: IOrg;
     packages: Array<IPackage>;
     dependents: Array<IDependency>;
@@ -274,24 +273,17 @@ declare namespace GQL {
   */
   interface IUser {
     __typename: "User";
-    githubInstallations: Array<IInstallation>;
     id: string;
+    sourcegraphID: number | null;
+    email: string;
+    displayName: string | null;
+    username: string | null;
     avatarURL: string | null;
-    email: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
     orgs: Array<IOrg>;
     orgMemberships: Array<IOrgMember>;
-  }
-
-  /*
-    description: null
-  */
-  interface IInstallation {
-    __typename: "Installation";
-    login: string;
-    githubId: number;
-    installId: number;
-    type: string;
-    avatarURL: string;
+    hasSourcegraphUser: boolean;
   }
 
   /*
@@ -365,8 +357,6 @@ declare namespace GQL {
     contents: string;
     createdAt: string;
     updatedAt: string;
-    authorName: string;
-    authorEmail: string;
     author: IOrgMember;
   }
 
@@ -542,6 +532,7 @@ declare namespace GQL {
   */
   interface IMutation {
     __typename: "Mutation";
+    createUser: IUser;
     createThread: IThread;
     createThread2: IThread;
     updateThread: IThread;
@@ -560,6 +551,18 @@ declare namespace GQL {
   interface IEmptyResponse {
     __typename: "EmptyResponse";
     alwaysNil: string | null;
+  }
+
+  /*
+    description: null
+  */
+  interface IInstallation {
+    __typename: "Installation";
+    login: string;
+    githubId: number;
+    installId: number;
+    type: string;
+    avatarURL: string;
   }
 
   /*
