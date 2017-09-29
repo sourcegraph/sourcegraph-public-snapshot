@@ -166,7 +166,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", "", actor.UID)
+	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", actor.Email, actor.UID)
 	if err != nil {
 		return nil, err
 	}
