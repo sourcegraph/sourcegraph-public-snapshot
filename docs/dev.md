@@ -142,6 +142,11 @@ permanent for every shell session by adding the following line to your
 ulimit -n 10000
 ```
 
+If you ever need to wipe your local database, run the following command:
+```
+./dev/drop-entire-local-database.sh
+```
+
 ## Test
 
 BuildKite runs all our unit tests, and its output can be viewed [here](https://buildkite.com/sourcegraph/sourcegraph). 
