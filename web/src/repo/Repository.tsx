@@ -196,7 +196,7 @@ export class Repository extends React.Component<Props, State> {
                         {
                             this.state.highlightedFile && this.state.highlightedFile.aborted &&
                                 <p className='repository__blob-alert'>
-                                        <ErrorIcon />
+                                    <ErrorIcon className='icon-inline'/>
                                     Syntax highlighting for this file has been disabled because it took too long.
                                     (<a href='#' onClick={this.handleShowAnywayButtonClick}>show anyway</a>)
                                     {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
