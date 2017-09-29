@@ -106,7 +106,7 @@ export class SearchResults extends React.Component<Props, State> {
             alertTitle = 'Something went wrong!'
             alertDetails = upperFirst(this.state.error.message)
         } else if (this.state.loading) {
-            alertTitle = <Loader />
+            alertTitle = <Loader className='icon-inline'/>
         } else if (this.state.results.length === 0 && this.state.missing.length === 0 && this.state.cloning.length === 0) {
             alertTitle = 'No results'
         }

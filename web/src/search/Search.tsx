@@ -63,10 +63,10 @@ export class Search extends React.Component<Props, State> {
                         title={(this.state.helpVisible ? 'Hide' : 'Show') + ' help'}
                         onClick={this.toggleHelp}
                     >
-                        <HelpIcon />
+                        <HelpIcon className='icon-inline' />
                     </button>
                     <div className={'search__instructions' + (this.state.helpVisible ? ' search__instructions--open' : '')}>
-                        <button type='button' className='search__instructions-close-button' onClick={this.hideHelp}><CloseIcon /></button>
+                        <button type='button' className='search__instructions-close-button' onClick={this.hideHelp}><CloseIcon className='icon-inline' /></button>
                         <div className='search__instruction-row'>
                             <div className='search__explanation'>
                                 Go to the repository github.com/gorilla/mux

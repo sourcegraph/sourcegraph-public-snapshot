@@ -177,7 +177,7 @@ export class NewTeam extends React.Component<Props, State> {
                     </div>
 
                     <button type='submit' className='btn btn-primary' disabled={this.state.loading}>Create Team</button>
-                    { this.state.loading && <LoaderIcon /> }
+                    { this.state.loading && <LoaderIcon className='icon-inline' /> }
 
                 </form>
             </div>

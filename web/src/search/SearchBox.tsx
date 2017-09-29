@@ -308,7 +308,7 @@ export class SearchBox extends React.Component<Props, State> {
 
                     {/* Search icon / Loader */}
                     <div className='search-box__search-icon'>
-                        { this.state.loading ? <Loader /> : <SearchIcon /> }
+                        { this.state.loading ? <Loader className='icon-inline' /> : <SearchIcon className='icon-inline' /> }
                     </div>
 
                     {/* Chips */}
@@ -347,7 +347,7 @@ export class SearchBox extends React.Component<Props, State> {
                 }
                 {
                     showNoMatches &&
-                        <div className='search-box__no-matches'><ReportIcon /> No matches</div>
+                        <div className='search-box__no-matches'><ReportIcon className='icon-inline' /> No matches</div>
                 }
 
                 {/* Suggestions */}

@@ -2,7 +2,7 @@ import AddIcon from '@sourcegraph/icons/lib/Add'
 import FriendsIcon from '@sourcegraph/icons/lib/Friends'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
-import SignOut from '@sourcegraph/icons/lib/SignOut'
+import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -54,44 +54,40 @@ export class SettingsSidebar extends React.Component<Props, State> {
         return (
             <div className='settings-sidebar'>
                 <div className='settings-sidebar__header'>
-                    <div className='settings-sidebar__header-icon'><GearIcon /></div>
-                    <div className='settings-sidebar__header-title'>Settings</div>
+                    <div className='settings-sidebar__header-icon'><GearIcon className='icon-inline' /></div>
+                    <div className='settings-sidebar__header-title ui-title'>Settings</div>
                 </div>
-                <ul>
-                    {/* <li className='settings-sidebar__item'>
-                        <Link to='/settings' className='settings-sidebar__item-text'>Profile</Link>
-                    </li> */}
+                <ul className='settings-sidebar__items'>
                     <li className='settings-sidebar__item'>
-                        <div className='settings-sidebar__item-text'>Your profile</div>
-                        <ul>
-                            <li className='settings-sidebar__item'>
-                                <Link to='/settings/editor-auth' className='settings-sidebar__item-text'><KeyIcon /> Authenticate your editor</Link>
-                            </li>
-
-                            <li className='settings-sidebar__item'>
-                                <a href='/-/sign-out' className='settings-sidebar__item-text' onClick={this.logTelemetryOnSignOut}><SignOut /> Sign out</a>
-                            </li>
-                        </ul>
+                        <Link to='/settings/editor-auth' className='settings-sidebar__item-link'>
+                            <KeyIcon className='icon-inline settings-sidebar__item-icon' /> Editor authentication
+                        </Link>
                     </li>
-
                     <li className='settings-sidebar__item'>
-                        <div className='settings-sidebar__item-text'>Your teams</div>
+                        <div className='settings-sidebar__item-header'>
+                            <FriendsIcon className='icon-inline settings-sidebar__item-icon'/> Your teams
+                        </div>
                         <ul>
                             {
                                 this.state.orgs && this.state.orgs.map(org => (
                                     <li className='settings-sidebar__item' key={org.id}>
-                                        <Link to={`/settings/teams/${org.name}`} className='settings-sidebar__item-text'>
-                                            <FriendsIcon /> {org.name}
+                                        <Link to={`/settings/teams/${org.name}`} className='settings-sidebar__item-link'>
+                                            {org.name}
                                         </Link>
                                     </li>
                                 ))
                             }
                             <li className='settings-sidebar__item'>
-                                <Link to='/settings/teams/new' className='settings-sidebar__item-text'>
-                                    <AddIcon /> Create new team
+                                <Link to='/settings/teams/new' className='settings-sidebar__item-link'>
+                                    <AddIcon className='icon-inline settings-sidebar__item-icon'/> Create new team
                                 </Link>
                             </li>
                         </ul>
+                    </li>
+                    <li className='settings-sidebar__item'>
+                        <a href='/-/sign-out' className='settings-sidebar__item-link' onClick={this.logTelemetryOnSignOut}>
+                            <SignOutIcon className='icon-inline settings-sidebar__item-icon' /> Sign out
+                        </a>
                     </li>
                 </ul>
             </div>

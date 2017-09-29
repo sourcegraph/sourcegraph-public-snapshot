@@ -56,6 +56,8 @@
         position: absolute;
         top: 1rem;
         right: -2rem;
+        display: flex;
+
         cursor: pointer;
         border: none;
         padding: 0;
@@ -66,12 +68,6 @@
 
         &:hover, &--active {
             color: white;
-        }
-
-        .icon, svg {
-            fill: currentColor;
-            width: 1.5rem;
-            height: 1.5rem;
         }
     }
 
@@ -94,6 +90,8 @@
             position: absolute;
             top: 0.25rem;
             right: 0.25rem;
+
+            display: flex;
             cursor: pointer;
             border: none;
             padding: 0;
@@ -103,12 +101,6 @@
 
             &:hover {
                 color: white;
-            }
-
-            .icon, svg {
-                fill: currentColor;
-                width: 1.5rem;
-                height: 1.5rem;
             }
         }
     }

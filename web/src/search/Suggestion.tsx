@@ -4,7 +4,7 @@ import * as React from 'react'
 
 export interface SuggestionProps {
 
-    icon: React.ComponentType
+    icon: React.ComponentType<{ className: string }>
 
     label: string
 
@@ -23,9 +23,10 @@ export interface SuggestionProps {
 export const Suggestion = (props: SuggestionProps) => {
     const splitRegexp = new RegExp(`(${escapeRegexp(props.query)})`, 'gi')
     const parts = props.label.split(splitRegexp)
+    const Icon = props.icon
     return (
         <li className={'suggestion' + (props.isSelected ? ' suggestion--selected' : '')} onClick={props.onClick} ref={props.liRef}>
-            <props.icon />
+            <Icon className='icon-inline' />
             <div className='suggestion__label'>
                 {
                     parts.map((part, i) =>

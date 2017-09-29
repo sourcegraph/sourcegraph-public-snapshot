@@ -1,5 +1,5 @@
-import ChevronDown from '@sourcegraph/icons/lib/ChevronDown'
-import ChevronRight from '@sourcegraph/icons/lib/ChevronRight'
+import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
+import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -56,7 +56,7 @@ interface ReferenceGroupProps {
     /**
      * The icon to show left to the title.
      */
-    icon: React.ComponentType
+    icon: React.ComponentType<{ className: string }>
 }
 
 interface ReferenceGroupState {
@@ -121,18 +121,17 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
             )
         }
 
+        const Icon = this.props.icon
         return (
             <div className='references-group'>
                 <div className={'references-group__title' + ((this.props.refs || []).length > 0 ? ' references-group__title--expandable' : '')} onClick={this.toggle}>
-                    <div className='references-group__icon'><this.props.icon /></div>
+                    <Icon className='icon-inline' />
                     <RepoBreadcrumb repoPath={this.props.repoPath} filePath={this.props.filePath} />
-                    <span className='references-group__expand-icon'>
-                        {
-                            (this.props.refs || []).length > 0 && (
-                                this.state.hidden ? <ChevronRight /> : <ChevronDown />
-                            )
-                        }
-                    </span>
+                    {
+                        (this.props.refs || []).length > 0 && (
+                            this.state.hidden ? <ChevronRightIcon className='icon-inline'/> : <ChevronDownIcon className='icon-inline'/>
+                        )
+                    }
                 </div>
                 {refs}
             </div>
@@ -296,7 +295,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                     </Link>
                     <div className='references-widget__badge'>{externalRefCount}</div>
                     <span className='references-widget__close-icon' onClick={this.onDismiss}>
-                        <CloseIcon />
+                        <CloseIcon className='icon-inline'/>
                     </span>
                 </div>
                 {

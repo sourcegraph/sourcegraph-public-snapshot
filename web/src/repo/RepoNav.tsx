@@ -1,7 +1,7 @@
 import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import ComputerIcon from '@sourcegraph/icons/lib/Computer'
 import CopyIcon from '@sourcegraph/icons/lib/Copy'
-import GitHub from '@sourcegraph/icons/lib/GitHub'
+import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
@@ -34,19 +34,19 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 <span className='repo-nav__rev' onClick={this.props.onClickRevision}>
                      {/* TODO(future): It's bad to assume master! We also do this below in this file, and in repo/backend.tsx  */}
                     <span className='repo-nav__rev-text'>{this.props.rev || 'master'}</span>
-                    <CaretDownIcon />
+                    <CaretDownIcon className='icon-inline'/>
                 </span>
                 <span className='repo-nav__path'>
                     <RepoBreadcrumb {...this.props} />
                 </span>
                 <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
-                    <CopyIcon />
+                    <CopyIcon className='icon-inline'/>
                     <span className='repo-nav__action-text'>{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
                 </a>
                 {
                     this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
                         <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnGitHubButtonClicked}>
-                            <GitHub />
+                            <GitHubIcon className='icon-inline' />
                             <span className='repo-nav__action-text'>View on GitHub</span>
                         </a>
                 }
@@ -54,7 +54,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                     /* TODO(john): remove false condition below when we're ready to show desktop to users (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
                     this.props.repoPath && false &&
                         <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open on desktop' onClick={this.onOpenOnDesktopClicked}>
-                            <ComputerIcon />
+                            <ComputerIcon className='icon-inline'/>
                             <span className='repo-nav__action-text'>Open on desktop</span>
                         </a>
                 }

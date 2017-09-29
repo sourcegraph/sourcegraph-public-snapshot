@@ -135,7 +135,7 @@ export const Team = reactive<Props>(props => {
                                                 title={user.id === member.userID ? 'Leave' : 'Remove'}
                                                 onClick={() => memberRemoves.next({ ...member, org })}
                                             >
-                                                <CloseIcon />
+                                                <CloseIcon className='icon-inline' />
                                             </button>
                                         </td>
                                     </tr>

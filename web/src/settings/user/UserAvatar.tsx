@@ -1,4 +1,4 @@
-import { UserWomanAlternate } from '@sourcegraph/icons/lib/UserWomanAlternate'
+import UserWomanAlternateIcon from '@sourcegraph/icons/lib/UserWomanAlternate'
 import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../../auth'
@@ -62,7 +62,7 @@ export class UserAvatar extends React.Component<Props, State> {
             }
             avatar = <img className='avatar-icon' src={url.href} />
         } else {
-            avatar = <UserWomanAlternate />
+            avatar = <UserWomanAlternateIcon />
         }
 
         return (

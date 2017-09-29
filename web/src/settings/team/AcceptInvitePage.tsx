@@ -172,7 +172,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
 
                 <div className='form-group accept-invite-page__actions'>
                     <button type='submit' className='btn btn-primary' disabled={loading}>Accept Invite</button>
-                    { loading && <LoaderIcon /> }
+                    { loading && <LoaderIcon className='icon-inline' /> }
                 </div>
 
             </form>

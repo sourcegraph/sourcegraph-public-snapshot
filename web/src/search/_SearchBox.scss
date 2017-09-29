@@ -15,20 +15,6 @@
         box-shadow: 0px 0.25rem 0.5rem rgba(0, 0, 0, 0.32);
     }
 
-    .icon {
-        height: 100%;
-        width: 1.5rem;
-        fill: currentColor;
-        text-align: center;
-        display: inline-block;
-        > svg {
-            height: 100%;
-        }
-        .icon-loader {
-            stroke: currentColor;
-        }
-    }
-
     &__option {
         flex: 0 0 auto;
         border: none;
@@ -68,9 +54,6 @@
         flex: 0 0 auto;
         margin-left: 0.5rem;
         margin-top: 0.5rem;
-        > .icon > svg {
-            height: auto;
-        }
     }
 
     &__chips {
@@ -130,11 +113,5 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
-
-        .icon {
-            flex: 0 1 auto;
-            margin-right: 0.5rem;
-            height: 100%;
-        }
     }
 }

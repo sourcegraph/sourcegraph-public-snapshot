@@ -173,7 +173,7 @@ export class Repository extends React.Component<Props, State> {
                 {this.state.showRevSwitcher && <RevSwitcher {...this.props} onClose={this.toggleRevSwitcher} />}
                 <div className='repository__content'>
                     <div id='explorer' className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}>
-                        <button type='button' className='repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon /></button>
+                        <button type='button' className='repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon className='icon-inline'/></button>
                         <TreeHeader title='File Explorer' onDismiss={this.onTreeToggle} />
                         <Tree
                             repoPath={this.props.repoPath}

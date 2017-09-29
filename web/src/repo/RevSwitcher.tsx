@@ -215,9 +215,9 @@ export class RevSwitcher extends React.Component<Props, State> {
                     ref={index === this.state.selection ? this.setSelectedElement : undefined}
                     onClick={() => this.chooseIndex(index)}
                 >
-                {item.type === 'commit' && <CommitIcon />}
-                {item.type === 'branch' && <BranchIcon />}
-                {item.type === 'tag' && <TagIcon />}
+                {item.type === 'commit' && <CommitIcon className='icon-inline repo-rev-switcher__rev-icon' />}
+                {item.type === 'branch' && <BranchIcon className='icon-inline repo-rev-switcher__rev-icon' />}
+                {item.type === 'tag' && <TagIcon className='icon-inline repo-rev-switcher__rev-icon' />}
                 {item.rev}</div>
         })
         return <div className='repo-rev-switcher'>

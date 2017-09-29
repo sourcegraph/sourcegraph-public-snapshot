@@ -1,7 +1,7 @@
 // tslint:disable:no-use-before-declare
 
-import ChevronDown from '@sourcegraph/icons/lib/ChevronDown'
-import ChevronRight from '@sourcegraph/icons/lib/ChevronRight'
+import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
+import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import * as H from 'history'
 import * as immutable from 'immutable'
 import { Dictionary } from 'lodash'
@@ -483,8 +483,8 @@ class LayerTile extends React.Component<TileProps, {}> {
                                         <span className='tree__row-icon'>
                                             {
                                                 this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
-                                                    <ChevronDown /> :
-                                                    <ChevronRight />
+                                                    <ChevronDownIcon /> :
+                                                    <ChevronRightIcon />
                                             }
                                         </span>
                                         {dir}

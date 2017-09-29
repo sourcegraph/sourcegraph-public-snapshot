@@ -16,18 +16,13 @@
 
     cursor: pointer;
 
-    .icon {
-        flex: 0 1 auto;
-        margin-right: 0.5rem;
-        height: 100%;
-    }
-
     &--selected {
         background-color: #2A3A51;
     }
 
     &__label {
         flex: 1 0 auto;
+        margin-left: .5rem;
     }
 
     &__highlighted-query {

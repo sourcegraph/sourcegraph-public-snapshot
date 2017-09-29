@@ -105,7 +105,7 @@ body {
     color: $color-text;
     // Actual base font size
     font-size: 14px;
-    line-height: 1.5rem;
+    line-height: 1.5;
 }
 
 // React root element
@@ -144,10 +144,30 @@ body {
     }
 }
 
+// Formats an icon so that it appears inline in the text
+// with height matching the text
+.icon-inline {
+    // Center SVG inside the container
+    display: inline-flex;
+    align-items: center;
+    svg {
+        // 14px font size -> 24px icon size
+        width:  1.7142857143em;
+        height: 1.7142857143em;
+        // Match color of the text
+        fill: currentColor;
+    }
+}
+
+// Special case for the loader
+.icon-inline > .icon-loader {
+    stroke: currentColor;
+}
+
 kbd {
     font-family: Menlo;
     display: inline-block;
-    line-height: 1.125rem;
+    line-height: 1.5;
     height: 1.125rem;
     font-size: 0.8em;
     background-color: #93A9C8;
@@ -175,10 +195,6 @@ a {
         text-decoration: none;
         color: white;
     }
-}
-
-p {
-    margin: 0.5rem 0;
 }
 
 h1 {

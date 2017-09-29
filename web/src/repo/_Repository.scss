@@ -23,18 +23,6 @@
         display: flex;
         padding: .5em;
         line-height: 2em;
-
-        .icon {
-            margin-right: .25em;
-            width: 1.5rem;
-            height: 2em;
-            fill: currentColor;
-            text-align: center;
-            display: inline-block;
-            > svg {
-                width: 1.5rem;
-            }
-        }
     }
 
     &__content {
@@ -86,12 +74,6 @@
 
         &:hover {
             color: white;
-        }
-
-        .icon {
-            width: 1.5rem;
-            height: 1.5rem;
-            fill: currentColor;
         }
     }
 

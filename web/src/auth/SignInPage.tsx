@@ -72,7 +72,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     </button>
                 </div>
                 <small className='form-text'>Existing users who signed in via GitHub: please sign up for a Sourcegraph account.</small>
-                {this.state.loading && <div className='login-signup-form__loader'><Loader /></div>}
+                {this.state.loading && <div className='login-signup-form__loader'><Loader className='icon-inline'/></div>}
             </form>
         )
     }

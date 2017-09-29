@@ -22,7 +22,7 @@ export class EditorAuthPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='ui-section'>
+            <div className='editor-auth-page'>
                 <PageTitle title='Authenticate editor' />
                 <h1>
                     Authenticate your editor

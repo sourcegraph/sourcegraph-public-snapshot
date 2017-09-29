@@ -41,12 +41,5 @@
         width: 100%;
         display: flex;
         justify-content: center;
-
-        .icon-loader, .icon-loader svg {
-            display: flex;
-            width: 1.5rem;
-            height: 1.5rem;
-            stroke: currentColor;
-        }
     }
 }

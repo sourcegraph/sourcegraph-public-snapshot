@@ -10,13 +10,6 @@
 
     border-bottom: 1px solid #233043;
 
-    svg, .icon {
-        width: 1.5rem;
-        height: 1.5rem;
-        fill: currentColor;
-        display: inline-block;
-    }
-
     &__rev {
         flex: none;
         margin-left: 0.25rem;
@@ -61,11 +54,8 @@
         white-space: nowrap;
         text-overflow: ellipsis;
 
-        .icon {
-            margin-right: 0.25rem;
-        }
-
         &-text {
+            margin-left: .5rem;
             @media (max-width: $media-lg) {
                 display: none;
             }

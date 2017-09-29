@@ -13,7 +13,7 @@ export class TreeHeader extends React.Component<Props, {}> {
             <div className='tree-header'>
                 <span className='tree-header__title'>{this.props.title}</span>
                 <button onClick={this.props.onDismiss} className='tree-header__close-button'>
-                    <CloseIcon />
+                    <CloseIcon className='icon-inline' />
                 </button>
             </div>
         )

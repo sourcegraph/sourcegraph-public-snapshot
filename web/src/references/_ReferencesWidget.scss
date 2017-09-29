@@ -3,20 +3,10 @@
 
     margin-bottom: 1px;
 
-    &__icon {
-        .icon, svg {
-            width: 1.5rem;
-            fill: currentColor;
-            vertical-align: middle;
-        }
-        .icon-loader {
-            stroke: currentColor;
-        }
-    }
-
     &__title {
 
         padding-left: 1rem;
+        padding-right: .5rem;
         height: 2.5rem;
 
         display: flex;
@@ -36,19 +26,6 @@
         .breadcrumb {
             flex: 1 1 auto;
             margin: 0 1rem;
-        }
-    }
-
-    &__expand-icon {
-        margin-left: auto;
-        margin-right: 15px;
-
-        display: flex;
-
-        .icon, svg {
-            fill: currentColor;
-            width: 1rem;
-            height: 1rem;
         }
     }
 
@@ -139,12 +116,6 @@
         margin-left: auto;
 
         display: flex;
-
-        .icon, svg {
-            fill: currentColor;
-            width: 1rem;
-            height: 1rem;
-        }
 
         &:hover {
             color: white;
