@@ -97,7 +97,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	var user *immutableUser
-	if actor != nil {
+	if actor.UID != "" && actor != nil {
 		user = &immutableUser{UID: actor.UID}
 	}
 
