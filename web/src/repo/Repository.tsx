@@ -22,7 +22,6 @@ import { parseHash } from '../util/url'
 import { fetchHighlightedFile, listAllFiles } from './backend'
 import { Blob } from './Blob'
 import { RepoNav } from './RepoNav'
-import { RevSwitcher } from './RevSwitcher'
 
 export interface Props {
     repoPath: string
@@ -42,10 +41,6 @@ interface State {
      * show the file tree explorer
      */
     showTree: boolean
-    /**
-     * show the rev switcher
-     */
-    showRevSwitcher: boolean
     /**
      * an array of file paths in the repository
      */
@@ -72,7 +67,6 @@ export class Repository extends React.Component<Props, State> {
     public state: State = {
         showTree: true,
         showRefs: false,
-        showRevSwitcher: false,
         isDirectory: false
     }
     private componentUpdates = new Subject<Props>()
@@ -169,8 +163,7 @@ export class Repository extends React.Component<Props, State> {
         return (
             <div className='repository'>
                 <PageTitle title={this.getPageTitle()} />
-                <RepoNav {...this.props} onClickRevision={this.toggleRevSwitcher} />
-                {this.state.showRevSwitcher && <RevSwitcher {...this.props} onClose={this.toggleRevSwitcher} />}
+                <RepoNav {...this.props} />
                 <div className='repository__content'>
                     <div id='explorer' className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}>
                         <button type='button' className='repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon className='icon-inline'/></button>
@@ -229,13 +222,6 @@ export class Repository extends React.Component<Props, State> {
     }
 
     private onTreeToggle = () => this.setState({ showTree: !this.state.showTree })
-
-    /**
-     * toggles display of the rev switcher
-     */
-    private toggleRevSwitcher = () => {
-        this.setState({ showRevSwitcher: !this.state.showRevSwitcher })
-    }
 
     private handleShowAnywayButtonClick = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault()

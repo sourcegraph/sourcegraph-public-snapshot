@@ -1,4 +1,5 @@
 import BranchIcon from '@sourcegraph/icons/lib/Branch'
+import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
@@ -24,17 +25,16 @@ import { parseBrowserRepoURL } from './index'
 interface Props {
     history: H.History
     repoPath: string
-    rev?: string
-    /**
-     * Called when the user defocuses the input or hits escape.
-     */
-    onClose: () => void
+
+    /** The initial query value */
+    rev: string
 }
 
 /**
  * Component state.
  */
 interface State {
+    showSwitcher: boolean
     /**
      * All of the revisions in the repository.
      */
@@ -77,13 +77,6 @@ interface Item {
 }
 
 export class RevSwitcher extends React.Component<Props, State> {
-    public state: State = {
-        repoRevisions: [],
-        query: '',
-        visible: [],
-        queryIsCommit: false,
-        selection: -1
-    }
 
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
@@ -97,6 +90,9 @@ export class RevSwitcher extends React.Component<Props, State> {
     /** Only used to detect clicks outside component */
     private containerElement?: HTMLElement
 
+    /** Only used for selection management */
+    private inputElement?: HTMLInputElement
+
     /** Only used for scroll state management */
     private listElement?: HTMLElement
 
@@ -105,7 +101,14 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-
+        this.state = {
+            repoRevisions: [],
+            query: props.rev,
+            visible: [],
+            queryIsCommit: false,
+            selection: -1,
+            showSwitcher: false
+        }
         // Fetch all revisions for repo whenever component props change.
         this.subscriptions.add(
             Observable.merge(
@@ -117,15 +120,15 @@ export class RevSwitcher extends React.Component<Props, State> {
                                 console.error(err)
                                 return []
                             })
-                    )
-                    .map((repoRevisions: RepoRevisions) => {
-                        const combined = [
-                            ...repoRevisions.branches.map((branch): Item => ({rev: branch, type: 'branch'})),
-                            ...repoRevisions.tags.map((tag): Item => ({rev: tag, type: 'tag'}))
-                        ]
+                            .map((repoRevisions: RepoRevisions) => {
+                                const combined = [
+                                    ...repoRevisions.branches.map((branch): Item => ({rev: branch, type: 'branch'})),
+                                    ...repoRevisions.tags.map((tag): Item => ({rev: tag, type: 'tag'}))
+                                ]
 
-                        return { repoRevisions: combined, visible: combined, query: '', queryIsCommit: false } as State
-                    }),
+                                return { repoRevisions: combined, visible: combined, query: props.rev, queryIsCommit: false } as State
+                            })
+                    ),
 
                 // Always reset the queryIsCommit state when the user updated the query.
                 this.inputChanges
@@ -186,7 +189,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                 .subscribe(e => {
                     if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
                         // Click outside of our component.
-                        this.props.onClose()
+                        this.hide()
                     }
                 })
         )
@@ -206,34 +209,43 @@ export class RevSwitcher extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const items = this.getVisible().map((item, index) => {
-            const className = `repo-rev-switcher__list-item${index === this.state.selection ? ' repo-rev-switcher__list-item--selected' : ''}`
-            return <div
-                    className={className}
-                    key={item.rev}
-                    title={item.rev}
-                    ref={index === this.state.selection ? this.setSelectedElement : undefined}
-                    onClick={() => this.chooseIndex(index)}
-                >
-                {item.type === 'commit' && <CommitIcon className='icon-inline repo-rev-switcher__rev-icon' />}
-                {item.type === 'branch' && <BranchIcon className='icon-inline repo-rev-switcher__rev-icon' />}
-                {item.type === 'tag' && <TagIcon className='icon-inline repo-rev-switcher__rev-icon' />}
-                {item.rev}</div>
-        })
-        return <div className='repo-rev-switcher'>
-            <div ref={this.setContainer} className='repo-rev-switcher__inner'>
-                <input
-                    className='repo-rev-switcher__input'
-                    type='text'
-                    placeholder='Filter branches/tags...'
-                    autoFocus
-                    onChange={this.onInputChange}
-                    onKeyDown={this.onInputKeyDown} />
-                <div className='repo-rev-switcher__list-view' ref={this.setListElement}>
-                    {items}
+        return (
+            <div className='rev-switcher' ref={this.onRef}>
+                <div className='rev-switcher__rev-display' onClick={this.onInputFocus}>
+                    <input
+                        className='rev-switcher__input'
+                        type='text'
+                        placeholder='git revision'
+                        onChange={this.onInputChange}
+                        onFocus={this.onInputFocus}
+                        onKeyDown={this.onInputKeyDown}
+                        value={this.state.query}
+                        ref={ref => this.inputElement = ref || undefined}
+                    />
+                    <CaretDownIcon className='icon-inline rev-switcher__dropdown-icon'/>
                 </div>
+                {
+                    this.state.showSwitcher && <ul className='rev-switcher__revs' ref={this.setListElement}>
+                            {
+                                this.getVisible().map((item, index) => (
+                                    <li
+                                        className={'rev-switcher__rev' + (index === this.state.selection ? ' rev-switcher__rev--selected' : '')}
+                                        key={item.rev}
+                                        title={item.rev}
+                                        ref={index === this.state.selection ? this.setSelectedElement : undefined}
+                                        onClick={() => this.chooseIndex(index)}
+                                    >
+                                        {item.type === 'commit' && <CommitIcon className='icon-inline rev-switcher__rev-icon' />}
+                                        {item.type === 'branch' && <BranchIcon className='icon-inline rev-switcher__rev-icon' />}
+                                        {item.type === 'tag' && <TagIcon className='icon-inline rev-switcher__rev-icon' />}
+                                       <span className='rev-switcher__rev-name'>{item.rev}</span>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                }
             </div>
-        </div>
+        )
     }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = e => {
@@ -252,6 +264,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                 this.moveSelection(-1)
                 break
             }
+            case 'Tab':
             case 'Enter': {
                 event.preventDefault()
                 this.chooseIndex(this.state.selection)
@@ -259,7 +272,7 @@ export class RevSwitcher extends React.Component<Props, State> {
             }
             case 'Escape': {
                 event.preventDefault()
-                this.props.onClose()
+                this.hide()
                 break
             }
         }
@@ -270,7 +283,7 @@ export class RevSwitcher extends React.Component<Props, State> {
         this.setState({ selection })
     }
 
-    private setContainer = (ref: HTMLElement | null): void => {
+    private onRef = (ref: HTMLElement | null): void => {
         this.containerElement = ref || undefined
     }
 
@@ -320,5 +333,19 @@ export class RevSwitcher extends React.Component<Props, State> {
      */
     private getVisibleLength(): number {
         return this.state.visible.length + (this.state.queryIsCommit ? 1 : 0)
+    }
+
+    /**
+     * Hides the rev switcher and resets the query
+     */
+    private hide = () => {
+        this.setState(state => ({ query: this.props.rev, showSwitcher: false, visible: state.repoRevisions }))
+    }
+
+    private onInputFocus = () => {
+        this.setState({ showSwitcher: true })
+        if (this.inputElement) {
+            this.inputElement.select()
+        }
     }
 }

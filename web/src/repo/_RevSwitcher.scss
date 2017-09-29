@@ -1,52 +1,104 @@
-.repo-rev-switcher {
-    width: 0;
-    height: 0;
-    z-index: 11;
+.rev-switcher {
 
-    &__inner {
-        background: #1c2736;
-        border: 1px solid #2A3A51;
-        border-radius: .25rem;
-        width: 16rem;
+    height: 1.5rem;
+    width: 7rem;
+    margin-left: 0.25rem;
+    margin-right: 1rem;
+
+    &__rev-display {
+        height: 1.5rem;
+        width: 100%;
         display: flex;
-        flex-direction: column;
+
+        border: 1px solid #93A9C8;
+        padding-left: .5rem;
+        border-radius: .125rem;
+        user-select: none;
+        transition: all 100ms ease-in;
+
+        &:hover {
+            border-color: white;
+            color: white;
+            > .rev-switcher__input::placeholder {
+                color: white;
+            }
+        }
+
+        &-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     }
 
     &__input {
-        margin: .5rem;
-        padding: .5rem;
+        flex: 1 1 auto;
+        width: 100%;
+        text-overflow: ellipsis;
+
+        // Remove browser styles
         border: none;
         outline: none;
-        background: #151D28;
-        color: white;
+        background: transparent;
+        color: inherit;
         font-size: inherit;
         line-height: inherit;
+
         &::placeholder {
             color: $color-secondary;
+            transition: all 100ms ease-in;
         }
     }
-    &__list-view {
-        overflow: auto;
-        background: #233043;
-        max-height: 24rem;
+
+    &__dropdown-icon {
+        cursor: pointer;
     }
-    &__list-item {
+
+    &__revs {
+        position: relative;
+        z-index: 11;
+        bottom: 0;
+        left: 0;
+        width: 16rem;
+        max-width: 100vw;
+        max-height: 24rem;
+        margin: 0;
+
+        overflow-y: auto;
+
+        background: #233043;
+        border-radius: .25rem;
+        border: 1px solid #2A3A51;
+    }
+
+    &__rev {
         display: flex;
         width: 100%;
-        cursor: pointer;
+
         padding: .25rem .5rem;
         white-space: nowrap;
         overflow: hidden;
+
         text-overflow: ellipsis;
+        cursor: pointer;
+
         &:hover {
             background: #2A3A51;
             color: white;
         }
+
         &--selected {
             background: #2A3A51;
         }
     }
+
     &__rev-icon {
+        flex: none;
         margin-right: .25rem;
+    }
+
+    &__rev-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
