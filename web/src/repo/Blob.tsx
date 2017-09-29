@@ -199,103 +199,103 @@ export class Blob extends React.Component<Props, State> {
 
     private addEventListeners = (ref: HTMLElement): void => {
         const isSupportedExtension = supportedExtensions.has(getPathExtension(this.props.filePath))
-        this.subscriptions.add(
-            this.fixedTooltip
-                .filter(props => isSupportedExtension )
-                .filter(props => {
-                    const parsed = parseHash(props.location.hash)
-                    if (parsed.line && parsed.character) {
-                        const td = getCodeCell(parsed.line).childNodes[1] as HTMLTableDataCellElement
+        if (isSupportedExtension) {
+            this.subscriptions.add(
+                this.fixedTooltip
+                    .filter(props => {
+                        const parsed = parseHash(props.location.hash)
+                        if (parsed.line && parsed.character) {
+                            const td = getCodeCell(parsed.line).childNodes[1] as HTMLTableDataCellElement
+                            if (td && !td.classList.contains('annotated')) {
+                                td.classList.add('annotated')
+                                convertNode(td)
+                            }
+                            if (!parsed.modal) {
+                                return true
+                            }
+                            // Don't show a tooltip when there is a modal (but do highlight the token)
+                            // TODO(john): this can probably be simplified.
+                            const el = findElementWithOffset(getCodeCell(parsed.line!).childNodes[1]! as HTMLElement, parsed.character!)
+                            if (el) {
+                                el.classList.add('selection-highlight-sticky')
+                                return false
+                            }
+                        }
+                        this.setFixedTooltip()
+                        return false
+                    })
+                    .map(props => parseHash(props.location.hash))
+                    .map(pos => findElementWithOffset(getCodeCell(pos.line!).childNodes[1]! as HTMLElement, pos.character!))
+                    .filter(el => !!el)
+                    .map((target: HTMLElement) => {
+                        const data = { target, loc: getTargetLineAndOffset(target!, false) }
+                        if (!data.loc) {
+                            return null
+                        }
+                        const ctx = { ...this.props, position: data.loc! }
+                        return { target: data.target, ctx }
+                    })
+                    .switchMap(data => {
+                        if (data === null) {
+                            return [null]
+                        }
+                        const { target, ctx } = data
+                        return this.getTooltip(target, ctx)
+                            .zip(this.getDefinition(ctx))
+                            .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData))
+                            .catch(e => {
+                                const data: TooltipData = { target, ctx }
+                                return [data]
+                            })
+                    })
+                    .subscribe(data => {
+                        if (!data) {
+                            this.setFixedTooltip()
+                            return
+                        }
+
+                        const contents = data.contents
+                        if (!contents || isEmptyHover({ contents })) {
+                            this.setFixedTooltip()
+                            return
+                        }
+
+                        this.setFixedTooltip(data)
+                        updateTooltip(data, true, this.tooltipActions(data.ctx))
+                    })
+            )
+            this.subscriptions.add(
+                Observable.fromEvent<MouseEvent>(ref, 'mouseover')
+                    .map(e => e.target as HTMLElement)
+                    .do(target => {
+                        const td = getTableDataCell(target)
                         if (td && !td.classList.contains('annotated')) {
                             td.classList.add('annotated')
                             convertNode(td)
                         }
-                        if (!parsed.modal) {
-                            return true
-                        }
-                        // Don't show a tooltip when there is a modal (but do highlight the token)
-                        // TODO(john): this can probably be simplified.
-                        const el = findElementWithOffset(getCodeCell(parsed.line!).childNodes[1]! as HTMLElement, parsed.character!)
-                        if (el) {
-                            el.classList.add('selection-highlight-sticky')
-                            return false
-                        }
-                    }
-                    this.setFixedTooltip()
-                    return false
-                })
-                .map(props => parseHash(props.location.hash))
-                .map(pos => findElementWithOffset(getCodeCell(pos.line!).childNodes[1]! as HTMLElement, pos.character!))
-                .filter(el => !!el)
-                .map((target: HTMLElement) => {
-                    const data = { target, loc: getTargetLineAndOffset(target!, false) }
-                    if (!data.loc) {
-                        return null
-                    }
-                    const ctx = { ...this.props, position: data.loc! }
-                    return { target: data.target, ctx }
-                })
-                .switchMap(data => {
-                    if (data === null) {
-                        return [null]
-                    }
-                    const { target, ctx } = data
-                    return this.getTooltip(target, ctx)
-                        .zip(this.getDefinition(ctx))
-                        .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData))
-                        .catch(e => {
+                    })
+                    .map(target => ({ target, loc: getTargetLineAndOffset(target, false) }))
+                    .filter(data => Boolean(data.loc))
+                    .map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } }))
+                    .switchMap(({ target, ctx }) => {
+                        const tooltip = this.getTooltip(target, ctx)
+                        tooltip.subscribe(this.logTelemetryOnTooltip)
+                        const tooltipWithJ2D: Observable<TooltipData> = tooltip.zip(this.getDefinition(ctx))
+                            .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
+                        const loading = this.getLoadingTooltip(target, ctx, tooltip)
+                        return Observable.merge(loading, tooltip, tooltipWithJ2D).catch(e => {
                             const data: TooltipData = { target, ctx }
                             return [data]
                         })
-                })
-                .subscribe(data => {
-                    if (!data) {
-                        this.setFixedTooltip()
-                        return
-                    }
-
-                    const contents = data.contents
-                    if (!contents || isEmptyHover({ contents })) {
-                        this.setFixedTooltip()
-                        return
-                    }
-
-                    this.setFixedTooltip(data)
-                    updateTooltip(data, true, this.tooltipActions(data.ctx))
-                })
-        )
-
-        this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(ref, 'mouseover')
-                .filter(e => isSupportedExtension)
-                .map(e => e.target as HTMLElement)
-                .do(target => {
-                    const td = getTableDataCell(target)
-                    if (td && !td.classList.contains('annotated')) {
-                        td.classList.add('annotated')
-                        convertNode(td)
-                    }
-                })
-                .map(target => ({ target, loc: getTargetLineAndOffset(target, false) }))
-                .filter(data => Boolean(data.loc))
-                .map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } }))
-                .switchMap(({ target, ctx }) => {
-                    const tooltip = this.getTooltip(target, ctx)
-                    tooltip.subscribe(this.logTelemetryOnTooltip)
-                    const tooltipWithJ2D: Observable<TooltipData> = tooltip.zip(this.getDefinition(ctx))
-                        .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
-                    const loading = this.getLoadingTooltip(target, ctx, tooltip)
-                    return Observable.merge(loading, tooltip, tooltipWithJ2D).catch(e => {
-                        const data: TooltipData = { target, ctx }
-                        return [data]
                     })
-                })
-                .subscribe(data => {
-                    if (!this.state.fixedTooltip) {
-                        updateTooltip(data, false, this.tooltipActions(data.ctx))
-                    }
-                })
-        )
+                    .subscribe(data => {
+                        if (!this.state.fixedTooltip) {
+                            updateTooltip(data, false, this.tooltipActions(data.ctx))
+                        }
+                    })
+            )
+        }
+
         this.subscriptions.add(
             Observable.fromEvent<MouseEvent>(ref, 'mouseout')
                 .subscribe(e => {
