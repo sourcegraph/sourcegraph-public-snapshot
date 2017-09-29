@@ -480,14 +480,12 @@ class LayerTile extends React.Component<TileProps, {}> {
                                         }}
                                         href={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir)})}
                                         style={treePadding(this.props.depth, true)}>
-                                        <span className='tree__row-icon'>
-                                            {
-                                                this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
-                                                    <ChevronDownIcon /> :
-                                                    <ChevronRightIcon />
-                                            }
-                                        </span>
-                                        {dir}
+                                        {
+                                            this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
+                                                <ChevronDownIcon className='icon-inline'/> :
+                                                <ChevronRightIcon className='icon-inline'/>
+                                        }
+                                        <span className='tree__row-label'>{dir}</span>
                                     </a>
                                 </td>
                             </tr>,

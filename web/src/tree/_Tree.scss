@@ -31,15 +31,14 @@
     }
 
     &__row-contents {
-        color: #FFFFFF !important; // override link color
         display: flex;
+        color: #FFFFFF !important; // override link color
         align-items: center;
-        padding-top: .5rem;
-        padding-bottom: .5rem;
-        line-height: .875rem;
+        padding-top: .25rem;
+        padding-bottom: .25rem;
     }
 
-    &__row-icon {
-        margin-right: .25rem;
+    &__row-label {
+        margin-left: .25rem;
     }
 }
