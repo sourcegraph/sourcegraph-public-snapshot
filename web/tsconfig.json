@@ -1,27 +1,19 @@
 {
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "outDir": "./out",
     "target": "es2015",
     "module": "commonjs",
-    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
     "lib": [
       "es2017",
+      "es2017.object",
       "dom",
-      "dom.iterable",
-      "es2017.object"
+      "dom.iterable"
     ],
     "jsx": "react",
-    "allowJs": true,
     "sourceMap": true,
-    "strictNullChecks": true,
-    "experimentalDecorators": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
     "downlevelIteration": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitThis": true,
-    "noImplicitAny": true,
     "plugins": [
       {
         "name": "tslint-language-service"

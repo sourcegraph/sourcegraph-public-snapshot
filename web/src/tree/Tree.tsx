@@ -173,6 +173,7 @@ export class Tree extends React.PureComponent<Props, {}> {
                 return { items, i }
             }
         }
+        return undefined
     }
 
     public onKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {

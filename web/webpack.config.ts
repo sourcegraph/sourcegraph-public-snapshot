@@ -65,13 +65,18 @@ const config: webpack.Configuration = {
         loaders: [
             {
                 test: /\.tsx?$/,
-                loaders: ['babel-loader', 'ts-loader?' + JSON.stringify({
-                    compilerOptions: {
-                        module: 'esnext',
-                        noEmit: false // tsconfig.json sets this to true to avoid output when running tsc manually
-                    },
-                    transpileOnly: process.env.DISABLE_TYPECHECKING === 'true'
-                })]
+                loaders: [
+                    'babel-loader',
+                    {
+                        loader: 'ts-loader',
+                        options: {
+                            compilerOptions: {
+                                module: 'esnext'
+                            },
+                            transpileOnly: process.env.DISABLE_TYPECHECKING === 'true'
+                        }
+                    }
+                ]
             },
             {
                 test: /\.jsx?$/,

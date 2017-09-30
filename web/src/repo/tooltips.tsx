@@ -373,6 +373,7 @@ export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement 
     if (target.tagName === 'TD') {
         return target as HTMLTableDataCellElement
     }
+    return undefined
 }
 
 /**
@@ -470,4 +471,5 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
     if (findOrigTarget(target)) {
         return { line, character, word: origTarget.innerText }
     }
+    return undefined
 }

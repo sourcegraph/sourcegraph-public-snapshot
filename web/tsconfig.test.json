@@ -1,5 +1,8 @@
 {
     "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "outDir": "./out"
+    },
     "include": [
       "typings/**/*.d.ts",
       "src/**/*.test.tsx",

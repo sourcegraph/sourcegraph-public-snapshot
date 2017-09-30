@@ -148,6 +148,7 @@ export class Search extends React.Component<Props, State> {
         if (searchOptions.query) {
             return `${limitString(searchOptions.query, 25, true)}`
         }
+        return undefined
     }
 
     private toggleHelp = () => {
