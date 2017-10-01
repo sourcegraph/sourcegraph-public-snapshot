@@ -21,7 +21,7 @@ import (
 var autoRepoWhitelist []*regexp.Regexp
 
 // RestrictAutoAddToGitHubDotCom restricts the repository auto-add mechanism to valid
-// repositories from github.com (verified through the GitHub API0). If set to false,
+// repositories from github.com (verified through the GitHub API). If set to false,
 // we'll add every missing requested URI as a repository in the database.
 var RestrictAutoAddToGitHubDotCom = true
 
