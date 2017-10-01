@@ -314,6 +314,16 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	return repos, nil
 }
 
+func (s *repos) Delete(ctx context.Context, repo int32) error {
+	if Mocks.Repos.Delete != nil {
+		return Mocks.Repos.Delete(ctx, repo)
+	}
+
+	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
+	_, err := globalDB.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
+}
+
 // UpdateRepoFieldsFromRemote updates the DB from the remote (e.g., GitHub).
 func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repoID int32) error {
 	repo, err := s.Get(ctx, repoID)
