@@ -168,7 +168,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	token, err := createOrgInviteToken(args.OrgID)
+	token, err := createOrgInviteToken(org)
 	if err != nil {
 		return nil, err
 	}
@@ -209,10 +209,11 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	return &orgMemberResolver{org, member}, nil
 }
 
-func createOrgInviteToken(orgID int32) (string, error) {
+func createOrgInviteToken(org *sourcegraph.Org) (string, error) {
 	payload := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"orgID": orgID,
-		"exp":   time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"orgID":   org.ID,
+		"orgName": org.Name, // So the accept invite UI can display the name of the org
+		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
 	})
 	return payload.SignedString(conf.AppSecretKey)
 }
