@@ -534,11 +534,8 @@ declare namespace GQL {
     __typename: "Mutation";
     createUser: IUser;
     createThread: IThread;
-    createThread2: IThread;
     updateThread: IThread;
-    updateThread2: IThread;
     addCommentToThread: IThread;
-    addCommentToThread2: IThread;
     createOrg: IOrg;
     inviteUser: IEmptyResponse | null;
     acceptUserInvite: IOrgMember;

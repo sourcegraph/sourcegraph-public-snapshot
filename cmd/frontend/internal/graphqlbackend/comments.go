@@ -50,14 +50,6 @@ func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error
 	return &orgMemberResolver{c.org, member}, nil
 }
 
-// TODO(nick): remove this deprecated code path
-func (s *schemaResolver) AddCommentToThread2(ctx context.Context, args *struct {
-	ThreadID int32
-	Contents string
-}) (*threadResolver, error) {
-	return s.AddCommentToThread(ctx, args)
-}
-
 func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	ThreadID int32
 	Contents string

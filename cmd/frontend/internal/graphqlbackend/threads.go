@@ -100,22 +100,6 @@ func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, erro
 	return commentResolvers, nil
 }
 
-// TODO(nick): remove deprecated code path
-func (s *schemaResolver) CreateThread2(ctx context.Context, args *struct {
-	OrgID          int32
-	RemoteURI      string
-	File           string
-	Revision       string
-	StartLine      int32
-	EndLine        int32
-	StartCharacter int32
-	EndCharacter   int32
-	RangeLength    int32
-	Contents       string
-}) (*threadResolver, error) {
-	return s.CreateThread(ctx, args)
-}
-
 func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	OrgID          int32
 	RemoteURI      string
@@ -178,14 +162,6 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	}
 
 	return &threadResolver{org, repo, newThread}, nil
-}
-
-// TODO(nick): remove deprecated code path
-func (s *schemaResolver) UpdateThread2(ctx context.Context, args *struct {
-	ThreadID int32
-	Archived *bool
-}) (*threadResolver, error) {
-	return s.UpdateThread(ctx, args)
 }
 
 func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
