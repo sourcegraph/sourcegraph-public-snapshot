@@ -63,14 +63,13 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
-	File  *string // DEPRECATED. TODO(nick): remove this once https://github.com/sourcegraph/src/pull/1163 is deployed and users have had a chance to update
 	Limit *int32
 }) ([]*threadResolver, error) {
 	limit := int32(1000)
 	if args.Limit != nil && *args.Limit < limit {
 		limit = *args.Limit
 	}
-	threads, err := store.Threads.GetByOrg(ctx, o.org.ID, args.File, limit)
+	threads, err := store.Threads.GetByOrg(ctx, o.org.ID, nil, limit)
 	if err != nil {
 		return nil, err
 	}

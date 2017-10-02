@@ -313,7 +313,7 @@ type Org {
 	members: [OrgMember!]!
 	repos: [OrgRepo!]!
 	repo(remoteURI: String!): OrgRepo!
-	threads(file: String, limit: Int): [Thread!]!
+	threads(limit: Int): [Thread!]!
 }
 
 type OrgMember {
