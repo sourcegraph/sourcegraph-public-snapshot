@@ -1,15 +1,16 @@
 # Table "public.comments"
 ```
-    Column    |           Type           |                       Modifiers                       
---------------+--------------------------+-------------------------------------------------------
- id           | bigint                   | not null default nextval('comments_id_seq'::regclass)
- thread_id    | bigint                   | 
- contents     | text                     | 
- created_at   | timestamp with time zone | default now()
- updated_at   | timestamp with time zone | default now()
- deleted_at   | timestamp with time zone | 
- author_name  | text                     | 
- author_email | text                     | 
+     Column     |           Type           |                       Modifiers                       
+----------------+--------------------------+-------------------------------------------------------
+ id             | bigint                   | not null default nextval('comments_id_seq'::regclass)
+ thread_id      | bigint                   | 
+ contents       | text                     | 
+ created_at     | timestamp with time zone | default now()
+ updated_at     | timestamp with time zone | default now()
+ deleted_at     | timestamp with time zone | 
+ author_name    | text                     | 
+ author_email   | text                     | 
+ author_user_id | text                     | 
 Indexes:
     "comments_pkey" PRIMARY KEY, btree (id)
 
@@ -45,7 +46,28 @@ Indexes:
 
 ```
 
-# Table "public.local_repos"
+# Table "public.org_members"
+```
+    Column    |           Type           |                        Modifiers                         
+--------------+--------------------------+----------------------------------------------------------
+ id           | integer                  | not null default nextval('org_members_id_seq'::regclass)
+ org_id       | integer                  | not null
+ user_id      | text                     | not null
+ email        | text                     | not null
+ username     | text                     | not null
+ created_at   | timestamp with time zone | default now()
+ updated_at   | timestamp with time zone | default now()
+ display_name | text                     | not null
+ avatar_url   | text                     | 
+Indexes:
+    "org_members_pkey" PRIMARY KEY, btree (id)
+    "org_members_org_id_user_email_key" UNIQUE CONSTRAINT, btree (org_id, email)
+    "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
+    "org_members_org_id_user_name_key" UNIQUE CONSTRAINT, btree (org_id, username)
+
+```
+
+# Table "public.org_repos"
 ```
     Column    |           Type           |                        Modifiers                         
 --------------+--------------------------+----------------------------------------------------------
@@ -55,29 +77,10 @@ Indexes:
  created_at   | timestamp with time zone | default now()
  updated_at   | timestamp with time zone | default now()
  deleted_at   | timestamp with time zone | 
+ org_id       | integer                  | 
 Indexes:
     "local_repos_pkey" PRIMARY KEY, btree (id)
-    "local_repos_remote_uri_access_token_key" UNIQUE CONSTRAINT, btree (remote_uri, access_token)
     "local_repos_remote_uri_idx" btree (remote_uri)
-
-```
-
-# Table "public.org_members"
-```
-   Column   |           Type           |                        Modifiers                         
-------------+--------------------------+----------------------------------------------------------
- id         | integer                  | not null default nextval('org_members_id_seq'::regclass)
- org_id     | integer                  | not null
- user_id    | text                     | not null
- user_email | text                     | not null
- user_name  | text                     | not null
- created_at | timestamp with time zone | default now()
- updated_at | timestamp with time zone | default now()
-Indexes:
-    "org_members_pkey" PRIMARY KEY, btree (id)
-    "org_members_org_id_user_email_key" UNIQUE CONSTRAINT, btree (org_id, user_email)
-    "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
-    "org_members_org_id_user_name_key" UNIQUE CONSTRAINT, btree (org_id, user_name)
 
 ```
 
@@ -86,7 +89,7 @@ Indexes:
    Column   |           Type           |                     Modifiers                     
 ------------+--------------------------+---------------------------------------------------
  id         | integer                  | not null default nextval('orgs_id_seq'::regclass)
- name       | text                     | not null
+ name       | citext                   | not null
  created_at | timestamp with time zone | default now()
  updated_at | timestamp with time zone | default now()
 Indexes:
@@ -166,7 +169,7 @@ Indexes:
      Column      |           Type           |                      Modifiers                       
 -----------------+--------------------------+------------------------------------------------------
  id              | bigint                   | not null default nextval('threads_id_seq'::regclass)
- local_repo_id   | bigint                   | 
+ org_repo_id     | bigint                   | 
  file            | text                     | 
  revision        | text                     | 
  start_line      | integer                  | 
@@ -177,8 +180,32 @@ Indexes:
  archived_at     | timestamp with time zone | 
  updated_at      | timestamp with time zone | default now()
  deleted_at      | timestamp with time zone | 
+ range_length    | integer                  | 
 Indexes:
     "threads_pkey" PRIMARY KEY, btree (id)
-    "threads_local_repo_id_file_idx" btree (local_repo_id, file)
+    "threads_local_repo_id_file_idx" btree (org_repo_id, file)
+
+```
+
+# Table "public.users"
+```
+    Column    |            Type             |                     Modifiers                      
+--------------+-----------------------------+----------------------------------------------------
+ id           | integer                     | not null default nextval('users_id_seq'::regclass)
+ auth0_id     | text                        | not null
+ email        | citext                      | not null
+ username     | citext                      | not null
+ display_name | text                        | not null
+ avatar_url   | text                        | 
+ created_at   | timestamp with time zone    | default now()
+ updated_at   | timestamp with time zone    | default now()
+ deleted_at   | timestamp without time zone | 
+Indexes:
+    "users_pkey" PRIMARY KEY, btree (id)
+    "users_auth0_id_key" UNIQUE CONSTRAINT, btree (auth0_id)
+    "users_email_key" UNIQUE CONSTRAINT, btree (email)
+    "users_username_key" UNIQUE CONSTRAINT, btree (username)
+Check constraints:
+    "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,37}[a-zA-Z0-9])?$'::citext)
 
 ```
