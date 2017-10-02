@@ -156,3 +156,52 @@ func Test_Repos_ListCommits(t *testing.T) {
 		t.Error("!calledGet")
 	}
 }
+
+func Test_RepoResolve_DeleteOrKeepRepo(t *testing.T) {
+	cases := []struct {
+		vcsErr       error
+		expectDelete bool
+	}{
+		{nil, false},
+		{vcs.RepoNotExistError{CloneInProgress: true}, false},
+		{vcs.RepoNotExistError{CloneInProgress: false}, true},
+	}
+
+	for _, testcase := range cases {
+		testReposResolveDeleteOrKeepRepo(t, testcase.vcsErr, testcase.expectDelete)
+	}
+}
+
+func testReposResolveDeleteOrKeepRepo(t *testing.T, vcsErr error, expectDelete bool) {
+	var s repos
+	ctx := testContext()
+	requestedRepoID := int32(42)
+
+	expCalledDelete := map[int32]struct{}{}
+	if expectDelete {
+		expCalledDelete[requestedRepoID] = struct{}{}
+	}
+
+	mockNonExistentRepo := vcstest.MockRepository{}
+	mockNonExistentRepo.ResolveRevision_ = func(ctx context.Context, spec string) (vcs.CommitID, error) {
+		return "", vcsErr
+	}
+
+	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		return mockNonExistentRepo, nil
+	}
+	calledDelete := map[int32]struct{}{}
+	localstore.Mocks.Repos.Delete = func(ctx context.Context, repo int32) error {
+		calledDelete[repo] = struct{}{}
+		return nil
+	}
+
+	// Test ResolveRev
+	_, err := s.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: requestedRepoID, Rev: "master"})
+	if !reflect.DeepEqual(err, vcsErr) {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(calledDelete, expCalledDelete) {
+		t.Errorf("Expected delete calls to be %+v, actual was %+v", expCalledDelete, calledDelete)
+	}
+}

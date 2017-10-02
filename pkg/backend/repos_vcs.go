@@ -13,7 +13,7 @@ import (
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
 // If no rev is specified, HEAD is used.
 // Error cases:
-// * Repo does not exist: vsc.RepoNotExistError
+// * Repo does not exist: vcs.RepoNotExistError
 // * Commit does not exist: vcs.ErrRevisionNotFound
 // * Empty repository: vcs.ErrRevisionNotFound
 // * The user does not have permission: localstore.ErrRepoNotFound
@@ -28,6 +28,12 @@ func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevO
 
 	commitID, err := resolveRepoRev(ctx, op.Repo, op.Rev)
 	if err != nil {
+		if notExistErr, isNotExist := err.(vcs.RepoNotExistError); isNotExist && !notExistErr.CloneInProgress {
+			// Delete repository if gitserver says it doesn't exist
+			if err := localstore.Repos.Delete(ctx, op.Repo); err != nil {
+				log15.Warn("svc.local.repos.ResolveRev failed to delete non-existent repository")
+			}
+		}
 		return nil, err
 	}
 	return &sourcegraph.ResolvedRev{CommitID: string(commitID)}, nil

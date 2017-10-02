@@ -90,32 +90,41 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			return nil, err
 		}
 
+		// Auto-add repository if possible
 		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
-			// Repo does not exist in DB, create new entry.
-			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
-			ghRepo, err := github.GetRepo(ctx, uri)
-			if err != nil {
-				return nil, err
+			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
+				return ghRepo, nil
 			}
-			if ghRepo.URI != uri {
-				// not canonical name (the GitHub api will redirect from the old name to
-				// the results for the new name if the repo got renamed on GitHub)
-				if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
-					return repo, nil
-				}
-			}
-
-			if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
-				return nil, err
-			}
-
-			return s.getByURI(ctx, ghRepo.URI)
 		}
-
-		return nil, err
+		if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
+			return nil, err
+		}
+		return s.getByURI(ctx, uri)
 	}
 
 	return repo, nil
+}
+
+func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	// Repo does not exist in DB, create new entry.
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
+	ghRepo, err := github.GetRepo(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+	if ghRepo.URI != uri {
+		// not canonical name (the GitHub api will redirect from the old name to
+		// the results for the new name if the repo got renamed on GitHub)
+		if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
+			return repo, nil
+		}
+	}
+
+	if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
+		return nil, err
+	}
+
+	return s.getByURI(ctx, ghRepo.URI)
 }
 
 func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
@@ -292,6 +301,16 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	}
 
 	return repos, nil
+}
+
+func (s *repos) Delete(ctx context.Context, repo int32) error {
+	if Mocks.Repos.Delete != nil {
+		return Mocks.Repos.Delete(ctx, repo)
+	}
+
+	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
+	_, err := globalDB.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 // UpdateRepoFieldsFromRemote updates the DB from the remote (e.g., GitHub).
