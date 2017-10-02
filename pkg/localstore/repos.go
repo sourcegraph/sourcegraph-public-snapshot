@@ -20,11 +20,6 @@ import (
 
 var autoRepoWhitelist []*regexp.Regexp
 
-// RestrictAutoAddToGitHubDotCom restricts the repository auto-add mechanism to valid
-// repositories from github.com (verified through the GitHub API). If set to false,
-// we'll add every missing requested URI as a repository in the database.
-var RestrictAutoAddToGitHubDotCom = true
-
 func init() {
 	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
 		expr, err := regexp.Compile("^" + pattern + "$")
@@ -99,18 +94,12 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
 			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
 				return ghRepo, nil
-			} else if RestrictAutoAddToGitHubDotCom {
-				return nil, err
 			}
 		}
-		if !RestrictAutoAddToGitHubDotCom {
-			if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
-				return nil, err
-			}
-			return s.getByURI(ctx, uri)
+		if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
+			return nil, err
 		}
-
-		return nil, err
+		return s.getByURI(ctx, uri)
 	}
 
 	return repo, nil

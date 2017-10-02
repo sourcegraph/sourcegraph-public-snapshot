@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -63,12 +61,6 @@ var (
 
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
 )
-
-func init() {
-	if envvar.DeploymentOnPrem() {
-		localstore.RestrictAutoAddToGitHubDotCom = false
-	}
-}
 
 func configureAppURL() (*url.URL, error) {
 	var hostPort string
