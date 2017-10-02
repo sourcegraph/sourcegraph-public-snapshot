@@ -121,7 +121,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
         .do(console.log.bind(console))
         .map(({ email, username, displayName, loading, error, newOrgName }) => (
             <form className='accept-invite-page' onSubmit={nextSubmitEvent}>
-                {newOrgName && <Redirect to={`/settings/team/${newOrgName}`} />}
+                {newOrgName && <Redirect to={`/settings/teams/${newOrgName}`} />}
                 <h1>You were invited to join a Sourcegraph team!</h1>
 
                 {error && <p className='form-text text-error'>{error.message}</p>}

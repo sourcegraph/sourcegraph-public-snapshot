@@ -1,6 +1,6 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
-import upperFirst = require('lodash/upperFirst')
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/catch'
@@ -96,7 +96,7 @@ export class NewTeam extends React.Component<Props, State> {
                 )
                 .mergeMap(team => fetchCurrentUser().concat([team]))
                 .subscribe(team => {
-                    this.props.history.push(`/settings/team/${team.name}`)
+                    this.props.history.push(`/settings/teams/${team.name}`)
                 }, error => {
                     console.error(error)
                 })
