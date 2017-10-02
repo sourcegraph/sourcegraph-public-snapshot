@@ -46,32 +46,6 @@ $media-xl: 1200px;
     src: local(-apple-system), local(BlinkMacSystemFont), local("Segoe UI"), local(Helvetica), local(Arial), local(sans-serif), local("Apple Color Emoji"), local("Segoe UI Emoji"), local("Segoe UI Symbol");
 }
 
-// Responsive Container
-
-@media (min-width: $media-sm) {
-    .container {
-        width: 540px;
-    }
-}
-
-@media (min-width: $media-md) {
-    .container {
-        width: 720px;
-    }
-}
-
-@media (min-width: $media-lg) {
-    .container {
-        width: 960px;
-    }
-}
-
-@media (min-width: $media-xl) {
-    .container {
-        width: 1140px;
-    }
-}
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -133,14 +107,31 @@ body {
     flex-direction: column;
     align-items: center;
     &__app-router-container {
-        @extend .container;
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
-        padding: 0 2.5rem;
-        @media (max-width: $media-lg) {
+        &--restricted {
+            padding: 0 2.5rem;
+            @media (max-width: $media-md) {
+                width: 100%;
+                padding: 0;
+            }
+            @media (min-width: $media-md) {
+                width: 720px;
+            }
+            @media (min-width: $media-lg) {
+                width: 960px;
+            }
+            @media (min-width: $media-xl) {
+                width: 1140px;
+            }
+        }
+        &--full-width {
+            padding: 0 5rem;
+            @media (max-width: $media-md) {
+                padding: 0;
+            }
             width: 100%;
-            padding: 0;
         }
     }
 }

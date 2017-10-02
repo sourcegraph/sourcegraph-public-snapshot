@@ -5,13 +5,17 @@ import { RepositoryResolver } from './repo/RepositoryResolver'
 import { SearchResults } from './search/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
 
+export interface LayoutRouteProps extends RouteProps {
+    component: React.ComponentType<any>
+}
+
 /**
  * Holds all top-level routes for the app because both the navbar and the main content area need to
  * switch over matched path.
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: RouteProps[] = [
+export const routes: LayoutRouteProps[] = [
     {
         path: '/search',
         component: SearchResults,

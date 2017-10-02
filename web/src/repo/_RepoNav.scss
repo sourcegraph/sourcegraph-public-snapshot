@@ -29,7 +29,7 @@
 
         &-text {
             margin-left: .5rem;
-            @media (max-width: $media-lg) {
+            @media (max-width: $media-md) {
                 display: none;
             }
         }

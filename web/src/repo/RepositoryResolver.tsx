@@ -20,6 +20,8 @@ interface Props {
     location: H.Location
     history: H.History
     match: match<{ repoRev: string, filePath?: string }>
+    onToggleFullWidth: () => void
+    isFullWidth: boolean
 }
 
 interface State {
@@ -114,6 +116,8 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 commitID={this.state.commitID!}
                 location={this.props.location}
                 history={this.props.history}
+                onToggleFullWidth={this.props.onToggleFullWidth}
+                isFullWidth={this.props.isFullWidth}
             />
         )
     }

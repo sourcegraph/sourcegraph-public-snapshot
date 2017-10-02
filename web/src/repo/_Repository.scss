@@ -65,7 +65,7 @@
         outline: none;
         cursor: pointer;
 
-        @media (max-width: $media-lg) {
+        @media (max-width: $media-md) {
             // Make toggle float over code and file tree instead of off to the right
             left: inherit;
             right: -2.5rem;
@@ -82,16 +82,45 @@
         z-index: 10; // Overlay the sidebar when sidebar is closed
 
         display: flex;
+        position: relative;
         flex-direction: column;
         min-height: 0;
         min-width: 0;
-        overflow: hidden;
 
         background-color: #151D28;
-        border-top-right-radius: 0.25rem;
     }
 
     &__blob-placeholder {
         flex: 1 1 50%;
+    }
+
+    &__full-width-toggle {
+        position: absolute;
+        width: 2.5rem;
+        height: 2.5rem;
+        top: 0;
+        right: -2.5rem;
+        z-index: 1; // Outline should overlay blob
+
+        display: flex;
+        justify-content: center;
+
+        border-radius: 0 0.25rem 0.25rem 0;
+        background: #1C2736;
+        border: none;
+        color: inherit;
+        outline: none;
+        cursor: pointer;
+
+        @media (max-width: $media-md) {
+            // toggle is not useful on such a small screen, since we're always 100%.
+            display: none;
+        }
+
+        .icon {
+            fill: currentColor;
+            width: 1.5rem;
+            height: 1.5rem;
+        }
     }
 }

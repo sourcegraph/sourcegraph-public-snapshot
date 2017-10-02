@@ -23,21 +23,54 @@ interface LayoutProps {
     history: H.History
 }
 
+interface LayoutState {
+    /**
+     * whether or not container is full width
+     */
+    isFullWidth: boolean
+}
+
 /**
  * Defines the layout of all pages that have a navbar
  */
-class Layout extends React.Component<LayoutProps, {}> {
+class Layout extends React.Component<LayoutProps, LayoutState> {
+    public state: LayoutState = {
+        isFullWidth: localStorage.getItem('layout-is-full-width') !== 'false'
+    }
+
+    public componentDidUpdate(): void {
+        localStorage.setItem('layout-is-full-width', this.state.isFullWidth + '')
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className='layout'>
                 <Navbar location={this.props.location} history={this.props.history} />
-                <div className='layout__app-router-container'>
+                <div className={`layout__app-router-container layout__app-router-container--${this.state.isFullWidth ? 'full-width' : 'restricted'}`}>
                     <Switch>
-                        {routes.map((route, i) => <Route key={i} {...route} />)}
+                        {
+                            routes.map((route, i) => {
+                                const Component = route.component
+                                return <Route
+                                    {...route}
+                                    key={i}
+                                    component={undefined}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={props => <Component {...props} onToggleFullWidth={this.onToggleFullWidth} isFullWidth={this.state.isFullWidth} />}
+                                />
+                            })
+                        }
                     </Switch>
                 </div>
             </div>
         )
+    }
+
+    /**
+     * toggles full-width display of the container
+     */
+    private onToggleFullWidth = () => {
+        this.setState(state => ({ isFullWidth: !state.isFullWidth }))
     }
 }
 

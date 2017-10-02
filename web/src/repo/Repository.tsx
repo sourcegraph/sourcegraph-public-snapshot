@@ -1,3 +1,5 @@
+import ChevronLeftIcon from '@sourcegraph/icons/lib/ChevronLeft'
+import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -30,6 +32,8 @@ export interface Props {
     filePath?: string
     location: H.Location
     history: H.History
+    onToggleFullWidth: () => void
+    isFullWidth: boolean
 }
 
 interface State {
@@ -178,6 +182,9 @@ export class Repository extends React.Component<Props, State> {
                         />
                     </div>
                     <div className='repository__viewer'>
+                        <button type='button' className='repository__full-width-toggle' onClick={this.props.onToggleFullWidth} title='toggle full width'>
+                            {this.props.isFullWidth ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                        </button>
                         {
                             (!this.props.filePath || this.state.isDirectory) &&
                                 <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Select a file to begin browsing.' />
