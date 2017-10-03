@@ -86,7 +86,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
     public componentWillReceiveProps(nextProps: Props): void {
         if (this.props.match.params.repoRev !== nextProps.match.params.repoRev) {
             // clear state so the child won't render until the revision is resolved for new props
-            this.state = { cloneInProgress: false, notFound: false }
+            this.setState({ cloneInProgress: false, notFound: false, commitID: undefined })
             this.componentUpdates.next(nextProps)
         }
     }
