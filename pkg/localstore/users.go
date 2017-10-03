@@ -50,6 +50,44 @@ func (*users) Create(auth0ID, email, username, displayName string, avatarURL *st
 	}, nil
 }
 
+func (u *users) Update(id int32, displayName *string, avatarURL *string) (*sourcegraph.User, error) {
+	if displayName == nil && avatarURL == nil {
+		return nil, errors.New("no update values provided")
+	}
+
+	user, err := u.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if displayName != nil {
+		user.DisplayName = *displayName
+		if _, err := globalDB.Exec("UPDATE users SET display_name=$1 WHERE id=$2", user.DisplayName, id); err != nil {
+			return nil, err
+		}
+	}
+	if avatarURL != nil {
+		user.AvatarURL = avatarURL
+		if _, err := globalDB.Exec("UPDATE users SET avatar_url=$1 WHERE id=$2", *user.AvatarURL, id); err != nil {
+			return nil, err
+		}
+	}
+	user.UpdatedAt = time.Now()
+	if _, err := globalDB.Exec("UPDATE users SET updated_at=$1 WHERE id=$2", user.UpdatedAt, id); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (u *users) GetByID(id int32) (*sourcegraph.User, error) {
+	users, err := u.getBySQL("WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	if err != nil || len(users) == 0 {
+		return nil, err
+	}
+	return users[0], nil
+}
+
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {

@@ -64,6 +64,8 @@ Indexes:
     "org_members_org_id_user_email_key" UNIQUE CONSTRAINT, btree (org_id, email)
     "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
     "org_members_org_id_user_name_key" UNIQUE CONSTRAINT, btree (org_id, username)
+Foreign-key constraints:
+    "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 
 ```
 
@@ -96,7 +98,9 @@ Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
     "org_name_unique" UNIQUE CONSTRAINT, btree (name)
 Check constraints:
-    "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9_\-]+$'::text)
+    "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
+Referenced by:
+    TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 
 ```
 
@@ -206,6 +210,7 @@ Indexes:
     "users_email_key" UNIQUE CONSTRAINT, btree (email)
     "users_username_key" UNIQUE CONSTRAINT, btree (username)
 Check constraints:
-    "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,37}[a-zA-Z0-9])?$'::citext)
+    "users_display_name_valid" CHECK (char_length(display_name) <= 64)
+    "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
 
 ```

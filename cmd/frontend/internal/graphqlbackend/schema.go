@@ -28,6 +28,7 @@ type Query {
 type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
 	createThread(orgID: Int!, remoteURI: String!, file: String!, revision: String!, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!): Thread!
+	updateUser(displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
 	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): Org!

@@ -108,6 +108,23 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	return &userResolver{actor: actor, user: newUser}, nil
 }
 
+func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
+	DisplayName *string
+	AvatarURL   *string
+}) (*userResolver, error) {
+	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedUser, err := store.Users.Update(user.ID, args.DisplayName, args.AvatarURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userResolver{actor: actor.FromContext(ctx), user: updatedUser}, nil
+}
+
 func currentUser(ctx context.Context) (*userResolver, error) {
 	user, err := store.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
