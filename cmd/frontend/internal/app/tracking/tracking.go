@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slackinternal"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
@@ -56,7 +56,7 @@ func TrackUser(a *actor.Actor, event string) {
 
 	// Finally, post signup notification to Slack
 	if event == "SignupCompleted" {
-		err = slack.NotifyOnSignup(a, contactParams, hsResponse)
+		err = slackinternal.NotifyOnSignup(a, contactParams, hsResponse)
 		if err != nil {
 			log15.Error("Error sending new signup details to Slack", "error", err)
 			return

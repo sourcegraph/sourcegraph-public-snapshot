@@ -2,14 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -156,7 +155,10 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	}
 
 	results := notifyThreadParticipants(repo, newThread, nil, comment, member.DisplayName)
-	err = slack.NotifyOnThread(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
+
+	// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+	client := slack.New(sourcegraphOrgWebhookURL)
+	err = client.NotifyOnThread(actor, org, repo, newThread, comment, results.emails, results.commentURL)
 	if err != nil {
 		log15.Error("slack.NotifyOnThread failed", "error", err)
 	}

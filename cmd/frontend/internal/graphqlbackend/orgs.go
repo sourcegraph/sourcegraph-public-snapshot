@@ -8,6 +8,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/conf"
 	appconf "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -177,6 +178,13 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+	client := slack.New(sourcegraphOrgWebhookURL)
+	err = client.NotifyOnInvite(actor, org, args.Email)
+	if err != nil {
+		log15.Error("slack.NotifyOnInvite failed", "error", err)
+	}
+
 	return nil, nil
 }
 
@@ -205,6 +213,14 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+	client := slack.New(sourcegraphOrgWebhookURL)
+	err = client.NotifyOnAcceptedInvite(actor, org)
+	if err != nil {
+		log15.Error("slack.NotifyOnAcceptedInvite failed", "error", err)
+	}
+
 	return &orgMemberResolver{org, member}, nil
 }
 

@@ -12,12 +12,15 @@ import (
 	"github.com/mattbaird/gochimp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
+
+var sourcegraphOrgWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook for dogfooding notifications from an organization-level Slack bot.")
 
 type commentResolver struct {
 	org     *sourcegraph.Org
@@ -88,11 +91,21 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	}
 
 	results := notifyThreadParticipants(repo, thread, comments, comment, member.DisplayName)
-	err = slack.NotifyOnComment(member.DisplayName, member.Email, fmt.Sprintf("%s (%d)", repo.RemoteURI, repo.ID), strings.Join(results.emails, ", "), results.commentURL)
+
+	t := &threadResolver{org, repo, thread}
+
+	// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+	client := slack.New(sourcegraphOrgWebhookURL)
+	title, err := t.Title(ctx)
+	if err != nil {
+		log15.Error("threadResolver.Title failed", "error", err)
+	}
+	err = client.NotifyOnComment(actor, org, repo, thread, comment, results.emails, results.commentURL, title)
 	if err != nil {
 		log15.Error("slack.NotifyOnComment failed", "error", err)
 	}
-	return &threadResolver{org, repo, thread}, nil
+
+	return t, nil
 }
 
 type commentResults struct {
