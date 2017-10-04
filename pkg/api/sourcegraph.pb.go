@@ -431,10 +431,11 @@ type Comment struct {
 }
 
 type Org struct {
-	ID        int32     `json:"ID"`
-	Name      string    `json:"Name,omitempty"`
-	CreatedAt time.Time `json:"CreatedAt,omitempty"`
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+	ID          int32     `json:"ID"`
+	Name        string    `json:"Name,omitempty"`
+	DisplayName *string   `json:"DisplayName,omitempty"`
+	CreatedAt   time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt   time.Time `json:"UpdatedAt,omitempty"`
 }
 
 type OrgMember struct {
@@ -447,4 +448,16 @@ type OrgMember struct {
 	AvatarURL   *string   `json:"AvatarURL,omitempty"`
 	CreatedAt   time.Time `json:"CreatedAt,omitempty"`
 	UpdatedAt   time.Time `json:"UpdatedAt,omitempty"`
+}
+
+type UserTag struct {
+	ID     int32  `json:"ID"`
+	UserID int32  `json:"UserID"`
+	Name   string `json:"Name,omitempty"`
+}
+
+type OrgTag struct {
+	ID    int32  `json:"ID"`
+	OrgID int32  `json:"OrgID"`
+	Name  string `json:"Name,omitempty"`
 }

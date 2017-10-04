@@ -34,6 +34,8 @@
 // ../../../migrations/1506646657_alter_orgs_citext.up.sql
 // ../../../migrations/1506710237_user_org_constraint_updates.down.sql
 // ../../../migrations/1506710237_user_org_constraint_updates.up.sql
+// ../../../migrations/1506989402_add_tags.down.sql
+// ../../../migrations/1506989402_add_tags.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -781,6 +783,46 @@ func _1506710237_user_org_constraint_updatesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1506989402_add_tagsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x50\x2a\x2d\x4e\x2d\x8a\x2f\x49\x4c\x2f\x56\xb2\xe6\x42\x16\xcf\x2f\x4a\x87\x09\x73\x39\xfa\x84\xb8\x06\x41\x25\xf2\x8b\xd2\x8b\x15\xc0\x0a\x9d\xfd\x7d\x42\x7d\xfd\x14\x52\x32\x8b\x0b\x72\x12\x2b\xe3\xf3\x12\x73\x53\xad\xb9\x00\x01\x00\x00\xff\xff\xcd\xef\x9c\xc3\x5b\x00\x00\x00")
+
+func _1506989402_add_tagsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1506989402_add_tagsDownSql,
+		"1506989402_add_tags.down.sql",
+	)
+}
+
+func _1506989402_add_tagsDownSql() (*asset, error) {
+	bytes, err := _1506989402_add_tagsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1506989402_add_tags.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1506989402_add_tagsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xdc\x90\x4d\x6f\xe2\x30\x10\x86\xcf\xe4\x57\x8c\x72\x4a\x24\x8e\xab\xbd\xb0\x7b\xf0\x3a\xc3\x12\xe1\x38\xc8\x31\xaa\xe8\xc5\xb2\xc8\x34\x44\x4a\x03\x72\xdc\xaf\x7f\x5f\x99\xd0\x0a\x7a\x28\x55\x8f\x3d\xfa\x9d\x67\xe4\x79\x1f\xae\x90\x69\x04\xcd\xfe\x09\x84\xf8\x61\x20\x67\xbc\x6d\x86\x18\x92\x68\x12\xb7\x75\x0c\x03\xb9\xd6\x76\xb0\x52\x79\xc1\xd4\x06\x96\xb8\x99\x46\x93\x11\x0c\xe3\xb6\xf7\xd4\x90\x03\x59\x6a\x90\x6b\x21\xc2\xb0\xb7\xf7\x14\x83\xa7\x67\x7f\x11\x6f\x1d\x59\x4f\xb5\xb1\x3e\x06\x9d\x17\x58\x69\x56\xac\xe0\x26\xd7\x8b\xe3\x13\x6e\x4b\x89\x90\xe1\x9c\xad\x85\x86\x7e\xff\x94\xa4\xc7\x9f\x0e\xf5\x37\xb6\x6a\xea\xe8\xda\xd6\x34\x9a\xf0\x52\x56\x5a\xb1\x5c\x6a\x78\xaf\x6e\x1c\xdd\x91\xa3\x7e\x4b\x83\x09\xe1\x00\xf3\x52\x61\xfe\x5f\x86\xee\x90\x9c\x9a\xa7\xa0\x70\x8e\x0a\x25\xc7\x0a\x46\x2c\x09\x69\x29\x21\x43\x81\x1a\x41\x61\xa5\x55\xce\x75\x94\xce\xa2\xe8\x52\xf3\xde\x35\x5f\xb2\x1c\xb8\x1f\x25\xf9\xad\xf8\x15\xc7\x63\xef\x0b\xc5\x7b\xd7\x7c\x6e\x98\x09\x8d\xea\x24\xf8\x08\xb3\x2c\x03\x5e\x8a\x75\x21\xa1\x6e\x87\x43\x67\x5f\x4c\x70\x36\x2a\xfb\x70\xd3\x39\x60\x1e\x6d\xd7\xd6\xc0\x17\xc8\x97\x90\x6c\x77\xd6\x99\x8e\xfa\xc6\xef\x92\x73\x2a\x85\x3f\x7f\xe1\xf7\xaf\x74\x16\xbd\x06\x00\x00\xff\xff\xde\xec\xb2\x5a\x42\x03\x00\x00")
+
+func _1506989402_add_tagsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1506989402_add_tagsUpSql,
+		"1506989402_add_tags.up.sql",
+	)
+}
+
+func _1506989402_add_tagsUpSql() (*asset, error) {
+	bytes, err := _1506989402_add_tagsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1506989402_add_tags.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -867,6 +909,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1506646657_alter_orgs_citext.up.sql":             _1506646657_alter_orgs_citextUpSql,
 	"1506710237_user_org_constraint_updates.down.sql": _1506710237_user_org_constraint_updatesDownSql,
 	"1506710237_user_org_constraint_updates.up.sql":   _1506710237_user_org_constraint_updatesUpSql,
+	"1506989402_add_tags.down.sql":                    _1506989402_add_tagsDownSql,
+	"1506989402_add_tags.up.sql":                      _1506989402_add_tagsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -944,6 +988,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1506646657_alter_orgs_citext.up.sql":             &bintree{_1506646657_alter_orgs_citextUpSql, map[string]*bintree{}},
 	"1506710237_user_org_constraint_updates.down.sql": &bintree{_1506710237_user_org_constraint_updatesDownSql, map[string]*bintree{}},
 	"1506710237_user_org_constraint_updates.up.sql":   &bintree{_1506710237_user_org_constraint_updatesUpSql, map[string]*bintree{}},
+	"1506989402_add_tags.down.sql":                    &bintree{_1506989402_add_tagsDownSql, map[string]*bintree{}},
+	"1506989402_add_tags.up.sql":                      &bintree{_1506989402_add_tagsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -158,3 +158,15 @@ func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver
 	}
 	return orgMemberResolvers, nil
 }
+
+func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
+	tags, err := store.UserTags.GetByUserID(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	userTagResolvers := []*userTagResolver{}
+	for _, tag := range tags {
+		userTagResolvers = append(userTagResolvers, &userTagResolver{tag})
+	}
+	return userTagResolvers, nil
+}

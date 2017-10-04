@@ -86,21 +86,41 @@ Indexes:
 
 ```
 
-# Table "public.orgs"
+# Table "public.org_tags"
 ```
-   Column   |           Type           |                     Modifiers                     
-------------+--------------------------+---------------------------------------------------
- id         | integer                  | not null default nextval('orgs_id_seq'::regclass)
- name       | citext                   | not null
+   Column   |           Type           |                       Modifiers                       
+------------+--------------------------+-------------------------------------------------------
+ id         | integer                  | not null default nextval('org_tags_id_seq'::regclass)
+ org_id     | integer                  | not null
+ name       | text                     | not null
  created_at | timestamp with time zone | default now()
  updated_at | timestamp with time zone | default now()
+ deleted_at | timestamp with time zone | 
+Indexes:
+    "org_tags_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "org_tags_references_users" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.orgs"
+```
+    Column    |           Type           |                     Modifiers                     
+--------------+--------------------------+---------------------------------------------------
+ id           | integer                  | not null default nextval('orgs_id_seq'::regclass)
+ name         | citext                   | not null
+ created_at   | timestamp with time zone | default now()
+ updated_at   | timestamp with time zone | default now()
+ display_name | text                     | 
 Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
     "org_name_unique" UNIQUE CONSTRAINT, btree (name)
 Check constraints:
+    "org_display_name_valid" CHECK (char_length(display_name) <= 64)
     "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
 Referenced by:
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
+    TABLE "org_tags" CONSTRAINT "org_tags_references_users" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 
 ```
 
@@ -191,6 +211,23 @@ Indexes:
 
 ```
 
+# Table "public.user_tags"
+```
+   Column   |           Type           |                       Modifiers                        
+------------+--------------------------+--------------------------------------------------------
+ id         | integer                  | not null default nextval('user_tags_id_seq'::regclass)
+ user_id    | integer                  | not null
+ name       | text                     | not null
+ created_at | timestamp with time zone | default now()
+ updated_at | timestamp with time zone | default now()
+ deleted_at | timestamp with time zone | 
+Indexes:
+    "user_tags_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
 # Table "public.users"
 ```
     Column    |            Type             |                     Modifiers                      
@@ -212,5 +249,7 @@ Indexes:
 Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
+Referenced by:
+    TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```

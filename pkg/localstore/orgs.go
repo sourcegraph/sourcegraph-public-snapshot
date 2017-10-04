@@ -16,7 +16,7 @@ type orgs struct{}
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (*orgs) GetByUserID(userID string) ([]*sourcegraph.Org, error) {
-	rows, err := globalDB.Query("SELECT orgs.id, orgs.name, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1", userID)
+	rows, err := globalDB.Query("SELECT orgs.id, orgs.name, orgs.display_name, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1", userID)
 	if err != nil {
 		return []*sourcegraph.Org{}, err
 	}
@@ -25,7 +25,7 @@ func (*orgs) GetByUserID(userID string) ([]*sourcegraph.Org, error) {
 	defer rows.Close()
 	for rows.Next() {
 		org := sourcegraph.Org{}
-		err := rows.Scan(&org.ID, &org.Name, &org.CreatedAt, &org.UpdatedAt)
+		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, erro
 }
 
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Org, error) {
-	rows, err := globalDB.Query("SELECT id, name, created_at, updated_at FROM orgs "+query, args...)
+	rows, err := globalDB.Query("SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([
 	defer rows.Close()
 	for rows.Next() {
 		org := sourcegraph.Org{}
-		err := rows.Scan(&org.ID, &org.Name, &org.CreatedAt, &org.UpdatedAt)
+		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -94,8 +94,8 @@ func (*orgs) Create(ctx context.Context, name string) (*sourcegraph.Org, error) 
 		return nil, err
 	}
 	err = globalDB.QueryRow(
-		"INSERT INTO orgs(name, created_at, updated_at) VALUES($1, $2, $3) RETURNING id",
-		newOrg.Name, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
+		"INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
+		newOrg.Name, newOrg.DisplayName, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "org_name_valid_chars" {
@@ -103,6 +103,9 @@ func (*orgs) Create(ctx context.Context, name string) (*sourcegraph.Org, error) 
 			}
 			if pqErr.Constraint == "org_name_unique" {
 				return nil, errors.New(`org name already exists`)
+			}
+			if pqErr.Constraint == "org_display_name_valid" {
+				return nil, errors.New(`org display name invalid`)
 			}
 		}
 

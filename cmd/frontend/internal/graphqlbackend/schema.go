@@ -274,6 +274,7 @@ type User {
 	orgs: [Org!]!
 	orgMemberships: [OrgMember!]!
 	hasSourcegraphUser: Boolean!
+	tags: [UserTag!]!
 }
 
 type CompanyProfile {
@@ -317,10 +318,12 @@ type CompanyCategory {
 type Org {
 	id: Int!
 	name: String!
+	displayName: String
 	members: [OrgMember!]!
 	repos: [OrgRepo!]!
 	repo(remoteURI: String!): OrgRepo!
 	threads(limit: Int): [Thread!]!
+	tags: [OrgTag!]!
 }
 
 type OrgMember {
@@ -401,5 +404,15 @@ type Dependency {
 	version: String
 	id: String
 	package: String
+}
+
+type UserTag {
+	id: Int!
+	name: String!
+}
+
+type OrgTag {
+	id: Int!
+	name: String!
 }
 `

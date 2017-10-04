@@ -50,6 +50,10 @@ func (o *orgResolver) Name() string {
 	return o.org.Name
 }
 
+func (o *orgResolver) DisplayName() *string {
+	return o.org.DisplayName
+}
+
 func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error) {
 	sgMembers, err := store.OrgMembers.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
@@ -80,6 +84,18 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 		threadResolvers = append(threadResolvers, &threadResolver{o.org, nil, thread})
 	}
 	return threadResolvers, nil
+}
+
+func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
+	tags, err := store.OrgTags.GetByOrgID(ctx, o.org.ID)
+	if err != nil {
+		return nil, err
+	}
+	orgTagResolvers := []*orgTagResolver{}
+	for _, tag := range tags {
+		orgTagResolvers = append(orgTagResolvers, &orgTagResolver{tag})
+	}
+	return orgTagResolvers, nil
 }
 
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
