@@ -1,6 +1,7 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import { Auth0Error, WebAuth } from 'auth0-js'
+import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
@@ -9,14 +10,9 @@ import { PageTitle } from '../components/PageTitle'
 import { events, viewEvents } from '../tracking/events'
 import { sourcegraphContext } from '../util/sourcegraphContext'
 
-const webAuth = new WebAuth({
-    domain: sourcegraphContext.auth0Domain,
-    clientID: sourcegraphContext.auth0ClientID,
-    redirectUri: `${sourcegraphContext.appURL}/-/auth0/sign-in`,
-    responseType: 'code'
-})
-
-interface LoginSignupFormProps {}
+interface LoginSignupFormProps {
+    location: H.Location
+}
 
 interface LoginSignupFormState {
     mode: 'signin' | 'signup'
@@ -95,6 +91,19 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        const redirect = new URL(`${sourcegraphContext.appURL}/-/auth0/sign-in`)
+        const returnTo = new URLSearchParams(this.props.location.search).get('return-to')
+        if (returnTo) {
+            redirect.searchParams.set('return-to', returnTo)
+        }
+
+        const webAuth = new WebAuth({
+            domain: sourcegraphContext.auth0Domain,
+            clientID: sourcegraphContext.auth0ClientID,
+            redirectUri: redirect.href,
+            responseType: 'code'
+        })
+
         event.preventDefault()
         if (this.state.loading) {
             return
@@ -142,7 +151,9 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
     }
 }
 
-interface SignInPageProps {}
+interface SignInPageProps {
+    location: H.Location
+}
 
 /**
  * A landing page for the user to sign in or register, if not authed
@@ -161,7 +172,7 @@ export class SignInPage extends React.Component<SignInPageProps> {
         return (
             <div className='sign-in-page'>
                 <PageTitle title='Sign in or sign up' />
-                <HeroPage icon={KeyIcon} title='Welcome to Sourcegraph' subtitle='Sign in or sign up to create an account' cta={<LoginSignupForm />} />
+                <HeroPage icon={KeyIcon} title='Welcome to Sourcegraph' subtitle='Sign in or sign up to create an account' cta={<LoginSignupForm {...this.props} />} />
             </div>
         )
     }

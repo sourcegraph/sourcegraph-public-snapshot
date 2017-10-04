@@ -33,7 +33,7 @@ export class Navbar extends React.Component<Props, State> {
                             null :
                             sourcegraphContext.user ?
                                 <Link to='/settings'><UserAvatar size={64} /></Link> :
-                                <Link to='/sign-in' className='btn btn-primary'>Sign in</Link>
+                                <Link to={`/sign-in?return-to=${encodeURIComponent(this.props.location.pathname)}`} className='btn btn-primary'>Sign in</Link>
                     }
                 </div>
             </div>

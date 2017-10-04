@@ -108,6 +108,11 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		go tracking.TrackUser(actor, eventLabel)
 	}
 
+	returnTo := r.URL.Query().Get("return-to")
+	if returnTo == "" {
+		returnTo = "/"
+	}
+
 	if !info.AppMetadata.DidLoginBefore {
 		if err := auth0.SetAppMetadata(r.Context(), info.UID, "did_login_before", true); err != nil {
 			return err
@@ -119,7 +124,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		q := returnToNewURL.Query()
 		q.Set("_event", eventLabel)
 		returnToNewURL.RawQuery = q.Encode()
-		http.Redirect(w, r, returnToNewURL.String(), http.StatusSeeOther)
+		http.Redirect(w, r, returnTo, http.StatusSeeOther)
 	} else {
 		// Add tracking info to return-to URL.
 		returnToURL, err := url.Parse(cookie.ReturnTo)
@@ -129,7 +134,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		q := returnToURL.Query()
 		q.Set("_event", eventLabel)
 		returnToURL.RawQuery = q.Encode()
-		http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
+		http.Redirect(w, r, returnTo, http.StatusSeeOther)
 	}
 
 	return nil
