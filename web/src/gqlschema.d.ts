@@ -534,11 +534,12 @@ declare namespace GQL {
     __typename: "Mutation";
     createUser: IUser;
     createThread: IThread;
+    updateUser: IUser;
     updateThread: IThread;
     addCommentToThread: IThread;
     createOrg: IOrg;
     inviteUser: IEmptyResponse | null;
-    acceptUserInvite: IOrgMember;
+    acceptUserInvite: IOrgInviteStatus;
     removeUserFromOrg: IEmptyResponse | null;
   }
 
@@ -548,6 +549,14 @@ declare namespace GQL {
   interface IEmptyResponse {
     __typename: "EmptyResponse";
     alwaysNil: string | null;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgInviteStatus {
+    __typename: "OrgInviteStatus";
+    emailVerified: boolean;
   }
 
   /*

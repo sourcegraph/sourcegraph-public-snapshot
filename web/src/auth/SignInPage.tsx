@@ -2,6 +2,7 @@ import KeyIcon from '@sourcegraph/icons/lib/Key'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import { Auth0Error, WebAuth } from 'auth0-js'
 import * as H from 'history'
+import { Base64 } from 'js-base64'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
@@ -12,6 +13,8 @@ import { sourcegraphContext } from '../util/sourcegraphContext'
 
 interface LoginSignupFormProps {
     location: H.Location
+    mode: 'signin' | 'signup'
+    prefilledEmail?: string
 }
 
 interface LoginSignupFormState {
@@ -23,12 +26,15 @@ interface LoginSignupFormState {
 }
 
 class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupFormState> {
-    public state: LoginSignupFormState = {
-        mode: 'signin',
-        email: '',
-        password: '',
-        errorDescription: '',
-        loading: false
+    constructor(props: LoginSignupFormProps) {
+        super(props)
+        this.state = {
+            mode: props.mode,
+            email: props.prefilledEmail || '',
+            password: '',
+            errorDescription: '',
+            loading: false
+        }
     }
 
     public render(): JSX.Element | null {
@@ -49,7 +55,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         value={this.state.email}
                         type='email'
                         placeholder='Email'
-                        disabled={this.state.loading}
+                        disabled={this.state.loading || Boolean(this.props.prefilledEmail)}
                     />
                 </div>
                 <div className='form-group'>
@@ -155,13 +161,28 @@ interface SignInPageProps {
     location: H.Location
 }
 
+interface SignInPageState {
+    prefilledEmail?: string
+}
+
 /**
  * A landing page for the user to sign in or register, if not authed
  */
-export class SignInPage extends React.Component<SignInPageProps> {
+export class SignInPage extends React.Component<SignInPageProps, SignInPageState> {
+
+    constructor(props: SignInPageProps) {
+        super(props)
+        this.state = {
+            prefilledEmail: this.getPrefilledEmail(props)
+        }
+    }
 
     public componentDidMount(): void {
         viewEvents.SignIn.log()
+    }
+
+    public componentWillReceiveProps(nextProps: SignInPageProps): void {
+        this.setState({ prefilledEmail: this.getPrefilledEmail(nextProps) })
     }
 
     public render(): JSX.Element | null {
@@ -171,9 +192,29 @@ export class SignInPage extends React.Component<SignInPageProps> {
 
         return (
             <div className='sign-in-page'>
-                <PageTitle title='Sign in or sign up' />
-                <HeroPage icon={KeyIcon} title='Welcome to Sourcegraph' subtitle='Sign in or sign up to create an account' cta={<LoginSignupForm {...this.props} />} />
+                <PageTitle title={this.props.location.pathname === '/sign-in' ? 'Sign in' : 'Sign up'} />
+                <HeroPage
+                    icon={KeyIcon}
+                    title='Welcome to Sourcegraph'
+                    cta={
+                        <LoginSignupForm
+                            {...this.props}
+                            mode={this.props.location.pathname === '/sign-in' ? 'signin' : 'signup'}
+                            prefilledEmail={this.state.prefilledEmail}
+                        />
+                    }
+                />
             </div>
         )
+    }
+
+    private getPrefilledEmail(props: SignInPageProps): string | undefined {
+        const searchParams = new URLSearchParams(props.location.search)
+        let prefilledEmail: string | undefined
+        if (searchParams.get('token')) {
+            const tokenPayload = JSON.parse(Base64.decode(searchParams.get('token')!.split('.')[1]))
+            prefilledEmail = tokenPayload.email
+        }
+        return prefilledEmail
     }
 }

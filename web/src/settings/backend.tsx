@@ -149,8 +149,6 @@ export interface AcceptUserInviteOptions {
     inviteToken: string
     /** The user's new username in the org profile */
     username: string
-    /** The user's email in the org profile */
-    email: string
     /** The user's display name (e.g. full name) in the org profile */
     displayName: string
 }
@@ -160,7 +158,7 @@ export interface AcceptUserInviteOptions {
  *
  * @return An Observable that does not emit items and completes when done
  */
-export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<GQL.IOrgMember> {
+export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<GQL.IOrgInviteStatus> {
     return currentUser
         .take(1)
         .mergeMap(user => {
@@ -172,13 +170,10 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
                     acceptUserInvite(
                         inviteToken: $inviteToken,
                         username: $username,
-                        email: $email,
                         displayName: $displayName,
                         avatarUrl: $avatarURL
                     ) {
-                        org {
-                            name
-                        }
+                        emailVerified
                     }
                 }
             `, {
@@ -191,16 +186,6 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
                 events.AcceptInviteFailed.log()
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            events.InviteAccepted.log({
-                organization: {
-                    invite: {
-                        user_email: data.acceptUserInvite.email,
-                        user_id: data.acceptUserInvite.userID
-                    },
-                    org_id: data.acceptUserInvite.org.id,
-                    org_name: data.acceptUserInvite.org.name
-                }
-            })
             return data.acceptUserInvite
         })
 }

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -36,6 +35,55 @@ var auth0ManagementTokenSource = (&clientcredentials.Config{
 	},
 }).TokenSource(context.Background())
 
+// User represents the user information returned from Auth0 profile information
+type User struct {
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	FamilyName    string `json:"family_name"`
+	Gender        string `json:"gender"`
+	GivenName     string `json:"given_name"`
+	AppMetadata   struct {
+		DidLoginBefore bool `json:"did_login_before"`
+	} `json:"app_metadata"`
+	Identities []struct {
+		Provider   string `json:"provider"`
+		UserID     string `json:"user_id"`
+		Connection string `json:"connection"`
+		IsSocial   bool   `json:"isSocial"`
+	} `json:"identities"`
+	Locale   string `json:"locale"`
+	Name     string `json:"name"`
+	Nickname string `json:"nickname"`
+	Picture  string `json:"picture"`
+	UserID   string `json:"user_id"`
+}
+
+func GetAuth0User(ctx context.Context) (*User, error) {
+	actor := actor.FromContext(ctx)
+	uid := actor.AuthInfo().UID
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users/" + uid)
+	if err != nil {
+		return nil, err
+	}
+	var user User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func GetEmailVerificationStatus(ctx context.Context) (bool, error) {
+	user, err := GetAuth0User(ctx)
+	if err != nil {
+		return false, err
+	}
+	return user.EmailVerified, nil
+}
+
+type AppMetadata struct {
+	AppMetadata map[string]interface{} `json:"app_metadata"`
+}
+
 func SetAppMetadata(ctx context.Context, uid string, key string, value interface{}) error {
 	body, err := json.Marshal(AppMetadata{
 		AppMetadata: map[string]interface{}{
@@ -62,75 +110,4 @@ func SetAppMetadata(ctx context.Context, uid string, key string, value interface
 	}
 
 	return nil
-}
-
-type AppMetadata struct {
-	AppMetadata map[string]interface{} `json:"app_metadata"`
-}
-
-func GetAppMetadata(ctx context.Context) (map[string]interface{}, error) {
-	actor := actor.FromContext(ctx)
-	uid := actor.AuthInfo().UID
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users/" + uid)
-	if err != nil {
-		return nil, err
-	}
-	var appMetadata AppMetadata
-	if err := json.NewDecoder(resp.Body).Decode(&appMetadata); err != nil {
-		return nil, err
-	}
-	return appMetadata.AppMetadata, nil
-}
-
-// ListUsersByGitHubID lists registered Sourcegraph users by their GitHub ID.
-func ListUsersByGitHubID(ctx context.Context, ghIDs []string) (map[string]User, error) {
-	if len(ghIDs) == 0 {
-		return nil, errors.New("Array of GitHub IDs is required")
-	}
-
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users?q=identities.user_id%3A(" + url.QueryEscape(strings.Join(ghIDs, " ")) + ")")
-	if err != nil {
-		return nil, err
-	}
-
-	var users []User
-	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
-		return nil, err
-	}
-
-	rUsers := make(map[string]User)
-	for _, user := range users {
-		for _, identity := range user.Identities {
-			if identity.Provider == "github" {
-				rUsers[identity.UserID] = user
-			}
-		}
-	}
-	for _, id := range ghIDs {
-		if _, ok := rUsers[id]; !ok {
-			delete(rUsers, id)
-		}
-	}
-
-	return rUsers, nil
-}
-
-// User represents the user information returned from Auth0 profile information
-type User struct {
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	FamilyName    string `json:"family_name"`
-	Gender        string `json:"gender"`
-	GivenName     string `json:"given_name"`
-	Identities    []struct {
-		Provider   string `json:"provider"`
-		UserID     string `json:"user_id"`
-		Connection string `json:"connection"`
-		IsSocial   bool   `json:"isSocial"`
-	} `json:"identities"`
-	Locale   string `json:"locale"`
-	Name     string `json:"name"`
-	Nickname string `json:"nickname"`
-	Picture  string `json:"picture"`
-	UserID   string `json:"user_id"`
 }

@@ -27,6 +27,11 @@ export const routes: LayoutRouteProps[] = [
         exact: true
     },
     {
+        path: '/sign-up',
+        component: SignInPage,
+        exact: true
+    },
+    {
         path: '/settings',
         component: SettingsPage
     },

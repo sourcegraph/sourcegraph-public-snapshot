@@ -9,6 +9,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/conf"
 	appconf "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -168,7 +169,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	token, err := createOrgInviteToken(org)
+	token, err := createOrgInviteToken(args.Email, org)
 	if err != nil {
 		return nil, err
 	}
@@ -191,25 +192,34 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	InviteToken string
 	Username    string
-	Email       string
 	DisplayName string
 	AvatarURL   *string
-}) (*orgMemberResolver, error) {
+}) (*orgInviteResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
 
-	orgID, err := orgIDFromInviteToken(args.InviteToken)
+	u, err := auth0.GetAuth0User(ctx)
 	if err != nil {
 		return nil, err
 	}
-	org, err := store.Orgs.GetByID(ctx, orgID)
+	if !u.EmailVerified {
+		// Don't add user to the org until email is verified. This will be a common failure mode,
+		// so rather than return an error we return a response the client can handle.
+		return &orgInviteResolver{emailVerified: false}, nil
+	}
+
+	token, err := parseInviteToken(args.InviteToken)
+	if err != nil {
+		return nil, err
+	}
+	org, err := store.Orgs.GetByID(ctx, token.orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	member, err := store.OrgMembers.Create(ctx, orgID, actor.UID, args.Username, args.Email, args.DisplayName, args.AvatarURL)
+	_, err = store.OrgMembers.Create(ctx, token.orgID, actor.UID, args.Username, token.email, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
@@ -221,11 +231,18 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		log15.Error("slack.NotifyOnAcceptedInvite failed", "error", err)
 	}
 
-	return &orgMemberResolver{org, member}, nil
+	return &orgInviteResolver{emailVerified: true}, nil
 }
 
-func createOrgInviteToken(org *sourcegraph.Org) (string, error) {
+type inviteTokenPayload struct {
+	orgID   int32
+	orgName string
+	email   string
+}
+
+func createOrgInviteToken(email string, org *sourcegraph.Org) (string, error) {
 	payload := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email":   email,
 		"orgID":   org.ID,
 		"orgName": org.Name, // So the accept invite UI can display the name of the org
 		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
@@ -233,7 +250,7 @@ func createOrgInviteToken(org *sourcegraph.Org) (string, error) {
 	return payload.SignedString(conf.AppSecretKey)
 }
 
-func orgIDFromInviteToken(tokenString string) (int32, error) {
+func parseInviteToken(tokenString string) (*inviteTokenPayload, error) {
 	payload, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return 0, fmt.Errorf("error parsing org invite: unexpected signing method %v", token.Header["alg"])
@@ -241,17 +258,27 @@ func orgIDFromInviteToken(tokenString string) (int32, error) {
 		return conf.AppSecretKey, nil
 	})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	claims, ok := payload.Claims.(jwt.MapClaims)
 	if !ok && !payload.Valid {
-		return 0, errors.New("error parsing org invite: invalid token")
+		return nil, errors.New("error parsing org invite: invalid token")
 	}
-	id, ok := claims["orgID"].(float64)
+
+	orgID, ok := claims["orgID"].(float64)
 	if !ok {
-		return 0, errors.New("error parsing org invite: invalid type for field orgID")
+		return nil, errors.New("error parsing org invite: invalid type for field orgID")
 	}
-	return int32(id), nil
+	orgName, ok := claims["orgName"].(string)
+	if !ok {
+		return nil, errors.New("error parsing org invite: invalid type for field org name")
+	}
+	email, ok := claims["email"].(string)
+	if !ok {
+		return nil, errors.New("error parsing org invite: invalid type for field email")
+	}
+
+	return &inviteTokenPayload{orgID: int32(orgID), orgName: orgName, email: email}, nil
 }
 
 func sendInviteEmail(inviteEmail, fromName, orgName, token string) {

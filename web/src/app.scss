@@ -266,6 +266,10 @@ h1 {
     &:focus {
         border-color: $color-primary;
     }
+    &:disabled {
+        cursor: not-allowed;
+        background-color: #283240
+    }
     &:valid, &:placeholder-shown {
         + .invalid-feedback {
             display: none;

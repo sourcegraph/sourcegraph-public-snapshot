@@ -33,7 +33,7 @@ type Mutation {
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
 	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): Org!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
-	acceptUserInvite(inviteToken: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): OrgMember!
+	acceptUserInvite(inviteToken: String!, username: String!, displayName: String!, avatarUrl: String): OrgInviteStatus!
 	removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
 }
 
@@ -333,6 +333,10 @@ type OrgMember {
 	avatarURL: String
 	createdAt: String!
 	updatedAt: String!
+}
+
+type OrgInviteStatus {
+	emailVerified: Boolean!
 }
 
 type OrgRepo {

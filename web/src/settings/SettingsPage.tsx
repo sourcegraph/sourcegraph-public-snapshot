@@ -25,7 +25,12 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
     public render(): JSX.Element | null {
         // If not logged in, redirect to sign in
         if (!window.context.user) {
-            return <Redirect to='/sign-in' />
+            const currUrl = new URL(window.location.href)
+            const newUrl = new URL(window.location.href)
+            newUrl.pathname = currUrl.pathname === '/settings/accept-invite' ? '/sign-up' : '/sign-in'
+            // Return to the current page after sign up/in.
+            newUrl.searchParams.set('return-to', window.location.href)
+            return <Redirect to={newUrl.pathname + newUrl.search} />
         }
         return (
             <div className='settings-page'>

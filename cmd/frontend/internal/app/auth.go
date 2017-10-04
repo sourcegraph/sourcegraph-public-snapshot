@@ -63,30 +63,14 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("exchanging auth code yielded invalid OAuth2 token")}
 	}
 
-	var info struct {
-		UID         string `json:"user_id"`
-		Nickname    string `json:"nickname"`
-		Picture     string `json:"picture"`
-		Email       string `json:"email"`
-		Name        string `json:"name"`
-		Company     string `json:"company"`
-		Location    string `json:"location"`
-		AppMetadata struct {
-			DidLoginBefore bool `json:"did_login_before"`
-		} `json:"app_metadata"`
-		Identities []struct {
-			Connection string          `json:"connection"`
-			UserID     json.RawMessage `json:"user_id"`
-		} `json:"identities"`
-		Impersonated bool `json:"impersonated"`
-	}
+	info := auth0.User{}
 	err = fetchAuth0UserInfo(r.Context(), token, &info)
 	if err != nil {
 		return err
 	}
 
 	actor := &actor.Actor{
-		UID:             info.UID,
+		UID:             info.UserID,
 		Login:           info.Nickname,
 		Email:           info.Email,
 		AvatarURL:       info.Picture,
@@ -114,7 +98,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 
 	if !info.AppMetadata.DidLoginBefore {
-		if err := auth0.SetAppMetadata(r.Context(), info.UID, "did_login_before", true); err != nil {
+		if err := auth0.SetAppMetadata(r.Context(), info.UserID, "did_login_before", true); err != nil {
 			return err
 		}
 		returnToNewURL, err := url.Parse(cookie.ReturnToNew)
