@@ -12,8 +12,15 @@ Run the following, with the first argument being a descriptive name for the migr
 ./dev/add_migration.sh "migration name"
 ```
 
-There will be up/down `.sql` migration files created in this directory. Add SQL statements to those files, then embed them into the Go code:
+There will be up/down `.sql` migration files created in this directory. Add SQL statements to those files, then embed them into the Go code and update the schema doc:
 
 ```
 go generate ./pkg/localstore/migrations/
+go generate ./pkg/localstore/
+```
+
+or 
+
+```
+./dev/generate.sh
 ```
