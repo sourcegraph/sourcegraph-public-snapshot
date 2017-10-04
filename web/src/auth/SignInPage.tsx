@@ -3,6 +3,7 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import { Auth0Error, WebAuth } from 'auth0-js'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { events, viewEvents } from '../tracking/events'
@@ -153,6 +154,10 @@ export class SignInPage extends React.Component<SignInPageProps> {
     }
 
     public render(): JSX.Element | null {
+        if (sourcegraphContext.user) {
+            return <Redirect to='/search' />
+        }
+
         return (
             <div className='sign-in-page'>
                 <PageTitle title='Sign in or sign up' />
