@@ -6,7 +6,7 @@ export IMAGE=us.gcr.io/sourcegraph-dev/xlang-java
 export TAG=${TAG-latest}
 
 SKINNY_MODE=false;
-if [ -z ${SKINNY+x} ]; then
+if [ -z ${SKINNY} ]; then
     echo "building image with artifacts.";
 else
     SKINNY_MODE=true;
