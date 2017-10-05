@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"strconv"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -173,7 +173,6 @@ func (c *Client) notifyOnComments(
 	if user.Username() != nil {
 		usernameText = fmt.Sprintf("(*@%s*) ", *user.Username())
 	}
-
 	payload := &Payload{
 		Attachments: []*Attachment{
 			&Attachment{
@@ -193,8 +192,8 @@ func (c *Client) notifyOnComments(
 						Short: true,
 					},
 					&Field{
-						Title: "Thread participants",
-						Value: strings.Join(recipients, ", "),
+						Title: "# org members notified",
+						Value: strconv.Itoa(len(recipients)),
 						Short: true,
 					},
 				},
