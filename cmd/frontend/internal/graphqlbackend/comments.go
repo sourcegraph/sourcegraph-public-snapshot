@@ -93,15 +93,18 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 
 	t := &threadResolver{org, repo, thread}
 
-	// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-	client := slack.New(sourcegraphOrgWebhookURL)
 	title, err := t.Title(ctx)
 	if err != nil {
+		// errors swallowed because title is only needed for Slack notifications
 		log15.Error("threadResolver.Title failed", "error", err)
 	}
-	err = client.NotifyOnComment(actor, org, repo, thread, comment, results.emails, results.commentURL, title)
-	if err != nil {
-		log15.Error("slack.NotifyOnComment failed", "error", err)
+	if user, err := currentUser(ctx); err != nil {
+		// errors swallowed because user is only needed for Slack notifications
+		log15.Error("graphqlbackend.AddCommentToThread: currentUser failed", "error", err)
+	} else {
+		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+		client := slack.New(sourcegraphOrgWebhookURL)
+		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, results.commentURL, title)
 	}
 
 	return t, nil

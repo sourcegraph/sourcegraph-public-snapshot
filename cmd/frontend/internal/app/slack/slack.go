@@ -8,18 +8,29 @@ import (
 	"net/http"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
 	"github.com/pkg/errors"
 )
 
+// Client is capable of posting a message to a Slack webhook
 type Client struct {
 	webhookURL string
 }
 
+// New creates a new Slack client
 func New(webhookURL string) *Client {
 	return &Client{webhookURL: webhookURL}
+}
+
+// User is an interface for accessing a Sourcegraph user's profile data
+type User interface {
+	Email() string
+	Username() *string
+	DisplayName() *string
+	AvatarURL() *string
 }
 
 // Payload is the wrapper for a Slack message, defined at:
@@ -89,7 +100,7 @@ func (c *Client) Post(payload *Payload) error {
 // NotifyOnComment posts a message to the defined Slack channel
 // when a user posts a reply to a thread
 func (c *Client) NotifyOnComment(
-	actor *actor.Actor,
+	user User,
 	org *sourcegraph.Org,
 	orgRepo *sourcegraph.OrgRepo,
 	thread *sourcegraph.Thread,
@@ -97,27 +108,33 @@ func (c *Client) NotifyOnComment(
 	recipients []string,
 	deepURL string,
 	threadTitle string,
-) error {
-	return c.notifyOnComments(false, actor, org, orgRepo, thread, comment, recipients, deepURL, threadTitle)
+) {
+	err := c.notifyOnComments(false, user, org, orgRepo, thread, comment, recipients, deepURL, threadTitle)
+	if err != nil {
+		log15.Error("slack.NotifyOnComment failed", "error", err)
+	}
 }
 
 // NotifyOnThread posts a message to the defined Slack channel
 // when a user creates a thread
 func (c *Client) NotifyOnThread(
-	actor *actor.Actor,
+	user User,
 	org *sourcegraph.Org,
 	orgRepo *sourcegraph.OrgRepo,
 	thread *sourcegraph.Thread,
 	comment *sourcegraph.Comment,
 	recipients []string,
 	deepURL string,
-) error {
-	return c.notifyOnComments(true, actor, org, orgRepo, thread, comment, recipients, deepURL, "")
+) {
+	err := c.notifyOnComments(true, user, org, orgRepo, thread, comment, recipients, deepURL, "")
+	if err != nil {
+		log15.Error("slack.NotifyOnThread failed", "error", err)
+	}
 }
 
 func (c *Client) notifyOnComments(
 	isNewThread bool,
-	actor *actor.Actor,
+	user User,
 	org *sourcegraph.Org,
 	orgRepo *sourcegraph.OrgRepo,
 	thread *sourcegraph.Thread,
@@ -129,10 +146,10 @@ func (c *Client) notifyOnComments(
 	color := "good"
 	actionText := "created a thread"
 	if !isNewThread {
+		color = "warning"
 		// TODO: remove this check if webhook URLs are stored for every org, rather
 		// than just the one constant for Sourcegraph
 		if org.Name == "Sourcegraph" {
-			color = "warning"
 			if len(threadTitle) > 75 {
 				threadTitle = threadTitle[0:75] + "..."
 			}
@@ -148,14 +165,21 @@ func (c *Client) notifyOnComments(
 		text = comment.Contents
 	}
 
+	displayNameText := user.Email()
+	if user.DisplayName() != nil {
+		displayNameText = *user.DisplayName()
+	}
+	usernameText := ""
+	if user.Username() != nil {
+		usernameText = fmt.Sprintf("(*@%s*) ", *user.Username())
+	}
+
 	payload := &Payload{
 		Attachments: []*Attachment{
 			&Attachment{
-				ThumbURL:   actor.AvatarURL,
-				AuthorIcon: actor.AvatarURL,
-				AuthorName: fmt.Sprintf("%s %s", actor.Login, actionText),
+				AuthorName: fmt.Sprintf("%s %s%s", displayNameText, usernameText, actionText),
 				AuthorLink: deepURL,
-				Fallback:   fmt.Sprintf("%s (%s) just <%s|%s>!", actor.Login, actor.Email, deepURL, actionText),
+				Fallback:   fmt.Sprintf("%s %s<%s|%s>!", displayNameText, usernameText, deepURL, actionText),
 				Color:      color,
 				Fields: []*Field{
 					&Field{
@@ -180,18 +204,31 @@ func (c *Client) notifyOnComments(
 		},
 	}
 
+	if user.AvatarURL() != nil {
+		payload.Attachments[0].ThumbURL = *user.AvatarURL()
+		payload.Attachments[0].AuthorIcon = *user.AvatarURL()
+	}
+
 	return c.Post(payload)
 }
 
 // NotifyOnInvite posts a message to the defined Slack channel
 // when a user invites another user to join their org
-func (c *Client) NotifyOnInvite(actor *actor.Actor, org *sourcegraph.Org, email string) error {
-	text := fmt.Sprintf("*%s* (%s) just invited %s to join *<https://sourcegraph.com/settings/teams/%s|%s>*", actor.Login, actor.Email, email, org.Name, org.Name)
+func (c *Client) NotifyOnInvite(user User, org *sourcegraph.Org, inviteEmail string) {
+	displayNameText := user.Email()
+	if user.DisplayName() != nil {
+		displayNameText = *user.DisplayName()
+	}
+	usernameText := ""
+	if user.Username() != nil {
+		usernameText = fmt.Sprintf("(*@%s*) ", *user.Username())
+	}
+
+	text := fmt.Sprintf("*%s* %sjust invited %s to join *<https://sourcegraph.com/settings/teams/%s|%s>*", displayNameText, usernameText, inviteEmail, org.Name, org.Name)
 
 	payload := &Payload{
 		Attachments: []*Attachment{
 			&Attachment{
-				ThumbURL:   actor.AvatarURL,
 				Fallback:   text,
 				Color:      "#F96316",
 				Text:       text,
@@ -200,18 +237,33 @@ func (c *Client) NotifyOnInvite(actor *actor.Actor, org *sourcegraph.Org, email 
 		},
 	}
 
-	return c.Post(payload)
+	if user.AvatarURL() != nil {
+		payload.Attachments[0].ThumbURL = *user.AvatarURL()
+	}
+
+	err := c.Post(payload)
+	if err != nil {
+		log15.Error("slack.NotifyOnInvite failed", "error", err)
+	}
 }
 
 // NotifyOnAcceptedInvite posts a message to the defined Slack channel
 // when an invited user accepts their invite to join an org
-func (c *Client) NotifyOnAcceptedInvite(actor *actor.Actor, org *sourcegraph.Org) error {
-	text := fmt.Sprintf("*%s* (%s) just accepted their invitation to join *<https://sourcegraph.com/settings/teams/%s|%s>*", actor.Login, actor.Email, org.Name, org.Name)
+func (c *Client) NotifyOnAcceptedInvite(user User, org *sourcegraph.Org) {
+	displayNameText := user.Email()
+	if user.DisplayName() != nil {
+		displayNameText = *user.DisplayName()
+	}
+	usernameText := ""
+	if user.Username() != nil {
+		usernameText = fmt.Sprintf("(*@%s*) ", *user.Username())
+	}
+
+	text := fmt.Sprintf("*%s* %sjust accepted their invitation to join *<https://sourcegraph.com/settings/teams/%s|%s>*", displayNameText, usernameText, org.Name, org.Name)
 
 	payload := &Payload{
 		Attachments: []*Attachment{
 			&Attachment{
-				ThumbURL:   actor.AvatarURL,
 				Fallback:   text,
 				Color:      "#B114F7",
 				Text:       text,
@@ -220,5 +272,12 @@ func (c *Client) NotifyOnAcceptedInvite(actor *actor.Actor, org *sourcegraph.Org
 		},
 	}
 
-	return c.Post(payload)
+	if user.AvatarURL() != nil {
+		payload.Attachments[0].ThumbURL = *user.AvatarURL()
+	}
+
+	err := c.Post(payload)
+	if err != nil {
+		log15.Error("slack.NotifyOnAcceptedInvite failed", "error", err)
+	}
 }

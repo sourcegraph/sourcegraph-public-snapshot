@@ -195,11 +195,13 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-	client := slack.New(sourcegraphOrgWebhookURL)
-	err = client.NotifyOnInvite(actor, org, args.Email)
-	if err != nil {
-		log15.Error("slack.NotifyOnInvite failed", "error", err)
+	if user, err := currentUser(ctx); err != nil {
+		// errors swallowed because user is only needed for Slack notifications
+		log15.Error("graphqlbackend.InviteUser: currentUser failed", "error", err)
+	} else {
+		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+		client := slack.New(sourcegraphOrgWebhookURL)
+		go client.NotifyOnInvite(user, org, args.Email)
 	}
 
 	return nil, nil
@@ -240,11 +242,13 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-	client := slack.New(sourcegraphOrgWebhookURL)
-	err = client.NotifyOnAcceptedInvite(actor, org)
-	if err != nil {
-		log15.Error("slack.NotifyOnAcceptedInvite failed", "error", err)
+	if user, err := currentUser(ctx); err != nil {
+		// errors swallowed because user is only needed for Slack notifications
+		log15.Error("graphqlbackend.AcceptUserInvite: currentUser failed", "error", err)
+	} else {
+		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+		client := slack.New(sourcegraphOrgWebhookURL)
+		go client.NotifyOnAcceptedInvite(user, org)
 	}
 
 	return &orgInviteResolver{emailVerified: true}, nil
