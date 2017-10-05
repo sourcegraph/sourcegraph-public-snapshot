@@ -27,8 +27,8 @@ func (*orgMembers) Create(ctx context.Context, orgID int32, userID, username, em
 	return &m, nil
 }
 
-func (m *orgMembers) GetByUserID(userID string) ([]*sourcegraph.OrgMember, error) {
-	return m.getBySQL("WHERE user_id=$1", userID)
+func (m *orgMembers) GetByUserID(ctx context.Context, userID string) ([]*sourcegraph.OrgMember, error) {
+	return m.getBySQL(ctx, "WHERE user_id=$1", userID)
 }
 
 func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
@@ -53,7 +53,7 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.
 	if err != nil {
 		return nil, err
 	}
-	return OrgMembers.getBySQL("WHERE org_id=$1", org.ID)
+	return OrgMembers.getBySQL(ctx, "WHERE org_id=$1", org.ID)
 }
 
 // ErrOrgMemberNotFound is the error that is returned when
@@ -67,7 +67,7 @@ func (err ErrOrgMemberNotFound) Error() string {
 }
 
 func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgMember, error) {
-	members, err := m.getBySQL(query, args...)
+	members, err := m.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...inte
 	return members[0], nil
 }
 
-func (*orgMembers) getBySQL(query string, args ...interface{}) ([]*sourcegraph.OrgMember, error) {
+func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgMember, error) {
 	rows, err := globalDB.Query("SELECT id, org_id, user_id, username, email, display_name, avatar_url, created_at, updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err

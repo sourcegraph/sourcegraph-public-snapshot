@@ -48,7 +48,7 @@ func validateOrg(org sourcegraph.Org) error {
 
 func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, error) {
 	if Mocks.Orgs.GetByID != nil {
-		return Mocks.Orgs.GetByID(orgID)
+		return Mocks.Orgs.GetByID(ctx, orgID)
 	}
 	orgs, err := o.getBySQL(ctx, "WHERE id=$1 LIMIT 1", orgID)
 	if err != nil {
