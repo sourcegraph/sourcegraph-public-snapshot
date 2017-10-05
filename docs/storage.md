@@ -46,6 +46,10 @@ To test the environment's credentials, run `psql` (the PostgreSQL CLI
 client) with the `PG*` environment variables set. If you see a
 database prompt, then the environment's credentials are valid.
 
+# Migrations
+
+Documented in [../migrations/README.md](../migrations/README.md)
+
 # Style guide
 
 Here is the preferred style going forward. Existing tables may be inconsistent with this style.
