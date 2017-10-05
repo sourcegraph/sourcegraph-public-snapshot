@@ -135,7 +135,7 @@ func currentUser(ctx context.Context) (*userResolver, error) {
 
 func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
 	actor := actor.FromContext(ctx)
-	orgs, err := store.Orgs.GetByUserID(actor.UID)
+	orgs, err := store.Orgs.GetByUserID(ctx, actor.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
 
 func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
 	actor := actor.FromContext(ctx)
-	members, err := store.OrgMembers.GetByUserID(ctx, actor.UID)
+	members, err := store.OrgMembers.GetByUserID(actor.UID)
 	if err != nil {
 		return nil, err
 	}

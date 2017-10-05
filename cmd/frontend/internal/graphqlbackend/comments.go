@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -90,7 +89,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	results := notifyThreadParticipants(repo, thread, comments, comment, member.DisplayName)
+	results := notifyAllInOrg(ctx, repo, thread, comments, comment, member.DisplayName)
 
 	t := &threadResolver{org, repo, thread}
 
@@ -113,8 +112,7 @@ type commentResults struct {
 	commentURL string
 }
 
-// notifyThreadParticipants sends email notifications to the participants in the comment thread.
-func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment, commentAuthorName string) *commentResults {
+func notifyAllInOrg(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment, commentAuthorName string) *commentResults {
 	commentURL := getURL(repo, thread, comment)
 	if !notif.EmailIsConfigured() {
 		return &commentResults{emails: []string{}, commentURL: commentURL}
@@ -126,7 +124,19 @@ func notifyThreadParticipants(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thr
 	} else {
 		first = comment
 	}
-	emails := emailsToNotify(previousComments, comment)
+
+	members, err := store.OrgMembers.GetByOrgID(ctx, repo.OrgID)
+	if err != nil {
+		return nil
+	}
+	emails := []string{}
+	for _, m := range members {
+		if m.UserID == comment.AuthorUserID {
+			continue
+		}
+		emails = append(emails, m.Email)
+	}
+
 	repoName := repoNameFromURI(repo.RemoteURI)
 	contents := strings.Replace(comment.Contents, "\n", "<br>", -1)
 	for _, email := range emails {
@@ -169,59 +179,4 @@ func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, comment *sour
 	values.Set("path", thread.File)
 	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
 	return fmt.Sprintf("https://about.sourcegraph.com/open/#open?%s", values.Encode())
-}
-
-// maxEmails is a limit on the number of email notifications
-// that we will send per comment to mitigate potential spam abuse.
-const maxEmails = 50
-
-// emailMentionPattern is a regex that matches an email mention in a comment, of
-// the form "+alice@example.com". This is a simplified pattern that does not
-// ensure the email is valid.
-//
-// TODO: will not match emails with non-alphanumeric TLDs (e.g. user@foo.みんな)
-var emailMentionPattern = regexp.MustCompile(`\B\+[^\s]+@[^\s]+\.[A-Za-z0-9]+`)
-
-// emailsToNotify returns all emails that should be notified of the new comment in the thread of previous comments.
-func emailsToNotify(previousComments []*sourcegraph.Comment, newComment *sourcegraph.Comment) []string {
-	unique := map[string]struct{}{}
-	var emails []string
-
-	// Notify everyone already in the conversation, except for the author of the new comment.
-	for _, c := range previousComments {
-		if c.AuthorEmail != newComment.AuthorEmail {
-			emails = appendUnique(unique, emails, c.AuthorEmail)
-		}
-		emails = appendUniqueEmailsFromMentions(unique, emails, c.Contents, newComment.AuthorEmail)
-	}
-
-	// Notify all mentions in the new comment (including the original author if they mentioned themself).
-	emails = appendUniqueEmailsFromMentions(unique, emails, newComment.Contents, "")
-
-	if len(emails) > maxEmails {
-		emails = emails[:maxEmails]
-	}
-	return emails
-}
-
-// appendUniqueEmailsFromMentions parses email mentions from comment and returns
-// the ones not already in unique appended to emails.
-func appendUniqueEmailsFromMentions(unique map[string]struct{}, emails []string, comment, excludeAuthor string) []string {
-	matches := emailMentionPattern.FindAll([]byte(comment), -1)
-	for _, m := range matches {
-		email := strings.TrimPrefix(string(m), "+")
-		if email != excludeAuthor {
-			emails = appendUnique(unique, emails, email)
-		}
-	}
-	return emails
-}
-
-// appendUnique returns value appended to values if value is not a key in unique.
-func appendUnique(unique map[string]struct{}, values []string, value string) []string {
-	if _, ok := unique[value]; ok {
-		return values
-	}
-	unique[value] = struct{}{}
-	return append(values, value)
 }

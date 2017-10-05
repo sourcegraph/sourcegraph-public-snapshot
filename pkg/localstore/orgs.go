@@ -15,7 +15,7 @@ type orgs struct{}
 
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
-func (*orgs) GetByUserID(userID string) ([]*sourcegraph.Org, error) {
+func (*orgs) GetByUserID(ctx context.Context, userID string) ([]*sourcegraph.Org, error) {
 	rows, err := globalDB.Query("SELECT orgs.id, orgs.name, orgs.display_name, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1", userID)
 	if err != nil {
 		return []*sourcegraph.Org{}, err
@@ -48,7 +48,7 @@ func validateOrg(org sourcegraph.Org) error {
 
 func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, error) {
 	if Mocks.Orgs.GetByID != nil {
-		return Mocks.Orgs.GetByID(ctx, orgID)
+		return Mocks.Orgs.GetByID(orgID)
 	}
 	orgs, err := o.getBySQL(ctx, "WHERE id=$1 LIMIT 1", orgID)
 	if err != nil {
