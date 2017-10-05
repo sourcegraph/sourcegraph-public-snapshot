@@ -127,3 +127,7 @@ Join tables should be named based on the two tables being joined (e.g. `foo_bar`
 ## Validation
 
 To the extent that certain fields require validation (e.g. username) we should perform that validation in client AND EITHER the database when possible, OR the graphql api. This results in the best experience for the client, and protects us from corrupt data.
+
+## Trigger functions
+
+Trigger functions perform some action when data is inserted or updated. Don't use trigger functions.
