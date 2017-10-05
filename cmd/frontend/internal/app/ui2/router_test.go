@@ -36,25 +36,25 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
-		// repo-or-main
+		// repo
 		{
 			path:      "/r",
-			wantRoute: routeRepoOrMain,
+			wantRoute: routeRepo,
 			wantVars:  map[string]string{"Repo": "r", "Rev": ""},
 		},
 		{
 			path:      "/r/r",
-			wantRoute: routeRepoOrMain,
+			wantRoute: routeRepo,
 			wantVars:  map[string]string{"Repo": "r/r", "Rev": ""},
 		},
 		{
 			path:      "/r/r@v",
-			wantRoute: routeRepoOrMain,
+			wantRoute: routeRepo,
 			wantVars:  map[string]string{"Repo": "r/r", "Rev": "@v"},
 		},
 		{
 			path:      "/r/r@v/v",
-			wantRoute: routeRepoOrMain,
+			wantRoute: routeRepo,
 			wantVars:  map[string]string{"Repo": "r/r", "Rev": "@v/v"},
 		},
 
@@ -87,17 +87,16 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
 		},
 
-		// We expect any about.sourcegraph.com subpaths will go to the
-		// routeRepoOrMain handler, because it handles all root level paths.
+		// about.sourcegraph.com redirects
 		{
-			path:      "/help",
-			wantRoute: routeRepoOrMain,
-			wantVars:  map[string]string{"Repo": "help", "Rev": ""},
+			path:      "/about",
+			wantRoute: routeAboutSubdomain,
+			wantVars:  map[string]string{"Path": "about"},
 		},
 		{
-			path:      "/foobar",
-			wantRoute: routeRepoOrMain,
-			wantVars:  map[string]string{"Repo": "foobar", "Rev": ""},
+			path:      "/privacy",
+			wantRoute: routeAboutSubdomain,
+			wantVars:  map[string]string{"Path": "privacy"},
 		},
 
 		// sign-in

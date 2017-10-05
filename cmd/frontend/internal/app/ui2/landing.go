@@ -102,7 +102,7 @@ func serveOldRouteDefLanding(w http.ResponseWriter, r *http.Request) {
 	infoURL, err := router.Get(routeLegacyDefLanding).URL(
 		"Repo", vars["Repo"], "Path", vars["Path"], "Rev", vars["Rev"], "UnitType", vars["UnitType"], "Unit", vars["Unit"])
 	if err != nil {
-		repoURL, err := router.Get(routeRepoOrMain).URL("Repo", vars["Repo"], "Rev", vars["Rev"])
+		repoURL, err := router.Get(routeRepo).URL("Repo", vars["Repo"], "Rev", vars["Rev"])
 		if err != nil {
 			// Last recourse is redirect to homepage
 			http.Redirect(w, r, "/", http.StatusSeeOther)

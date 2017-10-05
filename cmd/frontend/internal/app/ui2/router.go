@@ -18,7 +18,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -28,7 +27,7 @@ import (
 const (
 	routeHome                 = "home"
 	routeSearch               = "search"
-	routeRepoOrMain           = "repo-or-main" // see newRouter comment for details
+	routeRepo                 = "repo"
 	routeTree                 = "tree"
 	routeBlob                 = "blob"
 	routeSignIn               = "sign-in"
@@ -39,6 +38,7 @@ const (
 	routeSettingsTeamsTeam    = "settings.teams.team"
 	routePasswordReset        = "password-reset"
 
+	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
 
@@ -56,9 +56,6 @@ const (
 
 // aboutPaths is a list of paths that should redirect from sourcegraph.com/$PATH
 // to about.sourcegraph.com/$PATH.
-//
-// They always take precedence last, so they cannot override e.g. user
-// repositories, handlers added here, etc.
 var aboutPaths = []string{
 	"about",
 	"plan",
@@ -87,7 +84,7 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
-	// Top-level routes *excluding* pages that redirect to about.sourcegraph.com.
+	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
@@ -97,6 +94,7 @@ func newRouter() *mux.Router {
 	r.Path("/settings/teams/new").Methods("GET").Name(routeSettingsTeamsNew)
 	r.Path("/settings/teams/{team}").Methods("GET").Name(routeSettingsTeamsTeam)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
+	r.Path("/{Path:(?:" + strings.Join(aboutPaths, "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -105,14 +103,9 @@ func newRouter() *mux.Router {
 	r.Path("/settings/team/{team}").Methods("GET").Name(routeLegacySettingsTeam)
 	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
 
-	// repo-or-main
-	//
-	// This handles either a repo like 'sourcegraph.com/github.com/foo/bar' OR
-	// a main page if the path is not a repo. For example, 'sourcegraph.com/about'
-	// will be picked up by this handler. Repositories always get priority and,
-	// if the repository doesn't exist, the request is directed to about.sourcegraph.com.
+	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepoOrMain)
+	r.Path(repoRevPath).Methods("GET").Name(routeRepo)
 
 	// tree
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
@@ -168,39 +161,29 @@ func init() {
 		return fmt.Sprintf("%s - Sourcegraph", shortQuery)
 	})))
 
-	// repo or main pages
-	serveRepoHandler := handler(serveRepoOrBlob(routeRepoOrMain, func(c *Common, r *http.Request) string {
+	if !envvar.DeploymentOnPrem() {
+		// about subdomain
+		router.Get(routeAboutSubdomain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.URL.Scheme = aboutRedirectScheme
+			r.URL.User = nil
+			r.URL.Host = aboutRedirectHost
+			r.URL.Path = mux.Vars(r)["Path"]
+			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+		}))
+	}
+
+	// repo
+	serveRepoHandler := handler(serveRepoOrBlob(routeRepo, func(c *Common, r *http.Request) string {
 		// e.g. "gorilla/mux - Sourcegraph"
 		return fmt.Sprintf("%s - Sourcegraph", repoShortName(c.Repo.URI))
 	}))
-	router.Get(routeRepoOrMain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if handlerutil.DebugMode && r.URL.Path == "/__errorTest" {
 			handler(serveErrorTest).ServeHTTP(w, r)
 			return
 		}
 
-		_, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
-		if legacyerr.ErrCode(err) == legacyerr.NotFound {
-			// Repository not found, so redirect the request to about.sourcegraph.com
-			// if it is an about path (unless we're on-prem). This case does
-			// NOT trigger for repos that are cloning.
-			if !envvar.DeploymentOnPrem() {
-				pathNoSlash := strings.Trim(r.URL.Path, "/")
-				for _, path := range aboutPaths {
-					if pathNoSlash == path {
-						r.URL.Scheme = aboutRedirectScheme
-						r.URL.User = nil
-						r.URL.Host = aboutRedirectHost
-						r.URL.Path = strings.TrimSuffix(r.URL.Path, "/") // redirect to canonical path
-						http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-						return
-					}
-				}
-			}
-
-			// ignore err here, let serveRepoHandler handle the request below.
-		}
 		if mockServeRepo != nil {
 			mockServeRepo(w, r)
 			return
