@@ -88,14 +88,8 @@ Soft deletes are easier to recover from once you determine what happened. You ca
 ### Dealing with unique constraints
 
 Soft deleting data has implications for unique constraints.
-Consider a hypothetical `user_orgs` table which joins `users` to `orgs`.
 
-Rough schema:
-- `id` auto increment primary key
-- `user_id` foreign key to `user.id`
-- `org_id` foreign key to `org.id`
-- Unique constraint on `user_id`, `org_id` (a user can only have a single membership to an org)
-
+Consider a hypothetical schema:
 ```sql
 CREATE TABLE "orgs" (
 	"id" serial NOT NULL PRIMARY KEY
