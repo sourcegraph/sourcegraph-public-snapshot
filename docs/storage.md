@@ -69,8 +69,8 @@ Example:
 ```sql
 CREATE TABLE "widgets" (
 	"id" bigserial NOT NULL PRIMARY KEY,
-	"created_at" TIMESTAMP WITH TIME ZONE,
-	"updated_at" TIMESTAMP WITH TIME ZONE,
+	"created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	"updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 	"deleted_at" TIMESTAMP WITH TIME ZONE,
 );
 ```
@@ -95,6 +95,32 @@ Rough schema:
 - `user_id` foreign key to `user.id`
 - `org_id` foreign key to `org.id`
 - Unique constraint on `user_id`, `org_id` (a user can only have a single membership to an org)
+
+```sql
+CREATE TABLE "orgs" (
+	"id" serial NOT NULL PRIMARY KEY
+);
+
+CREATE TABLE "users" (
+	"id" serial NOT NULL PRIMARY KEY
+);
+
+CREATE TABLE "users_orgs" (
+	"id" serial NOT NULL PRIMARY KEY,
+	"user_id" integer NOT NULL,
+	"org_id" integer NOT NULL,
+
+	CONSTRAINT user_orgs_references_orgs
+	FOREIGN KEY (org_id)
+	REFERENCES orgs (id) ON DELETE RESTRICT,
+
+	CONSTRAINT users_references_users
+	FOREIGN KEY (user_id)
+	REFERENCES users (id) ON DELETE RESTRICT,
+
+	UNIQUE (user_id, org_id)
+);
+```
 
 #### Hard delete case
 
