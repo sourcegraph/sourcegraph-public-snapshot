@@ -48,6 +48,7 @@ func TestThreads_Create(t *testing.T) {
 		EndCharacter   int32
 		RangeLength    int32
 		Contents       string
+		Lines          *threadLines
 	}{
 		RemoteURI: wantRepo.RemoteURI,
 		File:      "foo.go",

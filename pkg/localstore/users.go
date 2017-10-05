@@ -93,6 +93,14 @@ func (u *users) GetByID(id int32) (*sourcegraph.User, error) {
 	return u.getOneBySQL("WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
+func (u *users) GetByAuth0ID(id string) (*sourcegraph.User, error) {
+	users, err := u.getBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	if err != nil || len(users) == 0 {
+		return nil, err
+	}
+	return users[0], nil
+}
+
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {

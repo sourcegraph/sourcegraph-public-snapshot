@@ -19,9 +19,43 @@ type Query {
 	node(id: ID!): Node
 }
 
+type ThreadLines {
+	htmlBefore: String! # HTML context lines before 'html'.
+	html: String!       # HTML lines that the user's selection was made on.
+	htmlAfter: String!  # HTML context lines after 'html'.
+
+	textBefore: String! # text context lines before 'text'.
+	text: String!       # text lines that the user's selection was made on.
+	textAfter: String!  # text context lines after 'text'.
+
+	# Two integers which represent the original user selection of text.
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeStart: Int!  # byte offset into textLines where user selection begins
+	textSelectionRangeLength: Int! # length in bytes of the user selection
+}
+
+# Literally the exact same thing as above, except it's an input type because
+# GraphQL doesn't allow mixing input and output types.
+input ThreadLinesInput {
+	htmlBefore: String! # HTML context lines before 'html'.
+	html: String!       # HTML lines that the user's selection was made on.
+	htmlAfter: String!  # HTML context lines after 'html'.
+
+	textBefore: String! # text context lines before 'text'.
+	text: String!       # text lines that the user's selection was made on.
+	textAfter: String!  # text context lines after 'text'.
+
+	# Two integers which represent the original user selection of text.
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeStart: Int!  # byte offset into textLines where user selection begins
+	textSelectionRangeLength: Int! # length in bytes of the user selection
+}
+
 type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
-	createThread(orgID: Int!, remoteURI: String!, file: String!, revision: String!, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!): Thread!
+	createThread(orgID: Int!, remoteURI: String!, file: String!, revision: String!, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
 	updateUser(displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
@@ -358,6 +392,8 @@ type Thread {
 	rangeLength: Int!
 	createdAt: String!
 	archivedAt: String
+	author: User!
+	lines: ThreadLines
 	comments: [Comment!]!
 }
 
