@@ -7,7 +7,6 @@ import { PageTitle } from '../components/PageTitle'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { viewEvents } from '../tracking/events'
 import { limitString } from '../util'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 import { parseSearchURLQuery } from './index'
 import { SearchBox } from './SearchBox'
 
@@ -42,19 +41,19 @@ export class Search extends React.Component<Props, State> {
             <div className='search'>
                 <PageTitle title={this.getPageTitle()} />
                 <div className='search__nav'>
-                    {!sourcegraphContext.user && <a href='https://about.sourcegraph.com' className='search__nav-link'>About</a>}
+                    {!window.context.user && <a href='https://about.sourcegraph.com' className='search__nav-link'>About</a>}
                     <div className='search__nav-auth'>
                         {
                             // if on-prem, never show a user avatar or sign-in button
-                            sourcegraphContext.onPrem ?
+                            window.context.onPrem ?
                                 null :
-                                sourcegraphContext.user ?
+                                window.context.user ?
                                     <Link to='/settings'><UserAvatar size={64} /></Link> :
                                     <Link to='/sign-in' className='btn btn-primary'>Sign in</Link>
                         }
                     </div>
                 </div>
-                <img className='search__logo' src={`${sourcegraphContext.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`} />
+                <img className='search__logo' src={`${window.context.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`} />
                 <div className='search__search-box-container'>
                     <SearchBox {...this.props} />
                     <button

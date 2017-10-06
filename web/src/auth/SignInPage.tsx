@@ -9,7 +9,6 @@ import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { events, viewEvents } from '../tracking/events'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 
 interface LoginSignupFormProps {
     location: H.Location
@@ -97,15 +96,15 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        const redirect = new URL(`${sourcegraphContext.appURL}/-/auth0/sign-in`)
+        const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
         const returnTo = new URLSearchParams(this.props.location.search).get('return-to')
         if (returnTo) {
             redirect.searchParams.set('return-to', returnTo)
         }
 
         const webAuth = new WebAuth({
-            domain: sourcegraphContext.auth0Domain,
-            clientID: sourcegraphContext.auth0ClientID,
+            domain: window.context.auth0Domain,
+            clientID: window.context.auth0ClientID,
             redirectUri: redirect.href,
             responseType: 'code'
         })
@@ -186,7 +185,7 @@ export class SignInPage extends React.Component<SignInPageProps, SignInPageState
     }
 
     public render(): JSX.Element | null {
-        if (sourcegraphContext.user) {
+        if (window.context.user) {
             return <Redirect to='/search' />
         }
 

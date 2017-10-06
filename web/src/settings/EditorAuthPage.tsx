@@ -2,7 +2,6 @@ import copy from 'copy-to-clipboard'
 import * as React from 'react'
 import { PageTitle } from '../components/PageTitle'
 import { events, viewEvents } from '../tracking/events'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 
 interface Props { }
 interface State {
@@ -14,7 +13,7 @@ interface State {
  */
 export class EditorAuthPage extends React.Component<Props, State> {
     public state: State = { copiedLink: false }
-    private sessionId = sourcegraphContext.sessionID.slice(sourcegraphContext.sessionID.indexOf(' ') + 1)
+    private sessionId = window.context.sessionID.slice(window.context.sessionID.indexOf(' ') + 1)
 
     public componentDidMount(): void {
         viewEvents.EditorAuth.log()

@@ -1,7 +1,6 @@
 import 'rxjs/add/observable/dom/ajax'
 import 'rxjs/add/operator/map'
 import { Observable } from 'rxjs/Observable'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 
 /**
  * Interface for the response result of a GraphQL query
@@ -33,7 +32,7 @@ function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IG
         url: '/.api/graphql' + (nameMatch ? '?' + nameMatch[1] : ''),
         headers: {
             'Content-Type': 'application/json',
-            ...sourcegraphContext.xhrHeaders
+            ...window.context.xhrHeaders
         },
         body: JSON.stringify({ query: request, variables })
     }).map(({ response }) => response)

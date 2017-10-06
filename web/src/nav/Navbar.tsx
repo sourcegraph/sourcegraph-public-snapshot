@@ -3,7 +3,6 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { SearchBox } from '../search/SearchBox'
 import { UserAvatar } from '../settings/user/UserAvatar'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 
 interface Props {
     history: H.History
@@ -29,9 +28,9 @@ export class Navbar extends React.Component<Props, State> {
                 <div className='navbar__right'>
                     {
                         // If on-prem, never show a user avatar or sign-in button
-                        sourcegraphContext.onPrem ?
+                        window.context.onPrem ?
                             null :
-                            sourcegraphContext.user ?
+                            window.context.user ?
                                 <Link to='/settings'><UserAvatar size={64} /></Link> :
                                 <Link to={`/sign-in?return-to=${encodeURIComponent(this.props.location.pathname)}`} className='btn btn-primary'>Sign in</Link>
                     }

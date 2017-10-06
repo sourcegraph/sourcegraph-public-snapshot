@@ -1,7 +1,6 @@
 import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 import { EventActions, EventCategories } from './analyticsConstants'
 import { hasBrowserExtensionInstalled } from './analyticsUtils'
 import { telligent } from './services/telligentWrapper'
@@ -10,8 +9,8 @@ class EventLogger {
     private static PLATFORM = 'Web'
 
     constructor() {
-        if (sourcegraphContext.user) {
-            this.updateUser({ id: sourcegraphContext.user.UID })
+        if (window.context.user) {
+            this.updateUser({ id: window.context.user.UID })
         }
 
         currentUser.subscribe(
@@ -86,7 +85,7 @@ class EventLogger {
      * Note: should NEVER be called outside of events.tsx
      */
     public logViewEvent(pageTitle: string, eventProperties?: any): void {
-        if (sourcegraphContext.userAgentIsBot || !pageTitle) {
+        if (window.context.userAgentIsBot || !pageTitle) {
             return
         }
 
@@ -100,7 +99,7 @@ class EventLogger {
      * Note: should NEVER be called outside of events.tsx
      */
     public logEvent(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
-        if (sourcegraphContext.userAgentIsBot || !eventLabel) {
+        if (window.context.userAgentIsBot || !eventLabel) {
             return
         }
 
@@ -119,7 +118,7 @@ class EventLogger {
         const props = {
             ...platformProperties,
             platform: EventLogger.PLATFORM,
-            is_authed: sourcegraphContext.user ? 'true' : 'false',
+            is_authed: window.context.user ? 'true' : 'false',
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : ''
         }
 

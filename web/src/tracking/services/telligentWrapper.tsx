@@ -1,4 +1,3 @@
-import { sourcegraphContext } from '../../util/sourcegraphContext'
 
 declare global {
     interface Window {
@@ -18,8 +17,8 @@ class TelligentWrapper {
         } else {
             return
         }
-        if (sourcegraphContext.version !== 'dev' && sourcegraphContext.trackingAppID) {
-            this.initialize(sourcegraphContext.trackingAppID, this.PROD_ENV)
+        if (window.context.version !== 'dev' && window.context.trackingAppID) {
+            this.initialize(window.context.trackingAppID, this.PROD_ENV)
         } else {
             this.initialize(this.DEFAULT_APP_ID, this.DEFAULT_ENV)
         }
@@ -83,7 +82,7 @@ class TelligentWrapper {
         let telligentUrl = 'sourcegraph-logging.telligentdata.com'
         // for an on-prem trial, we want to send information directly telligent.
         // for clients like umami, we use a bi-logger
-        if (sourcegraphContext.onPrem && sourcegraphContext.trackingAppID === 'UmamiWeb') {
+        if (window.context.onPrem && window.context.trackingAppID === 'UmamiWeb') {
             telligentUrl = `${window.location.host}`.concat('/.bi-logger')
         }
         this.telligent('newTracker', 'sg', telligentUrl, {

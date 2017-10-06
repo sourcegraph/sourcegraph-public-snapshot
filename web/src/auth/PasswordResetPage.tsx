@@ -3,12 +3,11 @@ import { WebAuth } from 'auth0-js'
 import * as React from 'react'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 
 const webAuth = new WebAuth({
-    domain: sourcegraphContext.auth0Domain,
-    clientID: sourcegraphContext.auth0ClientID,
-    redirectUri: `${sourcegraphContext.appURL}/-/auth0/sign-in`,
+    domain: window.context.auth0Domain,
+    clientID: window.context.auth0ClientID,
+    redirectUri: `${window.context.appURL}/-/auth0/sign-in`,
     responseType: 'code'
 })
 

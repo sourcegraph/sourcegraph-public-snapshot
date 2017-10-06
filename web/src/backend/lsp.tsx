@@ -2,7 +2,6 @@ import { Definition, Hover, Location } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
 import { memoizeAsync } from '../util/memoize'
-import { sourcegraphContext } from '../util/sourcegraphContext'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 
 interface LSPRequest {
@@ -62,7 +61,7 @@ export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<
         }
     }, pos, pos.filePath)
 
-    return fetch(`/.api/xlang/textDocument/hover`, { method: 'POST', body: JSON.stringify(body), headers: { ...sourcegraphContext.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/hover`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
@@ -91,7 +90,7 @@ export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pro
         }
     }, pos, pos.filePath)
 
-    return fetch(`/.api/xlang/textDocument/definition`, { method: 'POST', body: JSON.stringify(body), headers: { ...sourcegraphContext.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/definition`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
@@ -135,7 +134,7 @@ export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pr
         }
     }, pos, pos.filePath)
 
-    return fetch(`/.api/xlang/textDocument/xdefinition`, { method: 'POST', body: JSON.stringify(body), headers: { ...sourcegraphContext.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/xdefinition`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
         .then(resp => resp.json())
         .then(json => {
             if (!json ||
@@ -169,7 +168,7 @@ export const fetchReferences = memoizeAsync((ctx: AbsoluteRepoFilePosition): Pro
         }
     } as any, ctx, ctx.filePath)
 
-    return fetch(`/.api/xlang/textDocument/references`, { method: 'POST', body: JSON.stringify(body), headers: { ...sourcegraphContext.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/references`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
@@ -265,7 +264,7 @@ export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<L
         }
     }, { repoPath: ctx.repoPath, commitID: ctx.commitID }, ctx.filePath)
 
-    return fetch(`/.api/xlang/workspace/xreferences`, { method: 'POST', body: JSON.stringify(body), headers: { ...sourcegraphContext.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/workspace/xreferences`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
