@@ -103,6 +103,11 @@ func (o *orgResolver) Repo(ctx context.Context, args *struct {
 }) (*orgRepoResolver, error) {
 	orgRepo, err := store.OrgRepos.GetByRemoteURI(ctx, o.org.ID, args.RemoteURI)
 	if err != nil {
+		if err == store.ErrRepoNotFound {
+			// We don't want to create org repos just because an org member queried for threads
+			// and we don't want the client to think this is an error.
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &orgRepoResolver{o.org, orgRepo}, nil

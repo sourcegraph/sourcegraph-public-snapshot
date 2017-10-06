@@ -321,7 +321,7 @@ type Org {
 	displayName: String
 	members: [OrgMember!]!
 	repos: [OrgRepo!]!
-	repo(remoteURI: String!): OrgRepo!
+	repo(remoteURI: String!): OrgRepo
 	threads(limit: Int): [Thread!]!
 	tags: [OrgTag!]!
 }
