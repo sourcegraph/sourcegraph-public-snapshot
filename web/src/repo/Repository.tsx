@@ -170,7 +170,7 @@ export class Repository extends React.Component<Props, State> {
                 <RepoNav {...this.props} />
                 <div className='repository__content'>
                     <div id='explorer' className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}>
-                        <button type='button' className='repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon className='icon-inline'/></button>
+                        <button type='button' className='btn btn-icon repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon /></button>
                         <TreeHeader title='File Explorer' onDismiss={this.onTreeToggle} />
                         <Tree
                             repoPath={this.props.repoPath}
@@ -182,7 +182,7 @@ export class Repository extends React.Component<Props, State> {
                         />
                     </div>
                     <div className='repository__viewer'>
-                        <button type='button' className='repository__full-width-toggle' onClick={this.props.onToggleFullWidth} title='toggle full width'>
+                        <button type='button' className='btn btn-icon repository__full-width-toggle' onClick={this.props.onToggleFullWidth} title='toggle full width'>
                             {this.props.isFullWidth ? <ChevronLeftIcon /> : <ChevronRightIcon />}
                         </button>
                         {
@@ -198,7 +198,7 @@ export class Repository extends React.Component<Props, State> {
                                 <p className='repository__blob-alert'>
                                     <ErrorIcon className='icon-inline'/>
                                     Syntax highlighting for this file has been disabled because it took too long.
-                                    (<a href='#' onClick={this.handleShowAnywayButtonClick}>show anyway</a>)
+                                    (<a href='' onClick={this.handleShowAnywayButtonClick}>show anyway</a>)
                                     {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
                                 </p>
                         }

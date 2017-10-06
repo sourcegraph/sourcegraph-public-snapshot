@@ -19,19 +19,8 @@
     }
 
     &__close-button {
-        cursor: pointer;
-        color: #93A9C8;
-        background: transparent;
-        outline: none;
-        border: none;
-        font-size: inherit;
-
         @media (max-width: $media-md) {
             display: none;
-        }
-
-        &:hover {
-            color: #FFFFFF;
         }
     }
 }

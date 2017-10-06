@@ -22,20 +22,6 @@ $media-xl: 1200px;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 
-@import './highlight';
-@import './search/Search';
-@import './nav/Navbar';
-@import './auth/PasswordResetPage';
-@import './auth/SignInPage';
-@import './search/SearchBox';
-@import './search/SearchResults';
-@import './repo/Repository';
-@import './repo/Tooltips';
-@import './references/ReferencesWidget';
-@import './components/CodeExcerpt';
-@import './components/HeroPage';
-@import './settings/SettingsPage';
-
 // Define the 'system' font family
 //
 // See https://css-tricks.com/snippets/css/system-font-stack/
@@ -211,6 +197,10 @@ h1 {
     cursor: pointer;
     transition: all 100ms ease-out;
     outline: none;
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba($color-primary, .5);
+    }
 }
 
 .btn-block {
@@ -219,15 +209,15 @@ h1 {
 
 .btn-icon {
     // Increase clickable area
-    padding: 0.5rem;
-    margin: -0.5rem;
+    margin: 0;
+    padding: 0;
     background: transparent;
     color: inherit;
     display: flex;
-    .icon, svg {
-        width: 1.5em;
-        height: 1.5em;
-        fill: currentColor;
+    border: none;
+    cursor: pointer;
+    .icon {
+        @extend .icon-inline;
     }
     &:hover {
         color: white;
@@ -371,3 +361,17 @@ h1 {
         }
     }
 }
+
+@import './highlight';
+@import './search/Search';
+@import './nav/Navbar';
+@import './auth/PasswordResetPage';
+@import './auth/SignInPage';
+@import './search/SearchBox';
+@import './search/SearchResults';
+@import './repo/Repository';
+@import './repo/Tooltips';
+@import './references/ReferencesWidget';
+@import './components/CodeExcerpt';
+@import './components/HeroPage';
+@import './settings/SettingsPage';

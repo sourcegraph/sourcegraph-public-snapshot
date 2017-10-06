@@ -60,20 +60,12 @@
 
         background: #1C2736;
         border-radius: 0.25rem 0 0 0.25rem;
-        border: none;
-        color: inherit;
-        outline: none;
-        cursor: pointer;
 
         @media (max-width: $media-md) {
             // Make toggle float over code and file tree instead of off to the right
             left: inherit;
             right: -2.5rem;
             border-radius: 0 0 0.25rem;
-        }
-
-        &:hover {
-            color: white;
         }
     }
 
@@ -107,20 +99,10 @@
 
         border-radius: 0 0.25rem 0.25rem 0;
         background: #1C2736;
-        border: none;
-        color: inherit;
-        outline: none;
-        cursor: pointer;
 
         @media (max-width: $media-md) {
             // toggle is not useful on such a small screen, since we're always 100%.
             display: none;
-        }
-
-        .icon {
-            fill: currentColor;
-            width: 1.5rem;
-            height: 1.5rem;
         }
     }
 }

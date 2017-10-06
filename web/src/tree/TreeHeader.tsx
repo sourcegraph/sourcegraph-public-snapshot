@@ -12,8 +12,8 @@ export class TreeHeader extends React.Component<Props, {}> {
         return (
             <div className='tree-header'>
                 <span className='tree-header__title'>{this.props.title}</span>
-                <button onClick={this.props.onDismiss} className='tree-header__close-button'>
-                    <CloseIcon className='icon-inline' />
+                <button onClick={this.props.onDismiss} className='btn btn-icon tree-header__close-button'>
+                    <CloseIcon />
                 </button>
             </div>
         )

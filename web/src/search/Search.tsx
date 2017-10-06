@@ -58,14 +58,16 @@ export class Search extends React.Component<Props, State> {
                     <SearchBox {...this.props} />
                     <button
                         type='button'
-                        className={'search__help-button' + (this.state.helpVisible ? ' search__help-button--active' : '')}
+                        className={'btn btn-icon search__help-button' + (this.state.helpVisible ? ' search__help-button--active' : '')}
                         title={(this.state.helpVisible ? 'Hide' : 'Show') + ' help'}
                         onClick={this.toggleHelp}
                     >
-                        <HelpIcon className='icon-inline' />
+                        <HelpIcon />
                     </button>
                     <div className={'search__instructions' + (this.state.helpVisible ? ' search__instructions--open' : '')}>
-                        <button type='button' className='search__instructions-close-button' onClick={this.hideHelp}><CloseIcon className='icon-inline' /></button>
+                        <button type='button' className='btn btn-icon search__instructions-close-button' onClick={this.hideHelp}>
+                            <CloseIcon />
+                        </button>
                         <div className='search__instruction-row'>
                             <div className='search__explanation'>
                                 Go to the repository github.com/gorilla/mux

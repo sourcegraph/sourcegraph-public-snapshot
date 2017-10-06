@@ -58,15 +58,7 @@
         right: -2rem;
         display: flex;
 
-        cursor: pointer;
-        border: none;
-        padding: 0;
-        outline: none;
-        background: transparent;
-        color: inherit;
-        transition: color 100ms ease-out;
-
-        &:hover, &--active {
+        &--active {
             color: white;
         }
     }
@@ -90,18 +82,6 @@
             position: absolute;
             top: 0.25rem;
             right: 0.25rem;
-
-            display: flex;
-            cursor: pointer;
-            border: none;
-            padding: 0;
-            outline: none;
-            background: transparent;
-            color: inherit;
-
-            &:hover {
-                color: white;
-            }
         }
     }
 
