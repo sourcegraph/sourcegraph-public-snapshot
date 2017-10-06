@@ -2,8 +2,10 @@ package localstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/lib/pq"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -22,6 +24,11 @@ func (*orgMembers) Create(ctx context.Context, orgID int32, userID, username, em
 		"INSERT INTO org_members(org_id, user_id, username, email, display_name, avatar_url) VALUES($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at",
 		m.OrgID, m.UserID, m.Username, m.Email, m.DisplayName, m.AvatarURL).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Constraint == "org_members_org_id_user_id_key" {
+				return nil, errors.New("user is already member of the org")
+			}
+		}
 		return nil, err
 	}
 	return &m, nil
