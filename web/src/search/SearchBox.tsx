@@ -348,7 +348,10 @@ export class SearchBox extends React.Component<Props, State> {
                 }
                 {
                     showNoMatches &&
-                        <div className='search-box__no-matches'><ReportIcon className='icon-inline' /> No matches</div>
+                        <div className='search-box__no-matches'>
+                            <ReportIcon className='icon-inline' />
+                            <div className='search-box__no-matches-text'>No matches</div>
+                        </div>
                 }
 
                 {/* Suggestions */}

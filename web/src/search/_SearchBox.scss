@@ -113,5 +113,8 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
+        &-text {
+            margin-left: .5rem;
+        }
     }
 }
