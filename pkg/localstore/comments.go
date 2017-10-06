@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -51,6 +52,17 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 		AuthorEmail:  authorEmail,
 		AuthorUserID: authorUserID,
 	}, nil
+}
+
+func (c *comments) GetByID(ctx context.Context, commentID int32) (*sourcegraph.Comment, error) {
+	comments, err := c.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL ORDER BY id ASC", commentID)
+	if err != nil {
+		return nil, err
+	}
+	if len(comments) != 1 {
+		return nil, fmt.Errorf("comment ID %d does not exist", commentID)
+	}
+	return comments[0], nil
 }
 
 func (c *comments) GetAllForThread(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error) {

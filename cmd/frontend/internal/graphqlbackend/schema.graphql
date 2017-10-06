@@ -59,6 +59,8 @@ type Mutation {
 	updateUser(displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
+	shareThread(threadID: Int!): String!
+	shareComment(commentID: Int!): String!
 	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): Org!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
 	acceptUserInvite(inviteToken: String!, username: String!, displayName: String!, avatarUrl: String): OrgInviteStatus!

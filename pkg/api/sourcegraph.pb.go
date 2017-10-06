@@ -444,6 +444,17 @@ type Comment struct {
 	AuthorUserID string `json:"AuthorUserID,omitempty"`
 }
 
+// SharedItem represents a shared thread or comment. Note that a code snippet
+// is also just a thread.
+type SharedItem struct {
+	ULID         string `json:"ULID"`
+	AuthorUserID string `json:"AuthorUserID"`
+
+	// Only one of the below is present.
+	ThreadID  *int32 `json:"ThreadID,omitempty"`
+	CommentID *int32 `json:"CommentID,omitempty"`
+}
+
 type Org struct {
 	ID          int32     `json:"ID"`
 	Name        string    `json:"Name,omitempty"`

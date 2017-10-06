@@ -110,6 +110,36 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	return t, nil
 }
 
+func (*schemaResolver) ShareComment(ctx context.Context, args *struct {
+	CommentID int32
+}) (string, error) {
+	comment, err := store.Comments.GetByID(ctx, args.CommentID)
+	if err != nil {
+		return "", err
+	}
+
+	thread, err := store.Threads.Get(ctx, comment.ThreadID)
+	if err != nil {
+		return "", err
+	}
+
+	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+	if err != nil {
+		return "", err
+	}
+
+	// 🚨 SECURITY: verify that the user is in the org.
+	actor := actor.FromContext(ctx)
+	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+	if err != nil {
+		return "", err
+	}
+	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
+		AuthorUserID: actor.UID,
+		CommentID:    &args.CommentID,
+	})
+}
+
 type commentResults struct {
 	emails     []string
 	commentURL string

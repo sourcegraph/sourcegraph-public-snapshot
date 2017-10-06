@@ -279,6 +279,31 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	return &threadResolver{org, repo, thread}, nil
 }
 
+func (*schemaResolver) ShareThread(ctx context.Context, args *struct {
+	ThreadID int32
+}) (string, error) {
+	thread, err := store.Threads.Get(ctx, args.ThreadID)
+	if err != nil {
+		return "", err
+	}
+
+	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+	if err != nil {
+		return "", err
+	}
+
+	// 🚨 SECURITY: verify that the current user is in the org.
+	actor := actor.FromContext(ctx)
+	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+	if err != nil {
+		return "", err
+	}
+	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
+		AuthorUserID: actor.UID,
+		ThreadID:     &args.ThreadID,
+	})
+}
+
 // titleFromContents returns a title based on the first sentence or line of the content.
 func titleFromContents(contents string) string {
 	matchEndpoint := regexp.MustCompile(`[.!?]\s`)
