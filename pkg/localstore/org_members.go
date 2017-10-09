@@ -79,7 +79,7 @@ func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...inte
 		return nil, err
 	}
 	if len(members) != 1 {
-		return nil, &ErrOrgMemberNotFound{args}
+		return nil, ErrOrgMemberNotFound{args}
 	}
 	return members[0], nil
 }
