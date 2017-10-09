@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -17,6 +18,14 @@ import (
 // canonical, so any frontend or DB username validation should be based on a
 // pattern equivalent to this one.
 var matchUsername = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,36}[a-zA-Z0-9])?$`)
+
+type ErrUserNotFound struct {
+	args []interface{}
+}
+
+func (err ErrUserNotFound) Error() string {
+	return fmt.Sprintf("user not found: %v", err.args)
+}
 
 // users provides access to the `users` table.
 //
@@ -81,11 +90,7 @@ func (u *users) Update(id int32, displayName *string, avatarURL *string) (*sourc
 }
 
 func (u *users) GetByID(id int32) (*sourcegraph.User, error) {
-	users, err := u.getBySQL("WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
-	if err != nil || len(users) == 0 {
-		return nil, err
-	}
-	return users[0], nil
+	return u.getOneBySQL("WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
@@ -97,6 +102,17 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 	users, err := u.getBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 	if err != nil || len(users) == 0 {
 		return nil, err
+	}
+	return users[0], nil
+}
+
+func (u *users) getOneBySQL(query string, args ...interface{}) (*sourcegraph.User, error) {
+	users, err := u.getBySQL(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	if len(users) != 1 {
+		return nil, ErrUserNotFound{args}
 	}
 	return users[0], nil
 }
