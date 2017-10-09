@@ -20,37 +20,65 @@ type Query {
 }
 
 type ThreadLines {
-	htmlBefore: String! # HTML context lines before 'html'.
-	html: String!       # HTML lines that the user's selection was made on.
-	htmlAfter: String!  # HTML context lines after 'html'.
+	# HTML context lines before 'html'.
+	htmlBefore: String!
 
-	textBefore: String! # text context lines before 'text'.
-	text: String!       # text lines that the user's selection was made on.
-	textAfter: String!  # text context lines after 'text'.
+	# HTML lines that the user's selection was made on.
+	html: String!
 
-	# Two integers which represent the original user selection of text.
+	# HTML context lines after 'html'.
+	htmlAfter: String!
+
+	# text context lines before 'text'.
+	textBefore: String!
+
+	# text lines that the user's selection was made on.
+	text: String!
+
+	# text context lines after 'text'.
+	textAfter: String!
+
+	# byte offset into textLines where user selection began
 	#
 	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
-	textSelectionRangeStart: Int!  # byte offset into textLines where user selection begins
-	textSelectionRangeLength: Int! # length in bytes of the user selection
+	textSelectionRangeStart: Int!
+
+	# length in bytes of the user selection
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeLength: Int!
 }
 
 # Literally the exact same thing as above, except it's an input type because
 # GraphQL doesn't allow mixing input and output types.
 input ThreadLinesInput {
-	htmlBefore: String! # HTML context lines before 'html'.
-	html: String!       # HTML lines that the user's selection was made on.
-	htmlAfter: String!  # HTML context lines after 'html'.
+	# HTML context lines before 'html'.
+	htmlBefore: String!
 
-	textBefore: String! # text context lines before 'text'.
-	text: String!       # text lines that the user's selection was made on.
-	textAfter: String!  # text context lines after 'text'.
+	# HTML lines that the user's selection was made on.
+	html: String!
 
-	# Two integers which represent the original user selection of text.
+	# HTML context lines after 'html'.
+	htmlAfter: String!
+
+	# text context lines before 'text'.
+	textBefore: String!
+
+	# text lines that the user's selection was made on.
+	text: String!
+
+	# text context lines after 'text'.
+	textAfter: String!
+
+	# byte offset into textLines where user selection began
 	#
 	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
-	textSelectionRangeStart: Int!  # byte offset into textLines where user selection begins
-	textSelectionRangeLength: Int! # length in bytes of the user selection
+	textSelectionRangeStart: Int!
+
+	# length in bytes of the user selection
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeLength: Int!
 }
 
 type Mutation {
