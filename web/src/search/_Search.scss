@@ -70,12 +70,10 @@
         margin-top: 1rem;
         padding: 0.5rem 1.25rem;
         position: relative;
-        transition: opacity 100ms ease-in-out;
-        will-change: opacity;
-        opacity: 0;
+        display: none;
 
         &--open {
-            opacity: 1;
+            display: block;
         }
 
         &-close-button {
