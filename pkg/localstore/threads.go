@@ -29,8 +29,8 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 	newThread.CreatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
 	err := globalDB.QueryRow(
-		"INSERT INTO threads(org_repo_id, file, revision, start_line, end_line, start_character, end_character, range_length, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
-		newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.RangeLength, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
+		"INSERT INTO threads(org_repo_id, file, revision, branch, start_line, end_line, start_character, end_character, range_length, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+		newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.Branch, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.RangeLength, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +99,14 @@ func (t *threads) GetAllForRepo(ctx context.Context, repoID, limit int32) ([]*so
 
 func (t *threads) GetAllForFile(ctx context.Context, repoID int32, file string, limit int32) ([]*sourcegraph.Thread, error) {
 	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND file=$2 AND deleted_at IS NULL) LIMIT $3", repoID, file, limit)
+}
+
+func (t *threads) GetAllForBranch(ctx context.Context, repoID int32, branch string, limit int32) ([]*sourcegraph.Thread, error) {
+	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND branch=$2 AND deleted_at IS NULL) LIMIT $3", repoID, branch, limit)
+}
+
+func (t *threads) GetAllForFileOnBranch(ctx context.Context, repoID int32, file, branch string, limit int32) ([]*sourcegraph.Thread, error) {
+	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND file=$2 AND branch=$3 AND deleted_at IS NULL) LIMIT $4", repoID, file, branch, limit)
 }
 
 // getBySQL returns threads matching the SQL query, if any exist.

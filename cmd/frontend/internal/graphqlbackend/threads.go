@@ -104,6 +104,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	RemoteURI      string
 	File           string
 	Revision       string
+	Branch         *string
 	StartLine      int32
 	EndLine        int32
 	StartCharacter int32
@@ -139,6 +140,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 		OrgRepoID:      repo.ID,
 		File:           args.File,
 		Revision:       args.Revision,
+		Branch:         args.Branch,
 		StartLine:      args.StartLine,
 		EndLine:        args.EndLine,
 		StartCharacter: args.StartCharacter,

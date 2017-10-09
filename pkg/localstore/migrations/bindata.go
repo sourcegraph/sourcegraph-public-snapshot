@@ -36,6 +36,8 @@
 // ../../../migrations/1506710237_user_org_constraint_updates.up.sql
 // ../../../migrations/1506989402_add_tags.down.sql
 // ../../../migrations/1506989402_add_tags.up.sql
+// ../../../migrations/1507227971_branches_on_threads.down.sql
+// ../../../migrations/1507227971_branches_on_threads.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -823,6 +825,46 @@ func _1506989402_add_tagsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1507227971_branches_on_threadsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x50\x2a\xc9\x28\x4a\x4d\x4c\x29\x56\x52\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\x2a\x4a\xcc\x4b\xce\x50\xb2\xe6\x02\x04\x00\x00\xff\xff\x2a\x12\xa6\x0a\x2c\x00\x00\x00")
+
+func _1507227971_branches_on_threadsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507227971_branches_on_threadsDownSql,
+		"1507227971_branches_on_threads.down.sql",
+	)
+}
+
+func _1507227971_branches_on_threadsDownSql() (*asset, error) {
+	bytes, err := _1507227971_branches_on_threadsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507227971_branches_on_threads.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1507227971_branches_on_threadsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x50\x2a\xc9\x28\x4a\x4d\x4c\x29\x56\x52\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\x2a\x4a\xcc\x4b\xce\x50\x52\x28\x49\xad\x28\xb1\xe6\x02\x04\x00\x00\xff\xff\x1f\xa7\x1c\xef\x30\x00\x00\x00")
+
+func _1507227971_branches_on_threadsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507227971_branches_on_threadsUpSql,
+		"1507227971_branches_on_threads.up.sql",
+	)
+}
+
+func _1507227971_branches_on_threadsUpSql() (*asset, error) {
+	bytes, err := _1507227971_branches_on_threadsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507227971_branches_on_threads.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -911,6 +953,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1506710237_user_org_constraint_updates.up.sql":   _1506710237_user_org_constraint_updatesUpSql,
 	"1506989402_add_tags.down.sql":                    _1506989402_add_tagsDownSql,
 	"1506989402_add_tags.up.sql":                      _1506989402_add_tagsUpSql,
+	"1507227971_branches_on_threads.down.sql":         _1507227971_branches_on_threadsDownSql,
+	"1507227971_branches_on_threads.up.sql":           _1507227971_branches_on_threadsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -990,6 +1034,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1506710237_user_org_constraint_updates.up.sql":   &bintree{_1506710237_user_org_constraint_updatesUpSql, map[string]*bintree{}},
 	"1506989402_add_tags.down.sql":                    &bintree{_1506989402_add_tagsDownSql, map[string]*bintree{}},
 	"1506989402_add_tags.up.sql":                      &bintree{_1506989402_add_tagsUpSql, map[string]*bintree{}},
+	"1507227971_branches_on_threads.down.sql":         &bintree{_1507227971_branches_on_threadsDownSql, map[string]*bintree{}},
+	"1507227971_branches_on_threads.up.sql":           &bintree{_1507227971_branches_on_threadsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

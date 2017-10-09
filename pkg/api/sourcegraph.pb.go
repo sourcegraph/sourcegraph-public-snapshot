@@ -408,6 +408,7 @@ type Thread struct {
 	OrgRepoID      int32      `json:"OrgRepoID,omitempty"`
 	File           string     `json:"File,omitempty"`
 	Revision       string     `json:"Revision,omitempty"`
+	Branch         *string    `json:"Branch,omitempty"`
 	StartLine      int32      `json:"StartLine,omitempty"`
 	EndLine        int32      `json:"EndLine,omitempty"`
 	StartCharacter int32      `json:"StartCharacter,omitempty"`

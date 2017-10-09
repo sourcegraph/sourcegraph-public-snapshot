@@ -34,8 +34,9 @@ func (o *orgRepoResolver) UpdatedAt() string {
 }
 
 func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
-	File  *string
-	Limit *int32
+	File   *string
+	Branch *string
+	Limit  *int32
 }) ([]*threadResolver, error) {
 	limit := int32(1000)
 	if args.Limit != nil && *args.Limit < limit {
@@ -43,7 +44,11 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 	}
 	var threads []*sourcegraph.Thread
 	var err error
-	if args.File != nil {
+	if args.Branch != nil && args.File != nil {
+		threads, err = store.Threads.GetAllForFileOnBranch(ctx, o.repo.ID, *args.File, *args.Branch, limit)
+	} else if args.Branch != nil {
+		threads, err = store.Threads.GetAllForBranch(ctx, o.repo.ID, *args.Branch, limit)
+	} else if args.File != nil {
 		threads, err = store.Threads.GetAllForFile(ctx, o.repo.ID, *args.File, limit)
 	} else {
 		threads, err = store.Threads.GetAllForRepo(ctx, o.repo.ID, limit)

@@ -205,6 +205,7 @@ Indexes:
  updated_at      | timestamp with time zone | default now()
  deleted_at      | timestamp with time zone | 
  range_length    | integer                  | 
+ branch          | text                     | 
 Indexes:
     "threads_pkey" PRIMARY KEY, btree (id)
     "threads_local_repo_id_file_idx" btree (org_repo_id, file)

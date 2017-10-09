@@ -41,6 +41,7 @@ func TestThreads_Create(t *testing.T) {
 		RemoteURI      string
 		File           string
 		Revision       string
+		Branch         *string
 		StartLine      int32
 		EndLine        int32
 		StartCharacter int32
