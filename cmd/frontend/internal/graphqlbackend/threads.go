@@ -68,6 +68,54 @@ func (t *threadResolver) CreatedAt() string {
 	return t.thread.CreatedAt.Format(time.RFC3339) // ISO
 }
 
+func (t *threadResolver) Author(ctx context.Context) (*userResolver, error) {
+	user, err := store.Users.GetByAuth0ID(t.thread.AuthorUserID)
+	if err != nil {
+		return nil, err
+	}
+	return &userResolver{actor: actor.FromContext(ctx), user: user}, nil
+}
+
+func (t *threadResolver) Lines() *threadLineResolver {
+	return &threadLineResolver{t.thread}
+}
+
+type threadLineResolver struct {
+	*sourcegraph.Thread
+}
+
+func (t *threadLineResolver) HTMLBefore() string {
+	return t.Lines.HTMLBefore
+}
+
+func (t *threadLineResolver) HTML() string {
+	return t.Lines.HTML
+}
+
+func (t *threadLineResolver) HTMLAfter() string {
+	return t.Lines.HTMLAfter
+}
+
+func (t *threadLineResolver) TextBefore() string {
+	return t.Lines.TextBefore
+}
+
+func (t *threadLineResolver) Text() string {
+	return t.Lines.Text
+}
+
+func (t *threadLineResolver) TextAfter() string {
+	return t.Lines.TextAfter
+}
+
+func (t *threadLineResolver) TextSelectionRangeStart() int32 {
+	return t.Lines.TextSelectionRangeStart
+}
+
+func (t *threadLineResolver) TextSelectionRangeLength() int32 {
+	return t.Lines.TextSelectionRangeLength
+}
+
 func (t *threadResolver) ArchivedAt() *string {
 	if t.thread.ArchivedAt == nil {
 		return nil
@@ -99,7 +147,14 @@ func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, erro
 	return commentResolvers, nil
 }
 
-func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
+type threadLines struct {
+	HTMLBefore, HTML, HTMLAfter string
+	TextBefore, Text, TextAfter string
+	TextSelectionRangeStart     int32
+	TextSelectionRangeLength    int32
+}
+
+func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	OrgID          int32
 	RemoteURI      string
 	File           string
@@ -111,6 +166,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	EndCharacter   int32
 	RangeLength    int32
 	Contents       string
+	Lines          *threadLines
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
@@ -136,7 +192,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	}
 
 	// TODO(nick): transaction
-	newThread, err := store.Threads.Create(ctx, &sourcegraph.Thread{
+	thread := &sourcegraph.Thread{
 		OrgRepoID:      repo.ID,
 		File:           args.File,
 		Revision:       args.Revision,
@@ -146,27 +202,46 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 		StartCharacter: args.StartCharacter,
 		EndCharacter:   args.EndCharacter,
 		RangeLength:    args.RangeLength,
-	})
+		AuthorUserID:   actor.UID,
+	}
+	if args.Lines != nil {
+		thread.Lines = &sourcegraph.ThreadLines{
+			HTMLBefore:               args.Lines.HTMLBefore,
+			HTML:                     args.Lines.HTML,
+			HTMLAfter:                args.Lines.HTMLAfter,
+			TextBefore:               args.Lines.TextBefore,
+			Text:                     args.Lines.Text,
+			TextAfter:                args.Lines.TextAfter,
+			TextSelectionRangeStart:  args.Lines.TextSelectionRangeStart,
+			TextSelectionRangeLength: args.Lines.TextSelectionRangeLength,
+		}
+	}
+	newThread, err := store.Threads.Create(ctx, thread)
 	if err != nil {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", actor.Email, actor.UID)
-	if err != nil {
-		return nil, err
-	}
+	if args.Contents != "" {
+		comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", actor.Email, actor.UID)
+		if err != nil {
+			return nil, err
+		}
 
-	results := notifyAllInOrg(ctx, repo, newThread, nil, comment, member.DisplayName)
+		results := notifyAllInOrg(ctx, repo, newThread, nil, comment, member.DisplayName)
+		if user, err := currentUser(ctx); err != nil {
+			// errors swallowed because user is only needed for Slack notifications
+			log15.Error("graphqlbackend.CreateThread: currentUser failed", "error", err)
+		} else {
+			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
+			client := slack.New(sourcegraphOrgWebhookURL)
+			go client.NotifyOnThread(user, org, repo, newThread, comment, results.emails, getURL(repo, newThread, comment, "slack"))
+		}
+	} /* else {
+		// Creating a thread without Contents (a comment) means it is a code
+		// snippet without any user comment.
 
-	if user, err := currentUser(ctx); err != nil {
-		// errors swallowed because user is only needed for Slack notifications
-		log15.Error("graphqlbackend.CreateThread: currentUser failed", "error", err)
-	} else {
-		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-		client := slack.New(sourcegraphOrgWebhookURL)
-		go client.NotifyOnThread(user, org, repo, newThread, comment, results.emails, getURL(repo, newThread, comment, "slack"))
-	}
-
+		// TODO(dan): slack notifications for this case
+	}*/
 	return &threadResolver{org, repo, newThread}, nil
 }
 
@@ -202,6 +277,31 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 	// TODO: send email notification that thread has been archived?
 	return &threadResolver{org, repo, thread}, nil
+}
+
+func (*schemaResolver) ShareThread(ctx context.Context, args *struct {
+	ThreadID int32
+}) (string, error) {
+	thread, err := store.Threads.Get(ctx, args.ThreadID)
+	if err != nil {
+		return "", err
+	}
+
+	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+	if err != nil {
+		return "", err
+	}
+
+	// 🚨 SECURITY: verify that the current user is in the org.
+	actor := actor.FromContext(ctx)
+	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+	if err != nil {
+		return "", err
+	}
+	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
+		AuthorUserID: actor.UID,
+		ThreadID:     &args.ThreadID,
+	})
 }
 
 // titleFromContents returns a title based on the first sentence or line of the content.

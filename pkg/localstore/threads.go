@@ -28,9 +28,16 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 
 	newThread.CreatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
-	err := globalDB.QueryRow(
-		"INSERT INTO threads(org_repo_id, file, revision, branch, start_line, end_line, start_character, end_character, range_length, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
-		newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.Branch, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.RangeLength, newThread.CreatedAt, newThread.UpdatedAt).Scan(&newThread.ID)
+	var err error
+	if newThread.Lines == nil {
+		err = globalDB.QueryRow(
+			"INSERT INTO threads(org_repo_id, file, revision, branch, start_line, end_line, start_character, end_character, range_length, created_at, updated_at, author_user_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id",
+			newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.Branch, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.RangeLength, newThread.CreatedAt, newThread.UpdatedAt, newThread.AuthorUserID).Scan(&newThread.ID)
+	} else {
+		err = globalDB.QueryRow(
+			"INSERT INTO threads(org_repo_id, file, revision, branch, start_line, end_line, start_character, end_character, range_length, created_at, updated_at, author_user_id, html_lines_before, html_lines, html_lines_after, text_lines_before, text_lines, text_lines_after, text_lines_selection_range_start, text_lines_selection_range_length) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $18, $19, $20) RETURNING id",
+			newThread.OrgRepoID, newThread.File, newThread.Revision, newThread.Branch, newThread.StartLine, newThread.EndLine, newThread.StartCharacter, newThread.EndCharacter, newThread.RangeLength, newThread.CreatedAt, newThread.UpdatedAt, newThread.AuthorUserID, newThread.Lines.HTMLBefore, newThread.Lines.HTML, newThread.Lines.HTMLAfter, newThread.Lines.TextBefore, newThread.Lines.Text, newThread.Lines.TextAfter, newThread.Lines.TextSelectionRangeStart, newThread.Lines.TextSelectionRangeLength).Scan(&newThread.ID)
+	}
 	if err != nil {
 		return nil, err
 	}

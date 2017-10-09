@@ -403,20 +403,33 @@ type OrgRepo struct {
 	UpdatedAt time.Time
 }
 
+type ThreadLines struct {
+	HTMLBefore               string `json:"HTMLBefore,omitempty"`
+	HTML                     string `json:"HTML,omitempty"`
+	HTMLAfter                string `json:"HTMLAfter,omitempty"`
+	TextBefore               string `json:"TextBefore,omitempty"`
+	Text                     string `json:"Text,omitempty"`
+	TextAfter                string `json:"TextAfter,omitempty"`
+	TextSelectionRangeStart  int32  `json:"TextSelectionRangeStart,omitempty"`
+	TextSelectionRangeLength int32  `json:"TextSelectionRangeLength,omitempty"`
+}
+
 type Thread struct {
-	ID             int32      `json:"ID,omitempty"`
-	OrgRepoID      int32      `json:"OrgRepoID,omitempty"`
-	File           string     `json:"File,omitempty"`
-	Revision       string     `json:"Revision,omitempty"`
-	Branch         *string    `json:"Branch,omitempty"`
-	StartLine      int32      `json:"StartLine,omitempty"`
-	EndLine        int32      `json:"EndLine,omitempty"`
-	StartCharacter int32      `json:"StartCharacter,omitempty"`
-	EndCharacter   int32      `json:"EndCharacter,omitempty"`
-	RangeLength    int32      `json:"RangeLength,omitempty"`
-	CreatedAt      time.Time  `json:"CreatedAt,omitempty"`
-	UpdatedAt      time.Time  `json:"UpdatedAt,omitempty"`
-	ArchivedAt     *time.Time `json:"ArchivedAt,omitempty"`
+	ID             int32        `json:"ID,omitempty"`
+	OrgRepoID      int32        `json:"OrgRepoID,omitempty"`
+	File           string       `json:"File,omitempty"`
+	Revision       string       `json:"Revision,omitempty"`
+	Branch         *string      `json:"Branch,omitempty"`
+	StartLine      int32        `json:"StartLine,omitempty"`
+	EndLine        int32        `json:"EndLine,omitempty"`
+	StartCharacter int32        `json:"StartCharacter,omitempty"`
+	EndCharacter   int32        `json:"EndCharacter,omitempty"`
+	RangeLength    int32        `json:"RangeLength,omitempty"`
+	CreatedAt      time.Time    `json:"CreatedAt,omitempty"`
+	UpdatedAt      time.Time    `json:"UpdatedAt,omitempty"`
+	ArchivedAt     *time.Time   `json:"ArchivedAt,omitempty"`
+	AuthorUserID   string       `json:"AuthorUserID,omitempty"`
+	Lines          *ThreadLines `json:"ThreadLines,omitempty"`
 }
 
 type Comment struct {
@@ -429,6 +442,17 @@ type Comment struct {
 	AuthorName   string `json:"AuthorName,omitempty"`
 	AuthorEmail  string `json:"AuthorEmail,omitempty"`
 	AuthorUserID string `json:"AuthorUserID,omitempty"`
+}
+
+// SharedItem represents a shared thread or comment. Note that a code snippet
+// is also just a thread.
+type SharedItem struct {
+	ULID         string `json:"ULID"`
+	AuthorUserID string `json:"AuthorUserID"`
+
+	// Only one of the below is present.
+	ThreadID  *int32 `json:"ThreadID,omitempty"`
+	CommentID *int32 `json:"CommentID,omitempty"`
 }
 
 type Org struct {

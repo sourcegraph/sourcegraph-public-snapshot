@@ -25,12 +25,76 @@ type Query {
 	node(id: ID!): Node
 }
 
+type ThreadLines {
+	# HTML context lines before 'html'.
+	htmlBefore: String!
+
+	# HTML lines that the user's selection was made on.
+	html: String!
+
+	# HTML context lines after 'html'.
+	htmlAfter: String!
+
+	# text context lines before 'text'.
+	textBefore: String!
+
+	# text lines that the user's selection was made on.
+	text: String!
+
+	# text context lines after 'text'.
+	textAfter: String!
+
+	# byte offset into textLines where user selection began
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeStart: Int!
+
+	# length in bytes of the user selection
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeLength: Int!
+}
+
+# Literally the exact same thing as above, except it's an input type because
+# GraphQL doesn't allow mixing input and output types.
+input ThreadLinesInput {
+	# HTML context lines before 'html'.
+	htmlBefore: String!
+
+	# HTML lines that the user's selection was made on.
+	html: String!
+
+	# HTML context lines after 'html'.
+	htmlAfter: String!
+
+	# text context lines before 'text'.
+	textBefore: String!
+
+	# text lines that the user's selection was made on.
+	text: String!
+
+	# text context lines after 'text'.
+	textAfter: String!
+
+	# byte offset into textLines where user selection began
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeStart: Int!
+
+	# length in bytes of the user selection
+	#
+	# In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+	textSelectionRangeLength: Int!
+}
+
 type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
-	createThread(orgID: Int!, remoteURI: String!, file: String!, revision: String!, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!): Thread!
+	createThread(orgID: Int!, remoteURI: String!, file: String!, revision: String!, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
 	updateUser(displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
+	shareThread(threadID: Int!): String!
+	shareComment(commentID: Int!): String!
 	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): Org!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
 	acceptUserInvite(inviteToken: String!, username: String!, displayName: String!, avatarUrl: String): OrgInviteStatus!
@@ -364,6 +428,8 @@ type Thread {
 	rangeLength: Int!
 	createdAt: String!
 	archivedAt: String
+	author: User!
+	lines: ThreadLines
 	comments: [Comment!]!
 }
 
