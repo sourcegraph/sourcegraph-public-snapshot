@@ -55,7 +55,7 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 }
 
 func (c *comments) GetByID(ctx context.Context, commentID int32) (*sourcegraph.Comment, error) {
-	comments, err := c.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL ORDER BY id ASC", commentID)
+	comments, err := c.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL", commentID)
 	if err != nil {
 		return nil, err
 	}
