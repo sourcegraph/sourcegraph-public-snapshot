@@ -164,7 +164,7 @@ func (*schemaResolver) CreateThread(ctx context.Context, args *struct {
 	} else {
 		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 		client := slack.New(sourcegraphOrgWebhookURL)
-		go client.NotifyOnThread(user, org, repo, newThread, comment, results.emails, results.commentURL)
+		go client.NotifyOnThread(user, org, repo, newThread, comment, results.emails, getURL(repo, newThread, comment, "slack"))
 	}
 
 	return &threadResolver{org, repo, newThread}, nil

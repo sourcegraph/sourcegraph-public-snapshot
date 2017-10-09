@@ -104,7 +104,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	} else {
 		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 		client := slack.New(sourcegraphOrgWebhookURL)
-		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, results.commentURL, title)
+		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, getURL(repo, thread, comment, "slack"), title)
 	}
 
 	return t, nil
@@ -116,7 +116,7 @@ type commentResults struct {
 }
 
 func notifyAllInOrg(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment, commentAuthorName string) *commentResults {
-	commentURL := getURL(repo, thread, comment)
+	commentURL := getURL(repo, thread, comment, "email")
 	if !notif.EmailIsConfigured() {
 		return &commentResults{emails: []string{}, commentURL: commentURL}
 	}
@@ -173,7 +173,12 @@ func repoNameFromURI(remoteURI string) string {
 	return m[1]
 }
 
-func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment) string {
+func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment, utmSource string) string {
+	aboutValues := url.Values{}
+	if utmSource != "" {
+		aboutValues.Set("utm_source", utmSource)
+	}
+
 	cloneURL := fmt.Sprintf("https://%s", repo.RemoteURI)
 	values := url.Values{}
 	values.Set("repo", cloneURL)
@@ -181,5 +186,5 @@ func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, comment *sour
 	values.Set("revision", thread.Revision)
 	values.Set("path", thread.File)
 	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
-	return fmt.Sprintf("https://about.sourcegraph.com/open/#open?%s", values.Encode())
+	return fmt.Sprintf("https://about.sourcegraph.com/open/?%s#open?%s", aboutValues.Encode(), values.Encode())
 }
