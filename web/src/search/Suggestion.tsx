@@ -21,7 +21,8 @@ export interface SuggestionProps {
 }
 
 export const Suggestion = (props: SuggestionProps) => {
-    const splitRegexp = new RegExp(`(${escapeRegexp(props.query)})`, 'gi')
+    const lowerQuery = props.query.toLowerCase()
+    const splitRegexp = new RegExp(`(${escapeRegexp(lowerQuery)})`, 'gi')
     const parts = props.label.split(splitRegexp)
     const Icon = props.icon
     return (
@@ -30,7 +31,7 @@ export const Suggestion = (props: SuggestionProps) => {
             <div className='suggestion__label'>
                 {
                     parts.map((part, i) =>
-                        <span key={i} className={part.toLowerCase() === props.query ? 'suggestion__highlighted-query' : ''}>
+                        <span key={i} className={part.toLowerCase() === lowerQuery ? 'suggestion__highlighted-query' : ''}>
                             {part}
                         </span>
                     )
