@@ -188,24 +188,51 @@ Indexes:
 
 ```
 
+# Table "public.shared_items"
+```
+     Column     |           Type           |                         Modifiers                         
+----------------+--------------------------+-----------------------------------------------------------
+ id             | bigint                   | not null default nextval('shared_items_id_seq'::regclass)
+ ulid           | text                     | not null
+ author_user_id | text                     | not null
+ thread_id      | bigint                   | 
+ comment_id     | bigint                   | 
+ created_at     | timestamp with time zone | not null default now()
+ updated_at     | timestamp with time zone | not null default now()
+ deleted_at     | timestamp with time zone | 
+Indexes:
+    "shared_items_pkey" PRIMARY KEY, btree (id)
+    "shared_items_ulid_idx" UNIQUE, btree (ulid)
+
+```
+
 # Table "public.threads"
 ```
-     Column      |           Type           |                      Modifiers                       
------------------+--------------------------+------------------------------------------------------
- id              | bigint                   | not null default nextval('threads_id_seq'::regclass)
- org_repo_id     | bigint                   | 
- file            | text                     | 
- revision        | text                     | 
- start_line      | integer                  | 
- end_line        | integer                  | 
- start_character | integer                  | 
- end_character   | integer                  | 
- created_at      | timestamp with time zone | default now()
- archived_at     | timestamp with time zone | 
- updated_at      | timestamp with time zone | default now()
- deleted_at      | timestamp with time zone | 
- range_length    | integer                  | 
- branch          | text                     | 
+              Column               |           Type           |                      Modifiers                       
+-----------------------------------+--------------------------+------------------------------------------------------
+ id                                | bigint                   | not null default nextval('threads_id_seq'::regclass)
+ org_repo_id                       | bigint                   | 
+ file                              | text                     | 
+ revision                          | text                     | 
+ start_line                        | integer                  | 
+ end_line                          | integer                  | 
+ start_character                   | integer                  | 
+ end_character                     | integer                  | 
+ created_at                        | timestamp with time zone | default now()
+ archived_at                       | timestamp with time zone | 
+ updated_at                        | timestamp with time zone | default now()
+ deleted_at                        | timestamp with time zone | 
+ range_length                      | integer                  | 
+ branch                            | text                     | 
+ author_user_id                    | text                     | not null
+ html_lines_before                 | text                     | 
+ html_lines                        | text                     | 
+ html_lines_after                  | text                     | 
+ text_lines_before                 | text                     | 
+ text_lines                        | text                     | 
+ text_lines_after                  | text                     | 
+ text_lines_selection_range_start  | integer                  | not null default 0
+ text_lines_selection_range_length | integer                  | not null default 0
 Indexes:
     "threads_pkey" PRIMARY KEY, btree (id)
     "threads_local_repo_id_file_idx" btree (org_repo_id, file)
