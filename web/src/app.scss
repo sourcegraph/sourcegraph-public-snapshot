@@ -10,6 +10,9 @@ $color-success:   #0CA678;
 $color-primary:   #1C7CD6;
 $color-error:     #f03e3e;
 
+$color-light-page-background: #F2F4F8;
+$color-light-text:      #39496A;
+
 // Media breakpoints
 $media-sm: 576px;
 $media-md: 768px;
@@ -73,6 +76,12 @@ body {
 #root {
     display: flex;
     width: 100%;
+}
+
+// Light-themed elements
+.light {
+    background-color: $color-light-page-background;
+    color: $color-light-text;
 }
 
 // Selection highlight is the background color for matched/highlighted tokens,
@@ -231,6 +240,13 @@ h1 {
     }
     &:focus {
         outline: darken($color-primary, 5%);
+    }
+}
+
+.light a,
+.light .btn-icon {
+    &:hover {
+        color: #070A0D;
     }
 }
 

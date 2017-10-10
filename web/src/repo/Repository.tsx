@@ -16,6 +16,9 @@ import { Subscription } from 'rxjs/Subscription'
 import { Position } from 'vscode-languageserver-types'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
+import { SurveyToast } from '../marketing/SurveyToast'
+import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ReferencesWidget } from '../references/ReferencesWidget'
 import { viewEvents } from '../tracking/events'
 import { Tree } from '../tree/Tree'
@@ -168,6 +171,11 @@ export class Repository extends React.Component<Props, State> {
             <div className='repository'>
                 <PageTitle title={this.getPageTitle()} />
                 <RepoNav {...this.props} />
+                {IS_CHROME &&
+                    <ChromeExtensionToast />}
+                {IS_FIREFOX &&
+                    <FirefoxExtensionToast />}
+                <SurveyToast />
                 <div className='repository__content'>
                     <div id='explorer' className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}>
                         <button type='button' className='btn btn-icon repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon /></button>

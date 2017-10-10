@@ -12,6 +12,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter, Redirect } from 'react-router-dom'
 import { fetchCurrentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
+import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search/index'
@@ -141,7 +142,6 @@ class App extends React.Component<{}, AppState> {
     }
 
     public render(): JSX.Element | null {
-
         if (this.state.error) {
             return <HeroPage icon={ErrorIcon} title={'Something happened'} subtitle={this.state.error.message} />
         }
@@ -186,3 +186,4 @@ window.addEventListener('DOMContentLoaded', () => {
 })
 
 handleQueryEvents(window.location.href)
+updateUserSessionStores()

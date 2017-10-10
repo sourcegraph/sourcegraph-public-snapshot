@@ -66,6 +66,14 @@ export const events = {
     RemoveOrgMemberFailed: new LoggableEvent('RemoveOrgMemberFailed', EventCategories.Settings, EventActions.Error),
     OrgMemberRemoved: new LoggableEvent('OrgMemberRemoved', EventCategories.Settings, EventActions.Success),
 
+    // Marketing events
+    SurveyReminderViewed: new LoggableEvent('SurveyReminderViewed', EventCategories.Marketing, EventActions.Passive),
+    SurveyReminderButtonClicked: new LoggableEvent('SurveyReminderButtonClicked', EventCategories.Marketing, EventActions.Click),
+    BrowserExtReminderViewed: new LoggableEvent('BrowserExtReminderViewed', EventCategories.Marketing, EventActions.Passive),
+    BrowserExtInstallClicked: new LoggableEvent('BrowserExtInstallClicked', EventCategories.Marketing, EventActions.Click),
+    BrowserExtInstallSuccess: new LoggableEvent('BrowserExtInstallSuccess', EventCategories.Marketing, EventActions.Success),
+    BrowserExtInstallFailed: new LoggableEvent('BrowserExtInstallFailed', EventCategories.Marketing, EventActions.Error),
+
     // Nav bar events
     ShareButtonClicked: new LoggableEvent('ShareButtonClicked', EventCategories.Sharing, EventActions.Click),
     OpenInCodeHostClicked: new LoggableEvent('OpenInCodeHostClicked', EventCategories.External, EventActions.Click),
