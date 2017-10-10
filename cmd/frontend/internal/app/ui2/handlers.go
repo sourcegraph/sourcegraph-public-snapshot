@@ -1,12 +1,13 @@
 package ui2
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
@@ -14,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
@@ -256,4 +258,81 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 		}
 		return renderTemplate(w, "app.html", common)
 	}
+}
+
+func serveComment(w http.ResponseWriter, r *http.Request) error {
+	common, err := newCommon(w, r, "", serveError)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
+
+	// Locate the shared item.
+	sharedItem, err := localstore.SharedItems.Get(r.Context(), mux.Vars(r)["ULID"])
+	if err != nil {
+		if legacyerr.ErrCode(err) == legacyerr.NotFound {
+			// shared item does not exist.
+			serveError(w, r, err, http.StatusNotFound)
+			return nil
+		}
+		return errors.Wrap(err, "SharedItems.Get")
+	}
+
+	// Based on the shared item, determine the title and the thread ID.
+	var (
+		title    string
+		threadID int32
+	)
+	switch {
+	case sharedItem.ThreadID != nil:
+		threadID = *sharedItem.ThreadID
+		// TODO(slimsag): future: fetching all for thread just for first one's
+		// title is not that optimal
+		//
+		// TODO(slimsag): future: If comment or thread was deleted, return 404
+		// instead of 500.
+		comments, err := localstore.Comments.GetAllForThread(r.Context(), *sharedItem.ThreadID)
+		if err != nil {
+			return errors.Wrap(err, "Comments.GetAllForThread")
+		}
+		if len(comments) > 0 {
+			title = graphqlbackend.TitleFromContents(comments[0].Contents)
+		}
+	case sharedItem.CommentID != nil:
+		// TODO(slimsag): future: If comment or thread was deleted, return 404
+		// instead of 500.
+		comment, err := localstore.Comments.GetByID(r.Context(), *sharedItem.CommentID)
+		if err != nil {
+			return errors.Wrap(err, "Comments.GetByID")
+		}
+		threadID = comment.ThreadID
+		title = graphqlbackend.TitleFromContents(comment.Contents)
+	}
+
+	// 🚨 SECURITY: verify that the current user is in the org.
+	thread, err := localstore.Threads.Get(r.Context(), threadID)
+	if err != nil {
+		return errors.Wrap(err, "Threads.Get")
+	}
+	orgRepo, err := localstore.OrgRepos.GetByID(r.Context(), thread.OrgRepoID)
+	if err != nil {
+		return errors.Wrap(err, "OrgRepos.GetByID")
+	}
+	actor := actor.FromContext(r.Context())
+	_, err = localstore.OrgMembers.GetByOrgIDAndUserID(r.Context(), orgRepo.OrgID, actor.UID)
+	if err != nil {
+		// TODO(slimsag): future: redirect to sign-in here
+		return errors.Wrap(err, "OrgMembers.GetByOrgIDAndUserID")
+	}
+
+	if title != "" {
+		common.Title = fmt.Sprintf("%s - Sourcegraph", title)
+	} else {
+		// TODO(slimsag): future: Maybe serve some other information here. It
+		// can happen for e.g. a code snippet without any comments on it.
+		common.Title = "Sourcegraph"
+	}
+	return renderTemplate(w, "app.html", common)
 }

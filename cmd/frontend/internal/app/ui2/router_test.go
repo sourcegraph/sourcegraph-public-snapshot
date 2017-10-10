@@ -36,6 +36,13 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
+		// comment
+		{
+			path:      "/c/01BW1W498T6QK1M4EVYXZ0ASS2",
+			wantRoute: routeComment,
+			wantVars:  map[string]string{"ULID": "01BW1W498T6QK1M4EVYXZ0ASS2"},
+		},
+
 		// repo
 		{
 			path:      "/r",
