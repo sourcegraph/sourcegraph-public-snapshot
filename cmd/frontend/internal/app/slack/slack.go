@@ -171,7 +171,7 @@ func (c *Client) notifyOnComments(
 	}
 	usernameText := ""
 	if user.Username() != nil {
-		usernameText = fmt.Sprintf("(*@%s*) ", *user.Username())
+		usernameText = fmt.Sprintf("(@%s) ", *user.Username())
 	}
 	payload := &Payload{
 		Attachments: []*Attachment{
@@ -220,7 +220,7 @@ func (c *Client) NotifyOnInvite(user User, org *sourcegraph.Org, inviteEmail str
 	}
 	usernameText := ""
 	if user.Username() != nil {
-		usernameText = fmt.Sprintf("(*@%s*) ", *user.Username())
+		usernameText = fmt.Sprintf("(@%s) ", *user.Username())
 	}
 
 	text := fmt.Sprintf("*%s* %sjust invited %s to join *<https://sourcegraph.com/settings/teams/%s|%s>*", displayNameText, usernameText, inviteEmail, org.Name, org.Name)
@@ -255,7 +255,7 @@ func (c *Client) NotifyOnAcceptedInvite(user User, org *sourcegraph.Org) {
 	}
 	usernameText := ""
 	if user.Username() != nil {
-		usernameText = fmt.Sprintf("(*@%s*) ", *user.Username())
+		usernameText = fmt.Sprintf("(@%s) ", *user.Username())
 	}
 
 	text := fmt.Sprintf("*%s* %sjust accepted their invitation to join *<https://sourcegraph.com/settings/teams/%s|%s>*", displayNameText, usernameText, org.Name, org.Name)
