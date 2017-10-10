@@ -71,7 +71,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                 .subscribe(
                     () => {
                         const searchParams = new URLSearchParams(this.props.location.search)
-                        const returnTo = searchParams.get('return-to')
+                        const returnTo = searchParams.get('returnTo')
                         if (returnTo) {
                             const newURL = new URL(returnTo, window.location.href)
                             this.props.history.replace(newURL.pathname + newURL.search + newURL.hash)

@@ -29,7 +29,7 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
             const newUrl = new URL(window.location.href)
             newUrl.pathname = currUrl.pathname === '/settings/accept-invite' ? '/sign-up' : '/sign-in'
             // Return to the current page after sign up/in.
-            newUrl.searchParams.set('return-to', window.location.href)
+            newUrl.searchParams.set('returnTo', window.location.href)
             return <Redirect to={newUrl.pathname + newUrl.search} />
         }
         return (

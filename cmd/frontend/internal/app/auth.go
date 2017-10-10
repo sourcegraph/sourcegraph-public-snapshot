@@ -116,12 +116,12 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		go tracking.TrackUser(actor, eventLabel)
 	}
 
-	returnTo := r.URL.Query().Get("return-to")
+	returnTo := r.URL.Query().Get("returnTo")
 	if returnTo == "" {
 		returnTo = "/"
 	}
 	if dbUser == nil {
-		returnTo = "/settings?backfill=true&return-to=" + returnTo
+		returnTo = "/settings?backfill=true&returnTo=" + returnTo
 		if userCreateErr != nil {
 			errorCode := "err_unknown"
 			if cerr, ok := userCreateErr.(store.ErrCannotCreateUser); ok {
@@ -144,7 +144,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		returnToURL.RawQuery = q.Encode()
 		http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	} else {
-		// Add tracking info to return-to URL.
+		// Add tracking info to returnTo URL.
 		returnToURL, err := url.Parse(returnTo)
 		if err != nil {
 			return err

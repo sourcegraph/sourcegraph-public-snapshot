@@ -144,10 +144,10 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
         const searchParams = new URLSearchParams(this.props.location.search)
-        const returnTo = searchParams.get('return-to')
+        const returnTo = searchParams.get('returnTo')
         const token = searchParams.get('token')
         if (returnTo) {
-            redirect.searchParams.set('return-to', returnTo)
+            redirect.searchParams.set('returnTo', returnTo)
         }
         if (this.state.mode === 'signup') {
             redirect.searchParams.set('username', this.state.username)

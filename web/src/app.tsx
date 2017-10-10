@@ -97,7 +97,7 @@ class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { retu
         super(props)
         const searchParams = new URLSearchParams(this.props.location.search)
         this.state = {
-            returnTo: searchParams.get('return-to') || window.location.href
+            returnTo: searchParams.get('returnTo') || window.location.href
         }
     }
 
@@ -111,7 +111,7 @@ class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { retu
             searchParams.get('backfill') !== 'true'
 
         if (redirectToBackfill) {
-            return <Redirect to={`/settings?backfill=true&return-to=${encodeURIComponent(this.state.returnTo)}`} />
+            return <Redirect to={`/settings?backfill=true&returnTo=${encodeURIComponent(this.state.returnTo)}`} />
         }
         return (
             <Switch>
