@@ -28,7 +28,7 @@ class TelligentWrapper {
         return Boolean(this.telligent)
     }
 
-    public setUserId(login: string): void {
+    public setUsername(login: string): void {
         if (!this.telligent) {
             return
         }

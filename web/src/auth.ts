@@ -28,6 +28,8 @@ export function fetchCurrentUser(): Observable<never> {
             root {
                 currentUser {
                     id
+                    sourcegraphID
+                    username
                     avatarURL
                     email
                     username

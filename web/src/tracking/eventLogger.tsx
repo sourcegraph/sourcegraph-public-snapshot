@@ -10,7 +10,8 @@ class EventLogger {
 
     constructor() {
         if (window.context.user) {
-            this.updateUser({ id: window.context.user.UID })
+            // TODO(dan): update with sourcegraphID from JS Context once available
+            this.updateUser({ id: window.context.user.UID, sourcegraphID: null, username: null, email: null })
         }
 
         currentUser.subscribe(
@@ -30,9 +31,8 @@ class EventLogger {
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(user: GQL.IUser | { id: string, email?: string }): void {
-        // TODO(dan): update with correct handle, if we want one
-        this.setUserId(user.id.toString(), user.email || '')
+    public updateUser(user: GQL.IUser | { id: string, sourcegraphID: number | null, username: string | null, email: string | null }): void {
+        this.setUserIds(user.sourcegraphID, user.id, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
         }
@@ -54,17 +54,18 @@ class EventLogger {
 
     /**
      * Set user ID in Telligent tracker script.
-     * TODO(Dan): determine whether we continue to use handles at the user level, or
-     * if they're fully replaced by org-level handles/usernames. For now, handles
-     * have been replaced with emails.
-     * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.UID from backend)
-     * @param handle Human-readable user identifier, not guaranteed to always stay the same. TODO: determine if we choose to use usernames or emails.
+     * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.ID from backend)
+     * @param uniqueAuth0Id Unique Auth0 user ID (corresponds to Actor.UID or User.Auth0ID from backend)
+     * @param username Human-readable user identifier, not guaranteed to always stay the same
      */
-    public setUserId(uniqueSourcegraphId: string, handle?: string): void {
-        if (handle) {
-            telligent.setUserId(handle)
+    public setUserIds(uniqueSourcegraphId: number | null, uniqueAuth0Id: string, username: string | null): void {
+        if (username) {
+            telligent.setUsername(username)
         }
-        telligent.setUserProperty('internal_user_id', uniqueSourcegraphId)
+        if (uniqueSourcegraphId) {
+            telligent.setUserProperty('user_id', uniqueSourcegraphId)
+        }
+        telligent.setUserProperty('internal_user_id', uniqueAuth0Id)
     }
 
     public setUserInstalledChromeExtension(installedChromeExtension: string): void {
