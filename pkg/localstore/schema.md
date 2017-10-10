@@ -48,22 +48,16 @@ Indexes:
 
 # Table "public.org_members"
 ```
-    Column    |           Type           |                        Modifiers                         
---------------+--------------------------+----------------------------------------------------------
- id           | integer                  | not null default nextval('org_members_id_seq'::regclass)
- org_id       | integer                  | not null
- user_id      | text                     | not null
- email        | text                     | not null
- username     | text                     | not null
- created_at   | timestamp with time zone | default now()
- updated_at   | timestamp with time zone | default now()
- display_name | text                     | not null
- avatar_url   | text                     | 
+   Column   |           Type           |                        Modifiers                         
+------------+--------------------------+----------------------------------------------------------
+ id         | integer                  | not null default nextval('org_members_id_seq'::regclass)
+ org_id     | integer                  | not null
+ user_id    | text                     | not null
+ created_at | timestamp with time zone | default now()
+ updated_at | timestamp with time zone | default now()
 Indexes:
     "org_members_pkey" PRIMARY KEY, btree (id)
-    "org_members_org_id_user_email_key" UNIQUE CONSTRAINT, btree (org_id, email)
     "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
-    "org_members_org_id_user_name_key" UNIQUE CONSTRAINT, btree (org_id, username)
 Foreign-key constraints:
     "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 

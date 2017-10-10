@@ -4,18 +4,14 @@ import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser, fetchCurrentUser } from '../../auth'
 import { events } from '../../tracking/events'
 import { createOrg } from '../backend'
-import { VALID_ORG_NAME_REGEXP, VALID_USERNAME_REGEXP } from '../validation'
+import { VALID_ORG_NAME_REGEXP } from '../validation'
 
 export interface Props {
     history: H.History
@@ -28,11 +24,7 @@ export interface State {
      */
     name: string
 
-    username: string
-
     displayName: string
-
-    email: string
 
     /**
      * Holds any error returned by the remote GraphQL endpoint on failed requests.
@@ -54,31 +46,12 @@ export class NewTeam extends React.Component<Props, State> {
         super()
         this.state = {
             loading: false,
-            displayName: '',
             name: '',
-            username: '',
-            email: ''
+            displayName: ''
         }
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            currentUser
-                .filter((user: GQL.IUser | null): user is GQL.IUser => !!user)
-                .distinctUntilChanged((a, b) => !!(a && b && a.id === b.id))
-                .map(({ email }) => {
-                    email = email || ''
-                    let username = ''
-                    if (email) {
-                        username = email.split('@')[0]
-                        if (!VALID_USERNAME_REGEXP.test(username)) {
-                            username = ''
-                        }
-                    }
-                    return { email, username }
-                })
-                .subscribe(state => this.setState(state))
-        )
         this.subscriptions.add(
             this.submits
                 .do(event => {
@@ -94,7 +67,6 @@ export class NewTeam extends React.Component<Props, State> {
                             return []
                         })
                 )
-                .mergeMap(team => fetchCurrentUser().concat([team]))
                 .subscribe(team => {
                     this.props.history.push(`/settings/teams/${team.name}`)
                 }, error => {
@@ -134,23 +106,7 @@ export class NewTeam extends React.Component<Props, State> {
                     </div>
 
                     <div className='form-group'>
-                        <label>Your new username</label>
-                        <input
-                            type='text'
-                            className='ui-text-box'
-                            placeholder='yourusername'
-                            pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
-                            required={true}
-                            autoCorrect='off'
-                            value={this.state.username}
-                            onChange={this.onUserNameChange}
-                            disabled={this.state.loading}
-                        />
-                        <small className='form-text'>A username consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen</small>
-                    </div>
-
-                    <div className='form-group'>
-                        <label>Your display name</label>
+                        <label>Display name</label>
                         <input
                             type='text'
                             className='ui-text-box'
@@ -159,20 +115,6 @@ export class NewTeam extends React.Component<Props, State> {
                             autoCorrect='off'
                             value={this.state.displayName}
                             onChange={this.onDisplayNameChange}
-                            disabled={this.state.loading}
-                        />
-                    </div>
-
-                    <div className='form-group'>
-                        <label>Your company email</label>
-                        <input
-                            type='email'
-                            className='ui-text-box'
-                            placeholder='you@yourcompany.com'
-                            required={true}
-                            autoCorrect='off'
-                            value={this.state.email}
-                            onChange={this.onEmailChange}
                             disabled={this.state.loading}
                         />
                     </div>
@@ -190,16 +132,8 @@ export class NewTeam extends React.Component<Props, State> {
         this.setState({ name: hyphenatedName })
     }
 
-    private onUserNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.setState({ username: event.currentTarget.value })
-    }
-
     private onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.setState({ displayName: event.currentTarget.value })
-    }
-
-    private onEmailChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.setState({ email: event.currentTarget.value })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

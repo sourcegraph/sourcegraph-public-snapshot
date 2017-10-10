@@ -45,6 +45,9 @@ type User struct {
 	AppMetadata   struct {
 		DidLoginBefore bool `json:"did_login_before"`
 	} `json:"app_metadata"`
+	UserMetadata struct {
+		DisplayName string `json:"name"`
+	} `json:"user_metadata"`
 	Identities []struct {
 		Provider   string `json:"provider"`
 		UserID     string `json:"user_id"`
@@ -54,6 +57,7 @@ type User struct {
 	Locale   string `json:"locale"`
 	Name     string `json:"name"`
 	Nickname string `json:"nickname"`
+	Username string `json:"username"`
 	Picture  string `json:"picture"`
 	UserID   string `json:"user_id"`
 }
@@ -94,6 +98,27 @@ func SetAppMetadata(ctx context.Context, uid string, key string, value interface
 		return err
 	}
 
+	return updateUser(ctx, uid, body)
+}
+
+type EmailVerification struct {
+	Connection    string `json:"connection"`
+	EmailVerified bool   `json:"email_verified"`
+}
+
+func VerifyEmail(ctx context.Context, uid string) error {
+	body, err := json.Marshal(EmailVerification{
+		Connection:    "Sourcegraph",
+		EmailVerified: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	return updateUser(ctx, uid, body)
+}
+
+func updateUser(ctx context.Context, uid string, body []byte) error {
 	req, err := http.NewRequest("PATCH", "https://"+Domain+"/api/v2/users/"+uid, bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -104,9 +129,9 @@ func SetAppMetadata(ctx context.Context, uid string, key string, value interface
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed to set app metadata")
+		return errors.New("failed to update user")
 	}
 
 	return nil

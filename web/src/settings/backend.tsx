@@ -22,11 +22,13 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                     members {
                         id
                         userID
-                        username
-                        email
-                        displayName
-                        avatarURL
                         createdAt
+                        user {
+                            username
+                            email
+                            displayName
+                            avatarURL
+                        }
                     }
                 }
             }
@@ -43,12 +45,8 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
 export interface CreateOrgOptions {
     /** The name of the org */
     name: string
-    /** The user's new username in the org profile */
-    username: string
     /** The user's display name (e.g. full name) in the org profile */
     displayName: string
-    /** The user's email in the org profile */
-    email: string
 }
 
 /**
@@ -62,24 +60,17 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
                 throw new Error('User must be signed in.')
             }
 
-            const variables = {
-                ...options,
-                avatarUrl: user.avatarURL
-            }
             return mutateGraphQL(`
                 mutation createOrg(
                     $name: String!,
-                    $username: String!,
-                    $email: String!
-                    $displayName: String!,
-                    $avatarUrl: String!
+                    $displayName: String!
                 ) {
-                    createOrg(name: $name, username: $username, email: $email, displayName: $displayName, avatarUrl: $avatarUrl) {
+                    createOrg(name: $name, displayName: $displayName) {
                         id
                         name
                     }
                 }
-            `, variables)
+            `, options)
         })
         .mergeMap(({ data, errors }) => {
             if (!data || !data.createOrg) {
@@ -93,6 +84,108 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
                 }
             })
             return fetchCurrentUser().concat([data.createOrg])
+        })
+}
+
+export interface CreateUserOptions {
+    /** The user's username */
+    username: string
+    /** The user's display name */
+    displayName: string
+}
+
+/**
+ * Sends a GraphQL mutation to create a user and returns an Observable that emits the new user, then completes
+ */
+export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
+    return currentUser
+        .take(1)
+        .mergeMap(user => {
+            // This API is for user data backfill. You must be an authenticated user
+            // to write a row to the users db; we use the authenticated actor to
+            // fill auth0_id and email columns.
+            if (!user) {
+                throw new Error('User must be signed in.')
+            }
+
+            const variables = {
+                ...options,
+                avatarUrl: user.avatarURL
+            }
+            return mutateGraphQL(`
+                mutation createUser(
+                    $username: String!,
+                    $displayName: String!,
+                    $avatarURL: String
+                ) {
+                    createUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
+                        id
+                        username
+                    }
+                }
+            `, variables)
+        })
+        .map(({ data, errors }) => {
+            if (!data || !data.createUser) {
+                events.NewUserFailed.log()
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            events.NewUserCreated.log({
+                user: {
+                    id: data.createUser.id,
+                    username: data.createUser.username
+                }
+            })
+            return data.createUser
+        })
+}
+
+export interface UpdateUserOptions {
+    /** The user's display name */
+    displayName: string
+    /** The user's avatar URL */
+    avatarUrl?: string
+}
+
+/**
+ * Sends a GraphQL mutation to create an org and returns an Observable that emits the new org, then completes
+ */
+export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
+    return currentUser
+        .take(1)
+        .mergeMap(user => {
+            if (!user) {
+                throw new Error('User must be signed in.')
+            }
+
+            const variables = {
+                ...options,
+                avatarUrl: options.avatarUrl || user.avatarURL
+            }
+            return mutateGraphQL(`
+                mutation updateUser(
+                    $displayName: String!,
+                    $avatarURL: String
+                ) {
+                    updateUser(displayName: $displayName, avatarURL: $avatarUrl) {
+                        id
+                        username
+                    }
+                }
+            `, variables)
+        })
+        .map(({ data, errors }) => {
+            if (!data || !data.updateUser) {
+                events.NewUserFailed.log()
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            events.NewUserCreated.log({
+                user: {
+                    id: data.updateUser.id,
+                    username: data.updateUser.username
+                }
+            })
+            return data.updateUser
         })
 }
 
@@ -147,10 +240,6 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
 export interface AcceptUserInviteOptions {
     /** The JWT */
     inviteToken: string
-    /** The user's new username in the org profile */
-    username: string
-    /** The user's display name (e.g. full name) in the org profile */
-    displayName: string
 }
 
 /**
@@ -168,18 +257,12 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
             return mutateGraphQL(`
                 mutation AcceptUserInvite {
                     acceptUserInvite(
-                        inviteToken: $inviteToken,
-                        username: $username,
-                        displayName: $displayName,
-                        avatarUrl: $avatarURL
+                        inviteToken: $inviteToken
                     ) {
                         emailVerified
                     }
                 }
-            `, {
-                ...options,
-                avatarURL: user.avatarURL
-            })
+            `, options)
         })
         .map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {

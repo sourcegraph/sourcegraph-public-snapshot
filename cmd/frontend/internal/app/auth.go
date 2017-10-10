@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 type oauthCookie struct {
@@ -69,6 +70,29 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		return err
 	}
 
+	username := r.URL.Query().Get("username")
+	displayName := r.URL.Query().Get("displayName")
+	if displayName == "" {
+		displayName = username
+	}
+
+	dbUser, err := store.Users.GetByEmail(info.Email)
+	if err != nil {
+		if _, ok := err.(store.ErrUserNotFound); !ok {
+			// Return all but "user not found" errors;
+			// handle those by creating a db row.
+			return err
+		}
+	}
+	var userCreateErr error
+	if dbUser == nil && username != "" {
+		// We've not created a row in the users table for this user; add one.
+		// If there is an error, we can continue to create the user session and redirect the user, but
+		// we should include the error message to the client so they know e.g. that the username they've
+		// requested is taken.
+		dbUser, userCreateErr = store.Users.Create(info.UserID, info.Email, username, displayName, &info.Picture)
+	}
+
 	actor := &actor.Actor{
 		UID:             info.UserID,
 		Login:           info.Nickname,
@@ -95,6 +119,16 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	returnTo := r.URL.Query().Get("return-to")
 	if returnTo == "" {
 		returnTo = "/"
+	}
+	if dbUser == nil {
+		returnTo = "/settings?backfill=true&return-to=" + returnTo
+		if userCreateErr != nil {
+			errorCode := "err_unknown"
+			if cerr, ok := userCreateErr.(store.ErrCannotCreateUser); ok {
+				errorCode = cerr.Code()
+			}
+			returnTo = returnTo + "&error=" + errorCode
+		}
 	}
 
 	if !info.AppMetadata.DidLoginBefore {

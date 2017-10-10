@@ -49,7 +49,7 @@ func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error
 	if err != nil {
 		return nil, err
 	}
-	return &orgMemberResolver{c.org, member}, nil
+	return &orgMemberResolver{c.org, member, nil}, nil
 }
 
 func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
@@ -68,7 +68,12 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: verify that the user is in the org.
 	actor := actor.FromContext(ctx)
-	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := store.Users.GetByAuth0ID(actor.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +94,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	results := notifyAllInOrg(ctx, repo, thread, comments, comment, member.DisplayName)
+	results := notifyAllInOrg(ctx, repo, thread, comments, comment, user.DisplayName)
 
 	t := &threadResolver{org, repo, thread}
 
@@ -167,7 +172,14 @@ func notifyAllInOrg(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sour
 		if m.UserID == comment.AuthorUserID {
 			continue
 		}
-		emails = append(emails, m.Email)
+		user, err := store.Users.GetByAuth0ID(m.UserID)
+		if err != nil {
+			// This shouldn't happen, but we don't want to prevent the notification,
+			// so swallow the error.
+			log15.Error("get user", "uid", m.UserID, "error", err)
+			continue
+		}
+		emails = append(emails, user.Email)
 	}
 
 	repoName := repoNameFromURI(repo.RemoteURI)

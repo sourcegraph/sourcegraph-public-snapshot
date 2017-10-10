@@ -129,7 +129,9 @@ func init() {
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("Sign in or sign up - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("Profile - Sourcegraph")))
-	router.Get(routeSettingsAcceptInvite).Handler(handler(serveBasicPageString("Accept invite - Sourcegraph")))
+	router.Get(routeSettingsAcceptInvite).Handler(handler(serveBasicPageWithEmailVerification(func(c *Common, r *http.Request) string {
+		return "Accept invite - Sourcegraph"
+	})))
 	router.Get(routeSettingsEditorAuth).Handler(handler(serveBasicPageString("Authenticate editor - Sourcegraph")))
 	router.Get(routeSettingsTeamsNew).Handler(handler(serveBasicPageString("New team - Sourcegraph")))
 	router.Get(routeSettingsTeamsTeam).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {

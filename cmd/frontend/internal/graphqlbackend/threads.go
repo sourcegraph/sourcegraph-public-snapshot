@@ -175,6 +175,11 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	user, err := store.Users.GetByAuth0ID(member.UserID)
+	if err != nil {
+		return nil, err
+	}
+
 	repo, err := store.OrgRepos.GetByRemoteURI(ctx, args.OrgID, args.RemoteURI)
 	if err == store.ErrRepoNotFound {
 		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
@@ -226,8 +231,7 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-
-		results := notifyAllInOrg(ctx, repo, newThread, nil, comment, member.DisplayName)
+		results := notifyAllInOrg(ctx, repo, newThread, nil, comment, user.DisplayName)
 		if user, err := currentUser(ctx); err != nil {
 			// errors swallowed because user is only needed for Slack notifications
 			log15.Error("graphqlbackend.CreateThread: currentUser failed", "error", err)
@@ -239,7 +243,6 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	} /* else {
 		// Creating a thread without Contents (a comment) means it is a code
 		// snippet without any user comment.
-
 		// TODO(dan): slack notifications for this case
 	}*/
 	return &threadResolver{org, repo, newThread}, nil

@@ -30,6 +30,8 @@ export function fetchCurrentUser(): Observable<never> {
                     id
                     avatarURL
                     email
+                    username
+                    displayName
                     orgs {
                         id
                         name

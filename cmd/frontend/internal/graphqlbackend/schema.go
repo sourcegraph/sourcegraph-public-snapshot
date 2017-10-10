@@ -95,9 +95,9 @@ type Mutation {
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
 	shareThread(threadID: Int!): String!
 	shareComment(commentID: Int!): String!
-	createOrg(name: String!, username: String!, email: String!, displayName: String!, avatarUrl: String): Org!
+	createOrg(name: String!, displayName: String!): Org!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
-	acceptUserInvite(inviteToken: String!, username: String!, displayName: String!, avatarUrl: String): OrgInviteStatus!
+	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
 	removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
 }
 
@@ -393,11 +393,12 @@ type Org {
 type OrgMember {
 	id: Int!
 	org: Org!
-	userID: String!
+	user: User!
 	username: String!
 	email: String!
 	displayName: String!
 	avatarURL: String
+	userID: String!
 	createdAt: String!
 	updatedAt: String!
 }

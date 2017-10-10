@@ -12,8 +12,9 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// userResolver resolves a graphql user using an actor and optionally a
-// sourcegraph user. Sourcegraph users should contain a superset of the data
+// userResolver resolves a graphql user using an optional a
+// sourcegraph user and falling back to the provided actor.
+// Sourcegraph users should contain a superset of the data
 // stored in actors, but it is possible for a user to have an Auth0 account (and
 // thus and actor) and not a User for backwards compatibility reasons we must
 // support an actor-only userResolver as well.
@@ -101,6 +102,9 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 		return nil, errors.New("no current user")
 	}
 
+	// If this step fails, we are still in a recoverable state (it is safe to execute
+	// this codepath again, or the next user login will be possible with username and
+	// afterwards we will add a row to the DB).
 	newUser, err := store.Users.Create(actor.UID, actor.Email, args.Username, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
@@ -128,7 +132,9 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 func currentUser(ctx context.Context) (*userResolver, error) {
 	user, err := store.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		return nil, err
+		if _, ok := err.(store.ErrUserNotFound); !ok {
+			return nil, err
+		}
 	}
 	return &userResolver{actor: actor.FromContext(ctx), user: user}, nil
 }
@@ -154,7 +160,7 @@ func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver
 	}
 	orgMemberResolvers := []*orgMemberResolver{}
 	for _, member := range members {
-		orgMemberResolvers = append(orgMemberResolvers, &orgMemberResolver{nil, member})
+		orgMemberResolvers = append(orgMemberResolvers, &orgMemberResolver{nil, member, nil})
 	}
 	return orgMemberResolvers, nil
 }

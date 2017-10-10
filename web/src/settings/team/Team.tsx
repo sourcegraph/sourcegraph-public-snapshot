@@ -79,7 +79,7 @@ export const Team = reactive<Props>(props => {
             .filter(([member, user]) => !!user && confirm(
                 user.id === member.userID
                     ? `Leave this team?`
-                    : `Remove ${member.displayName} from this team?`
+                    : `Remove ${member.user.displayName} from this team?`
             ))
             .mergeMap(([memberToRemove, user]) =>
                 removeUserFromOrg(memberToRemove.org.id, memberToRemove.userID)
@@ -125,10 +125,10 @@ export const Team = reactive<Props>(props => {
                             {
                                 org.members.map(member => (
                                     <tr key={member.id}>
-                                        <td className='team__avatar-cell'><UserAvatar user={member} size={64}/></td>
-                                        <td>{member.displayName}</td>
-                                        <td>{member.username}</td>
-                                        <td>{member.email}</td>
+                                        <td className='team__avatar-cell'><UserAvatar user={member.user} size={64}/></td>
+                                        <td>{member.user.displayName}</td>
+                                        <td>{member.user.username}</td>
+                                        <td>{member.user.email}</td>
                                         <td className='team__actions-cell'>
                                             <button
                                                 className='btn btn-icon'

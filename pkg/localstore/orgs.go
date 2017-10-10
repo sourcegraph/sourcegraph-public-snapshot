@@ -83,9 +83,10 @@ func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([
 	return orgs, nil
 }
 
-func (*orgs) Create(ctx context.Context, name string) (*sourcegraph.Org, error) {
+func (*orgs) Create(ctx context.Context, name, displayName string) (*sourcegraph.Org, error) {
 	newOrg := sourcegraph.Org{
-		Name: name,
+		Name:        name,
+		DisplayName: &displayName,
 	}
 	newOrg.CreatedAt = time.Now()
 	newOrg.UpdatedAt = newOrg.CreatedAt

@@ -15,14 +15,12 @@ import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
 import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { fetchCurrentUser } from '../../auth'
 import { events } from '../../tracking/events'
 import { acceptUserInvite } from '../backend'
-import { VALID_USERNAME_REGEXP } from '../validation'
 
 export interface Props {
     location: H.Location
@@ -31,8 +29,6 @@ export interface Props {
 interface State {
     email: string
     emailVerified: boolean
-    username: string
-    displayName: string
     loading: boolean
     hasSubmitted: boolean
     orgName?: string
@@ -48,12 +44,6 @@ interface TokenPayload {
 }
 
 export const AcceptInvitePage = reactive<Props>(props => {
-
-    const usernameChangeEvents = new Subject<React.ChangeEvent<HTMLInputElement>>()
-    const nextUsernameChangeEvent = (event: React.ChangeEvent<HTMLInputElement>) => usernameChangeEvents.next(event)
-
-    const displayNameChangeEvents = new Subject<React.ChangeEvent<HTMLInputElement>>()
-    const nextDisplayNameChangeEvent = (event: React.ChangeEvent<HTMLInputElement>) => displayNameChangeEvents.next(event)
 
     const submitEvents = new Subject<React.FormEvent<HTMLFormElement>>()
     const nextSubmitEvent = (event: React.FormEvent<HTMLFormElement>) => submitEvents.next(event)
@@ -73,18 +63,8 @@ export const AcceptInvitePage = reactive<Props>(props => {
     const tokenPayload: Observable<TokenPayload> = inviteToken
         .map(token => JSON.parse(Base64.decode(token.split('.')[1])))
 
-    const username: Observable<string> = usernameChangeEvents
-        .map(event => event.currentTarget.value)
-        .startWith('')
-
-    const displayName: Observable<string> = displayNameChangeEvents
-        .map(event => event.currentTarget.value)
-        .startWith('')
-
     return Observable.merge<Update>(
         // Any update to these should cause a rerender
-        username.map(username => (state: State): State => ({ ...state, username })),
-        displayName.map(displayName => (state: State): State => ({ ...state, displayName })),
         tokenPayload.map(payload => (state: State): State => ({ ...state, orgName: payload.orgName, email: payload.email })),
 
         // Form submits
@@ -94,12 +74,12 @@ export const AcceptInvitePage = reactive<Props>(props => {
             // Feedback is done through CSS
             .filter(event => event.currentTarget.checkValidity())
             // Get latest state values
-            .withLatestFrom(inviteToken, tokenPayload, username, displayName)
-            .mergeMap(([, inviteToken, tokenPayload, username, displayName]) =>
+            .withLatestFrom(inviteToken, tokenPayload)
+            .mergeMap(([, inviteToken, tokenPayload]) =>
                 // Show loader
                 Observable.of<Update>(state => ({ ...state, loading: true, email: tokenPayload.email }))
                     .concat(
-                        acceptUserInvite({ inviteToken, username, displayName })
+                        acceptUserInvite({ inviteToken })
                             .do(status => {
                                 const eventProps = {
                                     user_email: tokenPayload.email,
@@ -135,14 +115,12 @@ export const AcceptInvitePage = reactive<Props>(props => {
         .filter(updates => updates.length > 0)
         .map(updates => (state: State): State => updates.reduce((state, update) => update(state), state))
         .scan<Update, State>((state: State, update: Update) => update(state), {
-            username: '',
             email: '',
-            displayName: '',
             loading: false,
             emailVerified: true,
             hasSubmitted: false
         })
-        .map(({ email, username, displayName, loading, error, orgName, emailVerified, hasSubmitted }) => (
+        .map(({ email, loading, error, orgName, emailVerified, hasSubmitted }) => (
             <form className='accept-invite-page' onSubmit={nextSubmitEvent}>
                 {!loading && !error && hasSubmitted && orgName && emailVerified && <Redirect to={`/settings/teams/${orgName}`} />}
                 <h1>You were invited to join {orgName} on Sourcegraph!</h1>
@@ -154,36 +132,6 @@ export const AcceptInvitePage = reactive<Props>(props => {
                     hasSubmitted && !emailVerified &&
                         <p className='form-text text-error'>Please verify your email address to accept this invitation; check your inbox for a verification link.</p>
                 }
-
-                <div className='form-group'>
-                    <label>Your new username</label>
-                    <input
-                        type='text'
-                        className='ui-text-box'
-                        placeholder='yourusername'
-                        pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
-                        required={true}
-                        autoCorrect='off'
-                        value={username}
-                        onChange={nextUsernameChangeEvent}
-                        disabled={loading}
-                    />
-                    <small className='form-text'>A team name consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen</small>
-                </div>
-
-                <div className='form-group'>
-                    <label>Your display name</label>
-                    <input
-                        type='text'
-                        className='ui-text-box'
-                        placeholder='Your Name'
-                        required={true}
-                        autoCorrect='off'
-                        value={displayName}
-                        onChange={nextDisplayNameChangeEvent}
-                        disabled={loading}
-                    />
-                </div>
 
                 <div className='form-group'>
                     <label>Your company email</label>

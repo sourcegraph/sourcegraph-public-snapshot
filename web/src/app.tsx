@@ -9,7 +9,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, Redirect } from 'react-router-dom'
 import { fetchCurrentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { Navbar } from './nav/Navbar'
@@ -86,6 +86,41 @@ const SearchRouter = (props: RouteComponentProps<{}>): JSX.Element | null => {
     return <Search {...props} />
 }
 
+/**
+ * handles rendering Search or SearchResults components based on whether or not
+ * the search query (e.g. '?q=foo') is in URL.
+ */
+class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { returnTo: string }> {
+
+    constructor(props: RouteComponentProps<{}>) {
+        super(props)
+        const searchParams = new URLSearchParams(this.props.location.search)
+        this.state = {
+            returnTo: searchParams.get('return-to') || window.location.href
+        }
+    }
+
+    public render(): JSX.Element {
+        const searchParams = new URLSearchParams(this.props.location.search)
+
+        const redirectToBackfill =
+            window.context.user &&
+            window.context.requireUserBackfill &&
+            this.props.location.pathname !== '/settings' &&
+            searchParams.get('backfill') !== 'true'
+
+        if (redirectToBackfill) {
+            return <Redirect to={`/settings?backfill=true&return-to=${encodeURIComponent(this.state.returnTo)}`} />
+        }
+        return (
+            <Switch>
+                <Route path='/search' exact={true} component={SearchRouter} />
+                <Route component={Layout} />
+            </Switch>
+        )
+    }
+}
+
 interface AppState {
     error?: Error
 }
@@ -140,10 +175,7 @@ class App extends React.Component<{}, AppState> {
 
         return (
             <BrowserRouter>
-                <Switch>
-                    <Route path='/search' exact={true} component={SearchRouter} />
-                    <Route component={Layout} />
-                </Switch>
+                <Route path='/' component={BackfillRedirector} />
             </BrowserRouter>
         )
     }

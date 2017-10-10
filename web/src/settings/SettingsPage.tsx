@@ -9,7 +9,7 @@ import { SettingsSidebar } from './SettingsSidebar'
 import { AcceptInvitePage } from './team/AcceptInvitePage'
 import { NewTeam } from './team/NewTeam'
 import { Team } from './team/Team'
-// import { UserProfilePage } from './user/UserProfilePage'
+import { UserProfilePage } from './user/UserProfilePage'
 
 const SettingsNotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested settings page was not found.' />
 
@@ -38,7 +38,7 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
                 <div className='settings-page__content'>
                     <Switch>
                         {/* Render empty page if no settings page selected */}
-                        <Route path={this.props.match.url} exact={true} />
+                        <Route path={this.props.match.url} exact={true} component={UserProfilePage} />
                         <Route path={`${this.props.match.url}/accept-invite`} component={AcceptInvitePage} exact={true} />
                         <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
                         <Route path={`${this.props.match.url}/teams/new`} component={NewTeam} exact={true} />

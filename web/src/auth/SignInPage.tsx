@@ -8,10 +8,12 @@ import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { VALID_PASSWORD_REGEXP, VALID_USERNAME_REGEXP } from '../settings/validation'
 import { events, viewEvents } from '../tracking/events'
 
 interface LoginSignupFormProps {
     location: H.Location
+    history: H.History
     mode: 'signin' | 'signup'
     prefilledEmail?: string
 }
@@ -19,17 +21,22 @@ interface LoginSignupFormProps {
 interface LoginSignupFormState {
     mode: 'signin' | 'signup'
     email: string
+    username: string
+    displayName: string
     password: string
     errorDescription: string
     loading: boolean
 }
 
 class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupFormState> {
+
     constructor(props: LoginSignupFormProps) {
         super(props)
         this.state = {
             mode: props.mode,
             email: props.prefilledEmail || '',
+            username: '',
+            displayName: '',
             password: '',
             errorDescription: '',
             loading: false
@@ -54,20 +61,51 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         value={this.state.email}
                         type='email'
                         placeholder='Email'
+                        required={true}
                         disabled={this.state.loading || Boolean(this.props.prefilledEmail)}
                     />
                 </div>
+                {
+                    this.state.mode === 'signup' &&
+                        <div className='form-group'>
+                            <input
+                                className='ui-text-box login-signup-form__input'
+                                onChange={this.onUsernameFieldChange}
+                                value={this.state.username}
+                                type='text'
+                                required={true}
+                                placeholder='Username'
+                                pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
+                                disabled={this.state.loading}
+                            />
+                        </div>
+                }
                 <div className='form-group'>
                     <input
                         className='ui-text-box login-signup-form__input'
                         onChange={this.onPasswordFieldChange}
                         value={this.state.password}
+                        required={true}
                         type='password'
                         placeholder='Password'
+                        pattern={VALID_PASSWORD_REGEXP.toString().slice(1, -1)}
                         disabled={this.state.loading}
                     />
-                    <small className='form-text'><Link to='/password-reset'>Forgot password?</Link></small>
+                    {this.state.mode === 'signin' && <small className='form-text'><Link to='/password-reset'>Forgot password?</Link></small>}
                 </div>
+                {
+                    this.state.mode === 'signup' &&
+                        <div className='form-group'>
+                            <input
+                                className='ui-text-box login-signup-form__input'
+                                onChange={this.onDisplayNameFieldChange}
+                                value={this.state.displayName}
+                                type='text'
+                                placeholder='Display name (optional)'
+                                disabled={this.state.loading}
+                            />
+                        </div>
+                }
                 <div className='form-group'>
                     <button className='btn btn-primary btn-block' type='submit' disabled={this.state.loading}>
                         {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
@@ -83,23 +121,40 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         this.setState({ email: e.target.value })
     }
 
+    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ username: e.target.value })
+    }
+
+    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ displayName: e.target.value })
+    }
+
     private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({ password: e.target.value })
     }
 
     private setModeSignIn = () => {
-        this.setState({ mode: 'signin' })
+        this.props.history.push(`/sign-in` + this.props.location.search)
     }
 
     private setModeSignUp = () => {
-        this.setState({ mode: 'signup' })
+        this.props.history.push(`/sign-up` + this.props.location.search)
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
-        const returnTo = new URLSearchParams(this.props.location.search).get('return-to')
+        const searchParams = new URLSearchParams(this.props.location.search)
+        const returnTo = searchParams.get('return-to')
+        const token = searchParams.get('token')
         if (returnTo) {
             redirect.searchParams.set('return-to', returnTo)
+        }
+        if (this.state.mode === 'signup') {
+            redirect.searchParams.set('username', this.state.username)
+            redirect.searchParams.set('displayName', this.state.displayName || this.state.username)
+            if (token) {
+                redirect.searchParams.set('token', token)
+            }
         }
 
         const webAuth = new WebAuth({
@@ -149,7 +204,11 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     connection: 'Sourcegraph',
                     responseType: 'code',
                     email: this.state.email,
-                    password: this.state.password
+                    password: this.state.password,
+                    // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
+                    // user's name in Auth0. That's not an issue per-se, see more at
+                    // https://github.com/auth0/auth0.js/issues/70.
+                    user_metadata: { name: this.state.displayName || this.state.username }
                 }, authCallback)
                 break
         }
@@ -158,6 +217,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
 
 interface SignInPageProps {
     location: H.Location
+    history: H.History
 }
 
 interface SignInPageState {

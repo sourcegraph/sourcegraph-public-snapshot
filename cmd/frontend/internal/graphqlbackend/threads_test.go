@@ -18,6 +18,7 @@ func TestThreads_Create(t *testing.T) {
 		RemoteURI: "test",
 	}
 	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
+	store.Mocks.Users.MockGetByAuth0ID_Return(t, &sourcegraph.User{}, nil)
 	store.Mocks.OrgRepos.MockGetByRemoteURI_Return(t, nil, store.ErrRepoNotFound)
 	repoCreateCalled, repoCreateCalledWith := store.Mocks.OrgRepos.MockCreate_Return(t, &sourcegraph.OrgRepo{
 		ID:        1,

@@ -14,4 +14,5 @@ type MockStores struct {
 	Threads     MockThreads
 	Comments    MockComments
 	SharedItems MockSharedItems
+	Users       MockUsers
 }

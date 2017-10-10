@@ -464,15 +464,11 @@ type Org struct {
 }
 
 type OrgMember struct {
-	ID          int32     `json:"ID"`
-	OrgID       int32     `json:"OrgID"`
-	UserID      string    `json:"UserID"`
-	Username    string    `json:"Username,omitempty"`
-	Email       string    `json:"Email,omitempty"`
-	DisplayName string    `json:"DisplayName,omitempty"`
-	AvatarURL   *string   `json:"AvatarURL,omitempty"`
-	CreatedAt   time.Time `json:"CreatedAt,omitempty"`
-	UpdatedAt   time.Time `json:"UpdatedAt,omitempty"`
+	ID        int32     `json:"ID"`
+	OrgID     int32     `json:"OrgID"`
+	UserID    string    `json:"UserID"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 }
 
 type UserTag struct {

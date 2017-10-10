@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
@@ -38,15 +39,20 @@ type immutableUser struct {
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
-	AppRoot             string                     `json:"appRoot,omitempty"`
-	AppURL              string                     `json:"appURL,omitempty"`
-	XHRHeaders          map[string]string          `json:"xhrHeaders"`
-	CSRFToken           string                     `json:"csrfToken"`
-	UserAgentIsBot      bool                       `json:"userAgentIsBot"`
-	AssetsRoot          string                     `json:"assetsRoot"`
-	Version             string                     `json:"version"`
-	Features            interface{}                `json:"features"`
-	User                *immutableUser             `json:"user"`
+	AppRoot        string            `json:"appRoot,omitempty"`
+	AppURL         string            `json:"appURL,omitempty"`
+	XHRHeaders     map[string]string `json:"xhrHeaders"`
+	CSRFToken      string            `json:"csrfToken"`
+	UserAgentIsBot bool              `json:"userAgentIsBot"`
+	AssetsRoot     string            `json:"assetsRoot"`
+	Version        string            `json:"version"`
+	Features       interface{}       `json:"features"`
+	User           *immutableUser    `json:"user"`
+	// RequireUserFields is a temporary flag which is true for legacy users that must
+	// backfill data (username, and optionally display name) to be added to the users table.
+	// While this flag is true, the client should force the currently logged in user to
+	// provide the backfill data before taking other actions in the application.
+	RequireUserBackfill bool                       `json:"requireUserBackfill"`
 	GitHubToken         *sourcegraph.ExternalToken `json:"gitHubToken"`
 	GitHubAppURL        string                     `json:"gitHubAppURL"`
 	SentryDSN           string                     `json:"sentryDSN"`
@@ -101,6 +107,14 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		user = &immutableUser{UID: actor.UID}
 	}
 
+	backfill := false
+	if user != nil {
+		_, err := store.Users.GetByAuth0ID(actor.UID)
+		if _, ok := err.(store.ErrUserNotFound); ok {
+			backfill = true
+		}
+	}
+
 	return JSContext{
 		AppURL:              conf.AppURL.String(),
 		XHRHeaders:          headers,
@@ -110,6 +124,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Version:             env.Version,
 		Features:            feature.Features,
 		User:                user,
+		RequireUserBackfill: backfill,
 		GitHubToken:         gitHubToken,
 		GitHubAppURL:        gitHubAppURL,
 		SentryDSN:           sentryDSNFrontend,

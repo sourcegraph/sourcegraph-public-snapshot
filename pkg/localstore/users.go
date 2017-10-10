@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/lib/pq"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -19,6 +21,13 @@ import (
 // pattern equivalent to this one.
 var matchUsername = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,36}[a-zA-Z0-9])?$`)
 
+// users provides access to the `users` table.
+//
+// For a detailed overview of the schema, see schema.txt.
+type users struct{}
+
+// ErrUserNotFound is the error that is returned when
+// a user is not found.
 type ErrUserNotFound struct {
 	args []interface{}
 }
@@ -27,10 +36,19 @@ func (err ErrUserNotFound) Error() string {
 	return fmt.Sprintf("user not found: %v", err.args)
 }
 
-// users provides access to the `users` table.
-//
-// For a detailed overview of the schema, see schema.txt.
-type users struct{}
+// ErrCannotCreateUser is the error that is returned when
+// a user cannot be added to the DB due to a constraint.
+type ErrCannotCreateUser struct {
+	code string
+}
+
+func (err ErrCannotCreateUser) Error() string {
+	return fmt.Sprintf("cannot create user: %v", err.code)
+}
+
+func (err ErrCannotCreateUser) Code() string {
+	return err.code
+}
 
 func (*users) Create(auth0ID, email, username, displayName string, avatarURL *string) (*sourcegraph.User, error) {
 	createdAt := time.Now()
@@ -44,6 +62,17 @@ func (*users) Create(auth0ID, email, username, displayName string, avatarURL *st
 		"INSERT INTO users(auth0_id, email, username, display_name, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
 		auth0ID, email, username, displayName, avatarURLValue, createdAt, updatedAt).Scan(&id)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Constraint {
+			case "users_username_key":
+				return nil, ErrCannotCreateUser{"err_username_exists"}
+			case "users_email_key":
+				return nil, ErrCannotCreateUser{"err_email_exists"}
+			case "users_auth0_id_key":
+				return nil, ErrCannotCreateUser{"err_auth0_id_exists"}
+			}
+		}
+
 		return nil, err
 	}
 
@@ -94,11 +123,18 @@ func (u *users) GetByID(id int32) (*sourcegraph.User, error) {
 }
 
 func (u *users) GetByAuth0ID(id string) (*sourcegraph.User, error) {
-	users, err := u.getBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", id)
-	if err != nil || len(users) == 0 {
-		return nil, err
+	if Mocks.Users.GetByAuth0ID != nil {
+		return Mocks.Users.GetByAuth0ID(id)
 	}
-	return users[0], nil
+	return u.getOneBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", id)
+}
+
+func (u *users) GetByEmail(email string) (*sourcegraph.User, error) {
+	return u.getOneBySQL("WHERE email=$1 AND deleted_at IS NULL LIMIT 1", email)
+}
+
+func (u *users) GetByUsername(username string) (*sourcegraph.User, error) {
+	return u.getOneBySQL("WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
@@ -107,11 +143,7 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 		return nil, errors.New("no current user")
 	}
 
-	users, err := u.getBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
-	if err != nil || len(users) == 0 {
-		return nil, err
-	}
-	return users[0], nil
+	return u.getOneBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
 func (u *users) getOneBySQL(query string, args ...interface{}) (*sourcegraph.User, error) {

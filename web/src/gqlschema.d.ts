@@ -284,6 +284,7 @@ declare namespace GQL {
     orgs: Array<IOrg>;
     orgMemberships: Array<IOrgMember>;
     hasSourcegraphUser: boolean;
+    tags: Array<IUserTag>;
   }
 
   /*
@@ -293,10 +294,12 @@ declare namespace GQL {
     __typename: "Org";
     id: number;
     name: string;
+    displayName: string | null;
     members: Array<IOrgMember>;
     repos: Array<IOrgRepo>;
-    repo: IOrgRepo;
+    repo: IOrgRepo | null;
     threads: Array<IThread>;
+    tags: Array<IOrgTag>;
   }
 
   /*
@@ -306,11 +309,12 @@ declare namespace GQL {
     __typename: "OrgMember";
     id: number;
     org: IOrg;
-    userID: string;
+    user: IUser;
     username: string;
     email: string;
     displayName: string;
     avatarURL: string | null;
+    userID: string;
     createdAt: string;
     updatedAt: string;
   }
@@ -345,7 +349,24 @@ declare namespace GQL {
     rangeLength: number;
     createdAt: string;
     archivedAt: string | null;
+    author: IUser;
+    lines: IThreadLines | null;
     comments: Array<IComment>;
+  }
+
+  /*
+    description: null
+  */
+  interface IThreadLines {
+    __typename: "ThreadLines";
+    htmlBefore: string;
+    html: string;
+    htmlAfter: string;
+    textBefore: string;
+    text: string;
+    textAfter: string;
+    textSelectionRangeStart: number;
+    textSelectionRangeLength: number;
   }
 
   /*
@@ -358,6 +379,24 @@ declare namespace GQL {
     createdAt: string;
     updatedAt: string;
     author: IOrgMember;
+  }
+
+  /*
+    description: null
+  */
+  interface IOrgTag {
+    __typename: "OrgTag";
+    id: number;
+    name: string;
+  }
+
+  /*
+    description: null
+  */
+  interface IUserTag {
+    __typename: "UserTag";
+    id: number;
+    name: string;
   }
 
   /*
@@ -537,10 +576,27 @@ declare namespace GQL {
     updateUser: IUser;
     updateThread: IThread;
     addCommentToThread: IThread;
+    shareThread: string;
+    shareComment: string;
     createOrg: IOrg;
     inviteUser: IEmptyResponse | null;
     acceptUserInvite: IOrgInviteStatus;
     removeUserFromOrg: IEmptyResponse | null;
+  }
+
+  /*
+    description: Literally the exact same thing as above, except it's an input type because
+GraphQL doesn't allow mixing input and output types.
+  */
+  interface IThreadLinesInput {
+    htmlBefore: string;
+    html: string;
+    htmlAfter: string;
+    textBefore: string;
+    text: string;
+    textAfter: string;
+    textSelectionRangeStart: number;
+    textSelectionRangeLength: number;
   }
 
   /*
