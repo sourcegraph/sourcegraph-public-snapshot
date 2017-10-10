@@ -80,6 +80,23 @@ Indexes:
 
 ```
 
+# Table "public.org_settings"
+```
+     Column      |           Type           |                         Modifiers                         
+-----------------+--------------------------+-----------------------------------------------------------
+ id              | integer                  | not null default nextval('org_settings_id_seq'::regclass)
+ org_id          | integer                  | not null
+ author_auth0_id | text                     | not null
+ contents        | text                     | 
+ created_at      | timestamp with time zone | not null default now()
+Indexes:
+    "org_settings_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "org_settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
+    "org_settings_references_users" FOREIGN KEY (author_auth0_id) REFERENCES users(auth0_id) ON DELETE RESTRICT
+
+```
+
 # Table "public.org_tags"
 ```
    Column   |           Type           |                       Modifiers                       
@@ -114,6 +131,7 @@ Check constraints:
     "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
 Referenced by:
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
+    TABLE "org_settings" CONSTRAINT "org_settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "org_tags" CONSTRAINT "org_tags_references_users" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 
 ```
@@ -272,6 +290,7 @@ Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
 Referenced by:
+    TABLE "org_settings" CONSTRAINT "org_settings_references_users" FOREIGN KEY (author_auth0_id) REFERENCES users(auth0_id) ON DELETE RESTRICT
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```

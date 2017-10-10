@@ -44,6 +44,8 @@
 // ../../../migrations/1507252520_add_shared_items_table.up.sql
 // ../../../migrations/1507422179_remove_org_members_columns.down.sql
 // ../../../migrations/1507422179_remove_org_members_columns.up.sql
+// ../../../migrations/1507656459_add_org_settings.down.sql
+// ../../../migrations/1507656459_add_org_settings.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -991,6 +993,46 @@ func _1507422179_remove_org_members_columnsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1507656459_add_org_settingsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x50\xca\x2f\x4a\x8f\x2f\x4e\x2d\x29\xc9\xcc\x4b\x2f\x56\xb2\x06\x04\x00\x00\xff\xff\xd7\x99\xf3\xe4\x1a\x00\x00\x00")
+
+func _1507656459_add_org_settingsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507656459_add_org_settingsDownSql,
+		"1507656459_add_org_settings.down.sql",
+	)
+}
+
+func _1507656459_add_org_settingsDownSql() (*asset, error) {
+	bytes, err := _1507656459_add_org_settingsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507656459_add_org_settings.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1507656459_add_org_settingsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\x41\x4b\xf4\x30\x10\x86\xcf\xcd\xaf\x18\x72\xea\xc2\x1e\xbe\xfb\x77\x8a\xdd\xa9\x06\xdb\x74\x49\x67\x91\xf5\x52\x4a\x77\xac\x05\x49\x21\xc9\xa2\x3f\x5f\xd2\x82\xd5\xf5\xe2\x29\x24\xef\x33\x3c\x79\xa7\xb0\xa8\x08\x81\xd4\x5d\x85\x20\x67\x3f\x76\x81\x63\x9c\xdc\x18\x24\xe4\x22\x93\xd3\x45\x42\x60\x3f\xf5\x6f\x60\x1a\x02\x73\xaa\x2a\x38\x5a\x5d\x2b\x7b\x86\x47\x3c\xef\x45\xb6\x0c\x25\x6c\x72\x91\x47\xf6\x5f\x5c\xca\xfa\x6b\x7c\x9d\x7d\x97\x8e\x7f\x0b\x14\xf9\x23\x6e\x04\x88\x4c\x0e\xb3\x8b\xec\x62\x58\xb3\x34\x34\x78\xee\x23\x5f\xba\x3e\x4a\x20\x5d\x63\x4b\xaa\x3e\xc2\x93\xa6\x87\xe5\x0a\xcf\x8d\xc1\xed\x37\x07\x2c\xd5\xa9\x22\x70\xf3\x7b\xbe\xdb\x0b\x91\x15\x8d\x69\xc9\x2a\x6d\x08\xbe\xf7\xe9\x3c\xbf\xb0\x67\x37\x70\xe8\x66\x3f\x06\x28\x1b\x8b\xfa\xde\xa4\x1a\x90\xaf\x25\x76\x60\xb1\x44\x8b\xa6\xc0\x16\x16\x28\x4f\x8f\x8d\x81\x03\x56\x48\x08\x16\x5b\xb2\xba\xa0\xfd\x9f\x34\xd7\xc0\xfe\xc6\x73\xb3\x90\x1f\xc2\x15\xcf\xb7\xec\xb7\x57\xec\xfe\x7f\x06\x00\x00\xff\xff\x8f\x33\x11\x9b\xb2\x01\x00\x00")
+
+func _1507656459_add_org_settingsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507656459_add_org_settingsUpSql,
+		"1507656459_add_org_settings.up.sql",
+	)
+}
+
+func _1507656459_add_org_settingsUpSql() (*asset, error) {
+	bytes, err := _1507656459_add_org_settingsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507656459_add_org_settings.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1087,6 +1129,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1507252520_add_shared_items_table.up.sql":        _1507252520_add_shared_items_tableUpSql,
 	"1507422179_remove_org_members_columns.down.sql":  _1507422179_remove_org_members_columnsDownSql,
 	"1507422179_remove_org_members_columns.up.sql":    _1507422179_remove_org_members_columnsUpSql,
+	"1507656459_add_org_settings.down.sql":            _1507656459_add_org_settingsDownSql,
+	"1507656459_add_org_settings.up.sql":              _1507656459_add_org_settingsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1174,6 +1218,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1507252520_add_shared_items_table.up.sql":        &bintree{_1507252520_add_shared_items_tableUpSql, map[string]*bintree{}},
 	"1507422179_remove_org_members_columns.down.sql":  &bintree{_1507422179_remove_org_members_columnsDownSql, map[string]*bintree{}},
 	"1507422179_remove_org_members_columns.up.sql":    &bintree{_1507422179_remove_org_members_columnsUpSql, map[string]*bintree{}},
+	"1507656459_add_org_settings.down.sql":            &bintree{_1507656459_add_org_settingsDownSql, map[string]*bintree{}},
+	"1507656459_add_org_settings.up.sql":              &bintree{_1507656459_add_org_settingsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

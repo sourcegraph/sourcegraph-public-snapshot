@@ -96,6 +96,7 @@ type Mutation {
 	shareThread(threadID: Int!): String!
 	shareComment(commentID: Int!): String!
 	createOrg(name: String!, displayName: String!): Org!
+	updateOrgSettings(orgID: Int!, contents: String!): OrgSettings!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
 	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
 	removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
@@ -384,6 +385,7 @@ type Org {
 	name: String!
 	displayName: String
 	members: [OrgMember!]!
+	latestSettings: OrgSettings
 	repos: [OrgRepo!]!
 	repo(remoteURI: String!): OrgRepo
 	threads(limit: Int): [Thread!]!
@@ -414,6 +416,13 @@ type OrgRepo {
 	createdAt: String!
 	updatedAt: String!
 	threads(file: String, branch: String, limit: Int): [Thread!]!
+}
+
+type OrgSettings {
+	id: Int!
+	contents: String!
+	author: User!
+	createdAt: String!
 }
 
 type Thread {
