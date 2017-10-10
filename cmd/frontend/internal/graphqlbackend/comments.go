@@ -174,7 +174,7 @@ func notifyNewComment(ctx context.Context, repo *sourcegraph.OrgRepo, thread *so
 		if thread.Branch != nil {
 			branch = "@" + *thread.Branch
 		}
-		subject := fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, titleFromContents(first.Contents), thread.ID)
+		subject := fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
 		if len(previousComments) > 0 {
 			subject = "Re: " + subject
 		}

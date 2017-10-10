@@ -196,7 +196,7 @@ func (t *threadResolver) Title(ctx context.Context) (string, error) {
 	if len(cs) == 0 {
 		return "", nil
 	}
-	return titleFromContents(cs[0].Contents()), nil
+	return TitleFromContents(cs[0].Contents()), nil
 }
 
 func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, error) {
@@ -423,7 +423,7 @@ func notifyThreadArchived(ctx context.Context, repo *sourcegraph.OrgRepo, thread
 			if thread.Branch != nil {
 				branch = "@" + *thread.Branch
 			}
-			subject = fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, titleFromContents(first.Contents), thread.ID)
+			subject = fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
 		}
 		if len(previousComments) > 0 {
 			subject = "Re: " + subject
@@ -445,8 +445,8 @@ func notifyThreadArchived(ctx context.Context, repo *sourcegraph.OrgRepo, thread
 	return nil
 }
 
-// titleFromContents returns a title based on the first sentence or line of the content.
-func titleFromContents(contents string) string {
+// TitleFromContents returns a title based on the first sentence or line of the content.
+func TitleFromContents(contents string) string {
 	matchEndpoint := regexp.MustCompile(`[.!?]\s`)
 	if idxs := matchEndpoint.FindStringSubmatchIndex(contents); len(idxs) > 0 {
 		contents = contents[:idxs[0]+1]
