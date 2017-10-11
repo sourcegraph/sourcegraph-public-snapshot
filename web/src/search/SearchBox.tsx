@@ -562,7 +562,7 @@ export class SearchBox extends React.Component<Props, State> {
             if (this.state.filters.length === 1) {
                 // Go to repo
                 this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}`)
-            } else if (this.state.filters[1].type === FilterType.File && this.state.filters.length === 2) {
+            } else if (this.state.filters[1].type === FilterType.File && this.state.filters.length === 2 && !hasMagic(this.state.filters[1].value)) {
                 // Go to file
                 this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}/-/blob/${(this.state.filters[1] as FileFilter).value}`)
             }
