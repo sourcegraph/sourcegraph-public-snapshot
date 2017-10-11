@@ -107,6 +107,9 @@ func (t *threadResolver) Author(ctx context.Context) (*userResolver, error) {
 }
 
 func (t *threadResolver) Lines() *threadLineResolver {
+	if t.thread.Lines == nil {
+		return nil
+	}
 	return &threadLineResolver{t.thread}
 }
 
