@@ -32,14 +32,23 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
     constructor(props: Props) {
         super()
         this.state = {
-            visible: !hasBrowserExtensionInstalled() &&
+            visible: false
+        }
+    }
+
+    public componentDidMount(): void {
+        // Since this function checks if the Chrome ext has injected an element,
+        // wait a few ms in case there's an unpredictable delay before checking.
+        setTimeout(() => {
+            const visible = !hasBrowserExtensionInstalled() &&
                 !window.context.onPrem &&
                 localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
                 daysActiveCount === 1
-        }
-        if (this.state.visible) {
-            events.BrowserExtReminderViewed.log()
-        }
+            this.setState({ visible })
+            if (visible) {
+                events.BrowserExtReminderViewed.log()
+            }
+        }, 100)
     }
 
     public render(): JSX.Element | null {
