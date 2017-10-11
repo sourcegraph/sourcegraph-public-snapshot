@@ -558,7 +558,7 @@ export class SearchBox extends React.Component<Props, State> {
                 }
             })
             this.props.history.push(path)
-        } else if (this.state.filters[0].type === FilterType.Repo) {
+        } else if (this.state.filters[0].type === FilterType.Repo || this.state.filters[0].type === FilterType.UnknownRepo) {
             if (this.state.filters.length === 1) {
                 // Go to repo
                 this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}`)
