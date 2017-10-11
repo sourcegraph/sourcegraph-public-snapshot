@@ -51,10 +51,11 @@ export const events = {
     NewOrgFailed: new LoggableEvent('NewOrgFailed', EventCategories.Settings, EventActions.Error),
     NewOrgCreated: new LoggableEvent('NewOrgCreated', EventCategories.Settings, EventActions.Success),
 
+    UpdateUserClicked: new LoggableEvent('UpdateUserClicked', EventCategories.Settings, EventActions.Click),
     NewUserFailed: new LoggableEvent('NewUserFailed', EventCategories.Settings, EventActions.Error),
     NewUserCreated: new LoggableEvent('NewUserCreated', EventCategories.Settings, EventActions.Success),
-    UpdateUserClicked: new LoggableEvent('UpdateUserClicked', EventCategories.Settings, EventActions.Success),
     UpdateUserFailed: new LoggableEvent('UpdateUserFailed', EventCategories.Settings, EventActions.Error),
+    UserProfileUpdated: new LoggableEvent('UserProfileUpdated', EventCategories.Settings, EventActions.Success),
 
     InviteOrgMemberClicked: new LoggableEvent('InviteOrgMemberClicked', EventCategories.Settings, EventActions.Click),
     InviteOrgMemberFailed: new LoggableEvent('InviteOrgMemberFailed', EventCategories.Settings, EventActions.Error),

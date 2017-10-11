@@ -133,7 +133,8 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
             events.NewUserCreated.log({
                 user: {
                     id: data.createUser.id,
-                    username: data.createUser.username
+                    username: data.createUser.username,
+                    display_name: options.displayName
                 }
             })
             return data.createUser
@@ -148,7 +149,7 @@ export interface UpdateUserOptions {
 }
 
 /**
- * Sends a GraphQL mutation to create an org and returns an Observable that emits the new org, then completes
+ * Sends a GraphQL mutation to update a user's profile
  */
 export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
     return currentUser
@@ -176,13 +177,15 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
         })
         .map(({ data, errors }) => {
             if (!data || !data.updateUser) {
-                events.NewUserFailed.log()
+                events.UpdateUserFailed.log()
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            events.NewUserCreated.log({
+            events.UserProfileUpdated.log({
                 user: {
                     id: data.updateUser.id,
-                    username: data.updateUser.username
+                    username: data.updateUser.username,
+                    display_name: options.displayName,
+                    avatar_url: options.avatarUrl
                 }
             })
             return data.updateUser

@@ -178,13 +178,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         }
         switch (this.state.mode) {
             case 'signin':
-                events.InitiateSignIn.log({
-                    signup: {
-                        user_info: {
-                            signup_email: this.state.email
-                        }
-                    }
-                })
+                events.InitiateSignIn.log()
                 webAuth.redirect.loginWithCredentials({
                     connection: 'Sourcegraph',
                     responseType: 'code',
@@ -196,7 +190,9 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 events.InitiateSignUp.log({
                     signup: {
                         user_info: {
-                            signup_email: this.state.email
+                            signup_email: this.state.email,
+                            signup_display_name: this.state.displayName,
+                            signup_username: this.state.username
                         }
                     }
                 })
