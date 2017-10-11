@@ -3,6 +3,7 @@ package localstore
 import (
 	"context"
 	cryptorand "crypto/rand"
+	"database/sql"
 	"errors"
 	"net/url"
 	"path"
@@ -64,10 +65,10 @@ func (s *sharedItems) Get(ctx context.Context, ulid string) (*sourcegraph.Shared
 		&item.CommentID,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "shared item %q not found", ulid)
+		}
 		return nil, err
-	}
-	if item.AuthorUserID == "" {
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "shared item %q not found", ulid)
 	}
 	return item, nil
 }

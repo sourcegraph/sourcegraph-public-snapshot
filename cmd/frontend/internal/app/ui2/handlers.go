@@ -311,7 +311,6 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		title = graphqlbackend.TitleFromContents(comment.Contents)
 	}
 
-	// 🚨 SECURITY: verify that the current user is in the org.
 	thread, err := localstore.Threads.Get(r.Context(), threadID)
 	if err != nil {
 		return errors.Wrap(err, "Threads.Get")
@@ -320,6 +319,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "OrgRepos.GetByID")
 	}
+	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(r.Context())
 	_, err = localstore.OrgMembers.GetByOrgIDAndUserID(r.Context(), orgRepo.OrgID, actor.UID)
 	if err != nil {
