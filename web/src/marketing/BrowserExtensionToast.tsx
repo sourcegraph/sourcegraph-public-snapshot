@@ -81,7 +81,7 @@ export class ChromeExtensionToast extends React.Component {
     }
 
     private onClickInstall = (): void => {
-        events.SurveyReminderButtonClicked.log({ marketing: { browser: 'Chrome' } })
+        events.BrowserExtInstallClicked.log({ marketing: { browser: 'Chrome' } })
 
         if (window.chrome) {
             window.chrome.webstore.install(CHROME_EXTENSION_STORE_LINK, () => this.onInstallExtensionSuccess(), () => this.onInstallExtensionFail())
@@ -120,7 +120,7 @@ export class FirefoxExtensionToast extends React.Component {
     }
 
     private onClickInstall = (): void => {
-        events.SurveyReminderButtonClicked.log({ marketing: { browser: 'Firefox' } })
+        events.BrowserExtInstallClicked.log({ marketing: { browser: 'Firefox' } })
         window.open(FIREFOX_EXTENSION_STORE_LINK, '_blank')
     }
 }
