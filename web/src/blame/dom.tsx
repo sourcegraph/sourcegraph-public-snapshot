@@ -57,7 +57,7 @@ export function setLineBlame(data: BlameData): void {
         return clearLineBlameContent()
     }
 
-    const timeSince = distanceInWords(new Date(), hunk.author.date, { addSuffix: true })
+    const timeSince = distanceInWords(new Date(), new Date(hunk.author.date), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
 
     setLineBlameContent(data.ctx.position.line, blameContent, hunk.rev)
