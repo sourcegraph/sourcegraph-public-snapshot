@@ -61,7 +61,7 @@ export function setLineBlame(data: BlameData): void {
     const authorDate = parse(
         hunk.author.date,
         'YYYY-MM-DD HH:mm:ss ZZ',
-        new Date(),
+        new Date()
     )
     const timeSince = formatDistance(authorDate, new Date(), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
