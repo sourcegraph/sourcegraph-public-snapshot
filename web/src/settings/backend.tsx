@@ -120,6 +120,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                 ) {
                     createUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
                         id
+                        sourcegraphID
                         username
                     }
                 }
@@ -132,7 +133,8 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
             }
             events.NewUserCreated.log({
                 user: {
-                    id: data.createUser.id,
+                    id: data.createUser.sourcegraphID,
+                    auth0_id: data.createUser.id,
                     username: data.createUser.username,
                     display_name: options.displayName
                 }
@@ -170,6 +172,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 ) {
                     updateUser(displayName: $displayName, avatarURL: $avatarUrl) {
                         id
+                        sourcegraphID
                         username
                     }
                 }
@@ -182,7 +185,8 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
             }
             events.UserProfileUpdated.log({
                 user: {
-                    id: data.updateUser.id,
+                    id: data.updateUser.sourcegraphID,
+                    auth0_id: data.updateUser.id,
                     username: data.updateUser.username,
                     display_name: options.displayName,
                     avatar_url: options.avatarUrl
@@ -298,7 +302,7 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
             const eventData = {
                 organization: {
                     remove: {
-                        user_id: userID
+                        auth0_id: userID
                     },
                     org_id: orgID
                 }

@@ -70,7 +70,7 @@ export const Team = reactive<Props>(props => {
             .do(member => events.RemoveOrgMemberClicked.log({
                 organization: {
                     remove: {
-                        user_id: member.userID
+                        auth0_id: member.userID
                     },
                     org_id: member.org.id
                 }
