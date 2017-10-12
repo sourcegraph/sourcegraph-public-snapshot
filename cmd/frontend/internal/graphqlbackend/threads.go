@@ -121,43 +121,46 @@ func (t *threadResolver) Author(ctx context.Context) (*userResolver, error) {
 }
 
 func (t *threadResolver) Lines() *threadLineResolver {
-	return &threadLineResolver{t.thread}
+	if t.thread.Lines == nil {
+		return nil
+	}
+	return &threadLineResolver{t.thread.Lines}
 }
 
 type threadLineResolver struct {
-	*sourcegraph.Thread
+	*sourcegraph.ThreadLines
 }
 
 func (t *threadLineResolver) HTMLBefore() string {
-	return t.Lines.HTMLBefore
+	return t.ThreadLines.HTMLBefore
 }
 
 func (t *threadLineResolver) HTML() string {
-	return t.Lines.HTML
+	return t.ThreadLines.HTML
 }
 
 func (t *threadLineResolver) HTMLAfter() string {
-	return t.Lines.HTMLAfter
+	return t.ThreadLines.HTMLAfter
 }
 
 func (t *threadLineResolver) TextBefore() string {
-	return t.Lines.TextBefore
+	return t.ThreadLines.TextBefore
 }
 
 func (t *threadLineResolver) Text() string {
-	return t.Lines.Text
+	return t.ThreadLines.Text
 }
 
 func (t *threadLineResolver) TextAfter() string {
-	return t.Lines.TextAfter
+	return t.ThreadLines.TextAfter
 }
 
 func (t *threadLineResolver) TextSelectionRangeStart() int32 {
-	return t.Lines.TextSelectionRangeStart
+	return t.ThreadLines.TextSelectionRangeStart
 }
 
 func (t *threadLineResolver) TextSelectionRangeLength() int32 {
-	return t.Lines.TextSelectionRangeLength
+	return t.ThreadLines.TextSelectionRangeLength
 }
 
 func (t *threadResolver) ArchivedAt() *string {
