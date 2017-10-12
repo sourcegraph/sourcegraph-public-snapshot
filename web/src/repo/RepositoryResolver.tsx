@@ -65,7 +65,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                                 // Don't retry other errors
                                 throw err
                             })
-                            .delay(1000)
+                            .delay(1000),
                         )
                         // Log other errors but don't break the stream
                         .catch(err => {
@@ -75,7 +75,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 })
                 .subscribe(commitID => {
                     this.setState({ commitID, cloneInProgress: false })
-                }, err => console.error(err))
+                }, err => console.error(err)),
         )
     }
 

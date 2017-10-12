@@ -36,7 +36,7 @@ interface LayoutState {
  */
 class Layout extends React.Component<LayoutProps, LayoutState> {
     public state: LayoutState = {
-        isFullWidth: localStorage.getItem('layout-is-full-width') !== 'false'
+        isFullWidth: localStorage.getItem('layout-is-full-width') !== 'false',
     }
 
     public componentDidUpdate(): void {
@@ -97,7 +97,7 @@ class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { retu
         super(props)
         const searchParams = new URLSearchParams(this.props.location.search)
         this.state = {
-            returnTo: searchParams.get('returnTo') || window.location.href
+            returnTo: searchParams.get('returnTo') || window.location.href,
         }
     }
 

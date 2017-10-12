@@ -27,7 +27,7 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
         utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
         utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
         utm_product_name: parsedUrl.searchParams.get('utm_product_name') || undefined,
-        utm_product_version: parsedUrl.searchParams.get('utm_product_version') || undefined
+        utm_product_version: parsedUrl.searchParams.get('utm_product_version') || undefined,
     }
 }
 
@@ -63,7 +63,7 @@ export function handleQueryEvents(url: string): void {
         'utm_source',
         'utm_product_name',
         'utm_product_version',
-        'badge'
+        'badge',
     ])
 }
 

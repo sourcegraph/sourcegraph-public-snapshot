@@ -12,8 +12,8 @@ declare global {
     interface Window {
         chrome?: {
             webstore: {
-                install: (link: string, success: () => void, error: (reason: string) => void) => void
-            }
+                install: (link: string, success: () => void, error: (reason: string) => void) => void,
+            },
         }
     }
 }
@@ -32,7 +32,7 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
     constructor(props: Props) {
         super()
         this.state = {
-            visible: false
+            visible: false,
         }
     }
 

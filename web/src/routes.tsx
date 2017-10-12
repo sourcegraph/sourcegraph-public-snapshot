@@ -19,37 +19,37 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/search',
         component: SearchResults,
-        exact: true
+        exact: true,
     },
     {
         path: '/sign-in',
         component: SignInPage,
-        exact: true
+        exact: true,
     },
     {
         path: '/sign-up',
         component: SignInPage,
-        exact: true
+        exact: true,
     },
     {
         path: '/settings',
-        component: SettingsPage
+        component: SettingsPage,
     },
     {
         path: '/password-reset',
         component: PasswordResetPage,
-        exact: true
+        exact: true,
     },
     {
         path: '/:repoRev+/-/blob/:filePath+',
-        component: RepositoryResolver
+        component: RepositoryResolver,
     },
     {
         path: '/:repoRev+/-/tree/:filePath+',
-        component: RepositoryResolver
+        component: RepositoryResolver,
     },
     {
         path: '/:repoRev+',
-        component: RepositoryResolver
-    }
+        component: RepositoryResolver,
+    },
 ]

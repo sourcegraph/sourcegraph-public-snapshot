@@ -8,7 +8,7 @@ const webAuth = new WebAuth({
     domain: window.context.auth0Domain,
     clientID: window.context.auth0ClientID,
     redirectUri: `${window.context.appURL}/-/auth0/sign-in`,
-    responseType: 'code'
+    responseType: 'code',
 })
 
 interface State {
@@ -21,7 +21,7 @@ class PasswordResetForm extends React.Component<{}, State> {
     public state: State = {
         email: '',
         error: '',
-        didReset: false
+        didReset: false,
     }
 
     public render(): JSX.Element | null {
@@ -59,7 +59,7 @@ class PasswordResetForm extends React.Component<{}, State> {
 
         webAuth.changePassword({
             connection: 'Sourcegraph',
-            email: this.state.email
+            email: this.state.email,
         }, (err, authResult) => {
             if (err) {
                 console.error('auth error: ', err)

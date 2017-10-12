@@ -3,7 +3,7 @@ export enum FilterType {
     Repo = 'repo',
     UnknownRepo = 'unknownrepo',
     RepoGroup = 'repogroup',
-    File = 'file'
+    File = 'file',
 }
 
 const filterTypes = new Set(Object.values(FilterType))
@@ -66,6 +66,6 @@ export function parseSearchURLQuery(query: string): SearchOptions {
         query: searchParams.get('q') || '',
         matchCase: searchParams.get('matchCase') === 'true',
         matchWord: searchParams.get('matchWord') === 'true',
-        matchRegex: searchParams.get('matchRegex') === 'true'
+        matchRegex: searchParams.get('matchRegex') === 'true',
     }
 }

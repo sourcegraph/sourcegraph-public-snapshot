@@ -12,7 +12,7 @@ interface State {
 
 export class VirtualList extends React.Component<Props, State> {
     public state: State = {
-        itemsToShow: 5
+        itemsToShow: 5,
     }
 
     constructor(props: Props) {
@@ -42,7 +42,7 @@ export class VirtualList extends React.Component<Props, State> {
                     // tslint:disable-next-line:jsx-no-lambda
                     <VisibilitySensor key={i} onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, i)} partialVisibility={true}>
                         {item}
-                    </VisibilitySensor>
+                    </VisibilitySensor>,
                 )
             }
             </div>

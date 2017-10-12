@@ -25,7 +25,7 @@ interface RepoSubnavState {
 
 export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     public state: RepoSubnavState = {
-        copiedLink: false
+        copiedLink: false,
     }
 
     public render(): JSX.Element | null {

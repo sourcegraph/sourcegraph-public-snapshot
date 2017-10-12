@@ -49,7 +49,7 @@ export const Team = reactive<Props>(props => {
             currentUser,
             props
                 .map(props => props.match.params.teamName)
-                .distinctUntilChanged()
+                .distinctUntilChanged(),
         )
             .mergeMap(([user, teamName]) => {
                 if (!user) {
@@ -63,23 +63,23 @@ export const Team = reactive<Props>(props => {
                 // Fetch the org by ID by ID
                 return fetchOrg(org.id)
                     .map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
-                }
+                },
             ),
 
         memberRemoves
             .do(member => events.RemoveOrgMemberClicked.log({
                 organization: {
                     remove: {
-                        auth0_id: member.userID
+                        auth0_id: member.userID,
                     },
-                    org_id: member.org.id
-                }
+                    org_id: member.org.id,
+                },
             }))
             .withLatestFrom(currentUser)
             .filter(([member, user]) => !!user && confirm(
                 user.id === member.userID
                     ? `Leave this team?`
-                    : `Remove ${member.user.displayName} from this team?`
+                    : `Remove ${member.user.displayName} from this team?`,
             ))
             .mergeMap(([memberToRemove, user]) =>
                 removeUserFromOrg(memberToRemove.org.id, memberToRemove.userID)
@@ -88,10 +88,10 @@ export const Team = reactive<Props>(props => {
                         left: memberToRemove.userID === user!.id,
                         org: state.org && {
                             ...state.org,
-                            members: state.org.members.filter(member => member.userID !== memberToRemove.userID)
-                        }
-                    })])
-            )
+                            members: state.org.members.filter(member => member.userID !== memberToRemove.userID),
+                        },
+                    })]),
+            ),
     )
         .scan<Update, State>((state: State, update: Update) => update(state), { left: false })
         .map(({ user, org, left }: State): JSX.Element | null => {

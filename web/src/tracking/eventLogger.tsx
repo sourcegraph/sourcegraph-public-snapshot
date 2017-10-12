@@ -24,7 +24,7 @@ class EventLogger {
                     setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
                 }
             },
-            error => { /* noop */ }
+            error => { /* noop */ },
         )
     }
 
@@ -120,7 +120,7 @@ class EventLogger {
             ...platformProperties,
             platform: EventLogger.PLATFORM,
             is_authed: window.context.user ? 'true' : 'false',
-            path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : ''
+            path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }
 
         try {

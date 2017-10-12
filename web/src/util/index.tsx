@@ -47,7 +47,7 @@ export const supportedExtensions = new Set<string>([
     'js', 'jsx', // JavaScript
     'java', // Java
     'py', // Python
-    'php' // PHP
+    'php', // PHP
 ])
 
 /**

@@ -91,7 +91,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
                                             <td className='line'>{i + 1}</td>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                             <td className='code'> </td>
-                                        </tr>
+                                        </tr>,
                                     )
                                 }
                             </tbody>
@@ -111,7 +111,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
             repoPath: props.repoPath,
             commitID: props.commitID,
             filePath: props.filePath,
-            disableTimeout: true
+            disableTimeout: true,
         })
             .subscribe(
                 lines => {
@@ -119,7 +119,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
                 },
                 err => {
                     console.error('failed to fetch blob content', err)
-                }
+                },
             )
     }
 

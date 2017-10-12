@@ -39,7 +39,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
             displayName: '',
             password: '',
             errorDescription: '',
-            loading: false
+            loading: false,
         }
     }
 
@@ -162,7 +162,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
             domain: window.context.auth0Domain,
             clientID: window.context.auth0ClientID,
             redirectUri: redirect.href,
-            responseType: 'code'
+            responseType: 'code',
         })
 
         event.preventDefault()
@@ -184,7 +184,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     connection: 'Sourcegraph',
                     responseType: 'code',
                     username: this.state.email,
-                    password: this.state.password
+                    password: this.state.password,
                 }, authCallback)
                 break
             case 'signup':
@@ -193,9 +193,9 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         user_info: {
                             signup_email: this.state.email,
                             signup_display_name: this.state.displayName,
-                            signup_username: this.state.username
-                        }
-                    }
+                            signup_username: this.state.username,
+                        },
+                    },
                 })
                 webAuth.redirect.signupAndLogin({
                     connection: 'Sourcegraph',
@@ -205,7 +205,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
                     // user's name in Auth0. That's not an issue per-se, see more at
                     // https://github.com/auth0/auth0.js/issues/70.
-                    user_metadata: { name: this.state.displayName || this.state.username }
+                    user_metadata: { name: this.state.displayName || this.state.username },
                 }, authCallback)
                 break
         }
@@ -229,7 +229,7 @@ export class SignInPage extends React.Component<SignInPageProps, SignInPageState
     constructor(props: SignInPageProps) {
         super(props)
         this.state = {
-            prefilledEmail: this.getPrefilledEmail(props)
+            prefilledEmail: this.getPrefilledEmail(props),
         }
     }
 

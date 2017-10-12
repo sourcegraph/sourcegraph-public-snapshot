@@ -60,9 +60,9 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
                     searchProfilesFetch
                         .concat(Observable.defer(() =>
                             // If still not found, ignore
-                            Observable.from(searchProfileRepos.get(name) || [])
-                        ))
-            )
+                            Observable.from(searchProfileRepos.get(name) || []),
+                        )),
+            ),
     )
         .map(repo => ({ repo }))
         .toArray()
@@ -79,7 +79,7 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
                 repositories,
                 isCaseSensitive: params.matchCase,
                 includePattern,
-                excludePattern
+                excludePattern,
             }
         })
         .mergeMap(variables => queryGraphQL(`
@@ -154,7 +154,7 @@ export function fetchSuggestions(query: string, filters: Filter[]): Observable<G
         }
     `, {
         query,
-        repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value)
+        repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
     })
         .mergeMap(({ data, errors }) => {
             if (!data || !data.root.search) {

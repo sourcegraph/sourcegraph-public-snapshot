@@ -29,7 +29,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
     constructor() {
         super()
         this.state = {
-            editorBeta: false
+            editorBeta: false,
         }
     }
 
@@ -53,8 +53,8 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     }
                     this.setState({ orgs: user.orgs })
 
-                }
-            )
+                },
+            ),
         )
     }
 

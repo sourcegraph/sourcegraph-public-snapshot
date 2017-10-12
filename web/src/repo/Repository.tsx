@@ -74,7 +74,7 @@ export class Repository extends React.Component<Props, State> {
     public state: State = {
         showTree: true,
         showRefs: false,
-        isDirectory: false
+        isDirectory: false,
     }
     private componentUpdates = new Subject<Props>()
     private showAnywayButtonClicks = new Subject<void>()
@@ -92,17 +92,17 @@ export class Repository extends React.Component<Props, State> {
                         .catch(err => {
                             console.error(err)
                             return []
-                        })
+                        }),
                 )
                 .subscribe(
                     (files: string[]) => this.setState({ files }),
-                    err => console.error(err)
-                )
+                    err => console.error(err),
+                ),
         )
 
         const [contentUpdatesWithFile, contentUpdatesWithoutFile] = Observable.merge(
             this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
-            this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
+            this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true })),
         ).partition(props => Boolean(props.filePath))
 
         // Transitions to routes with file should update file contents
@@ -113,13 +113,13 @@ export class Repository extends React.Component<Props, State> {
                         repoPath: props.repoPath,
                         commitID: props.commitID,
                         filePath: props.filePath!,
-                        disableTimeout: props.showHighlightingAnyway
+                        disableTimeout: props.showHighlightingAnyway,
                     })
                         .catch(err => {
                             this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
                             console.error(err)
                             return []
-                        })
+                        }),
                 )
                 .subscribe(
                     result => this.setState({
@@ -127,17 +127,17 @@ export class Repository extends React.Component<Props, State> {
                         // file contents for a directory is a textual representation of the directory tree;
                         // we prefer not to display that
                         highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
-                        highlightingError: undefined
+                        highlightingError: undefined,
                     }),
-                    err => console.error(err)
-                )
+                    err => console.error(err),
+                ),
         )
         // Transitions to routes without file should unset file contents
         this.subscriptions.add(
             contentUpdatesWithoutFile
                 .subscribe(() => {
                     this.setState({ highlightedFile: undefined, highlightingError: undefined })
-                })
+                }),
         )
     }
 

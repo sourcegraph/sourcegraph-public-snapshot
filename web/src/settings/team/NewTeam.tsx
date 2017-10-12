@@ -47,7 +47,7 @@ export class NewTeam extends React.Component<Props, State> {
         this.state = {
             loading: false,
             name: '',
-            displayName: ''
+            displayName: '',
         }
     }
 
@@ -65,13 +65,13 @@ export class NewTeam extends React.Component<Props, State> {
                             console.error(error)
                             this.setState({ error })
                             return []
-                        })
+                        }),
                 )
                 .subscribe(team => {
                     this.props.history.push(`/settings/teams/${team.name}`)
                 }, error => {
                     console.error(error)
-                })
+                }),
         )
     }
 

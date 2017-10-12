@@ -80,8 +80,8 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
             events.NewOrgCreated.log({
                 organization: {
                     org_id: data.createOrg.id,
-                    org_name: data.createOrg.name
-                }
+                    org_name: data.createOrg.name,
+                },
             })
             return fetchCurrentUser().concat([data.createOrg])
         })
@@ -110,7 +110,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
 
             const variables = {
                 ...options,
-                avatarUrl: user.avatarURL
+                avatarUrl: user.avatarURL,
             }
             return mutateGraphQL(`
                 mutation createUser(
@@ -136,8 +136,8 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                     id: data.createUser.sourcegraphID,
                     auth0_id: data.createUser.id,
                     username: data.createUser.username,
-                    display_name: options.displayName
-                }
+                    display_name: options.displayName,
+                },
             })
             return data.createUser
         })
@@ -163,7 +163,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
 
             const variables = {
                 ...options,
-                avatarUrl: options.avatarUrl || user.avatarURL
+                avatarUrl: options.avatarUrl || user.avatarURL,
             }
             return mutateGraphQL(`
                 mutation updateUser(
@@ -189,8 +189,8 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                     auth0_id: data.updateUser.id,
                     username: data.updateUser.username,
                     display_name: options.displayName,
-                    avatar_url: options.avatarUrl
-                }
+                    avatar_url: options.avatarUrl,
+                },
             })
             return data.updateUser
         })
@@ -213,7 +213,7 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
 
             const variables = {
                 email,
-                orgID
+                orgID,
             }
             return mutateGraphQL(`
                 mutation inviteUser($email: String!, $orgID: Int!) {
@@ -227,10 +227,10 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
             const eventData = {
                 organization: {
                     invite: {
-                        user_email: email
+                        user_email: email,
                     },
-                    org_id: orgID
-                }
+                    org_id: orgID,
+                },
             }
             if (!data || (errors && errors.length > 0)) {
                 events.InviteOrgMemberFailed.log(eventData)
@@ -296,16 +296,16 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
         }
     `, {
         userID,
-        orgID
+        orgID,
     })
         .mergeMap(({ data, errors }) => {
             const eventData = {
                 organization: {
                     remove: {
-                        auth0_id: userID
+                        auth0_id: userID,
                     },
-                    org_id: orgID
-                }
+                    org_id: orgID,
+                },
             }
             if (errors && errors.length > 0) {
                 events.RemoveOrgMemberFailed.log(eventData)

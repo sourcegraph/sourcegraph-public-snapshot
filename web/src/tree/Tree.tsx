@@ -26,7 +26,7 @@ export interface Props extends Repo {
 
 const treePadding = (depth: number, directory: boolean) => ({
     paddingLeft: (depth * 12 + (directory ? 0 : 12) + 12) + 'px',
-    paddingRight: '16px'
+    paddingRight: '16px',
 })
 
 function closeDirectory(store: TreeStore, dir: string): void {
@@ -148,7 +148,7 @@ export class Tree extends React.PureComponent<Props, {}> {
             const urlProps = {
                 repoPath: this.props.repoPath,
                 rev: this.props.rev,
-                filePath: selectedPath
+                filePath: selectedPath,
             }
             this.props.history.push(isDir ? toTreeURL(urlProps) : toBlobURL(urlProps))
         }
@@ -513,7 +513,7 @@ class LayerTile extends React.Component<TileProps, {}> {
                                                 currSubpath={this.currentDirectory(dir)}
                                             />
                                         </td>
-                                    </tr>
+                                    </tr>,
                             ]
                         }))
                     }

@@ -107,7 +107,7 @@ export class RevSwitcher extends React.Component<Props, State> {
             visible: [],
             queryIsCommit: false,
             selection: -1,
-            showSwitcher: false
+            showSwitcher: false,
         }
         // Fetch all revisions for repo whenever component props change.
         this.subscriptions.add(
@@ -123,11 +123,11 @@ export class RevSwitcher extends React.Component<Props, State> {
                             .map((repoRevisions: RepoRevisions) => {
                                 const combined = [
                                     ...repoRevisions.branches.map((branch): Item => ({rev: branch, type: 'branch'})),
-                                    ...repoRevisions.tags.map((tag): Item => ({rev: tag, type: 'tag'}))
+                                    ...repoRevisions.tags.map((tag): Item => ({rev: tag, type: 'tag'})),
                                 ]
 
                                 return { repoRevisions: combined, visible: combined, query: props.rev, queryIsCommit: false } as State
-                            })
+                            }),
                     ),
 
                 // Always reset the queryIsCommit state when the user updated the query.
@@ -146,7 +146,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                                     console.error(err)
                                 }
                                 return [] // no-op
-                            })
+                            }),
                     ),
 
                 // Filter branches/tags based on updated user query.
@@ -172,13 +172,13 @@ export class RevSwitcher extends React.Component<Props, State> {
                             })
 
                         return { visible, query } as State
-                    })
+                    }),
             )
                 .map(state => ({ ...state, selection: 0 }))
                 .subscribe(
                     state => this.setState(state),
-                    err => console.error(err)
-                )
+                    err => console.error(err),
+                ),
         )
     }
 
@@ -191,7 +191,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                         // Click outside of our component.
                         this.hide()
                     }
-                })
+                }),
         )
     }
 

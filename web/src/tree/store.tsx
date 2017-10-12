@@ -55,7 +55,7 @@ export function createTreeStore(initSelectedPath?: string): TreeStore {
     }
     const setState: (t: TreeState) => void = actionDispatcher(payload => ({
         type: 'SET',
-        payload
+        payload,
     }))
 
     const store: BehaviorSubject<TreeState> = new BehaviorSubject<TreeState>(initState)

@@ -24,21 +24,21 @@ function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
                 rootPath: `git://${ctx.repoPath}?${ctx.commitID}`,
 
                 rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
-                mode: `${getModeFromExtension(getPathExtension(path))}`
-            }
+                mode: `${getModeFromExtension(getPathExtension(path))}`,
+            },
         },
         {
             id: 1,
-            ...req
+            ...req,
         },
         {
             id: 2,
-            method: 'shutdown'
+            method: 'shutdown',
         },
         {
             // id not included on 'exit' requests
-            method: 'exit'
-        }
+            method: 'exit',
+        },
     ]
 }
 
@@ -52,13 +52,13 @@ export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<
         method: 'textDocument/hover',
         params: {
             textDocument: {
-                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
+                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
             },
             position: {
                 character: pos.position.character! - 1,
-                line: pos.position.line - 1
-            }
-        }
+                line: pos.position.line - 1,
+            },
+        },
     }, pos, pos.filePath)
 
     return fetch(`/.api/xlang/textDocument/hover`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
@@ -81,13 +81,13 @@ export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pro
         method: 'textDocument/definition',
         params: {
             textDocument: {
-                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
+                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
             },
             position: {
                 character: pos.position.character! - 1,
-                line: pos.position.line - 1
-            }
-        }
+                line: pos.position.line - 1,
+            },
+        },
     }, pos, pos.filePath)
 
     return fetch(`/.api/xlang/textDocument/definition`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
@@ -125,13 +125,13 @@ export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pr
         method: 'textDocument/xdefinition',
         params: {
             textDocument: {
-                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`
+                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
             },
             position: {
                 character: pos.position.character! - 1,
-                line: pos.position.line - 1
-            }
-        }
+                line: pos.position.line - 1,
+            },
+        },
     }, pos, pos.filePath)
 
     return fetch(`/.api/xlang/textDocument/xdefinition`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
@@ -156,16 +156,16 @@ export const fetchReferences = memoizeAsync((ctx: AbsoluteRepoFilePosition): Pro
         method: 'textDocument/references',
         params: {
             textDocument: {
-                uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
+                uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
             },
             position: {
                 character: ctx.position.character! - 1,
-                line: ctx.position.line - 1
+                line: ctx.position.line - 1,
             },
             context: {
-                includeDeclaration: true
-            }
-        }
+                includeDeclaration: true,
+            },
+        },
     } as any, ctx, ctx.filePath)
 
     return fetch(`/.api/xlang/textDocument/references`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
@@ -260,8 +260,8 @@ export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<L
         params: {
             hints: ctx.hints,
             query: ctx.query,
-            limit: ctx.limit
-        }
+            limit: ctx.limit,
+        },
     }, { repoPath: ctx.repoPath, commitID: ctx.commitID }, ctx.filePath)
 
     return fetch(`/.api/xlang/workspace/xreferences`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })

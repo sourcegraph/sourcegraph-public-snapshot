@@ -28,7 +28,7 @@ export class Search extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            helpVisible: localStorage.getItem('show-search-help') !== 'false'
+            helpVisible: localStorage.getItem('show-search-help') !== 'false',
         }
     }
 

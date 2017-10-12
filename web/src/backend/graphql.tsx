@@ -32,9 +32,9 @@ function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IG
         url: '/.api/graphql' + (nameMatch ? '?' + nameMatch[1] : ''),
         headers: {
             'Content-Type': 'application/json',
-            ...window.context.xhrHeaders
+            ...window.context.xhrHeaders,
         },
-        body: JSON.stringify({ query: request, variables })
+        body: JSON.stringify({ query: request, variables }),
     }).map(({ response }) => response)
 }
 

@@ -136,7 +136,7 @@ export class SearchBox extends React.Component<Props, State> {
                 this.setState(this.getStateFromProps(props))
             }, err => {
                 console.error(err)
-            })
+            }),
         )
 
         this.subscriptions.add(
@@ -151,7 +151,7 @@ export class SearchBox extends React.Component<Props, State> {
                     // Defer to next tick to get the selection _after_ any selection change was dipatched (e.g. arrow keys)
                     .observeOn(asap)
                     .filter(event => event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
-                    .map(() => this.state.query)
+                    .map(() => this.state.query),
             )
                 // Only use query up to the cursor
                 .map(query => query.substring(0, this.inputElement!.selectionEnd))
@@ -169,7 +169,7 @@ export class SearchBox extends React.Component<Props, State> {
                         if (hasMagic(query)) {
                             const fileFilter: FileFilter = {
                                 type: FilterType.File,
-                                value: query
+                                value: query,
                             }
                             return Observable.of(fileFilter)
                         }
@@ -206,7 +206,7 @@ export class SearchBox extends React.Component<Props, State> {
                     return Observable.merge(
                         suggestionsFetch,
                         // Show a loader if the fetch takes longer than 100ms
-                        Observable.of({ loading: true }).delay(100).takeUntil(suggestionsFetch)
+                        Observable.of({ loading: true }).delay(100).takeUntil(suggestionsFetch),
                     )
                 })
                 // Abort suggestion display on route change
@@ -217,7 +217,7 @@ export class SearchBox extends React.Component<Props, State> {
                     this.setState(state as State)
                 }, err => {
                     console.error(err)
-                })
+                }),
         )
 
         // Quick-Open hotkeys
@@ -229,7 +229,7 @@ export class SearchBox extends React.Component<Props, State> {
                     // Cmd/Ctrl+P shortcut
                     || ((event.metaKey || event.ctrlKey) && event.key === 'p')
                     // Cmd/Ctrl+Shift+F shortcut
-                    || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
+                    || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f'),
                 )
                 .switchMap(event => {
                     event.preventDefault()
@@ -239,7 +239,7 @@ export class SearchBox extends React.Component<Props, State> {
                         return new Observable<void>(observer => this.setState({
                             query: selection,
                             suggestions: [],
-                            selectedSuggestion: -1
+                            selectedSuggestion: -1,
                         }, () => {
                             observer.next()
                             observer.complete()
@@ -253,7 +253,7 @@ export class SearchBox extends React.Component<Props, State> {
                         this.inputElement.focus()
                         this.inputElement.setSelectionRange(0, this.inputElement.value.length)
                     }
-                })
+                }),
         )
 
         this.subscriptions.add(
@@ -262,7 +262,7 @@ export class SearchBox extends React.Component<Props, State> {
                     if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
                         this.setState({ suggestionsVisible: false })
                     }
-                })
+                }),
         )
     }
 
@@ -316,7 +316,7 @@ export class SearchBox extends React.Component<Props, State> {
                         {
                             this.state.filters.map((filter, i) =>
                                 // tslint:disable-next-line:jsx-no-lambda
-                                <Chip key={i} icon={getFilterIcon(filter)} label={getFilterLabel(filter)} onDelete={() => this.removeFilter(i)} />
+                                <Chip key={i} icon={getFilterIcon(filter)} label={getFilterLabel(filter)} onDelete={() => this.removeFilter(i)} />,
                             )
                         }
                         <input
@@ -365,7 +365,7 @@ export class SearchBox extends React.Component<Props, State> {
                                             filters: prevState.filters.concat(suggestion),
                                             suggestions: [],
                                             selectedSuggestion: -1,
-                                            query: ''
+                                            query: '',
                                         }))
                                     }
                                     const isSelected = this.state.selectedSuggestion === i
@@ -418,7 +418,7 @@ export class SearchBox extends React.Component<Props, State> {
             filters: [],
             matchCase: false,
             matchWord: false,
-            matchRegex: false
+            matchRegex: false,
         }
         // This is basically a programmatical <Switch> with <Route>s
         // see https://reacttraining.com/react-router/web/api/matchPath
@@ -497,7 +497,7 @@ export class SearchBox extends React.Component<Props, State> {
                     filters: this.state.filters.concat(this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)]),
                     suggestions: [],
                     selectedSuggestion: -1,
-                    query: this.state.query.substr(event.currentTarget.selectionEnd)
+                    query: this.state.query.substr(event.currentTarget.selectionEnd),
                 }, () => {
                     // Scroll chips so search input stays visible
                     if (this.chipsElement) {
@@ -554,8 +554,8 @@ export class SearchBox extends React.Component<Props, State> {
             events.SearchSubmitted.log({
                 code_search: {
                     pattern: this.state.query,
-                    repos: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value)
-                }
+                    repos: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
+                },
             })
             this.props.history.push(path)
         } else if (this.state.filters[0].type === FilterType.Repo || this.state.filters[0].type === FilterType.UnknownRepo) {

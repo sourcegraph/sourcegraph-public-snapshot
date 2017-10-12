@@ -83,7 +83,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                             .do(status => {
                                 const eventProps = {
                                     user_email: tokenPayload.email,
-                                    org_name: tokenPayload.orgName
+                                    org_name: tokenPayload.orgName,
                                 }
                                 if (status.emailVerified) {
                                     events.InviteAccepted.log(eventProps)
@@ -99,16 +99,16 @@ export const AcceptInvitePage = reactive<Props>(props => {
                                         ...state,
                                         loading: false,
                                         hasSubmitted: true,
-                                        emailVerified: status.emailVerified
-                                    })])
+                                        emailVerified: status.emailVerified,
+                                    })]),
                             )
                             // Show error
                             .catch(error => {
                                 console.error(error)
                                 return [(state: State): State => ({ ...state, hasSubmitted: true, loading: false, error })]
-                            })
-                    )
-            )
+                            }),
+                    ),
+            ),
     )
         // Buffer state updates in the same tick to avoid too many rerenders
         .bufferTime(0)
@@ -118,7 +118,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
             email: '',
             loading: false,
             emailVerified: true,
-            hasSubmitted: false
+            hasSubmitted: false,
         })
         .map(({ email, loading, error, orgName, emailVerified, hasSubmitted }) => (
             <form className='accept-invite-page' onSubmit={nextSubmitEvent}>

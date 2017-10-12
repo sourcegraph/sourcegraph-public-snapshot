@@ -193,7 +193,7 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
         if (parsedHash.line) {
             position = {
                 line: parsedHash.line,
-                character: parsedHash.character || 0
+                character: parsedHash.character || 0,
             }
         }
     }

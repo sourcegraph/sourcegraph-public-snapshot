@@ -54,10 +54,10 @@ export const InviteForm = reactive<Props>(props => {
             .do(([, orgId, email]) => events.InviteOrgMemberClicked.log({
                 organization: {
                     invite: {
-                        user_email: email
+                        user_email: email,
                     },
-                    org_id: orgId
-                }
+                    org_id: orgId,
+                },
             }))
             .mergeMap(([, orgID, email]) =>
                 inviteUser(email, orgID)
@@ -65,11 +65,11 @@ export const InviteForm = reactive<Props>(props => {
                         // Reset email, reenable submit button, flash "invited" text
                         Observable.of((state: State): State => ({ ...state, loading: false, email: '', invited: true }))
                             // Hide "invited" text again after 1s
-                            .concat(Observable.of<Update>(state => ({ ...state, invited: false })).delay(1000))
+                            .concat(Observable.of<Update>(state => ({ ...state, invited: false })).delay(1000)),
                     )
                     // Disable button while loading
-                    .startWith<Update>((state: State): State => ({ ...state, loading: true }))
-            )
+                    .startWith<Update>((state: State): State => ({ ...state, loading: true })),
+            ),
     )
         .scan<Update, State>((state: State, update: Update) => update(state), { invited: false, loading: false, email: '' } as State)
         .map(({ loading, email, invited }) => (

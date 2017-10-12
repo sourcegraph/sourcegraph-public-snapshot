@@ -26,7 +26,7 @@ export class UserAvatar extends React.Component<Props, State> {
     constructor() {
         super()
         this.state = {
-            user: null
+            user: null,
         }
     }
 
@@ -37,8 +37,8 @@ export class UserAvatar extends React.Component<Props, State> {
             this.subscriptions.add(
                 currentUser.subscribe(
                     user => this.setState({ user }),
-                    error => console.error(error)
-                )
+                    error => console.error(error),
+                ),
             )
         }
     }

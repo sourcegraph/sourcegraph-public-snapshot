@@ -96,7 +96,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                             const commit = repo.lastIndexedRevOrLatest.commit
                             return {
                                 workspace: commit && { repoPath: repo.uri, commitID: commit.sha1 },
-                                hints: ref.hints ? JSON.parse(ref.hints) : {}
+                                hints: ref.hints ? JSON.parse(ref.hints) : {},
                             }
                         })
                         .filter(dep => Boolean(dep.workspace)) // slice to MAX_DEPENDENT_REPOS (10)?
@@ -123,7 +123,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                                         filePath: ctx.filePath,
                                         query: defInfo.symbol,
                                         hints: dependent.hints,
-                                        limit: 50
+                                        limit: 50,
                                     }))
                                         .do(refs => numRefsFetched += refs.length)
                                         .catch(e => {

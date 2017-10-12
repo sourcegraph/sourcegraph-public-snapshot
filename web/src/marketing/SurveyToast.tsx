@@ -22,7 +22,7 @@ export class SurveyToast extends React.Component<{}, State> {
         this.state = {
             user: null,
             visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
-                daysActiveCount === 3
+                daysActiveCount === 3,
         }
         if (this.state.visible) {
             events.SurveyReminderViewed.log({ marketing: { sessionCount: daysActiveCount } })
@@ -32,8 +32,8 @@ export class SurveyToast extends React.Component<{}, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             currentUser.subscribe(
-                user => this.setState({ user })
-            )
+                user => this.setState({ user }),
+            ),
         )
     }
 

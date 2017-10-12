@@ -22,7 +22,7 @@ export const viewEvents = {
     SignIn: new LoggableViewEvent('ViewSignIn'),
     EditorAuth: new LoggableViewEvent('ViewEditorAuth'),
     AddNewOrg: new LoggableViewEvent('ViewAddNewOrg'),
-    OrgProfile: new LoggableViewEvent('ViewOrgProfile')
+    OrgProfile: new LoggableViewEvent('ViewOrgProfile'),
 }
 
 export class LoggableEvent {
@@ -99,5 +99,5 @@ export const events = {
     SearchSubmitted: new LoggableEvent('SearchSubmitted', EventCategories.Search, EventActions.Submit),
 
     // External events
-    RepoBadgeRedirected: new LoggableEvent('RepoBadgeRedirected', EventCategories.External, EventActions.Redirect)
+    RepoBadgeRedirected: new LoggableEvent('RepoBadgeRedirected', EventCategories.External, EventActions.Redirect),
 }

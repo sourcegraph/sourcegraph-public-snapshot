@@ -102,8 +102,8 @@ class TelligentWrapper {
                 gaCookies: true,
                 performanceTiming: true,
                 augurIdentityLite: true,
-                webPage: true
-            }
+                webPage: true,
+            },
         })
     }
 
