@@ -1,4 +1,5 @@
-import distanceInWords from 'date-fns/distance_in_words'
+import formatDistance from 'date-fns/formatDistance'
+import parse from 'date-fns/parse'
 import { limitString } from '../util'
 import { BlameData } from './index'
 
@@ -57,7 +58,12 @@ export function setLineBlame(data: BlameData): void {
         return clearLineBlameContent()
     }
 
-    const timeSince = distanceInWords(new Date(), hunk.author.date, { addSuffix: true })
+    const authorDate = parse(
+        hunk.author.date,
+        'YYYY-MM-DD HH:mm:ss ZZ',
+        new Date()
+    )
+    const timeSince = formatDistance(authorDate, new Date(), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
 
     setLineBlameContent(data.ctx.position.line, blameContent, hunk.rev)
