@@ -86,7 +86,7 @@ func (o *orgResolver) Threads2(ctx context.Context, args *struct {
 	if args.Limit != nil {
 		limit = *args.Limit
 	}
-	return &threadConnectionResolver{orgID: &o.org.ID, limit: limit}
+	return &threadConnectionResolver{o.org, nil, nil, nil, limit}
 }
 
 func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {

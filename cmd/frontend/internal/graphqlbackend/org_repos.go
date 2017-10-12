@@ -49,5 +49,5 @@ func (o *orgRepoResolver) Threads2(ctx context.Context, args *struct {
 	if args.Limit != nil {
 		limit = *args.Limit
 	}
-	return &threadConnectionResolver{repoID: &o.repo.ID, file: args.File, branch: args.Branch, limit: limit}
+	return &threadConnectionResolver{o.org, o.repo, args.File, args.Branch, limit}
 }

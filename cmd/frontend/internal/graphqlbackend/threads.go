@@ -16,11 +16,23 @@ import (
 )
 
 type threadConnectionResolver struct {
-	repoID *int32
-	orgID  *int32
+	org    *sourcegraph.Org
+	repo   *sourcegraph.OrgRepo
 	file   *string
 	branch *string
 	limit  int32
+}
+
+func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
+	if t.org != nil {
+		orgID = &t.org.ID
+	}
+	if t.repo != nil {
+		repoID = &t.repo.ID
+		// repoID implies an orgID, avoid unnecessary join.
+		orgID = nil
+	}
+	return orgID, repoID
 }
 
 func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver, error) {
@@ -30,19 +42,21 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 	} else if t.limit > maxLimit {
 		t.limit = maxLimit
 	}
-	threads, err := store.Threads.List(ctx, t.repoID, t.orgID, t.branch, t.file, t.limit)
+	orgID, repoID := t.orgRepoArgs()
+	threads, err := store.Threads.List(ctx, repoID, orgID, t.branch, t.file, t.limit)
 	if err != nil {
 		return nil, err
 	}
 	resolvers := []*threadResolver{}
-	for _, t := range threads {
-		resolvers = append(resolvers, &threadResolver{thread: t})
+	for _, thread := range threads {
+		resolvers = append(resolvers, &threadResolver{t.org, t.repo, thread})
 	}
 	return resolvers, nil
 }
 
 func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return store.Threads.Count(ctx, t.repoID, t.orgID, t.branch, t.file, t.limit)
+	orgID, repoID := t.orgRepoArgs()
+	return store.Threads.Count(ctx, repoID, orgID, t.branch, t.file, t.limit)
 }
 
 type threadResolver struct {
