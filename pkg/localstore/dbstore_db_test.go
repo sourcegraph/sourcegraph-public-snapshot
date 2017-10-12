@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os/exec"
+	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -16,6 +17,16 @@ func init() {
 		log.Fatal(err)
 	}
 	ConnectToDB("dbname=" + dbname)
+}
+
+func TestMigrations(t *testing.T) {
+	// Run all down migrations then up migrations again to ensure there are no SQL errors.
+	if err := globalMigrate.Down(); err != nil {
+		t.Errorf("error running down migrations: %s", err)
+	}
+	if err := globalMigrate.Up(); err != nil {
+		t.Errorf("error running up migrations: %s", err)
+	}
 }
 
 // testContext constructs a new context that holds a temporary test DB
