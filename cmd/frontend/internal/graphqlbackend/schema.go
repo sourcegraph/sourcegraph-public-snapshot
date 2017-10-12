@@ -114,8 +114,18 @@ type Root {
 	searchProfiles: [SearchProfile!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
 	org(id: Int!): Org!
+	sharedItem(ulid: String!): SharedItem
 	packages(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, limit: Int): [Package!]!
 	dependents(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, package: String, limit: Int): [Dependency!]!
+}
+
+type SharedItem {
+	# who shared the item.
+	author: User!
+	thread: Thread!
+
+	# present only if the shared item was a specific comment.
+	comment: Comment
 }
 
 union SearchResult = Repository | File | SearchProfile
