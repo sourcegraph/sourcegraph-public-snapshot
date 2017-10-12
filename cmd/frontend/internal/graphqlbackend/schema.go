@@ -388,7 +388,8 @@ type Org {
 	latestSettings: OrgSettings
 	repos: [OrgRepo!]!
 	repo(remoteURI: String!): OrgRepo
-	threads(limit: Int): [Thread!]!
+	threads(limit: Int): [Thread!]! @deprecated(reason: "To be replaced by threads2")
+	threads2(limit: Int): ThreadConnection!
 	tags: [OrgTag!]!
 }
 
@@ -415,7 +416,13 @@ type OrgRepo {
 	remoteUri: String!
 	createdAt: String!
 	updatedAt: String!
-	threads(file: String, branch: String, limit: Int): [Thread!]!
+	threads(file: String, branch: String, limit: Int): [Thread!]! @deprecated(reason: "To be replaced by threads2")
+	threads2(file: String, branch: String, limit: Int): ThreadConnection!
+}
+
+type ThreadConnection {
+	nodes: [Thread!]!
+	totalCount: Int!
 }
 
 type OrgSettings {

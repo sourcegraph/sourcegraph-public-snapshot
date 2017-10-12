@@ -48,6 +48,8 @@
 // ../../../migrations/1507656459_add_org_settings.up.sql
 // ../../../migrations/1507755085_add_editor_beta_tags.down.sql
 // ../../../migrations/1507755085_add_editor_beta_tags.up.sql
+// ../../../migrations/1507773049_threads_indexes.down.sql
+// ../../../migrations/1507773049_threads_indexes.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1075,6 +1077,46 @@ func _1507755085_add_editor_beta_tagsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1507773049_threads_indexesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\x28\xc9\x28\x4a\x4d\x4c\x29\x8e\xcf\x2f\x4a\x8f\x2f\x4a\x2d\xc8\x8f\xcf\x4c\x89\x4f\xcb\xcc\x49\x8d\x4f\x2a\x4a\xcc\x4b\xce\x88\xcf\x4c\xa9\xb0\x26\xa4\x1e\x59\x29\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x8b\x39\x8a\x0f\x6c\x00\x00\x00")
+
+func _1507773049_threads_indexesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507773049_threads_indexesDownSql,
+		"1507773049_threads_indexes.down.sql",
+	)
+}
+
+func _1507773049_threads_indexesDownSql() (*asset, error) {
+	bytes, err := _1507773049_threads_indexesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507773049_threads_indexes.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1507773049_threads_indexesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\x28\xc9\x28\x4a\x4d\x4c\x29\x8e\xcf\x2f\x4a\x8f\x2f\x4a\x2d\xc8\x8f\xcf\x4c\x89\x4f\xcb\xcc\x49\x8d\x4f\x2a\x4a\xcc\x4b\xce\x88\xcf\x4c\xa9\x50\xc8\xcf\x83\x29\x53\xd0\x40\x52\xa7\xa3\x00\x52\xa8\xa3\x00\x51\xa9\x69\x4d\xd8\x60\x62\xcc\x84\x9b\xc6\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x7d\xca\x62\x3f\xb8\x00\x00\x00")
+
+func _1507773049_threads_indexesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507773049_threads_indexesUpSql,
+		"1507773049_threads_indexes.up.sql",
+	)
+}
+
+func _1507773049_threads_indexesUpSql() (*asset, error) {
+	bytes, err := _1507773049_threads_indexesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507773049_threads_indexes.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1175,6 +1217,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1507656459_add_org_settings.up.sql":              _1507656459_add_org_settingsUpSql,
 	"1507755085_add_editor_beta_tags.down.sql":        _1507755085_add_editor_beta_tagsDownSql,
 	"1507755085_add_editor_beta_tags.up.sql":          _1507755085_add_editor_beta_tagsUpSql,
+	"1507773049_threads_indexes.down.sql":             _1507773049_threads_indexesDownSql,
+	"1507773049_threads_indexes.up.sql":               _1507773049_threads_indexesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1266,6 +1310,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1507656459_add_org_settings.up.sql":              &bintree{_1507656459_add_org_settingsUpSql, map[string]*bintree{}},
 	"1507755085_add_editor_beta_tags.down.sql":        &bintree{_1507755085_add_editor_beta_tagsDownSql, map[string]*bintree{}},
 	"1507755085_add_editor_beta_tags.up.sql":          &bintree{_1507755085_add_editor_beta_tagsUpSql, map[string]*bintree{}},
+	"1507773049_threads_indexes.down.sql":             &bintree{_1507773049_threads_indexesDownSql, map[string]*bintree{}},
+	"1507773049_threads_indexes.up.sql":               &bintree{_1507773049_threads_indexesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

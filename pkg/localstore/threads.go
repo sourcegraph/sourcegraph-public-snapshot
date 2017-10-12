@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
 	"github.com/lib/pq"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -93,27 +95,41 @@ func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (
 	return thread, nil
 }
 
-func (t *threads) GetByOrg(ctx context.Context, orgID int32, file *string, limit int32) ([]*sourcegraph.Thread, error) {
-	if file != nil {
-		return t.getBySQL(ctx, "JOIN org_repos ON (org_repos.id = t.org_repo_id) WHERE org_repos.org_id=$1 AND org_repos.deleted_at IS NULL AND t.file=$2 AND t.deleted_at IS NULL LIMIT $3", orgID, file, limit)
+func (t *threads) listQuery(ctx context.Context, repoID, orgID *int32, branch, file *string) *sqlf.Query {
+	var join string
+	conds := []*sqlf.Query{}
+	if repoID != nil {
+		conds = append(conds, sqlf.Sprintf("t.org_repo_id=%d", repoID))
 	}
-	return t.getBySQL(ctx, "JOIN org_repos ON (org_repos.id = t.org_repo_id) WHERE org_repos.org_id=$1 AND org_repos.deleted_at IS NULL AND t.deleted_at IS NULL LIMIT $2", orgID, limit)
+	if orgID != nil {
+		join = "JOIN org_repos ON (org_repos.id = t.org_repo_id) "
+		conds = append(conds, sqlf.Sprintf("(org_repos.org_id=%d AND org_repos.deleted_at IS NULL)", *orgID))
+	}
+	if branch != nil {
+		conds = append(conds, sqlf.Sprintf("t.branch=%s", *branch))
+	}
+	if file != nil {
+		conds = append(conds, sqlf.Sprintf("t.file=%s", *file))
+	}
+	conds = append(conds, sqlf.Sprintf("t.deleted_at IS NULL"))
+	return sqlf.Sprintf(join+"WHERE %s", sqlf.Join(conds, "AND"))
 }
 
-func (t *threads) GetAllForRepo(ctx context.Context, repoID, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND deleted_at IS NULL) LIMIT $2", repoID, limit)
+func (t *threads) List(ctx context.Context, repoID, orgID *int32, branch, file *string, limit int32) ([]*sourcegraph.Thread, error) {
+	q := sqlf.Sprintf("%s LIMIT %d", t.listQuery(ctx, repoID, orgID, branch, file), limit)
+	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) GetAllForFile(ctx context.Context, repoID int32, file string, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND file=$2 AND deleted_at IS NULL) LIMIT $3", repoID, file, limit)
+func (t *threads) Count(ctx context.Context, repoID, orgID *int32, branch, file *string, limit int32) (int32, error) {
+	q := t.listQuery(ctx, repoID, orgID, branch, file)
+	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) GetAllForBranch(ctx context.Context, repoID int32, branch string, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND branch=$2 AND deleted_at IS NULL) LIMIT $3", repoID, branch, limit)
-}
-
-func (t *threads) GetAllForFileOnBranch(ctx context.Context, repoID int32, file, branch string, limit int32) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "WHERE (org_repo_id=$1 AND file=$2 AND branch=$3 AND deleted_at IS NULL) LIMIT $4", repoID, file, branch, limit)
+func (t *threads) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int32, error) {
+	var count int32
+	rows := globalDB.QueryRow("SELECT count(*) FROM threads t "+query, args...)
+	err := rows.Scan(&count)
+	return count, err
 }
 
 // getBySQL returns threads matching the SQL query, if any exist.

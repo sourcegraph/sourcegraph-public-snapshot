@@ -15,6 +15,36 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
+type threadConnectionResolver struct {
+	repoID *int32
+	orgID  *int32
+	file   *string
+	branch *string
+	limit  int32
+}
+
+func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver, error) {
+	const maxLimit = 1000
+	if t.limit == 0 {
+		t.limit = maxLimit
+	} else if t.limit > maxLimit {
+		t.limit = maxLimit
+	}
+	threads, err := store.Threads.List(ctx, t.repoID, t.orgID, t.branch, t.file, t.limit)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := []*threadResolver{}
+	for _, t := range threads {
+		resolvers = append(resolvers, &threadResolver{thread: t})
+	}
+	return resolvers, nil
+}
+
+func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return store.Threads.Count(ctx, t.repoID, t.orgID, t.branch, t.file, t.limit)
+}
+
 type threadResolver struct {
 	org    *sourcegraph.Org
 	repo   *sourcegraph.OrgRepo

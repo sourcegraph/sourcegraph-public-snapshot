@@ -5,7 +5,6 @@ import (
 	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 type orgRepoResolver struct {
@@ -38,27 +37,17 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 	Branch *string
 	Limit  *int32
 }) ([]*threadResolver, error) {
-	limit := int32(1000)
-	if args.Limit != nil && *args.Limit < limit {
+	return o.Threads2(ctx, args).Nodes(ctx)
+}
+
+func (o *orgRepoResolver) Threads2(ctx context.Context, args *struct {
+	File   *string
+	Branch *string
+	Limit  *int32
+}) *threadConnectionResolver {
+	var limit int32
+	if args.Limit != nil {
 		limit = *args.Limit
 	}
-	var threads []*sourcegraph.Thread
-	var err error
-	if args.Branch != nil && args.File != nil {
-		threads, err = store.Threads.GetAllForFileOnBranch(ctx, o.repo.ID, *args.File, *args.Branch, limit)
-	} else if args.Branch != nil {
-		threads, err = store.Threads.GetAllForBranch(ctx, o.repo.ID, *args.Branch, limit)
-	} else if args.File != nil {
-		threads, err = store.Threads.GetAllForFile(ctx, o.repo.ID, *args.File, limit)
-	} else {
-		threads, err = store.Threads.GetAllForRepo(ctx, o.repo.ID, limit)
-	}
-	if err != nil {
-		return nil, err
-	}
-	threadResolvers := []*threadResolver{}
-	for _, thread := range threads {
-		threadResolvers = append(threadResolvers, &threadResolver{o.org, o.repo, thread})
-	}
-	return threadResolvers, nil
+	return &threadConnectionResolver{repoID: &o.repo.ID, file: args.File, branch: args.Branch, limit: limit}
 }

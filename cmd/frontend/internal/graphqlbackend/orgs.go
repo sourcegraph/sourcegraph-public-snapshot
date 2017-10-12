@@ -76,19 +76,17 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*orgSettingsResolver,
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	Limit *int32
 }) ([]*threadResolver, error) {
-	limit := int32(1000)
-	if args.Limit != nil && *args.Limit < limit {
+	return o.Threads2(ctx, args).Nodes(ctx)
+}
+
+func (o *orgResolver) Threads2(ctx context.Context, args *struct {
+	Limit *int32
+}) *threadConnectionResolver {
+	var limit int32
+	if args.Limit != nil {
 		limit = *args.Limit
 	}
-	threads, err := store.Threads.GetByOrg(ctx, o.org.ID, nil, limit)
-	if err != nil {
-		return nil, err
-	}
-	threadResolvers := []*threadResolver{}
-	for _, thread := range threads {
-		threadResolvers = append(threadResolvers, &threadResolver{o.org, nil, thread})
-	}
-	return threadResolvers, nil
+	return &threadConnectionResolver{orgID: &o.org.ID, limit: limit}
 }
 
 func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
