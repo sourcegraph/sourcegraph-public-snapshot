@@ -253,6 +253,9 @@ func Main() error {
 			next.ServeHTTP(w, r)
 		})
 	})(h)
+	// 🚨 SECURITY: The main frontend handler should always be wrapped in a
+	// basic auth handler
+	h = handlerutil.NewBasicAuthHandler(h)
 
 	srv := &http.Server{
 		Handler:      h,
