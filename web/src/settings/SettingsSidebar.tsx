@@ -53,8 +53,8 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     }
                     this.setState({ orgs: user.orgs })
 
-                },
-            ),
+                }
+            )
         )
     }
 

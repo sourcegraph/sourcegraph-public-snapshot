@@ -33,7 +33,7 @@ export const Suggestion = (props: SuggestionProps) => {
                     parts.map((part, i) =>
                         <span key={i} className={part.toLowerCase() === lowerQuery ? 'suggestion__highlighted-query' : ''}>
                             {part}
-                        </span>,
+                        </span>
                     )
                 }
             </div>

@@ -49,7 +49,7 @@ export class UserProfilePage extends React.Component<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(currentUser.subscribe(
             user => this.setState({ user, username: (user && user.username) || '', displayName: (user && user.displayName) || '' }),
-            error => this.setState({ error }),
+            error => this.setState({ error })
         ))
         this.subscriptions.add(
             this.submits
@@ -65,7 +65,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                             .do(() => window.context.requireUserBackfill = false)
                             .catch(this.handleError) :
                         updateUser({ displayName: this.state.displayName })
-                            .catch(this.handleError),
+                            .catch(this.handleError)
                 )
                 .mergeMap(user => fetchCurrentUser().concat([user]))
                 .do(() => this.setState({ loading: false }))
@@ -81,8 +81,8 @@ export class UserProfilePage extends React.Component<Props, State> {
                             this.props.history.replace('/settings')
                         }
                     },
-                    this.handleError,
-                ),
+                    this.handleError
+                )
         )
     }
 

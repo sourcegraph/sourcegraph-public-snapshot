@@ -73,7 +73,7 @@ export class SearchResults extends React.Component<Props, State> {
                         // Can't use takeWhile here because it would omit the last element (the first which the predicate returns false for)
                         .multicast<GQL.ISearchResults>(
                             () => new ReplaySubject<GQL.ISearchResults>(1),
-                            textSearch => textSearch.takeWhile(res => res.cloning.length > 0).concat(textSearch.take(1)),
+                            textSearch => textSearch.takeWhile(res => res.cloning.length > 0).concat(textSearch.take(1))
                         )
                         .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
                         .catch(error => {
@@ -85,8 +85,8 @@ export class SearchResults extends React.Component<Props, State> {
                 })
                 .subscribe(
                     newState => this.setState(newState as State),
-                    err => console.error(err),
-                ),
+                    err => console.error(err)
+                )
         )
     }
 
@@ -142,12 +142,12 @@ export class SearchResults extends React.Component<Props, State> {
                 }
                 {
                     this.state.cloning.map((repoPath, i) =>
-                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />,
+                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />
                     )
                 }
                 {
                     this.state.missing.map((repoPath, i) =>
-                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon}/>,
+                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon}/>
                     )
                 }
                 {

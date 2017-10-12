@@ -48,5 +48,5 @@ export const fetchBlameFile = memoizeObservable((ctx: AbsoluteRepoFilePosition):
             }
             return result.data.root.repository.commit.commit.file.blame
         }),
-    makeRepoURI,
+    makeRepoURI
 )

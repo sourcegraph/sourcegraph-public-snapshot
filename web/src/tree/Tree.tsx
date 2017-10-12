@@ -362,7 +362,7 @@ class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             <td>
                                 {
                                     this.tile(this.files).map((files, i) =>
-                                        <LayerTile key={i} {...this.props} {...this.state} depth={this.depth} files={files} subfiles={[]} subfilesByDir={{}} />,
+                                        <LayerTile key={i} {...this.props} {...this.state} depth={this.depth} files={files} subfiles={[]} subfilesByDir={{}} />
                                     )
                                 }
                             </td>

@@ -189,7 +189,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                             console.error(e)
                             return []
                         })
-                        .concat([{ loadingExternal: false } as State]),
+                        .concat([{ loadingExternal: false } as State])
                 ))
                 .bufferTime(500)
                 .filter(updates => updates.length > 0)
@@ -205,9 +205,9 @@ export class ReferencesWidget extends React.Component<Props, State> {
                         }
                         return newState
                     },
-                    { references: [], loadingLocal: true, loadingExternal: true } as State,
+                    { references: [], loadingLocal: true, loadingExternal: true } as State
                 )
-                .subscribe(state => this.setState(state)),
+                .subscribe(state => this.setState(state))
         )
     }
 

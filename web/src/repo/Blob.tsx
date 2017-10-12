@@ -262,7 +262,7 @@ export class Blob extends React.Component<Props, State> {
 
                         this.setFixedTooltip(data)
                         updateTooltip(data, true, this.tooltipActions(data.ctx))
-                    }),
+                    })
             )
             this.subscriptions.add(
                 Observable.fromEvent<MouseEvent>(ref, 'mouseover')
@@ -292,7 +292,7 @@ export class Blob extends React.Component<Props, State> {
                         if (!this.state.fixedTooltip) {
                             updateTooltip(data, false, this.tooltipActions(data.ctx))
                         }
-                    }),
+                    })
             )
         }
 
@@ -305,7 +305,7 @@ export class Blob extends React.Component<Props, State> {
                     if (isSupportedExtension && !this.state.fixedTooltip) {
                         hideTooltip()
                     }
-                }),
+                })
         )
         this.subscriptions.add(
             Observable.fromEvent<MouseEvent>(ref, 'click')
@@ -339,7 +339,7 @@ export class Blob extends React.Component<Props, State> {
                     }
                     const ctx = { ...this.props, position: { line, character: data.loc!.character } }
                     updateLine(row, this.props.history, ctx, e)
-                }),
+                })
         )
     }
 

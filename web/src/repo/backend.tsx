@@ -60,7 +60,7 @@ export const resolveRev = memoizeObservable((ctx: { repoPath: string, rev?: stri
             throw new RevNotFoundError(ctx.rev)
         }
         return result.data.root.repository.commit.commit.sha1
-    }), makeRepoURI,
+    }), makeRepoURI
 )
 
 interface FetchFileCtx {
@@ -109,7 +109,7 @@ export const fetchHighlightedFile = memoizeObservable((ctx: FetchFileCtx): Obser
         }
         const file = result.data.root.repository.commit.commit.file
         return { isDirectory: file.isDirectory, highlightedFile: file.highlight }
-    }), ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}`,
+    }), ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}`
 )
 
 /**
@@ -159,7 +159,7 @@ export const listAllFiles = memoizeObservable((ctx: { repoPath: string, commitID
             throw new Error('invalid response received from graphql endpoint')
         }
         return result.data.root.repository.commit.commit.tree.files.map(file => file.name)
-    }), makeRepoURI,
+    }), makeRepoURI
 )
 
 interface BlobContent {
@@ -194,7 +194,7 @@ export const fetchBlobContent = memoizeObservable((ctx: FetchFileCtx): Observabl
         }
         const file = result.data.root.repository.commit.commit.file
         return { isDirectory: file.isDirectory, content: file.content }
-    }), makeRepoURI,
+    }), makeRepoURI
 )
 
 export interface RepoRevisions {
@@ -225,5 +225,5 @@ export const fetchRepoRevisions = memoizeObservable((ctx: { repoPath: string }):
             throw new Error(`cannot locate repo revisions: ${ctx}`)
         }
         return result.data.root.repository
-    }), makeRepoURI,
+    }), makeRepoURI
 )

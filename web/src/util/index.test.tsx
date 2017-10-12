@@ -90,7 +90,7 @@ describe('util module', () => {
             it('formats url with references mode', () => {
                 assert.deepEqual(
                     toPrettyBlobURL({ ...ctx, position: lineCharPosition, referencesMode: 'external' }),
-                    '/github.com/gorilla/mux/-/blob/mux.go#L1:1$references:external',
+                    '/github.com/gorilla/mux/-/blob/mux.go#L1:1$references:external'
                 )
             })
         })

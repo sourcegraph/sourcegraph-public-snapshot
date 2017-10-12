@@ -100,15 +100,15 @@ export const AcceptInvitePage = reactive<Props>(props => {
                                         loading: false,
                                         hasSubmitted: true,
                                         emailVerified: status.emailVerified,
-                                    })]),
+                                    })])
                             )
                             // Show error
                             .catch(error => {
                                 console.error(error)
                                 return [(state: State): State => ({ ...state, hasSubmitted: true, loading: false, error })]
-                            }),
-                    ),
-            ),
+                            })
+                    )
+            )
     )
         // Buffer state updates in the same tick to avoid too many rerenders
         .bufferTime(0)

@@ -24,7 +24,7 @@ class EventLogger {
                     setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
                 }
             },
-            error => { /* noop */ },
+            error => { /* noop */ }
         )
     }
 

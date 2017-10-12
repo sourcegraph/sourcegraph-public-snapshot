@@ -32,8 +32,8 @@ export class SurveyToast extends React.Component<{}, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             currentUser.subscribe(
-                user => this.setState({ user }),
-            ),
+                user => this.setState({ user })
+            )
         )
     }
 

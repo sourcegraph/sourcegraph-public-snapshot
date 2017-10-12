@@ -60,9 +60,9 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
                     searchProfilesFetch
                         .concat(Observable.defer(() =>
                             // If still not found, ignore
-                            Observable.from(searchProfileRepos.get(name) || []),
-                        )),
-            ),
+                            Observable.from(searchProfileRepos.get(name) || [])
+                        ))
+            )
     )
         .map(repo => ({ repo }))
         .toArray()

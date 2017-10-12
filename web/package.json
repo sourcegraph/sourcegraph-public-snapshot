@@ -16,7 +16,7 @@
   "license": "MIT",
   "devDependencies": {
     "@sourcegraph/tsconfig": "^1.0.0",
-    "@sourcegraph/tslint-config": "^4.0.0",
+    "@sourcegraph/tslint-config": "^5.0.0",
     "@types/auth0-js": "^8.6.3",
     "@types/escape-string-regexp": "0.0.31",
     "@types/extract-text-webpack-plugin": "^2.1.0",

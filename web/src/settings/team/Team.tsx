@@ -49,7 +49,7 @@ export const Team = reactive<Props>(props => {
             currentUser,
             props
                 .map(props => props.match.params.teamName)
-                .distinctUntilChanged(),
+                .distinctUntilChanged()
         )
             .mergeMap(([user, teamName]) => {
                 if (!user) {
@@ -63,7 +63,7 @@ export const Team = reactive<Props>(props => {
                 // Fetch the org by ID by ID
                 return fetchOrg(org.id)
                     .map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
-                },
+                }
             ),
 
         memberRemoves
@@ -79,7 +79,7 @@ export const Team = reactive<Props>(props => {
             .filter(([member, user]) => !!user && confirm(
                 user.id === member.userID
                     ? `Leave this team?`
-                    : `Remove ${member.user.displayName} from this team?`,
+                    : `Remove ${member.user.displayName} from this team?`
             ))
             .mergeMap(([memberToRemove, user]) =>
                 removeUserFromOrg(memberToRemove.org.id, memberToRemove.userID)
@@ -90,8 +90,8 @@ export const Team = reactive<Props>(props => {
                             ...state.org,
                             members: state.org.members.filter(member => member.userID !== memberToRemove.userID),
                         },
-                    })]),
-            ),
+                    })])
+            )
     )
         .scan<Update, State>((state: State, update: Update) => update(state), { left: false })
         .map(({ user, org, left }: State): JSX.Element | null => {

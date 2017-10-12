@@ -92,17 +92,17 @@ export class Repository extends React.Component<Props, State> {
                         .catch(err => {
                             console.error(err)
                             return []
-                        }),
+                        })
                 )
                 .subscribe(
                     (files: string[]) => this.setState({ files }),
-                    err => console.error(err),
-                ),
+                    err => console.error(err)
+                )
         )
 
         const [contentUpdatesWithFile, contentUpdatesWithoutFile] = Observable.merge(
             this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
-            this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true })),
+            this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
         ).partition(props => Boolean(props.filePath))
 
         // Transitions to routes with file should update file contents
@@ -119,7 +119,7 @@ export class Repository extends React.Component<Props, State> {
                             this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
                             console.error(err)
                             return []
-                        }),
+                        })
                 )
                 .subscribe(
                     result => this.setState({
@@ -129,15 +129,15 @@ export class Repository extends React.Component<Props, State> {
                         highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
                         highlightingError: undefined,
                     }),
-                    err => console.error(err),
-                ),
+                    err => console.error(err)
+                )
         )
         // Transitions to routes without file should unset file contents
         this.subscriptions.add(
             contentUpdatesWithoutFile
                 .subscribe(() => {
                     this.setState({ highlightedFile: undefined, highlightingError: undefined })
-                }),
+                })
         )
     }
 
