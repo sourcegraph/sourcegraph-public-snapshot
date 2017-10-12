@@ -100,6 +100,6 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 			nil,
 		}, nil
 	default:
-		panic("never here")
+		panic("SharedItem: never here")
 	}
 }
