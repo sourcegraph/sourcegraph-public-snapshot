@@ -134,7 +134,7 @@ func (t *threads) getCountBySQL(ctx context.Context, query string, args ...inter
 
 // getBySQL returns threads matching the SQL query, if any exist.
 func (*threads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Thread, error) {
-	rows, err := globalDB.Query("SELECT t.id, t.org_repo_id, t.file, t.revision, t.start_line, t.end_line, t.start_character, t.end_character, t.range_length, t.created_at, t.archived_at FROM threads t "+query, args...)
+	rows, err := globalDB.Query("SELECT t.id, t.org_repo_id, t.file, t.revision, t.branch, t.start_line, t.end_line, t.start_character, t.end_character, t.range_length, t.created_at, t.updated_at, t.archived_at, t.author_user_id, t.html_lines_before, t.html_lines, t.html_lines_after, t.text_lines_before, t.text_lines, t.text_lines_after, t.text_lines_selection_range_start, t.text_lines_selection_range_length FROM threads t "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,9 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 		var t sourcegraph.Thread
 		var archivedAt pq.NullTime
 		var rangeLength sql.NullInt64
-		err := rows.Scan(&t.ID, &t.OrgRepoID, &t.File, &t.Revision, &t.StartLine, &t.EndLine, &t.StartCharacter, &t.EndCharacter, &rangeLength, &t.CreatedAt, &archivedAt)
+		var authorUserID, htmlBefore, html, htmlAfter, textBefore, text, textAfter sql.NullString
+		var textSelectionRangeStart, textSelectionRangeLength sql.NullInt64
+		err := rows.Scan(&t.ID, &t.OrgRepoID, &t.File, &t.Revision, &t.Branch, &t.StartLine, &t.EndLine, &t.StartCharacter, &t.EndCharacter, &rangeLength, &t.CreatedAt, &t.UpdatedAt, &archivedAt, &authorUserID, &htmlBefore, &html, &htmlAfter, &textBefore, &text, &textAfter, &textSelectionRangeStart, &textSelectionRangeLength)
 		if err != nil {
 			return nil, err
 		}
@@ -158,6 +160,21 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 			t.ArchivedAt = &archivedAt.Time
 		} else {
 			t.ArchivedAt = nil
+		}
+		if authorUserID.Valid {
+			t.AuthorUserID = authorUserID.String
+		}
+		if htmlBefore.Valid && html.Valid && htmlAfter.Valid && textBefore.Valid && text.Valid && textAfter.Valid && textSelectionRangeStart.Valid && textSelectionRangeLength.Valid {
+			t.Lines = &sourcegraph.ThreadLines{
+				HTMLBefore:               htmlBefore.String,
+				HTML:                     html.String,
+				HTMLAfter:                htmlAfter.String,
+				TextBefore:               textBefore.String,
+				Text:                     text.String,
+				TextAfter:                textAfter.String,
+				TextSelectionRangeLength: int32(textSelectionRangeLength.Int64),
+				TextSelectionRangeStart:  int32(textSelectionRangeStart.Int64),
+			}
 		}
 
 		threads = append(threads, &t)
