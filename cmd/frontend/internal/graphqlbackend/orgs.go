@@ -149,6 +149,13 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+
+	// Add the editor-beta tag to all orgs created
+	_, err = store.OrgTags.Create(ctx, newOrg.ID, "editor-beta")
+	if err != nil {
+		return nil, err
+	}
+
 	return &orgResolver{org: newOrg}, nil
 }
 
@@ -197,6 +204,11 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, args.OrgID)
 		}
 		if _, ok := err.(store.ErrOrgMemberNotFound); !ok {
+			return nil, err
+		}
+		// Add the editor beta tag to an invited user if they're already registered
+		_, err := store.UserTags.CreateIfNotExists(ctx, invitedUser.ID, "editor-beta")
+		if err != nil {
 			return nil, err
 		}
 	}

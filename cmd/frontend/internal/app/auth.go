@@ -10,10 +10,12 @@ import (
 	"encoding/base64"
 
 	"golang.org/x/oauth2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -131,6 +133,15 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		}
 	}
 
+	userToken := r.URL.Query().Get("token")
+	if dbUser != nil && userToken != "" {
+		// Add editor beta tag for a new user that signs up, if they have been invited to an org.
+		_, err := addEditorBetaTag(r.Context(), dbUser, userToken)
+		if err != nil {
+			return err
+		}
+	}
+
 	if !info.AppMetadata.DidLoginBefore {
 		if err := auth0.SetAppMetadata(r.Context(), info.UserID, "did_login_before", true); err != nil {
 			return err
@@ -167,4 +178,13 @@ func fetchAuth0UserInfo(ctx context.Context, token *oauth2.Token, v interface{})
 	}
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(&v)
+}
+
+func addEditorBetaTag(ctx context.Context, user *sourcegraph.User, tokenString string) (*sourcegraph.UserTag, error) {
+	// 🚨 SECURITY: verify that the token is valid before adding editor-beta tag
+	_, err := invite.ParseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	return store.UserTags.CreateIfNotExists(ctx, user.ID, "editor-beta")
 }

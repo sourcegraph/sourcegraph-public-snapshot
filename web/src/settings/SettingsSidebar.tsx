@@ -16,6 +16,7 @@ interface Props {
 
 interface State {
     orgs?: GQL.IOrg[]
+    editorBeta: boolean
 }
 
 /**
@@ -27,7 +28,9 @@ export class SettingsSidebar extends React.Component<Props, State> {
 
     constructor() {
         super()
-        this.state = {}
+        this.state = {
+            editorBeta: false
+        }
     }
 
     public componentDidMount(): void {
@@ -40,7 +43,16 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         // this.props.history.push('/sign-in')
                         return
                     }
+                    if (user.tags) {
+                        for (const tag of user.tags) {
+                            if (tag.name === 'editor-beta') {
+                                this.setState({ editorBeta: true })
+                                break
+                            }
+                        }
+                    }
                     this.setState({ orgs: user.orgs })
+
                 }
             )
         )
@@ -58,32 +70,36 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     <div className='settings-sidebar__header-title ui-title'>Settings</div>
                 </div>
                 <ul className='settings-sidebar__items'>
-                    <li className='settings-sidebar__item'>
-                        <Link to='/settings/editor-auth' className='settings-sidebar__item-link'>
-                            <KeyIcon className='icon-inline settings-sidebar__item-icon' /> Editor authentication
-                        </Link>
-                    </li>
-                    <li className='settings-sidebar__item'>
-                        <div className='settings-sidebar__item-header'>
-                            <FriendsIcon className='icon-inline settings-sidebar__item-icon'/> Your teams
-                        </div>
+                    {this.state.editorBeta &&
                         <ul>
-                            {
-                                this.state.orgs && this.state.orgs.map(org => (
-                                    <li className='settings-sidebar__item' key={org.id}>
-                                        <Link to={`/settings/teams/${org.name}`} className='settings-sidebar__item-link'>
-                                            {org.name}
-                                        </Link>
-                                    </li>
-                                ))
-                            }
                             <li className='settings-sidebar__item'>
-                                <Link to='/settings/teams/new' className='settings-sidebar__item-link'>
-                                    <AddIcon className='icon-inline settings-sidebar__item-icon'/> Create new team
+                                <Link to='/settings/editor-auth' className='settings-sidebar__item-link'>
+                                    <KeyIcon className='icon-inline settings-sidebar__item-icon' /> Editor authentication
                                 </Link>
                             </li>
+                            <li className='settings-sidebar__item'>
+                                <div className='settings-sidebar__item-header'>
+                                    <FriendsIcon className='icon-inline settings-sidebar__item-icon'/> Your teams
+                                </div>
+                                <ul>
+                                    {
+                                        this.state.orgs && this.state.orgs.map(org => (
+                                            <li className='settings-sidebar__item' key={org.id}>
+                                                <Link to={`/settings/teams/${org.name}`} className='settings-sidebar__item-link'>
+                                                    {org.name}
+                                                </Link>
+                                            </li>
+                                        ))
+                                    }
+                                    <li className='settings-sidebar__item'>
+                                        <Link to='/settings/teams/new' className='settings-sidebar__item-link'>
+                                            <AddIcon className='icon-inline settings-sidebar__item-icon'/> Create new team
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </li>
                         </ul>
-                    </li>
+                    }
                     <li className='settings-sidebar__item'>
                         <a href='/-/sign-out' className='settings-sidebar__item-link' onClick={this.logTelemetryOnSignOut}>
                             <SignOutIcon className='icon-inline settings-sidebar__item-icon' /> Sign out

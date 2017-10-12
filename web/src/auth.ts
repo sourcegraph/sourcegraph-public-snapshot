@@ -38,6 +38,10 @@ export function fetchCurrentUser(): Observable<never> {
                         id
                         name
                     }
+                    tags {
+                        id
+                        name
+                    }
                 }
             }
         }

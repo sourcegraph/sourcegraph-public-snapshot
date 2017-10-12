@@ -145,16 +145,16 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
         const searchParams = new URLSearchParams(this.props.location.search)
         const returnTo = searchParams.get('returnTo')
-        const token = searchParams.get('token')
         if (returnTo) {
             redirect.searchParams.set('returnTo', returnTo)
         }
         if (this.state.mode === 'signup') {
             redirect.searchParams.set('username', this.state.username)
             redirect.searchParams.set('displayName', this.state.displayName || this.state.username)
-            if (token) {
-                redirect.searchParams.set('token', token)
-            }
+        }
+        const token = searchParams.get('token')
+        if (token) {
+            redirect.searchParams.set('token', token)
         }
 
         const webAuth = new WebAuth({

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
@@ -17,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -157,6 +159,34 @@ func serveBasicPageWithEmailVerification(title func(c *Common, r *http.Request) 
 		common.Title = title(common, r)
 		return renderTemplate(w, "app.html", common)
 	}
+}
+
+func serveEditorAuthWithEditorBetaRegistration(w http.ResponseWriter, r *http.Request) error {
+	// Add editor beta tag for users who sign in or sign up from the editor.
+	// This logic is executed when they are redirected to the editor-auth page
+	// with the referrer=editor query string.
+	user, err := localstore.Users.GetByCurrentAuthUser(r.Context())
+	if err != nil {
+		log15.Debug("no current auth user", "error", err)
+	}
+	if user != nil {
+		referrer := r.URL.Query().Get("referrer")
+		if referrer == "editor" {
+			_, err := localstore.UserTags.CreateIfNotExists(r.Context(), user.ID, "editor-beta")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	common, err := newCommon(w, r, "Authenticate editor - Sourcegraph", serveError)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
+	return renderTemplate(w, "app.html", common)
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {

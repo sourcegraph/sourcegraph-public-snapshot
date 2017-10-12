@@ -46,6 +46,8 @@
 // ../../../migrations/1507422179_remove_org_members_columns.up.sql
 // ../../../migrations/1507656459_add_org_settings.down.sql
 // ../../../migrations/1507656459_add_org_settings.up.sql
+// ../../../migrations/1507755085_add_editor_beta_tags.down.sql
+// ../../../migrations/1507755085_add_editor_beta_tags.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1033,6 +1035,46 @@ func _1507656459_add_org_settingsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1507755085_add_editor_beta_tagsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x71\xf5\x71\x0d\x71\x55\x70\x0b\xf2\xf7\x55\x28\x2d\x4e\x2d\x8a\x2f\x49\x4c\x2f\x56\x08\xf7\x70\x0d\x72\x55\xc8\x4b\xcc\x4d\x55\xb0\x55\x50\x4f\x4d\xc9\x2c\xc9\x2f\xd2\x4d\x4a\x2d\x49\x54\xb7\xe6\xe2\x42\xd6\x92\x5f\x94\x4e\x58\x07\x20\x00\x00\xff\xff\x45\x7b\x54\x6e\x64\x00\x00\x00")
+
+func _1507755085_add_editor_beta_tagsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507755085_add_editor_beta_tagsDownSql,
+		"1507755085_add_editor_beta_tags.down.sql",
+	)
+}
+
+func _1507755085_add_editor_beta_tagsDownSql() (*asset, error) {
+	bytes, err := _1507755085_add_editor_beta_tagsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507755085_add_editor_beta_tags.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1507755085_add_editor_beta_tagsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x8e\xb1\xca\x83\x30\x14\x46\xe7\x3f\x4f\xf1\x6d\x2a\xf8\x4b\xf7\xd2\xc9\xa6\x90\xd2\xde\x80\x66\x97\x48\x82\xcd\x60\x85\x24\xbe\x7f\x49\x63\xc1\xa5\x74\x3b\xc3\x77\xee\x3d\x82\x7a\xde\x29\x08\x52\x12\x6b\xb0\x7e\x88\x7a\x0a\x28\xdf\xe8\x4c\x8d\xa7\x9e\x6d\x85\x92\xfd\xf5\xfc\xc6\x5b\x85\xb3\xe8\x95\xa0\x56\x41\x52\x5e\x85\xc6\x99\x0a\x1f\xaa\x51\x58\xe3\xe2\xe2\xff\x47\x1b\x75\x81\x4b\x27\xef\x58\xfc\x34\xcc\x76\x1e\xad\x0f\x10\x44\xbc\xc3\x55\x0a\xca\x4e\xba\x93\x65\xbd\xc6\xc7\x61\x70\x06\xa7\xbd\xd0\x6c\x25\xac\x3a\x32\xb6\x8f\x4d\x9b\xdc\x9a\xe8\x67\xea\xe2\xa7\x5c\xba\xc1\xb7\xd0\x90\x1e\xbd\x02\x00\x00\xff\xff\xc8\x59\xe8\xd0\x15\x01\x00\x00")
+
+func _1507755085_add_editor_beta_tagsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507755085_add_editor_beta_tagsUpSql,
+		"1507755085_add_editor_beta_tags.up.sql",
+	)
+}
+
+func _1507755085_add_editor_beta_tagsUpSql() (*asset, error) {
+	bytes, err := _1507755085_add_editor_beta_tagsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507755085_add_editor_beta_tags.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1131,6 +1173,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1507422179_remove_org_members_columns.up.sql":    _1507422179_remove_org_members_columnsUpSql,
 	"1507656459_add_org_settings.down.sql":            _1507656459_add_org_settingsDownSql,
 	"1507656459_add_org_settings.up.sql":              _1507656459_add_org_settingsUpSql,
+	"1507755085_add_editor_beta_tags.down.sql":        _1507755085_add_editor_beta_tagsDownSql,
+	"1507755085_add_editor_beta_tags.up.sql":          _1507755085_add_editor_beta_tagsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1220,6 +1264,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1507422179_remove_org_members_columns.up.sql":    &bintree{_1507422179_remove_org_members_columnsUpSql, map[string]*bintree{}},
 	"1507656459_add_org_settings.down.sql":            &bintree{_1507656459_add_org_settingsDownSql, map[string]*bintree{}},
 	"1507656459_add_org_settings.up.sql":              &bintree{_1507656459_add_org_settingsUpSql, map[string]*bintree{}},
+	"1507755085_add_editor_beta_tags.down.sql":        &bintree{_1507755085_add_editor_beta_tagsDownSql, map[string]*bintree{}},
+	"1507755085_add_editor_beta_tags.up.sql":          &bintree{_1507755085_add_editor_beta_tagsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
