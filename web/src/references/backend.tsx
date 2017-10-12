@@ -74,11 +74,11 @@ export const fetchDependencyReferences = memoizeObservable((ctx: AbsoluteRepoFil
         })
 }, makeRepoURI)
 
-export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observable<Location[]> => {
+export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observable<Location[]> =>
     // Memoization is not done at the top level (b/c we only support Promise fetching memoization ATM).
     // In this case, memoization is achieved at a lower level since this function simply calls out to
     // other memoized fetchers.
-    return Observable.fromPromise(fetchXdefinition(ctx))
+    Observable.fromPromise(fetchXdefinition(ctx))
         .mergeMap(defInfo => {
             if (!defInfo) {
                 return []
@@ -134,4 +134,3 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                         })
                 })
         })
-}

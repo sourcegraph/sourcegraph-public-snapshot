@@ -361,9 +361,9 @@ class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                         <tr>
                             <td>
                                 {
-                                    this.tile(this.files).map((files, i) => {
-                                        return <LayerTile key={i} {...this.props} {...this.state} depth={this.depth} files={files} subfiles={[]} subfilesByDir={{}} />
-                                    })
+                                    this.tile(this.files).map((files, i) =>
+                                        <LayerTile key={i} {...this.props} {...this.state} depth={this.depth} files={files} subfiles={[]} subfilesByDir={{}} />,
+                                    )
                                 }
                             </td>
                         </tr>
@@ -459,8 +459,8 @@ class LayerTile extends React.Component<TileProps, {}> {
             <table className='tile' style={{ width: '100%' }}>
                 <tbody>
                     {
-                        flatten(Object.keys(this.props.subfilesByDir).map((dir, i) => {
-                            return [
+                        flatten(Object.keys(this.props.subfilesByDir).map((dir, i) =>
+                            [
                                 <tr key={i} className={this.currentDirectory(dir) === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}>
                                     <td
                                         // tslint:disable-next-line:jsx-no-lambda
@@ -514,8 +514,7 @@ class LayerTile extends React.Component<TileProps, {}> {
                                             />
                                         </td>
                                     </tr>,
-                            ]
-                        }))
+                            ]))
                     }
                     {
                         this.props.files.map((file, i) => {
