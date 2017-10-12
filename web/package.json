@@ -63,7 +63,7 @@
     "auth0-js": "^8.10.1",
     "bootstrap": "^4.0.0-beta",
     "copy-to-clipboard": "^3.0.7",
-    "date-fns": "^1.28.5",
+    "date-fns": "^2.0.0-alpha.7",
     "escape-string-regexp": "^1.0.5",
     "highlight.js": "^9.12.0",
     "immutable": "^3.8.1",
