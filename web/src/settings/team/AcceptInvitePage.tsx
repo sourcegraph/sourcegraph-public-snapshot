@@ -141,6 +141,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                         placeholder='you@yourcompany.com'
                         required={true}
                         autoCorrect='off'
+                        spellCheck={false}
                         value={email}
                         disabled={true}
                     />

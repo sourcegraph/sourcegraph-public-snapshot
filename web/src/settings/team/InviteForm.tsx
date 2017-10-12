@@ -81,6 +81,7 @@ export const InviteForm = reactive<Props>(props => {
                     onChange={nextEmailChange}
                     value={email}
                     required={true}
+                    spellCheck={false}
                     size={30}
                 />
                 <button type='submit' disabled={loading} className='btn btn-primary invite-form__submit-button'>Invite</button>

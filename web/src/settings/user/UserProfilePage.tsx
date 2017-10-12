@@ -110,6 +110,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                                 className='ui-text-box user-profile-page__input'
                                 value={this.state.user && this.state.user.email || ''}
                                 disabled={true}
+                                spellCheck={false}
                                 placeholder='Email'
                             />
                             <label>Username</label>

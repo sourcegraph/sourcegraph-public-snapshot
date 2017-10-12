@@ -63,6 +63,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         placeholder='Email'
                         required={true}
                         disabled={this.state.loading || Boolean(this.props.prefilledEmail)}
+                        spellCheck={false}
                     />
                 </div>
                 {
