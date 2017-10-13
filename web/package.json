@@ -2,6 +2,9 @@
   "name": "sourcegraph",
   "version": "0.0.1",
   "description": "Sourcegraph",
+  "engines": {
+    "npm": "^5.3.0"
+  },
   "scripts": {
     "test": "npm run build-tests && mocha --opts mocha.opts",
     "build": "webpack --config webpack.config.ts --progress --profile --colors",
