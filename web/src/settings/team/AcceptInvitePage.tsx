@@ -82,6 +82,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                         acceptUserInvite({ inviteToken })
                             .do(status => {
                                 const eventProps = {
+                                    org_id: tokenPayload.orgID,
                                     user_email: tokenPayload.email,
                                     org_name: tokenPayload.orgName,
                                 }
