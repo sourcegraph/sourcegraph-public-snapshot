@@ -1,3 +1,6 @@
+// Package slackinternal is used to send notifications to Sourcegraph. Unlike
+// package slack, these notifications would never be consumed by external users
+// or customers, and will only ever be sent to specific Sourcegraph webhooks.
 package slackinternal
 
 import (
@@ -15,8 +18,6 @@ var signupsWebhookURL = env.Get("SLACK_SIGNUPS_BOT_HOOK", "", "Webhook for posti
 // NotifyOnSignup posts a message to the Slack channel #bot-signups
 // when a user signs up for Sourcegraph
 func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse) error {
-	client := slack.New(&signupsWebhookURL, false)
-
 	var links []string
 	if hubSpotProps.LookerLink != "" {
 		links = append(links, fmt.Sprintf("<%s|View on Looker>", hubSpotProps.LookerLink))
@@ -43,5 +44,5 @@ func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties,
 		},
 	}
 
-	return client.Post(payload)
+	return slack.Post(payload, &signupsWebhookURL)
 }
