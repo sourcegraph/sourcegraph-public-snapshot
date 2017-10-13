@@ -88,6 +88,10 @@ func (t *threadResolver) File() string {
 	return t.thread.File
 }
 
+func (t *threadResolver) Branch() *string {
+	return t.thread.Branch
+}
+
 func (t *threadResolver) Revision() string {
 	return t.thread.Revision
 }

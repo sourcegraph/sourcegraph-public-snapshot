@@ -448,6 +448,7 @@ type Thread {
 	id: Int!
 	repo: OrgRepo!
 	file: String!
+	branch: String
 	revision: String!
 	title: String!
 	startLine: Int!
