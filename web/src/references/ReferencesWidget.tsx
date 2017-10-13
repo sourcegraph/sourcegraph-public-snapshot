@@ -57,6 +57,11 @@ interface ReferenceGroupProps {
      * The icon to show left to the title.
      */
     icon: React.ComponentType<{ className: string }>
+
+    /**
+     * Callback when a reference result is selected
+     */
+    onSelect?: () => void
 }
 
 interface ReferenceGroupState {
@@ -103,7 +108,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                         to={toPrettyBlobURL({ repoPath: uri.hostname + uri.pathname, rev, filePath: uri.hash.substr('#'.length), position })}
                                         key={i}
                                         className='references-group__reference'
-                                        onClick={this.logEvent}
+                                        onClick={this.onSelect}
                                     >
                                         <CodeExcerpt
                                             repoPath={uri.hostname + uri.pathname}
@@ -138,12 +143,10 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
         )
     }
 
+    private onSelect = () => this.props.onSelect && this.props.onSelect()
+
     private toggle = () => {
         this.setState({ hidden: !this.state.hidden })
-    }
-
-    private logEvent = (): void => {
-        (this.props.isLocal ? events.GoToLocalRefClicked : events.GoToExternalRefClicked).log()
     }
 }
 
@@ -322,6 +325,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                             localRev={this.props.rev}
                                             refs={refsByUri[uri]}
                                             icon={RepoIcon}
+                                            onSelect={this.logLocalSelection}
                                         />
                                     )
                                 })}
@@ -341,6 +345,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                             isLocal={false}
                                             refs={refsByUri[uri]}
                                             icon={GlobeIcon}
+                                            onSelect={this.logExternalSelection}
                                         />
                                     )
                                 })}
@@ -356,4 +361,6 @@ export class ReferencesWidget extends React.Component<Props, State> {
     }
     private onLocalRefsButtonClick = () => events.ShowLocalRefsButtonClicked.log()
     private onShowExternalRefsButtonClick = () => events.ShowExternalRefsButtonClicked.log()
+    private logLocalSelection = () => events.GoToLocalRefClicked.log()
+    private logExternalSelection = () => events.GoToExternalRefClicked.log()
 }

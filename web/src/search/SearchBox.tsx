@@ -360,14 +360,6 @@ export class SearchBox extends React.Component<Props, State> {
                         <ul className='search-box__suggestions' ref={this.setSuggestionListElement}>
                             {
                                 this.state.suggestions.map((suggestion, i) => {
-                                    const onClick = () => {
-                                        this.setState(prevState => ({
-                                            filters: prevState.filters.concat(suggestion),
-                                            suggestions: [],
-                                            selectedSuggestion: -1,
-                                            query: '',
-                                        }))
-                                    }
                                     const isSelected = this.state.selectedSuggestion === i
                                     const onRef = (ref: HTMLLIElement) => {
                                         if (isSelected) {
@@ -381,7 +373,8 @@ export class SearchBox extends React.Component<Props, State> {
                                             label={getFilterLabel(suggestion)}
                                             query={queryToCursor}
                                             isSelected={isSelected}
-                                            onClick={onClick}
+                                            // tslint:disable-next-line:jsx-no-lambda
+                                            onClick={() => this.selectSuggestion(suggestion, '')}
                                             liRef={onRef}
                                         />
                                     )
@@ -399,6 +392,28 @@ export class SearchBox extends React.Component<Props, State> {
 
     private setSuggestionListElement = (ref: HTMLElement | null): void => {
         this.suggestionListElement = ref || undefined
+    }
+
+    private selectSuggestion = (suggestion: Filter, newQuery: string): void => {
+        events.SearchSuggestionSelected.log({
+            code_search: {
+                suggestion: {
+                    type: suggestion.type,
+                    value: suggestion.value,
+                },
+            },
+        })
+        this.setState(prevState => ({
+            filters: prevState.filters.concat(suggestion),
+            suggestions: [],
+            selectedSuggestion: -1,
+            query: newQuery,
+        }), () => {
+            // Scroll chips so search input stays visible
+            if (this.chipsElement) {
+                this.chipsElement.scrollLeft = this.chipsElement.scrollWidth
+            }
+        })
     }
 
     private focusInput(): void {
@@ -493,17 +508,7 @@ export class SearchBox extends React.Component<Props, State> {
                 if (this.state.suggestions.length === 0) {
                     break
                 }
-                this.setState({
-                    filters: this.state.filters.concat(this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)]),
-                    suggestions: [],
-                    selectedSuggestion: -1,
-                    query: this.state.query.substr(event.currentTarget.selectionEnd),
-                }, () => {
-                    // Scroll chips so search input stays visible
-                    if (this.chipsElement) {
-                        this.chipsElement.scrollLeft = this.chipsElement.scrollWidth
-                    }
-                })
+                this.selectSuggestion(this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)], this.state.query.substr(event.currentTarget.selectionEnd))
                 break
             }
             case 'Backspace': {

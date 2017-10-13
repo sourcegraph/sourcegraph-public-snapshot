@@ -19,7 +19,7 @@ import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
-import { viewEvents } from '../tracking/events'
+import { events, viewEvents } from '../tracking/events'
 import { searchText } from './backend'
 import { parseSearchURLQuery } from './index'
 
@@ -126,6 +126,8 @@ export class SearchResults extends React.Component<Props, State> {
             totalResults += result.lineMatches.length
         }
 
+        const logEvent = () => events.SearchResultClicked.log()
+
         return (
            <div className='search-results'>
                 {
@@ -179,7 +181,16 @@ export class SearchResults extends React.Component<Props, State> {
                             repoURI: repoPath,
                         }))
 
-                        return <ReferencesGroup hidden={prevTotal > 500} repoPath={repoPath} filePath={filePath} key={i} refs={refs} isLocal={false} icon={RepoIcon} />
+                        return <ReferencesGroup
+                            hidden={prevTotal > 500}
+                            repoPath={repoPath}
+                            filePath={filePath}
+                            key={i}
+                            refs={refs}
+                            isLocal={false}
+                            icon={RepoIcon}
+                            onSelect={logEvent}
+                        />
                     })
                 }
             </div>
