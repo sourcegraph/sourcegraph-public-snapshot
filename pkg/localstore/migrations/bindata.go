@@ -52,6 +52,8 @@
 // ../../../migrations/1507773049_threads_indexes.up.sql
 // ../../../migrations/1507828928_add-slack-webhook-url.down.sql
 // ../../../migrations/1507828928_add-slack-webhook-url.up.sql
+// ../../../migrations/1507927334_thread_revision_updates.down.sql
+// ../../../migrations/1507927334_thread_revision_updates.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1159,6 +1161,46 @@ func _1507828928_addSlackWebhookUrlUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1507927334_thread_revision_updatesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x50\x2a\xc9\x28\x4a\x4d\x4c\x29\x56\x52\x08\x72\xf5\x73\xf4\x75\x55\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x2a\x4a\x2d\xc8\x8f\x2f\x4a\x2d\xcb\x2c\xce\xcc\xcf\x53\x52\x28\xc9\x07\x09\x41\x79\xb8\xcc\xe0\xe2\x84\x08\x23\xcc\x80\x69\x77\x09\xf2\x0f\x50\xf0\xf3\x0f\x51\xf0\x0b\xf5\xf1\xd1\xe1\xe2\x04\xf3\x61\xca\x72\x32\xf3\x52\x8b\xe3\x91\x4d\x77\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x9e\x17\x36\xfc\xb2\x00\x00\x00")
+
+func _1507927334_thread_revision_updatesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507927334_thread_revision_updatesDownSql,
+		"1507927334_thread_revision_updates.down.sql",
+	)
+}
+
+func _1507927334_thread_revision_updatesDownSql() (*asset, error) {
+	bytes, err := _1507927334_thread_revision_updatesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507927334_thread_revision_updates.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1507927334_thread_revision_updatesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8f\x41\x0a\xc2\x30\x10\x45\xd7\x9d\x53\x0c\x59\x7b\x83\xe0\x22\x6d\x07\x29\x24\xa9\xd4\xc9\x5a\x04\x03\x06\xa4\x91\x26\x88\xc7\x97\x22\xd8\x46\xea\x32\xe1\xff\x37\xff\xd5\x74\xe8\xac\x04\x50\x9a\x69\x40\x56\xb5\x26\x14\xf9\x36\xf9\xcb\x35\x09\xa8\x3e\xdf\x4d\xaf\x9d\xb1\x28\x26\xff\x0c\x29\xc4\x51\xe0\x89\x18\x6d\xcf\x68\x9d\xd6\x3b\xa8\x54\xdb\x7e\x43\xf7\x30\xfa\x74\x5e\xa2\xd9\xbf\xb2\xdc\xe6\xe3\x40\x56\x19\xda\xe0\xe7\x38\xbf\x1e\x71\xe1\x48\x00\x77\x6c\x15\xaf\xeb\xf3\x8a\xf2\xdc\xbe\x28\xfd\xf3\xc2\x52\xeb\x77\xf1\x5a\x4e\x02\x34\xbd\x31\x1d\x4b\x78\x07\x00\x00\xff\xff\xae\xe1\x4b\x32\x2b\x01\x00\x00")
+
+func _1507927334_thread_revision_updatesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507927334_thread_revision_updatesUpSql,
+		"1507927334_thread_revision_updates.up.sql",
+	)
+}
+
+func _1507927334_thread_revision_updatesUpSql() (*asset, error) {
+	bytes, err := _1507927334_thread_revision_updatesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507927334_thread_revision_updates.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1263,6 +1305,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1507773049_threads_indexes.up.sql":               _1507773049_threads_indexesUpSql,
 	"1507828928_add-slack-webhook-url.down.sql":       _1507828928_addSlackWebhookUrlDownSql,
 	"1507828928_add-slack-webhook-url.up.sql":         _1507828928_addSlackWebhookUrlUpSql,
+	"1507927334_thread_revision_updates.down.sql":     _1507927334_thread_revision_updatesDownSql,
+	"1507927334_thread_revision_updates.up.sql":       _1507927334_thread_revision_updatesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1358,6 +1402,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1507773049_threads_indexes.up.sql":               &bintree{_1507773049_threads_indexesUpSql, map[string]*bintree{}},
 	"1507828928_add-slack-webhook-url.down.sql":       &bintree{_1507828928_addSlackWebhookUrlDownSql, map[string]*bintree{}},
 	"1507828928_add-slack-webhook-url.up.sql":         &bintree{_1507828928_addSlackWebhookUrlUpSql, map[string]*bintree{}},
+	"1507927334_thread_revision_updates.down.sql":     &bintree{_1507927334_thread_revision_updatesDownSql, map[string]*bintree{}},
+	"1507927334_thread_revision_updates.up.sql":       &bintree{_1507927334_thread_revision_updatesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

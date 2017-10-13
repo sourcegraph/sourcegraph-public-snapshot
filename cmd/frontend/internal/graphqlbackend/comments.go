@@ -214,7 +214,7 @@ func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, utmSource str
 	values := url.Values{}
 	values.Set("repo", cloneURL)
 	values.Set("vcs", "git")
-	values.Set("revision", thread.Revision)
+	values.Set("revision", thread.RepoRevision)
 	values.Set("path", thread.File)
 	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
 	return fmt.Sprintf("https://about.sourcegraph.com/open/?%s#open?%s", aboutValues.Encode(), values.Encode())

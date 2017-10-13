@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -93,7 +94,15 @@ func (t *threadResolver) Branch() *string {
 }
 
 func (t *threadResolver) Revision() string {
-	return t.thread.Revision
+	return t.thread.RepoRevision // Deprecated. Using new repoRevision field data.
+}
+
+func (t *threadResolver) RepoRevision() string {
+	return t.thread.RepoRevision
+}
+
+func (t *threadResolver) LinesRevision() string {
+	return t.thread.LinesRevision
 }
 
 func (t *threadResolver) StartLine() int32 {
@@ -213,7 +222,9 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	OrgID          int32
 	RemoteURI      string
 	File           string
-	Revision       string
+	RepoRevision   *string
+	LinesRevision  *string
+	Revision       *string
 	Branch         *string
 	StartLine      int32
 	EndLine        int32
@@ -223,6 +234,16 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	Contents       string
 	Lines          *threadLines
 }) (*threadResolver, error) {
+	// Sort out the revision args. This is temporary until args.Revision is phased out.
+	if args.RepoRevision == nil && args.LinesRevision == nil {
+		if args.Revision == nil {
+			return nil, errors.New("no revision specified")
+		}
+		args.RepoRevision, args.LinesRevision = args.Revision, args.Revision
+	} else if args.RepoRevision == nil || args.LinesRevision == nil {
+		return nil, errors.New("both repoRevision and linesRevision required")
+	}
+
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
 	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
@@ -255,7 +276,8 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	thread := &sourcegraph.Thread{
 		OrgRepoID:      repo.ID,
 		File:           args.File,
-		Revision:       args.Revision,
+		RepoRevision:   *args.RepoRevision,
+		LinesRevision:  *args.LinesRevision,
 		Branch:         args.Branch,
 		StartLine:      args.StartLine,
 		EndLine:        args.EndLine,

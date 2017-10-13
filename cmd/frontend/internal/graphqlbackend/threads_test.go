@@ -28,11 +28,13 @@ func TestThreads_Create(t *testing.T) {
 	}, nil)
 
 	store.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
+	repoRev, lineRev := "abcd", "dcba"
 	threadCreateCalled, _ := store.Mocks.Threads.MockCreate_Return(t, &sourcegraph.Thread{
-		ID:        1,
-		OrgRepoID: wantRepo.ID,
-		File:      "foo.go",
-		Revision:  "abcd",
+		ID:            1,
+		OrgRepoID:     wantRepo.ID,
+		File:          "foo.go",
+		RepoRevision:  repoRev,
+		LinesRevision: lineRev,
 	}, nil)
 	commentCreateCalled, _ := store.Mocks.Comments.MockCreate(t)
 
@@ -41,7 +43,9 @@ func TestThreads_Create(t *testing.T) {
 		OrgID          int32
 		RemoteURI      string
 		File           string
-		Revision       string
+		RepoRevision   *string
+		LinesRevision  *string
+		Revision       *string
 		Branch         *string
 		StartLine      int32
 		EndLine        int32
@@ -51,10 +55,11 @@ func TestThreads_Create(t *testing.T) {
 		Contents       string
 		Lines          *threadLines
 	}{
-		RemoteURI: wantRepo.RemoteURI,
-		File:      "foo.go",
-		Revision:  "abcd",
-		Contents:  "Hello",
+		RemoteURI:     wantRepo.RemoteURI,
+		File:          "foo.go",
+		RepoRevision:  &repoRev,
+		LinesRevision: &lineRev,
+		Contents:      "Hello",
 	})
 
 	if err != nil {

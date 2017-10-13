@@ -226,7 +226,7 @@ Indexes:
  id                                | bigint                   | not null default nextval('threads_id_seq'::regclass)
  org_repo_id                       | bigint                   | 
  file                              | text                     | 
- revision                          | text                     | 
+ repo_revision                     | text                     | not null
  start_line                        | integer                  | 
  end_line                          | integer                  | 
  start_character                   | integer                  | 
@@ -246,6 +246,7 @@ Indexes:
  text_lines_after                  | text                     | 
  text_lines_selection_range_start  | integer                  | not null default 0
  text_lines_selection_range_length | integer                  | not null default 0
+ lines_revision                    | text                     | not null
 Indexes:
     "threads_pkey" PRIMARY KEY, btree (id)
     "threads_local_repo_id_file_idx" btree (org_repo_id, file)
