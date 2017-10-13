@@ -397,7 +397,11 @@ func notifyThreadArchived(ctx context.Context, repo *sourcegraph.OrgRepo, thread
 	for _, email := range emails {
 		var subject string
 		if first != nil {
-			subject = fmt.Sprintf("[%s] %s (#%d)", repoName, titleFromContents(first.Contents), thread.ID)
+			var branch string
+			if thread.Branch != nil {
+				branch = "@" + *thread.Branch
+			}
+			subject = fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, titleFromContents(first.Contents), thread.ID)
 		}
 		if len(previousComments) > 0 {
 			subject = "Re: " + subject
