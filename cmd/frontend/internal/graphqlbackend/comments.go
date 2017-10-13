@@ -91,7 +91,10 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	results := notifyAllInOrg(ctx, repo, thread, comments, comment, user.DisplayName)
+	results, err := notifyNewComment(ctx, repo, thread, comments, comment, user.DisplayName)
+	if err != nil {
+		log15.Error("notifyNewComment failed", "error", err)
+	}
 
 	t := &threadResolver{org, repo, thread}
 
@@ -104,8 +107,9 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		// errors swallowed because user is only needed for Slack notifications
 		log15.Error("graphqlbackend.AddCommentToThread: currentUser failed", "error", err)
 	} else {
+		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 		client := slack.New(org.SlackWebhookURL, true)
-		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, getURL(repo, thread, comment, "slack"), title)
+		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, getURL(repo, thread, "slack"), title)
 	}
 
 	return t, nil
@@ -146,10 +150,10 @@ type commentResults struct {
 	commentURL string
 }
 
-func notifyAllInOrg(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment, commentAuthorName string) *commentResults {
-	commentURL := getURL(repo, thread, comment, "email")
+func notifyNewComment(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment, commentAuthorName string) (*commentResults, error) {
+	commentURL := getURL(repo, thread, "email")
 	if !notif.EmailIsConfigured() {
-		return &commentResults{emails: []string{}, commentURL: commentURL}
+		return &commentResults{emails: []string{}, commentURL: commentURL}, nil
 	}
 
 	var first *sourcegraph.Comment
@@ -159,25 +163,10 @@ func notifyAllInOrg(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sour
 		first = comment
 	}
 
-	members, err := store.OrgMembers.GetByOrgID(ctx, repo.OrgID)
+	emails, err := allEmailsForOrg(ctx, repo.OrgID, []string{comment.AuthorUserID})
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	emails := []string{}
-	for _, m := range members {
-		if m.UserID == comment.AuthorUserID {
-			continue
-		}
-		user, err := store.Users.GetByAuth0ID(m.UserID)
-		if err != nil {
-			// This shouldn't happen, but we don't want to prevent the notification,
-			// so swallow the error.
-			log15.Error("get user", "uid", m.UserID, "error", err)
-			continue
-		}
-		emails = append(emails, user.Email)
-	}
-
 	repoName := repoNameFromURI(repo.RemoteURI)
 	contents := strings.Replace(comment.Contents, "\n", "<br>", -1)
 	for _, email := range emails {
@@ -200,7 +189,7 @@ func notifyAllInOrg(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sour
 			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
 		})
 	}
-	return &commentResults{emails: emails, commentURL: commentURL}
+	return &commentResults{emails: emails, commentURL: commentURL}, nil
 }
 
 func repoNameFromURI(remoteURI string) string {
@@ -211,7 +200,7 @@ func repoNameFromURI(remoteURI string) string {
 	return m[1]
 }
 
-func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, comment *sourcegraph.Comment, utmSource string) string {
+func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, utmSource string) string {
 	aboutValues := url.Values{}
 	if utmSource != "" {
 		aboutValues.Set("utm_source", utmSource)

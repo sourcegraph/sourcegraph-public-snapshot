@@ -2,10 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/mattbaird/gochimp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
@@ -13,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
 type threadConnectionResolver struct {
@@ -278,13 +282,17 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		results := notifyAllInOrg(ctx, repo, newThread, nil, comment, user.DisplayName)
+		results, err := notifyNewComment(ctx, repo, newThread, nil, comment, user.DisplayName)
+		if err != nil {
+			log15.Error("notifyAllInOrg failed", "error", err)
+		}
 		if user, err := currentUser(ctx); err != nil {
 			// errors swallowed because user is only needed for Slack notifications
 			log15.Error("graphqlbackend.CreateThread: currentUser failed", "error", err)
 		} else {
+			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
-			go client.NotifyOnThread(user, org, repo, newThread, comment, results.emails, getURL(repo, newThread, comment, "slack"))
+			go client.NotifyOnThread(user, org, repo, newThread, comment, results.emails, getURL(repo, newThread, "slack"))
 		}
 	} /* else {
 		// Creating a thread without Contents (a comment) means it is a code
@@ -320,11 +328,24 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	wasArchived := thread.ArchivedAt
 	thread, err = store.Threads.Update(ctx, args.ThreadID, repo.ID, args.Archived)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: send email notification that thread has been archived?
+
+	if wasArchived == nil && thread.ArchivedAt != nil {
+		user, err := store.Users.GetByAuth0ID(actor.UID)
+		if err != nil {
+			return nil, err
+		}
+		comments, err := store.Comments.GetAllForThread(ctx, args.ThreadID)
+		if err != nil {
+			return nil, err
+		}
+		notifyThreadArchived(ctx, repo, thread, comments, *user)
+	}
+
 	return &threadResolver{org, repo, thread}, nil
 }
 
@@ -351,6 +372,47 @@ func (*schemaResolver) ShareThread(ctx context.Context, args *struct {
 		AuthorUserID: actor.UID,
 		ThreadID:     &args.ThreadID,
 	})
+}
+
+func notifyThreadArchived(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
+	url := getURL(repo, thread, "email")
+	if !notif.EmailIsConfigured() {
+		return nil
+	}
+
+	var first *sourcegraph.Comment
+	if len(previousComments) > 0 {
+		first = previousComments[0]
+	}
+
+	emails, err := allEmailsForOrg(ctx, repo.OrgID, []string{archiver.Auth0ID})
+	if err != nil {
+		return err
+	}
+	repoName := repoNameFromURI(repo.RemoteURI)
+	for _, email := range emails {
+		var subject string
+		if first != nil {
+			subject = fmt.Sprintf("[%s] %s (#%d)", repoName, titleFromContents(first.Contents), thread.ID)
+		}
+		if len(previousComments) > 0 {
+			subject = "Re: " + subject
+		}
+		config := &notif.EmailConfig{
+			Template:  "thread-archived",
+			FromName:  archiver.DisplayName,
+			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
+			ToName:    "",                        // We don't know names right now.
+			ToEmail:   email,
+			Subject:   subject,
+		}
+
+		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
+			gochimp.Var{Name: "THREAD_ID", Content: strconv.Itoa(int(thread.ID))},
+			gochimp.Var{Name: "THREAD_URL", Content: url},
+		})
+	}
+	return nil
 }
 
 // titleFromContents returns a title based on the first sentence or line of the content.

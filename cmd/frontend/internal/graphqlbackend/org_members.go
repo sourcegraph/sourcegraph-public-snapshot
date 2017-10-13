@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 type orgMemberResolver struct {
@@ -94,4 +96,30 @@ func (m *orgMemberResolver) UpdatedAt() string {
 
 func (i *orgInviteResolver) EmailVerified() bool {
 	return i.emailVerified
+}
+
+func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []string) ([]string, error) {
+	members, err := store.OrgMembers.GetByOrgID(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	exclude := make(map[string]interface{})
+	for _, id := range excludeByUserID {
+		exclude[id] = struct{}{}
+	}
+	emails := []string{}
+	for _, m := range members {
+		if _, ok := exclude[m.UserID]; ok {
+			continue
+		}
+		user, err := store.Users.GetByAuth0ID(m.UserID)
+		if err != nil {
+			// This shouldn't happen, but we don't want to prevent the notification,
+			// so swallow the error.
+			log15.Error("get user", "uid", m.UserID, "error", err)
+			continue
+		}
+		emails = append(emails, user.Email)
+	}
+	return emails, nil
 }
