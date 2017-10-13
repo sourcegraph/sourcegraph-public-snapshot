@@ -50,6 +50,8 @@
 // ../../../migrations/1507755085_add_editor_beta_tags.up.sql
 // ../../../migrations/1507773049_threads_indexes.down.sql
 // ../../../migrations/1507773049_threads_indexes.up.sql
+// ../../../migrations/1507828928_add-slack-webhook-url.down.sql
+// ../../../migrations/1507828928_add-slack-webhook-url.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1117,6 +1119,46 @@ func _1507773049_threads_indexesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1507828928_addSlackWebhookUrlDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x2a\xce\x49\x4c\xce\x8e\x2f\x4f\x4d\xca\xc8\xcf\xcf\x8e\x2f\x2d\xca\x51\xb2\xe6\x02\x04\x00\x00\xff\xff\xfb\x49\xa5\xda\x32\x00\x00\x00")
+
+func _1507828928_addSlackWebhookUrlDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507828928_addSlackWebhookUrlDownSql,
+		"1507828928_add-slack-webhook-url.down.sql",
+	)
+}
+
+func _1507828928_addSlackWebhookUrlDownSql() (*asset, error) {
+	bytes, err := _1507828928_addSlackWebhookUrlDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507828928_add-slack-webhook-url.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1507828928_addSlackWebhookUrlUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x2a\xce\x49\x4c\xce\x8e\x2f\x4f\x4d\xca\xc8\xcf\xcf\x8e\x2f\x2d\xca\x51\x52\x28\x49\xad\x28\xb1\xe6\x02\x04\x00\x00\xff\xff\x53\x6a\x1e\x62\x36\x00\x00\x00")
+
+func _1507828928_addSlackWebhookUrlUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1507828928_addSlackWebhookUrlUpSql,
+		"1507828928_add-slack-webhook-url.up.sql",
+	)
+}
+
+func _1507828928_addSlackWebhookUrlUpSql() (*asset, error) {
+	bytes, err := _1507828928_addSlackWebhookUrlUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1507828928_add-slack-webhook-url.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1219,6 +1261,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1507755085_add_editor_beta_tags.up.sql":          _1507755085_add_editor_beta_tagsUpSql,
 	"1507773049_threads_indexes.down.sql":             _1507773049_threads_indexesDownSql,
 	"1507773049_threads_indexes.up.sql":               _1507773049_threads_indexesUpSql,
+	"1507828928_add-slack-webhook-url.down.sql":       _1507828928_addSlackWebhookUrlDownSql,
+	"1507828928_add-slack-webhook-url.up.sql":         _1507828928_addSlackWebhookUrlUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1312,6 +1356,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1507755085_add_editor_beta_tags.up.sql":          &bintree{_1507755085_add_editor_beta_tagsUpSql, map[string]*bintree{}},
 	"1507773049_threads_indexes.down.sql":             &bintree{_1507773049_threads_indexesDownSql, map[string]*bintree{}},
 	"1507773049_threads_indexes.up.sql":               &bintree{_1507773049_threads_indexesUpSql, map[string]*bintree{}},
+	"1507828928_add-slack-webhook-url.down.sql":       &bintree{_1507828928_addSlackWebhookUrlDownSql, map[string]*bintree{}},
+	"1507828928_add-slack-webhook-url.up.sql":         &bintree{_1507828928_addSlackWebhookUrlUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

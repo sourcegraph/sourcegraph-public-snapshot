@@ -295,6 +295,7 @@ declare namespace GQL {
     id: number;
     name: string;
     displayName: string | null;
+    slackWebhookURL: string | null;
     members: Array<IOrgMember>;
     repos: Array<IOrgRepo>;
     repo: IOrgRepo | null;

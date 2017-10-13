@@ -116,13 +116,14 @@ Foreign-key constraints:
 
 # Table "public.orgs"
 ```
-    Column    |           Type           |                     Modifiers                     
---------------+--------------------------+---------------------------------------------------
- id           | integer                  | not null default nextval('orgs_id_seq'::regclass)
- name         | citext                   | not null
- created_at   | timestamp with time zone | default now()
- updated_at   | timestamp with time zone | default now()
- display_name | text                     | 
+      Column       |           Type           |                     Modifiers                     
+-------------------+--------------------------+---------------------------------------------------
+ id                | integer                  | not null default nextval('orgs_id_seq'::regclass)
+ name              | citext                   | not null
+ created_at        | timestamp with time zone | default now()
+ updated_at        | timestamp with time zone | default now()
+ display_name      | text                     | 
+ slack_webhook_url | text                     | 
 Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
     "org_name_unique" UNIQUE CONSTRAINT, btree (name)

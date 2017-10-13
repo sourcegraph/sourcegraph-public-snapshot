@@ -86,7 +86,7 @@ export const InviteForm = reactive<Props>(props => {
                 />
                 <button type='submit' disabled={loading} className='btn btn-primary invite-form__submit-button'>Invite</button>
                 {loading && <LoaderIcon className='icon-inline' />}
-                <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-test--visible' : '')}><small>Invited!</small></div>
+                <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}><small>Invited!</small></div>
             </form>
         ))
 })

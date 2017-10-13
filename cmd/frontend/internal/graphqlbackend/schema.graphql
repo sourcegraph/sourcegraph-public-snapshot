@@ -90,6 +90,7 @@ type Mutation {
 	shareThread(threadID: Int!): String!
 	shareComment(commentID: Int!): String!
 	createOrg(name: String!, displayName: String!): Org!
+	updateOrg(orgID: Int!, displayName: String, slackWebhookURL: String): Org!
 	updateOrgSettings(orgID: Int!, contents: String!): OrgSettings!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
 	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
@@ -388,6 +389,7 @@ type Org {
 	id: Int!
 	name: String!
 	displayName: String
+	slackWebhookURL: String
 	members: [OrgMember!]!
 	latestSettings: OrgSettings
 	repos: [OrgRepo!]!

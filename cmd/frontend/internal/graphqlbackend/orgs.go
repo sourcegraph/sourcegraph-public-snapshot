@@ -48,6 +48,10 @@ func (o *orgResolver) DisplayName() *string {
 	return o.org.DisplayName
 }
 
+func (o *orgResolver) SlackWebhookURL() *string {
+	return o.org.SlackWebhookURL
+}
+
 func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error) {
 	sgMembers, err := store.OrgMembers.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
@@ -157,6 +161,27 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	return &orgResolver{org: newOrg}, nil
 }
 
+func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
+	OrgID           int32
+	DisplayName     *string
+	SlackWebhookURL *string
+}) (*orgResolver, error) {
+	// 🚨 SECURITY: Check that the current user is a member
+	// of the org that is being modified.
+	actor := actor.FromContext(ctx)
+	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID); err != nil {
+		return nil, err
+	}
+	log15.Info("updating org", "org", args.OrgID, "display name", args.DisplayName, "webhook URL", args.SlackWebhookURL, "actor", actor.UID)
+
+	updatedOrg, err := store.Orgs.Update(ctx, args.OrgID, args.DisplayName, args.SlackWebhookURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orgResolver{org: updatedOrg}, nil
+}
+
 func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	UserID string
 	OrgID  int32
@@ -230,8 +255,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		// errors swallowed because user is only needed for Slack notifications
 		log15.Error("graphqlbackend.InviteUser: currentUser failed", "error", err)
 	} else {
-		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-		client := slack.New(sourcegraphOrgWebhookURL)
+		client := slack.New(org.SlackWebhookURL, true)
 		go client.NotifyOnInvite(user, org, args.Email)
 	}
 
@@ -274,8 +298,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		// errors swallowed because user is only needed for Slack notifications
 		log15.Error("graphqlbackend.AcceptUserInvite: currentUser failed", "error", err)
 	} else {
-		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-		client := slack.New(sourcegraphOrgWebhookURL)
+		client := slack.New(org.SlackWebhookURL, true)
 		go client.NotifyOnAcceptedInvite(user, org)
 	}
 

@@ -67,6 +67,9 @@ export const events = {
     RemoveOrgMemberFailed: new LoggableEvent('RemoveOrgMemberFailed', EventCategories.Settings, EventActions.Error),
     OrgMemberRemoved: new LoggableEvent('OrgMemberRemoved', EventCategories.Settings, EventActions.Success),
 
+    UpdateOrgSettingsFailed: new LoggableEvent('UpdateOrgSettingsFailed', EventCategories.Settings, EventActions.Error),
+    OrgSettingsUpdated: new LoggableEvent('OrgSettingsUpdated', EventCategories.Settings, EventActions.Success),
+
     // Marketing events
     SurveyReminderViewed: new LoggableEvent('SurveyReminderViewed', EventCategories.Marketing, EventActions.Passive),
     SurveyReminderButtonClicked: new LoggableEvent('SurveyReminderButtonClicked', EventCategories.Marketing, EventActions.Click),

@@ -19,6 +19,8 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                 org(id: $id) {
                     id
                     name
+                    slackWebhookURL
+                    displayName
                     members {
                         id
                         userID
@@ -314,5 +316,53 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
             events.OrgMemberRemoved.log(eventData)
             // Reload user data
             return fetchCurrentUser()
+        })
+}
+
+/**
+ * Sends a GraphQL mutation to update an org
+ *
+ * @param orgID The ID of the org
+ * @param displayName The display name of the org
+ * @param slackWebhookURL The Slack webhook URL to send Slack-formatted org actions/updates to
+ * @return Observable that emits `undefined`, then completes
+ */
+export function updateOrg(orgID: number, displayName: string, slackWebhookURL: string): Observable<void> {
+    return currentUser
+        .take(1)
+        .mergeMap(user => {
+            if (!user) {
+                throw new Error('User must be signed in.')
+            }
+
+            const variables = {
+                orgID,
+                displayName,
+                slackWebhookURL
+            }
+            return mutateGraphQL(`
+                mutation updateOrg($orgID: Int!, $displayName: String, $slackWebhookURL: String) {
+                    updateOrg(orgID: $orgID, displayName: $displayName, slackWebhookURL: $slackWebhookURL) {
+                        id
+                    }
+                }
+            `, variables)
+        })
+        .map(({ data, errors }) => {
+            const eventData = {
+                organization: {
+                    update: {
+                        display_name: displayName,
+                        slack_webhook_url: slackWebhookURL
+                    },
+                    org_id: orgID
+                }
+            }
+            if (!data || (errors && errors.length > 0)) {
+                events.UpdateOrgSettingsFailed.log(eventData)
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            events.OrgSettingsUpdated.log(eventData)
+            return
         })
 }

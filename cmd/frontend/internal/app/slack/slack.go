@@ -11,18 +11,22 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/pkg/errors"
 )
 
+var sourcegraphOrgWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook for dogfooding notifications from an organization-level Slack bot.")
+
 // Client is capable of posting a message to a Slack webhook
 type Client struct {
-	webhookURL string
+	webhookURL            *string
+	alsoSendToSourcegraph bool
 }
 
 // New creates a new Slack client
-func New(webhookURL string) *Client {
-	return &Client{webhookURL: webhookURL}
+func New(webhookURL *string, alsoSendToSourcegraph bool) *Client {
+	return &Client{webhookURL: webhookURL, alsoSendToSourcegraph: alsoSendToSourcegraph}
 }
 
 // User is an interface for accessing a Sourcegraph user's profile data
@@ -67,8 +71,8 @@ type Field struct {
 
 // Post sends payload to a Slack channel defined by the client's webhookURL
 func (c *Client) Post(payload *Payload) error {
-	if c.webhookURL == "" {
-		return errors.New("slack: webhookURL is empty")
+	if c.alsoSendToSourcegraph && sourcegraphOrgWebhookURL == "" {
+		return errors.New("slack: env var SLACK_COMMENTS_BOT_HOOK not set")
 	}
 
 	payloadJSON, err := json.Marshal(payload)
@@ -76,7 +80,26 @@ func (c *Client) Post(payload *Payload) error {
 		return errors.Wrap(err, "slack: marshal json")
 	}
 
-	req, err := http.NewRequest("POST", c.webhookURL, bytes.NewReader(payloadJSON))
+	var errs []error
+	if c.webhookURL != nil && *c.webhookURL != "" {
+		if err := c.post(payloadJSON, *c.webhookURL); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if sourcegraphOrgWebhookURL != "" {
+		if err := c.post(payloadJSON, sourcegraphOrgWebhookURL); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if errs != nil {
+		return fmt.Errorf("%q", errs)
+	}
+
+	return nil
+}
+
+func (c *Client) post(payloadJSON []byte, webhookURL string) error {
+	req, err := http.NewRequest("POST", webhookURL, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return errors.Wrap(err, "slack: create post request")
 	}

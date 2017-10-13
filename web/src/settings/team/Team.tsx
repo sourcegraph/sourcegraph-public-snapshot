@@ -21,6 +21,7 @@ import { events } from '../../tracking/events'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 import { InviteForm } from './InviteForm'
+import { OrgSettingsForm } from './OrgSettingsForm'
 
 const TeamNotFound = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested team was not found.' />
 
@@ -111,6 +112,7 @@ export const Team = reactive<Props>(props => {
 
                     <InviteForm orgID={org.id}/>
 
+                    <h3>Members</h3>
                     <table className='table table-hover'>
                         <thead>
                             <tr>
@@ -144,6 +146,8 @@ export const Team = reactive<Props>(props => {
                             }
                         </tbody>
                     </table>
+
+                    <OrgSettingsForm org={org}/>
                 </div>
             )
         })

@@ -456,11 +456,12 @@ type SharedItem struct {
 }
 
 type Org struct {
-	ID          int32     `json:"ID"`
-	Name        string    `json:"Name,omitempty"`
-	DisplayName *string   `json:"DisplayName,omitempty"`
-	CreatedAt   time.Time `json:"CreatedAt,omitempty"`
-	UpdatedAt   time.Time `json:"UpdatedAt,omitempty"`
+	ID              int32     `json:"ID"`
+	Name            string    `json:"Name,omitempty"`
+	DisplayName     *string   `json:"DisplayName,omitempty"`
+	SlackWebhookURL *string   `json:"SlackWebhookURL,omitempty"`
+	CreatedAt       time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt       time.Time `json:"UpdatedAt,omitempty"`
 }
 
 type OrgMember struct {

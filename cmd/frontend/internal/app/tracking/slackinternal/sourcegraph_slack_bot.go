@@ -15,7 +15,7 @@ var signupsWebhookURL = env.Get("SLACK_SIGNUPS_BOT_HOOK", "", "Webhook for posti
 // NotifyOnSignup posts a message to the Slack channel #bot-signups
 // when a user signs up for Sourcegraph
 func NotifyOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse) error {
-	client := slack.New(signupsWebhookURL)
+	client := slack.New(&signupsWebhookURL, false)
 
 	var links []string
 	if hubSpotProps.LookerLink != "" {

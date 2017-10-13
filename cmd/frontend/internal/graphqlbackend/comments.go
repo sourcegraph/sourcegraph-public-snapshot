@@ -14,12 +14,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
-
-var sourcegraphOrgWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook for dogfooding notifications from an organization-level Slack bot.")
 
 type commentResolver struct {
 	org     *sourcegraph.Org
@@ -107,8 +104,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		// errors swallowed because user is only needed for Slack notifications
 		log15.Error("graphqlbackend.AddCommentToThread: currentUser failed", "error", err)
 	} else {
-		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-		client := slack.New(sourcegraphOrgWebhookURL)
+		client := slack.New(org.SlackWebhookURL, true)
 		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, getURL(repo, thread, comment, "slack"), title)
 	}
 
