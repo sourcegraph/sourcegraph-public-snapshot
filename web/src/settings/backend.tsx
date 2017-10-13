@@ -338,7 +338,7 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
             const variables = {
                 orgID,
                 displayName,
-                slackWebhookURL
+                slackWebhookURL,
             }
             return mutateGraphQL(`
                 mutation updateOrg($orgID: Int!, $displayName: String, $slackWebhookURL: String) {
@@ -353,10 +353,10 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
                 organization: {
                     update: {
                         display_name: displayName,
-                        slack_webhook_url: slackWebhookURL
+                        slack_webhook_url: slackWebhookURL,
                     },
-                    org_id: orgID
-                }
+                    org_id: orgID,
+                },
             }
             if (!data || (errors && errors.length > 0)) {
                 events.UpdateOrgSettingsFailed.log(eventData)

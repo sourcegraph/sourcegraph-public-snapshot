@@ -105,9 +105,8 @@ export const OrgSettingsForm = reactive<Props>(props => {
                 />
                 <small className='form-text'>
                     Sourcegraph can send comment notifications and org updates in a selected Slack channel using a webhook.
-                    You can generate a webhook URL for this by visiting <a href='https://sourcegraph.slack.com/apps/manage/custom-integrations' target='_blank'>
-                        https://sourcegraph.slack.com/apps/manage/custom-integrations
-                    </a>.
+                    You can generate a webhook URL for this by visiting your Slack organization's Apps > Custom Integrations > Incoming Webhooks page,
+                    and adding a new configuration. The Webhook URL you generate there should be entered here.
                 </small>
             </div>
             <button type='submit' disabled={loading} className='btn btn-primary org-settings-form__submit-button'>Update</button>
