@@ -133,17 +133,17 @@ func TestTitleFromContents(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		out := titleFromContents(test.In)
+		out := TitleFromContents(test.In)
 		if out != test.Out {
 			t.Errorf("\n   input: \"%s\"\nexpected: \"%s\"\n     got: \"%s\"", test.In, test.Out, out)
 		}
 		// Adding trailing whitespace should not change the title
-		outTrailingSpace := titleFromContents(test.In + " ")
+		outTrailingSpace := TitleFromContents(test.In + " ")
 		if outTrailingSpace != test.Out {
 			t.Errorf("\n   input: \"%s\"\nexpected: \"%s\"\n     got: \"%s\"", test.In, test.Out, outTrailingSpace)
 		}
 		// Adding trailing newline should not change the title
-		outTrailingNewline := titleFromContents(test.In + "\n")
+		outTrailingNewline := TitleFromContents(test.In + "\n")
 		if outTrailingNewline != test.Out {
 			t.Errorf("\n   input: \"%s\"\nexpected: \"%s\"\n     got: \"%s\"", test.In, test.Out, outTrailingNewline)
 		}

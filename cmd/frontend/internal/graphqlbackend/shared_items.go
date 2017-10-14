@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -35,7 +34,7 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 }) (*sharedItemResolver, error) {
 	item, err := store.SharedItems.Get(ctx, args.ULID)
 	if err != nil {
-		if legacyerr.ErrCode(err) == legacyerr.NotFound {
+		if _, ok := err.(store.ErrSharedItemNotFound); ok {
 			// shared item does not exist.
 			return nil, nil
 		}
