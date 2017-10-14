@@ -272,7 +272,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	// Locate the shared item.
 	sharedItem, err := localstore.SharedItems.Get(r.Context(), mux.Vars(r)["ULID"])
 	if err != nil {
-		if legacyerr.ErrCode(err) == legacyerr.NotFound {
+		if _, ok := err.(localstore.ErrSharedItemNotFound); ok {
 			// shared item does not exist.
 			serveError(w, r, err, http.StatusNotFound)
 			return nil

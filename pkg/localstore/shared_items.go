@@ -5,15 +5,25 @@ import (
 	cryptorand "crypto/rand"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/url"
 	"path"
 	"time"
 
 	"github.com/oklog/ulid"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
+
+// ErrSharedItemNotFound is an error returned by SharedItems.Get when the
+// requested shared item is not found.
+type ErrSharedItemNotFound struct {
+	ulid string
+}
+
+func (err ErrSharedItemNotFound) Error() string {
+	return fmt.Sprintf("shared item not found: %q", err.ulid)
+}
 
 // sharedItems provides access to the `shared_items` table.
 //
@@ -66,7 +76,7 @@ func (s *sharedItems) Get(ctx context.Context, ulid string) (*sourcegraph.Shared
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "shared item %q not found", ulid)
+			return nil, ErrSharedItemNotFound{ulid}
 		}
 		return nil, err
 	}
