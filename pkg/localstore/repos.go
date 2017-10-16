@@ -95,6 +95,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
 				return ghRepo, nil
 			}
+			return nil, ErrRepoNotFound
 		}
 		if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
 			return nil, err
