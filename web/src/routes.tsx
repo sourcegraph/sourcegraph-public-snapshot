@@ -7,6 +7,13 @@ import { SettingsPage } from './settings/SettingsPage'
 
 export interface LayoutRouteProps extends RouteProps {
     component: React.ComponentType<any>
+
+    /**
+     * Whether or not to force the width of the page to be narrow. Otherwise
+     * this is controlled by the user's full-width toggle state, which is not
+     * accessible on all pages.
+     */
+    forceNarrowWidth?: boolean
 }
 
 /**
@@ -25,20 +32,24 @@ export const routes: LayoutRouteProps[] = [
         path: '/sign-in',
         component: SignInPage,
         exact: true,
+        forceNarrowWidth: true,
     },
     {
         path: '/sign-up',
         component: SignInPage,
         exact: true,
+        forceNarrowWidth: true,
     },
     {
         path: '/settings',
         component: SettingsPage,
+        forceNarrowWidth: true,
     },
     {
         path: '/password-reset',
         component: PasswordResetPage,
         exact: true,
+        forceNarrowWidth: true,
     },
     {
         path: '/:repoRev+/-/blob/:filePath+',
