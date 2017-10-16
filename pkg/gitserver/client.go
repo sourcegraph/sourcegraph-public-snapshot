@@ -214,6 +214,22 @@ func (c *Client) List() ([]string, error) {
 	return list, err
 }
 
+// IsRepoCloneable returns true if the repository is cloneable.
+func (c *Client) IsRepoCloneable(ctx context.Context, repo string) (bool, error) {
+	req := &protocol.IsRepoCloneableRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, c.Addrs[0], "is-repo-cloneable", req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	var cloneable bool
+	err = json.NewDecoder(resp.Body).Decode(&cloneable)
+	return cloneable, err
+}
+
 func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (string, error) {
 	req := &protocol.RepoFromRemoteURLRequest{
 		RemoteURL: remoteURL,
@@ -227,7 +243,6 @@ func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (strin
 	var repo string
 	err = json.NewDecoder(resp.Body).Decode(&repo)
 	return repo, err
-
 }
 
 func (c *Client) httpPost(ctx context.Context, addr string, method string, payload interface{}) (*http.Response, error) {

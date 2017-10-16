@@ -84,6 +84,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/list", s.handleList)
+	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/repo-from-remote-url", s.handleRepoFromRemoteURL)
 	return mux
 }
@@ -102,6 +103,20 @@ func (s *Server) releaseCloneLock(dir string) {
 	s.cloningMu.Lock()
 	delete(s.cloning, dir)
 	s.cloningMu.Unlock()
+}
+
+func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
+	var req protocol.IsRepoCloneableRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	cloneable := s.isCloneable(r.Context(), req.Repo)
+	if err := json.NewEncoder(w).Encode(cloneable); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) handleRepoFromRemoteURL(w http.ResponseWriter, r *http.Request) {
@@ -177,9 +192,9 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
-		if origin := OriginMap(req.Repo); origin != "" && s.repoExists(ctx, origin, req.Repo) {
+		if origin := OriginMap(req.Repo); origin != "" && s.isCloneable(ctx, req.Repo) {
 			// Mark this repo as currently being cloned. We have to check again if someone else isn't already
-			// cloning since we released the lock. We released the lock since repoExists is a potentially
+			// cloning since we released the lock. We released the lock since isCloneable is a potentially
 			// slow operation.
 			s.cloningMu.Lock()
 			_, cloneInProgress := s.cloning[dir]
@@ -268,16 +283,29 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 }
 
 // testRepoExists is a test fixture that overrides the return value
-// for repoExists when it is set.
+// for isCloneable when it is set.
 var testRepoExists func(ctx context.Context, origin string, repoURI string) bool
 
-// repoExists returns true if the repo is cloneable.
-func (s *Server) repoExists(ctx context.Context, origin string, repoURI string) bool {
+// isCloneable checks to see if the repo is cloneable.
+func (s *Server) isCloneable(ctx context.Context, repo string) bool {
+	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout)
+	defer cancel()
+
+	if strings.ToLower(repo) == "github.com/sourcegraphtest/alwayscloningtest" {
+		return true
+	}
+
+	repo = protocol.NormalizeRepo(repo)
+	origin := OriginMap(repo)
+	if origin == "" {
+		return false
+	}
+
 	if testRepoExists != nil {
-		return testRepoExists(ctx, origin, repoURI)
+		return testRepoExists(ctx, origin, repo)
 	}
 	cmd := exec.CommandContext(ctx, "git", "ls-remote", origin, "HEAD")
-	_, err := s.runWithRemoteOpts(cmd, repoURI)
+	_, err := s.runWithRemoteOpts(cmd, repo)
 	return err == nil
 }
 

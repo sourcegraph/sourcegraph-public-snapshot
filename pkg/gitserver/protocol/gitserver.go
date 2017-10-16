@@ -14,6 +14,12 @@ type NotFoundPayload struct {
 	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
 }
 
+// IsRepoCloneableRequest is a request to determine if a repo is cloneable.
+type IsRepoCloneableRequest struct {
+	// Repo is the repository to check.
+	Repo string
+}
+
 // RepoFromRemoteURLRequest is a request to determine a repository URI (like
 // github.com/gorilla/mux) from a Git remote URL (like git@github.com:gorilla/mux
 // or any other variation).
