@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 var autoRepoWhitelist []*regexp.Regexp
@@ -95,6 +96,13 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
 				return ghRepo, nil
 			}
+			return nil, ErrRepoNotFound
+		}
+		cloneable, err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri)
+		if err != nil {
+			return nil, err
+		}
+		if !cloneable {
 			return nil, ErrRepoNotFound
 		}
 		if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
