@@ -17,6 +17,7 @@ interface RepoSubnavProps {
     onClickRevision?: () => void
     hideCopyLink?: boolean
     showOpenOnDesktop?: boolean
+    customEditorURL?: string
     location: H.Location
     history: H.History
 }
@@ -31,7 +32,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     }
 
     public render(): JSX.Element | null {
-        const editorUrl = toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))
+        const editorUrl = this.props.customEditorURL ?
+            this.props.customEditorURL :
+            toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))
         return (
             <div className='repo-nav'>
                 {/* TODO Don't assume master! */}
