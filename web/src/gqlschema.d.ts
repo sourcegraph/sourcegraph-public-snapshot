@@ -42,6 +42,7 @@ declare namespace GQL {
     searchProfiles: Array<ISearchProfile>;
     revealCustomerCompany: ICompanyProfile | null;
     org: IOrg;
+    sharedItem: ISharedItem | null;
     packages: Array<IPackage>;
     dependents: Array<IDependency>;
   }
@@ -297,9 +298,11 @@ declare namespace GQL {
     displayName: string | null;
     slackWebhookURL: string | null;
     members: Array<IOrgMember>;
+    latestSettings: IOrgSettings | null;
     repos: Array<IOrgRepo>;
     repo: IOrgRepo | null;
     threads: Array<IThread>;
+    threads2: IThreadConnection;
     tags: Array<IOrgTag>;
   }
 
@@ -323,6 +326,17 @@ declare namespace GQL {
   /*
     description: null
   */
+  interface IOrgSettings {
+    __typename: "OrgSettings";
+    id: number;
+    contents: string;
+    author: IUser;
+    createdAt: string;
+  }
+
+  /*
+    description: null
+  */
   interface IOrgRepo {
     __typename: "OrgRepo";
     id: number;
@@ -331,6 +345,7 @@ declare namespace GQL {
     createdAt: string;
     updatedAt: string;
     threads: Array<IThread>;
+    threads2: IThreadConnection;
   }
 
   /*
@@ -341,6 +356,9 @@ declare namespace GQL {
     id: number;
     repo: IOrgRepo;
     file: string;
+    branch: string | null;
+    repoRevision: string;
+    linesRevision: string;
     revision: string;
     title: string;
     startLine: number;
@@ -379,7 +397,16 @@ declare namespace GQL {
     contents: string;
     createdAt: string;
     updatedAt: string;
-    author: IOrgMember;
+    author: IUser;
+  }
+
+  /*
+    description: null
+  */
+  interface IThreadConnection {
+    __typename: "ThreadConnection";
+    nodes: Array<IThread>;
+    totalCount: number;
   }
 
   /*
@@ -536,6 +563,16 @@ declare namespace GQL {
   /*
     description: null
   */
+  interface ISharedItem {
+    __typename: "SharedItem";
+    author: IUser;
+    thread: IThread;
+    comment: IComment | null;
+  }
+
+  /*
+    description: null
+  */
   interface IPackage {
     __typename: "Package";
     lang: string;
@@ -580,6 +617,8 @@ declare namespace GQL {
     shareThread: string;
     shareComment: string;
     createOrg: IOrg;
+    updateOrg: IOrg;
+    updateOrgSettings: IOrgSettings;
     inviteUser: IEmptyResponse | null;
     acceptUserInvite: IOrgInviteStatus;
     removeUserFromOrg: IEmptyResponse | null;
