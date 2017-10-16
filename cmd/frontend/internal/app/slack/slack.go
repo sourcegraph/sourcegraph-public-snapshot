@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -220,13 +219,13 @@ func (c *Client) notifyOnComments(
 						Short: true,
 					},
 					&Field{
-						Title: "# org members notified",
-						Value: strconv.Itoa(len(recipients)),
+						Title: "Org ",
+						Value: fmt.Sprintf("`%s`\n(%d member(s) notified)", org.Name, len(recipients)),
 						Short: true,
 					},
 				},
 				Text:       text,
-				MarkdownIn: []string{"text"},
+				MarkdownIn: []string{"text", "fields"},
 			},
 		},
 	}
