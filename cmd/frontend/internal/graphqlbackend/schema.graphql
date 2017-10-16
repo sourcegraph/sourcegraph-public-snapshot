@@ -444,7 +444,26 @@ type Thread {
 	repo: OrgRepo!
 	file: String!
 	branch: String
+
+	# The commit ID of the repository at the time the thread was created.
 	repoRevision: String!
+
+	# The commit ID from Git blame, at the time the thread was created.
+	#
+	# The selection may be multiple lines, and the commit id is the
+	# topologically most recent commit of the blame commit ids for the selected
+	# lines.
+	#
+	# For example, if you have a selection of lines that have blame revisions
+	# (a, c, e, f), and assuming a history like::
+	#
+	# 	a <- b <- c <- d <- e <- f <- g <- h <- HEAD
+	#
+	# Then lines_revision would be f, because all other blame revisions a, c, e
+	# are reachable from f.
+	#
+	# Or in lay terms: "What is the oldest revision that I could checkout and
+	# still see the exact lines of code that I selected?".
 	linesRevision: String!
 	revision: String! @deprecated(reason: "To be replaced by repoRevision")
 	title: String!
