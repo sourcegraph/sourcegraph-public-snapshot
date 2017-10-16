@@ -25,7 +25,7 @@ type threadConnectionResolver struct {
 	repo   *sourcegraph.OrgRepo
 	file   *string
 	branch *string
-	limit  int32
+	limit  *int32
 }
 
 func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
@@ -40,15 +40,15 @@ func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
 	return orgID, repoID
 }
 
+const maxLimit = 1000
+
 func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver, error) {
-	const maxLimit = 1000
-	if t.limit == 0 {
-		t.limit = maxLimit
-	} else if t.limit > maxLimit {
-		t.limit = maxLimit
+	limit := int32(maxLimit)
+	if t.limit != nil && *t.limit < maxLimit {
+		limit = *t.limit
 	}
 	orgID, repoID := t.orgRepoArgs()
-	threads, err := store.Threads.List(ctx, repoID, orgID, t.branch, t.file, t.limit)
+	threads, err := store.Threads.List(ctx, repoID, orgID, t.branch, t.file, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 
 func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	orgID, repoID := t.orgRepoArgs()
-	return store.Threads.Count(ctx, repoID, orgID, t.branch, t.file, t.limit)
+	return store.Threads.Count(ctx, repoID, orgID, t.branch, t.file)
 }
 
 type threadResolver struct {

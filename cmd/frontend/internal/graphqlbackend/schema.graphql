@@ -396,7 +396,7 @@ type Org {
 	repos: [OrgRepo!]!
 	repo(remoteURI: String!): OrgRepo
 	threads(limit: Int): [Thread!]! @deprecated(reason: "To be replaced by threads2")
-	threads2(limit: Int): ThreadConnection!
+	threads2(repoRemoteURI: String, branch: String, file: String, limit: Int): ThreadConnection!
 	tags: [OrgTag!]!
 }
 

@@ -120,7 +120,7 @@ func (t *threads) List(ctx context.Context, repoID, orgID *int32, branch, file *
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) Count(ctx context.Context, repoID, orgID *int32, branch, file *string, limit int32) (int32, error) {
+func (t *threads) Count(ctx context.Context, repoID, orgID *int32, branch, file *string) (int32, error) {
 	q := t.listQuery(ctx, repoID, orgID, branch, file)
 	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }

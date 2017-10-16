@@ -80,17 +80,35 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*orgSettingsResolver,
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	Limit *int32
 }) ([]*threadResolver, error) {
-	return o.Threads2(ctx, args).Nodes(ctx)
+	connection, err := o.Threads2(ctx, &struct {
+		RepoRemoteURI *string
+		Branch        *string
+		File          *string
+		Limit         *int32
+	}{
+		Limit: args.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return connection.Nodes(ctx)
 }
 
 func (o *orgResolver) Threads2(ctx context.Context, args *struct {
-	Limit *int32
-}) *threadConnectionResolver {
-	var limit int32
-	if args.Limit != nil {
-		limit = *args.Limit
+	RepoRemoteURI *string
+	Branch        *string
+	File          *string
+	Limit         *int32
+}) (*threadConnectionResolver, error) {
+	var repo *sourcegraph.OrgRepo
+	if args.RepoRemoteURI != nil {
+		var err error
+		repo, err = getOrgRepo(ctx, o.org.ID, *args.RepoRemoteURI)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return &threadConnectionResolver{o.org, nil, nil, nil, limit}
+	return &threadConnectionResolver{o.org, repo, args.File, args.Branch, args.Limit}, nil
 }
 
 func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
@@ -108,16 +126,21 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
 	RemoteURI string
 }) (*orgRepoResolver, error) {
-	orgRepo, err := store.OrgRepos.GetByRemoteURI(ctx, o.org.ID, args.RemoteURI)
+	orgRepo, err := getOrgRepo(ctx, o.org.ID, args.RemoteURI)
 	if err != nil {
-		if err == store.ErrRepoNotFound {
-			// We don't want to create org repos just because an org member queried for threads
-			// and we don't want the client to think this is an error.
-			return nil, nil
-		}
 		return nil, err
 	}
 	return &orgRepoResolver{o.org, orgRepo}, nil
+}
+
+func getOrgRepo(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error) {
+	orgRepo, err := store.OrgRepos.GetByRemoteURI(ctx, orgID, remoteURI)
+	if err == store.ErrRepoNotFound {
+		// We don't want to create org repos just because an org member queried for threads
+		// and we don't want the client to think this is an error.
+		err = nil
+	}
+	return orgRepo, err
 }
 
 func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
