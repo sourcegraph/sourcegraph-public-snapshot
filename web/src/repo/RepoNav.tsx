@@ -15,6 +15,7 @@ interface RepoSubnavProps {
     commitID?: string
     filePath?: string
     onClickRevision?: () => void
+    hideCopyLink?: boolean
     location: H.Location
     history: H.History
 }
@@ -37,10 +38,10 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 <span className='repo-nav__path'>
                     <RepoBreadcrumb {...this.props} />
                 </span>
-                <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
+                {!this.props.hideCopyLink && <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
                     <CopyIcon className='icon-inline'/>
                     <span className='repo-nav__action-text'>{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
-                </a>
+                </a>}
                 {
                     this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
                         <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnGitHubButtonClicked}>
