@@ -29,6 +29,10 @@ func (c *commentResolver) ID() int32 {
 	return c.comment.ID
 }
 
+func (c *commentResolver) Title(ctx context.Context) string {
+	return TitleFromContents(c.comment.Contents)
+}
+
 func (c *commentResolver) Contents() string {
 	return c.comment.Contents
 }
