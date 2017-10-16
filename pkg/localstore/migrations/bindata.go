@@ -54,6 +54,8 @@
 // ../../../migrations/1507828928_add-slack-webhook-url.up.sql
 // ../../../migrations/1507927334_thread_revision_updates.down.sql
 // ../../../migrations/1507927334_thread_revision_updates.up.sql
+// ../../../migrations/1508190086_drop_repo_access_token.down.sql
+// ../../../migrations/1508190086_drop_repo_access_token.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1201,6 +1203,46 @@ func _1507927334_thread_revision_updatesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1508190086_drop_repo_access_tokenDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x50\xca\x2f\x4a\x8f\x2f\x4a\x2d\xc8\x2f\x56\x52\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x4c\x4e\x4e\x2d\x2e\x8e\x2f\xc9\xcf\x4e\xcd\x53\x28\x49\xad\x28\xb1\xe6\x02\x04\x00\x00\xff\xff\x65\xe5\x1c\xa9\x36\x00\x00\x00")
+
+func _1508190086_drop_repo_access_tokenDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1508190086_drop_repo_access_tokenDownSql,
+		"1508190086_drop_repo_access_token.down.sql",
+	)
+}
+
+func _1508190086_drop_repo_access_tokenDownSql() (*asset, error) {
+	bytes, err := _1508190086_drop_repo_access_tokenDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1508190086_drop_repo_access_token.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1508190086_drop_repo_access_tokenUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x50\xca\x2f\x4a\x8f\x2f\x4a\x2d\xc8\x2f\x56\x52\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x4c\x4e\x4e\x2d\x2e\x8e\x2f\xc9\xcf\x4e\xcd\xb3\xe6\x02\x04\x00\x00\xff\xff\xb7\x8b\x86\x7b\x32\x00\x00\x00")
+
+func _1508190086_drop_repo_access_tokenUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1508190086_drop_repo_access_tokenUpSql,
+		"1508190086_drop_repo_access_token.up.sql",
+	)
+}
+
+func _1508190086_drop_repo_access_tokenUpSql() (*asset, error) {
+	bytes, err := _1508190086_drop_repo_access_tokenUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1508190086_drop_repo_access_token.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1307,6 +1349,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1507828928_add-slack-webhook-url.up.sql":         _1507828928_addSlackWebhookUrlUpSql,
 	"1507927334_thread_revision_updates.down.sql":     _1507927334_thread_revision_updatesDownSql,
 	"1507927334_thread_revision_updates.up.sql":       _1507927334_thread_revision_updatesUpSql,
+	"1508190086_drop_repo_access_token.down.sql":      _1508190086_drop_repo_access_tokenDownSql,
+	"1508190086_drop_repo_access_token.up.sql":        _1508190086_drop_repo_access_tokenUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1404,6 +1448,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1507828928_add-slack-webhook-url.up.sql":         &bintree{_1507828928_addSlackWebhookUrlUpSql, map[string]*bintree{}},
 	"1507927334_thread_revision_updates.down.sql":     &bintree{_1507927334_thread_revision_updatesDownSql, map[string]*bintree{}},
 	"1507927334_thread_revision_updates.up.sql":       &bintree{_1507927334_thread_revision_updatesUpSql, map[string]*bintree{}},
+	"1508190086_drop_repo_access_token.down.sql":      &bintree{_1508190086_drop_repo_access_tokenDownSql, map[string]*bintree{}},
+	"1508190086_drop_repo_access_token.up.sql":        &bintree{_1508190086_drop_repo_access_tokenUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

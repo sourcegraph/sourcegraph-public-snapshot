@@ -65,15 +65,14 @@ Foreign-key constraints:
 
 # Table "public.org_repos"
 ```
-    Column    |           Type           |                        Modifiers                         
---------------+--------------------------+----------------------------------------------------------
- id           | bigint                   | not null default nextval('local_repos_id_seq'::regclass)
- remote_uri   | citext                   | 
- access_token | text                     | 
- created_at   | timestamp with time zone | default now()
- updated_at   | timestamp with time zone | default now()
- deleted_at   | timestamp with time zone | 
- org_id       | integer                  | 
+   Column   |           Type           |                        Modifiers                         
+------------+--------------------------+----------------------------------------------------------
+ id         | bigint                   | not null default nextval('local_repos_id_seq'::regclass)
+ remote_uri | citext                   | 
+ created_at | timestamp with time zone | default now()
+ updated_at | timestamp with time zone | default now()
+ deleted_at | timestamp with time zone | 
+ org_id     | integer                  | 
 Indexes:
     "local_repos_pkey" PRIMARY KEY, btree (id)
     "local_repos_remote_uri_idx" btree (remote_uri)
