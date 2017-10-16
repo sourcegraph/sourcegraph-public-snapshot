@@ -41,12 +41,12 @@ func (c *commentResolver) UpdatedAt() string {
 	return c.comment.UpdatedAt.Format(time.RFC3339) // ISO
 }
 
-func (c *commentResolver) Author(ctx context.Context) (*orgMemberResolver, error) {
-	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, c.org.ID, c.comment.AuthorUserID)
+func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
+	user, err := store.Users.GetByAuth0ID(c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
-	return &orgMemberResolver{c.org, member, nil}, nil
+	return &userResolver{user, actor.FromContext(ctx)}, nil
 }
 
 func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {

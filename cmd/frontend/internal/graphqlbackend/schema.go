@@ -471,7 +471,7 @@ type Comment {
 	contents: String!
 	createdAt: String!
 	updatedAt: String!
-	author: OrgMember!
+	author: User!
 }
 
 type Package {
