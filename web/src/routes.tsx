@@ -1,6 +1,7 @@
 import { RouteProps } from 'react-router'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
+import { CommentsPage } from './comments/CommentsPage'
 import { RepositoryResolver } from './repo/RepositoryResolver'
 import { SearchResults } from './search/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
@@ -27,6 +28,12 @@ export const routes: LayoutRouteProps[] = [
         path: '/search',
         component: SearchResults,
         exact: true,
+    },
+    {
+        path: '/c/:ulid',
+        component: CommentsPage,
+        exact: true,
+        forceNarrowWidth: true,
     },
     {
         path: '/sign-in',
