@@ -89,7 +89,7 @@ func (c *Config) UnauthedClient() *github.Client {
 	return c.client(&http.Client{Transport: t})
 }
 
-// AuthedTransport returns a GitHub HTTP transport using a user's
+// AuthedClient returns a GitHub HTTP Client using a user's
 // OAuth2 access token. All actions taken by clients using this
 // transport will use the full granted permissions of the token's
 // user. It uses a HTTP cache transport whose storage keys are

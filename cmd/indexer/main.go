@@ -14,6 +14,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer/idx"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer/idx/repos"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -69,6 +70,13 @@ func main() {
 	for i := 0; i < n; i++ {
 		go idx.Work(ctx, wq)
 	}
+
+	// Repository syncing thread
+	go func() {
+		if err := repos.RunRepositorySyncWorker(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	http.HandleFunc("/refresh", func(resp http.ResponseWriter, req *http.Request) {
 		repo := req.URL.Query().Get("repo")

@@ -10,6 +10,7 @@ package server
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -22,6 +23,7 @@ type prefixAndOrgin struct {
 
 var originMapEnv = env.Get("ORIGIN_MAP", "", `space separated list of mappings from repo name prefix to origin url, for example "github.com/!https://github.com/%.git"`)
 var gitoliteHostsEnv = env.Get("GITOLITE_HOSTS", "", `space separated list of mappings from repo name prefix to gitolite hosts"`)
+var githubEnterpriseURLEnv = env.Get("GITHUB_ENTERPRISE_URL", "", "URL to a GitHub Enterprise instance. If non-empty, repositories are synced from this instance periodically")
 
 var originMap []prefixAndOrgin
 var gitoliteHostMap []prefixAndOrgin
@@ -40,6 +42,16 @@ func init() {
 	for _, entry := range gitoliteHostMap {
 		originMap = append(originMap, prefixAndOrgin{Prefix: entry.Prefix, Origin: entry.Origin + ":%"})
 	}
+
+	// Add origin map for GitHub Enterprise instance of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
+	if githubEnterpriseURLEnv != "" {
+		gheURL, err := url.Parse(githubEnterpriseURLEnv)
+		if err != nil {
+			log.Fatal(err)
+		}
+		originMap = append(originMap, prefixAndOrgin{Prefix: gheURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", gheURL.Hostname())})
+	}
+
 	addGitHubDefaults()
 }
 
