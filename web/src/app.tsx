@@ -47,22 +47,25 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
         return (
             <div className='layout'>
                 <Navbar location={this.props.location} history={this.props.history} />
-                <div className={`layout__app-router-container layout__app-router-container--${this.state.isFullWidth ? 'full-width' : 'restricted'}`}>
                     <Switch>
                         {
                             routes.map((route, i) => {
+                                const isFullWidth = !route.forceNarrowWidth && this.state.isFullWidth
                                 const Component = route.component
                                 return <Route
                                     {...route}
                                     key={i}
                                     component={undefined}
                                     // tslint:disable-next-line:jsx-no-lambda
-                                    render={props => <Component {...props} onToggleFullWidth={this.onToggleFullWidth} isFullWidth={this.state.isFullWidth} />}
+                                    render={props => (
+                                        <div className={`layout__app-router-container layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`}>
+                                            <Component {...props} onToggleFullWidth={this.onToggleFullWidth} isFullWidth={isFullWidth} />
+                                        </div>
+                                    )}
                                 />
                             })
                         }
                     </Switch>
-                </div>
             </div>
         )
     }
