@@ -3,6 +3,7 @@ import * as React from 'react'
 import reactive from 'rx-component'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/observable/of'
+import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/concat'
 import 'rxjs/add/operator/concat'
 import 'rxjs/add/operator/delay'
@@ -26,6 +27,7 @@ interface State {
     email: string
     loading: boolean
     invited: boolean
+    error?: Error
 }
 
 type Update = (state: State) => State
@@ -63,16 +65,17 @@ export const InviteForm = reactive<Props>(props => {
                 inviteUser(email, orgID)
                     .mergeMap(() =>
                         // Reset email, reenable submit button, flash "invited" text
-                        Observable.of((state: State): State => ({ ...state, loading: false, email: '', invited: true }))
+                        Observable.of((state: State): State => ({ ...state, loading: false, error: undefined, email: '', invited: true }))
                             // Hide "invited" text again after 1s
                             .concat(Observable.of<Update>(state => ({ ...state, invited: false })).delay(1000))
                     )
                     // Disable button while loading
                     .startWith<Update>((state: State): State => ({ ...state, loading: true }))
+                    .catch(error => [(state: State): State => ({ ...state, loading: false, error })])
             )
     )
         .scan<Update, State>((state: State, update: Update) => update(state), { invited: false, loading: false, email: '' } as State)
-        .map(({ loading, email, invited }) => (
+        .map(({ loading, email, invited, error }) => (
             <form className='invite-form form-inline' onSubmit={nextSubmit}>
                 <input
                     type='email'
@@ -86,7 +89,9 @@ export const InviteForm = reactive<Props>(props => {
                 />
                 <button type='submit' disabled={loading} className='btn btn-primary invite-form__submit-button'>Invite</button>
                 {loading && <LoaderIcon className='icon-inline' />}
+                {error && <div className='text-error'><small>{error.message}</small></div>}
                 <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}><small>Invited!</small></div>
             </form>
         ))
+
 })
