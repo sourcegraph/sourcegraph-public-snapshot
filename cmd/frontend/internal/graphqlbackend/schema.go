@@ -468,6 +468,7 @@ type Thread {
 
 type Comment {
 	id: Int!
+	title: String!
 	contents: String!
 	createdAt: String!
 	updatedAt: String!
