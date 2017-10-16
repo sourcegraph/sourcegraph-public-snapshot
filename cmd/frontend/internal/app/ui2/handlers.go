@@ -319,11 +319,20 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "OrgRepos.GetByID")
 	}
-	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(r.Context())
+	if !actor.IsAuthenticated() {
+		u := &url.URL{
+			Path: "/sign-in",
+		}
+		q := u.Query()
+		q.Set("returnTo", r.URL.String())
+		u.RawQuery = q.Encode()
+		http.Redirect(w, r, u.String(), http.StatusSeeOther)
+		return nil
+	}
+	// 🚨 SECURITY: verify that the current user is in the org.
 	_, err = localstore.OrgMembers.GetByOrgIDAndUserID(r.Context(), orgRepo.OrgID, actor.UID)
 	if err != nil {
-		// TODO(slimsag): future: redirect to sign-in here
 		return errors.Wrap(err, "OrgMembers.GetByOrgIDAndUserID")
 	}
 
