@@ -16,6 +16,7 @@ interface RepoSubnavProps {
     filePath?: string
     onClickRevision?: () => void
     hideCopyLink?: boolean
+    showOpenOnDesktop?: boolean
     location: H.Location
     history: H.History
 }
@@ -50,8 +51,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                         </a>
                 }
                 {
-                    /* TODO(john): remove false condition below when we're ready to show desktop to users (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
-                    this.props.repoPath && false &&
+                    /* TODO(john): remove showOpenOnDesktop alltogether when we're ready to show
+                       desktop to users everywhere (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
+                    this.props.repoPath && this.props.showOpenOnDesktop &&
                         <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open on desktop' onClick={this.onOpenOnDesktopClicked}>
                             <ComputerIcon className='icon-inline'/>
                             <span className='repo-nav__action-text'>Open on desktop</span>
