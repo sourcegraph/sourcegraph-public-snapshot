@@ -394,6 +394,7 @@ declare namespace GQL {
   interface IComment {
     __typename: "Comment";
     id: number;
+    title: string;
     contents: string;
     createdAt: string;
     updatedAt: string;
