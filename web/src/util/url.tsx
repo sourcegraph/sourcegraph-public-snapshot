@@ -68,7 +68,7 @@ export function toTreeURL(ctx: RepoFile): string {
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/tree/${ctx.filePath}`
 }
 
-export function toEditorURL(repoPath: string, rev?: string, filePath?: string, position?: { line?: number }): string {
+export function toEditorURL(repoPath: string, rev?: string, filePath?: string, position?: { line?: number }, thread?: number): string {
     let query = 'repo=' + encodeURIComponent('ssh://git@' + repoPath + '.git')
     query += '&vcs=git'
     if (rev) {
@@ -82,6 +82,9 @@ export function toEditorURL(repoPath: string, rev?: string, filePath?: string, p
     }
     if (position && position.line) {
         query += '&selection=' + encodeURIComponent('' + position.line)
+    }
+    if (thread) {
+        query += '&thread=' + encodeURIComponent(String(thread))
     }
     return 'https://about.sourcegraph.com/open/#open?' + query
 }
