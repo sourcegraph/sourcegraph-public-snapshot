@@ -125,7 +125,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), shortGitCommandTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout)
 	defer cancel()
 
 	start := time.Now()

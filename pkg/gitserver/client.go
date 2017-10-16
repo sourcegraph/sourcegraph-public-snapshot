@@ -64,12 +64,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 	}
-	reqJSON, err := json.Marshal(req)
-	if err != nil {
-		panic(err) // should never fail to encode
-	}
-
-	resp, err := http.Post("http://"+addr+"/exec", "application/json", bytes.NewReader(reqJSON))
+	resp, err := c.client.httpPost(ctx, addr, "exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -219,16 +214,11 @@ func (c *Client) List() ([]string, error) {
 	return list, err
 }
 
-func (c *Client) RepoFromRemoteURL(remoteURL string) (string, error) {
+func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (string, error) {
 	req := &protocol.RepoFromRemoteURLRequest{
 		RemoteURL: remoteURL,
 	}
-	reqJSON, err := json.Marshal(req)
-	if err != nil {
-		panic(err) // should never fail to encode
-	}
-
-	resp, err := http.Post("http://"+c.Addrs[0]+"/repo-from-remote-url", "application/json", bytes.NewReader(reqJSON))
+	resp, err := c.httpPost(ctx, c.Addrs[0], "repo-from-remote-url", req)
 	if err != nil {
 		return "", err
 	}
@@ -238,4 +228,20 @@ func (c *Client) RepoFromRemoteURL(remoteURL string) (string, error) {
 	err = json.NewDecoder(resp.Body).Decode(&repo)
 	return repo, err
 
+}
+
+func (c *Client) httpPost(ctx context.Context, addr string, method string, payload interface{}) (*http.Response, error) {
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", "http://"+addr+"/"+method, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(ctx)
+	return http.DefaultClient.Do(req)
 }

@@ -73,7 +73,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// Determine the repo URI and branch.
-		repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(remoteURL)
+		repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(r.Context(), remoteURL)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// Open-file request.
 
 	// Determine the repo URI and branch.
-	repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(remoteURL)
+	repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(r.Context(), remoteURL)
 	if err != nil {
 		return err
 	}
