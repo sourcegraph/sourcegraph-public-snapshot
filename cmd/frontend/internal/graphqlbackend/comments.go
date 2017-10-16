@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/url"
 	"strconv"
 	"strings"
@@ -172,7 +173,14 @@ func notifyNewComment(ctx context.Context, repo *sourcegraph.OrgRepo, thread *so
 		return nil, err
 	}
 	repoName := repoNameFromURI(repo.RemoteURI)
-	contents := strings.Replace(comment.Contents, "\n", "<br>", -1)
+	contents := strings.Replace(html.EscapeString(comment.Contents), "\n", "<br>", -1)
+	lineVars := []gochimp.Var{}
+	if len(previousComments) == 0 && thread.Lines != nil {
+		lines := thread.Lines.TextBefore + thread.Lines.Text
+		lineVars = []gochimp.Var{
+			gochimp.Var{Name: "CONTEXT_LINES", Content: html.EscapeString(lines)},
+		}
+	}
 	for _, email := range emails {
 		var branch string
 		if thread.Branch != nil {
@@ -191,11 +199,11 @@ func notifyNewComment(ctx context.Context, repo *sourcegraph.OrgRepo, thread *so
 			Subject:   subject,
 		}
 
-		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
+		notif.SendMandrillTemplate(config, []gochimp.Var{}, append([]gochimp.Var{
 			gochimp.Var{Name: "CONTENTS", Content: contents},
 			gochimp.Var{Name: "COMMENT_URL", Content: commentURL},
 			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
-		})
+		}, lineVars...))
 	}
 	return &commentResults{emails: emails, commentURL: commentURL}, nil
 }
