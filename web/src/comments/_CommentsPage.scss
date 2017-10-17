@@ -26,9 +26,9 @@
         flex: none;
         align-items: center;
         width: 100%;
-        .icon {
-            margin-right: .25rem;
-        }
+    }
+    &__error-icon {
+        margin-right: .25rem;
     }
     &__no-shared-code-container {
         height: 0;

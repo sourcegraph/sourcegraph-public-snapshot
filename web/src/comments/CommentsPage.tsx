@@ -80,7 +80,7 @@ export const CommentsPage = reactive<Props>(props =>
                         history={history}
                     />
                     {sharedItem && !sharedItem.thread.repoRevision && <div className='comments-page__no-revision'>
-                        <ErrorIcon className='icon-inline'/>
+                        <ErrorIcon className='icon-inline comments-page__error-icon'/>
                         This discussion was created on code that was not pushed. File or line numbers may have changed since this discussion was created.
                     </div>}
                     <div className='comments-page__content'>
