@@ -65,7 +65,7 @@ export class Comment extends React.Component<Props, State> {
     }
 
     private onShareLinkClick: React.MouseEventHandler<HTMLElement> = event => {
-        if (event && (event.metaKey || event.altKey || event.ctrlKey)) {
+        if (event.metaKey || event.altKey || event.ctrlKey) {
             return
         }
         const loc = this.props.location
