@@ -351,6 +351,9 @@ export class RevSwitcher extends React.Component<Props, State> {
     }
 
     private onInputFocus = () => {
+        if (this.props.disabled) {
+            return
+        }
         this.setState({ showSwitcher: true })
         if (this.inputElement) {
             this.inputElement.select()
