@@ -35,6 +35,7 @@ export interface RepoBreadcrumbProps {
     repoPath: string
     rev?: string
     filePath?: string
+    disabled?: boolean
 }
 
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
@@ -44,6 +45,9 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     }
 
     private partToUrl = (i: number): string | undefined => {
+        if (this.props.disabled) {
+            return undefined
+        }
         const trimmedUri = this.props.repoPath.split('/').slice(1).join('/') // remove first path part
         const uriParts = trimmedUri.split('/')
         if (i < uriParts.length - 1) {
