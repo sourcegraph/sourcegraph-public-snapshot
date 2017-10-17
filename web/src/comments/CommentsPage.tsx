@@ -70,6 +70,7 @@ export const CommentsPage = reactive<Props>(props =>
                         customEditorURL={editorURL}
                         breadcrumbDisabled={true}
                         revSwitcherDisabled={true}
+                        customGitHubLine={sharedItem && sharedItem.thread.startLine}
                         location={location}
                         history={history}
                     />
