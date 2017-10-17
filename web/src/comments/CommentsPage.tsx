@@ -129,18 +129,39 @@ interface Line {
     className: string
 }
 
+/**
+ * Phony 'before' lines.
+ *
+ * These are used when the thread has no lines (because the user didn't share
+ * them) and we need *some code* to render with a heavy CSS blur to imply that
+ * code would normally be there.
+ */
 const phonyBeforeLines = [
     'func (r *commitResolver) File(ctx context.Context, args *struct {',
     '	Path string',
     '}) (*fileResolver, error) {',
 ]
 
+/**
+ * Phony 'main' lines.
+ *
+ * These are used when the thread has no lines (because the user didn't share
+ * them) and we need *some code* to render with a heavy CSS blur to imply that
+ * code would normally be there.
+ */
 const phonyLines = [
     '	return &fileResolver{',
     '		commit: r.commit,',
     '		name:   path.Base(args.Path),',
 ]
 
+/**
+ * Phony 'after' lines.
+ *
+ * These are used when the thread has no lines (because the user didn't share
+ * them) and we need *some code* to render with a heavy CSS blur to imply that
+ * code would normally be there.
+ */
 const phonyAfterLines = [
     '		path:   args.Path,',
     '	}, nil',
