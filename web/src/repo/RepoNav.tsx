@@ -18,6 +18,7 @@ interface RepoSubnavProps {
     hideCopyLink?: boolean
     showOpenOnDesktop?: boolean
     customEditorURL?: string
+    breadcrumbDisabled?: boolean
     location: H.Location
     history: H.History
 }
@@ -38,7 +39,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 {/* TODO Don't assume master! */}
                 <RevSwitcher history={this.props.history} rev={this.props.rev || 'master'} repoPath={this.props.repoPath}/>
                 <span className='repo-nav__path'>
-                    <RepoBreadcrumb {...this.props} />
+                    <RepoBreadcrumb {...this.props} disabled={this.props.breadcrumbDisabled} />
                 </span>
                 {!this.props.hideCopyLink && <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
                     <CopyIcon className='icon-inline'/>
