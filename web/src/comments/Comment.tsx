@@ -41,9 +41,9 @@ export class Comment extends React.Component<Props, State> {
         const loc = this.props.location
 
         // Determine the (relative) URL to the comment.
-        const sloc = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
-        sloc.searchParams.set('id', String(this.props.comment.id))
-        const shareLinkHref = sloc.pathname + sloc.search + sloc.hash
+        const shareUrl = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
+        shareUrl.searchParams.set('id', String(this.props.comment.id))
+        const shareLinkHref = shareUrl.pathname + shareUrl.search + shareUrl.hash
 
         // Check if this comment is targeted.
         const u = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
