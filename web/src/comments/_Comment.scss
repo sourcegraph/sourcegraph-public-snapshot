@@ -48,15 +48,5 @@
         margin-left: auto;
         display: flex;
         align-items: center;
-        .icon {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            fill: #8296C4;
-            transition: fill 100ms ease-out;
-        }
-        &:hover .icon {
-            fill: white;
-        }
     }
 }
