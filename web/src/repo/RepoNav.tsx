@@ -45,7 +45,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 {/* TODO Don't assume master! */}
                 <RevSwitcher history={this.props.history} rev={this.props.rev || 'master'} repoPath={this.props.repoPath} disabled={this.props.revSwitcherDisabled} />
                 <span className='repo-nav__path'>
-                    <RepoBreadcrumb {...this.props} disabled={this.props.breadcrumbDisabled} />
+                    <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
                 </span>
                 {!this.props.hideCopyLink && <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
                     <CopyIcon className='icon-inline'/>
