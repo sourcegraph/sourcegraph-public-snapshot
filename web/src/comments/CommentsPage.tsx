@@ -1,5 +1,6 @@
 import ChatIcon from '@sourcegraph/icons/lib/Chat'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
 import * as React from 'react'
 import { match } from 'react-router'
@@ -74,6 +75,10 @@ export const CommentsPage = reactive<Props>(props =>
                         location={location}
                         history={history}
                     />
+                    {sharedItem && !sharedItem.thread.repoRevision && <div className='comments-page__no-revision'>
+                        <ErrorIcon className='icon-inline'/>
+                        This discussion was created on code that was not pushed. File or line numbers may have changed since this discussion was created.
+                    </div>}
                     <div className='comments-page__content'>
                         {sharedItem && !sharedItem.thread.lines && <div className='comments-page__no-shared-code-container'>
                             <div className='comments-page__no-shared-code'>

@@ -16,6 +16,18 @@
         padding-bottom: 5rem;
     }
 
+    &__no-revision {
+        background: #1d2837;
+        display: flex;
+        padding: 0.5rem;
+        font-size: .75rem;
+        height: 6em;
+        align-items: center;
+        width: 100%;
+        .icon {
+            margin-right: .25rem;
+        }
+    }
     &__no-shared-code-container {
         height: 0;
     }
