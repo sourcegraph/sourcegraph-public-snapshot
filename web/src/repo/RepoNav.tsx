@@ -20,6 +20,11 @@ interface RepoSubnavProps {
     customEditorURL?: string
     revSwitcherDisabled?: boolean
     breadcrumbDisabled?: boolean
+    /**
+     * overrides the line number that 'View on GitHub' should link to. By
+     * default, it is parsed from the current URL hash.
+     */
+    customGitHubLine?: number
     location: H.Location
     history: H.History
 }
@@ -89,7 +94,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     }
 
     private urlToGitHub(): string {
-        const hash = parseHash(this.props.location.hash)
-        return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${hash.line ? '#L' + hash.line : ''}`
+        const line = this.props.customGitHubLine || parseHash(this.props.location.hash).line || undefined
+        return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line ? '#L' + line : ''}`
     }
 }
