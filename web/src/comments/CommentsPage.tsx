@@ -15,6 +15,7 @@ import { toEditorURL } from '../util/url'
 import { fetchSharedItem } from './backend'
 import { CodeView } from './CodeView'
 import { Comment } from './Comment'
+import { Observable } from 'rxjs/Observable';
 
 const SharedItemNotFound = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, we can&#39;t find anything here.' />
 
@@ -25,9 +26,10 @@ interface Props {
 }
 
 interface State {
-    sharedItem?: GQL.ISharedItem
+    sharedItem?: GQL.ISharedItem | null
     location: H.Location
     history: H.History
+    error?: Error
 }
 
 type Update = (s: State) => State
@@ -36,18 +38,29 @@ type Update = (s: State) => State
  * Renders a shared code comment's thread.
  */
 export const CommentsPage = reactive<Props>(props =>
-    props
-        .mergeMap(props =>
-            fetchSharedItem(props.match.params.ulid)
-                .map(sharedItem => (state: State): State => ({ ...state, location: props.location, history: props.history, sharedItem: sharedItem || undefined }))
-                .catch(err => {
-                    console.error(err)
-                    return []
-                })
-        )
-        .scan<Update, State>((state: State, update: Update) => update(state), undefined)
+    Observable.merge(
+        props
+            .map(({ location, history }): Update => state => ({ ...state, location, history })),
+
+        props
+            .map(props => props.match.params.ulid)
+            .distinctUntilChanged()
+            .mergeMap(ulid =>
+                fetchSharedItem(ulid)
+                    .map((sharedItem): Update => state => ({ ...state, sharedItem }))
+                    .catch((error): Update[] => {
+                        console.error(error)
+                        return [state => ({ ...state, error })]
+                    })
+            )
+    )
+        .scan<Update, State>((state: State, update: Update) => update(state), {} as State)
         .map(({ location, history, sharedItem }: State): JSX.Element | null => {
-            if (!sharedItem) {
+            if (sharedItem === undefined) {
+                // TODO(slimsag): future: add loading screen
+                return null
+            }
+            if (sharedItem === null) {
                 return <SharedItemNotFound />
             }
 
@@ -93,7 +106,7 @@ export const CommentsPage = reactive<Props>(props =>
                         {sharedItem && CodeView(sharedItem)}
                         <hr className='comments-page__hr' />
                         {sharedItem && sharedItem.thread.comments.map(comment =>
-                            <div className='comments-page__comment-container' key={comment.id} id={String(comment.id)}>
+                            <div className='comments-page__comment-container' key={comment.id}>
                                 <Comment location={location} comment={comment} />
                                 <hr className='comments-page__hr' />
                             </div>
@@ -104,10 +117,6 @@ export const CommentsPage = reactive<Props>(props =>
                     </div>
                 </div>
             )
-        })
-        .catch(err => {
-            console.error(err)
-            return []
         })
 )
 
