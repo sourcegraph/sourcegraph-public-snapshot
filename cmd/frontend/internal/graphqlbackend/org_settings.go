@@ -39,8 +39,9 @@ func (o *orgSettingsResolver) Author(ctx context.Context) (*userResolver, error)
 }
 
 func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
-	OrgID    int32
-	Contents string
+	OrgID               int32
+	LastKnownSettingsID *int32
+	Contents            string
 }) (*orgSettingsResolver, error) {
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
@@ -54,7 +55,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	setting, err := store.OrgSettings.Create(ctx, args.OrgID, actor.UID, args.Contents)
+	setting, err := store.OrgSettings.CreateIfUpToDate(ctx, args.OrgID, args.LastKnownSettingsID, actor.UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}

@@ -98,7 +98,7 @@ type Mutation {
 	shareComment(commentID: Int!): String!
 	createOrg(name: String!, displayName: String!): Org!
 	updateOrg(orgID: Int!, displayName: String, slackWebhookURL: String): Org!
-	updateOrgSettings(orgID: Int!, contents: String!): OrgSettings!
+	updateOrgSettings(orgID: Int!, lastKnownSettingsID: Int, contents: String!): OrgSettings!
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
 	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
 	removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
