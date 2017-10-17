@@ -5,9 +5,12 @@ import * as React from 'react'
 import { match } from 'react-router'
 import reactive from 'rx-component'
 import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/map'
+import 'rxjs/add/operator/merge'
 import 'rxjs/add/operator/mergeMap'
 import 'rxjs/add/operator/scan'
+import { Observable } from 'rxjs/Observable'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoNav } from '../repo/RepoNav'
@@ -15,7 +18,6 @@ import { toEditorURL } from '../util/url'
 import { fetchSharedItem } from './backend'
 import { CodeView } from './CodeView'
 import { Comment } from './Comment'
-import { Observable } from 'rxjs/Observable';
 
 const SharedItemNotFound = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, we can&#39;t find anything here.' />
 
