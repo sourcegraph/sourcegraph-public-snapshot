@@ -40,6 +40,10 @@ export const CommentsPage = reactive<Props>(props =>
         .mergeMap(props =>
             fetchSharedItem(props.match.params.ulid)
                 .map(sharedItem => (state: State): State => ({ ...state, location: props.location, history: props.history, sharedItem: sharedItem || undefined }))
+                .catch(err => {
+                    console.error(err)
+                    return []
+                })
         )
         .scan<Update, State>((state: State, update: Update) => update(state), undefined)
         .map(({ location, history, sharedItem }: State): JSX.Element | null => {
