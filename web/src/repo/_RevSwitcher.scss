@@ -16,6 +16,16 @@
         user-select: none;
         transition: all 100ms ease-in;
 
+        &:not(.rev-switcher__rev-display--disabled) {
+            &:hover {
+                border-color: white;
+                color: white;
+                > .rev-switcher__input::placeholder {
+                    color: white;
+                }
+            }
+        }
+
         &-text {
             overflow: hidden;
             text-overflow: ellipsis;
