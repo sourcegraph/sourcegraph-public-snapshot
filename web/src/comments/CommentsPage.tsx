@@ -174,24 +174,26 @@ const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
     const htmlBefore = threadLines ? threadLines.htmlBefore.split('\n') : phonyBeforeLines
     const html = threadLines ? threadLines.html.split('\n') : phonyLines
     const htmlAfter = threadLines ? threadLines.htmlAfter.split('\n') : phonyAfterLines
-    let lines = htmlBefore.map((line: string, i: number) => ({
-        number: startLine - (htmlBefore.length - i),
-        content: line,
-        isStartLine: false,
-        className: 'comments-page__line--before',
-    }))
-    lines = lines.concat(html.map((line: string, i: number) => ({
-        number: startLine + i,
-        content: line,
-        isStartLine: false,
-        className: 'comments-page__line--main',
-    })))
-    lines = lines.concat(htmlAfter.map((line: string, i: number) => ({
-        number: startLine + i + html.length,
-        content: line,
-        isStartLine: false,
-        className: 'comments-page__line--after',
-    })))
+    const lines = [
+        ...htmlBefore.map((line: string, i: number) => ({
+            number: startLine - (htmlBefore.length - i),
+            content: line,
+            isStartLine: false,
+            className: 'comments-page__line--before',
+        })),
+        ...html.map((line: string, i: number) => ({
+            number: startLine + i,
+            content: line,
+            isStartLine: false,
+            className: 'comments-page__line--main',
+        })),
+        ...htmlAfter.map((line: string, i: number) => ({
+            number: startLine + i + html.length,
+            content: line,
+            isStartLine: false,
+            className: 'comments-page__line--after',
+        })),
+    ]
     return lines.map((line: Line) => ({
         ...line,
         isStartLine: line.number === startLine,
