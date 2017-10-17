@@ -15,6 +15,9 @@ interface RepoSubnavProps {
     commitID?: string
     filePath?: string
     onClickRevision?: () => void
+    hideCopyLink?: boolean
+    showOpenOnDesktop?: boolean
+    customEditorURL?: string
     location: H.Location
     history: H.History
 }
@@ -29,7 +32,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     }
 
     public render(): JSX.Element | null {
-        const editorUrl = toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))
+        const editorUrl = this.props.customEditorURL || toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))
         return (
             <div className='repo-nav'>
                 {/* TODO Don't assume master! */}
@@ -37,10 +40,10 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 <span className='repo-nav__path'>
                     <RepoBreadcrumb {...this.props} />
                 </span>
-                <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
+                {!this.props.hideCopyLink && <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
                     <CopyIcon className='icon-inline'/>
                     <span className='repo-nav__action-text'>{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
-                </a>
+                </a>}
                 {
                     this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
                         <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnGitHubButtonClicked}>
@@ -49,8 +52,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                         </a>
                 }
                 {
-                    /* TODO(john): remove false condition below when we're ready to show desktop to users (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
-                    this.props.repoPath && false &&
+                    /* TODO(john): remove showOpenOnDesktop alltogether when we're ready to show
+                       desktop to users everywhere (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
+                    this.props.repoPath && this.props.showOpenOnDesktop &&
                         <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open on desktop' onClick={this.onOpenOnDesktopClicked}>
                             <ComputerIcon className='icon-inline'/>
                             <span className='repo-nav__action-text'>Open on desktop</span>
