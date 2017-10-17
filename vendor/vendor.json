@@ -826,6 +826,12 @@
 			"revisionTime": "2015-10-11T12:25:29+02:00"
 		},
 		{
+			"checksumSHA1": "o4QEsKDObqBBotNwgV99F2T6LEg=",
+			"path": "github.com/microcosm-cc/bluemonday",
+			"revision": "68fecaef60268522d2ac3f0123cec9d3bcab7b6e",
+			"revisionTime": "2017-08-30T06:24:24Z"
+		},
+		{
 			"checksumSHA1": "krRdA5DGBcrIOIjotdFjB/YKuHk=",
 			"path": "github.com/neelance/cdp-go",
 			"revision": "4fec7a02171156ce1a5744167c7ced13d75770e3",

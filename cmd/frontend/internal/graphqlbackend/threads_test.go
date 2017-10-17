@@ -149,3 +149,89 @@ func TestTitleFromContents(t *testing.T) {
 		}
 	}
 }
+
+func TestSanitize(t *testing.T) {
+	for _, test := range []struct {
+		name, input, want string
+	}{
+		{
+			// Output format of VS Code, i.e. we expect this to pass through unscathed.
+			name: "good_vscode_copy_with_syntax_highlighting",
+			input: `<div><span style="color: #2b8a3e;">// sharedItems provides access to the 'shared_items' table.</span></div>
+				<div><span style="color: #2b8a3e;">//</span></div><div><span style="color: #2b8a3e;">// For a detailed overview of the schema, see schema.md.</span></div>
+				<div><span style="color: #329af0;">type</span> <span style="color: #4ec9b0;">sharedItems</span> <span style="color: #329af0;">struct</span>{}</div><br>
+				<div><span style="color: #329af0;">func</span> (s <span style="color: #d4d4d4;">*</span>sharedItems) <span style="color: #fff3bf;">Create</span>(ctx context.Context, item <span style="color: #d4d4d4;">*</span>sourcegraph.SharedItem) (<span style="color: #329af0;">string</span>, <span style="color: #329af0;">error</span>) {</div>
+				<div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">if</span> item.ULID <span style="color: #d4d4d4;">!=</span> <span style="color: #ffa8a8;">""</span> {</div>
+				<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">return</span> <span style="color: #ffa8a8;">""</span>, errors.<span style="color: #fff3bf;">New</span>(<span style="color: #ffa8a8;">"SharedItems.Create: cannot specify ULID when creating shared item"</span>)</div>
+				<div>&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+				<div></div>`,
+			want: `<div><span style="color: #2b8a3e;">// sharedItems provides access to the &#39;shared_items&#39; table.</span></div>
+				<div><span style="color: #2b8a3e;">//</span></div><div><span style="color: #2b8a3e;">// For a detailed overview of the schema, see schema.md.</span></div>
+				<div><span style="color: #329af0;">type</span> <span style="color: #4ec9b0;">sharedItems</span> <span style="color: #329af0;">struct</span>{}</div><br>
+				<div><span style="color: #329af0;">func</span> (s <span style="color: #d4d4d4;">*</span>sharedItems) <span style="color: #fff3bf;">Create</span>(ctx context.Context, item <span style="color: #d4d4d4;">*</span>sourcegraph.SharedItem) (<span style="color: #329af0;">string</span>, <span style="color: #329af0;">error</span>) {</div>
+				<div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">if</span> item.ULID <span style="color: #d4d4d4;">!=</span> <span style="color: #ffa8a8;">&#34;&#34;</span> {</div>
+				<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">return</span> <span style="color: #ffa8a8;">&#34;&#34;</span>, errors.<span style="color: #fff3bf;">New</span>(<span style="color: #ffa8a8;">&#34;SharedItems.Create: cannot specify ULID when creating shared item&#34;</span>)</div>
+				<div>&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+				<div></div>`,
+		}, {
+			name:  "bad_script_tags",
+			input: `Hello <script>alert("world!")</script>`,
+			want:  `Hello `,
+		}, {
+			name:  "bad_div_style",
+			input: `<div style="color: #329af0;">Hello</div>`,
+			want:  `<div>Hello</div>`,
+		}, {
+			name:  "good_span_style",
+			input: `<span style="color: #329af0;">Hello</span>`,
+			want:  `<span style="color: #329af0;">Hello</span>`,
+		}, {
+			name:  "bad_span_style_3",
+			input: `<span style="color: #329;">Hello</span>`,
+			want:  `<span>Hello</span>`,
+		}, {
+			name:  "bad_span_style_suffix",
+			input: `<span style="color: #329af0; pwnd: yes;">Hello</span>`,
+			want:  `<span>Hello</span>`,
+		}, {
+			name:  "bad_span_style_prefix",
+			input: `<span style="pwnd: yes; color: #329af0;">Hello</span>`,
+			want:  `<span>Hello</span>`,
+		}, {
+			name:  "bad_span_style_olor_not_color",
+			input: `<span style="olor: #329af0;">Hello</span>`,
+			want:  `<span>Hello</span>`,
+		}, {
+			name:  "bad_span_style_colo_not_color",
+			input: `<span style="colo: #329af0;">Hello</span>`,
+			want:  `<span>Hello</span>`,
+		}, {
+			name:  "bad_span_style_missing_semicolon",
+			input: `<span style="color: #329af0">Hello</span>`,
+			want:  `<span>Hello</span>`,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got := sanitize(test.input)
+
+			// Replace "&nbsp;" with "\00a0", since internally our sanitizer
+			// does this and it's quite hard to write (and distinguish) the
+			// literal unicode codepoint above.
+			test.want = strings.Replace(test.want, "&nbsp;", "\u00a0", -1)
+			if got != test.want {
+				gotLines := strings.Split(got, "\n")
+				wantLines := strings.Split(test.want, "\n")
+				for i, gotLine := range gotLines {
+					if gotLine != wantLines[i] {
+						t.Log("(NOT match)")
+					} else {
+						t.Log("(match)")
+					}
+					t.Logf(" got line %d: %q\n", i, gotLine)
+					t.Logf("want line %d: %q\n\n", i, wantLines[i])
+				}
+				t.Fatal("got != want")
+			}
+		})
+	}
+}
