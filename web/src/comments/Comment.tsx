@@ -52,7 +52,7 @@ export class Comment extends React.Component<Props, State> {
             <div className={`comment${isTargeted ? ' comment--targeted' : ''}`} ref={isTargeted ? this.setScrollToElement : undefined}>
                 <div className='comment__top-area'>
                     <span className='comment__author' title={comment.author.username || undefined}>
-                        <UserAvatar size={16} user={comment.author} />
+                        <UserAvatar size={16} user={comment.author} className='avatar comment__author-avatar' />
                         <span className='comment__author-name'>{comment.author.displayName ? comment.author.displayName : comment.author.username}</span>
                     </span>
                     <Link to={shareLinkHref} className='comment__share' title='Copy link to this comment' onClick={this.onShareLinkClick}>

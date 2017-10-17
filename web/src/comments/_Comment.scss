@@ -13,9 +13,6 @@
     &--targeted{
         animation: highlight 3s;
     }
-    .avatar {
-        height: 1rem;
-    }
     &__top-area {
         display: flex;
         font-size: .75rem;
@@ -24,6 +21,9 @@
     &__author {
         display: flex;
         align-items: center;
+    }
+    &__author-avatar {
+        height: 1rem;
     }
     &__author-name {
         padding-left: .25rem;
