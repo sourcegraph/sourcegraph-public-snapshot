@@ -57,19 +57,16 @@ const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
         ...htmlBefore.map((line: string, i: number) => ({
             number: startLine - (htmlBefore.length - i),
             content: line,
-            isStartLine: false,
             className: 'code-view__line--before',
         })),
         ...html.map((line: string, i: number) => ({
             number: startLine + i,
             content: line,
-            isStartLine: false,
             className: 'code-view__line--main',
         })),
         ...htmlAfter.map((line: string, i: number) => ({
             number: startLine + i + html.length,
             content: line,
-            isStartLine: false,
             className: 'code-view__line--after',
         })),
     ]
