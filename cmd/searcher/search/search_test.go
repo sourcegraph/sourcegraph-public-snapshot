@@ -143,6 +143,16 @@ func TestSearch_badrequest(t *testing.T) {
 			},
 		},
 
+		// Unsupported regex
+		{
+			Repo:   "foo",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:  `(?!id)entity`,
+				IsRegExp: true,
+			},
+		},
+
 		// No repo
 		{
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
