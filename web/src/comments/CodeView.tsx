@@ -82,7 +82,7 @@ const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
 
 export function CodeView(sharedItem: GQL.ISharedItem): JSX.Element | null {
     return (
-        <table className={`code-view__table${sharedItem.thread.lines ? '' : ' code-view__table--blurry'}`}>
+        <table className={`code-view__code${sharedItem.thread.lines ? '' : ' code-view__code--blurry'}`}>
             <tbody>
                 {itemToLines(sharedItem).map((line: Line) => <tr className={line.className} key={line.number}>
                         <td className={`code-view__line-number${line.isStartLine ? ' code-view__line-number--start-line' : ''}`}>
