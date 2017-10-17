@@ -12,8 +12,8 @@
     }
     &__line {
         font-family: 'Menlo';
-        font-size: .75rem;
-        line-height: 1.5rem;
+        font-size: 12px;
+        line-height: 20px;
         &--main {
             background: #0D111C;
         }
@@ -45,10 +45,10 @@
     &__chat-icon {
         height: 1rem;
         color: #8296C4;
-        margin-right: 0.1875rem;
+        margin-right: 0.42em;
         .icon {
-            width: 1rem;
-            height: 1rem;
+            width: 1.125rem;
+            height: 1.125rem;
         }
     }
 }
