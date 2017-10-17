@@ -24,7 +24,9 @@ export class Comment extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        if (this.scrollToElement) { this.scrollToElement.scrollIntoView() }
+        if (this.scrollToElement) {
+            this.scrollToElement.scrollIntoView()
+        }
     }
 
     public render(): JSX.Element | null {
