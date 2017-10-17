@@ -404,8 +404,13 @@ type OrgRepo struct {
 }
 
 type ThreadLines struct {
-	HTMLBefore               string `json:"HTMLBefore,omitempty"`
-	HTML                     string `json:"HTML,omitempty"`
+	// HTMLBefore is unsanitized HTML lines before the user selection.
+	HTMLBefore string `json:"HTMLBefore,omitempty"`
+
+	// HTML is unsanitized HTML lines of the user selection.
+	HTML string `json:"HTML,omitempty"`
+
+	// HTMLAfter is unsanitized HTML lines after the user selection.
 	HTMLAfter                string `json:"HTMLAfter,omitempty"`
 	TextBefore               string `json:"TextBefore,omitempty"`
 	Text                     string `json:"Text,omitempty"`

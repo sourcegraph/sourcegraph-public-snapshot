@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mattbaird/gochimp"
+	"github.com/microcosm-cc/bluemonday"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
@@ -149,15 +150,30 @@ type threadLineResolver struct {
 }
 
 func (t *threadLineResolver) HTMLBefore() string {
-	return t.ThreadLines.HTMLBefore
+	return sanitize(t.ThreadLines.HTMLBefore)
 }
 
 func (t *threadLineResolver) HTML() string {
-	return t.ThreadLines.HTML
+	return sanitize(t.ThreadLines.HTML)
 }
 
 func (t *threadLineResolver) HTMLAfter() string {
-	return t.ThreadLines.HTMLAfter
+	return sanitize(t.ThreadLines.HTMLAfter)
+}
+
+var (
+	// Matches exactly a string "color: #aaaaaa;" and NOTHING else. "aaaaaa"
+	// can be any alphanumeric (upper or lowercase) characters.
+	//
+	// Be *VERY* careful modifying this, as it matching anything but the above
+	// would introduce XSS vulnerabilies.
+	onlyColorStyle = regexp.MustCompile(`^color: #[[:alnum:]]{6};$`)
+)
+
+func sanitize(html string) string {
+	policy := bluemonday.UGCPolicy()
+	policy.AllowAttrs("style").Matching(onlyColorStyle).OnElements("span")
+	return policy.Sanitize(html)
 }
 
 func (t *threadLineResolver) TextBefore() string {

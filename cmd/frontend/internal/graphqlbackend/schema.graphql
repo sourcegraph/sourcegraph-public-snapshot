@@ -21,12 +21,18 @@ type Query {
 
 type ThreadLines {
 	# HTML context lines before 'html'.
+	#
+	# It is sanitized already by the server, and thus is safe for rendering.
 	htmlBefore: String!
 
 	# HTML lines that the user's selection was made on.
+	#
+	# It is sanitized already by the server, and thus is safe for rendering.
 	html: String!
 
 	# HTML context lines after 'html'.
+	#
+	# It is sanitized already by the server, and thus is safe for rendering.
 	htmlAfter: String!
 
 	# text context lines before 'text'.
