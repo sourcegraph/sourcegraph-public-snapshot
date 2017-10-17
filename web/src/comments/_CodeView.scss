@@ -38,13 +38,17 @@
         padding: 0 1rem 0 1.75rem;
         display: flex;
         align-items: center;
-        .icon {
-            height: 1rem;
-            fill: #8296C4;
-            margin-right: 0.1875rem;
-        }
         &--start-line {
             padding-left: 0.375rem;
+        }
+    }
+    &__chat-icon {
+        height: 1rem;
+        color: #8296C4;
+        margin-right: 0.1875rem;
+        .icon {
+            width: 1rem;
+            height: 1rem;
         }
     }
 }
