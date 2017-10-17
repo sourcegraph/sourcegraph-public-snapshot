@@ -117,7 +117,7 @@ export class RevSwitcher extends React.Component<Props, State> {
             Observable.merge(
                 // Fetch the list of all branches/tags for the repo initially.
                 this.componentUpdates
-                    .filter(props => this.props.disabled ? !this.props.disabled : false)
+                    .filter(props => !props.disabled)
                     .switchMap(props =>
                         fetchRepoRevisions({ repoPath: props.repoPath })
                             .catch(err => {
@@ -140,7 +140,7 @@ export class RevSwitcher extends React.Component<Props, State> {
 
                 // Find out if the query is a commit ID.
                 this.inputChanges
-                    .filter(query => this.props.disabled ? !this.props.disabled : false)
+                    .filter(query => !this.props.disabled)
                     // We're only interested in query if it is a commit ID, not a branch or tag.
                     .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(item => item.rev.includes(query))))
                     .switchMap(query =>
