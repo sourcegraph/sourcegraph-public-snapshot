@@ -18,6 +18,7 @@ interface RepoSubnavProps {
     hideCopyLink?: boolean
     showOpenOnDesktop?: boolean
     customEditorURL?: string
+    revSwitcherDisabled?: boolean
     breadcrumbDisabled?: boolean
     location: H.Location
     history: H.History
@@ -37,7 +38,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
         return (
             <div className='repo-nav'>
                 {/* TODO Don't assume master! */}
-                <RevSwitcher history={this.props.history} rev={this.props.rev || 'master'} repoPath={this.props.repoPath}/>
+                <RevSwitcher history={this.props.history} rev={this.props.rev || 'master'} repoPath={this.props.repoPath} disabled={this.props.revSwitcherDisabled} />
                 <span className='repo-nav__path'>
                     <RepoBreadcrumb {...this.props} disabled={this.props.breadcrumbDisabled} />
                 </span>
