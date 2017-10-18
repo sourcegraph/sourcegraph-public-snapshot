@@ -67,7 +67,7 @@ export class UserAvatar extends React.Component<Props, State> {
         }
 
         return (
-            <div onClick={this.props.onClick} className={this.props.className || 'avatar'}>{avatar}</div>
+            <div onClick={this.props.onClick} className={`avatar${this.props.className ? this.props.className + ' ' : ''}`}>{avatar}</div>
         )
     }
 }
