@@ -13,6 +13,10 @@
         align-items: center;
         padding: 0.5rem;
         vertical-align: middle;
+        background: #151C28;
+        &-account-settings {
+            background: #1C2736;
+        }
     }
 
     &__header-title {
@@ -35,21 +39,14 @@
         width: 100%;
         list-style: none;
         user-select: none;
-        padding-left: 1rem;
         display: flex;
         flex-direction: column;
 
-        &--active {
-            color: white;
-        }
-
         &-header, &-link {
             height: 100%;
-            margin-left: -100%;
-            padding-left: 100%;
-            padding-top: .25rem;
-            padding-bottom: .25rem;
+            padding: .5rem 0;
             display: flex;
+            align-items: center;
         }
 
         &-link:hover {
@@ -58,6 +55,55 @@
 
         &-icon {
             margin-right: .5rem;
+            margin-left: .5rem;
+        }
+
+        .avatar {
+            height: 1.5rem;
+            width: 1.5rem;
+        }
+
+        &--active {
+            background: #1C7CD6;
+            color: #F2F4F8;
+            &:hover {
+                background: #1C7CD6;
+                color: #F2F4F8;
+            }
+        }
+    }
+
+    &__profile {
+        display: flex;
+        overflow: hidden;
+        &-avatar-column {
+            flex: 0 0 auto;
+            display: flex;
+            padding-left: .5rem;
+            margin-right: .5rem;
+        }
+        &-content {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        &-row {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    &__download-editor {
+        border-top: 1px solid #2B3750;
+        padding: 0.5rem;
+        text-align: center;
+        &-button {
+            background-color: #2B3750;
+            color: #93A9C8;
+        }
+        &-button:hover {
+            background-color: rgba(42,58,81,0.7);
+            color: #F2F4F8;
         }
     }
 }

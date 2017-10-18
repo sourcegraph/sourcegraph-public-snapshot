@@ -4,6 +4,8 @@ import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
+import { Subscription } from 'rxjs/Subscription'
+import { currentUser } from '../auth'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { events } from '../tracking/events'
 import { parseHash, toEditorURL } from '../util/url'
@@ -16,7 +18,6 @@ interface RepoSubnavProps {
     filePath?: string
     onClickRevision?: () => void
     hideCopyLink?: boolean
-    showOpenOnDesktop?: boolean
     customEditorURL?: string
     revSwitcherDisabled?: boolean
     breadcrumbDisabled?: boolean
@@ -31,11 +32,22 @@ interface RepoSubnavProps {
 
 interface RepoSubnavState {
     copiedLink: boolean
+    editorBeta: boolean
 }
 
 export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
+    private subscriptions = new Subscription()
     public state: RepoSubnavState = {
         copiedLink: false,
+        editorBeta: false,
+    }
+
+    public componentDidMount(): void {
+        this.subscriptions.add(currentUser.subscribe(
+            user => {
+                this.setState({editorBeta: !!user && user.tags.some(tag => tag.name === 'editor-beta')})
+            }
+        ))
     }
 
     public render(): JSX.Element | null {
@@ -59,12 +71,12 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                         </a>
                 }
                 {
-                    /* TODO(john): remove showOpenOnDesktop alltogether when we're ready to show
+                    /* TODO(john): remove editorBeta alltogether when we're ready to show
                        desktop to users everywhere (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
-                    this.props.repoPath && this.props.showOpenOnDesktop &&
-                        <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open on desktop' onClick={this.onOpenOnDesktopClicked}>
+                    this.props.repoPath && this.state.editorBeta &&
+                        <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open in Sourcegraph Editor' onClick={this.onOpenOnDesktopClicked}>
                             <ComputerIcon className='icon-inline'/>
-                            <span className='repo-nav__action-text'>Open on desktop</span>
+                            <span className='repo-nav__action-text'>Open in Sourcegraph Editor</span>
                         </a>
                 }
             </div>

@@ -1,6 +1,6 @@
 @import './SettingsSidebar';
-@import './team/Team';
-@import './team/AcceptInvitePage';
+@import './org/Org';
+@import './org/AcceptInvitePage';
 @import './user/UserProfilePage';
 @import './EditorAuthPage';
 
@@ -14,14 +14,8 @@
 
     &__content {
         flex: 1 1 auto;
-        padding: 1rem;
-        background-color: #151D28;
+        padding: 2rem;
+        background-color: #0E121B;
         overflow-y: auto;
-    }
-
-    &__form {
-        flex: 1 0 auto;
-        display: flex;
-        flex-direction: column;
     }
 }

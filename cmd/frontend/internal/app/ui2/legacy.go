@@ -7,6 +7,6 @@ import (
 )
 
 func serveLegacySettingsTeam(w http.ResponseWriter, r *http.Request) error {
-	http.Redirect(w, r, "/settings/teams/"+mux.Vars(r)["team"], http.StatusMovedPermanently)
+	http.Redirect(w, r, "/settings/orgs/"+mux.Vars(r)["org"], http.StatusMovedPermanently)
 	return nil
 }

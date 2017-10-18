@@ -97,7 +97,7 @@ type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
 	# TODO make linesRevision and repoRevision required after removing revision.
 	createThread(orgID: Int!, remoteURI: String!, file: String!, repoRevision: String, linesRevision: String, revision: String, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
-	updateUser(displayName: String, avatarURL: String): User!
+	updateUser(username: String, displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
 	shareThread(threadID: Int!): String!

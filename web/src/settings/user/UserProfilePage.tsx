@@ -1,5 +1,6 @@
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/concat'
@@ -13,7 +14,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { events } from '../../tracking/events'
 import { createUser, updateUser } from '../backend'
 import { VALID_USERNAME_REGEXP } from '../validation'
-// import { UserAvatar } from './UserAvatar'
+import { UserAvatar } from './UserAvatar'
 
 interface Props {
     location: H.Location
@@ -24,6 +25,7 @@ interface State {
     user: GQL.IUser | null
     error?: Error
     loading?: boolean
+    saved?: boolean
     username: string
     displayName: string
 }
@@ -64,11 +66,11 @@ export class UserProfilePage extends React.Component<Props, State> {
                         createUser({ username: this.state.username, displayName: this.state.displayName || this.state.username })
                             .do(() => window.context.requireUserBackfill = false)
                             .catch(this.handleError) :
-                        updateUser({ displayName: this.state.displayName })
+                        updateUser({ username: this.state.username, displayName: this.state.displayName })
                             .catch(this.handleError)
                 )
-                .mergeMap(user => fetchCurrentUser().concat([user]))
-                .do(() => this.setState({ loading: false }))
+                .do(() => this.setState({ loading: false, error: undefined, saved: true }))
+                .mergeMap(() => fetchCurrentUser().concat([null]))
                 .subscribe(
                     () => {
                         const searchParams = new URLSearchParams(this.props.location.search)
@@ -93,56 +95,61 @@ export class UserProfilePage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className='user-profile-page'>
-                <div className='ui-section'>
-                    <PageTitle title='Profile' />
-                    <h1>Your Sourcegraph profile</h1>
-                    {this.requireBackfill() && <h4>Please complete your profile to continue using Sourcegraph.</h4>}
-                    {this.state.error && <h6 className='user-profile-page__error'>{this.state.error.message}</h6>}
-                    <div className='user-profile-page__split-row'>
-                        {/* <div className='user-profile-page__avatar-column'>
+                <PageTitle title='Profile' />
+                <h1>Your profile</h1>
+                {this.requireBackfill() && <p className='alert alert-danger'>Please complete your profile to continue using Sourcegraph.</p>}
+                {this.state.error && <p className='alert alert-danger'>{upperFirst(this.state.error.message)}</p>}
+                {this.state.saved && <p className='alert alert-success'>Profile saved!</p>}
+                <form className='user-profile-page__form' onSubmit={this.handleSubmit}>
+                    <div className='user-profile-page__avatar-row'>
+                        <div className='user-profile-page__avatar-column'>
                             <UserAvatar />
-                        </div> */}
-                        <form className='settings-page__form' onSubmit={this.handleSubmit}>
-                            <label>Email</label>
-                            <input
-                                readOnly={true}
-                                type='email'
-                                className='ui-text-box user-profile-page__input'
-                                value={this.state.user && this.state.user.email || ''}
-                                disabled={true}
-                                spellCheck={false}
-                                placeholder='Email'
-                            />
+                        </div>
+                        <div className='form-group'>
                             <label>Username</label>
                             <input
-                                readOnly={!this.requireBackfill()}
                                 type='text'
-                                className='ui-text-box user-profile-page__input'
+                                className='ui-text-box'
                                 value={this.state.username}
                                 onChange={this.onUsernameFieldChange}
                                 pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
                                 required={true}
-                                disabled={this.state.loading || !this.requireBackfill()}
+                                disabled={this.state.loading}
+                                spellCheck={false}
                                 placeholder='Username'
                             />
-                            <label>Display name (optional)</label>
-                            <input
-                                type='text'
-                                className='ui-text-box user-profile-page__input'
-                                value={this.state.displayName}
-                                onChange={this.onDisplayNameFieldChange}
-                                disabled={this.state.loading}
-                                placeholder='Display name'
-                            />
-                            <div className='form-group'>
-                                <button className='btn btn-primary btn-block user-profile-page__button' type='submit' disabled={this.state.loading}>
-                                    Update profile
-                                </button>
-                            </div>
-                            {this.state.loading && <div className='user-profile-page__loader'><Loader className='icon-inline'/></div>}
-                        </form>
+                            <small className='form-text'>A username consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen</small>
+                        </div>
                     </div>
-                </div>
+                    <div className='form-group'>
+                        <label>Email</label>
+                        <input
+                            readOnly={true}
+                            type='email'
+                            className='ui-text-box'
+                            value={this.state.user && this.state.user.email || ''}
+                            disabled={true}
+                            spellCheck={false}
+                            placeholder='Email'
+                        />
+                    </div>
+                    <div className='form-group'>
+                        <label>Display name (optional)</label>
+                        <input
+                            type='text'
+                            className='ui-text-box'
+                            value={this.state.displayName}
+                            onChange={this.onDisplayNameFieldChange}
+                            disabled={this.state.loading}
+                            spellCheck={false}
+                            placeholder='Display name'
+                        />
+                    </div>
+                    <button className='btn btn-primary user-profile-page__button' type='submit' disabled={this.state.loading}>
+                        Update profile
+                    </button>
+                    {this.state.loading && <div className='icon-inline'><Loader className='icon-inline'/></div>}
+                </form>
             </div>
         )
     }
@@ -179,7 +186,7 @@ export class UserProfilePage extends React.Component<Props, State> {
 
     private handleError = (err: Error) => {
         console.error(err)
-        this.setState({ loading: false, error: err })
+        this.setState({ loading: false, saved: false, error: err })
         return []
     }
 }

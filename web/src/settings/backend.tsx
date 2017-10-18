@@ -146,6 +146,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
 }
 
 export interface UpdateUserOptions {
+    username: string
     /** The user's display name */
     displayName: string
     /** The user's avatar URL */
@@ -169,10 +170,11 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
             }
             return mutateGraphQL(`
                 mutation updateUser(
+                    $username: String!,
                     $displayName: String!,
                     $avatarURL: String
                 ) {
-                    updateUser(displayName: $displayName, avatarURL: $avatarUrl) {
+                    updateUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
                         id
                         sourcegraphID
                         username

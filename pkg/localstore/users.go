@@ -88,8 +88,8 @@ func (*users) Create(auth0ID, email, username, displayName string, avatarURL *st
 	}, nil
 }
 
-func (u *users) Update(id int32, displayName *string, avatarURL *string) (*sourcegraph.User, error) {
-	if displayName == nil && avatarURL == nil {
+func (u *users) Update(id int32, username *string, displayName *string, avatarURL *string) (*sourcegraph.User, error) {
+	if username == nil && displayName == nil && avatarURL == nil {
 		return nil, errors.New("no update values provided")
 	}
 
@@ -98,6 +98,17 @@ func (u *users) Update(id int32, displayName *string, avatarURL *string) (*sourc
 		return nil, err
 	}
 
+	if username != nil {
+		user.Username = *username
+		if _, err := globalDB.Exec("UPDATE users SET username=$1 WHERE id=$2", user.Username, id); err != nil {
+			if pqErr, ok := err.(*pq.Error); ok {
+				if pqErr.Constraint == "users_username_key" {
+					return nil, errors.New("username already exists")
+				}
+				return nil, err
+			}
+		}
+	}
 	if displayName != nil {
 		user.DisplayName = *displayName
 		if _, err := globalDB.Exec("UPDATE users SET display_name=$1 WHERE id=$2", user.DisplayName, id); err != nil {

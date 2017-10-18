@@ -20,7 +20,7 @@ export interface Props {
 export interface State {
 
     /**
-     * Current value of the team name input
+     * Current value of the organization name input
      */
     name: string
 
@@ -37,7 +37,7 @@ export interface State {
     loading: boolean
 }
 
-export class NewTeam extends React.Component<Props, State> {
+export class NewOrg extends React.Component<Props, State> {
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
@@ -67,8 +67,8 @@ export class NewTeam extends React.Component<Props, State> {
                             return []
                         })
                 )
-                .subscribe(team => {
-                    this.props.history.push(`/settings/teams/${team.name}`)
+                .subscribe(org => {
+                    this.props.history.push(`/settings/orgs/${org.name}`)
                 }, error => {
                     console.error(error)
                 })
@@ -77,22 +77,22 @@ export class NewTeam extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='new-team'>
+            <div className='new-organization'>
                 <form className='settings-form' onSubmit={this.onSubmit}>
 
-                    <h1>Create a new team</h1>
+                    <h1>Create a new organization</h1>
 
                     <p>
-                        Create a Sourcegraph team to bring the discussion to the code.
+                        Create a Sourcegraph organization to bring the discussion to the code.
                         Learn more about <a href='https://about.sourcegraph.com/products/editor' target='_blank'>collaboration in Sourcegraph</a>.
                     </p>
                     {this.state.error && <p className='form-text text-error'>{upperFirst(this.state.error.message)}</p>}
                     <div className='form-group'>
-                        <label>Team name</label>
+                        <label>Organization name</label>
                         <input
                             type='text'
                             className='ui-text-box'
-                            placeholder='your-team'
+                            placeholder='acme-corp'
                             pattern={VALID_ORG_NAME_REGEXP.toString().slice(1, -1)}
                             required={true}
                             autoCorrect='off'
@@ -102,7 +102,7 @@ export class NewTeam extends React.Component<Props, State> {
                             onChange={this.onNameChange}
                             disabled={this.state.loading}
                         />
-                        <small className='form-text'>A team name consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen</small>
+                        <small className='form-text'>An organization name consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen</small>
                     </div>
 
                     <div className='form-group'>
@@ -110,7 +110,7 @@ export class NewTeam extends React.Component<Props, State> {
                         <input
                             type='text'
                             className='ui-text-box'
-                            placeholder='Your Name'
+                            placeholder='ACME Corporation'
                             required={true}
                             autoCorrect='off'
                             value={this.state.displayName}
@@ -119,7 +119,7 @@ export class NewTeam extends React.Component<Props, State> {
                         />
                     </div>
 
-                    <button type='submit' className='btn btn-primary' disabled={this.state.loading}>Create Team</button>
+                    <button type='submit' className='btn btn-primary' disabled={this.state.loading}>Create organization</button>
                     {this.state.loading && <LoaderIcon className='icon-inline' />}
 
                 </form>

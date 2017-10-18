@@ -23,10 +23,10 @@ import { UserAvatar } from '../user/UserAvatar'
 import { InviteForm } from './InviteForm'
 import { OrgSettingsForm } from './OrgSettingsForm'
 
-const TeamNotFound = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested team was not found.' />
+const OrgNotFound = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested organization was not found.' />
 
 export interface Props {
-    match: match<{ teamName: string }>
+    match: match<{ orgName: string }>
 }
 
 interface State {
@@ -39,9 +39,9 @@ interface State {
 type Update = (s: State) => State
 
 /**
- * The team settings page
+ * The organizations settings page
  */
-export const Team = reactive<Props>(props => {
+export const Org = reactive<Props>(props => {
 
     const memberRemoves = new Subject<GQL.IOrgMember>()
 
@@ -49,15 +49,15 @@ export const Team = reactive<Props>(props => {
         Observable.combineLatest(
             currentUser,
             props
-                .map(props => props.match.params.teamName)
+                .map(props => props.match.params.orgName)
                 .distinctUntilChanged()
         )
-            .mergeMap(([user, teamName]) => {
+            .mergeMap(([user, orgName]) => {
                 if (!user) {
                     return [(state: State): State => ({ ...state, user: undefined })]
                 }
                 // Find org ID from user auth state
-                const org = user.orgs.find(org => org.name === teamName)
+                const org = user.orgs.find(org => org.name === orgName)
                 if (!org) {
                     return [(state: State): State => ({ ...state, user, org })]
                 }
@@ -79,8 +79,8 @@ export const Team = reactive<Props>(props => {
             .withLatestFrom(currentUser)
             .filter(([member, user]) => !!user && confirm(
                 user.id === member.userID
-                    ? `Leave this team?`
-                    : `Remove ${member.user.displayName} from this team?`
+                    ? `Leave this organization?`
+                    : `Remove ${member.user.displayName} from this organization?`
             ))
             .mergeMap(([memberToRemove, user]) =>
                 removeUserFromOrg(memberToRemove.org.id, memberToRemove.userID)
@@ -104,34 +104,36 @@ export const Team = reactive<Props>(props => {
                 return <Redirect to='/sign-in' />
             }
             if (!org) {
-                return <TeamNotFound />
+                return <OrgNotFound />
             }
             return (
-                <div className='team'>
-                    <h1>{org.name}</h1>
+                <div className='org'>
+                    <div className='org__header'>
+                        <h1>{org.name}</h1>
 
-                    <InviteForm orgID={org.id}/>
+                        <InviteForm orgID={org.id}/>
+                    </div>
 
                     <h3>Members</h3>
-                    <table className='table table-hover'>
+                    <table className='table table-hover org__table'>
                         <thead>
                             <tr>
-                                <th></th>
+                                <th className='org__avatar-cell'></th>
                                 <th>Name</th>
                                 <th>Username</th>
                                 <th>Email</th>
-                                <th></th>
+                                <th className='org__actions-cell'></th>
                             </tr>
                         </thead>
                         <tbody>
                             {
                                 org.members.map(member => (
                                     <tr key={member.id}>
-                                        <td className='team__avatar-cell'><UserAvatar user={member.user} size={64}/></td>
+                                        <td className='org__avatar-cell'><UserAvatar user={member.user} size={64}/></td>
                                         <td>{member.user.displayName}</td>
                                         <td>{member.user.username}</td>
                                         <td>{member.user.email}</td>
-                                        <td className='team__actions-cell'>
+                                        <td className='org__actions-cell'>
                                             <button
                                                 className='btn btn-icon'
                                                 title={user.id === member.userID ? 'Leave' : 'Remove'}

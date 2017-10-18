@@ -114,6 +114,10 @@ body {
             @media (min-width: $media-md) {
                 width: 720px;
             }
+            @media (max-width: $media-lg) {
+                width: 100%;
+                padding: 0;
+            }
             @media (min-width: $media-lg) {
                 width: 960px;
             }
@@ -257,8 +261,8 @@ h1 {
 }
 
 .ui-text-box {
-    background-color: #151D28;
-    border: 1px solid #2A3A51;
+    background-color: #0E121B;
+    border: 1px solid #2B3750;
     color: #FFFFFF;
     font-size: inherit;
     border-radius: 2px;
@@ -274,7 +278,8 @@ h1 {
     }
     &:disabled {
         cursor: not-allowed;
-        background-color: #283240
+        background-color: #1D2535;
+        color: #A2B0CD;
     }
     &:valid, &:placeholder-shown {
         + .invalid-feedback {
@@ -337,6 +342,8 @@ h1 {
 
     th, td {
         padding: .25rem .5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
@@ -375,6 +382,21 @@ h1 {
             background-color: #233043;
             padding: 1em;
         }
+    }
+}
+
+.alert {
+    border-radius: .25rem;
+    padding: .5rem;
+    &-success {
+        border: 1px solid #37B24D;
+        background: rgba(43, 138, 62, 0.5);
+        color: #F2F4F8;
+    }
+    &-danger{
+        border: 1px solid #F03E3E;
+        background: rgba(201, 42, 42, 0.5);
+        color: #F2F4F8;
     }
 }
 

@@ -76,7 +76,7 @@ export const InviteForm = reactive<Props>(props => {
     )
         .scan<Update, State>((state: State, update: Update) => update(state), { invited: false, loading: false, email: '' } as State)
         .map(({ loading, email, invited, error }) => (
-            <form className='invite-form form-inline' onSubmit={nextSubmit}>
+            <form className='invite-form invite-form__container' onSubmit={nextSubmit}>
                 <input
                     type='email'
                     className='ui-text-box invite-form__email'

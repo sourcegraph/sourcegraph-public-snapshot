@@ -113,6 +113,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
+	Username    *string
 	DisplayName *string
 	AvatarURL   *string
 }) (*userResolver, error) {
@@ -121,7 +122,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedUser, err := store.Users.Update(user.ID, args.DisplayName, args.AvatarURL)
+	updatedUser, err := store.Users.Update(user.ID, args.Username, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
