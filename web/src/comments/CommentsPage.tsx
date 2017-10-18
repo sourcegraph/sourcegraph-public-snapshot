@@ -86,7 +86,6 @@ export const CommentsPage = reactive<Props>(props =>
                         rev={sharedItem.thread.branch || sharedItem.thread.repoRevision}
                         filePath={sharedItem.thread.file}
                         hideCopyLink={true}
-                        showOpenOnDesktop={true}
                         customEditorURL={editorURL}
                         breadcrumbDisabled={true}
                         revSwitcherDisabled={true}
