@@ -34,12 +34,7 @@ func (o *orgSettings) CreateIfUpToDate(ctx context.Context, orgID int32, lastKno
 		err = tx.Commit()
 	}()
 
-	rows, err := tx.Query(getLatestByOrgIDSql, orgID)
-	if err != nil {
-		return nil, err
-	}
-
-	latestSetting, err = o.parseQueryRows(ctx, rows)
+	latestSetting, err = o.getLatestByOrgID(ctx, tx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -59,16 +54,34 @@ func (o *orgSettings) CreateIfUpToDate(ctx context.Context, orgID int32, lastKno
 }
 
 func (o *orgSettings) GetLatestByOrgID(ctx context.Context, orgID int32) (*sourcegraph.OrgSettings, error) {
-	rows, err := globalDB.Query(getLatestByOrgIDSql, orgID)
+	return o.getLatestByOrgID(ctx, globalDB, orgID)
+}
+
+func (o *orgSettings) getLatestByOrgID(ctx context.Context, queryTarget queryable, orgID int32) (*sourcegraph.OrgSettings, error) {
+	rows, err := queryTarget.Query(getLatestByOrgIDSql, orgID)
 	if err != nil {
 		return nil, err
 	}
-	return o.parseQueryRows(ctx, rows)
+	settings, err := o.parseQueryRows(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(settings) != 1 {
+		// No configuration has been set for this org yet.
+		return nil, nil
+	}
+	return settings[0], nil
+}
+
+// queryable allows us to reuse the same logic for certain operations both
+// inside and outside an explicit transaction.
+type queryable interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
 const getLatestByOrgIDSql = "SELECT id, org_id, author_auth0_id, contents, created_at FROM org_settings WHERE org_id = $1 ORDER BY id DESC LIMIT 1"
 
-func (o *orgSettings) parseQueryRows(ctx context.Context, rows *sql.Rows) (*sourcegraph.OrgSettings, error) {
+func (o *orgSettings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*sourcegraph.OrgSettings, error) {
 	settings := []*sourcegraph.OrgSettings{}
 	defer rows.Close()
 	for rows.Next() {
@@ -82,9 +95,5 @@ func (o *orgSettings) parseQueryRows(ctx context.Context, rows *sql.Rows) (*sour
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if len(settings) != 1 {
-		// No configuration has been set for this org yet.
-		return nil, nil
-	}
-	return settings[0], nil
+	return settings, nil
 }
