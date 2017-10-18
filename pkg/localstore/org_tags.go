@@ -44,7 +44,7 @@ func (t *orgTags) CreateIfNotExists(ctx context.Context, orgID int32, name strin
 }
 
 func (*orgTags) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgTag, error) {
-	rows, err := globalDB.Query("SELECT org_id, name FROM org_tags "+query, args...)
+	rows, err := globalDB.Query("SELECT id, org_id, name FROM org_tags "+query, args...)
 	if err != nil {
 		return nil, err
 	}
