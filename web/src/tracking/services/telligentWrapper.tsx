@@ -53,7 +53,24 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        // TODO(Dan): validate umami user id props
+        // for on-prem usage, we only want to collect high level event context
+        // note user identification information is still captured through persistent `user_info`
+        // metadata stored in a cookie
+        if (window.context.onPrem && window.context.trackingAppID !== 'UmamiWeb') {
+            if (!window.context.trackingAppID) {
+                return
+            }
+            const limitedEventProps = {
+                event_action: eventProps.eventAction,
+                event_category: eventProps.eventCategory,
+                event_label: eventProps.eventLabel,
+                page_title: eventProps.page_title,
+                language: eventProps.language,
+                platform: eventProps.platform,
+            }
+            this.telligent('track', eventAction, limitedEventProps)
+            return
+        }
         this.telligent('track', eventAction, eventProps)
     }
 
