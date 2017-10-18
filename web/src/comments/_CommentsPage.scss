@@ -1,0 +1,54 @@
+@import './Comment';
+@import './CodeView';
+
+.comments-page {
+    flex: 1 1 auto;
+    display: flex;
+    line-height: 1.5rem;
+    overflow: hidden;
+    border-radius: 0.25rem;
+
+    flex-direction: column;
+
+    &__content {
+        flex: 1 1 auto;
+        background-color: #0D111C;
+        overflow-y: auto;
+        padding-bottom: 5rem;
+    }
+
+    &__no-revision {
+        background: #1d2837;
+        display: flex;
+        padding: 0.5rem;
+        font-size: .75rem;
+        height: 2rem;
+        flex: none;
+        align-items: center;
+        width: 100%;
+    }
+    &__error-icon {
+        margin-right: .25rem;
+    }
+    &__no-shared-code-container {
+        height: 0;
+    }
+    &__no-shared-code {
+        padding: 1rem;
+        background: #1d2837;
+        position: relative;
+        z-index: 1;
+        height: 3.5rem;
+        top: 6rem;
+        width: 41rem;
+        margin: auto;
+    }
+
+    &__reply-in-editor {
+        width: 21.3125rem;
+        display: block;
+        margin: auto;
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+}

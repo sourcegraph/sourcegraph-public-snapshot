@@ -1,0 +1,56 @@
+@keyframes highlight {
+    0% {
+        background: #2A3A51
+    }
+    100% {
+        background: none;
+    }
+}
+
+.comment{
+    width: 100%;
+    padding: .5rem;
+    border-bottom: 1px solid #212C45;
+    &:first-of-type {
+        border-top: 1px solid #212C45;
+    }
+    &--targeted{
+        animation: highlight 3s;
+    }
+    &__top-area {
+        display: flex;
+        font-size: .75rem;
+        line-height: 1rem;
+    }
+    &__author {
+        display: flex;
+        align-items: center;
+    }
+    &__author-avatar {
+        height: 1rem;
+    }
+    &__author-name {
+        padding-left: .25rem;
+    }
+    &__content {
+        margin-left: 1.25rem;
+        p, pre {
+            margin-bottom: 0;
+        }
+        code, pre {
+            background: #141A2A;
+        }
+        pre {
+            padding: .5rem;
+        }
+        code {
+            padding: .25rem;
+        }
+    }
+    &__share {
+        color: rgba(130, 150, 196, 0.5);
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+    }
+}

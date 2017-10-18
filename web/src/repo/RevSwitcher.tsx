@@ -28,6 +28,9 @@ interface Props {
 
     /** The initial query value */
     rev: string
+
+    /** whether or not to disable the rev switcher (make it ready-only) */
+    disabled?: boolean
 }
 
 /**
@@ -114,6 +117,7 @@ export class RevSwitcher extends React.Component<Props, State> {
             Observable.merge(
                 // Fetch the list of all branches/tags for the repo initially.
                 this.componentUpdates
+                    .filter(props => !props.disabled)
                     .switchMap(props =>
                         fetchRepoRevisions({ repoPath: props.repoPath })
                             .catch(err => {
@@ -136,6 +140,7 @@ export class RevSwitcher extends React.Component<Props, State> {
 
                 // Find out if the query is a commit ID.
                 this.inputChanges
+                    .filter(query => !this.props.disabled)
                     // We're only interested in query if it is a commit ID, not a branch or tag.
                     .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(item => item.rev.includes(query))))
                     .switchMap(query =>
@@ -211,7 +216,7 @@ export class RevSwitcher extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className='rev-switcher' ref={this.onRef}>
-                <div className='rev-switcher__rev-display' onClick={this.onInputFocus}>
+                <div className={`rev-switcher__rev-display${this.props.disabled ? ' rev-switcher__rev-display--disabled' : ''}`} onClick={this.onInputFocus}>
                     <input
                         className='rev-switcher__input'
                         type='text'
@@ -220,9 +225,10 @@ export class RevSwitcher extends React.Component<Props, State> {
                         onFocus={this.onInputFocus}
                         onKeyDown={this.onInputKeyDown}
                         value={this.state.query}
+                        disabled={this.props.disabled}
                         ref={ref => this.inputElement = ref || undefined}
                     />
-                    <CaretDownIcon className='icon-inline rev-switcher__dropdown-icon'/>
+                    {!this.props.disabled && <CaretDownIcon className='icon-inline rev-switcher__dropdown-icon'/>}
                 </div>
                 {
                     this.state.showSwitcher &&
@@ -345,6 +351,9 @@ export class RevSwitcher extends React.Component<Props, State> {
     }
 
     private onInputFocus = () => {
+        if (this.props.disabled) {
+            return
+        }
         this.setState({ showSwitcher: true })
         if (this.inputElement) {
             this.inputElement.select()

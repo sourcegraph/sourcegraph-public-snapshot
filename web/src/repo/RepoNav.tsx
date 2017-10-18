@@ -18,6 +18,13 @@ interface RepoSubnavProps {
     hideCopyLink?: boolean
     showOpenOnDesktop?: boolean
     customEditorURL?: string
+    revSwitcherDisabled?: boolean
+    breadcrumbDisabled?: boolean
+    /**
+     * overrides the line number that 'View on GitHub' should link to. By
+     * default, it is parsed from the current URL hash.
+     */
+    line?: number
     location: H.Location
     history: H.History
 }
@@ -36,9 +43,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
         return (
             <div className='repo-nav'>
                 {/* TODO Don't assume master! */}
-                <RevSwitcher history={this.props.history} rev={this.props.rev || 'master'} repoPath={this.props.repoPath}/>
+                <RevSwitcher history={this.props.history} rev={this.props.rev || 'master'} repoPath={this.props.repoPath} disabled={this.props.revSwitcherDisabled} />
                 <span className='repo-nav__path'>
-                    <RepoBreadcrumb {...this.props} />
+                    <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
                 </span>
                 {!this.props.hideCopyLink && <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
                     <CopyIcon className='icon-inline'/>
@@ -87,7 +94,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     }
 
     private urlToGitHub(): string {
-        const hash = parseHash(this.props.location.hash)
-        return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${hash.line ? '#L' + hash.line : ''}`
+        const line = this.props.line || parseHash(this.props.location.hash).line || undefined
+        return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line ? '#L' + line : ''}`
     }
 }
