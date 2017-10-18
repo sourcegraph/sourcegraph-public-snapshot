@@ -106,12 +106,8 @@ export const CommentsPage = reactive<Props>(props =>
                             </div>
                         </div>}
                         {sharedItem && CodeView(sharedItem)}
-                        <hr className='comments-page__hr' />
                         {sharedItem && sharedItem.thread.comments.map(comment =>
-                            <div className='comments-page__comment-container' key={comment.id}>
-                                <Comment location={location} comment={comment} />
-                                <hr className='comments-page__hr' />
-                            </div>
+                            <Comment location={location} comment={comment} key={comment.id} />
                         )}
                         <button className='btn btn-primary btn-block comments-page__reply-in-editor' onClick={openEditor}>
                             Reply in Sourcegraph Editor
