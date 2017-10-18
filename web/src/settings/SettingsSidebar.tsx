@@ -44,7 +44,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
             currentUser.subscribe(
                 user => {
                     // If not logged in, redirect
-                    if (!user || !user.hasSourcegraphUser) {
+                    if (!user) {
                         // TODO currently we can't redirect here because the initial value will always be `null`
                         // this.props.history.push('/sign-in')
                         return
