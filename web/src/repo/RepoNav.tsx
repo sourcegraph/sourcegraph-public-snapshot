@@ -45,7 +45,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     public componentDidMount(): void {
         this.subscriptions.add(currentUser.subscribe(
             user => {
-                this.setState({editorBeta: !!user && user.tags.some(tag => tag.name === 'editor-beta')})
+                this.setState({editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta')})
             }
         ))
     }

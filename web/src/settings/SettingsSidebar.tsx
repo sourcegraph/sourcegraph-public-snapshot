@@ -49,7 +49,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         // this.props.history.push('/sign-in')
                         return
                     }
-                    this.setState({ orgs: user.orgs, currentUser: user, editorBeta: !!user && user.tags.some(tag => tag.name === 'editor-beta')})
+                    this.setState({ orgs: user.orgs, currentUser: user, editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta')})
                 }
             )
         )
