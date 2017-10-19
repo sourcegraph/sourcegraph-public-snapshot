@@ -108,11 +108,17 @@ type Mutation {
 	inviteUser(email: String!, orgID: Int!): EmptyResponse
 	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
 	removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
+
+	# adds a phabricator repository to the Sourcegraph server.
+	# example callsign: "MUX"
+	# example uri: "github.com/gorilla/mux"
+	addPhabricatorRepo(callsign: String!, uri: String!): EmptyResponse
 }
 
 
 type Root {
 	repository(uri: String!): Repository
+	phabricatorRepo(uri: String!): PhabricatorRepo
 	repositories(query: String = ""): [Repository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
@@ -178,6 +184,13 @@ type Repository implements Node {
 	tags: [String!]!
 	listTotalRefs: TotalRefList!
 	gitCmdRaw(params: [String!]!): String!
+}
+
+type PhabricatorRepo {
+	# the canonical repo path, like 'github.com/gorilla/mux'
+	uri: String!
+	# the unique Phabricator identifier for the repo, like 'MUX'
+	callsign: String!
 }
 
 type TotalRefList {

@@ -33,6 +33,7 @@ declare namespace GQL {
   interface IRoot {
     __typename: "Root";
     repository: IRepository | null;
+    phabricatorRepository: IRepository | null;
     repositories: Array<IRepository>;
     symbols: Array<ISymbol>;
     currentUser: IUser | null;
@@ -623,6 +624,7 @@ declare namespace GQL {
     inviteUser: IEmptyResponse | null;
     acceptUserInvite: IOrgInviteStatus;
     removeUserFromOrg: IEmptyResponse | null;
+    addPhabricatorRepo: IEmptyResponse | null;
   }
 
   /*

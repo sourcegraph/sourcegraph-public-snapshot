@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -9,9 +10,12 @@ import (
 	"strings"
 	"sync"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"github.com/neelance/parallel"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -299,4 +303,18 @@ func (s sortByRepoSpecID) Len() int      { return len(s) }
 func (s sortByRepoSpecID) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s sortByRepoSpecID) Less(i, j int) bool {
 	return s[i].ID < s[j].ID
+}
+
+func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
+	Callsign string
+	URI      string
+}) (*EmptyResponse, error) {
+	if !envvar.DeploymentOnPrem() {
+		return nil, errors.New("AddPhabricatorRepo: illegal operation on public Sourcegraph server")
+	}
+	_, err := localstore.Phabricator.CreateIfNotExists(ctx, args.Callsign, args.URI)
+	if err != nil {
+		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI)
+	}
+	return nil, err
 }

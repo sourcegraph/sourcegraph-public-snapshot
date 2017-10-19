@@ -56,6 +56,8 @@
 // ../../../migrations/1507927334_thread_revision_updates.up.sql
 // ../../../migrations/1508190086_drop_repo_access_token.down.sql
 // ../../../migrations/1508190086_drop_repo_access_token.up.sql
+// ../../../migrations/1508361685_add_phabricator_repos.down.sql
+// ../../../migrations/1508361685_add_phabricator_repos.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1243,6 +1245,46 @@ func _1508190086_drop_repo_access_tokenUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1508361685_add_phabricator_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x28\xc8\x48\x4c\x2a\xca\x4c\x4e\x2c\xc9\x2f\x8a\x2f\x4a\x2d\xc8\x2f\xb6\xe6\x02\x04\x00\x00\xff\xff\xf8\x84\xff\x92\x1e\x00\x00\x00")
+
+func _1508361685_add_phabricator_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1508361685_add_phabricator_reposDownSql,
+		"1508361685_add_phabricator_repos.down.sql",
+	)
+}
+
+func _1508361685_add_phabricator_reposDownSql() (*asset, error) {
+	bytes, err := _1508361685_add_phabricator_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1508361685_add_phabricator_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1508361685_add_phabricator_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\xcc\xc1\x8e\xc2\x20\x18\x04\xe0\x73\x79\x8a\x3f\x9c\xda\x64\xdf\x60\x4f\xec\xee\xbf\x59\xb2\x94\xd6\x0a\x31\xf5\xd2\x20\x10\x25\x21\x6d\x43\x31\xfa\xf8\xc6\x5e\xbc\xe9\xc1\xe3\x64\xe6\x9b\xef\x0e\x99\x42\x50\xec\x4b\x20\xd0\xf9\x64\x0e\x29\x58\x93\xa7\x34\x24\x3f\x4f\x0b\x85\x92\x14\x34\x38\x0a\x8b\x4f\xc1\x44\x68\x3b\x5e\xb3\xae\x87\x7f\xec\x3f\x48\x41\xad\x89\x71\x09\xc7\x91\x82\x0d\xd9\x5f\x33\xc8\x46\x81\xd4\x42\x80\x96\x7c\xa3\xf1\xbe\x39\xa7\xf0\xac\xb6\xc9\x9b\xec\xdd\x60\x32\x05\xc5\x6b\xdc\x2a\x56\xb7\xb0\xe3\xea\x6f\x8d\xb0\x6f\x24\x3e\xdc\x0f\xfe\x32\x2d\x14\x8c\xd3\xa5\xac\xd6\xf7\xd9\xbd\xc3\x9d\x8f\xfe\x15\x27\xd5\x27\xb9\x05\x00\x00\xff\xff\x93\x81\x80\x03\x28\x01\x00\x00")
+
+func _1508361685_add_phabricator_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1508361685_add_phabricator_reposUpSql,
+		"1508361685_add_phabricator_repos.up.sql",
+	)
+}
+
+func _1508361685_add_phabricator_reposUpSql() (*asset, error) {
+	bytes, err := _1508361685_add_phabricator_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1508361685_add_phabricator_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1351,6 +1393,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1507927334_thread_revision_updates.up.sql":       _1507927334_thread_revision_updatesUpSql,
 	"1508190086_drop_repo_access_token.down.sql":      _1508190086_drop_repo_access_tokenDownSql,
 	"1508190086_drop_repo_access_token.up.sql":        _1508190086_drop_repo_access_tokenUpSql,
+	"1508361685_add_phabricator_repos.down.sql":       _1508361685_add_phabricator_reposDownSql,
+	"1508361685_add_phabricator_repos.up.sql":         _1508361685_add_phabricator_reposUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1450,6 +1494,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1507927334_thread_revision_updates.up.sql":       &bintree{_1507927334_thread_revision_updatesUpSql, map[string]*bintree{}},
 	"1508190086_drop_repo_access_token.down.sql":      &bintree{_1508190086_drop_repo_access_tokenDownSql, map[string]*bintree{}},
 	"1508190086_drop_repo_access_token.up.sql":        &bintree{_1508190086_drop_repo_access_tokenUpSql, map[string]*bintree{}},
+	"1508361685_add_phabricator_repos.down.sql":       &bintree{_1508361685_add_phabricator_reposDownSql, map[string]*bintree{}},
+	"1508361685_add_phabricator_repos.up.sql":         &bintree{_1508361685_add_phabricator_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

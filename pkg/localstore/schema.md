@@ -136,6 +136,23 @@ Referenced by:
 
 ```
 
+# Table "public.phabricator_repos"
+```
+   Column   |           Type           |                           Modifiers                            
+------------+--------------------------+----------------------------------------------------------------
+ id         | integer                  | not null default nextval('phabricator_repos_id_seq'::regclass)
+ callsign   | citext                   | not null
+ uri        | citext                   | not null
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+ deleted_at | timestamp with time zone | 
+Indexes:
+    "phabricator_repos_pkey" PRIMARY KEY, btree (id)
+    "phabricator_repos_callsign_key" UNIQUE CONSTRAINT, btree (callsign)
+    "phabricator_repos_uri_key" UNIQUE CONSTRAINT, btree (uri)
+
+```
+
 # Table "public.pkgs"
 ```
   Column  |  Type   | Modifiers 

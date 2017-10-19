@@ -497,3 +497,9 @@ type OrgSettings struct {
 	Contents      string    `json:"Contents"`
 	CreatedAt     time.Time `json:"CreatedAt"`
 }
+
+type PhabricatorRepo struct {
+	ID       int32  `json:"ID"`
+	URI      string `json:"URI"`
+	Callsign string `json:"Callsign"`
+}
