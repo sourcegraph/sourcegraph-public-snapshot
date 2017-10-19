@@ -346,7 +346,8 @@ type Installation {
 }
 
 type User {
-	id: String!
+	id: String! @deprecated(reason: "use auth0ID instead")
+	auth0ID: String!
 	sourcegraphID: Int
 	email: String!
 	displayName: String
@@ -416,11 +417,11 @@ type OrgMember {
 	id: Int!
 	org: Org!
 	user: User!
-	username: String!
-	email: String!
-	displayName: String!
-	avatarURL: String
-	userID: String!
+	username: String! @deprecated(reason: "use user.username instead")
+	email: String! @deprecated(reason: "use user.email instead")
+	displayName: String! @deprecated(reason: "use user.displayName instead")
+	avatarURL: String @deprecated(reason: "use user.avatarURL instead")
+	userID: String! @deprecated(reason: "use user.auth0ID instead")
 	createdAt: String!
 	updatedAt: String!
 }

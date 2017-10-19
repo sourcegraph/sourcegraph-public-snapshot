@@ -23,7 +23,12 @@ type userResolver struct {
 	actor *actor.Actor
 }
 
+// deprecated use Auth0ID
 func (r *userResolver) ID() string {
+	return r.Auth0ID()
+}
+
+func (r *userResolver) Auth0ID() string {
 	if r.user == nil {
 		return r.actor.UID
 	}
