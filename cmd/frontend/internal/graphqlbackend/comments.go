@@ -176,6 +176,10 @@ func notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sour
 
 	repoName := repoNameFromURI(repo.RemoteURI)
 	contents := strings.Replace(html.EscapeString(comment.Contents), "\n", "<br>", -1)
+	mentions := usernamesFromMentions(comment.Contents)
+	for _, m := range mentions {
+		contents = strings.Replace(contents, "@"+m, `<b>@`+m+`</b>`, -1)
+	}
 	lineVars := []gochimp.Var{}
 	if len(previousComments) == 0 && thread.Lines != nil {
 		lines := thread.Lines.TextBefore + thread.Lines.Text
