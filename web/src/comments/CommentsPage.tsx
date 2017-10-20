@@ -120,10 +120,7 @@ export const CommentsPage = reactive<Props>(props =>
 function getPageTitle(sharedItem: GQL.ISharedItem): string | undefined {
     const title = sharedItem.comment ? sharedItem.comment.title : sharedItem.thread.title
     if (title === '') {
-        // TODO(slimsag): future: Maybe serve some other information here. It
-        // can happen for e.g. a code snippet ('thread') without any comments
-        // on it.
-        return undefined // "Sourcegraph"
+        return sharedItem.thread.file
     }
     return title
 }
