@@ -60,6 +60,12 @@ func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) 
 		return "", err
 	}
 	shareURL := conf.AppURL.ResolveReference(&url.URL{Path: path.Join("c", ulid.String())})
+	if item.CommentID != nil {
+		// Linking to a comment.
+		q := shareURL.Query()
+		q.Set("id", fmt.Sprint(*item.CommentID))
+		shareURL.RawQuery = q.Encode()
+	}
 	return shareURL.String(), nil
 }
 
