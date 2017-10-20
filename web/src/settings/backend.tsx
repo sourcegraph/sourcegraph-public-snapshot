@@ -137,11 +137,13 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             events.NewUserCreated.log({
-                user: {
-                    id: data.createUser.sourcegraphID,
-                    auth0_id: data.createUser.id,
-                    username: data.createUser.username,
-                    display_name: options.displayName,
+                auth: {
+                    user: {
+                        id: data.createUser.sourcegraphID,
+                        auth0_id: data.createUser.id,
+                        username: data.createUser.username,
+                        display_name: options.displayName,
+                    },
                 },
             })
             return data.createUser
@@ -191,12 +193,14 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             events.UserProfileUpdated.log({
-                user: {
-                    id: data.updateUser.sourcegraphID,
-                    auth0_id: data.updateUser.id,
-                    username: data.updateUser.username,
-                    display_name: options.displayName,
-                    avatar_url: options.avatarUrl,
+                auth: {
+                    user: {
+                        id: data.updateUser.sourcegraphID,
+                        auth0_id: data.updateUser.id,
+                        username: data.updateUser.username,
+                        display_name: options.displayName,
+                        avatar_url: options.avatarUrl,
+                    },
                 },
             })
             return data.updateUser
