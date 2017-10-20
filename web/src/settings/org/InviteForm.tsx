@@ -76,18 +76,20 @@ export const InviteForm = reactive<Props>(props => {
     )
         .scan<Update, State>((state: State, update: Update) => update(state), { invited: false, loading: false, email: '' } as State)
         .map(({ loading, email, invited, error }) => (
-            <form className='invite-form invite-form__container' onSubmit={nextSubmit}>
-                <input
-                    type='email'
-                    className='ui-text-box invite-form__email'
-                    placeholder='newmember@yourcompany.com'
-                    onChange={nextEmailChange}
-                    value={email}
-                    required={true}
-                    spellCheck={false}
-                    size={30}
-                />
-                <button type='submit' disabled={loading} className='btn btn-primary invite-form__submit-button'>Invite</button>
+            <form className='invite-form' onSubmit={nextSubmit}>
+                <div className='invite-form__container'>
+                    <input
+                        type='email'
+                        className='ui-text-box invite-form__email'
+                        placeholder='newmember@yourcompany.com'
+                        onChange={nextEmailChange}
+                        value={email}
+                        required={true}
+                        spellCheck={false}
+                        size={30}
+                    />
+                    <button type='submit' disabled={loading} className='btn btn-primary invite-form__submit-button'>Invite</button>
+                </div>
                 {loading && <LoaderIcon className='icon-inline' />}
                 {error && <div className='text-error'><small>{error.message}</small></div>}
                 <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}><small>Invited!</small></div>
