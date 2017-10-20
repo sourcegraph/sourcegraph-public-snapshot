@@ -22,7 +22,8 @@ export function fetchSharedItem(ulid: string): Observable<GQL.ISharedItem | null
                             remoteUri
                         }
                         file
-                        revision
+                        repoRevision
+                        branch
                         title
                         startLine
                         endLine
