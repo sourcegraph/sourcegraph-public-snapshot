@@ -21,6 +21,9 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                     name
                     slackWebhookURL
                     displayName
+                    latestSettings {
+                        contents
+                    }
                     members {
                         id
                         userID

@@ -20,6 +20,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { events } from '../../tracking/events'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
+import { EditorConfiguration } from './EditorConfiguration'
 import { InviteForm } from './InviteForm'
 import { OrgSettingsForm } from './OrgSettingsForm'
 
@@ -148,6 +149,8 @@ export const Org = reactive<Props>(props => {
                             }
                         </tbody>
                     </table>
+
+                    <EditorConfiguration settings={org.latestSettings} />
 
                     <OrgSettingsForm org={org}/>
                 </div>
