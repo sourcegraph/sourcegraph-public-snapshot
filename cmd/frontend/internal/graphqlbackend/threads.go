@@ -262,12 +262,7 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
-	member, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := store.Users.GetByAuth0ID(member.UserID)
+	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -324,17 +319,28 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		results, err := notifyNewComment(ctx, repo, newThread, nil, comment, user.DisplayName)
+		var results *commentResults
+		err = func() error {
+			user, err := store.Users.GetByCurrentAuthUser(ctx)
+			if err != nil {
+				return err
+			}
+			results, err = notifyNewComment(ctx, *repo, *newThread, nil, *comment, *user, *org)
+			if err != nil {
+				return err
+			}
+			return nil
+		}()
 		if err != nil {
-			log15.Error("notifyAllInOrg failed", "error", err)
+			log15.Error("notifyNewComment failed", "error", err)
 		}
-		if user, err := currentUser(ctx); err != nil {
+		if uResolver, err := currentUser(ctx); err != nil {
 			// errors swallowed because user is only needed for Slack notifications
 			log15.Error("graphqlbackend.CreateThread: currentUser failed", "error", err)
 		} else {
 			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
-			go client.NotifyOnThread(user, org, repo, newThread, comment, results.emails, getURL(repo, newThread, "slack"))
+			go client.NotifyOnThread(uResolver, org, repo, newThread, comment, results.emails, getURL(*repo, *newThread, "slack"))
 		}
 	} /* else {
 		// Creating a thread without Contents (a comment) means it is a code
@@ -385,7 +391,7 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		notifyThreadArchived(ctx, repo, thread, comments, *user)
+		notifyThreadArchived(ctx, *repo, *thread, comments, *user)
 	}
 
 	return &threadResolver{org, repo, thread}, nil
@@ -416,7 +422,7 @@ func (*schemaResolver) ShareThread(ctx context.Context, args *struct {
 	})
 }
 
-func notifyThreadArchived(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
+func notifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
 	url := getURL(repo, thread, "email")
 	if !notif.EmailIsConfigured() {
 		return nil
@@ -427,10 +433,15 @@ func notifyThreadArchived(ctx context.Context, repo *sourcegraph.OrgRepo, thread
 		first = previousComments[0]
 	}
 
-	emails, err := allEmailsForOrg(ctx, repo.OrgID, []string{archiver.Auth0ID})
+	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return err
 	}
+	emails, err := emailsToNotify(ctx, previousComments, archiver, *org)
+	if err != nil {
+		return err
+	}
+
 	repoName := repoNameFromURI(repo.RemoteURI)
 	for _, email := range emails {
 		var subject string

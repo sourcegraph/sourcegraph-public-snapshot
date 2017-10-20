@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -75,7 +76,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := store.Users.GetByAuth0ID(actor.UID)
+	user, err := store.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +97,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	results, err := notifyNewComment(ctx, repo, thread, comments, comment, user.DisplayName)
+	results, err := notifyNewComment(ctx, *repo, *thread, comments, *comment, *user, *org)
 	if err != nil {
 		log15.Error("notifyNewComment failed", "error", err)
 	}
@@ -114,7 +115,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	} else {
 		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 		client := slack.New(org.SlackWebhookURL, true)
-		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, getURL(repo, thread, "slack"), title)
+		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, getURL(*repo, *thread, "slack"), title)
 	}
 
 	return t, nil
@@ -155,23 +156,24 @@ type commentResults struct {
 	commentURL string
 }
 
-func notifyNewComment(ctx context.Context, repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment *sourcegraph.Comment, commentAuthorName string) (*commentResults, error) {
+func notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) (*commentResults, error) {
 	commentURL := getURL(repo, thread, "email")
 	if !notif.EmailIsConfigured() {
 		return &commentResults{emails: []string{}, commentURL: commentURL}, nil
 	}
 
-	var first *sourcegraph.Comment
+	var first sourcegraph.Comment
 	if len(previousComments) > 0 {
-		first = previousComments[0]
+		first = *previousComments[0]
 	} else {
 		first = comment
 	}
 
-	emails, err := allEmailsForOrg(ctx, repo.OrgID, []string{comment.AuthorUserID})
+	emails, err := emailsToNotify(ctx, append(previousComments, &comment), author, org)
 	if err != nil {
 		return nil, err
 	}
+
 	repoName := repoNameFromURI(repo.RemoteURI)
 	contents := strings.Replace(html.EscapeString(comment.Contents), "\n", "<br>", -1)
 	lineVars := []gochimp.Var{}
@@ -192,7 +194,7 @@ func notifyNewComment(ctx context.Context, repo *sourcegraph.OrgRepo, thread *so
 		}
 		config := &notif.EmailConfig{
 			Template:  "new-comment",
-			FromName:  commentAuthorName,
+			FromName:  author.DisplayName,
 			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
 			ToName:    "",                        // We don't know names right now.
 			ToEmail:   email,
@@ -208,6 +210,70 @@ func notifyNewComment(ctx context.Context, repo *sourcegraph.OrgRepo, thread *so
 	return &commentResults{emails: emails, commentURL: commentURL}, nil
 }
 
+// emailsToNotify returns all emails that should be notified of activity given a list of comments.
+func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+	uniqueParticipants, uniqueMentions := map[string]struct{}{}, map[string]struct{}{}
+
+	// Prevent the author from being mentioned
+	uniqueParticipants[author.Auth0ID] = struct{}{}
+	uniqueMentions[author.Username] = struct{}{}
+
+	var participantIDs, mentions []string
+	for i, c := range comments {
+		// Notify participants in the conversation.
+		participantIDs = appendUnique(uniqueParticipants, participantIDs, c.AuthorUserID)
+
+		// Notify mentioned people in the conversation.
+		usernames := usernamesFromMentions(c.Contents)
+
+		// If first comment contains no mentions, notify entire org.
+		if i == 0 && len(usernames) == 0 {
+			usernames = []string{org.Name}
+		}
+
+		// Allow the user to mention themself in their latest comment.
+		if i == len(comments)-1 {
+			delete(uniqueMentions, author.Username)
+		}
+		mentions = appendUnique(uniqueMentions, mentions, usernames...)
+	}
+
+	_, selfMentioned := uniqueMentions[author.Username]
+	_, atOrgMention := uniqueMentions["org"]
+	_, orgNameMention := uniqueMentions[org.Name]
+
+	if atOrgMention || orgNameMention {
+		var exclude []string
+		if !selfMentioned {
+			exclude = []string{author.Auth0ID}
+		}
+		return allEmailsForOrg(ctx, org.ID, exclude)
+	}
+
+	users, err := store.Users.ListByOrg(ctx, org.ID, participantIDs, mentions)
+	if err != nil {
+		return nil, err
+	}
+	emails, uniqueEmails := []string{}, map[string]struct{}{}
+	for _, u := range users {
+		emails = appendUnique(uniqueEmails, emails, u.Email)
+	}
+	return emails, nil
+}
+
+var usernameMentionPattern = regexp.MustCompile("@" + store.UsernamePattern)
+
+// usernamesFromMentions extracts usernames that are mentioned using a @username
+// syntax within a comment.
+func usernamesFromMentions(contents string) []string {
+	matches := usernameMentionPattern.FindAll([]byte(contents), -1)
+	var usernames []string
+	for _, m := range matches {
+		usernames = append(usernames, strings.TrimPrefix(string(m), "@"))
+	}
+	return usernames
+}
+
 func repoNameFromURI(remoteURI string) string {
 	m := strings.SplitN(remoteURI, "/", 2)
 	if len(m) < 2 {
@@ -216,7 +282,7 @@ func repoNameFromURI(remoteURI string) string {
 	return m[1]
 }
 
-func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, utmSource string) string {
+func getURL(repo sourcegraph.OrgRepo, thread sourcegraph.Thread, utmSource string) string {
 	aboutValues := url.Values{}
 	if utmSource != "" {
 		aboutValues.Set("utm_source", utmSource)
@@ -230,4 +296,16 @@ func getURL(repo *sourcegraph.OrgRepo, thread *sourcegraph.Thread, utmSource str
 	values.Set("path", thread.File)
 	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
 	return fmt.Sprintf("https://about.sourcegraph.com/open/?%s#open?%s", aboutValues.Encode(), values.Encode())
+}
+
+// appendUnique returns value appended to values if value is not a key in unique.
+func appendUnique(unique map[string]struct{}, slice []string, values ...string) []string {
+	for _, v := range values {
+		if _, ok := unique[v]; ok {
+			continue
+		}
+		unique[v] = struct{}{}
+		slice = append(slice, v)
+	}
+	return slice
 }

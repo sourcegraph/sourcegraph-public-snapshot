@@ -42,7 +42,7 @@ func TestUsers_MatchUsernameRegex(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		matched := matchUsername.MatchString(test.username)
+		matched := MatchUsernameString.MatchString(test.username)
 		if matched != test.isValid {
 			t.Errorf("expected '%v' for username '%s'", test.isValid, test.username)
 		}

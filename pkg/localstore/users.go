@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -15,11 +17,13 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// matchUsername represents the limitations on Sourcegraph usernames. It is
+// UserNamePattern represents the limitations on Sourcegraph usernames. It is
 // based on the limitations GitHub places on their usernames. This pattern is
 // canonical, so any frontend or DB username validation should be based on a
 // pattern equivalent to this one.
-var matchUsername = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,36}[a-zA-Z0-9])?$`)
+const UsernamePattern = `[a-zA-Z0-9]([a-zA-Z0-9-]{0,36}[a-zA-Z0-9])?`
+
+var MatchUsernameString = regexp.MustCompile("^" + UsernamePattern + "$")
 
 // users provides access to the `users` table.
 //
@@ -157,6 +161,33 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 	return u.getOneBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
+// ListByOrg returns users for a given org. It can also query a list of specific
+// users by either auth0IDs or usernames.
+func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames []string) ([]*sourcegraph.User, error) {
+	if Mocks.Users.ListByOrg != nil {
+		return Mocks.Users.ListByOrg(ctx, orgID, auth0IDs, usernames)
+	}
+	conds := []*sqlf.Query{}
+	filters := []*sqlf.Query{}
+	if len(auth0IDs) > 0 {
+		items := []*sqlf.Query{}
+		for _, id := range auth0IDs {
+			items = append(items, sqlf.Sprintf("%s", id))
+		}
+		filters = append(filters, sqlf.Sprintf("u.auth0_id IN (%s)", sqlf.Join(items, ",")))
+	}
+	if len(usernames) > 0 {
+		items := []*sqlf.Query{}
+		for _, u := range usernames {
+			items = append(items, sqlf.Sprintf("%s", u))
+		}
+		filters = append(filters, sqlf.Sprintf("u.username IN (%s)", sqlf.Join(items, ",")))
+	}
+	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"), sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
+	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth0_id) WHERE %s", sqlf.Join(conds, "AND"))
+	return u.getBySQL(q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
 func (u *users) getOneBySQL(query string, args ...interface{}) (*sourcegraph.User, error) {
 	users, err := u.getBySQL(query, args...)
 	if err != nil {
@@ -170,7 +201,7 @@ func (u *users) getOneBySQL(query string, args ...interface{}) (*sourcegraph.Use
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.Query("SELECT id, auth0_id, email, username, display_name, avatar_url, created_at, updated_at FROM users "+query, args...)
+	rows, err := globalDB.Query("SELECT u.id, u.auth0_id, u.email, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}

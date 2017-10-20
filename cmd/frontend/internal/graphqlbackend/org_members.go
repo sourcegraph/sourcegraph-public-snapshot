@@ -98,7 +98,13 @@ func (i *orgInviteResolver) EmailVerified() bool {
 	return i.emailVerified
 }
 
+var mockAllEmailsForOrg func(ctx context.Context, orgID int32, excludeByUserID []string) ([]string, error)
+
 func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []string) ([]string, error) {
+	if mockAllEmailsForOrg != nil {
+		return mockAllEmailsForOrg(ctx, orgID, excludeByUserID)
+	}
+
 	members, err := store.OrgMembers.GetByOrgID(ctx, orgID)
 	if err != nil {
 		return nil, err
