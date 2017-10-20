@@ -95,7 +95,10 @@ export const CommentsPage = reactive<Props>(props =>
                     />
                     {sharedItem && !sharedItem.thread.repoRevision && <div className='comments-page__no-revision'>
                         <ErrorIcon className='icon-inline comments-page__error-icon'/>
-                        This discussion was created on code that was not pushed. File or line numbers may have changed since this discussion was created.
+                        {sharedItem.thread.comments.length === 0 ?
+                            'This code snippet was created from code that was not pushed. File or line numbers may have changed since this snippet was created.' :
+                            'This discussion was created on code that was not pushed. File or line numbers may have changed since this discussion was created.'
+                        }
                     </div>}
                     <div className='comments-page__content'>
                         {sharedItem && !sharedItem.thread.lines && <div className='comments-page__no-shared-code-container'>
@@ -108,9 +111,11 @@ export const CommentsPage = reactive<Props>(props =>
                         {sharedItem && sharedItem.thread.comments.map(comment =>
                             <Comment location={location} comment={comment} key={comment.id} />
                         )}
-                        <button className='btn btn-primary btn-block comments-page__reply-in-editor' onClick={openEditor}>
-                            Reply in Sourcegraph Editor
-                        </button>
+                        {sharedItem &&
+                            <button className='btn btn-primary btn-block comments-page__reply-in-editor' onClick={openEditor}>
+                                {sharedItem.thread.comments.length === 0 ? 'Open in Sourcegraph Editor' : 'Reply in Sourcegraph Editor'}
+                            </button>
+                        }
                     </div>
                 </div>
             )
@@ -120,10 +125,7 @@ export const CommentsPage = reactive<Props>(props =>
 function getPageTitle(sharedItem: GQL.ISharedItem): string | undefined {
     const title = sharedItem.comment ? sharedItem.comment.title : sharedItem.thread.title
     if (title === '') {
-        // TODO(slimsag): future: Maybe serve some other information here. It
-        // can happen for e.g. a code snippet ('thread') without any comments
-        // on it.
-        return undefined // "Sourcegraph"
+        return sharedItem.thread.file
     }
     return title
 }

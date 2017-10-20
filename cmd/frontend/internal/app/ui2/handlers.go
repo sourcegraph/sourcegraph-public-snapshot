@@ -339,9 +339,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	if title != "" {
 		common.Title = fmt.Sprintf("%s - Sourcegraph", title)
 	} else {
-		// TODO(slimsag): future: Maybe serve some other information here. It
-		// can happen for e.g. a code snippet without any comments on it.
-		common.Title = "Sourcegraph"
+		common.Title = fmt.Sprintf("%s - Sourcegraph", thread.File)
 	}
 	return renderTemplate(w, "app.html", common)
 }
