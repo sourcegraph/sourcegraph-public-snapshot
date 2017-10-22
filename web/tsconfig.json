@@ -13,7 +13,12 @@
     ],
     "jsx": "react",
     "sourceMap": true,
+    "noEmit": true,
     "downlevelIteration": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/date-fns"
+    ],
     "plugins": [
       {
         "name": "tslint-language-service"

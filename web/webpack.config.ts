@@ -71,7 +71,8 @@ const config: webpack.Configuration = {
                         loader: 'ts-loader',
                         options: {
                             compilerOptions: {
-                                module: 'esnext'
+                                module: 'esnext',
+                                noEmit: false,
                             },
                             transpileOnly: process.env.DISABLE_TYPECHECKING === 'true'
                         }

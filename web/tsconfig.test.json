@@ -1,11 +1,12 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-      "outDir": "./out"
-    },
-    "include": [
-      "typings/**/*.d.ts",
-      "src/**/*.test.tsx",
-      "src/**/*.test.ts"
-    ]
-  }
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./out"
+  },
+  "include": [
+    "typings/**/*.d.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.test.ts"
+  ]
+}
