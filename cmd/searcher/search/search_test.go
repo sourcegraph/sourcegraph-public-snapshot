@@ -36,54 +36,82 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
+		"abc.txt": "w",
 	}
 
-	cases := map[protocol.PatternInfo]string{
-		protocol.PatternInfo{Pattern: "foo"}: "",
+	cases := []struct {
+		arg  protocol.PatternInfo
+		want string
+	}{
+		{protocol.PatternInfo{Pattern: "foo"}, ""},
 
-		protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}: `
+		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}, `
 README.md:1:# Hello World
-`,
+`},
 
-		protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}: `
+		{protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}, `
 README.md:3:Hello world example in go
 main.go:6:	fmt.Println("Hello world")
-`,
+`},
 
-		protocol.PatternInfo{Pattern: "world"}: `
+		{protocol.PatternInfo{Pattern: "world"}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 main.go:6:	fmt.Println("Hello world")
-`,
+`},
 
-		protocol.PatternInfo{Pattern: "func.*main"}: "",
+		{protocol.PatternInfo{Pattern: "func.*main"}, ""},
 
-		protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}: `
+		{protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}, `
 main.go:5:func main() {
-`,
+`},
 
-		protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}: "",
+		{protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}, ""},
 
-		protocol.PatternInfo{Pattern: "main", IsWordMatch: true}: `
+		{protocol.PatternInfo{Pattern: "main", IsWordMatch: true}, `
 main.go:1:package main
 main.go:5:func main() {
-`,
+`},
 
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
-		protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}: `
+		{protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}, `
 main.go:6:	fmt.Println("Hello world")
-`,
+`},
 
-		protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}: `
+		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
 main.go:6:	fmt.Println("Hello world")
-`,
-		protocol.PatternInfo{Pattern: "world", IncludePattern: "*.md"}: `
+`},
+		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.md"}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
-`,
+`},
 
-		protocol.PatternInfo{Pattern: "doesnotmatch"}: "",
+		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"*.{md,txt}", "*.txt"}}, `
+abc.txt:1:w
+`},
+
+		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", IncludeExcludePatternsAreRegExps: true}, `
+main.go:6:	fmt.Println("Hello world")
+`},
+		{protocol.PatternInfo{Pattern: "world", IncludePattern: "\\.md", IncludeExcludePatternsAreRegExps: true}, `
+README.md:1:# Hello World
+README.md:3:Hello world example in go
+`},
+
+		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, IncludeExcludePatternsAreRegExps: true}, `
+README.md:1:# Hello World
+README.md:3:Hello world example in go
+`},
+
+		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.{MD,go}", IncludeExcludePatternsAreCaseSensitive: true}, `
+main.go:6:	fmt.Println("Hello world")
+`},
+		{protocol.PatternInfo{Pattern: "world", IncludePattern: `\.(MD|go)`, IncludeExcludePatternsAreRegExps: true, IncludeExcludePatternsAreCaseSensitive: true}, `
+main.go:6:	fmt.Println("Hello world")
+`},
+
+		{protocol.PatternInfo{Pattern: "doesnotmatch"}, ""},
 	}
 
 	store, cleanup, err := newStore(files)
@@ -94,33 +122,33 @@ README.md:3:Hello world example in go
 	ts := httptest.NewServer(&search.Service{Store: store})
 	defer ts.Close()
 
-	for p, want := range cases {
+	for _, test := range cases {
 		req := protocol.Request{
 			Repo:        "foo",
 			Commit:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: p,
+			PatternInfo: test.arg,
 		}
 		m, err := doSearch(ts.URL, &req)
 		if err != nil {
-			t.Errorf("%v failed: %s", p, err)
+			t.Errorf("%v failed: %s", test.arg, err)
 			continue
 		}
 		sort.Sort(sortByPath(m))
 		got := toString(m)
 		err = sanityCheckSorted(m)
 		if err != nil {
-			t.Errorf("%v malformed response: %s\n%s", p, err, got)
+			t.Errorf("%v malformed response: %s\n%s", test.arg, err, got)
 		}
 		// We have an extra newline to make expected readable
-		if len(want) > 0 {
-			want = want[1:]
+		if len(test.want) > 0 {
+			test.want = test.want[1:]
 		}
-		if got != want {
-			d, err := diff(want, got)
+		if got != test.want {
+			d, err := diff(test.want, got)
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Errorf("%v unexpected response:\n%s", p, d)
+			t.Errorf("%v unexpected response:\n%s", test.arg, d)
 		}
 	}
 }
@@ -197,6 +225,28 @@ func TestSearch_badrequest(t *testing.T) {
 				ExcludePattern: "[c-a]",
 			},
 		},
+
+		// Bad include regexp
+		{
+			Repo:   "foo",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:                          "test",
+				IncludePattern:                   "**",
+				IncludeExcludePatternsAreRegExps: true,
+			},
+		},
+
+		// Bad exclude regexp
+		{
+			Repo:   "foo",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:                          "test",
+				ExcludePattern:                   "**",
+				IncludeExcludePatternsAreRegExps: true,
+			},
+		},
 	}
 
 	store, cleanup, err := newStore(nil)
@@ -220,11 +270,12 @@ func TestSearch_badrequest(t *testing.T) {
 
 func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	form := url.Values{
-		"Repo":           []string{p.Repo},
-		"Commit":         []string{p.Commit},
-		"Pattern":        []string{p.Pattern},
-		"IncludePattern": []string{p.IncludePattern},
-		"ExcludePattern": []string{p.ExcludePattern},
+		"Repo":            []string{p.Repo},
+		"Commit":          []string{p.Commit},
+		"Pattern":         []string{p.Pattern},
+		"IncludePatterns": p.IncludePatterns,
+		"IncludePattern":  []string{p.IncludePattern},
+		"ExcludePattern":  []string{p.ExcludePattern},
 	}
 	if p.IsRegExp {
 		form.Set("IsRegExp", "true")
@@ -234,6 +285,12 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	}
 	if p.IsCaseSensitive {
 		form.Set("IsCaseSensitive", "true")
+	}
+	if p.IncludeExcludePatternsAreRegExps {
+		form.Set("IncludeExcludePatternsAreRegExps", "true")
+	}
+	if p.IncludeExcludePatternsAreCaseSensitive {
+		form.Set("IncludeExcludePatternsAreCaseSensitive", "true")
 	}
 	resp, err := http.PostForm(u, form)
 	if err != nil {

@@ -38,8 +38,12 @@ type patternInfo struct {
 
 	// We do not support IsMultiline
 	//IsMultiline     bool
-	IncludePattern *string
-	ExcludePattern *string
+	IncludePattern  *string
+	IncludePatterns []string
+	ExcludePattern  *string
+
+	IncludeExcludePatternsAreRegExps       bool
+	IncludeExcludePatternsAreCaseSensitive bool
 }
 
 type searchResults struct {
@@ -126,11 +130,12 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		p.ExcludePattern = &s
 	}
 	q := url.Values{
-		"Repo":           []string{repo},
-		"Commit":         []string{commit},
-		"Pattern":        []string{p.Pattern},
-		"ExcludePattern": []string{*p.ExcludePattern},
-		"IncludePattern": []string{*p.IncludePattern},
+		"Repo":            []string{repo},
+		"Commit":          []string{commit},
+		"Pattern":         []string{p.Pattern},
+		"ExcludePattern":  []string{*p.ExcludePattern},
+		"IncludePatterns": p.IncludePatterns,
+		"IncludePattern":  []string{*p.IncludePattern},
 	}
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
@@ -141,6 +146,12 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	}
 	if p.IsCaseSensitive {
 		q.Set("IsCaseSensitive", "true")
+	}
+	if p.IncludeExcludePatternsAreRegExps {
+		q.Set("IncludeExcludePatternsAreRegExps", "true")
+	}
+	if p.IncludeExcludePatternsAreCaseSensitive {
+		q.Set("IncludeExcludePatternsAreCaseSensitive", "true")
 	}
 	searcherURL := searcherURLs.Get(repo + "@" + commit)
 	req, err := http.NewRequest("GET", searcherURL, nil)

@@ -11,9 +11,9 @@ import (
 	"sync"
 	"unicode"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 
-	"github.com/gobwas/glob"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
@@ -76,11 +76,9 @@ type readerGrep struct {
 	// ignoreCase.
 	transformBuf []byte
 
-	// include is a glob pattern that must match the file path.
-	include glob.Glob
-
-	// exclude is a glob pattern that must not match the file path.
-	exclude glob.Glob
+	// matchPath is compiled from the include/exclude path patterns and reports
+	// whether a file path matches (and should be searched).
+	matchPath pathmatch.PathMatcher
 }
 
 // compile returns a readerGrep for matching p.
@@ -113,15 +111,15 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		expr = "(?m:" + expr + ")"
 	}
 
-	var include, exclude glob.Glob
-	var err error
-	if p.IncludePattern != "" {
-		if include, err = glob.Compile(p.IncludePattern); err != nil {
-			return nil, err
-		}
+	pathOptions := pathmatch.CompileOptions{
+		RegExp:        p.IncludeExcludePatternsAreRegExps,
+		CaseSensitive: p.IncludeExcludePatternsAreCaseSensitive,
 	}
-	if p.ExcludePattern != "" {
-		if exclude, err = glob.Compile(p.ExcludePattern); err != nil {
+	var matchPath pathmatch.PathMatcher
+	if includePatterns := p.AllIncludePatterns(); len(includePatterns) > 0 || p.ExcludePattern != "" {
+		var err error
+		matchPath, err = pathmatch.CompileIncludeExcludePatterns(p.AllIncludePatterns(), p.ExcludePattern, pathOptions)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -133,8 +131,7 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 	return &readerGrep{
 		re:         re,
 		ignoreCase: ignoreCase,
-		include:    include,
-		exclude:    exclude,
+		matchPath:  matchPath,
 	}, nil
 }
 
@@ -287,8 +284,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader, fileMat
 	go func() {
 		done := ctx.Done()
 		for _, f := range zr.File {
-			if (rg.include != nil && !rg.include.Match(f.Name)) ||
-				(rg.exclude != nil && rg.exclude.Match(f.Name)) {
+			if rg.matchPath != nil && !rg.matchPath(f.Name) {
 				continue
 			}
 			select {
