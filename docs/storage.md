@@ -54,6 +54,26 @@ Documented in [../migrations/README.md](../migrations/README.md)
 
 Here is the preferred style going forward. Existing tables may be inconsistent with this style.
 
+## Avoiding nullable columns
+
+Use a `NOT NULL` constraint whenever possible to enforce having a value on every column. `NULL` values can easily introduce errors when not handled correctly, and for many fields it makes sense to always have a value anyways.
+
+For example, a `"revision" text` column can use `NULL` to represent no revision, or instead `""` (empty string). On the other hand, it makes sense to represent a `"deleted_at" timestamp` field as `NULL`, meaning "this row has not been deleted".
+
+When NULL fields are necessary, remember to use [`Null*` types](https://golang.org/pkg/database/sql/#NullString) in Go when querying this data. Otherwise `row.Scan` will error after encountering a `NULL` value.
+
+```Go
+var s sql.NullString
+// Column name can be NULL
+err := db.QueryRow("SELECT name FROM foo WHERE id=?", id).Scan(&s)
+...
+if s.Valid {
+   // use s.String
+} else {
+   // NULL value
+}
+```
+
 ## Recommended columns for all tables
 
 - `id` auto increment primary key.
