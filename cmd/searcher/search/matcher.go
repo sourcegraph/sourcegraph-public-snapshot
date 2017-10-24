@@ -138,9 +138,14 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 // Copy returns a copied version of rg that is safe to use from another
 // goroutine.
 func (rg *readerGrep) Copy() *readerGrep {
+	var matchPathCopy pathmatch.PathMatcher
+	if rg.matchPath != nil {
+		matchPathCopy = rg.matchPath.Copy()
+	}
 	return &readerGrep{
 		re:         rg.re.Copy(),
 		ignoreCase: rg.ignoreCase,
+		matchPath:  matchPathCopy,
 	}
 }
 

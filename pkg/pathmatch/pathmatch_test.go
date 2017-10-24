@@ -28,9 +28,13 @@ func TestCompilePattern(t *testing.T) {
 				return
 			}
 			for path, want := range test.want {
-				got := match(path)
+				got := match.MatchPath(path)
 				if got != want {
 					t.Errorf("path %q: got %v, want %v", path, got, want)
+				}
+
+				if got2 := match.Copy().MatchPath(path); got != got2 {
+					t.Errorf("path %q: after copy, got %v, want %v", path, got2, got)
 				}
 			}
 		})
@@ -38,7 +42,7 @@ func TestCompilePattern(t *testing.T) {
 }
 
 func TestCompilePathPatterns(t *testing.T) {
-	match, err := CompilePathPatterns(nil, `README\.md`, CompileOptions{RegExp: true})
+	match, err := CompilePathPatterns([]string{`main\.go`, `m`}, `README\.md`, CompileOptions{RegExp: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,9 +52,14 @@ func TestCompilePathPatterns(t *testing.T) {
 		"main.go":   true,
 	}
 	for path, want := range want {
-		got := match(path)
+		got := match.MatchPath(path)
 		if got != want {
 			t.Errorf("path %q: got %v, want %v", path, got, want)
+			continue
+		}
+
+		if got2 := match.Copy().MatchPath(path); got != got2 {
+			t.Errorf("path %q: after copy, got %v, want %v", path, got2, got)
 		}
 	}
 }

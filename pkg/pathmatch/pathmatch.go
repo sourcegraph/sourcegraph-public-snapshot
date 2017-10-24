@@ -26,8 +26,20 @@ type pathMatcherFunc func(path string) bool
 func (f pathMatcherFunc) MatchPath(path string) bool { return f(path) }
 
 func (f pathMatcherFunc) Copy() PathMatcher {
-	// TODO(sqs): noop
+	// Noop; use regexpMatcher or another type that implements Copy if
+	// the underlying pattern can be copied.
 	return f
+}
+
+// regexpMatcher is a PathMatcher backed by a regexp.
+type regexpMatcher regexp.Regexp
+
+func (m *regexpMatcher) MatchPath(path string) bool {
+	return (*regexp.Regexp)(m).MatchString(path)
+}
+
+func (m *regexpMatcher) Copy() PathMatcher {
+	return (*regexpMatcher)((*regexp.Regexp)(m).Copy())
 }
 
 // CompileOptions specifies options about the patterns to compile.
@@ -49,7 +61,7 @@ func CompilePattern(pattern string, options CompileOptions) (PathMatcher, error)
 		if err != nil {
 			return nil, err
 		}
-		return pathMatcherFunc(p.MatchString), nil
+		return (*regexpMatcher)(p), nil
 	}
 
 	if !options.CaseSensitive {
@@ -69,6 +81,27 @@ func CompilePattern(pattern string, options CompileOptions) (PathMatcher, error)
 	return pathMatcherFunc(p.Match), nil
 }
 
+// pathMatcherAnd is a PathMatcher that matches a path iff all of the
+// underlying matchers match the path.
+type pathMatcherAnd []PathMatcher
+
+func (pm pathMatcherAnd) MatchPath(path string) bool {
+	for _, m := range pm {
+		if !m.MatchPath(path) {
+			return false
+		}
+	}
+	return true
+}
+
+func (pm pathMatcherAnd) Copy() PathMatcher {
+	pm2 := make([]PathMatcher, len(pm))
+	for i, m := range pm {
+		pm2[i] = m.Copy()
+	}
+	return pathMatcherAnd(pm2)
+}
+
 // CompilePatterns compiles the patterns into a PathMatcher func that matches
 // a path iff all patterns match the path.
 func CompilePatterns(patterns []string, options CompileOptions) (PathMatcher, error) {
@@ -85,14 +118,35 @@ func CompilePatterns(patterns []string, options CompileOptions) (PathMatcher, er
 		return matchers[0], nil
 	}
 
-	return pathMatcherFunc(func(path string) bool {
-		for _, match := range matchers {
-			if !match.MatchPath(path) {
-				return false
-			}
-		}
-		return true
-	}), nil
+	return pathMatcherAnd(matchers), nil
+}
+
+// pathMatcherIncludeExclude is a PathMatcher that matches a path iff it matches
+// the include matcher AND it does not match the exclude matcher.
+type pathMatcherIncludeExclude struct {
+	include PathMatcher
+	exclude PathMatcher
+}
+
+func (pm pathMatcherIncludeExclude) MatchPath(path string) bool {
+	include := pm.include == nil || pm.include.MatchPath(path)
+	if !include {
+		return false
+	}
+
+	exclude := pm.exclude != nil && pm.exclude.MatchPath(path)
+	return !exclude
+}
+
+func (pm pathMatcherIncludeExclude) Copy() PathMatcher {
+	var pm2 pathMatcherIncludeExclude
+	if pm.include != nil {
+		pm2.include = pm.include.Copy()
+	}
+	if pm.exclude != nil {
+		pm2.exclude = pm.exclude.Copy()
+	}
+	return pm2
 }
 
 // CompilePathPatterns returns a PathMatcher func that matches a path iff:
@@ -121,25 +175,13 @@ func CompilePathPatterns(includePatterns []string, excludePattern string, option
 	}
 
 	if include == nil && exclude == nil {
-		return All, nil
-	}
-	if include == nil {
-		// Just negate the exclude func.
-		return pathMatcherFunc(func(path string) bool {
-			return !exclude.MatchPath(path)
-		}), nil
+		return pathMatcherFunc(func(path string) bool { return true }), nil
 	}
 	if exclude == nil {
 		return include, nil
 	}
-
-	return pathMatcherFunc(func(path string) bool {
-		return include.MatchPath(path) && !exclude.MatchPath(path)
-	}), nil
+	return pathMatcherIncludeExclude{
+		include: include,
+		exclude: exclude,
+	}, nil
 }
-
-// All is a PathMatcher that matches all paths.
-var All = pathMatcherFunc(func(path string) bool { return true })
-
-// None is a PathMatcher that matches no paths.
-var None = pathMatcherFunc(func(path string) bool { return false })
