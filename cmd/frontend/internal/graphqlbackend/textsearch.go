@@ -122,6 +122,19 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
+
+	// Combine IncludePattern and IncludePatterns.
+	//
+	// NOTE: This makes it easier to (in the future) remove support for
+	// IncludePattern from searcher and only have it consult IncludePatterns.
+	// We still need to send IncludePattern (because searcher isn't guaranteed
+	// to be upgraded yet).
+	var includePatterns []string
+	if p.IncludePattern != nil && *p.IncludePattern != "" {
+		includePatterns = append(includePatterns, *p.IncludePattern)
+	}
+	includePatterns = append(includePatterns, p.IncludePatterns...)
+
 	var s string
 	if p.IncludePattern == nil {
 		p.IncludePattern = &s
@@ -134,7 +147,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		"Commit":          []string{commit},
 		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{*p.ExcludePattern},
-		"IncludePatterns": p.IncludePatterns,
+		"IncludePatterns": includePatterns,
 		"IncludePattern":  []string{*p.IncludePattern},
 	}
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
