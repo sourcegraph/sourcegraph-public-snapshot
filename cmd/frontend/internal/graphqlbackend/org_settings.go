@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -21,6 +23,21 @@ func (o *orgSettingsResolver) ID() int32 {
 
 func (o *orgSettingsResolver) Contents() string {
 	return o.settings.Contents
+}
+
+func (o *orgSettingsResolver) Highlighted(ctx context.Context) (string, error) {
+	html, aborted, err := highlight.Code(ctx, o.Contents(), "json", false)
+	if err != nil {
+		return "", err
+	}
+	if aborted {
+		// Org Settings should be small enough so the syntax highlighting
+		// completes before the automatic timeout. If it doesn't, something
+		// seriously wrong has happened.
+		return "", errors.New("org settings syntax highlighting aborted")
+	}
+
+	return string(html), nil
 }
 
 func (o *orgSettingsResolver) CreatedAt() string {

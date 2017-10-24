@@ -3,9 +3,16 @@
     margin-top: 2.5rem;
     
     &__settings-box {
-        overflow: scroll;
-        resize: vertical;
-        font-size: 12px;
-        font-family: 'Menlo';
+        overflow-x: scroll;
+        border: 1px solid #2B3750;
+        border-radius: 2px;
+        padding: 0.5rem 1rem;
+        
+        table {
+            white-space: pre;
+            background-color: #0E121B;
+            font-family: 'Menlo';
+            font-size: 12px;
+        }  
     }
 }

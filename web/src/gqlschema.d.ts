@@ -33,7 +33,7 @@ declare namespace GQL {
   interface IRoot {
     __typename: "Root";
     repository: IRepository | null;
-    phabricatorRepository: IRepository | null;
+    phabricatorRepo: IPhabricatorRepo | null;
     repositories: Array<IRepository>;
     symbols: Array<ISymbol>;
     currentUser: IUser | null;
@@ -262,6 +262,15 @@ declare namespace GQL {
   /*
     description: null
   */
+  interface IPhabricatorRepo {
+    __typename: "PhabricatorRepo";
+    uri: string;
+    callsign: string;
+  }
+
+  /*
+    description: null
+  */
   interface ISymbol {
     __typename: "Symbol";
     repository: IRepository;
@@ -276,6 +285,7 @@ declare namespace GQL {
   interface IUser {
     __typename: "User";
     id: string;
+    auth0ID: string;
     sourcegraphID: number | null;
     email: string;
     displayName: string | null;
@@ -331,6 +341,7 @@ declare namespace GQL {
     __typename: "OrgSettings";
     id: number;
     contents: string;
+    highlighted: string;
     author: IUser;
     createdAt: string;
   }

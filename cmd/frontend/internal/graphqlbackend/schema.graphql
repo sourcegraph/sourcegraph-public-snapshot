@@ -455,6 +455,8 @@ type ThreadConnection {
 type OrgSettings {
 	id: Int!
 	contents: String!
+	# contents as highlighted HTML
+	highlighted: String!
 	author: User!
 	createdAt: String!
 }
