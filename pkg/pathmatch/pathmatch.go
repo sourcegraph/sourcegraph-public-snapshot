@@ -12,11 +12,23 @@ import (
 // PathMatcher reports whether the path was matched.
 type PathMatcher interface {
 	MatchPath(path string) bool
+
+	// Copy returns a copied version of this PathMatcher that is safe to use
+	// from another goroutine. (For example, if this PathMatcher is backed
+	// by a regexp, this Copy method should lead to the regexp's Copy method
+	// being called, to avoid lock contention if multiple goroutines are
+	// using the regexp.)
+	Copy() PathMatcher
 }
 
 type pathMatcherFunc func(path string) bool
 
 func (f pathMatcherFunc) MatchPath(path string) bool { return f(path) }
+
+func (f pathMatcherFunc) Copy() PathMatcher {
+	// TODO(sqs): noop
+	return f
+}
 
 // CompileOptions specifies options about the patterns to compile.
 type CompileOptions struct {
