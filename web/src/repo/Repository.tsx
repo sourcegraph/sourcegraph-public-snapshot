@@ -143,6 +143,9 @@ export class Repository extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
+
+        const hash = parseHash(this.props.location.hash)
+        viewEvents.Blob.log({ fileShown: Boolean(this.props.filePath), referencesShown: hash.modal === 'references' })
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
