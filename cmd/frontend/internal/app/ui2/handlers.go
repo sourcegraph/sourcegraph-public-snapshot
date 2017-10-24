@@ -334,7 +334,12 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	// 🚨 SECURITY: verify that the current user is in the org.
 	_, err = localstore.OrgMembers.GetByOrgIDAndUserID(r.Context(), orgRepo.OrgID, actor.UID)
 	if err != nil {
-		return errors.Wrap(err, "OrgMembers.GetByOrgIDAndUserID")
+		// User is not in the org. We don't want to produce a 500, because we
+		// want to render a nice error page on the frontend. But it's important
+		// that we do not leak information about the shared item (e.g. through
+		// the page title, see below).
+		common.Title = "Sourcegraph"
+		return renderTemplate(w, "app.html", common)
 	}
 
 	if title != "" {
