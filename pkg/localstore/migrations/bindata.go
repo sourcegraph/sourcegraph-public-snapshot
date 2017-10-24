@@ -58,6 +58,8 @@
 // ../../../migrations/1508190086_drop_repo_access_token.up.sql
 // ../../../migrations/1508361685_add_phabricator_repos.down.sql
 // ../../../migrations/1508361685_add_phabricator_repos.up.sql
+// ../../../migrations/1508795218_update_constraints.down.sql
+// ../../../migrations/1508795218_update_constraints.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1285,6 +1287,46 @@ func _1508361685_add_phabricator_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1508795218_update_constraintsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xbc\xcf\xcd\x8a\x83\x30\x14\x05\xe0\xf5\xe4\x29\x2e\x59\xcf\x1b\xb8\x52\x27\x4c\x03\xf9\x11\x7b\xa5\xb4\x1b\x49\xcd\xc5\x2e\x9a\x2a\x31\xbe\x7f\x69\x5d\x55\xba\xce\xf6\x70\x0e\x1f\xa7\x12\xff\xd2\x14\x8c\x95\x0a\x45\x0b\x58\x56\x4a\x00\x1f\xa6\x10\xe8\x91\x16\xce\x7e\xb6\xbc\xb6\xaa\xd3\x06\xf8\x10\xc9\x25\xf2\xbd\x4b\x1c\xfe\x5a\xdb\x80\xb1\x08\xa6\x53\xea\x77\xdf\x5c\x67\xff\xbd\xb9\xb7\xd2\x2d\x92\xf3\x59\xa8\x29\x8e\x7d\xa0\x70\xa5\x98\x8d\x8b\x34\x4f\xd9\xb0\xe4\xc6\x5c\x56\x16\x67\x5d\x28\x66\x3b\xf5\xc2\x32\x42\xf0\xb1\xf6\x74\xa7\x6d\x0c\x78\x6e\x04\xa0\xd4\xe2\x88\xa5\x6e\xe0\x24\xf1\x60\x3b\x7c\x27\x70\xb1\x46\x14\x8c\xd5\x56\x6b\x89\x05\x7b\x06\x00\x00\xff\xff\x8c\xe5\x82\xba\xbc\x03\x00\x00")
+
+func _1508795218_update_constraintsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1508795218_update_constraintsDownSql,
+		"1508795218_update_constraints.down.sql",
+	)
+}
+
+func _1508795218_update_constraintsDownSql() (*asset, error) {
+	bytes, err := _1508795218_update_constraintsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1508795218_update_constraints.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1508795218_update_constraintsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xbc\xcf\xcd\xaa\x83\x30\x10\x05\xe0\xf5\xcd\x53\x0c\x59\xdf\x37\x70\xa5\x12\xda\x40\x7e\xa4\x8e\x94\x76\x23\xa9\x19\xec\xa2\xa9\x12\xe3\xfb\x97\xd6\x55\xa5\xeb\x2c\x67\x38\x87\x8f\x53\x89\x83\x34\x05\x63\xa5\x42\x71\x02\x2c\x2b\x25\x80\x0f\x53\x08\xf4\x4c\x0b\x67\x7f\xdb\xbf\xb6\xaa\xd3\x06\xf8\x10\xc9\x25\xf2\xbd\x4b\x1c\x5a\x81\x60\x2c\x82\xe9\x94\xfa\xdf\x07\xd7\xd9\xff\x0c\xee\xa5\x74\x8f\xe4\x7c\x06\x68\x8a\x63\x1f\x28\xdc\x28\x66\xc2\x22\xcd\x53\x26\x2a\xb9\x31\x8f\x94\x41\x59\x17\x8a\x99\x06\xbd\xa9\x6c\x0c\x7c\x95\x3d\x3d\x68\xeb\x02\x5e\x1a\x01\x28\xb5\x68\xb1\xd4\x0d\x9c\x25\x1e\x3f\x27\x5c\xad\x11\x05\x63\xb5\xd5\x5a\x62\xc1\x5e\x01\x00\x00\xff\xff\x33\x71\xef\x3d\xa9\x03\x00\x00")
+
+func _1508795218_update_constraintsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1508795218_update_constraintsUpSql,
+		"1508795218_update_constraints.up.sql",
+	)
+}
+
+func _1508795218_update_constraintsUpSql() (*asset, error) {
+	bytes, err := _1508795218_update_constraintsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1508795218_update_constraints.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1395,6 +1437,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1508190086_drop_repo_access_token.up.sql":        _1508190086_drop_repo_access_tokenUpSql,
 	"1508361685_add_phabricator_repos.down.sql":       _1508361685_add_phabricator_reposDownSql,
 	"1508361685_add_phabricator_repos.up.sql":         _1508361685_add_phabricator_reposUpSql,
+	"1508795218_update_constraints.down.sql":          _1508795218_update_constraintsDownSql,
+	"1508795218_update_constraints.up.sql":            _1508795218_update_constraintsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1496,6 +1540,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1508190086_drop_repo_access_token.up.sql":        &bintree{_1508190086_drop_repo_access_tokenUpSql, map[string]*bintree{}},
 	"1508361685_add_phabricator_repos.down.sql":       &bintree{_1508361685_add_phabricator_reposDownSql, map[string]*bintree{}},
 	"1508361685_add_phabricator_repos.up.sql":         &bintree{_1508361685_add_phabricator_reposUpSql, map[string]*bintree{}},
+	"1508795218_update_constraints.down.sql":          &bintree{_1508795218_update_constraintsDownSql, map[string]*bintree{}},
+	"1508795218_update_constraints.up.sql":            &bintree{_1508795218_update_constraintsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
