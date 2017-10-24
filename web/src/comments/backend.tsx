@@ -70,6 +70,7 @@ export function fetchSharedItem(ulid: string): Observable<GQL.ISharedItem | null
     `, { ulid })
         .map(({ data, errors }) => {
             if (!data || !data.root || errors) {
+                // TODO(slimsag): string comparison is bad practice, remove this
                 if (errors && errors[0].message === 'permission denied') {
                     throw new PermissionDeniedError()
                 }
