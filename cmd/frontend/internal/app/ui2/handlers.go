@@ -233,6 +233,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 		if common == nil {
 			return nil // request was handled
 		}
+		common.Title = title(common, r)
 
 		q := r.URL.Query()
 		if search := q.Get("q"); search != "" {
