@@ -1,5 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import LockIcon from '@sourcegraph/icons/lib/Lock'
 import * as H from 'history'
 import * as React from 'react'
 import { match } from 'react-router'
@@ -15,7 +16,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoNav } from '../repo/RepoNav'
 import { toEditorURL } from '../util/url'
-import { fetchSharedItem } from './backend'
+import { EPERMISSIONDENIED, fetchSharedItem } from './backend'
 import { CodeView } from './CodeView'
 import { Comment } from './Comment'
 
@@ -31,7 +32,7 @@ interface State {
     sharedItem?: GQL.ISharedItem | null
     location: H.Location
     history: H.History
-    error?: Error
+    error?: any
 }
 
 type Update = (s: State) => State
@@ -57,7 +58,13 @@ export const CommentsPage = reactive<Props>(props =>
             )
     )
         .scan<Update, State>((state: State, update: Update) => update(state), {} as State)
-        .map(({ location, history, sharedItem }: State): JSX.Element | null => {
+        .map(({ sharedItem, location, history, error }: State): JSX.Element | null => {
+            if (error) {
+                if (error.code === EPERMISSIONDENIED) {
+                    return <HeroPage icon={LockIcon} title='Permission denied.' subtitle={'You must be a member of the organization to view this page.'} />
+                }
+                return <HeroPage icon={ErrorIcon} title='Something went wrong.' subtitle={error.message} />
+            }
             if (sharedItem === undefined) {
                 // TODO(slimsag): future: add loading screen
                 return null

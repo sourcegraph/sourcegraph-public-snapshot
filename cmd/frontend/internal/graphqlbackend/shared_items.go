@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -60,6 +61,9 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 		actor := actor.FromContext(ctx)
 		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
 		if err != nil {
+			if _, ok := err.(store.ErrOrgMemberNotFound); ok {
+				return nil, errors.New("permission denied")
+			}
 			return nil, err
 		}
 
@@ -86,6 +90,9 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 		actor := actor.FromContext(ctx)
 		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
 		if err != nil {
+			if _, ok := err.(store.ErrOrgMemberNotFound); ok {
+				return nil, errors.New("permission denied")
+			}
 			return nil, err
 		}
 
