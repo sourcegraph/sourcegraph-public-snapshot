@@ -77,13 +77,13 @@ func CompilePatterns(patterns []string, options CompileOptions) (PathMatcher, er
 	}, nil
 }
 
-// CompileIncludeExcludePatterns returns a PathMatcher func that matches a path iff:
+// CompilePathPatterns returns a PathMatcher func that matches a path iff:
 //
 // * all of the includePatterns match the path; AND
 // * the excludePattern does NOT match the path.
 //
 // This is the most common behavior for include/exclude paths in a search interface.
-func CompileIncludeExcludePatterns(includePatterns []string, excludePattern string, options CompileOptions) (PathMatcher, error) {
+func CompilePathPatterns(includePatterns []string, excludePattern string, options CompileOptions) (PathMatcher, error) {
 	var include PathMatcher
 	if len(includePatterns) > 0 {
 		var err error

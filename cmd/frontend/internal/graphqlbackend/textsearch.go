@@ -42,8 +42,8 @@ type patternInfo struct {
 	IncludePatterns []string
 	ExcludePattern  *string
 
-	IncludeExcludePatternsAreRegExps       bool
-	IncludeExcludePatternsAreCaseSensitive bool
+	PathPatternsAreRegExps       bool
+	PathPatternsAreCaseSensitive bool
 }
 
 type searchResults struct {
@@ -147,11 +147,11 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	if p.IsCaseSensitive {
 		q.Set("IsCaseSensitive", "true")
 	}
-	if p.IncludeExcludePatternsAreRegExps {
-		q.Set("IncludeExcludePatternsAreRegExps", "true")
+	if p.PathPatternsAreRegExps {
+		q.Set("PathPatternsAreRegExps", "true")
 	}
-	if p.IncludeExcludePatternsAreCaseSensitive {
-		q.Set("IncludeExcludePatternsAreCaseSensitive", "true")
+	if p.PathPatternsAreCaseSensitive {
+		q.Set("PathPatternsAreCaseSensitive", "true")
 	}
 	searcherURL := searcherURLs.Get(repo + "@" + commit)
 	req, err := http.NewRequest("GET", searcherURL, nil)

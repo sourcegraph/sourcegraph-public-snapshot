@@ -37,8 +37,8 @@ func TestCompilePattern(t *testing.T) {
 	}
 }
 
-func TestCompileIncludeExcludePatterns(t *testing.T) {
-	match, err := CompileIncludeExcludePatterns(nil, `README\.md`, CompileOptions{RegExp: true})
+func TestCompilePathPatterns(t *testing.T) {
+	match, err := CompilePathPatterns(nil, `README\.md`, CompileOptions{RegExp: true})
 	if err != nil {
 		t.Fatal(err)
 	}

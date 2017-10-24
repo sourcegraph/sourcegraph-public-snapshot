@@ -112,13 +112,13 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 	}
 
 	pathOptions := pathmatch.CompileOptions{
-		RegExp:        p.IncludeExcludePatternsAreRegExps,
-		CaseSensitive: p.IncludeExcludePatternsAreCaseSensitive,
+		RegExp:        p.PathPatternsAreRegExps,
+		CaseSensitive: p.PathPatternsAreCaseSensitive,
 	}
 	var matchPath pathmatch.PathMatcher
 	if includePatterns := p.AllIncludePatterns(); len(includePatterns) > 0 || p.ExcludePattern != "" {
 		var err error
-		matchPath, err = pathmatch.CompileIncludeExcludePatterns(p.AllIncludePatterns(), p.ExcludePattern, pathOptions)
+		matchPath, err = pathmatch.CompilePathPatterns(p.AllIncludePatterns(), p.ExcludePattern, pathOptions)
 		if err != nil {
 			return nil, err
 		}

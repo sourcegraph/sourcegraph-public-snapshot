@@ -47,11 +47,11 @@ type PatternInfo struct {
 
 	// IncludeExcludePatternAreRegExps indicates that ExcludePattern, IncludePattern,
 	// and IncludePatterns are regular expressions (not globs).
-	IncludeExcludePatternsAreRegExps bool
+	PathPatternsAreRegExps bool
 
 	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePattern, IncludePattern,
 	// and IncludePatterns are case sensitive.
-	IncludeExcludePatternsAreCaseSensitive bool
+	PathPatternsAreCaseSensitive bool
 
 	// IncludePattern is DEPRECATED. Use IncludePatterns instead. If specified,
 	// IncludePattern will be appended to IncludePatterns.

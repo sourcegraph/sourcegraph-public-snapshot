@@ -91,23 +91,23 @@ README.md:3:Hello world example in go
 abc.txt:1:w
 `},
 
-		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", IncludeExcludePatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "\\.md", IncludeExcludePatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePattern: "\\.md", PathPatternsAreRegExps: true}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, IncludeExcludePatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, PathPatternsAreRegExps: true}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.{MD,go}", IncludeExcludePatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.{MD,go}", PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: `\.(MD|go)`, IncludeExcludePatternsAreRegExps: true, IncludeExcludePatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePattern: `\.(MD|go)`, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
 
@@ -231,9 +231,9 @@ func TestSearch_badrequest(t *testing.T) {
 			Repo:   "foo",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:                          "test",
-				IncludePattern:                   "**",
-				IncludeExcludePatternsAreRegExps: true,
+				Pattern:                "test",
+				IncludePattern:         "**",
+				PathPatternsAreRegExps: true,
 			},
 		},
 
@@ -242,9 +242,9 @@ func TestSearch_badrequest(t *testing.T) {
 			Repo:   "foo",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:                          "test",
-				ExcludePattern:                   "**",
-				IncludeExcludePatternsAreRegExps: true,
+				Pattern:                "test",
+				ExcludePattern:         "**",
+				PathPatternsAreRegExps: true,
 			},
 		},
 	}
@@ -286,11 +286,11 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	if p.IsCaseSensitive {
 		form.Set("IsCaseSensitive", "true")
 	}
-	if p.IncludeExcludePatternsAreRegExps {
-		form.Set("IncludeExcludePatternsAreRegExps", "true")
+	if p.PathPatternsAreRegExps {
+		form.Set("PathPatternsAreRegExps", "true")
 	}
-	if p.IncludeExcludePatternsAreCaseSensitive {
-		form.Set("IncludeExcludePatternsAreCaseSensitive", "true")
+	if p.PathPatternsAreCaseSensitive {
+		form.Set("PathPatternsAreCaseSensitive", "true")
 	}
 	resp, err := http.PostForm(u, form)
 	if err != nil {
