@@ -9,8 +9,6 @@ import (
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -19,10 +17,10 @@ var allowRobotsVar = env.Get("ROBOTS_TXT_ALLOW", "false", "allow search engines 
 func robotsTxt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	allowRobots, _ := strconv.ParseBool(allowRobotsVar)
-	robotsTxtHelper(w, allowRobots, conf.AppURL.ResolveReference(router.Rel.URLTo(router.SitemapIndex)).String())
+	robotsTxtHelper(w, allowRobots)
 }
 
-func robotsTxtHelper(w io.Writer, allowRobots bool, sitemapUrl string) {
+func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	var buf bytes.Buffer
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
@@ -32,7 +30,6 @@ func robotsTxtHelper(w io.Writer, allowRobots bool, sitemapUrl string) {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
 	fmt.Fprintln(&buf)
-	fmt.Fprintln(&buf, "Sitemap:", sitemapUrl)
 	buf.WriteTo(w)
 }
 

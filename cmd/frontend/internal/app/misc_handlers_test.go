@@ -44,7 +44,7 @@ func TestRobotsTxt(t *testing.T) {
 	}
 	var b bytes.Buffer
 	writer := bufio.NewWriter(&b)
-	robotsTxtHelper(writer, true, "https://www.sourcegraph.com/sitemap.xml")
+	robotsTxtHelper(writer, true)
 	writer.Flush()
 	robots, _ := robotstxt.FromBytes(b.Bytes())
 	for _, test := range tests {

@@ -15,9 +15,7 @@ const (
 
 	OpenSearch = "opensearch"
 
-	SitemapIndex = "sitemap-index"
-	RepoSitemap  = "repo.sitemap"
-	RepoBadge    = "repo.badge"
+	RepoBadge = "repo.badge"
 
 	Logout = "logout"
 
@@ -66,8 +64,6 @@ func New() *Router {
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 	base.Path("/opensearch.xml").Methods("GET").Name(OpenSearch)
 
-	base.Path("/sitemap.xml").Methods("GET").Name(SitemapIndex)
-
 	base.Path("/-/logout").Methods("GET").Name(Logout)
 
 	base.Path("/-/sign-in").Methods("GET").Name(SignIn)
@@ -95,7 +91,6 @@ func New() *Router {
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
-	repo.Path("/sitemap.xml").Methods("GET").Name(RepoSitemap)
 	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
 
 	// Must come last

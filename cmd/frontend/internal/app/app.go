@@ -35,8 +35,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.Favicon).Handler(traceutil.TraceRoute(http.HandlerFunc(favicon)))
 	r.Get(router.OpenSearch).Handler(traceutil.TraceRoute(http.HandlerFunc(openSearch)))
 
-	r.Get(router.SitemapIndex).Handler(traceutil.TraceRoute(errorutil.Handler(serveSitemapIndex)))
-	r.Get(router.RepoSitemap).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoSitemap)))
 	r.Get(router.RepoBadge).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoBadge)))
 
 	r.Get(router.Logout).Handler(traceutil.TraceRoute(errorutil.Handler(serveLogout)))

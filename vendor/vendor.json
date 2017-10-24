@@ -1421,11 +1421,6 @@
 			"revisionTime": "2017-02-21T15:51:53Z"
 		},
 		{
-			"path": "github.com/sourcegraph/sitemap",
-			"revision": "5d2a42ccab8dc0079484263b326b9a3191d5bee8",
-			"revisionTime": "2013-09-12T23:55:21-07:00"
-		},
-		{
 			"checksumSHA1": "GxPD7A0NjMDom1xte0mghkpzr0E=",
 			"origin": "k8s.io/client-go/vendor/github.com/spf13/pflag",
 			"path": "github.com/spf13/pflag",
