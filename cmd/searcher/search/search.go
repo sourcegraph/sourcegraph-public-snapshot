@@ -99,6 +99,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
 	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
 	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
+	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
+	span.SetTag("pathPatternsAreCaseSensitive", strconv.FormatBool(p.PathPatternsAreCaseSensitive))
 	span.SetTag("fileMatchLimit", p.FileMatchLimit)
 	defer func(start time.Time) {
 		code := "200"

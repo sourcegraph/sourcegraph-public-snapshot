@@ -31,16 +31,49 @@ type PatternInfo struct {
 	// when finding matches.
 	IsCaseSensitive bool
 
-	// ExcludePattern is a glob pattern that should not match the returned files.
+	// ExcludePattern is a pattern that may not match the returned files' paths.
 	// eg '**/node_modules'
 	ExcludePattern string
 
-	// Include pattern is a glob pattern that should match the returned files.
-	// eg '**/*.go' to search go files.
+	// IncludePatterns is a list of patterns that must *all* match the returned
+	// files' paths.
+	// eg '**/node_modules'
+	//
+	// The patterns are ANDed together; a file's path must match all patterns
+	// for it to be kept. That is also why it is a list (unlike the singular
+	// ExcludePattern); it is not possible in general to construct a single
+	// glob or Go regexp that represents multiple such patterns ANDed together.
+	IncludePatterns []string
+
+	// IncludeExcludePatternAreRegExps indicates that ExcludePattern, IncludePattern,
+	// and IncludePatterns are regular expressions (not globs).
+	PathPatternsAreRegExps bool
+
+	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePattern, IncludePattern,
+	// and IncludePatterns are case sensitive.
+	PathPatternsAreCaseSensitive bool
+
+	// IncludePattern is DEPRECATED. Use IncludePatterns instead. If specified,
+	// IncludePattern will be appended to IncludePatterns.
 	IncludePattern string
 
 	// FileMatchLimit limits the number of files with matches that are returned.
 	FileMatchLimit int
+}
+
+// AllIncludePatterns returns all include patterns (including the deprecated
+// single p.IncludePattern).
+func (p PatternInfo) AllIncludePatterns() []string {
+	if p.IncludePattern == "" {
+		return p.IncludePatterns
+	}
+	if len(p.IncludePatterns) == 0 {
+		return []string{p.IncludePattern}
+	}
+	all := make([]string, 1+len(p.IncludePatterns))
+	copy(all, p.IncludePatterns)
+	all[len(all)-1] = p.IncludePattern
+	return all
 }
 
 // Response represents the response from a Search request.

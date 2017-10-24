@@ -38,8 +38,12 @@ type patternInfo struct {
 
 	// We do not support IsMultiline
 	//IsMultiline     bool
-	IncludePattern *string
-	ExcludePattern *string
+	IncludePattern  *string
+	IncludePatterns []string
+	ExcludePattern  *string
+
+	PathPatternsAreRegExps       bool
+	PathPatternsAreCaseSensitive bool
 }
 
 type searchResults struct {
@@ -118,6 +122,19 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
+
+	// Combine IncludePattern and IncludePatterns.
+	//
+	// NOTE: This makes it easier to (in the future) remove support for
+	// IncludePattern from searcher and only have it consult IncludePatterns.
+	// We still need to send IncludePattern (because searcher isn't guaranteed
+	// to be upgraded yet).
+	var includePatterns []string
+	if p.IncludePattern != nil && *p.IncludePattern != "" {
+		includePatterns = append(includePatterns, *p.IncludePattern)
+	}
+	includePatterns = append(includePatterns, p.IncludePatterns...)
+
 	var s string
 	if p.IncludePattern == nil {
 		p.IncludePattern = &s
@@ -126,11 +143,12 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		p.ExcludePattern = &s
 	}
 	q := url.Values{
-		"Repo":           []string{repo},
-		"Commit":         []string{commit},
-		"Pattern":        []string{p.Pattern},
-		"ExcludePattern": []string{*p.ExcludePattern},
-		"IncludePattern": []string{*p.IncludePattern},
+		"Repo":            []string{repo},
+		"Commit":          []string{commit},
+		"Pattern":         []string{p.Pattern},
+		"ExcludePattern":  []string{*p.ExcludePattern},
+		"IncludePatterns": includePatterns,
+		"IncludePattern":  []string{*p.IncludePattern},
 	}
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
@@ -141,6 +159,12 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	}
 	if p.IsCaseSensitive {
 		q.Set("IsCaseSensitive", "true")
+	}
+	if p.PathPatternsAreRegExps {
+		q.Set("PathPatternsAreRegExps", "true")
+	}
+	if p.PathPatternsAreCaseSensitive {
+		q.Set("PathPatternsAreCaseSensitive", "true")
 	}
 	searcherURL := searcherURLs.Get(repo + "@" + commit)
 	req, err := http.NewRequest("GET", searcherURL, nil)

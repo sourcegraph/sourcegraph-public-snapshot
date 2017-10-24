@@ -1,0 +1,187 @@
+// Package pathmatch provides helpers for matching paths against globs
+// and regular expressions.
+package pathmatch
+
+import (
+	"regexp"
+	"strings"
+
+	"github.com/gobwas/glob"
+)
+
+// PathMatcher reports whether the path was matched.
+type PathMatcher interface {
+	MatchPath(path string) bool
+
+	// Copy returns a copied version of this PathMatcher that is safe to use
+	// from another goroutine. (For example, if this PathMatcher is backed
+	// by a regexp, this Copy method should lead to the regexp's Copy method
+	// being called, to avoid lock contention if multiple goroutines are
+	// using the regexp.)
+	Copy() PathMatcher
+}
+
+type pathMatcherFunc func(path string) bool
+
+func (f pathMatcherFunc) MatchPath(path string) bool { return f(path) }
+
+func (f pathMatcherFunc) Copy() PathMatcher {
+	// Noop; use regexpMatcher or another type that implements Copy if
+	// the underlying pattern can be copied.
+	return f
+}
+
+// regexpMatcher is a PathMatcher backed by a regexp.
+type regexpMatcher regexp.Regexp
+
+func (m *regexpMatcher) MatchPath(path string) bool {
+	return (*regexp.Regexp)(m).MatchString(path)
+}
+
+func (m *regexpMatcher) Copy() PathMatcher {
+	return (*regexpMatcher)((*regexp.Regexp)(m).Copy())
+}
+
+// CompileOptions specifies options about the patterns to compile.
+type CompileOptions struct {
+	RegExp        bool // whether the patterns are regular expressions (false means globs)
+	CaseSensitive bool // whether the patterns are case sensitive
+}
+
+// CompilePattern compiles pattern into a PathMatcher func.
+func CompilePattern(pattern string, options CompileOptions) (PathMatcher, error) {
+	if options.RegExp {
+		// Respect the CaseSensitive option. However, if the pattern already contains
+		// (?i:...), then don't clear that 'i' flag (because we assume that behavior
+		// is desirable in more cases).
+		if !options.CaseSensitive {
+			pattern = "(?i:" + pattern + ")"
+		}
+		p, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		return (*regexpMatcher)(p), nil
+	}
+
+	if !options.CaseSensitive {
+		pattern = strings.ToLower(pattern)
+	}
+	p, err := glob.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	if !options.CaseSensitive {
+		// Use a match func that lowercases the input because globbing has no
+		// first-class concept of case-insensitivity (as regexps do, with the 'i' flag).
+		return pathMatcherFunc(func(path string) bool {
+			return p.Match(strings.ToLower(path))
+		}), nil
+	}
+	return pathMatcherFunc(p.Match), nil
+}
+
+// pathMatcherAnd is a PathMatcher that matches a path iff all of the
+// underlying matchers match the path.
+type pathMatcherAnd []PathMatcher
+
+func (pm pathMatcherAnd) MatchPath(path string) bool {
+	for _, m := range pm {
+		if !m.MatchPath(path) {
+			return false
+		}
+	}
+	return true
+}
+
+func (pm pathMatcherAnd) Copy() PathMatcher {
+	pm2 := make([]PathMatcher, len(pm))
+	for i, m := range pm {
+		pm2[i] = m.Copy()
+	}
+	return pathMatcherAnd(pm2)
+}
+
+// CompilePatterns compiles the patterns into a PathMatcher func that matches
+// a path iff all patterns match the path.
+func CompilePatterns(patterns []string, options CompileOptions) (PathMatcher, error) {
+	matchers := make([]PathMatcher, len(patterns))
+	for i, pattern := range patterns {
+		matcher, err := CompilePattern(pattern, options)
+		if err != nil {
+			return nil, err
+		}
+		matchers[i] = matcher
+	}
+
+	if len(matchers) == 1 {
+		return matchers[0], nil
+	}
+
+	return pathMatcherAnd(matchers), nil
+}
+
+// pathMatcherIncludeExclude is a PathMatcher that matches a path iff it matches
+// the include matcher AND it does not match the exclude matcher.
+type pathMatcherIncludeExclude struct {
+	include PathMatcher
+	exclude PathMatcher
+}
+
+func (pm pathMatcherIncludeExclude) MatchPath(path string) bool {
+	include := pm.include == nil || pm.include.MatchPath(path)
+	if !include {
+		return false
+	}
+
+	exclude := pm.exclude != nil && pm.exclude.MatchPath(path)
+	return !exclude
+}
+
+func (pm pathMatcherIncludeExclude) Copy() PathMatcher {
+	var pm2 pathMatcherIncludeExclude
+	if pm.include != nil {
+		pm2.include = pm.include.Copy()
+	}
+	if pm.exclude != nil {
+		pm2.exclude = pm.exclude.Copy()
+	}
+	return pm2
+}
+
+// CompilePathPatterns returns a PathMatcher func that matches a path iff:
+//
+// * all of the includePatterns match the path; AND
+// * the excludePattern does NOT match the path.
+//
+// This is the most common behavior for include/exclude paths in a search interface.
+func CompilePathPatterns(includePatterns []string, excludePattern string, options CompileOptions) (PathMatcher, error) {
+	var include PathMatcher
+	if len(includePatterns) > 0 {
+		var err error
+		include, err = CompilePatterns(includePatterns, options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var exclude PathMatcher
+	if excludePattern != "" {
+		var err error
+		exclude, err = CompilePattern(excludePattern, options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if include == nil && exclude == nil {
+		return pathMatcherFunc(func(path string) bool { return true }), nil
+	}
+	if exclude == nil {
+		return include, nil
+	}
+	return pathMatcherIncludeExclude{
+		include: include,
+		exclude: exclude,
+	}, nil
+}
