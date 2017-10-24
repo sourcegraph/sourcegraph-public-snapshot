@@ -10,7 +10,13 @@ import (
 )
 
 // PathMatcher reports whether the path was matched.
-type PathMatcher func(path string) bool
+type PathMatcher interface {
+	MatchPath(path string) bool
+}
+
+type pathMatcherFunc func(path string) bool
+
+func (f pathMatcherFunc) MatchPath(path string) bool { return f(path) }
 
 // CompileOptions specifies options about the patterns to compile.
 type CompileOptions struct {
@@ -31,7 +37,7 @@ func CompilePattern(pattern string, options CompileOptions) (PathMatcher, error)
 		if err != nil {
 			return nil, err
 		}
-		return p.MatchString, nil
+		return pathMatcherFunc(p.MatchString), nil
 	}
 
 	if !options.CaseSensitive {
@@ -44,11 +50,11 @@ func CompilePattern(pattern string, options CompileOptions) (PathMatcher, error)
 	if !options.CaseSensitive {
 		// Use a match func that lowercases the input because globbing has no
 		// first-class concept of case-insensitivity (as regexps do, with the 'i' flag).
-		return func(path string) bool {
+		return pathMatcherFunc(func(path string) bool {
 			return p.Match(strings.ToLower(path))
-		}, nil
+		}), nil
 	}
-	return p.Match, nil
+	return pathMatcherFunc(p.Match), nil
 }
 
 // CompilePatterns compiles the patterns into a PathMatcher func that matches
@@ -67,14 +73,14 @@ func CompilePatterns(patterns []string, options CompileOptions) (PathMatcher, er
 		return matchers[0], nil
 	}
 
-	return func(path string) bool {
+	return pathMatcherFunc(func(path string) bool {
 		for _, match := range matchers {
-			if !match(path) {
+			if !match.MatchPath(path) {
 				return false
 			}
 		}
 		return true
-	}, nil
+	}), nil
 }
 
 // CompilePathPatterns returns a PathMatcher func that matches a path iff:
@@ -107,21 +113,21 @@ func CompilePathPatterns(includePatterns []string, excludePattern string, option
 	}
 	if include == nil {
 		// Just negate the exclude func.
-		return func(path string) bool {
-			return !exclude(path)
-		}, nil
+		return pathMatcherFunc(func(path string) bool {
+			return !exclude.MatchPath(path)
+		}), nil
 	}
 	if exclude == nil {
 		return include, nil
 	}
 
-	return func(path string) bool {
-		return include(path) && !exclude(path)
-	}, nil
+	return pathMatcherFunc(func(path string) bool {
+		return include.MatchPath(path) && !exclude.MatchPath(path)
+	}), nil
 }
 
 // All is a PathMatcher that matches all paths.
-func All(path string) bool { return true }
+var All = pathMatcherFunc(func(path string) bool { return true })
 
 // None is a PathMatcher that matches no paths.
-func None(path string) bool { return false }
+var None = pathMatcherFunc(func(path string) bool { return false })

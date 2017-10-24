@@ -284,7 +284,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader, fileMat
 	go func() {
 		done := ctx.Done()
 		for _, f := range zr.File {
-			if rg.matchPath != nil && !rg.matchPath(f.Name) {
+			if rg.matchPath != nil && !rg.matchPath.MatchPath(f.Name) {
 				continue
 			}
 			select {
