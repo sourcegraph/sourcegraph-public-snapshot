@@ -99,7 +99,10 @@ export const events = {
     GoToExternalRefClicked: new LoggableEvent('GoToExternalRefClicked', EventCategories.Editor, EventActions.Click),
 
     // Search events
+    SearchInitiated: new LoggableEvent('SearchInitiated', EventCategories.Search, EventActions.Initiate),
     SearchSubmitted: new LoggableEvent('SearchSubmitted', EventCategories.Search, EventActions.Submit),
+    SearchGoToFileSubmitted: new LoggableEvent('SearchGoToFileSubmitted', EventCategories.Search, EventActions.Submit),
+    SearchGoToRepoSubmitted: new LoggableEvent('SearchGoToRepoSubmitted', EventCategories.Search, EventActions.Submit),
     SearchResultClicked: new LoggableEvent('SearchResultClicked', EventCategories.Search, EventActions.Click),
     SearchSuggestionSelected: new LoggableEvent('SearchSuggestionSelected', EventCategories.Search, EventActions.Click),
 

@@ -119,6 +119,9 @@ export class SearchBox extends React.Component<Props, State> {
     /** Only used for scroll state management */
     private chipsElement?: HTMLElement
 
+    /** Only used for event logging */
+    private hasLoggedFirstChange = false
+
     constructor(props: Props) {
         super(props)
         // Fill text input from URL info
@@ -475,6 +478,10 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        if (!this.hasLoggedFirstChange) {
+            events.SearchInitiated.log()
+            this.hasLoggedFirstChange = true
+        }
         this.inputValues.next(event.currentTarget.value)
     }
 
@@ -566,9 +573,11 @@ export class SearchBox extends React.Component<Props, State> {
         } else if (this.state.filters[0].type === FilterType.Repo || this.state.filters[0].type === FilterType.UnknownRepo) {
             if (this.state.filters.length === 1) {
                 // Go to repo
+                events.SearchGoToRepoSubmitted.log()
                 this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}`)
             } else if (this.state.filters[1].type === FilterType.File && this.state.filters.length === 2 && !hasMagic(this.state.filters[1].value)) {
                 // Go to file
+                events.SearchGoToFileSubmitted.log()
                 this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}/-/blob/${(this.state.filters[1] as FileFilter).value}`)
             }
         }
