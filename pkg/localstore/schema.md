@@ -5,8 +5,8 @@
  id             | bigint                   | not null default nextval('comments_id_seq'::regclass)
  thread_id      | bigint                   | 
  contents       | text                     | 
- created_at     | timestamp with time zone | default now()
- updated_at     | timestamp with time zone | default now()
+ created_at     | timestamp with time zone | not null default now()
+ updated_at     | timestamp with time zone | not null default now()
  deleted_at     | timestamp with time zone | 
  author_name    | text                     | 
  author_email   | text                     | 
@@ -53,8 +53,8 @@ Indexes:
  id         | integer                  | not null default nextval('org_members_id_seq'::regclass)
  org_id     | integer                  | not null
  user_id    | text                     | not null
- created_at | timestamp with time zone | default now()
- updated_at | timestamp with time zone | default now()
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
 Indexes:
     "org_members_pkey" PRIMARY KEY, btree (id)
     "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
@@ -69,8 +69,8 @@ Foreign-key constraints:
 ------------+--------------------------+----------------------------------------------------------
  id         | bigint                   | not null default nextval('local_repos_id_seq'::regclass)
  remote_uri | citext                   | 
- created_at | timestamp with time zone | default now()
- updated_at | timestamp with time zone | default now()
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
  deleted_at | timestamp with time zone | 
  org_id     | integer                  | 
 Indexes:
@@ -103,8 +103,8 @@ Foreign-key constraints:
  id         | integer                  | not null default nextval('org_tags_id_seq'::regclass)
  org_id     | integer                  | not null
  name       | text                     | not null
- created_at | timestamp with time zone | default now()
- updated_at | timestamp with time zone | default now()
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
  deleted_at | timestamp with time zone | 
 Indexes:
     "org_tags_pkey" PRIMARY KEY, btree (id)
@@ -119,8 +119,8 @@ Foreign-key constraints:
 -------------------+--------------------------+---------------------------------------------------
  id                | integer                  | not null default nextval('orgs_id_seq'::regclass)
  name              | citext                   | not null
- created_at        | timestamp with time zone | default now()
- updated_at        | timestamp with time zone | default now()
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
  display_name      | text                     | 
  slack_webhook_url | text                     | 
 Indexes:
@@ -247,9 +247,9 @@ Indexes:
  end_line                          | integer                  | 
  start_character                   | integer                  | 
  end_character                     | integer                  | 
- created_at                        | timestamp with time zone | default now()
+ created_at                        | timestamp with time zone | not null default now()
  archived_at                       | timestamp with time zone | 
- updated_at                        | timestamp with time zone | default now()
+ updated_at                        | timestamp with time zone | not null default now()
  deleted_at                        | timestamp with time zone | 
  range_length                      | integer                  | 
  branch                            | text                     | 
@@ -278,8 +278,8 @@ Indexes:
  id         | integer                  | not null default nextval('user_tags_id_seq'::regclass)
  user_id    | integer                  | not null
  name       | text                     | not null
- created_at | timestamp with time zone | default now()
- updated_at | timestamp with time zone | default now()
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
  deleted_at | timestamp with time zone | 
 Indexes:
     "user_tags_pkey" PRIMARY KEY, btree (id)
@@ -290,17 +290,17 @@ Foreign-key constraints:
 
 # Table "public.users"
 ```
-    Column    |            Type             |                     Modifiers                      
---------------+-----------------------------+----------------------------------------------------
- id           | integer                     | not null default nextval('users_id_seq'::regclass)
- auth0_id     | text                        | not null
- email        | citext                      | not null
- username     | citext                      | not null
- display_name | text                        | not null
- avatar_url   | text                        | 
- created_at   | timestamp with time zone    | default now()
- updated_at   | timestamp with time zone    | default now()
- deleted_at   | timestamp without time zone | 
+    Column    |           Type           |                     Modifiers                      
+--------------+--------------------------+----------------------------------------------------
+ id           | integer                  | not null default nextval('users_id_seq'::regclass)
+ auth0_id     | text                     | not null
+ email        | citext                   | not null
+ username     | citext                   | not null
+ display_name | text                     | not null
+ avatar_url   | text                     | 
+ created_at   | timestamp with time zone | not null default now()
+ updated_at   | timestamp with time zone | not null default now()
+ deleted_at   | timestamp with time zone | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_auth0_id_key" UNIQUE CONSTRAINT, btree (auth0_id)
