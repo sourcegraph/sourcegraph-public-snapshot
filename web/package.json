@@ -10,10 +10,11 @@
     "build": "webpack --config webpack.config.ts --progress --profile --colors",
     "build-tests": "tsc -p ./tsconfig.test.json",
     "watch": "npm run build -- --watch",
-    "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o src/gqlschema.d.ts",
-    "lint": "npm run tslint && npm run stylelint",
+    "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o src/gqlschema.d.ts && tsfmt -r src/gqlschema.d.ts",
+    "lint": "npm run tslint && npm run stylelint && npm run tsfmt-verify",
     "tslint": "tslint -c tslint.json -p tsconfig.json 'src/**/*.ts?(x)'",
-    "stylelint": "stylelint 'src/**/*.scss'"
+    "stylelint": "stylelint 'src/**/*.scss'",
+    "tsfmt-verify": "find src -name '*.tsx' -or -name '*.ts' | xargs tsfmt --verify"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
@@ -57,6 +58,7 @@
     "tslint-language-service": "^0.9.6",
     "tslint-webpack-plugin": "^0.5.0",
     "typescript": "^2.5.2",
+    "typescript-formatter": "^6.0.0",
     "webpack": "^3.5.6",
     "webpack-bundle-analyzer": "^2.9.0",
     "webpack-shell-plugin": "^0.5.0"
