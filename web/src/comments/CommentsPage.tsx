@@ -4,6 +4,7 @@ import LockIcon from '@sourcegraph/icons/lib/Lock'
 import * as H from 'history'
 import * as React from 'react'
 import { match } from 'react-router'
+import { Redirect } from 'react-router-dom'
 import reactive from 'rx-component'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
@@ -71,6 +72,14 @@ export const CommentsPage = reactive<Props>(props =>
             }
             if (sharedItem === null) {
                 return <SharedItemNotFound />
+            }
+
+            // If not logged in, redirect to sign in
+            if (!window.context.user) {
+                const newUrl = new URL(window.location.href)
+                newUrl.pathname = '/sign-in'
+                newUrl.searchParams.set('returnTo', window.location.href)
+                return <Redirect to={newUrl.pathname + newUrl.search} />
             }
 
             const editorURL = toEditorURL(
