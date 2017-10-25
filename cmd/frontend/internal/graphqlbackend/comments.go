@@ -217,10 +217,11 @@ func notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sour
 // emailsToNotify returns all emails that should be notified of activity given a list of comments.
 func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
 	uniqueParticipants, uniqueMentions := map[string]struct{}{}, map[string]struct{}{}
+	orgName, authorUsername := strings.ToLower(org.Name), strings.ToLower(author.Username)
 
 	// Prevent the author from being mentioned
 	uniqueParticipants[author.Auth0ID] = struct{}{}
-	uniqueMentions[author.Username] = struct{}{}
+	uniqueMentions[authorUsername] = struct{}{}
 
 	var participantIDs, mentions []string
 	for i, c := range comments {
@@ -229,22 +230,36 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 
 		// Notify mentioned people in the conversation.
 		usernames := usernamesFromMentions(c.Contents)
+		// Normalize usernames for case-insensitivity.
+		for i, u := range usernames {
+			usernames[i] = strings.ToLower(u)
+		}
 
-		// If first comment contains no mentions, notify entire org.
-		if i == 0 && len(usernames) == 0 {
-			usernames = []string{org.Name}
+		// If first comment contains no valid mentions, notify entire org.
+		if i == 0 {
+			if len(usernames) == 0 {
+				usernames = []string{orgName}
+			} else {
+				users, err := store.Users.ListByOrg(ctx, org.ID, nil, usernames)
+				if err != nil {
+					return nil, err
+				}
+				if len(users) == 0 {
+					usernames = []string{orgName}
+				}
+			}
 		}
 
 		// Allow the user to mention themself in their latest comment.
 		if i == len(comments)-1 {
-			delete(uniqueMentions, author.Username)
+			delete(uniqueMentions, authorUsername)
 		}
 		mentions = appendUnique(uniqueMentions, mentions, usernames...)
 	}
 
-	_, selfMentioned := uniqueMentions[author.Username]
+	_, selfMentioned := uniqueMentions[authorUsername]
 	_, atOrgMention := uniqueMentions["org"]
-	_, orgNameMention := uniqueMentions[org.Name]
+	_, orgNameMention := uniqueMentions[orgName]
 
 	if atOrgMention || orgNameMention {
 		var exclude []string
@@ -265,10 +280,10 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	return emails, nil
 }
 
-var usernameMentionPattern = regexp.MustCompile("@" + store.UsernamePattern)
+var usernameMentionPattern = regexp.MustCompile(`\B@` + store.UsernamePattern)
 
 // usernamesFromMentions extracts usernames that are mentioned using a @username
-// syntax within a comment.
+// syntax within a comment. Mentions are normalized to lowercase format.
 func usernamesFromMentions(contents string) []string {
 	matches := usernameMentionPattern.FindAll([]byte(contents), -1)
 	var usernames []string

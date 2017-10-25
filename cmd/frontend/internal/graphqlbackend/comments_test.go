@@ -18,19 +18,22 @@ func TestComments_appendUniqueEmailsFromMentions(t *testing.T) {
 		{Input: "@alice", Output: []string{"alice"}},
 		{Input: "@alice-w", Output: []string{"alice-w"}},
 		{Input: "@alice_w", Output: []string{"alice"}},
-		{Input: "@everyone", Output: []string{"everyone"}},
+		{Input: "@org", Output: []string{"org"}},
 		{Input: "hello @alice", Output: []string{"alice"}},
 		{Input: "hello @alice look at this", Output: []string{"alice"}},
 		{Input: "hello @alice. hello @bob.", Output: []string{"alice", "bob"}},
-		{Input: "@alice@bob", Output: []string{"alice", "bob"}},
-		{Input: "@alice@bob@nick", Output: []string{"alice", "bob", "nick"}},
-		{Input: ".@alice.@bob!@nick?", Output: []string{"alice", "bob", "nick"}},
+		{Input: "@alice. @bob?", Output: []string{"alice", "bob"}},
+		{Input: "@alice@bob", Output: []string{"alice"}},
+		{Input: "@alice@bob@nick", Output: []string{"alice"}},
+		{Input: "hello.@alice.@bob!@nick?", Output: []string{"alice", "bob", "nick"}},
 
 		{Input: "@", Output: nil},
 		{Input: "@@", Output: nil},
 		{Input: "@", Output: nil},
 		{Input: "@_al", Output: nil},
 		{Input: "@-@", Output: nil},
+		{Input: "hello@alice", Output: nil},
+		{Input: "renfred@sourcegraph.com", Output: nil},
 	}
 
 	for _, test := range tests {
@@ -140,7 +143,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 		AuthorEmail:  nick.Email,
 	}
 	four := &sourcegraph.Comment{
-		Contents:     "Dude, I am on vacation. Ask @sqs or @john",
+		Contents:     "Dude, I am on vacation. Ask @sqs or @John",
 		AuthorUserID: renfred.Auth0ID,
 		AuthorEmail:  renfred.Email,
 	}
