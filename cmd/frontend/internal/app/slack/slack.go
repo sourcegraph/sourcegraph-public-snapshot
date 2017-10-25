@@ -209,16 +209,6 @@ func (c *Client) notifyOnComments(
 				Color:      color,
 				Fields: []*Field{
 					&Field{
-						Title: "Path",
-						Value: fmt.Sprintf("<%s|%s/%s (lines %d–%d)>",
-							deepURL,
-							orgRepo.RemoteURI,
-							thread.File,
-							thread.StartLine,
-							thread.EndLine),
-						Short: true,
-					},
-					&Field{
 						Title: "Org ",
 						Value: fmt.Sprintf("`%s`\n(%d member(s) notified)", org.Name, len(recipients)),
 						Short: true,
@@ -228,6 +218,21 @@ func (c *Client) notifyOnComments(
 				MarkdownIn: []string{"text", "fields"},
 			},
 		},
+	}
+
+	if !censored {
+		payload.Attachments[0].Fields = append([]*Field{
+			&Field{
+				Title: "Path",
+				Value: fmt.Sprintf("<%s|%s/%s (lines %d–%d)>",
+					deepURL,
+					orgRepo.RemoteURI,
+					thread.File,
+					thread.StartLine,
+					thread.EndLine),
+				Short: true,
+			},
+		}, payload.Attachments[0].Fields...)
 	}
 
 	if user.AvatarURL() != nil {
