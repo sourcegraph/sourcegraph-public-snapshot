@@ -61,7 +61,7 @@ export class Comment extends React.Component<Props, State> {
                         {this.state.copiedLink ? 'Copied link to clipboard!' : timeSince}
                     </Link>
                 </div>
-                <div className='comment__content' dangerouslySetInnerHTML={{__html: marked(comment.contents, { gfm: true, breaks: true, sanitize: true })}}></div>
+                <div className='comment__content' dangerouslySetInnerHTML={{ __html: marked(comment.contents, { gfm: true, breaks: true, sanitize: true }) }}></div>
             </div>
         )
     }

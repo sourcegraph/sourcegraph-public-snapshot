@@ -9,7 +9,7 @@ interface Props {
     location: H.Location
 }
 
-interface State {}
+interface State { }
 
 export class Navbar extends React.Component<Props, State> {
     public state: State = {}

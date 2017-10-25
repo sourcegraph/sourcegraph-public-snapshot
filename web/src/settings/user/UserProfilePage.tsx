@@ -72,18 +72,18 @@ export class UserProfilePage extends React.Component<Props, State> {
                 .do(() => this.setState({ loading: false, error: undefined, saved: true }))
                 .mergeMap(() => fetchCurrentUser().concat([null]))
                 .subscribe(
-                    () => {
-                        const searchParams = new URLSearchParams(this.props.location.search)
-                        const returnTo = searchParams.get('returnTo')
-                        if (returnTo) {
-                            const newURL = new URL(returnTo, window.location.href)
-                            this.props.history.replace(newURL.pathname + newURL.search + newURL.hash)
-                        } else {
-                            // just take back to settings
-                            this.props.history.replace('/settings')
-                        }
-                    },
-                    this.handleError
+                () => {
+                    const searchParams = new URLSearchParams(this.props.location.search)
+                    const returnTo = searchParams.get('returnTo')
+                    if (returnTo) {
+                        const newURL = new URL(returnTo, window.location.href)
+                        this.props.history.replace(newURL.pathname + newURL.search + newURL.hash)
+                    } else {
+                        // just take back to settings
+                        this.props.history.replace('/settings')
+                    }
+                },
+                this.handleError
                 )
         )
     }
@@ -148,7 +148,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                     <button className='btn btn-primary user-profile-page__button' type='submit' disabled={this.state.loading}>
                         Update profile
                     </button>
-                    {this.state.loading && <div className='icon-inline'><Loader className='icon-inline'/></div>}
+                    {this.state.loading && <div className='icon-inline'><Loader className='icon-inline' /></div>}
                 </form>
             </div>
         )

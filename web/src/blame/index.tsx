@@ -42,7 +42,7 @@ blameEvents
         if (!ctx) {
             return []
         }
-        const fetch: Observable<BlameData> = fetchBlameFile({ ...ctx, position: { line: ctx.position.line, character: 0 }})
+        const fetch: Observable<BlameData> = fetchBlameFile({ ...ctx, position: { line: ctx.position.line, character: 0 } })
             .map(hunks => ({ ctx, loading: false, hunks: hunks || [] }))
         // show loading data after 250ms if the fetch has not resolved
         const loading: Observable<BlameData> = Observable.interval(250)

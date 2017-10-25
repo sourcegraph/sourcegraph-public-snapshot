@@ -65,7 +65,7 @@ export const Org = reactive<Props>(props => {
                 // Fetch the org by ID by ID
                 return fetchOrg(org.id)
                     .map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
-                }
+            }
             ),
 
         memberRemoves
@@ -112,7 +112,7 @@ export const Org = reactive<Props>(props => {
                     <div className='org__header'>
                         <h1>{org.name}</h1>
 
-                        <InviteForm orgID={org.id}/>
+                        <InviteForm orgID={org.id} />
                     </div>
 
                     <h3>Members</h3>
@@ -130,7 +130,7 @@ export const Org = reactive<Props>(props => {
                             {
                                 org.members.map(member => (
                                     <tr key={member.id}>
-                                        <td className='org__avatar-cell'><UserAvatar user={member.user} size={64}/></td>
+                                        <td className='org__avatar-cell'><UserAvatar user={member.user} size={64} /></td>
                                         <td>{member.user.displayName}</td>
                                         <td>{member.user.username}</td>
                                         <td>{member.user.email}</td>
@@ -152,7 +152,7 @@ export const Org = reactive<Props>(props => {
 
                     <EditorConfiguration settings={org.latestSettings} />
 
-                    <OrgSettingsForm org={org}/>
+                    <OrgSettingsForm org={org} />
                 </div>
             )
         })

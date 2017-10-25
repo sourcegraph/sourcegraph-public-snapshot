@@ -35,7 +35,7 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
         }
         return (
             <div className='settings-page'>
-                <SettingsSidebar history={this.props.history} location={this.props.location}/>
+                <SettingsSidebar history={this.props.history} location={this.props.location} />
                 <div className='settings-page__content'>
                     <Switch>
                         {/* Render empty page if no settings page selected */}

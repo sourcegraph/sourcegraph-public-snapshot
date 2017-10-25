@@ -79,7 +79,7 @@ export class CodeExcerpt extends React.Component<Props, State> {
                 <div className='code-excerpt'>
                     {
                         this.state.blobLines &&
-                            <div ref={this.setTableContainerElement} dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }} />
+                        <div ref={this.setTableContainerElement} dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }} />
                     }
                     {
                         !this.state.blobLines &&
@@ -114,12 +114,12 @@ export class CodeExcerpt extends React.Component<Props, State> {
             disableTimeout: true,
         })
             .subscribe(
-                lines => {
-                    this.setState({ blobLines: lines })
-                },
-                err => {
-                    console.error('failed to fetch blob content', err)
-                }
+            lines => {
+                this.setState({ blobLines: lines })
+            },
+            err => {
+                console.error('failed to fetch blob content', err)
+            }
             )
     }
 

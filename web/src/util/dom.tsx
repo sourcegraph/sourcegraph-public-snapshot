@@ -50,7 +50,7 @@ function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: n
     const Node = (w as any).Node as Node
 
     if (length === 0) {
-        return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0}
+        return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0 }
     }
 
     const origOffset = currOffset
