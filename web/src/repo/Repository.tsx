@@ -95,8 +95,8 @@ export class Repository extends React.Component<Props, State> {
                         })
                 )
                 .subscribe(
-                    (files: string[]) => this.setState({ files }),
-                    err => console.error(err)
+                (files: string[]) => this.setState({ files }),
+                err => console.error(err)
                 )
         )
 
@@ -122,14 +122,14 @@ export class Repository extends React.Component<Props, State> {
                         })
                 )
                 .subscribe(
-                    result => this.setState({
-                        isDirectory: result.isDirectory,
-                        // file contents for a directory is a textual representation of the directory tree;
-                        // we prefer not to display that
-                        highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
-                        highlightingError: undefined,
-                    }),
-                    err => console.error(err)
+                result => this.setState({
+                    isDirectory: result.isDirectory,
+                    // file contents for a directory is a textual representation of the directory tree;
+                    // we prefer not to display that
+                    highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
+                    highlightingError: undefined,
+                }),
+                err => console.error(err)
                 )
         )
         // Transitions to routes without file should unset file contents
@@ -198,20 +198,20 @@ export class Repository extends React.Component<Props, State> {
                         </button>
                         {
                             (!this.props.filePath || this.state.isDirectory) &&
-                                <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Select a file to begin browsing.' />
+                            <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Select a file to begin browsing.' />
                         }
                         {
                             this.state.highlightingError &&
-                                <HeroPage icon={ErrorIcon} title='' subtitle={'Error: ' + this.state.highlightingError.message} />
+                            <HeroPage icon={ErrorIcon} title='' subtitle={'Error: ' + this.state.highlightingError.message} />
                         }
                         {
                             this.state.highlightedFile && this.state.highlightedFile.aborted &&
-                                <p className='repository__blob-alert'>
-                                    <ErrorIcon className='icon-inline'/>
-                                    Syntax highlighting for this file has been disabled because it took too long.
+                            <p className='repository__blob-alert'>
+                                <ErrorIcon className='icon-inline' />
+                                Syntax highlighting for this file has been disabled because it took too long.
                                     (<a href='' onClick={this.handleShowAnywayButtonClick}>show anyway</a>)
                                     {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
-                                </p>
+                            </p>
                         }
                         {
                             this.state.highlightedFile ?
@@ -221,7 +221,7 @@ export class Repository extends React.Component<Props, State> {
                         }
                         {
                             this.state.showRefs && this.state.position &&
-                                <ReferencesWidget {...{ ...this.props, filePath: this.props.filePath!, position: this.state.position! }} />
+                            <ReferencesWidget {...{ ...this.props, filePath: this.props.filePath!, position: this.state.position! }} />
                         }
                     </div>
                 </div>

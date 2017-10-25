@@ -134,7 +134,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                     <RepoBreadcrumb repoPath={this.props.repoPath} filePath={this.props.filePath} />
                     {
                         (this.props.refs || []).length > 0 && (
-                            this.state.hidden ? <ChevronRightIcon className='icon-inline'/> : <ChevronDownIcon className='icon-inline'/>
+                            this.state.hidden ? <ChevronRightIcon className='icon-inline' /> : <ChevronDownIcon className='icon-inline' />
                         )
                     }
                 </div>
@@ -197,18 +197,18 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 .bufferTime(500)
                 .filter(updates => updates.length > 0)
                 .scan(
-                    (currState, updates) => {
-                        let newState = currState
-                        for (const update of updates) {
-                            if (update.references) {
-                                newState = { ...newState, references: newState.references.concat(update.references) }
-                            } else {
-                                newState = { ...newState, ...update }
-                            }
+                (currState, updates) => {
+                    let newState = currState
+                    for (const update of updates) {
+                        if (update.references) {
+                            newState = { ...newState, references: newState.references.concat(update.references) }
+                        } else {
+                            newState = { ...newState, ...update }
                         }
-                        return newState
-                    },
-                    { references: [], loadingLocal: true, loadingExternal: true } as State
+                    }
+                    return newState
+                },
+                { references: [], loadingLocal: true, loadingExternal: true } as State
                 )
                 .subscribe(state => this.setState(state))
         )
@@ -301,7 +301,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                     </Link>
                     <div className='references-widget__badge'>{externalRefCount}</div>
                     <span className='references-widget__close-icon' onClick={this.onDismiss}>
-                        <CloseIcon className='icon-inline'/>
+                        <CloseIcon className='icon-inline' />
                     </span>
                 </div>
                 {
@@ -312,44 +312,44 @@ export class ReferencesWidget extends React.Component<Props, State> {
                 <div className='references-widget__groups'>
                     {
                         this.state.group === 'local' &&
-                            <VirtualList
-                                initItemsToShow={3}
-                                items={localRefs.sort().map((uri, i) => {
-                                    const parsed = new URL(uri)
-                                    return (
-                                        <ReferencesGroup
-                                            key={i}
-                                            repoPath={parsed.hostname + parsed.pathname}
-                                            filePath={parsed.hash.substr('#'.length)}
-                                            isLocal={true}
-                                            localRev={this.props.rev}
-                                            refs={refsByUri[uri]}
-                                            icon={RepoIcon}
-                                            onSelect={this.logLocalSelection}
-                                        />
-                                    )
-                                })}
-                            />
+                        <VirtualList
+                            initItemsToShow={3}
+                            items={localRefs.sort().map((uri, i) => {
+                                const parsed = new URL(uri)
+                                return (
+                                    <ReferencesGroup
+                                        key={i}
+                                        repoPath={parsed.hostname + parsed.pathname}
+                                        filePath={parsed.hash.substr('#'.length)}
+                                        isLocal={true}
+                                        localRev={this.props.rev}
+                                        refs={refsByUri[uri]}
+                                        icon={RepoIcon}
+                                        onSelect={this.logLocalSelection}
+                                    />
+                                )
+                            })}
+                        />
                     }
                     {
                         this.state.group === 'external' &&
-                            <VirtualList
-                                initItemsToShow={3}
-                                items={externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
-                                    const parsed = new URL(uri)
-                                    return (
-                                        <ReferencesGroup
-                                            key={i}
-                                            repoPath={parsed.hostname + parsed.pathname}
-                                            filePath={parsed.hash.substr('#'.length)}
-                                            isLocal={false}
-                                            refs={refsByUri[uri]}
-                                            icon={GlobeIcon}
-                                            onSelect={this.logExternalSelection}
-                                        />
-                                    )
-                                })}
-                            />
+                        <VirtualList
+                            initItemsToShow={3}
+                            items={externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+                                const parsed = new URL(uri)
+                                return (
+                                    <ReferencesGroup
+                                        key={i}
+                                        repoPath={parsed.hostname + parsed.pathname}
+                                        filePath={parsed.hash.substr('#'.length)}
+                                        isLocal={false}
+                                        refs={refsByUri[uri]}
+                                        icon={GlobeIcon}
+                                        onSelect={this.logExternalSelection}
+                                    />
+                                )
+                            })}
+                        />
                     }
                 </div>
             </div>

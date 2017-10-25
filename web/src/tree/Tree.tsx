@@ -203,7 +203,7 @@ export class Tree extends React.PureComponent<Props, {}> {
             if (selectedPath) {
                 let curr = ''
                 const split = selectedPath.split('/')
-                for(const part of split) {
+                for (const part of split) {
                     if (curr !== '') { curr += '/' }
                     curr += part
                     shownSubpaths = shownSubpaths.add(curr)
@@ -488,32 +488,32 @@ class LayerTile extends React.Component<TileProps, {}> {
                                                     e.preventDefault()
                                                 }
                                             }}
-                                            href={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir)})}
+                                            href={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir) })}
                                             style={treePadding(this.props.depth, true)}
                                         >
                                             {
                                                 this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
-                                                    <ChevronDownIcon className='icon-inline'/> :
-                                                    <ChevronRightIcon className='icon-inline'/>
+                                                    <ChevronDownIcon className='icon-inline' /> :
+                                                    <ChevronRightIcon className='icon-inline' />
                                             }
                                             <span className='tree__row-label'>{dir}</span>
                                         </a>
                                     </td>
                                 </tr>,
                                 this.showSubpath(dir) &&
-                                    <tr key={'layer-' + i}>
-                                        <td>
-                                            <TreeLayer
-                                                key={'layer-' + i}
-                                                history={this.props.history}
-                                                repoPath={this.props.repoPath}
-                                                rev={this.props.rev}
-                                                store={this.props.store}
-                                                pathSplits={this.props.pathSplits.filter(split => split[this.props.depth] === dir)}
-                                                currSubpath={this.currentDirectory(dir)}
-                                            />
-                                        </td>
-                                    </tr>,
+                                <tr key={'layer-' + i}>
+                                    <td>
+                                        <TreeLayer
+                                            key={'layer-' + i}
+                                            history={this.props.history}
+                                            repoPath={this.props.repoPath}
+                                            rev={this.props.rev}
+                                            store={this.props.store}
+                                            pathSplits={this.props.pathSplits.filter(split => split[this.props.depth] === dir)}
+                                            currSubpath={this.currentDirectory(dir)}
+                                        />
+                                    </td>
+                                </tr>,
                             ]))
                     }
                     {
@@ -523,7 +523,7 @@ class LayerTile extends React.Component<TileProps, {}> {
                                 <td style={treePadding(this.props.depth, false)}>
                                     <Link
                                         className='tree__row-contents'
-                                        to={toBlobURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: path})}
+                                        to={toBlobURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: path })}
                                         data-tree-path={path}
                                     >
                                         {file[file.length - 1]}

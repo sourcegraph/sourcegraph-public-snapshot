@@ -306,9 +306,9 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
             }
         }
     `, {
-        userID,
-        orgID,
-    })
+            userID,
+            orgID,
+        })
         .mergeMap(({ data, errors }) => {
             const eventData = {
                 organization: {

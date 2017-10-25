@@ -45,7 +45,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     public componentDidMount(): void {
         this.subscriptions.add(currentUser.subscribe(
             user => {
-                this.setState({editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta')})
+                this.setState({ editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta') })
             }
         ))
     }
@@ -60,24 +60,24 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                     <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
                 </span>
                 {!this.props.hideCopyLink && <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
-                    <CopyIcon className='icon-inline'/>
+                    <CopyIcon className='icon-inline' />
                     <span className='repo-nav__action-text'>{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
                 </a>}
                 {
                     this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
-                        <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnGitHubButtonClicked}>
-                            <GitHubIcon className='icon-inline' />
-                            <span className='repo-nav__action-text'>View on GitHub</span>
-                        </a>
+                    <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnGitHubButtonClicked}>
+                        <GitHubIcon className='icon-inline' />
+                        <span className='repo-nav__action-text'>View on GitHub</span>
+                    </a>
                 }
                 {
                     /* TODO(john): remove editorBeta alltogether when we're ready to show
                        desktop to users everywhere (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
                     this.props.repoPath && this.state.editorBeta &&
-                        <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open in Sourcegraph Editor' onClick={this.onOpenOnDesktopClicked}>
-                            <ComputerIcon className='icon-inline'/>
-                            <span className='repo-nav__action-text'>Open in Sourcegraph Editor</span>
-                        </a>
+                    <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open in Sourcegraph Editor' onClick={this.onOpenOnDesktopClicked}>
+                        <ComputerIcon className='icon-inline' />
+                        <span className='repo-nav__action-text'>Open in Sourcegraph Editor</span>
+                    </a>
                 }
             </div>
         )

@@ -49,7 +49,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         // this.props.history.push('/sign-in')
                         return
                     }
-                    this.setState({ orgs: user.orgs, currentUser: user, editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta')})
+                    this.setState({ orgs: user.orgs, currentUser: user, editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta') })
                 }
             )
         )
@@ -79,13 +79,13 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         >
                             <div className='settings-sidebar__profile'>
                                 <div className='settings-sidebar__profile-avatar-column'>
-                                    <UserAvatar user={this.state.currentUser}/>
+                                    <UserAvatar user={this.state.currentUser} />
                                 </div>
                                 <div className='settings-sidebar__profile-content'>
                                     <div className='settings-sidebar__profile-row'>
                                         {this.state.currentUser ? this.state.currentUser.displayName : ''}
                                     </div>
-                                    <div className='settings-sidebar__profile-row' title={this.state.currentUser ? this.state.currentUser.email  : ''}>
+                                    <div className='settings-sidebar__profile-row' title={this.state.currentUser ? this.state.currentUser.email : ''}>
                                         {this.state.currentUser ? this.state.currentUser.email : ''}
                                     </div>
                                 </div>
@@ -101,20 +101,20 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             <ul>
                                 {
                                     this.state.orgs &&
-                                        this.state.orgs.map(org => (
-                                            <li className='settings-sidebar__item' key={org.id}>
-                                                <NavLink
-                                                    to={`/settings/orgs/${org.name}`}
-                                                    className='settings-sidebar__item-link'
-                                                    activeClassName='settings-sidebar__item--active'
-                                                >
-                                                    <div className='settings-sidebar__profile-avatar-column'>
-                                                        <OrgAvatar org={org.name}/>
-                                                    </div>
-                                                    {org.name}
-                                                </NavLink>
-                                            </li>
-                                        ))
+                                    this.state.orgs.map(org => (
+                                        <li className='settings-sidebar__item' key={org.id}>
+                                            <NavLink
+                                                to={`/settings/orgs/${org.name}`}
+                                                className='settings-sidebar__item-link'
+                                                activeClassName='settings-sidebar__item--active'
+                                            >
+                                                <div className='settings-sidebar__profile-avatar-column'>
+                                                    <OrgAvatar org={org.name} />
+                                                </div>
+                                                {org.name}
+                                            </NavLink>
+                                        </li>
+                                    ))
                                 }
                                 <li className='settings-sidebar__item'>
                                     <NavLink
@@ -122,7 +122,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                         className='settings-sidebar__item-link'
                                         activeClassName='settings-sidebar__item--active'
                                     >
-                                        <AddIcon className='icon-inline settings-sidebar__item-icon'/>Create new organization
+                                        <AddIcon className='icon-inline settings-sidebar__item-icon' />Create new organization
                                     </NavLink>
                                 </li>
                             </ul>

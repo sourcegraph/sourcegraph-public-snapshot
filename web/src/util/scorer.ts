@@ -38,98 +38,98 @@ BEGIN THIRD PARTY
  */
 const wordPathBoundary = ['-', '_', ' ', '/', '\\', '.'];
 export function score(target: string, query: string, cache?: { [id: string]: number }): number {
-	if (!target || !query) {
-		return 0; // return early if target or query are undefined
-	}
+    if (!target || !query) {
+        return 0; // return early if target or query are undefined
+    }
 
-	const hash = target + query;
-	const cached = cache && cache[hash];
-	if (typeof cached === 'number') {
-		return cached;
-	}
+    const hash = target + query;
+    const cached = cache && cache[hash];
+    if (typeof cached === 'number') {
+        return cached;
+    }
 
-	const queryLen = query.length;
-	const targetLower = target.toLowerCase();
-	const queryLower = query.toLowerCase();
+    const queryLen = query.length;
+    const targetLower = target.toLowerCase();
+    const queryLower = query.toLowerCase();
 
-	let index = 0;
-	let startAt = 0;
-	let score = 0;
-	while (index < queryLen) {
-		let indexOf = targetLower.indexOf(queryLower[index], startAt);
-		if (indexOf < 0) {
-			score = 0; // This makes sure that the query is contained in the target
-			break;
-		}
+    let index = 0;
+    let startAt = 0;
+    let score = 0;
+    while (index < queryLen) {
+        let indexOf = targetLower.indexOf(queryLower[index], startAt);
+        if (indexOf < 0) {
+            score = 0; // This makes sure that the query is contained in the target
+            break;
+        }
 
-		// Character match bonus
-		score += 1;
+        // Character match bonus
+        score += 1;
 
-		// Consecutive match bonus
-		if (startAt === indexOf) {
-			score += 5;
-		}
+        // Consecutive match bonus
+        if (startAt === indexOf) {
+            score += 5;
+        }
 
-		// Same case bonus
-		if (target[indexOf] === query[indexOf]) {
-			score += 1;
-		}
+        // Same case bonus
+        if (target[indexOf] === query[indexOf]) {
+            score += 1;
+        }
 
-		// Start of word bonus
-		if (indexOf === 0) {
-			score += 8;
-		}
+        // Start of word bonus
+        if (indexOf === 0) {
+            score += 8;
+        }
 
-		// After separator bonus
-		else if (wordPathBoundary.some(w => w === target[indexOf - 1])) {
-			score += 7;
-		}
+        // After separator bonus
+        else if (wordPathBoundary.some(w => w === target[indexOf - 1])) {
+            score += 7;
+        }
 
-		// Inside word upper case bonus
-		else if (isUpper(target.charCodeAt(indexOf))) {
-			score += 1;
-		}
+        // Inside word upper case bonus
+        else if (isUpper(target.charCodeAt(indexOf))) {
+            score += 1;
+        }
 
-		startAt = indexOf + 1;
-		index++;
-	}
+        startAt = indexOf + 1;
+        index++;
+    }
 
-	if (cache) {
-		cache[hash] = score;
-	}
+    if (cache) {
+        cache[hash] = score;
+    }
 
-	return score;
+    return score;
 }
 
 function isUpper(code: number): boolean {
-	return 65 <= code && code <= 90;
+    return 65 <= code && code <= 90;
 }
 
 /**
  * A fast method to check if a given string would produce a score > 0 for the given query.
  */
 export function matches(target: string, queryLower: string): boolean {
-	if (!target || !queryLower) {
-		return false; // return early if target or query are undefined
-	}
+    if (!target || !queryLower) {
+        return false; // return early if target or query are undefined
+    }
 
-	const queryLen = queryLower.length;
-	const targetLower = target.toLowerCase();
+    const queryLen = queryLower.length;
+    const targetLower = target.toLowerCase();
 
-	let index = 0;
-	let lastIndexOf = -1;
-	while (index < queryLen) {
-		let indexOf = targetLower.indexOf(queryLower[index], lastIndexOf + 1);
-		if (indexOf < 0) {
-			return false;
-		}
+    let index = 0;
+    let lastIndexOf = -1;
+    while (index < queryLen) {
+        let indexOf = targetLower.indexOf(queryLower[index], lastIndexOf + 1);
+        if (indexOf < 0) {
+            return false;
+        }
 
-		lastIndexOf = indexOf;
+        lastIndexOf = indexOf;
 
-		index++;
-	}
+        index++;
+    }
 
-	return true;
+    return true;
 }
 /*!
 END THIRD PARTY

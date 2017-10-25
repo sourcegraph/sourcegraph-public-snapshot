@@ -176,9 +176,9 @@ export class SearchBox extends React.Component<Props, State> {
                         return fetchSuggestions(query, this.state.filters)
                             .map((item: GQL.SearchResult): Filter => {
                                 switch (item.__typename) {
-                                    case 'Repository':    return { type: FilterType.Repo, value: item.uri }
+                                    case 'Repository': return { type: FilterType.Repo, value: item.uri }
                                     case 'SearchProfile': return { type: FilterType.RepoGroup, value: item.name }
-                                    case 'File':          return { type: FilterType.File, value: item.name }
+                                    case 'File': return { type: FilterType.File, value: item.name }
                                 }
                             })
                     })()
@@ -344,43 +344,43 @@ export class SearchBox extends React.Component<Props, State> {
                 </div>
                 {
                     showSpacer &&
-                        <div className='search-box__spacer'></div>
+                    <div className='search-box__spacer'></div>
                 }
                 {
                     showNoMatches &&
-                        <div className='search-box__no-matches'>
-                            <ReportIcon className='icon-inline' />
-                            <div className='search-box__no-matches-text'>No matches</div>
-                        </div>
+                    <div className='search-box__no-matches'>
+                        <ReportIcon className='icon-inline' />
+                        <div className='search-box__no-matches-text'>No matches</div>
+                    </div>
                 }
 
                 {/* Suggestions */}
                 {
                     showSuggestions &&
-                        <ul className='search-box__suggestions' ref={this.setSuggestionListElement}>
-                            {
-                                this.state.suggestions.map((suggestion, i) => {
-                                    const isSelected = this.state.selectedSuggestion === i
-                                    const onRef = (ref: HTMLLIElement) => {
-                                        if (isSelected) {
-                                            this.selectedSuggestionElement = ref || undefined
-                                        }
+                    <ul className='search-box__suggestions' ref={this.setSuggestionListElement}>
+                        {
+                            this.state.suggestions.map((suggestion, i) => {
+                                const isSelected = this.state.selectedSuggestion === i
+                                const onRef = (ref: HTMLLIElement) => {
+                                    if (isSelected) {
+                                        this.selectedSuggestionElement = ref || undefined
                                     }
-                                    return (
-                                        <Suggestion
-                                            key={i}
-                                            icon={getFilterIcon(suggestion)}
-                                            label={getFilterLabel(suggestion)}
-                                            query={queryToCursor}
-                                            isSelected={isSelected}
-                                            // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={() => this.selectSuggestion(suggestion, '')}
-                                            liRef={onRef}
-                                        />
-                                    )
-                                })
-                            }
-                        </ul>
+                                }
+                                return (
+                                    <Suggestion
+                                        key={i}
+                                        icon={getFilterIcon(suggestion)}
+                                        label={getFilterLabel(suggestion)}
+                                        query={queryToCursor}
+                                        isSelected={isSelected}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        onClick={() => this.selectSuggestion(suggestion, '')}
+                                        liRef={onRef}
+                                    />
+                                )
+                            })
+                        }
+                    </ul>
                 }
             </form>
         )

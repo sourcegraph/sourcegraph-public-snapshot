@@ -56,12 +56,12 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
             .map(filter => filter.value)
             // Try to expand the search profile from the cache
             .mergeMap(name => searchProfileRepos.get(name) ||
-                    // If not found, subscribe to the fetch and try again
-                    searchProfilesFetch
-                        .concat(Observable.defer(() =>
-                            // If still not found, ignore
-                            Observable.from(searchProfileRepos.get(name) || [])
-                        ))
+                // If not found, subscribe to the fetch and try again
+                searchProfilesFetch
+                    .concat(Observable.defer(() =>
+                        // If still not found, ignore
+                        Observable.from(searchProfileRepos.get(name) || [])
+                    ))
             )
     )
         .map(repo => ({ repo }))
@@ -130,7 +130,7 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
 }
 
 export function fetchSuggestions(query: string, filters: Filter[]): Observable<GQL.SearchResult> {
-   return queryGraphQL(`
+    return queryGraphQL(`
         query SearchRepos($query: String!) {
             root {
                 search(query: $query, repositories: $repositories) {
@@ -153,9 +153,9 @@ export function fetchSuggestions(query: string, filters: Filter[]): Observable<G
             }
         }
     `, {
-        query,
-        repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
-    })
+            query,
+            repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
+        })
         .mergeMap(({ data, errors }) => {
             if (!data || !data.root.search) {
                 const message = errors ? errors.map(e => e.message).join('\n') : 'Incomplete response from GraphQL search endpoint'

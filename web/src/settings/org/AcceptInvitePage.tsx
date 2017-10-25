@@ -79,35 +79,35 @@ export const AcceptInvitePage = reactive<Props>(props => {
                 // Show loader
                 Observable.of<Update>(state => ({ ...state, loading: true, email: tokenPayload.email }))
                     .concat(
-                        acceptUserInvite({ inviteToken })
-                            .do(status => {
-                                const eventProps = {
-                                    org_id: tokenPayload.orgID,
-                                    user_email: tokenPayload.email,
-                                    org_name: tokenPayload.orgName,
-                                }
-                                if (status.emailVerified) {
-                                    events.InviteAccepted.log(eventProps)
-                                } else {
-                                    events.AcceptInviteFailed.log(eventProps)
-                                }
-                            })
-                            .mergeMap(status =>
-                                // Reload user
-                                fetchCurrentUser()
-                                    // Redirect
-                                    .concat([(state: State): State => ({
-                                        ...state,
-                                        loading: false,
-                                        hasSubmitted: true,
-                                        emailVerified: status.emailVerified,
-                                    })])
-                            )
-                            // Show error
-                            .catch(error => {
-                                console.error(error)
-                                return [(state: State): State => ({ ...state, hasSubmitted: true, loading: false, error })]
-                            })
+                    acceptUserInvite({ inviteToken })
+                        .do(status => {
+                            const eventProps = {
+                                org_id: tokenPayload.orgID,
+                                user_email: tokenPayload.email,
+                                org_name: tokenPayload.orgName,
+                            }
+                            if (status.emailVerified) {
+                                events.InviteAccepted.log(eventProps)
+                            } else {
+                                events.AcceptInviteFailed.log(eventProps)
+                            }
+                        })
+                        .mergeMap(status =>
+                            // Reload user
+                            fetchCurrentUser()
+                                // Redirect
+                                .concat([(state: State): State => ({
+                                    ...state,
+                                    loading: false,
+                                    hasSubmitted: true,
+                                    emailVerified: status.emailVerified,
+                                })])
+                        )
+                        // Show error
+                        .catch(error => {
+                            console.error(error)
+                            return [(state: State): State => ({ ...state, hasSubmitted: true, loading: false, error })]
+                        })
                     )
             )
     )
@@ -131,7 +131,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                 {/* TODO(john): provide action to re-send verification email */}
                 {
                     hasSubmitted && !emailVerified &&
-                        <p className='form-text text-error'>Please verify your email address to accept this invitation; check your inbox for a verification link.</p>
+                    <p className='form-text text-error'>Please verify your email address to accept this invitation; check your inbox for a verification link.</p>
                 }
 
                 <div className='form-group'>

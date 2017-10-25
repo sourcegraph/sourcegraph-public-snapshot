@@ -68,18 +68,18 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 </div>
                 {
                     this.state.mode === 'signup' &&
-                        <div className='form-group'>
-                            <input
-                                className='ui-text-box login-signup-form__input'
-                                onChange={this.onUsernameFieldChange}
-                                value={this.state.username}
-                                type='text'
-                                required={true}
-                                placeholder='Username'
-                                pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
-                                disabled={this.state.loading}
-                            />
-                        </div>
+                    <div className='form-group'>
+                        <input
+                            className='ui-text-box login-signup-form__input'
+                            onChange={this.onUsernameFieldChange}
+                            value={this.state.username}
+                            type='text'
+                            required={true}
+                            placeholder='Username'
+                            pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
+                            disabled={this.state.loading}
+                        />
+                    </div>
                 }
                 <div className='form-group'>
                     <input
@@ -96,16 +96,16 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 </div>
                 {
                     this.state.mode === 'signup' &&
-                        <div className='form-group'>
-                            <input
-                                className='ui-text-box login-signup-form__input'
-                                onChange={this.onDisplayNameFieldChange}
-                                value={this.state.displayName}
-                                type='text'
-                                placeholder='Display name (optional)'
-                                disabled={this.state.loading}
-                            />
-                        </div>
+                    <div className='form-group'>
+                        <input
+                            className='ui-text-box login-signup-form__input'
+                            onChange={this.onDisplayNameFieldChange}
+                            value={this.state.displayName}
+                            type='text'
+                            placeholder='Display name (optional)'
+                            disabled={this.state.loading}
+                        />
+                    </div>
                 }
                 <div className='form-group'>
                     <button className='btn btn-primary btn-block' type='submit' disabled={this.state.loading}>
@@ -113,7 +113,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     </button>
                 </div>
                 <small className='form-text'>Existing users who signed in via GitHub: please sign up for a Sourcegraph account.</small>
-                {this.state.loading && <div className='login-signup-form__loader'><Loader className='icon-inline'/></div>}
+                {this.state.loading && <div className='login-signup-form__loader'><Loader className='icon-inline' /></div>}
             </form>
         )
     }

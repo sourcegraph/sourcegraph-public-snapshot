@@ -126,8 +126,8 @@ export class RevSwitcher extends React.Component<Props, State> {
                             })
                             .map((repoRevisions: RepoRevisions) => {
                                 const combined = [
-                                    ...repoRevisions.branches.map((branch): Item => ({rev: branch, type: 'branch'})),
-                                    ...repoRevisions.tags.map((tag): Item => ({rev: tag, type: 'tag'})),
+                                    ...repoRevisions.branches.map((branch): Item => ({ rev: branch, type: 'branch' })),
+                                    ...repoRevisions.tags.map((tag): Item => ({ rev: tag, type: 'tag' })),
                                 ]
 
                                 return { repoRevisions: combined, visible: combined, query: props.rev, queryIsCommit: false } as State
@@ -144,7 +144,7 @@ export class RevSwitcher extends React.Component<Props, State> {
                     // We're only interested in query if it is a commit ID, not a branch or tag.
                     .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(item => item.rev.includes(query))))
                     .switchMap(query =>
-                        resolveRev({repoPath: this.props.repoPath, rev: query})
+                        resolveRev({ repoPath: this.props.repoPath, rev: query })
                             .map(query => ({ queryIsCommit: true } as State))
                             .catch(err => {
                                 if (err.code !== EREVNOTFOUND) {
@@ -163,9 +163,9 @@ export class RevSwitcher extends React.Component<Props, State> {
                         const visible = this.state.repoRevisions
                             .filter(item => item.rev.includes(query))
                             // Assign score to each item.
-                            .map(item => ({ ...item, score: score(item.rev, query)}))
+                            .map(item => ({ ...item, score: score(item.rev, query) }))
                             // Remove items with zero zero (no match).
-                            .filter(item => item.score > 0 )
+                            .filter(item => item.score > 0)
                             // Sort by sort value.
                             .sort((a, b) => {
                                 if (a.score !== b.score) {
@@ -181,8 +181,8 @@ export class RevSwitcher extends React.Component<Props, State> {
             )
                 .map(state => ({ ...state, selection: 0 }))
                 .subscribe(
-                    state => this.setState(state),
-                    err => console.error(err)
+                state => this.setState(state),
+                err => console.error(err)
                 )
         )
     }
@@ -228,29 +228,29 @@ export class RevSwitcher extends React.Component<Props, State> {
                         disabled={this.props.disabled}
                         ref={ref => this.inputElement = ref || undefined}
                     />
-                    {!this.props.disabled && <CaretDownIcon className='icon-inline rev-switcher__dropdown-icon'/>}
+                    {!this.props.disabled && <CaretDownIcon className='icon-inline rev-switcher__dropdown-icon' />}
                 </div>
                 {
                     this.state.showSwitcher &&
-                        <ul className='rev-switcher__revs' ref={this.setListElement}>
-                            {
-                                this.getVisible().map((item, index) => (
-                                    <li
-                                        className={'rev-switcher__rev' + (index === this.state.selection ? ' rev-switcher__rev--selected' : '')}
-                                        key={item.rev}
-                                        title={item.rev}
-                                        ref={index === this.state.selection ? this.setSelectedElement : undefined}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        onClick={() => this.chooseIndex(index)}
-                                    >
-                                        {item.type === 'commit' && <CommitIcon className='icon-inline rev-switcher__rev-icon' />}
-                                        {item.type === 'branch' && <BranchIcon className='icon-inline rev-switcher__rev-icon' />}
-                                        {item.type === 'tag' && <TagIcon className='icon-inline rev-switcher__rev-icon' />}
-                                       <span className='rev-switcher__rev-name'>{item.rev}</span>
-                                    </li>
-                                ))
-                            }
-                        </ul>
+                    <ul className='rev-switcher__revs' ref={this.setListElement}>
+                        {
+                            this.getVisible().map((item, index) => (
+                                <li
+                                    className={'rev-switcher__rev' + (index === this.state.selection ? ' rev-switcher__rev--selected' : '')}
+                                    key={item.rev}
+                                    title={item.rev}
+                                    ref={index === this.state.selection ? this.setSelectedElement : undefined}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.chooseIndex(index)}
+                                >
+                                    {item.type === 'commit' && <CommitIcon className='icon-inline rev-switcher__rev-icon' />}
+                                    {item.type === 'branch' && <BranchIcon className='icon-inline rev-switcher__rev-icon' />}
+                                    {item.type === 'tag' && <TagIcon className='icon-inline rev-switcher__rev-icon' />}
+                                    <span className='rev-switcher__rev-name'>{item.rev}</span>
+                                </li>
+                            ))
+                        }
+                    </ul>
                 }
             </div>
         )
@@ -330,7 +330,7 @@ export class RevSwitcher extends React.Component<Props, State> {
     private getVisible(): Item[] {
         let items: Item[] = []
         if (this.state.queryIsCommit) {
-            items.push({rev: this.state.query, type: 'commit'})
+            items.push({ rev: this.state.query, type: 'commit' })
         }
         items = items.concat(this.state.visible)
         return items

@@ -74,43 +74,43 @@ export const OrgSettingsForm = reactive<Props>(props => {
                     )
                     // Disable button while loading
                     .startWith<Update>((state: State): State => ({ ...state, loading: true }))
-                )
+            )
     )
-    .scan<Update, State>((state: State, update: Update) => update(state), { updated: false, loading: false, slackWebhookURL: '', displayName: '' } as State)
-    .map(({ loading, slackWebhookURL, displayName, updated }) => (
-        <form className='org-settings-form' onSubmit={nextSubmit}>
-            <h3>Organization settings</h3>
-            <div className='form-group'>
-                <label>Display name</label>
-                <input
-                    type='text'
-                    className='ui-text-box org-settings-form__display-name'
-                    placeholder='Organization name'
-                    onChange={nextDisplayNameChange}
-                    value={displayName}
-                    spellCheck={false}
-                    size={60}
-                />
-            </div>
-            <div className='form-group'>
-                <label>Slack webhook URL</label>
-                <input
-                    type='url'
-                    className='ui-text-box org-settings-form__slack-webhook-url'
-                    placeholder=''
-                    onChange={nextSlackWebhookURLChange}
-                    value={slackWebhookURL}
-                    spellCheck={false}
-                    size={60}
-                />
-                <small className='form-text'>
-                Integrate Sourcegraph's code comments and org updates with your team's Slack channel!
+        .scan<Update, State>((state: State, update: Update) => update(state), { updated: false, loading: false, slackWebhookURL: '', displayName: '' } as State)
+        .map(({ loading, slackWebhookURL, displayName, updated }) => (
+            <form className='org-settings-form' onSubmit={nextSubmit}>
+                <h3>Organization settings</h3>
+                <div className='form-group'>
+                    <label>Display name</label>
+                    <input
+                        type='text'
+                        className='ui-text-box org-settings-form__display-name'
+                        placeholder='Organization name'
+                        onChange={nextDisplayNameChange}
+                        value={displayName}
+                        spellCheck={false}
+                        size={60}
+                    />
+                </div>
+                <div className='form-group'>
+                    <label>Slack webhook URL</label>
+                    <input
+                        type='url'
+                        className='ui-text-box org-settings-form__slack-webhook-url'
+                        placeholder=''
+                        onChange={nextSlackWebhookURLChange}
+                        value={slackWebhookURL}
+                        spellCheck={false}
+                        size={60}
+                    />
+                    <small className='form-text'>
+                        Integrate Sourcegraph's code comments and org updates with your team's Slack channel!
                 Visit &lt;your-workspace-url&gt;.slack.com/apps/manage/custom-integrations > Incoming Webhooks > Add Configuration.
                 </small>
-            </div>
-            <button type='submit' disabled={loading} className='btn btn-primary org-settings-form__submit-button'>Update</button>
-            {loading && <LoaderIcon className='icon-inline' />}
-            <div className={'org-settings-form__updated-text' + (updated ? ' org-settings-form__updated-text--visible' : '')}><small>Updated!</small></div>
-        </form>
-    ))
+                </div>
+                <button type='submit' disabled={loading} className='btn btn-primary org-settings-form__submit-button'>Update</button>
+                {loading && <LoaderIcon className='icon-inline' />}
+                <div className={'org-settings-form__updated-text' + (updated ? ' org-settings-form__updated-text--visible' : '')}><small>Updated!</small></div>
+            </form>
+        ))
 })

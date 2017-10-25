@@ -72,8 +72,8 @@ export class SearchResults extends React.Component<Props, State> {
                         // Make sure that last item is still included
                         // Can't use takeWhile here because it would omit the last element (the first which the predicate returns false for)
                         .multicast<GQL.ISearchResults>(
-                            () => new ReplaySubject<GQL.ISearchResults>(1),
-                            textSearch => textSearch.takeWhile(res => res.cloning.length > 0).concat(textSearch.take(1))
+                        () => new ReplaySubject<GQL.ISearchResults>(1),
+                        textSearch => textSearch.takeWhile(res => res.cloning.length > 0).concat(textSearch.take(1))
                         )
                         .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
                         .catch(error => {
@@ -84,8 +84,8 @@ export class SearchResults extends React.Component<Props, State> {
                         .startWith({ results: [], missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined })
                 })
                 .subscribe(
-                    newState => this.setState(newState as State),
-                    err => console.error(err)
+                newState => this.setState(newState as State),
+                err => console.error(err)
                 )
         )
     }
@@ -106,7 +106,7 @@ export class SearchResults extends React.Component<Props, State> {
             alertTitle = 'Something went wrong!'
             alertDetails = upperFirst(this.state.error.message)
         } else if (this.state.loading) {
-            alertTitle = <Loader className='icon-inline'/>
+            alertTitle = <Loader className='icon-inline' />
         } else if (this.state.results.length === 0 && this.state.missing.length === 0 && this.state.cloning.length === 0) {
             alertTitle = 'No results'
         }
@@ -129,18 +129,18 @@ export class SearchResults extends React.Component<Props, State> {
         const logEvent = () => events.SearchResultClicked.log()
 
         return (
-           <div className='search-results'>
+            <div className='search-results'>
                 {
                     this.state.results.length > 0 &&
-                        <div className='search-results__header'>
-                            <div className='search-results__badge'>{numberWithCommas(totalResults)}</div>
-                            <div className='search-results__label'>{pluralize('result', totalResults)} in</div>
-                            <div className='search-results__badge'>{numberWithCommas(totalFiles)}</div>
-                            <div className='search-results__label'>{pluralize('file', totalFiles)}  in</div>
-                            <div className='search-results__badge'>{numberWithCommas(totalRepos)}</div>
-                            <div className='search-results__label'>{pluralize('repo', totalRepos)} </div>
-                            <div className='search-results__duration'>{this.state.searchDuration! / 1000} seconds</div>
-                        </div>
+                    <div className='search-results__header'>
+                        <div className='search-results__badge'>{numberWithCommas(totalResults)}</div>
+                        <div className='search-results__label'>{pluralize('result', totalResults)} in</div>
+                        <div className='search-results__badge'>{numberWithCommas(totalFiles)}</div>
+                        <div className='search-results__label'>{pluralize('file', totalFiles)}  in</div>
+                        <div className='search-results__badge'>{numberWithCommas(totalRepos)}</div>
+                        <div className='search-results__label'>{pluralize('repo', totalRepos)} </div>
+                        <div className='search-results__duration'>{this.state.searchDuration! / 1000} seconds</div>
+                    </div>
                 }
                 {
                     this.state.cloning.map((repoPath, i) =>
@@ -149,15 +149,15 @@ export class SearchResults extends React.Component<Props, State> {
                 }
                 {
                     this.state.missing.map((repoPath, i) =>
-                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon}/>
+                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon} />
                     )
                 }
                 {
                     (alertTitle || alertDetails) &&
-                        <div className='search-results__alert'>
-                            {alertTitle && <h1 className='search-results__alert-title'>{alertTitle}</h1>}
-                            {alertDetails && <p className='search-results__alert-details'>{alertDetails}</p>}
-                        </div>
+                    <div className='search-results__alert'>
+                        {alertTitle && <h1 className='search-results__alert-title'>{alertTitle}</h1>}
+                        {alertDetails && <p className='search-results__alert-details'>{alertDetails}</p>}
+                    </div>
                 }
                 {
                     this.state.results.map((result, i) => {

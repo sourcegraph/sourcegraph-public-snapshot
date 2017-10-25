@@ -77,7 +77,7 @@ export const CommentsPage = reactive<Props>(props =>
                 sharedItem.thread.repo.remoteUri,
                 sharedItem.thread.repoRevision,
                 sharedItem.thread.file,
-                {line: sharedItem.thread.startLine},
+                { line: sharedItem.thread.startLine },
                 sharedItem.thread.id
             )
             const openEditor = () => {
@@ -101,7 +101,7 @@ export const CommentsPage = reactive<Props>(props =>
                         history={history}
                     />
                     {sharedItem && !sharedItem.thread.repoRevision && <div className='comments-page__no-revision'>
-                        <ErrorIcon className='icon-inline comments-page__error-icon'/>
+                        <ErrorIcon className='icon-inline comments-page__error-icon' />
                         {sharedItem.thread.comments.length === 0 ?
                             'This code snippet was created from code that was not pushed. File or line numbers may have changed since this snippet was created.' :
                             'This discussion was created on code that was not pushed. File or line numbers may have changed since this discussion was created.'
