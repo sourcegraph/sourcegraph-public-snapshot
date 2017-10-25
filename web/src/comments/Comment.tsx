@@ -4,7 +4,6 @@ import * as H from 'history'
 import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Redirect } from 'react-router-dom'
 import { UserAvatar } from '../settings/user/UserAvatar'
 
 interface Props {
@@ -30,14 +29,6 @@ export class Comment extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        // If not logged in, redirect to sign in
-        if (!window.context.user) {
-            const newUrl = new URL(window.location.href)
-            newUrl.pathname = '/sign-in'
-            newUrl.searchParams.set('returnTo', window.location.href)
-            return <Redirect to={newUrl.pathname + newUrl.search} />
-        }
-
         const comment = this.props.comment
         const timeSince = formatDistance(comment.createdAt, new Date(), { addSuffix: true })
         const loc = this.props.location
