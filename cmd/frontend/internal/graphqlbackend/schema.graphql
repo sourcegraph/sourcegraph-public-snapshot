@@ -127,13 +127,98 @@ type Root {
 	dependents(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, package: String, limit: Int): [Dependency!]!
 }
 
+# Represents a shared item (either a shared code comment OR code snippet).
+#
+# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+# type.
 type SharedItem {
 	# who shared the item.
-	author: User!
-	thread: Thread!
+	author: SharedItemUser!
+	thread: SharedItemThread!
 
 	# present only if the shared item was a specific comment.
-	comment: Comment
+	comment: SharedItemComment
+}
+
+# Like the User type, except with fields that should not be accessible with a
+# secret URL removed.
+#
+# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+# type.
+type SharedItemUser {
+	displayName: String
+	username: String
+	avatarURL: String
+}
+
+# Like the Thread type, except with fields that should not be accessible with a
+# secret URL removed.
+#
+# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+# type.
+type SharedItemThread {
+	id: Int!
+	repo: SharedItemOrgRepo!
+	file: String!
+	branch: String
+	repoRevision: String!
+	title: String!
+	startLine: Int!
+	endLine: Int!
+	startCharacter: Int!
+	endCharacter: Int!
+	rangeLength: Int!
+	createdAt: String!
+	archivedAt: String
+	author: SharedItemUser!
+	lines: SharedItemThreadLines
+	comments: [SharedItemComment!]!
+}
+
+# Like the OrgRepo type, except with fields that should not be accessible with
+# a secret URL removed.
+#
+# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+# type.
+type SharedItemOrgRepo {
+	id: Int!
+	remoteUri: String!
+}
+
+# Like the Comment type, except with fields that should not be accessible with a
+# secret URL removed.
+#
+# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+# type.
+type SharedItemComment {
+	id: Int!
+	title: String!
+	contents: String!
+	createdAt: String!
+	updatedAt: String!
+	author: SharedItemUser!
+}
+
+# Exactly the same as the ThreadLines type, except it cannot have sensitive
+# fields accidently added.
+#
+# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+# type.
+type SharedItemThreadLines {
+	htmlBefore: String!
+	html: String!
+	htmlAfter: String!
+	textBefore: String!
+	text: String!
+	textAfter: String!
+	textSelectionRangeStart: Int!
+	textSelectionRangeLength: Int!
 }
 
 union SearchResult = Repository | File | SearchProfile

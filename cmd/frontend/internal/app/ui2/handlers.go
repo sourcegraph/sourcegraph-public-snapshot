@@ -320,26 +320,34 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "OrgRepos.GetByID")
 	}
-	actor := actor.FromContext(r.Context())
-	if !actor.IsAuthenticated() {
-		u := &url.URL{
-			Path: "/sign-in",
+
+	// TODO(slimsag): Store in DB whether or not a shared item is public
+	// ("private URL") or for org-members only.
+	public := false
+
+	if !public {
+		actor := actor.FromContext(r.Context())
+		if !actor.IsAuthenticated() {
+			u := &url.URL{
+				Path: "/sign-in",
+			}
+			q := u.Query()
+			q.Set("returnTo", r.URL.String())
+			u.RawQuery = q.Encode()
+			http.Redirect(w, r, u.String(), http.StatusSeeOther)
+			return nil
 		}
-		q := u.Query()
-		q.Set("returnTo", r.URL.String())
-		u.RawQuery = q.Encode()
-		http.Redirect(w, r, u.String(), http.StatusSeeOther)
-		return nil
-	}
-	// 🚨 SECURITY: verify that the current user is in the org.
-	_, err = localstore.OrgMembers.GetByOrgIDAndUserID(r.Context(), orgRepo.OrgID, actor.UID)
-	if err != nil {
-		// User is not in the org. We don't want to produce a 500, because we
-		// want to render a nice error page on the frontend. But it's important
-		// that we do not leak information about the shared item (e.g. through
-		// the page title, see below).
-		common.Title = "Sourcegraph"
-		return renderTemplate(w, "app.html", common)
+
+		// 🚨 SECURITY: verify that the current user is in the org.
+		_, err = localstore.OrgMembers.GetByOrgIDAndUserID(r.Context(), orgRepo.OrgID, actor.UID)
+		if err != nil {
+			// User is not in the org. We don't want to produce a 500, because we
+			// want to render a nice error page on the frontend. But it's important
+			// that we do not leak information about the shared item (e.g. through
+			// the page title, see below).
+			common.Title = "Sourcegraph"
+			return renderTemplate(w, "app.html", common)
+		}
 	}
 
 	if title != "" {
