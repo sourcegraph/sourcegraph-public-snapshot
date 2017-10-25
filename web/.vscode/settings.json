@@ -3,5 +3,6 @@
     "tslint.nodePath": "./node_modules",
     "files.associations": {
       ".stylelintrc": "json"
-    }
+    },
+    "editor.formatOnSave": true
 }
