@@ -11,9 +11,10 @@
     "build-tests": "tsc -p ./tsconfig.test.json",
     "watch": "npm run build -- --watch",
     "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o src/gqlschema.d.ts && tsfmt -r src/gqlschema.d.ts",
-    "lint": "npm run tslint && npm run stylelint",
+    "lint": "npm run tslint && npm run stylelint && npm run tsfmt-verify",
     "tslint": "tslint -c tslint.json -p tsconfig.json 'src/**/*.ts?(x)'",
-    "stylelint": "stylelint 'src/**/*.scss'"
+    "stylelint": "stylelint 'src/**/*.scss'",
+    "tsfmt-verify": "find src -name '*.tsx' -or -name '*.ts' | xargs tsfmt --verify"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
