@@ -307,11 +307,17 @@ func getURL(repo sourcegraph.OrgRepo, thread sourcegraph.Thread, utmSource strin
 		aboutValues.Set("utm_source", utmSource)
 	}
 
+	revision := thread.RepoRevision
+	// Prefer linking to a branch if it exists.
+	if thread.Branch != nil {
+		revision = *thread.Branch
+	}
+
 	cloneURL := fmt.Sprintf("https://%s", repo.RemoteURI)
 	values := url.Values{}
 	values.Set("repo", cloneURL)
 	values.Set("vcs", "git")
-	values.Set("revision", thread.RepoRevision)
+	values.Set("revision", revision)
 	values.Set("path", thread.File)
 	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
 	return fmt.Sprintf("https://about.sourcegraph.com/open/?%s#open?%s", aboutValues.Encode(), values.Encode())
