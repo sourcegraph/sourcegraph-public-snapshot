@@ -77,7 +77,7 @@ const (
 
 func FromContext(ctx context.Context) *Actor {
 	a, ok := ctx.Value(actorKey).(*Actor)
-	if !ok {
+	if !ok || a == nil {
 		return &Actor{}
 	}
 	return a

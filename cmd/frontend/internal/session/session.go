@@ -6,63 +6,40 @@ import (
 	"net/http"
 	"net/textproto"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-
 	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/boj/redistore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
-var sessionStore *redistore.RediStore
-var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "redis-store:6379", "redis used for storing sessions")
-var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
+var actorSessionStore *Store
 
 // InitSessionStore initializes the session store.
 func InitSessionStore(secureCookie bool) {
-	if sessionStoreRedis == "" {
-		sessionStoreRedis = ":6379"
-	}
 	var err error
-	sessionStore, err = redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
+	actorSessionStore, err = NewStore("sg-session", "actor", secureCookie, nil)
 	if err != nil {
 		panic(err)
 	}
-	sessionStore.Options.Path = "/"
-	sessionStore.Options.HttpOnly = true
-	sessionStore.Options.Secure = secureCookie
 }
 
 // StartNewSession starts a new session with authentication for the given uid.
 func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor) error {
-	DeleteSession(w, r)
 
-	session, err := sessionStore.New(&http.Request{}, "sg-session") // workaround: not passing the request forces a new session
-	if err != nil {
-		log15.Error("error creating session", "error", err)
-	}
 	actorJSON, err := json.Marshal(actor)
 	if err != nil {
 		return err
 	}
-	session.Values["actor"] = actorJSON
-	if err = session.Save(r, w); err != nil {
-		log15.Error("error saving session", "error", err)
-	}
-
+	actorSessionStore.StartNewSession(w, r, actorJSON)
 	return nil
 }
 
 // DeleteSession deletes the current session.
 func DeleteSession(w http.ResponseWriter, r *http.Request) {
-	session, err := sessionStore.Get(r, "sg-session")
-	if err != nil {
-		log15.Error("error getting session", "error", err)
-	}
-	session.Options.MaxAge = -1
-	if err = session.Save(r, w); err != nil {
-		log15.Error("error saving session", "error", err)
-	}
+	actorSessionStore.DeleteSession(w, r)
+}
+
+// SessionCookie returns the session cookie from the header of the given request.
+func SessionCookie(r *http.Request) string {
+	return actorSessionStore.Cookie(r)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
@@ -87,37 +64,26 @@ func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler
 	})
 }
 
-// SessionCookie returns the session cookie from the header of the given request.
-func SessionCookie(r *http.Request) string {
-	c, err := r.Cookie("sg-session")
-	if err != nil {
-		return ""
-	}
-	return c.Value
-}
-
 // AuthenticateBySession authenticates the context with the given session cookie.
 func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Context {
-	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{"sg-session=" + sessionCookie}}}
+	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{actorSessionStore.Name + "=" + sessionCookie}}}
 	return authenticateByCookie(fakeRequest.WithContext(ctx))
 }
 
 func authenticateByCookie(r *http.Request) context.Context {
-	session, err := sessionStore.Get(r, "sg-session")
+	actorJSON, err := actorSessionStore.GetSession(r)
 	if err != nil {
 		log15.Error("error getting session", "error", err)
-		return r.Context()
+		// 🚨 SECURITY: erase any existing actor
+		return actor.WithActor(r.Context(), &actor.Actor{})
 	}
 
-	if actorJSON, ok := session.Values["actor"]; ok {
-		var a actor.Actor
-		if err := json.Unmarshal(actorJSON.([]byte), &a); err != nil {
-			log15.Error("error unmarshalling actor", "error", err)
-			return r.Context()
-		}
-
-		return actor.WithActor(r.Context(), &a)
+	var a actor.Actor
+	if err := json.Unmarshal(actorJSON, &a); err != nil {
+		log15.Error("error unmarshalling actor", "error", err)
+		// 🚨 SECURITY: erase any existing actor
+		return actor.WithActor(r.Context(), &actor.Actor{})
 	}
 
-	return r.Context()
+	return actor.WithActor(r.Context(), &a)
 }
