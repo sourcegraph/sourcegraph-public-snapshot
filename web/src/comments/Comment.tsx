@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import { UserAvatar } from '../settings/user/UserAvatar'
 
 interface Props {
-    comment: GQL.IComment
+    comment: GQL.ISharedItemComment
     location: H.Location
 }
 
