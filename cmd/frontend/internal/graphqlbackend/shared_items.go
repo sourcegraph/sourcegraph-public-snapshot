@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -42,6 +41,10 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	// TODO(slimsag): Store in DB whether or not a shared item is public
+	// ("private URL") or for org-members only.
+	public := false
+
 	switch {
 	case item.CommentID != nil:
 		comment, err := store.Comments.GetByID(ctx, *item.CommentID)
@@ -57,14 +60,13 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 			return nil, err
 		}
 
-		// 🚨 SECURITY: verify that the user is in the org.
-		actor := actor.FromContext(ctx)
-		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
-		if err != nil {
-			if _, ok := err.(store.ErrOrgMemberNotFound); ok {
-				return nil, errors.New("permission denied")
+		if !public {
+			// 🚨 SECURITY: verify that the user is in the org.
+			actor := actor.FromContext(ctx)
+			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
+			if err != nil {
+				return nil, err
 			}
-			return nil, err
 		}
 
 		org, err := store.Orgs.GetByID(ctx, orgRepo.OrgID)
@@ -86,14 +88,13 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 			return nil, err
 		}
 
-		// 🚨 SECURITY: verify that the current user is in the org.
-		actor := actor.FromContext(ctx)
-		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
-		if err != nil {
-			if _, ok := err.(store.ErrOrgMemberNotFound); ok {
-				return nil, errors.New("permission denied")
+		if !public {
+			// 🚨 SECURITY: verify that the current user is in the org.
+			actor := actor.FromContext(ctx)
+			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
+			if err != nil {
+				return nil, err
 			}
-			return nil, err
 		}
 
 		org, err := store.Orgs.GetByID(ctx, orgRepo.OrgID)
