@@ -233,6 +233,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 		if common == nil {
 			return nil // request was handled
 		}
+		common.Title = title(common, r)
 		return renderTemplate(w, "app.html", common)
 	}
 }
