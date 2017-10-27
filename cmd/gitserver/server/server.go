@@ -203,7 +203,9 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 			}
 			s.cloningMu.Unlock()
 
-			if !cloneInProgress {
+			if skipCloneForTests {
+				s.releaseCloneLock(dir)
+			} else if !cloneInProgress {
 				go func() {
 					// Create a new context because this is in a background goroutine.
 					ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
@@ -211,10 +213,6 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 						cancel()
 						s.releaseCloneLock(dir)
 					}()
-
-					if skipCloneForTests {
-						return
-					}
 
 					cmd := cloneCmd(ctx, origin, dir)
 					if output, err := s.runWithRemoteOpts(cmd, req.Repo); err != nil {
