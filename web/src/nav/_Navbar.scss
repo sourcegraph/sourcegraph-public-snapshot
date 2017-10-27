@@ -2,7 +2,7 @@
 
     position: sticky;
     flex: none;
-    height: 3.55rem; // +.05 to avoid the search box leaking
+    height: 4.35rem; // +.05 to avoid the search box leaking
     width: 100%;
     z-index: 9999999;
 
@@ -12,12 +12,7 @@
 
     background-color: #1C2736;
 
-    &__left {
-        flex: 1;
-    }
-
     &__right {
-        flex: 1;
         display: flex;
         padding-right: 1rem;
         justify-content: flex-end;
@@ -38,8 +33,8 @@
     }
 
     &__logo {
-        width: 1.5rem;
-        height: 1.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
         &:hover {
             animation: spin 0.5s ease-in-out 1;
             @keyframes spin {
@@ -50,8 +45,8 @@
     }
 
     &__search-box-container {
-        width: 52rem;
-        min-width: 0;
+        flex: 1 0;
+        min-width: 18rem;
         align-self: flex-start;
     }
 }

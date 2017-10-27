@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -237,6 +238,20 @@ type repositoryRevision struct {
 	Rev  *string
 }
 
+// parseRepositoryRevision parses strings of the form "repo" or "repo@rev" into
+// a repositoryRevision.
+func parseRepositoryRevision(repoAndOptionalRev string) repositoryRevision {
+	i := strings.Index(repoAndOptionalRev, "@")
+	if i == -1 {
+		return repositoryRevision{Repo: repoAndOptionalRev}
+	}
+	rev := repoAndOptionalRev[i+1:]
+	return repositoryRevision{
+		Repo: repoAndOptionalRev[:i],
+		Rev:  &rev,
+	}
+}
+
 func (repoRev *repositoryRevision) String() string {
 	if repoRev.hasRev() {
 		return repoRev.Repo + "@" + *repoRev.Rev
@@ -248,8 +263,14 @@ func (repoRev *repositoryRevision) hasRev() bool {
 	return repoRev.Rev != nil && *repoRev.Rev != ""
 }
 
+var mockSearchRepos func(args *repoSearchArgs) (*searchResults, error)
+
 // SearchRepos searches a set of repos for a pattern.
 func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults, error) {
+	if mockSearchRepos != nil {
+		return mockSearchRepos(args)
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

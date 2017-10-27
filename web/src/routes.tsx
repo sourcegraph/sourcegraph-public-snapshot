@@ -3,7 +3,9 @@ import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { RepositoryResolver } from './repo/RepositoryResolver'
+import { enableSearch2 } from './search'
 import { SearchResults } from './search/SearchResults'
+import { SearchResults as SearchResults2 } from './search2/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
 
 export interface LayoutRouteProps extends RouteProps {
@@ -26,7 +28,7 @@ export interface LayoutRouteProps extends RouteProps {
 export const routes: LayoutRouteProps[] = [
     {
         path: '/search',
-        component: SearchResults,
+        component: enableSearch2 ? SearchResults2 : SearchResults,
         exact: true,
     },
     {

@@ -41,19 +41,6 @@ $media-xl: 1200px;
     padding: 0;
 }
 
-// Custom scrollbar
-::-webkit-scrollbar {
-    width: 0.5rem;
-    height: 0.5rem;
-}
-::-webkit-scrollbar-corner,
-::-webkit-scrollbar-track {
-    background-color: transparent;
-}
-::-webkit-scrollbar-thumb {
-    background-color: #2A3A51;
-}
-
 html {
     font-family: 'system';
     // Base for layout rem values
@@ -402,6 +389,9 @@ h1 {
 
 @import './highlight';
 @import './search/Search';
+@import './search2/SearchNavbarItem';
+@import './search2/SearchPage';
+@import './search2/SearchResults';
 @import './nav/Navbar';
 @import './auth/PasswordResetPage';
 @import './auth/SignInPage';

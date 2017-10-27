@@ -41,6 +41,8 @@ declare namespace GQL {
         search: Array<SearchResult>;
         searchRepos: ISearchResults;
         searchProfiles: Array<ISearchProfile>;
+        search2: ISearch2 | null;
+        searchScopes2: Array<ISearchScope2>;
         revealCustomerCompany: ICompanyProfile | null;
         org: IOrg;
         sharedItem: ISharedItem | null;
@@ -133,8 +135,10 @@ declare namespace GQL {
         __typename: "File";
         name: string;
         content: string;
+        repository: IRepository;
         binary: boolean;
         isDirectory: boolean;
+        commit: ICommit;
         highlight: IHighlightedFile;
         blame: Array<IHunk>;
         commits: Array<ICommitInfo>;
@@ -517,6 +521,31 @@ declare namespace GQL {
         lineNumber: number;
         offsetAndLengths: Array<Array<number>>;
         limitHit: boolean;
+    }
+
+    /*
+      description: null
+    */
+    interface ISearch2 {
+        __typename: "Search2";
+        results: ISearchResults;
+        suggestions: Array<SearchSuggestion2>;
+    }
+
+    /*
+      description: null
+    */
+    type SearchSuggestion2 = IRepository | IFile;
+
+
+
+    /*
+      description: null
+    */
+    interface ISearchScope2 {
+        __typename: "SearchScope2";
+        name: string;
+        value: string;
     }
 
     /*

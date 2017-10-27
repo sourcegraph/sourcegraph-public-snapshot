@@ -61,6 +61,14 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	return stat.IsDir(), nil
 }
 
+func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
+	repo, err := localstore.Repos.Get(ctx, r.commit.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	return &repositoryResolver{repo: repo}, nil
+}
+
 func (r *fileResolver) Binary(ctx context.Context) (bool, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
@@ -116,6 +124,17 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	}
 	result.html = string(html)
 	return result, nil
+}
+
+func (r *fileResolver) Commit(ctx context.Context) (*commitResolver, error) {
+	repo, err := localstore.Repos.Get(ctx, r.commit.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	return &commitResolver{
+		commit: r.commit,
+		repo:   *repo,
+	}, nil
 }
 
 func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, error) {

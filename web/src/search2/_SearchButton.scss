@@ -1,0 +1,21 @@
+.search-button2 {
+    display: flex;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-color: transparent;
+    background-color: #1C7CD6;
+    border: none;
+    border-radius: 0.15rem;
+    color: white;
+    cursor: pointer;
+    white-space: nowrap;
+    &__label {
+        margin-left: 0.25rem;
+    }
+
+    @media (max-width: $media-sm) {
+        &__label {
+            display: none;
+        }
+    }
+}

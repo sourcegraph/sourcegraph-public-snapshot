@@ -69,3 +69,5 @@ export function parseSearchURLQuery(query: string): SearchOptions {
         matchRegex: searchParams.get('matchRegex') === 'true',
     }
 }
+
+export const enableSearch2 = Boolean(window.localStorage.getItem('search2'))

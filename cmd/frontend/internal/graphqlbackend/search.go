@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -212,7 +213,13 @@ func searchFiles(ctx context.Context, query string, repoURIs []string, limit int
 	return res, nil
 }
 
+var mockSearchFilesForRepoURI func(query string, repoURI string, limit int) ([]*searchResultResolver, error)
+
 func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, limit int) (res []*searchResultResolver, err error) {
+	if mockSearchFilesForRepoURI != nil {
+		return mockSearchFilesForRepoURI(query, repoURI, limit)
+	}
+
 	repo, err := backend.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return nil, err
@@ -229,6 +236,9 @@ func searchFilesForRepoURI(ctx context.Context, query string, repoURI string, li
 		return res, nil
 	}
 	commitResolver := commitStateResolver.Commit()
+	if commitResolver == nil {
+		return nil, fmt.Errorf("unable to resolve commit for repo %s", repoURI)
+	}
 	treeResolver, err := commitResolver.Tree(ctx, &struct {
 		Path      string
 		Recursive bool
@@ -277,6 +287,7 @@ func newSearchResultResolver(result interface{}, score int) *searchResultResolve
 // across calcScore calls for the same query string.
 type scorer struct {
 	query      string
+	queryEmpty bool
 	queryParts []string
 }
 
@@ -285,6 +296,7 @@ type scorer struct {
 func newScorer(query string) *scorer {
 	return &scorer{
 		query:      query,
+		queryEmpty: strings.TrimSpace(query) == "",
 		queryParts: splitNoEmpty(query, "/"),
 	}
 }
@@ -304,9 +316,18 @@ const (
 // A panic occurs if the type of result is not a *repositoryResolver,
 // *fileResolver, or *searchProfile.
 func (s *scorer) calcScore(result interface{}) int {
+	var score int
+	if s.queryEmpty {
+		// If no query, then it will show *all* results; score must be nonzero in order to
+		// have scoreBump* constants applied.
+		score = 1
+	}
+
 	switch r := result.(type) {
 	case *repositoryResolver:
-		score := postfixFuzzyAlignScore(splitNoEmpty(r.repo.URI, "/"), s.queryParts)
+		if !s.queryEmpty {
+			score = postfixFuzzyAlignScore(splitNoEmpty(r.repo.URI, "/"), s.queryParts)
+		}
 		// Push forks down
 		if r.repo.Fork {
 			score += scoreBumpFork
@@ -317,15 +338,19 @@ func (s *scorer) calcScore(result interface{}) int {
 		return score
 
 	case *fileResolver:
-		pathParts := splitNoEmpty(r.path, "/")
-		score := postfixFuzzyAlignScore(pathParts, s.queryParts)
+		if !s.queryEmpty {
+			pathParts := splitNoEmpty(r.path, "/")
+			score = postfixFuzzyAlignScore(pathParts, s.queryParts)
+		}
 		if score > 0 {
 			score += scoreBumpFile
 		}
 		return score
 
 	case *searchProfile:
-		score := stringscore.Score(r.name, s.query)
+		if !s.queryEmpty {
+			score = stringscore.Score(r.name, s.query)
+		}
 		if score > 0 {
 			score += scoreBumpSearchProfile
 		}

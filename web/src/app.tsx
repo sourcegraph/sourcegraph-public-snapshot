@@ -15,8 +15,10 @@ import { HeroPage } from './components/HeroPage'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
-import { parseSearchURLQuery } from './search/index'
+import { enableSearch2, parseSearchURLQuery } from './search/index'
 import { Search } from './search/Search'
+import { parseSearchURLQuery as parseSearchURLQuery2 } from './search2/index'
+import { SearchPage as SearchPage2 } from './search2/SearchPage'
 import { handleQueryEvents } from './tracking/analyticsUtils'
 
 interface LayoutProps {
@@ -89,6 +91,14 @@ const SearchRouter = (props: RouteComponentProps<{}>): JSX.Element | null => {
     }
     return <Search {...props} />
 }
+const SearchRouter2 = (props: RouteComponentProps<{}>): JSX.Element | null => {
+    const options = parseSearchURLQuery2(props.location.search)
+    if (options.query) {
+        return <Layout {...props} />
+    }
+    return <SearchPage2 {...props} />
+}
+const SearchRouter12 = enableSearch2 ? SearchRouter2 : SearchRouter
 
 /**
  * handles rendering Search or SearchResults components based on whether or not
@@ -118,7 +128,7 @@ class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { retu
         }
         return (
             <Switch>
-                <Route path='/search' exact={true} component={SearchRouter} />
+                <Route path='/search' exact={true} component={SearchRouter12} />
                 <Route component={Layout} />
             </Switch>
         )

@@ -1,7 +1,9 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { enableSearch2 } from '../search'
 import { SearchBox } from '../search/SearchBox'
+import { SearchNavbarItem as SearchNavbarItem2 } from '../search2/SearchNavbarItem'
 import { UserAvatar } from '../settings/user/UserAvatar'
 
 interface Props {
@@ -10,6 +12,8 @@ interface Props {
 }
 
 interface State { }
+
+const SearchBox12 = enableSearch2 ? SearchNavbarItem2 : SearchBox
 
 export class Navbar extends React.Component<Props, State> {
     public state: State = {}
@@ -23,7 +27,7 @@ export class Navbar extends React.Component<Props, State> {
                     </Link>
                 </div>
                 <div className='navbar__search-box-container'>
-                    <SearchBox history={this.props.history} location={this.props.location} />
+                    <SearchBox12 history={this.props.history} location={this.props.location} />
                 </div>
                 <div className='navbar__right'>
                     {

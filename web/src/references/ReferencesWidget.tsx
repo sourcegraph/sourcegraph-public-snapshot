@@ -28,6 +28,7 @@ import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
 import { VirtualList } from '../components/VIrtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
+import { SearchOptions } from '../search2'
 import { events } from '../tracking/events'
 import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
@@ -62,6 +63,11 @@ interface ReferenceGroupProps {
      * Callback when a reference result is selected
      */
     onSelect?: () => void
+
+    /**
+     * The options for the current search, to maintain as the user navigates.
+     */
+    searchOptions?: SearchOptions
 }
 
 interface ReferenceGroupState {
@@ -105,7 +111,12 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
                                 }
                                 return (
                                     <Link
-                                        to={toPrettyBlobURL({ repoPath: uri.hostname + uri.pathname, rev, filePath: uri.hash.substr('#'.length), position })}
+                                        to={toPrettyBlobURL({
+                                            repoPath: uri.hostname + uri.pathname,
+                                            rev,
+                                            filePath: uri.hash.substr('#'.length),
+                                            position,
+                                        })}
                                         key={i}
                                         className='references-group__reference'
                                         onClick={this.onSelect}
@@ -131,7 +142,7 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
             <div className='references-group'>
                 <div className={'references-group__title' + ((this.props.refs || []).length > 0 ? ' references-group__title--expandable' : '')} onClick={this.toggle}>
                     <Icon className='icon-inline' />
-                    <RepoBreadcrumb repoPath={this.props.repoPath} filePath={this.props.filePath} />
+                    <RepoBreadcrumb repoPath={this.props.repoPath} rev={this.props.localRev} filePath={this.props.filePath} />
                     {
                         (this.props.refs || []).length > 0 && (
                             this.state.hidden ? <ChevronRightIcon className='icon-inline' /> : <ChevronDownIcon className='icon-inline' />

@@ -126,11 +126,27 @@ type Root {
 	search(query: String = "", repositories: [String!]!, first: Int): [SearchResult!]!
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	searchProfiles: [SearchProfile!]!
+	search2(query: String = "", scopeQuery: String = ""): Search2
+	searchScopes2: [SearchScope2!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
 	org(id: Int!): Org!
 	sharedItem(ulid: String!): SharedItem
 	packages(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, limit: Int): [Package!]!
 	dependents(lang: String!, id: String, type: String, name: String, commit: String, baseDir: String, repoURL: String, version: String, package: String, limit: Int): [Dependency!]!
+}
+
+type Search2 {
+	results: SearchResults!
+	suggestions(first: Int): [SearchSuggestion2!]!
+
+	# TODO(sqs): add unknownFields, query parse errors
+}
+
+union SearchSuggestion2 = Repository|File
+
+type SearchScope2 {
+	name: String!
+	value: String!
 }
 
 # Represents a shared item (either a shared code comment OR code snippet).
@@ -359,8 +375,10 @@ type HighlightedFile {
 type File {
 	name: String!
 	content: String!
+	repository: Repository!
 	binary: Boolean!
 	isDirectory: Boolean!
+	commit: Commit!
 	highlight(disableTimeout: Boolean!): HighlightedFile!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!

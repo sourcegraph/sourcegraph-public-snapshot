@@ -1,0 +1,71 @@
+@import './SearchFields';
+@import './QueryInput';
+@import './ScopeLabel';
+@import './SearchButton';
+@import './SearchResults';
+@import './SearchScope';
+
+.search-page2 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+    width: 100%;
+
+    &__nav {
+        flex: none;
+        width: 100%;
+        margin-top: 2rem;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 1rem;
+        &-link {
+            display: inline-block;
+            text-decoration: none;
+            margin-left: 1rem;
+        }
+        &-auth {
+            display: flex;
+            align-items: center;
+            margin: 0 1rem;
+        }
+        .avatar {
+            height: 2rem;
+            width: 2rem;
+        }
+    }
+
+    &__logo {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        width: 20rem;
+        margin-top: 6rem;
+        max-width: 90%;
+    }
+
+    &__container {
+        flex: 0 0 auto;
+        margin-top: 4rem;
+        width: 49rem;
+        max-width: 90%;
+        position: relative;
+    }
+
+    &__input-container {
+        width: 100%;
+        display: flex;
+        & > *:not(:first-child) {
+            margin-left: 0.35rem;
+        }
+    }
+
+    .query-input2__input {
+        padding: 0.25rem 0.5rem;
+    }
+    .search-button2 {
+        font-weight: bold;
+    }
+}

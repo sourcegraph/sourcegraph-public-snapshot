@@ -1,0 +1,39 @@
+.suggestion2 {
+    height: 2.5rem;
+    padding: 0 0.5rem;
+
+    display: flex;
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    line-height: 2.5rem;
+    white-space: nowrap;
+
+    background-color: #1C2736;
+    border-top: 1px solid #2A3A51;
+
+    cursor: pointer;
+
+    &--selected {
+        background-color: #2A3A51;
+    }
+
+    &__title {
+        margin-left: .25rem;
+    }
+    &__description {
+        flex: 1 1 auto;
+        margin-left: .35rem;
+        opacity: 0.6;
+        font-size: 90%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    &__highlighted-query {
+        color: white;
+    }
+    &__action {
+        flex: 0 0 auto;
+    }
+}

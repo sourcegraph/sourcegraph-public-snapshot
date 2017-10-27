@@ -233,30 +233,6 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 		if common == nil {
 			return nil // request was handled
 		}
-		common.Title = title(common, r)
-
-		q := r.URL.Query()
-		if search := q.Get("q"); search != "" {
-			// Redirect old search URLs:
-			//
-			// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7?q=ErrMethodMismatch&utm_source=chrome-extension
-			// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go?q=NewRouter
-			//
-			// To new ones:
-			//
-			// 	/search?q=route&repo=github.com/gorilla/mux&repo=github.com/kubernetes/kubernetes&matchCase=false&matchWord=false
-			//
-			r.URL.Path = "/search"
-			q.Set("repo", common.Repo.URI)
-			q.Set("matchCase", "false")
-			q.Set("matchWord", "false")
-			r.URL.RawQuery = q.Encode()
-			if routeName == routeTree {
-				q.Set("file", mux.Vars(r)["Path"])
-			}
-			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
-			return nil
-		}
 		return renderTemplate(w, "app.html", common)
 	}
 }
