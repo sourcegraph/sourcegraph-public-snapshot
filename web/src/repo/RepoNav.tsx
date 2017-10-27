@@ -1,6 +1,7 @@
 import ComputerIcon from '@sourcegraph/icons/lib/Computer'
 import CopyIcon from '@sourcegraph/icons/lib/Copy'
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
+import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
@@ -21,6 +22,7 @@ interface RepoSubnavProps {
     customEditorURL?: string
     revSwitcherDisabled?: boolean
     breadcrumbDisabled?: boolean
+    phabricatorCallsign?: string
     /**
      * overrides the line number that 'View on GitHub' should link to. By
      * default, it is parsed from the current URL hash.
@@ -65,14 +67,19 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                 </a>}
                 {
                     this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
-                    <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnGitHubButtonClicked}>
+                    <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnCodeHostButtonClicked}>
                         <GitHubIcon className='icon-inline' />
                         <span className='repo-nav__action-text'>View on GitHub</span>
                     </a>
                 }
                 {
-                    /* TODO(john): remove editorBeta alltogether when we're ready to show
-                       desktop to users everywhere (see https://github.com/sourcegraph/sourcegraph/issues/7297) */
+                    this.props.filePath && this.props.phabricatorCallsign &&
+                    <a href={this.urlToPhabricator()} target='_blank' className='repo-nav__action' title='View on Phabricator' onClick={this.onViewOnCodeHostButtonClicked}>
+                        <PhabricatorIcon className='icon-inline' />
+                        <span className='repo-nav__action-text'>View on Phabricator</span>
+                    </a>
+                }
+                {
                     this.props.repoPath && this.state.editorBeta &&
                     <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open in Sourcegraph Editor' onClick={this.onOpenOnDesktopClicked}>
                         <ComputerIcon className='icon-inline' />
@@ -97,7 +104,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
         }, 1000)
     }
 
-    private onViewOnGitHubButtonClicked: React.MouseEventHandler<HTMLAnchorElement> = () => {
+    private onViewOnCodeHostButtonClicked: React.MouseEventHandler<HTMLAnchorElement> = () => {
         events.OpenInCodeHostClicked.log()
     }
 
@@ -108,5 +115,12 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     private urlToGitHub(): string {
         const line = this.props.line || parseHash(this.props.location.hash).line || undefined
         return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line ? '#L' + line : ''}`
+    }
+
+    private urlToPhabricator(): string {
+        if (!window.context.phabricatorURL) {
+            throw new Error('cannot locate Phabricator instance, make sure your admin has set PHABRICATOR_URL')
+        }
+        return `${window.context.phabricatorURL}/source/${this.props.phabricatorCallsign}/browse/${this.props.filePath}`
     }
 }

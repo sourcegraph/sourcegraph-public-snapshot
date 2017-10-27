@@ -37,6 +37,7 @@ export interface Props {
     history: H.History
     onToggleFullWidth: () => void
     isFullWidth: boolean
+    phabricatorCallsign?: string
 }
 
 interface State {

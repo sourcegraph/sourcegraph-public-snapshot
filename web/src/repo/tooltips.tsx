@@ -182,8 +182,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         container.className = 'tooltip__divider'
 
         const tooltipText = document.createElement('DIV')
-        tooltipText.className = `${getModeFromExtension(ctx.filePath)}`
-        tooltipText.className = 'tooltip__title'
+        tooltipText.className = `tooltip__title ${getModeFromExtension(ctx.filePath)}`
         tooltipText.appendChild(document.createTextNode(title))
 
         container.appendChild(tooltipText)
@@ -435,7 +434,7 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
     if (target.classList.contains('line')) {
         line = parseInt(target.getAttribute('data-line')!, 10)
     } else {
-        line = parseInt((target.previousSibling as HTMLTableDataCellElement).getAttribute('data-line')!, 10)
+        line = parseInt((target.previousElementSibling as HTMLTableDataCellElement).getAttribute('data-line')!, 10)
     }
 
     let character = 1

@@ -7,6 +7,7 @@ import 'rxjs/add/operator/takeUntil'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { Observable } from 'rxjs/Observable'
 import { AbsoluteRepoFilePosition } from '../repo'
+import { fetchPhabricatorRepo } from '../repo/backend'
 import { openFromJS } from '../util/url'
 import { fetchBlameFile } from './backend'
 import { clearLineBlameContent, setLineBlame } from './dom'
@@ -94,8 +95,24 @@ function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent)
         return // Not clicking on blame text
     }
 
+    if (ctx.repoPath.startsWith('github.com')) {
+        openFromJS(`https://${ctx.repoPath}/commit/${rev}`, clickEvent)
+    } else {
+        // Try resolving to internal code host.
+        fetchPhabricatorRepo({ repoPath: ctx.repoPath })
+            .subscribe(phabRepo => {
+                if (phabRepo) {
+                    if (!window.context.phabricatorURL) {
+                        window.context.phabricatorURL = 'http://phabricator.aws.sgdev.org'
+                        // TODO(john): use line below
+                        // return console.error('cannot locate Phabricator instance, make sure your admin has set PHABRICATOR_URL')
+                    }
+                    openFromJS(`${window.context.phabricatorURL}/r${phabRepo.callsign.toUpperCase()}${ctx.commitID}`, clickEvent)
+                }
+            })
+    }
+
     // TODO(future): For Umami Phabricator repos, the URL should be to Phabricator per #6487
-    openFromJS(`https://${ctx.repoPath}/commit/${rev}`, clickEvent)
 }
 
 export function triggerBlame(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {

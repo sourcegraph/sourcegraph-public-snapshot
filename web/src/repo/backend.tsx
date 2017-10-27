@@ -1,8 +1,8 @@
 import 'rxjs/add/operator/map'
 import { Observable } from 'rxjs/Observable'
 import { queryGraphQL } from '../backend/graphql'
-import { makeRepoURI } from '../repo'
 import { memoizeObservable } from '../util/memoize'
+import { makeRepoURI } from './index'
 
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
 class CloneInProgressError extends Error {
@@ -225,5 +225,25 @@ export const fetchRepoRevisions = memoizeObservable((ctx: { repoPath: string }):
                 throw new Error(`cannot locate repo revisions: ${ctx}`)
             }
             return result.data.root.repository
+        }), makeRepoURI
+)
+
+export const fetchPhabricatorRepo = memoizeObservable((ctx: { repoPath: string }): Observable<GQL.IPhabricatorRepo | null> =>
+    queryGraphQL(`query PhabricatorRepo($repoPath: String) {
+        root {
+            phabricatorRepo(uri: $repoPath) {
+                callsign
+                uri
+            }
+        }
+    }`, ctx).map(result => {
+            if (result.errors ||
+                !result.data ||
+                !result.data.root ||
+                !result.data.root.phabricatorRepo
+            ) {
+                return null
+            }
+            return result.data.root.phabricatorRepo
         }), makeRepoURI
 )

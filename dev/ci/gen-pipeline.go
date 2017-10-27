@@ -128,6 +128,13 @@ func main() {
 		Cmd("npm run lint"),
 		Cmd("npm test"))
 
+	pipeline.AddStep(":html:",
+		Cmd("mkdir -p ui/assets/extension"),
+		Cmd("mkdir -p ui/assets/extension/css"),
+		Cmd("mkdir -p ui/assets/extension/scripts"),
+		Cmd("cp client/phabricator/scripts/phabricator.bundle.js ui/assets/extension/scripts"),
+		Cmd("cp client/phabricator/scripts/style.bundle.css ui/assets/extension/css"))
+
 	for _, path := range pkgs {
 		coverageFile := path + "/coverage.txt"
 		pipeline.AddStep(":go:",

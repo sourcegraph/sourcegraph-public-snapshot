@@ -13,7 +13,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
-import { ECLONEINPROGESS, EREPONOTFOUND, resolveRev } from './backend'
+import { ECLONEINPROGESS, EREPONOTFOUND, fetchPhabricatorRepo, resolveRev } from './backend'
 import { Repository } from './Repository'
 
 interface Props {
@@ -26,6 +26,7 @@ interface Props {
 
 interface State {
     commitID?: string
+    phabricatorCallsign?: string
     cloneInProgress: boolean
     notFound: boolean
 }
@@ -73,8 +74,28 @@ export class RepositoryResolver extends React.Component<Props, State> {
                             return []
                         })
                 })
-                .subscribe(commitID => {
-                    this.setState({ commitID, cloneInProgress: false })
+                .subscribe(
+                commitID => this.setState({ commitID, cloneInProgress: false }),
+                err => console.error(err)
+                )
+        )
+        this.subscriptions.add(
+            this.componentUpdates
+                .switchMap(props => {
+                    if (!props.match.params.repoRev) {
+                        return [null]
+                    }
+                    const [repoPath] = props.match.params.repoRev.split('@')
+                    return fetchPhabricatorRepo({ repoPath })
+                        .catch(err => {
+                            console.error(err)
+                            return []
+                        })
+                })
+                .subscribe(phabRepo => {
+                    if (phabRepo) {
+                        this.setState({ phabricatorCallsign: phabRepo.callsign })
+                    }
                 }, err => console.error(err))
         )
     }
@@ -86,7 +107,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
     public componentWillReceiveProps(nextProps: Props): void {
         if (this.props.match.params.repoRev !== nextProps.match.params.repoRev) {
             // clear state so the child won't render until the revision is resolved for new props
-            this.setState({ cloneInProgress: false, notFound: false, commitID: undefined })
+            this.setState({ cloneInProgress: false, notFound: false, commitID: undefined, phabricatorCallsign: undefined })
             this.componentUpdates.next(nextProps)
         }
     }
@@ -118,6 +139,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 history={this.props.history}
                 onToggleFullWidth={this.props.onToggleFullWidth}
                 isFullWidth={this.props.isFullWidth}
+                phabricatorCallsign={this.state.phabricatorCallsign}
             />
         )
     }

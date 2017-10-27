@@ -31,6 +31,17 @@ var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute 
 
 var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
 
+var phabricatorURL = env.Get("PHABRICATOR_URL", "", "URL for internal Phabricator instance (on-prem)")
+
+func init() {
+	if phabricatorURL != "" {
+		if !strings.HasPrefix(phabricatorURL, "http") {
+			phabricatorURL = "https://" + phabricatorURL
+		}
+		phabricatorURL = strings.TrimSuffix(phabricatorURL, "/")
+	}
+}
+
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
 	UID string
@@ -63,6 +74,7 @@ type JSContext struct {
 	SessionID           string                     `json:"sessionID"`
 	Auth0Domain         string                     `json:"auth0Domain"`
 	Auth0ClientID       string                     `json:"auth0ClientID"`
+	PhabricatorURL      string                     `json:"phabricatorURL"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -135,6 +147,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SessionID:           sessionID,
 		Auth0Domain:         auth0.Domain,
 		Auth0ClientID:       auth0.Config.ClientID,
+		PhabricatorURL:      phabricatorURL,
 	}
 }
 

@@ -1,56 +1,70 @@
-# Sourcegraph Phabricator integration
+# Sourcegraph extension for Phabricator
 
-## Sourcegraph development stack
-This stack is a simulated Umami environment.
+## Overview
 
-* [aws-test-cluster Sourcegraph instance](http://node.aws.sgdev.org:30000/)
-To access this instance using kubectl, the infrastructure repo has an on-prem folder, and the aws-test-cluster folder has the relevant configs.
-* [aws-test-cluster Phabricator instance](http://phabricator.aws.sgdev.org/)
-Richard controls this. In the root direcotry of this box (ubuntu user), you'll find all the scripts in the [scripts directory.](./scripts).
-To log in, use these credentials: `sourcegraph-test`/`Fyu2e4yb7hTcFs8J2E`.
-* [aws-test-cluster gitolite instance](git@gitolite.aws.sgdev.org:<REPO_NAME>)
+This extension provides tooltips on Phabricator like the tooltips provided by our
+[Chrome extension for GitHub](https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en).
 
-## Developing using the chrome extension
-Note: http://phabricator.aws.sgdev.org/ is usually serving a version of the Phabricator integration. The two versions will interfere with one another. You must set a localStorage flag to prevent loading of the server-side Phabricator JavaScript. Run `window.localStorage['SOURCEGRAPH_DISABLED'] = true;`, and [this code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@f9c7474eb5dbd4477146ac4907c3098539075417/-/blob/client/browser-ext/phabricator/init.tsx?_event=ExploreAtCursor#L18:100) prevents the server-side integration from loading.
+Tooltips are provided on:
+- diffusion views like https://phabricator.mycompany.com/source/nrepo/browse/master/file.go and https://phabricator.mycompany.com/source/nrepo/change/master/file.go
+- differential pages like https://phabricator.mycompany.com/D1
+- commit views like https://phabricator.mycompany.com/rNREPOf9a34fd4ddd26824e4653d1f473c5709f2c21bd8
 
-Other than that, load the Chrome extension in developer mode, and it should run on http://phabricator.aws.sgdev.org/. Try it on a [diffusion view](http://phabricator.aws.sgdev.org/source/nmux/browse/master/mux.go) and a [differential view](http://phabricator.aws.sgdev.org/D3).
+### How does it work?
 
-## Pushing changes to production
-In the [browser-ext](../browser-ext/) directory, run `make phabricator`. This will automatically generate 4 files - the sgdev.bundle.js\[.map\] files, and the umami.bundle.js\[.map\] files. The sgdev bundle files are used by the aws-test-cluster Phabricator extension, and the umami ones are used at umami. These files are copied in to the [ui/assets/scripts](../../ui/assets/scripts) folder. Once these assets are commited, they will be available from the Sourcegraph frontend pod @ <SOURCEGRAPH_URL>/.assets/scripts/phabricator.bundle.js.
+Whenever you load a Phabricator page, the extension will load additional JavaScript & CSS assets. These
+assets contain the logic and styles for marking up Phabricator views w/ Sourcegraph tooltips.
 
-Note: Our build process will automatically deploy the changes to Sourcegraph.com. However, to deploy changes on node.aws.sgdev.org or umami, you will need to update the frontend pods on those instances.
+Data for the tooltips is fetched via cross-origin XHR requests to your Sourcegraph Server. Requests are made with
+the user's Sourcegraph cookie, so users must first sign in to Sourcegraph to receive tooltips while on Phabricator.
 
-## How Phabricator integrations work
-Phabricator is able to serve up arbitrary JavaScript. Here is how it works on the aws-test-cluster phabricator host:
-* Create the JavaScript file in the rsrc directory, such as `/var/www/phabricator/webroot/rsrc/js/sourcegraph/sgdev-sourcegraph.js`
-* I don't think the file name matters, at the top of the JS file, the plugin declares it's name. This looks like: [scripts/base.js](./scripts/base.js).
-* Make sure that your JS will get injected into the page in question. You need to modify some PHP code to require your JavaScript extension. I figured that the base/Controller.php code file gets loaded every page, so put the "require" statement there. Look at `/var/www/phabricator/src/applications/base/controller/PhabricatorController.php` on the phabricator server; on line 66, you'll see `require_celerity_resource('sgdev-sourcegraph');`.
-* Run `${PHABRICATOR_ROOT}/bin/celerity map`. This creates an index file where the PHP can find where sgdev-sourcegraph lives.
-* Run `sudo service apache2 restart`, to restart Phabricator
-* All this is available in the `restart.sh` script on the phabricator.aws.sgdev.org serverm also in the scripts/ directory.
+## Requirements
 
-## Deploying a server-side version of the Phabricator integration to aws-test-cluster
-Talk to @neelance about getting you access to ubuntu@phabricator.aws.sgdev.org .
+- A Phabricator installation
+- A Sourcegraph Server installation
 
-Theory: In general, the Chrome extension is a pretty good approximation for the behavior of the integration. However, it is important to test on the actual server. You either want to a) test the version of the code being served from the [aws-test-cluster version of Sourcegraph](http://node.aws.sgdev.org:30000/.assets/scripts/phabricator.bundle.js), OR you want to test JavaScript that resulted from `make phabricator` that is not yet deployed to the aws-test-cluster.
+## Installation
 
-### Deploying a Phabricator integration that pulls its JavaScript from node.aws.sgdev.org:30000
-`ssh ubuntu@phabricator.aws.sgdev.org`
-`sh setup_hosted_script.sh`
+First, copy the contents of the `scripts` directory to your Phabricator server.
 
-### Deploying a Phabricator integration that has the JavaScript right in it
-`scp sgdev.bundle.js ubuntu@phabricator.aws.sgdev.org:~/`, from your computer SCP the sgdev.bundle.js you want to test out to the sgdev server.
-On the SGDev Phabricator server, run `sh setup_script_from_bundle.sh`, and this will append the right header to the bundle file, and restart the Phabricator server.
+### Loading assets without automatic updates
 
-## How does the logic for the Chrome extension / Phabricator extension look
-The main point of entry for the [Chrome extension](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@f9c7474eb5dbd4477146ac4907c3098539075417/-/blob/client/browser-ext/chrome/extension/inject.tsx#L27:15-27:32). When you are developing the extension in Chrome, this is the code path taken.
+For most users, a manual installation & upgrade workflow is preferred. Follow these steps
+(which may need to be run with `sudo`):
 
-The main points of entry for the [sgdev.bundle.js](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@f9c7474eb5dbd4477146ac4907c3098539075417/-/blob/client/browser-ext/phabricator/sgdev/sgdev.tsx) and for [umami.bundle.js](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@f9c7474eb5dbd4477146ac4907c3098539075417/-/blob/client/browser-ext/phabricator/umami/umami.tsx#L1:1).
+* Update `/var/www/phabricator/src/applications/base/controller/PhabricatorController.php` to include the following lines at the top of `willBeginExecution()` (this instructs Phabricator to load Sourcegraph's JavaScript and CSS assets):
+```
+require_celerity_resource("sourcegraph");
+require_celerity_resource("sourcegraph-style");
+```
+* Run `./install_bundle.sh $SOURCEGRAPH_SERVER_URL` (this adds the JavaScript and CSS assets to Phabricator's static asset map)
 
-## Questions
+### Loading assets with automatic updates
 
-### Why are there different bundles for sgdev and umami?
-Phabricator requires a mapping from repo nickname to repo URI. Also, our plugin requires an address for where to find the Sourcegraph instance. This is the only difference between the bundles.
+You may configure the extension to load assets dynamically from your Sourcegraph Server, in which case updating
+your server can automatically update the JavaScript and CSS which gets loaded on Phabricator pages.
 
-### Long term plans
-Ideally, we could get the repo nickname -> uri mapping using the Phabricator API, either directly from the front-end, or Sourcegraph would do this. I think either could probably work, and there is a [conduit API](http://phabricator.aws.sgdev.org/conduit/method/diffusion.repository.search/) that performs this operation.
+* Update `/var/www/phabricator/src/applications/base/controller/PhabricatorController.php` to include the following lines at the top of `willBeginExecution()` (this instructs Phabricator to load Sourcegraph's JavaScript shim):
+```
+require_celerity_resource("sourcegraph");
+```
+* Run `./install_loader.sh $SOURCEGRAPH_SERVER_URL` (this adds a JavaScript shim to Phabricator's static asset map which loads assets from your Sourcegraph Server)
+
+
+## Development
+
+The Phabricator extension shares code with our Chrome extension for GitHub, so one way to develop it is as a Chrome extension.
+If this would interfere with an installed version of the extension, you can set a flag which prevents running the installed
+extension assets (since you want the Chrome extension to do that instead):
+
+```
+window.localStorage['SOURCEGRAPH_DISABLED'] = true;
+```
+
+Alternatively, you can develop the extension using the loader shim and setting your Sourcegraph Server to localhost, like this:
+
+```
+./install_loader.sh http://localhost:3080
+```
+
+Then run a build loop for the Phabricator extension which outputs generated files to the Sourcegraph frontend's static assets root.

@@ -74,4 +74,9 @@ interface SourcegraphContext {
      * For instance, on node.aws.sgdev.org, it is set to ^gitolite\.aws\.sgdev\.org.
      */
     repoHomeRegexFilter: string
+
+    /**
+     * phabricatorURL is the URL for outbound Phabricator links
+     */
+    phabricatorURL: string
 }
