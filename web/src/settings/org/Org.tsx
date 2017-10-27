@@ -150,9 +150,9 @@ export const Org = reactive<Props>(props => {
                         </tbody>
                     </table>
 
-                    <EditorConfiguration settings={org.latestSettings} />
-
                     <OrgSettingsForm org={org} />
+
+                    <EditorConfiguration settings={org.latestSettings} />
                 </div>
             )
         })
