@@ -574,13 +574,112 @@ declare namespace GQL {
     }
 
     /*
-      description: null
+      description: Represents a shared item (either a shared code comment OR code snippet).
+  
+  🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+  Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+  type.
     */
     interface ISharedItem {
         __typename: "SharedItem";
-        author: IUser;
-        thread: IThread;
-        comment: IComment | null;
+        author: ISharedItemUser;
+        thread: ISharedItemThread;
+        comment: ISharedItemComment | null;
+    }
+
+    /*
+      description: Like the User type, except with fields that should not be accessible with a
+  secret URL removed.
+  
+  🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+  Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+  type.
+    */
+    interface ISharedItemUser {
+        __typename: "SharedItemUser";
+        displayName: string | null;
+        username: string | null;
+        avatarURL: string | null;
+    }
+
+    /*
+      description: Like the Thread type, except with fields that should not be accessible with a
+  secret URL removed.
+  
+  🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+  Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+  type.
+    */
+    interface ISharedItemThread {
+        __typename: "SharedItemThread";
+        id: number;
+        repo: ISharedItemOrgRepo;
+        file: string;
+        branch: string | null;
+        repoRevision: string;
+        title: string;
+        startLine: number;
+        endLine: number;
+        startCharacter: number;
+        endCharacter: number;
+        rangeLength: number;
+        createdAt: string;
+        archivedAt: string | null;
+        author: ISharedItemUser;
+        lines: ISharedItemThreadLines | null;
+        comments: Array<ISharedItemComment>;
+    }
+
+    /*
+      description: Like the OrgRepo type, except with fields that should not be accessible with
+  a secret URL removed.
+  
+  🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+  Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+  type.
+    */
+    interface ISharedItemOrgRepo {
+        __typename: "SharedItemOrgRepo";
+        id: number;
+        remoteUri: string;
+    }
+
+    /*
+      description: Exactly the same as the ThreadLines type, except it cannot have sensitive
+  fields accidently added.
+  
+  🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+  Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+  type.
+    */
+    interface ISharedItemThreadLines {
+        __typename: "SharedItemThreadLines";
+        htmlBefore: string;
+        html: string;
+        htmlAfter: string;
+        textBefore: string;
+        text: string;
+        textAfter: string;
+        textSelectionRangeStart: number;
+        textSelectionRangeLength: number;
+    }
+
+    /*
+      description: Like the Comment type, except with fields that should not be accessible with a
+  secret URL removed.
+  
+  🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+  Do NOT use any non-primitive graphql type here unless it is also a SharedItem
+  type.
+    */
+    interface ISharedItemComment {
+        __typename: "SharedItemComment";
+        id: number;
+        title: string;
+        contents: string;
+        createdAt: string;
+        updatedAt: string;
+        author: ISharedItemUser;
     }
 
     /*
