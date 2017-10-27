@@ -191,10 +191,15 @@ func newOIDCLoginHandler(createCtx context.Context, sessionStore *session.Store,
 		}
 
 		// Parse and verify ID Token payload. See http://openid.net/specs/openid-connect-core-1_0.html#TokenResponseValidation.
-		idToken, err := verifier.Verify(ctx, rawIDToken)
-		if err != nil {
-			http.Error(w, ssoErrMsg("ID Token verification failed", ""), http.StatusUnauthorized)
-			return
+		var idToken *oidc.IDToken
+		if mockVerifyIDToken != nil {
+			idToken = mockVerifyIDToken(rawIDToken)
+		} else {
+			idToken, err = verifier.Verify(ctx, rawIDToken)
+			if err != nil {
+				http.Error(w, ssoErrMsg("ID Token verification failed", ""), http.StatusUnauthorized)
+				return
+			}
 		}
 
 		// Validate the nonce. The Verify method explicitly doesn't handle nonce validation, so we do that here.
@@ -242,3 +247,6 @@ type oidcSession struct {
 func ssoErrMsg(err string, description interface{}) string {
 	return fmt.Sprintf("SSO error: %s\n%v", err, description)
 }
+
+// mockVerifyIDToken mocks the OIDC ID Token verification step. It should only be set in tests.
+var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
