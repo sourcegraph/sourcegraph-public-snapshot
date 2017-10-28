@@ -30,7 +30,7 @@ type Store struct {
 	store     sessions.Store
 }
 
-// Init initializes the session store.
+// NewStore initializes the session store.
 func NewStore(name string, cookieKey string, secureCookie bool, underlyingStore sessions.Store) (*Store, error) {
 	if underlyingStore == nil {
 		redisStore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
@@ -95,9 +95,9 @@ func (s *Store) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SessionCookie returns the session cookie from the header of the given request.
+// Cookie returns the session cookie from the header of the given request.
 func (s *Store) Cookie(r *http.Request) string {
-	c, err := r.Cookie(s.CookieKey)
+	c, err := r.Cookie(s.Name)
 	if err != nil {
 		return ""
 	}
