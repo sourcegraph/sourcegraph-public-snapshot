@@ -66,7 +66,7 @@ func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler
 
 // AuthenticateBySession authenticates the context with the given session cookie.
 func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Context {
-	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{actorSessionStore.Name + "=" + sessionCookie}}}
+	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{actorSessionStore.name + "=" + sessionCookie}}}
 	return authenticateByCookie(fakeRequest.WithContext(ctx))
 }
 

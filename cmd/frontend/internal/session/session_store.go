@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "redis-store:6379", "redis used for storing sessions")
-	sessionCookieKey  = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
+	sessionStoreRedis     = env.Get("SRC_SESSION_STORE_REDIS", "redis-store:6379", "redis used for storing sessions")
+	sessionCookieKeyRedis = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 )
 
 func init() {
@@ -23,17 +23,22 @@ func init() {
 	}
 }
 
-// Store is Redis-backed store for sessions
+// Store is a wrapper that stores and fetches data from some underlying session store
 type Store struct {
-	Name      string
-	CookieKey string
-	store     sessions.Store
+	// name is the name of the session and session cookie
+	name string
+
+	// sessionKey is the key in the underlying gorilla/session from which we fetch/set the session data.
+	sessionKey string
+
+	// store is the underlying store for session data
+	store sessions.Store
 }
 
 // NewStore initializes the session store.
-func NewStore(name string, cookieKey string, secureCookie bool, underlyingStore sessions.Store) (*Store, error) {
+func NewStore(name string, sessionKey string, secureCookie bool, underlyingStore sessions.Store) (*Store, error) {
 	if underlyingStore == nil {
-		redisStore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
+		redisStore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKeyRedis))
 		if err != nil {
 			return nil, err
 		}
@@ -43,9 +48,9 @@ func NewStore(name string, cookieKey string, secureCookie bool, underlyingStore 
 		underlyingStore = redisStore
 	}
 	return &Store{
-		Name:      name,
-		CookieKey: cookieKey,
-		store:     underlyingStore,
+		name:       name,
+		sessionKey: sessionKey,
+		store:      underlyingStore,
 	}, nil
 }
 
@@ -53,11 +58,11 @@ func NewStore(name string, cookieKey string, secureCookie bool, underlyingStore 
 func (s *Store) StartNewSession(w http.ResponseWriter, r *http.Request, val []byte) error {
 	s.DeleteSession(w, r)
 
-	session, err := s.store.New(&http.Request{}, s.Name) // workaround: not passing the request forces a new session
+	session, err := s.store.New(&http.Request{}, s.name) // workaround: not passing the request forces a new session
 	if err != nil {
 		log15.Error("error creating session", "error", err)
 	}
-	session.Values[s.CookieKey] = val
+	session.Values[s.sessionKey] = val
 	if err = session.Save(r, w); err != nil {
 		log15.Error("error saving session", "error", err)
 	}
@@ -67,14 +72,14 @@ func (s *Store) StartNewSession(w http.ResponseWriter, r *http.Request, val []by
 
 // GetSession gets the current session token value, nil if it doesn't exist
 func (s *Store) GetSession(r *http.Request) ([]byte, error) {
-	session, err := s.store.Get(r, s.Name)
+	session, err := s.store.Get(r, s.name)
 	if err != nil {
 		return nil, err
 	}
 	if session == nil {
 		return nil, nil
 	}
-	val := session.Values[s.CookieKey]
+	val := session.Values[s.sessionKey]
 	if val == nil {
 		return nil, nil
 	} else if val, ok := val.([]byte); ok {
@@ -85,7 +90,7 @@ func (s *Store) GetSession(r *http.Request) ([]byte, error) {
 
 // DeleteSession deletes the current session.
 func (s *Store) DeleteSession(w http.ResponseWriter, r *http.Request) {
-	session, err := s.store.Get(r, s.Name)
+	session, err := s.store.Get(r, s.name)
 	if err != nil {
 		log15.Error("error getting session", "error", err)
 	}
@@ -97,7 +102,7 @@ func (s *Store) DeleteSession(w http.ResponseWriter, r *http.Request) {
 
 // Cookie returns the session cookie from the header of the given request.
 func (s *Store) Cookie(r *http.Request) string {
-	c, err := r.Cookie(s.Name)
+	c, err := r.Cookie(s.name)
 	if err != nil {
 		return ""
 	}
