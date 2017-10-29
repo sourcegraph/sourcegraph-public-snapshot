@@ -103,8 +103,13 @@ export class SearchResults extends React.Component<Props, State> {
         let alertTitle: string | JSX.Element | undefined
         let alertDetails: string | undefined
         if (this.state.error) {
-            alertTitle = 'Something went wrong!'
-            alertDetails = upperFirst(this.state.error.message)
+            if (this.state.error.message.includes('no query terms or regexp specified')) {
+                alertTitle = ''
+                alertDetails = 'Enter terms to search...'
+            } else {
+                alertTitle = 'Something went wrong!'
+                alertDetails = upperFirst(this.state.error.message)
+            }
         } else if (this.state.loading) {
             alertTitle = <Loader className='icon-inline' />
         } else if (this.state.results.length === 0 && this.state.missing.length === 0 && this.state.cloning.length === 0) {

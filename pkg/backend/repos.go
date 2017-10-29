@@ -88,8 +88,10 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	repos, err := localstore.Repos.List(ctx, &localstore.RepoListOp{
-		Query:       opt.Query,
-		ListOptions: opt.ListOptions,
+		Query:           opt.Query,
+		IncludePatterns: opt.IncludePatterns,
+		ExcludePattern:  opt.ExcludePattern,
+		ListOptions:     opt.ListOptions,
 	})
 	if err != nil {
 		return nil, err

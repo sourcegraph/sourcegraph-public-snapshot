@@ -47,26 +47,24 @@ func TestSearch2Suggestions(t *testing.T) {
 	})
 
 	t.Run("single term", func(t *testing.T) {
-		var mu sync.Mutex
-		reposListCalls := map[string][]*sourcegraph.Repo{
-			"foo": []*sourcegraph.Repo{{URI: "foo-repo"}},
-			"":    []*sourcegraph.Repo{{URI: "bar-repo"}},
-		}
+		var calledReposListAll, calledReposListFoo bool
 		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
-			mu.Lock()
-			defer mu.Unlock()
-			repos, expected := reposListCalls[op.Query]
-			delete(reposListCalls, op.Query)
-			if !expected {
-				t.Errorf("unexpected %q", op.Query)
+			wantFoo := &store.RepoListOp{IncludePatterns: []string{"foo"}} // when treating term as repo: field
+			wantAll := &store.RepoListOp{}                                 // when treating term as text query
+			if reflect.DeepEqual(op, wantAll) {
+				calledReposListAll = true
+				return []*sourcegraph.Repo{{URI: "bar-repo"}}, nil
+			} else if reflect.DeepEqual(op, wantFoo) {
+				calledReposListFoo = true
+				return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
+			} else {
+				t.Errorf("got %+v, want %+v or %+v", op, wantFoo, wantAll)
 			}
-			return repos, nil
+			return nil, nil
 		}
 		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) (*searchResults, error) {
-			mu.Lock()
-			defer mu.Unlock()
 			calledSearchRepos = true
 			if want := "foo"; args.Query.Pattern != want {
 				t.Errorf("got %q, want %q", args.Query.Pattern, want)
@@ -79,8 +77,11 @@ func TestSearch2Suggestions(t *testing.T) {
 		}
 		defer func() { mockSearchRepos = nil }()
 		testSuggestions(t, "foo", "", []string{"repo:foo-repo", "file:dir/file"})
-		if len(reposListCalls) != 0 {
-			t.Errorf("reposListCalls: %+v", reposListCalls)
+		if !calledReposListAll {
+			t.Error("!calledReposListAll")
+		}
+		if !calledReposListFoo {
+			t.Error("!calledReposListFoo")
 		}
 		if !calledSearchRepos {
 			t.Error("!calledSearchRepos")
@@ -94,15 +95,13 @@ func TestSearch2Suggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := "foo"; op.Query != want {
-				t.Errorf("got %q, want %q", op.Query, want)
+			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}}); !reflect.DeepEqual(op, want) {
+				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
 		mockSearchFilesForRepoURI = func(query string, repoURI string, limit int) ([]*searchResultResolver, error) {
-			mu.Lock()
-			defer mu.Unlock()
 			calledSearchFiles = true
 			if want := ""; query != want {
 				t.Errorf("got %q, want %q", query, want)
@@ -131,15 +130,13 @@ func TestSearch2Suggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := "foo"; op.Query != want {
-				t.Errorf("got %q, want %q", op.Query, want)
+			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}}); !reflect.DeepEqual(op, want) {
+				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
 		mockSearchFilesForRepoURI = func(query string, repoURI string, limit int) ([]*searchResultResolver, error) {
-			mu.Lock()
-			defer mu.Unlock()
 			calledSearchFiles = true
 			if want := ""; query != want {
 				t.Errorf("got %q, want %q", query, want)
