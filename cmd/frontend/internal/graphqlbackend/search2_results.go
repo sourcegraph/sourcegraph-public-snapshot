@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"strings"
 )
@@ -19,11 +20,15 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 	// expands the result set. This is not a critical issue, but it should be
 	// made consistent.
 	var patternsToCombine []string
-	if termPattern := patternForQueryTerms(r.query.fieldValues[""]); termPattern != "" {
+	if termPattern := patternForQueryTerms(withoutEmptyStrings(r.query.fieldValues[""])); termPattern != "" {
 		patternsToCombine = append(patternsToCombine, termPattern)
 	}
-	for _, pattern := range r.query.fieldValues[searchFieldRegExp] {
+	for _, pattern := range withoutEmptyStrings(r.query.fieldValues[searchFieldRegExp]) {
 		patternsToCombine = append(patternsToCombine, pattern)
+	}
+
+	if len(patternsToCombine) == 0 {
+		return nil, errors.New("no query terms or regexp specified")
 	}
 
 	args := repoSearchArgs{
