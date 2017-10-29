@@ -57,7 +57,6 @@
     "ts-node": "^3.3.0",
     "tslint": "^5.7.0",
     "tslint-language-service": "^0.9.6",
-    "tslint-webpack-plugin": "^0.5.0",
     "typescript": "^2.5.2",
     "typescript-formatter": "^6.0.0",
     "webpack": "^3.5.6",
