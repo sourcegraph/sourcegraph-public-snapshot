@@ -2,6 +2,7 @@ package localstore
 
 import (
 	"bytes"
+	"errors"
 	"log"
 	"regexp"
 	"strings"
@@ -200,10 +201,22 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 	return repos, nil
 }
 
+// RepoListOp specifies the options for listing repositories.
+//
+// Query and IncludePatterns/ExcludePatterns may not be used together.
 type RepoListOp struct {
 	// Query specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
 	Query string
+
+	// IncludePatterns is a list of regular expressions, all of which must match all
+	// repositories returned in the list.
+	IncludePatterns []string
+
+	// ExcludePattern is a regular expression that must not match any repository
+	// returned in the list.
+	ExcludePattern string
+
 	sourcegraph.ListOptions
 }
 
@@ -273,8 +286,17 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	}
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
+		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
+	}
 	if opt.Query != "" {
 		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeRepoQuery(strings.ToLower(opt.Query))))
+	}
+	for _, includePattern := range opt.IncludePatterns {
+		conds = append(conds, sqlf.Sprintf("uri ~* %s", includePattern))
+	}
+	if opt.ExcludePattern != "" {
+		conds = append(conds, sqlf.Sprintf("uri !~* %s", opt.ExcludePattern))
 	}
 
 	// fetch matching repos unordered

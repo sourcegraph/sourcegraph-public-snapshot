@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,8 +14,6 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
-
-	"github.com/neelance/parallel"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
 )
@@ -119,7 +118,7 @@ type searchResolver2 struct {
 	userQuery resolvedQuery // the user query only (ONLY USE for UX hints)
 }
 
-func (r *searchResolver2) resolveRepoGroups(ctx context.Context) (map[string][]*searchResultResolver, error) {
+func (r *searchResolver2) resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
 	var active, inactive []*sourcegraph.Repo
 	if len(inactiveReposMap) != 0 {
 		var err error
@@ -138,10 +137,10 @@ func (r *searchResolver2) resolveRepoGroups(ctx context.Context) (map[string][]*
 		}
 	}
 
-	return map[string][]*searchResultResolver{
-		"active":   toSearchResultResolvers(active, math.MaxInt32-1),
-		"inactive": toSearchResultResolvers(inactive, math.MaxInt32-2),
-		"sample":   toSearchResultResolvers(sample, math.MaxInt32-1),
+	return map[string][]*sourcegraph.Repo{
+		"active":   active,
+		"inactive": inactive,
+		"sample":   sample,
 	}, nil
 }
 
@@ -181,166 +180,84 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	return sampleRepos, nil
 }
 
-func toSearchResultResolvers(repos []*sourcegraph.Repo, score int) []*searchResultResolver {
-	resolvers := make([]*searchResultResolver, len(repos))
-	for i, repo := range repos {
-		resolvers[i] = &searchResultResolver{
-			result: &repositoryResolver{repo: repo},
-			score:  score,
-		}
-	}
-	return resolvers
-}
-
 func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) ([]*repositoryRevision, []*searchResultResolver, error) {
-	var (
-		mu            sync.Mutex
-		repoRevisions []*repositoryRevision
-		repoResolvers []*searchResultResolver
-
-		run = parallel.NewRun(8)
-	)
-
-	var repoPatterns []string
+	var includePatterns []string
 	if len(effectiveRepoFieldValues) > 0 {
-		repoPatterns = effectiveRepoFieldValues
+		includePatterns = effectiveRepoFieldValues
 	} else {
-		repoPatterns = r.query.fieldValues[searchFieldRepo]
+		includePatterns = r.query.fieldValues[searchFieldRepo]
 	}
-
-	// Omit empty fields.
-	x := make([]string, 0, len(repoPatterns))
-	for _, p := range repoPatterns {
-		if p != "" {
-			x = append(x, p)
-		}
-	}
-	repoPatterns = x
-
-	if len(repoPatterns) == 0 {
-		repoPatterns = []string{""} // search across all repos
-	}
-
-	for _, repoPattern := range repoPatterns {
-		run.Acquire()
-		go func(repoPattern string) {
-			defer func() {
-				if r := recover(); r != nil {
-					run.Error(fmt.Errorf("recover: %v", r))
-				}
-				run.Release()
-			}()
-
-			repoRev := parseRepositoryRevision(repoPattern)
-
-			repos, err := searchRepos(ctx, repoRev.Repo, nil, 15) // TODO(sqs): un-hardcode 15
-			if err != nil {
-				run.Error(err)
-				return
-			}
-
-			for _, repo := range repos {
-				repo.score = math.MaxInt32
-			}
-
-			mu.Lock()
-			repoResolvers = append(repoResolvers, repos...)
-			for _, repo := range repos {
-				repoRevisions = append(repoRevisions, &repositoryRevision{
-					Repo: repo.result.(*repositoryResolver).URI(),
-					Rev:  repoRev.Rev,
-				})
-			}
-			mu.Unlock()
-		}(repoPattern)
-	}
-	if err := run.Wait(); err != nil {
-		return nil, nil, err
-	}
+	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)]
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
 	if groupNames := r.query.fieldValues[searchFieldRepoGroup]; len(groupNames) > 0 {
-		reposFromRepoField := make(map[string]struct{}, len(repoRevisions))
-		for _, repo := range repoRevisions {
-			reposFromRepoField[repo.Repo] = struct{}{}
-		}
-
 		groups, err := r.resolveRepoGroups(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
-		var repoRevisionsFromGroups []*repositoryRevision
-		var repoResolversFromGroups []*searchResultResolver
-		reposFromGroups := map[string]struct{}{}
-		for _, groupName := range groupNames {
-			for _, repo := range groups[groupName] {
-				repoRevisionsFromGroups = append(repoRevisionsFromGroups, &repositoryRevision{Repo: repo.result.(*repositoryResolver).URI()})
-				repoResolversFromGroups = append(repoResolversFromGroups, repo)
-				reposFromGroups[repo.result.(*repositoryResolver).URI()] = struct{}{}
+		var patterns []string
+		for _, reposInGroup := range groups {
+			for _, repo := range reposInGroup {
+				patterns = append(patterns, "^"+repo.URI+"$")
 			}
 		}
+		includePatterns = append(includePatterns, unionRegExps(patterns))
+	}
 
-		if len(repoRevisions) == 0 {
-			repoRevisions = repoRevisionsFromGroups
-			repoResolvers = repoResolversFromGroups
-		} else {
-			filter := func(repo string) bool {
-				_, isInRepoGroup := reposFromGroups[repo]
-				return isInRepoGroup
-			}
-			repoRevisions = append(repoRevisions, repoRevisionsFromGroups...)
-			repoResolvers = append(repoResolvers, repoResolversFromGroups...)
-			repoRevisions, repoResolvers = filterRepos(repoRevisions, repoResolvers, filter)
+	// Treat an include pattern with a suffix of "@rev" as meaning that all
+	// matched repos should be resolved to "rev".
+	includePatternRevs := make([]string, len(includePatterns))
+	for i, includePattern := range includePatterns {
+		repoRev := parseRepositoryRevision(includePattern)
+		if repoRev.hasRev() {
+			includePatterns[i] = repoRev.Repo // trim "@rev" from pattern
+			includePatternRevs[i] = *repoRev.Rev
 		}
 	}
 
-	// Eliminate duplicates.
-	repoRevisions, repoResolvers = uniqueRepos(repoRevisions, repoResolvers)
+	// Support determining which include pattern with a rev (if any) matched
+	// a repo in the result set.
+	compiledIncludePatterns := make([]*regexp.Regexp, len(includePatterns))
+	for i, includePattern := range includePatterns {
+		p, err := regexp.Compile(includePattern)
+		if err != nil {
+			return nil, nil, err
+		}
+		compiledIncludePatterns[i] = p
+	}
+	getRevForMatchedRepo := func(repo string) *string {
+		for i, pat := range compiledIncludePatterns {
+			if pat.MatchString(repo) && includePatternRevs[i] != "" {
+				return &includePatternRevs[i]
+			}
+		}
+		return nil
+	}
+
+	repos, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		IncludePatterns: includePatterns,
+		ExcludePattern:  unionRegExps(excludePatterns),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	repoRevisions := make([]*repositoryRevision, 0, len(repos.Repos))
+	repoResolvers := make([]*searchResultResolver, 0, len(repos.Repos))
+	for _, repo := range repos.Repos {
+		repoResolvers = append(repoResolvers, newSearchResultResolver(
+			&repositoryResolver{repo: repo},
+			math.MaxInt32,
+		))
+		repoRevisions = append(repoRevisions, &repositoryRevision{
+			Repo: repo.URI,
+			Rev:  getRevForMatchedRepo(repo.URI),
+		})
+	}
 
 	return repoRevisions, repoResolvers, nil
-}
-
-func uniqueRepos(repoRevisions []*repositoryRevision, repoResolvers []*searchResultResolver) ([]*repositoryRevision, []*searchResultResolver) {
-	if repoRevisions == nil || repoResolvers == nil {
-		return nil, nil
-	}
-
-	type key struct{ repo, rev string }
-	seen := map[key]struct{}{}
-	filteredRepoRevisions := repoRevisions[:0]
-	filteredRepoResolvers := repoResolvers[:0]
-	for i, repo := range repoRevisions {
-		k := key{repo: repo.Repo}
-		if repo.Rev != nil {
-			k.rev = *repo.Rev
-		}
-
-		if _, dup := seen[k]; !dup {
-			filteredRepoRevisions = append(filteredRepoRevisions, repo)
-			filteredRepoResolvers = append(filteredRepoResolvers, repoResolvers[i])
-			seen[k] = struct{}{}
-		}
-	}
-	return filteredRepoRevisions, filteredRepoResolvers
-}
-
-func filterRepos(repoRevisions []*repositoryRevision, repoResolvers []*searchResultResolver, filter func(repo string) bool) ([]*repositoryRevision, []*searchResultResolver) {
-	if repoRevisions == nil || repoResolvers == nil {
-		return nil, nil
-	}
-
-	filteredRepoRevisions := repoRevisions[:0]
-	filteredRepoResolvers := repoResolvers[:0]
-	for i, repo := range repoRevisions {
-		key := repo.Repo
-		if filter(key) {
-			filteredRepoRevisions = append(filteredRepoRevisions, repo)
-			filteredRepoResolvers = append(filteredRepoResolvers, repoResolvers[i])
-		}
-	}
-	return filteredRepoRevisions, filteredRepoResolvers
 }
 
 func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultResolver, error) {
