@@ -1,8 +1,6 @@
 .navbar {
-
     position: sticky;
     flex: none;
-    height: 3.55rem; // +.05 to avoid the search box leaking
     width: 100%;
     z-index: 9999999;
 
@@ -33,8 +31,6 @@
     }
 
     &__logo {
-        width: 1.5rem;
-        height: 1.5rem;
         &:hover {
             animation: spin 0.5s ease-in-out 1;
             @keyframes spin {
@@ -45,8 +41,28 @@
     }
 
     &__search-box-container {
-        width: 52rem;
         min-width: 18rem;
         align-self: flex-start;
+    }
+
+    &:not(.navbar-search2) {
+        height: 3.55rem; // +.05 to avoid the search box leaking
+        .navbar__logo {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        .navbar__search-box-container {
+            width: 52rem;
+        }
+    }
+    &.navbar-search2 {
+        height: 4.35rem; // +.05 to avoid the search box leaking
+        .navbar__logo {
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+        .navbar__search-box-container {
+            flex: 1 0;
+        }
     }
 }

@@ -20,7 +20,7 @@ export class Navbar extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='navbar'>
+            <div className={`navbar ${enableSearch2 ? 'navbar-search2' : ''}`}>
                 <div className='navbar__left'>
                     <Link to='/search' className='navbar__logo-link'>
                         <img className='navbar__logo' src='/.assets/img/sourcegraph-mark.svg' />
