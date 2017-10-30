@@ -4,24 +4,18 @@ import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import 'rxjs/add/observable/timer'
 import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/concat'
+import 'rxjs/add/operator/do'
+import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/multicast'
 import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/switchMap'
-import 'rxjs/add/operator/take'
-import 'rxjs/add/operator/takeWhile'
-import { Observable } from 'rxjs/Observable'
-import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
 import { events, viewEvents } from '../tracking/events'
 import { searchText } from './backend'
-import { parseSearchURLQuery } from './index'
+import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 
 interface Props {
     location: H.Location
@@ -56,32 +50,48 @@ export class SearchResults extends React.Component<Props, State> {
     }
 
     private componentUpdates = new Subject<Props>()
+    private searchRequested = new Subject<SearchOptions>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         viewEvents.SearchResults.log()
+
         this.subscriptions.add(
-            this.componentUpdates
-                .startWith(this.props)
-                .switchMap(props => {
+            this.searchRequested
+                // Don't search using stale search options.
+                .filter(searchOptions => {
+                    const currentSearchOptions = parseSearchURLQuery(this.props.location.search)
+                    return searchOptionsEqual(searchOptions, currentSearchOptions)
+                })
+                .switchMap(searchOptions => {
                     const start = Date.now()
-                    const searchOptions = parseSearchURLQuery(props.location.search)
-                    // Repeat the search every 1s until no more repos are clone in progress
-                    return Observable.timer(0, 1000)
-                        .mergeMap(() => searchText(searchOptions))
-                        // Make sure that last item is still included
-                        // Can't use takeWhile here because it would omit the last element (the first which the predicate returns false for)
-                        .multicast<GQL.ISearchResults>(
-                        () => new ReplaySubject<GQL.ISearchResults>(1),
-                        textSearch => textSearch.takeWhile(res => res.cloning.length > 0).concat(textSearch.take(1))
-                        )
+                    return searchText(searchOptions)
+                        .do(res => {
+                            if (res.cloning.length > 0) {
+                                // Perform search again if there are repos still waiting to be cloned,
+                                // so we can update the results list with those repos' results.
+                                setTimeout(() => this.searchRequested.next(searchOptions), 2000)
+                            }
+                        })
                         .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
                         .catch(error => {
                             console.error(error)
                             return [{ results: [], missing: [], cloning: [], limitHit: false, error, loading: false, searchDuration: undefined }]
                         })
-                        // Reset to loading state
-                        .startWith({ results: [], missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined })
+                })
+                .subscribe(
+                newState => this.setState(newState as State),
+                err => console.error(err)
+                )
+        )
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .startWith(this.props)
+                .map(props => {
+                    const searchOptions = parseSearchURLQuery(props.location.search)
+                    this.searchRequested.next(searchOptions)
+                    return { results: [], missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined }
                 })
                 .subscribe(
                 newState => this.setState(newState as State),

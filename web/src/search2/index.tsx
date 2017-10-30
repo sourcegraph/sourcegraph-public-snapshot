@@ -29,3 +29,10 @@ export function parseSearchURLQuery(query: string): SearchOptions {
         scopeQuery: searchParams.get('sq') || '',
     }
 }
+
+/**
+ * Returns whether the two sets of search options are equal.
+ */
+export function searchOptionsEqual(a: SearchOptions, b: SearchOptions): boolean {
+    return a.query === b.query && a.scopeQuery === b.scopeQuery
+}
