@@ -200,8 +200,8 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 			return nil, nil, err
 		}
 		var patterns []string
-		for _, reposInGroup := range groups {
-			for _, repo := range reposInGroup {
+		for _, groupName := range groupNames {
+			for _, repo := range groups[groupName] {
 				patterns = append(patterns, "^"+regexp.QuoteMeta(repo.URI)+"$")
 			}
 		}
