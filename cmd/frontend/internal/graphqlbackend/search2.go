@@ -31,6 +31,7 @@ const (
 
 var searchFieldAliases = map[search2.Field][]search2.Field{
 	searchFieldRepo:             {"r"},
+	minusField(searchFieldRepo): {minusField("r")},
 	searchFieldFile:             {"f"},
 	minusField(searchFieldFile): {minusField("f")},
 	searchFieldRepoGroup:        {"g"},
