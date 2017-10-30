@@ -207,6 +207,13 @@ export class SearchFields extends React.Component<Props, State> {
 }
 
 function formatFieldForQuery(field: string, value: string): string {
+    // The user shouldn't include the 'repo:' (or other field name) in the value, but
+    // if they do, then be helpful and remove it for them to avoid double fields like
+    // 'repo:repo:foo'.
+    if (field) {
+        value = value.replace(new RegExp(field + ':', 'g'), '')
+    }
+
     // See if we need to double-quote value.
     const jsonValue = JSON.stringify(value)
     if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value) {
