@@ -74,15 +74,17 @@ func authenticateByCookie(r *http.Request) context.Context {
 	actorJSON, err := actorSessionStore.GetSession(r)
 	if err != nil {
 		log15.Error("error getting session", "error", err)
-		// 🚨 SECURITY: erase any existing actor
-		return actor.WithActor(r.Context(), &actor.Actor{})
+		return r.Context()
+	}
+
+	if actorJSON == nil {
+		return r.Context()
 	}
 
 	var a actor.Actor
 	if err := json.Unmarshal(actorJSON, &a); err != nil {
 		log15.Error("error unmarshalling actor", "error", err)
-		// 🚨 SECURITY: erase any existing actor
-		return actor.WithActor(r.Context(), &actor.Actor{})
+		return r.Context()
 	}
 
 	return actor.WithActor(r.Context(), &a)
