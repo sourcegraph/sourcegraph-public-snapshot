@@ -294,7 +294,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeRepoQuery(strings.ToLower(opt.Query))))
 	}
 	for _, includePattern := range opt.IncludePatterns {
-		exact, pattern, err := parseIncludePattern(includePattern)
+		exact, like, pattern, err := parseIncludePattern(includePattern)
 		if err != nil {
 			return nil, err
 		}
@@ -308,12 +308,20 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 				}
 				conds = append(conds, sqlf.Sprintf("uri IN (%s)", sqlf.Join(items, ",")))
 			}
-		} else if pattern != "" {
-			conds = append(conds, sqlf.Sprintf("uri ~* %s", pattern))
+		}
+		if like != nil && len(like) > 0 {
+			var likeConds []*sqlf.Query
+			for _, v := range like {
+				likeConds = append(likeConds, sqlf.Sprintf(`lower(uri) LIKE %s`, v))
+			}
+			conds = append(conds, sqlf.Join(likeConds, " OR "))
+		}
+		if pattern != "" {
+			conds = append(conds, sqlf.Sprintf("lower(uri) ~* %s", pattern))
 		}
 	}
 	if opt.ExcludePattern != "" {
-		conds = append(conds, sqlf.Sprintf("uri !~* %s", opt.ExcludePattern))
+		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
 
 	// fetch matching repos unordered
@@ -352,8 +360,9 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 }
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible
-// string values if such a list can be determined from the pattern, or else (2)
-// returns the original regexp.
+// string values and LIKE patterns if such a list can be determined from the pattern,
+// and (2) returns the original regexp if those patterns are not equivalent to the
+// regexp.
 //
 // It allows Repos.List to optimize for the common case where a pattern like
 // `(^github.com/foo/bar$)|(^github.com/baz/qux$)` is provided. In that case,
@@ -365,39 +374,47 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 // in the database. With this optimization, specifying a "repogroup:" in the query
 // will be fast (even if there are many repos) because the query can be constrained
 // efficiently to only the repos in the group.
-func parseIncludePattern(pattern string) (exact []string, regexp string, err error) {
+func parseIncludePattern(pattern string) (exact, like []string, regexp string, err error) {
 	re, err := regexpsyntax.Parse(pattern, regexpsyntax.OneLine)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
-	exact, begin, end, err := allMatchingStrings(re.Simplify())
+	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify())
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
-	if begin && end {
-		return exact, "", nil
+	for _, v := range contains {
+		like = append(like, "%"+v+"%")
 	}
-	return nil, pattern, nil
+	for _, v := range prefix {
+		like = append(like, v+"%")
+	}
+	for _, v := range suffix {
+		like = append(like, "%"+v)
+	}
+	if exact != nil || like != nil {
+		return exact, like, "", nil
+	}
+	return nil, nil, pattern, nil
 }
 
 // allMatchingStrings returns a complete list of the strings that re
 // matches, if it's possible to determine the list.
-func allMatchingStrings(re *regexpsyntax.Regexp) (matches []string, begin, end bool, err error) {
+func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffix []string, err error) {
 	prog, err := regexpsyntax.Compile(re)
 	if err != nil {
-		return nil, false, false, err
+		return nil, nil, nil, nil, err
 	}
 
 	switch {
 	case re.Op == regexpsyntax.OpEmptyMatch:
-		return []string{""}, false, false, nil
-
+		return []string{""}, nil, nil, nil, nil
 	case re.Op == regexpsyntax.OpLiteral:
 		prefix, complete := prog.Prefix()
 		if complete {
-			return []string{prefix}, false, false, nil
+			return nil, []string{prefix}, nil, nil, nil
 		}
-		return nil, false, false, nil
+		return nil, nil, nil, nil, nil
 
 	case re.Op == regexpsyntax.OpCharClass:
 		// Only handle simple case of one range.
@@ -406,26 +423,27 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (matches []string, begin, end b
 			if len > 26 {
 				// Avoid large character ranges (which could blow up the number
 				// of possible matches).
-				return nil, false, false, nil
+				return nil, nil, nil, nil, nil
 			}
 			chars := make([]string, len)
 			for r := re.Rune[0]; r <= re.Rune[1]; r++ {
 				chars[r-re.Rune[0]] = string(r)
 			}
-			return chars, false, false, nil
+			return nil, chars, nil, nil, nil
 		}
-		return nil, false, false, nil
+		return nil, nil, nil, nil, nil
 
 	case re.Op == regexpsyntax.OpBeginText:
-		return []string{""}, true, false, nil
+		return nil, nil, []string{""}, nil, nil
 
 	case re.Op == regexpsyntax.OpEndText:
-		return []string{""}, false, true, nil
+		return nil, nil, nil, []string{""}, nil
 
 	case re.Op == regexpsyntax.OpCapture:
 		return allMatchingStrings(re.Sub0[0])
 
 	case re.Op == regexpsyntax.OpConcat:
+		var begin, end bool
 		for i, sub := range re.Sub {
 			if sub.Op == regexpsyntax.OpBeginText && i == 0 {
 				begin = true
@@ -435,58 +453,61 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (matches []string, begin, end b
 				end = true
 				continue
 			}
-			submatches, _, _, err := allMatchingStrings(sub)
+			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
 			if err != nil {
-				return nil, false, false, err
+				return nil, nil, nil, nil, err
 			}
-			if submatches == nil {
-				return nil, false, false, nil
+			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+				return nil, nil, nil, nil, nil
 			}
 
-			if matches == nil {
-				matches = submatches
+			if subexact == nil {
+				subexact = subcontains
+			}
+			if exact == nil {
+				exact = subexact
 			} else {
-				size := len(matches) * len(submatches)
-				if len(submatches) > 4 || size > 30 {
+				size := len(exact) * len(subexact)
+				if len(subexact) > 4 || size > 30 {
 					// Avoid blowup in number of possible matches.
-					return nil, false, false, nil
+					return nil, nil, nil, nil, nil
 				}
 				combined := make([]string, 0, size)
-				for _, match := range matches {
-					for _, submatch := range submatches {
+				for _, match := range exact {
+					for _, submatch := range subexact {
 						combined = append(combined, match+submatch)
 					}
 				}
-				matches = combined
+				exact = combined
 			}
 		}
-		if matches == nil {
-			matches = []string{""}
+		if exact == nil {
+			exact = []string{""}
 		}
-		return matches, begin, end, nil
-	}
+		if begin && end {
+			return exact, nil, nil, nil, nil
+		} else if begin {
+			return nil, nil, exact, nil, nil
+		} else if end {
+			return nil, nil, nil, exact, nil
+		}
+		return nil, exact, nil, nil, nil
 
-	if re.Op == regexpsyntax.OpAlternate {
-		begin = true
-		end = true
+	case re.Op == regexpsyntax.OpAlternate:
 		for _, sub := range re.Sub {
-			submatches, subbegin, subend, err := allMatchingStrings(sub)
+			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
 			if err != nil {
-				return nil, false, false, err
+				return nil, nil, nil, nil, err
 			}
-			if !subbegin {
-				begin = false
-			}
-			if !subend {
-				end = false
-			}
-			for _, submatch := range submatches {
-				matches = append(matches, submatch)
-			}
+			exact = append(exact, subexact...)
+			contains = append(contains, subcontains...)
+			prefix = append(prefix, subprefix...)
+			suffix = append(suffix, subsuffix...)
 		}
+		return exact, contains, prefix, suffix, nil
 	}
 
-	return matches, begin, end, nil
+	return nil, nil, nil, nil, nil
 }
 
 func (s *repos) Delete(ctx context.Context, repo int32) error {

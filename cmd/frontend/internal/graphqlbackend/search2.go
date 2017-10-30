@@ -182,7 +182,13 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	} else {
 		includePatterns = r.query.fieldValues[searchFieldRepo]
 	}
+	if includePatterns != nil {
+		// Copy to avoid race condition.
+		includePatterns = append([]string{}, includePatterns...)
+	}
 	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)]
+
+	maxRepoListSize := 15
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
@@ -199,6 +205,9 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 			}
 		}
 		includePatterns = append(includePatterns, unionRegExps(patterns))
+
+		// Ensure we don't omit any repos explicitly included via a repo group.
+		maxRepoListSize += len(patterns)
 	}
 
 	// Treat an include pattern with a suffix of "@rev" as meaning that all
@@ -206,8 +215,15 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	includePatternRevs := make([]string, len(includePatterns))
 	for i, includePattern := range includePatterns {
 		repoRev := parseRepositoryRevision(includePattern)
+		repoPattern := repoRev.Repo // trim "@rev" from pattern
+		// Optimization: make the "." in "github.com" a literal dot
+		// so that the regexp can be optimized more effectively.
+		if strings.HasPrefix(repoPattern, "github.com") {
+			repoPattern = "^" + repoPattern
+		}
+		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
+		includePatterns[i] = repoPattern
 		if repoRev.hasRev() {
-			includePatterns[i] = repoRev.Repo // trim "@rev" from pattern
 			includePatternRevs[i] = *repoRev.Rev
 		}
 	}
@@ -234,6 +250,7 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	repos, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
+		ListOptions:     sourcegraph.ListOptions{PerPage: int32(maxRepoListSize)},
 	})
 	if err != nil {
 		return nil, nil, err

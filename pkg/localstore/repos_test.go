@@ -8,6 +8,7 @@ import (
 func TestParseIncludePattern(t *testing.T) {
 	tests := map[string]struct {
 		exact  []string
+		like   []string
 		regexp string
 	}{
 		`^$`:              {exact: []string{""}},
@@ -22,16 +23,18 @@ func TestParseIncludePattern(t *testing.T) {
 		`^((^a$))$`:       {exact: []string{"a"}},
 		`^(a)$`:           {exact: []string{"a"}},
 		`^((a))$`:         {exact: []string{"a"}},
-		`^a|b$`:           {regexp: `^a|b$`},     // "|" has higher precedence than "^" or "$"
-		`^(a)|(b)$`:       {regexp: `^(a)|(b)$`}, // "|" has higher precedence than "^" or "$"
+		`^a|b$`:           {like: []string{"a%", "%b"}}, // "|" has higher precedence than "^" or "$"
+		`^(a)|(b)$`:       {like: []string{"a%", "%b"}}, // "|" has higher precedence than "^" or "$"
 		`^(a|b)$`:         {exact: []string{"a", "b"}},
 		`(^a$)|(^b$)`:     {exact: []string{"a", "b"}},
 		`((^a$)|(^b$))`:   {exact: []string{"a", "b"}},
 		`^((^a$)|(^b$))$`: {exact: []string{"a", "b"}},
 		`^((a)|(b))$`:     {exact: []string{"a", "b"}},
-		`abc`:             {regexp: `abc`},
-		`a|b`:             {regexp: `a|b`},
+		`abc`:             {like: []string{"%abc%"}},
+		`a|b`:             {like: []string{"%a%", "%b%"}},
 		`^a(b|c)$`:        {exact: []string{"ab", "ac"}},
+
+		`^github\.com/foo/bar`: {like: []string{"github.com/foo/bar%"}},
 
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
 
@@ -41,12 +44,15 @@ func TestParseIncludePattern(t *testing.T) {
 	}
 	for pattern, want := range tests {
 		t.Run(pattern, func(t *testing.T) {
-			exact, regexp, err := parseIncludePattern(pattern)
+			exact, like, regexp, err := parseIncludePattern(pattern)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(exact, want.exact) {
 				t.Errorf("got exact %q, want %q", exact, want.exact)
+			}
+			if !reflect.DeepEqual(like, want.like) {
+				t.Errorf("got like %q, want %q", like, want.like)
 			}
 			if regexp != want.regexp {
 				t.Errorf("got regexp %q, want %q", regexp, want.regexp)

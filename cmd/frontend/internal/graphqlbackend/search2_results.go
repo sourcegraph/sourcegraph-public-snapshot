@@ -30,6 +30,9 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 	if len(patternsToCombine) == 0 {
 		return nil, errors.New("no query terms or regexp specified")
 	}
+	if len(repos) == 0 {
+		return nil, errors.New("no repositories included")
+	}
 
 	args := repoSearchArgs{
 		Query: &patternInfo{
