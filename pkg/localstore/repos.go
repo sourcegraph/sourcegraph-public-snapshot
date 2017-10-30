@@ -312,7 +312,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		if like != nil && len(like) > 0 {
 			var likeConds []*sqlf.Query
 			for _, v := range like {
-				likeConds = append(likeConds, sqlf.Sprintf(`lower(uri) LIKE %s`, v))
+				likeConds = append(likeConds, sqlf.Sprintf(`lower(uri) LIKE %s`, strings.ToLower(v)))
 			}
 			conds = append(conds, sqlf.Join(likeConds, " OR "))
 		}
