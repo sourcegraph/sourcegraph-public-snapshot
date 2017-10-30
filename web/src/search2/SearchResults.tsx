@@ -88,11 +88,11 @@ export class SearchResults extends React.Component<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .startWith(this.props)
-                .map(props => {
+                .do(props => {
                     const searchOptions = parseSearchURLQuery(props.location.search)
-                    this.searchRequested.next(searchOptions)
-                    return { results: [], missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined }
+                    setTimeout(() => this.searchRequested.next(searchOptions))
                 })
+                .map(() => ({ results: [], missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined }))
                 .subscribe(
                 newState => this.setState(newState as State),
                 err => console.error(err)
