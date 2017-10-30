@@ -182,6 +182,10 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	} else {
 		includePatterns = r.query.fieldValues[searchFieldRepo]
 	}
+	if includePatterns != nil {
+		// Copy to avoid race condition.
+		includePatterns = append([]string{}, includePatterns...)
+	}
 	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)]
 
 	maxRepoListSize := 15
@@ -211,15 +215,15 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	includePatternRevs := make([]string, len(includePatterns))
 	for i, includePattern := range includePatterns {
 		repoRev := parseRepositoryRevision(includePattern)
+		repoPattern := repoRev.Repo // trim "@rev" from pattern
+		// Optimization: make the "." in "github.com" a literal dot
+		// so that the regexp can be optimized more effectively.
+		if strings.HasPrefix(repoPattern, "github.com") {
+			repoPattern = "^" + repoPattern
+		}
+		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
+		includePatterns[i] = repoPattern
 		if repoRev.hasRev() {
-			repoPattern := repoRev.Repo // trim "@rev" from pattern
-			// Optimization: make the "." in "github.com" a literal dot
-			// so that the regexp can be optimized more effectively.
-			if strings.HasPrefix(repoPattern, "github.com") {
-				repoPattern = "^" + repoPattern
-			}
-			repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
-			includePatterns[i] = repoPattern
 			includePatternRevs[i] = *repoRev.Rev
 		}
 	}
