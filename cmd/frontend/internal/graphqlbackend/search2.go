@@ -189,7 +189,7 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	}
 	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)]
 
-	maxRepoListSize := 30
+	maxRepoListSize := 15
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
@@ -255,12 +255,6 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	})
 	if err != nil {
 		return nil, nil, err
-	}
-
-	// TODO(sqs): hack because Repos.List does not respect ListOptions.PerPage due to
-	// it wanting to sort the results using its scorer.
-	if len(repos.Repos) > maxRepoListSize {
-		repos.Repos = repos.Repos[:maxRepoListSize]
 	}
 
 	repoRevisions := make([]*repositoryRevision, 0, len(repos.Repos))
