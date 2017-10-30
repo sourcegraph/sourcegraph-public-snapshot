@@ -207,7 +207,14 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	for i, includePattern := range includePatterns {
 		repoRev := parseRepositoryRevision(includePattern)
 		if repoRev.hasRev() {
-			includePatterns[i] = repoRev.Repo // trim "@rev" from pattern
+			repoPattern := repoRev.Repo // trim "@rev" from pattern
+			// Optimization: make the "." in "github.com" a literal dot
+			// so that the regexp can be optimized more effectively.
+			if strings.HasPrefix(repoPattern, "github.com") {
+				repoPattern = "^" + repoPattern
+			}
+			repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
+			includePatterns[i] = repoPattern
 			includePatternRevs[i] = *repoRev.Rev
 		}
 	}

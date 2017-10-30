@@ -309,11 +309,11 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 				conds = append(conds, sqlf.Sprintf("uri IN (%s)", sqlf.Join(items, ",")))
 			}
 		} else if pattern != "" {
-			conds = append(conds, sqlf.Sprintf("uri ~* %s", pattern))
+			conds = append(conds, sqlf.Sprintf("lower(uri) ~* %s", pattern))
 		}
 	}
 	if opt.ExcludePattern != "" {
-		conds = append(conds, sqlf.Sprintf("uri !~* %s", opt.ExcludePattern))
+		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
 
 	// fetch matching repos unordered
