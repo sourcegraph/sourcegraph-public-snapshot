@@ -154,15 +154,10 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	defer sampleReposMu.Unlock()
 	if sampleRepos == nil {
 		sampleRepoPaths := []string{
-			"github.com/Microsoft/vscode",
-			"github.com/sourcegraph/go-langserver",
 			"github.com/sourcegraph/jsonrpc2",
 			"github.com/sourcegraph/javascript-typescript-langserver",
 			"github.com/gorilla/mux",
 			"github.com/gorilla/schema",
-			"github.com/gorilla/securecookie",
-			"github.com/gorilla/websocket",
-			"github.com/golang/go",
 			"github.com/golang/lint",
 			"github.com/golang/oauth2",
 			"github.com/pallets/flask",
