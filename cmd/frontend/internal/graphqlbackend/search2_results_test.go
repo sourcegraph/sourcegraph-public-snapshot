@@ -11,6 +11,8 @@ import (
 )
 
 func TestSearch2Results(t *testing.T) {
+	listOpts := sourcegraph.ListOptions{PerPage: 15}
+
 	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
 		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
 		r, err := (&rootResolver{}).Search2(args)
@@ -44,7 +46,7 @@ func TestSearch2Results(t *testing.T) {
 		var calledReposList bool
 		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
 			calledReposList = true
-			if want := (&store.RepoListOp{}); !reflect.DeepEqual(op, want) {
+			if want := (&store.RepoListOp{ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "repo"}}, nil

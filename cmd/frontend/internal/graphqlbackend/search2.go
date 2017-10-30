@@ -184,6 +184,8 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	}
 	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)]
 
+	maxRepoListSize := 15
+
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
@@ -199,6 +201,9 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 			}
 		}
 		includePatterns = append(includePatterns, unionRegExps(patterns))
+
+		// Ensure we don't omit any repos explicitly included via a repo group.
+		maxRepoListSize += len(patterns)
 	}
 
 	// Treat an include pattern with a suffix of "@rev" as meaning that all
@@ -241,6 +246,7 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	repos, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
+		ListOptions:     sourcegraph.ListOptions{PerPage: int32(maxRepoListSize)},
 	})
 	if err != nil {
 		return nil, nil, err

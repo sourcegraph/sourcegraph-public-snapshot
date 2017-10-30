@@ -11,6 +11,8 @@ import (
 )
 
 func TestSearch2Suggestions(t *testing.T) {
+	listOpts := sourcegraph.ListOptions{PerPage: 15}
+
 	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
 		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
 		r, err := (&rootResolver{}).Search2(args)
@@ -49,8 +51,8 @@ func TestSearch2Suggestions(t *testing.T) {
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
 		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
-			wantFoo := &store.RepoListOp{IncludePatterns: []string{"foo"}} // when treating term as repo: field
-			wantAll := &store.RepoListOp{}                                 // when treating term as text query
+			wantFoo := &store.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts} // when treating term as repo: field
+			wantAll := &store.RepoListOp{ListOptions: listOpts}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
 				return []*sourcegraph.Repo{{URI: "bar-repo"}}, nil
@@ -95,7 +97,7 @@ func TestSearch2Suggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}}); !reflect.DeepEqual(op, want) {
+			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
@@ -130,7 +132,7 @@ func TestSearch2Suggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}}); !reflect.DeepEqual(op, want) {
+			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
