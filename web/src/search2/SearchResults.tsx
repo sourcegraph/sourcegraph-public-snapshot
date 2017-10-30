@@ -4,6 +4,7 @@ import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
@@ -15,7 +16,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
 import { events, viewEvents } from '../tracking/events'
 import { searchText } from './backend'
-import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { buildSearchURLQuery, parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 
 interface Props {
     location: H.Location
@@ -111,11 +112,14 @@ export class SearchResults extends React.Component<Props, State> {
     public render(): JSX.Element | null {
 
         let alertTitle: string | JSX.Element | undefined
-        let alertDetails: string | undefined
+        let alertDetails: string | JSX.Element | undefined
         if (this.state.error) {
             if (this.state.error.message.includes('no query terms or regexp specified')) {
                 alertTitle = ''
                 alertDetails = 'Enter terms to search...'
+            } else if (this.state.error.message.includes('no repositories included')) {
+                alertTitle = 'No repositories matched'
+                alertDetails = querySuggestionForAllReposExcluded(parseSearchURLQuery(this.props.location.search))
             } else {
                 alertTitle = 'Something went wrong!'
                 alertDetails = upperFirst(this.state.error.message)
@@ -216,4 +220,57 @@ export class SearchResults extends React.Component<Props, State> {
             </div>
         )
     }
+}
+
+function querySuggestionForAllReposExcluded(options: SearchOptions): string | JSX.Element | undefined {
+    const omitQueryFields = (query: string, omitField: string): string => query.split(' ').filter(token => !token.startsWith(omitField + ':')).join(' ')
+
+    let suggestion: SearchOptions | undefined
+    let reason: string | JSX.Element | undefined
+    if (!suggestion && options.query.includes('repogroup:') || options.scopeQuery.includes('repogroup:')) {
+        suggestion = {
+            query: omitQueryFields(options.query, 'repogroup'),
+            scopeQuery: omitQueryFields(options.scopeQuery, 'repogroup'),
+        }
+        reason = 'omitting the repository group filter'
+        if (options.scopeQuery.includes('repogroup:')) {
+            reason += ' in the search scope'
+        }
+    }
+
+    const repoFields = (options.query + ' ' + options.scopeQuery).split(' ').filter(token => token.startsWith('repo:'))
+    if (!suggestion && repoFields.length > 1) {
+        // Suggest union'ing multiple repo: field values, in case the user thought separate
+        // fields were OR'd not AND'd.
+        const values = repoFields.map(token => token.replace(/^repo:/, '')).filter(s => !!s)
+        suggestion = {
+            query: omitQueryFields(options.query, 'repo') + ` repo:${values.join('|')}`,
+            scopeQuery: omitQueryFields(options.scopeQuery, 'repo'),
+        }
+        reason = 'using a single pattern instead of multiple intersecting repo: filters'
+    }
+
+    if (!suggestion && repoFields.length === 1) {
+        const value = repoFields[0].replace(/^repo:/, '')
+        reason = (
+            <span>
+                The repo: filter value <code>{value}</code> matched no repositories.
+                Check that it is a valid regular expression that matches repository paths
+                such as <code>github.com/foo/bar</code> and <code>example.com/foo</code>.
+                For example, the following filter would match both: <code>repo:foo</code>.
+            </span>
+        )
+    }
+
+    if (suggestion) {
+        const url = '?' + buildSearchURLQuery(suggestion)
+        return (
+            <span>Did you mean: <Link className='search-results2__query-fix' to={url}>{suggestion.scopeQuery} {suggestion.query}</Link> {reason ? `(${reason})` : ''}</span>
+        )
+    }
+    if (reason) {
+        return reason
+    }
+
+    return undefined
 }
