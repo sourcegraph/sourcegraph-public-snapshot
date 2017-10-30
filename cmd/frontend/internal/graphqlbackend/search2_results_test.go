@@ -11,7 +11,7 @@ import (
 )
 
 func TestSearch2Results(t *testing.T) {
-	listOpts := sourcegraph.ListOptions{PerPage: 15}
+	listOpts := sourcegraph.ListOptions{PerPage: 30}
 
 	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
 		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
