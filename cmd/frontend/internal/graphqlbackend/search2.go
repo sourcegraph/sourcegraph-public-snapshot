@@ -195,7 +195,7 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 		var patterns []string
 		for _, reposInGroup := range groups {
 			for _, repo := range reposInGroup {
-				patterns = append(patterns, "^"+repo.URI+"$")
+				patterns = append(patterns, "^"+regexp.QuoteMeta(repo.URI)+"$")
 			}
 		}
 		includePatterns = append(includePatterns, unionRegExps(patterns))

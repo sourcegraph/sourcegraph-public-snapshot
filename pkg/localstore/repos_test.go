@@ -33,6 +33,8 @@ func TestParseIncludePattern(t *testing.T) {
 		`a|b`:             {regexp: `a|b`},
 		`^a(b|c)$`:        {exact: []string{"ab", "ac"}},
 
+		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
+
 		// Avoid DoS when there are too many possible matches to enumerate.
 		`^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`: {regexp: `^(a|b)(c|d)(e|f)(g|h)(i|j)(k|l)(m|n)$`},
 		`^[0-a]$`: {regexp: `^[0-a]$`},
