@@ -6,6 +6,14 @@ export function getParentDir(path: string): string {
     return split.splice(0, split.length - 1).join('/')
 }
 
+/**
+ * Returns true iff path is equal to candidate OR if candidate is an ancestor
+ * directory of path.
+ */
+export function isEqualOrAncestor(path: string, candidate: string): boolean {
+    return path === candidate || candidate === '' || path.startsWith(candidate + '/')
+}
+
 export function scrollIntoView(el: Element, scrollRoot: Element): void {
     if (!scrollRoot.getBoundingClientRect) {
         return el.scrollIntoView()
