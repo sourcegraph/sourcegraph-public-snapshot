@@ -107,7 +107,7 @@ export class SearchFields extends React.Component<Props, State> {
                     </div>
                     <div
                         className='search-fields2__row-example'
-                        title='Lines containing these terms (in order) will be included in the search results.'
+                        title='Same as typing into the search box. Lines containing these terms (in order) will be included in the search results.'
                     >
                         open file
                     </div>
