@@ -46,7 +46,7 @@ func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) 
 
 	// If a shared item already represents the specified thread, return that
 	// shared item instead of creating a new one.
-	existingULID, err := s.getByThreadID(ctx, *item.ThreadID)
+	existingULID, err := s.getByThreadID(ctx, *item.ThreadID, item.Public)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +91,9 @@ func (s *sharedItems) Get(ctx context.Context, ulid string) (*sourcegraph.Shared
 }
 
 // getByThreadID gets an existing shared item ULID for the given thread ID.
-func (s *sharedItems) getByThreadID(ctx context.Context, threadID int32) (string, error) {
+func (s *sharedItems) getByThreadID(ctx context.Context, threadID int32, wantPublic bool) (string, error) {
 	var ulid string
-	err := globalDB.QueryRow("SELECT ulid FROM shared_items WHERE thread_id=$1 AND deleted_at IS NULL", threadID).Scan(
+	err := globalDB.QueryRow("SELECT ulid FROM shared_items WHERE thread_id=$1 AND public=$2 AND deleted_at IS NULL", threadID, wantPublic).Scan(
 		&ulid,
 	)
 	if err != nil {
