@@ -52,7 +52,7 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.
 	if err != nil {
 		return nil, err
 	}
-	return OrgMembers.getBySQL(ctx, "WHERE org_id=$1", org.ID)
+	return OrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.auth0_id WHERE org_id=$1 ORDER BY upper(users.display_name)", org.ID)
 }
 
 // ErrOrgMemberNotFound is the error that is returned when
@@ -77,7 +77,7 @@ func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...inte
 }
 
 func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgMember, error) {
-	rows, err := globalDB.Query("SELECT id, org_id, user_id, created_at, updated_at FROM org_members "+query, args...)
+	rows, err := globalDB.Query("SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err
 	}
