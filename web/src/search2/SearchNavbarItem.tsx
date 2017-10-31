@@ -59,47 +59,14 @@ export class SearchNavbarItem extends React.Component<Props, State> {
             })
         )
 
-        // Preserve search options ('q' and 'sq' query parameters) as the
-        // user navigates, without requiring every <a href> value to contain
-        // the URL query.
+        // Listen to location changes in both ways. Depending on the source of the
+        // history event, it might be seen first by one or the other. If we don't
+        // listen for both, then we might receive some events too late.
         this.subscriptions.add(
-            routeChanges.subscribe(props => {
-                const search = new URLSearchParams(props.location.search)
-
-                let keepSearchOptionsParams = false
-                for (const route of routes) {
-                    const match = matchPath<{ repoRev?: string, filePath?: string }>(props.location.pathname, route)
-                    if (match) {
-                        switch (match.path) {
-                            case '/:repoRev+': {
-                                keepSearchOptionsParams = true
-                                break
-                            }
-                            case '/:repoRev+/-/blob/:filePath+': {
-                                keepSearchOptionsParams = true
-                                break
-                            }
-                            case '/:repoRev+/-/tree/:filePath+': {
-                                keepSearchOptionsParams = true
-                                break
-                            }
-                            case '/search': {
-                                keepSearchOptionsParams = false
-                            }
-                        }
-                        break
-                    }
-                }
-                if (!keepSearchOptionsParams) { return }
-
-                if (!search.has('q') && !search.has('sq')) {
-                    const searchOptions = parseSearchURLQuery(this.props.location.search)
-                    if (searchOptions.query || searchOptions.scopeQuery) {
-                        const urlWithSearchQueryParams = '?' + buildSearchURLQuery(searchOptions) + props.location.hash
-                        props.history.replace(urlWithSearchQueryParams, props.location.state)
-                    }
-                }
-            })
+            routeChanges.subscribe(props => this.onLocationChange(props.location))
+        )
+        this.subscriptions.add(
+            props.history.listen(location => this.onLocationChange(location))
         )
     }
 
@@ -142,6 +109,47 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                 </div>
             </form>
         )
+    }
+
+    private onLocationChange = (location: H.Location): void => {
+        // Preserve search options ('q' and 'sq' query parameters) as the
+        // user navigates, without requiring every <a href> value to contain
+        // the URL query.
+        const search = new URLSearchParams(location.search)
+
+        let keepSearchOptionsParams = false
+        for (const route of routes) {
+            const match = matchPath<{ repoRev?: string, filePath?: string }>(location.pathname, route)
+            if (match) {
+                switch (match.path) {
+                    case '/:repoRev+': {
+                        keepSearchOptionsParams = true
+                        break
+                    }
+                    case '/:repoRev+/-/blob/:filePath+': {
+                        keepSearchOptionsParams = true
+                        break
+                    }
+                    case '/:repoRev+/-/tree/:filePath+': {
+                        keepSearchOptionsParams = true
+                        break
+                    }
+                    case '/search': {
+                        keepSearchOptionsParams = false
+                    }
+                }
+                break
+            }
+        }
+        if (!keepSearchOptionsParams) { return }
+
+        if (!search.has('q') && !search.has('sq')) {
+            const searchOptions = parseSearchURLQuery(this.props.location.search)
+            if (searchOptions.query || searchOptions.scopeQuery) {
+                const urlWithSearchQueryParams = '?' + buildSearchURLQuery(searchOptions) + location.hash
+                this.props.history.replace(urlWithSearchQueryParams, location.state)
+            }
+        }
     }
 
     private onUserQueryChange = (userQuery: string) => {
