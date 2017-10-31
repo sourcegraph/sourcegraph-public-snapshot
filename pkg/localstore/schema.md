@@ -232,6 +232,7 @@ Indexes:
  created_at     | timestamp with time zone | not null default now()
  updated_at     | timestamp with time zone | not null default now()
  deleted_at     | timestamp with time zone | 
+ public         | boolean                  | not null default false
 Indexes:
     "shared_items_pkey" PRIMARY KEY, btree (id)
     "shared_items_ulid_idx" UNIQUE, btree (ulid)

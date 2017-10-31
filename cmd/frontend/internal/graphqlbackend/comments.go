@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -55,9 +55,35 @@ func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
 	return &userResolver{user, actor.FromContext(ctx)}, nil
 }
 
-func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
+func (s *schemaResolver) AddCommentToThreadShared(ctx context.Context, args *struct {
 	ThreadID int32
 	Contents string
+	ULID     string
+}) (*threadResolver, error) {
+	return s.addCommentToThread(ctx, args)
+}
+
+func (s *schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
+	ThreadID int32
+	Contents string
+}) (*threadResolver, error) {
+	return s.addCommentToThread(ctx, &struct {
+		ThreadID int32
+		Contents string
+		ULID     string
+	}{
+		args.ThreadID,
+		args.Contents,
+		"",
+	})
+}
+
+// TODO(slimsag): expose only one addCommentToThread in the future (with
+// nullable ULID string).
+func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
+	ThreadID int32
+	Contents string
+	ULID     string
 }) (*threadResolver, error) {
 	thread, err := store.Threads.Get(ctx, args.ThreadID)
 	if err != nil {
@@ -69,11 +95,35 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: verify that the user is in the org.
 	actor := actor.FromContext(ctx)
-	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
-	if err != nil {
-		return nil, err
+	if args.ULID == "" {
+		// Plain case (adding a comment to a thread from the editor).
+		// 🚨 SECURITY: verify that the user is in the org.
+		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Web case (adding a comment to a thread from a shared URL).
+		if !actor.IsAuthenticated() {
+			// They must be signed in to comment from the web.
+			return nil, errors.New("must be authenticated")
+		}
+
+		// 🚨 SECURITY: If the shared item is public, anyone can add comments
+		// as long as the ULID is real. If the shared item is not public, only
+		// org members can.
+		item, err := store.SharedItems.Get(ctx, args.ULID)
+		if err != nil {
+			return nil, err
+		}
+		if !item.Public {
+			// 🚨 SECURITY: verify that the user is in the org.
+			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	user, err := store.Users.GetByCurrentAuthUser(ctx)
@@ -97,7 +147,7 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	results, err := notifyNewComment(ctx, *repo, *thread, comments, *comment, *user, *org)
+	results, err := s.notifyNewComment(ctx, *repo, *thread, comments, *comment, *user, *org)
 	if err != nil {
 		log15.Error("notifyNewComment failed", "error", err)
 	}
@@ -115,39 +165,55 @@ func (*schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 	} else {
 		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 		client := slack.New(org.SlackWebhookURL, true)
-		go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, getURL(*repo, *thread, "slack"), title)
+		commentURL, err := s.getURL(ctx, thread.ID, &comment.ID, "slack")
+		if err != nil {
+			log15.Error("graphqlbackend.AddCommentToThread: getURL failed", "error", err)
+		} else {
+			go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, commentURL.String(), title)
+		}
 	}
 
 	return t, nil
 }
 
-func (*schemaResolver) ShareComment(ctx context.Context, args *struct {
+func (s *schemaResolver) ShareComment(ctx context.Context, args *struct {
 	CommentID int32
 }) (string, error) {
-	comment, err := store.Comments.GetByID(ctx, args.CommentID)
+	u, err := s.shareCommentInternal(ctx, args.CommentID, true)
 	if err != nil {
-		return "", err
+		return "", nil
+	}
+	return u.String(), nil
+}
+
+// TODO(slimsag): expose the public boolean as a graphql parameter and remove this internal function call
+func (*schemaResolver) shareCommentInternal(ctx context.Context, commentID int32, public bool) (*url.URL, error) {
+	comment, err := store.Comments.GetByID(ctx, commentID)
+	if err != nil {
+		return nil, err
 	}
 
 	thread, err := store.Threads.Get(ctx, comment.ThreadID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// 🚨 SECURITY: verify that the user is in the org.
 	actor := actor.FromContext(ctx)
 	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
 		AuthorUserID: actor.UID,
-		CommentID:    &args.CommentID,
+		Public:       public,
+		ThreadID:     &thread.ID,
+		CommentID:    &commentID,
 	})
 }
 
@@ -156,10 +222,13 @@ type commentResults struct {
 	commentURL string
 }
 
-func notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) (*commentResults, error) {
-	commentURL := getURL(repo, thread, "email")
+func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) (*commentResults, error) {
+	commentURL, err := s.getURL(ctx, thread.ID, &comment.ID, "email")
+	if err != nil {
+		return nil, err
+	}
 	if !notif.EmailIsConfigured() {
-		return &commentResults{emails: []string{}, commentURL: commentURL}, nil
+		return &commentResults{emails: []string{}, commentURL: commentURL.String()}, nil
 	}
 
 	var first sourcegraph.Comment
@@ -211,7 +280,7 @@ func notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sour
 			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
 		}, lineVars...))
 	}
-	return &commentResults{emails: emails, commentURL: commentURL}, nil
+	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
 }
 
 // emailsToNotify returns all emails that should be notified of activity given a list of comments.
@@ -301,25 +370,27 @@ func repoNameFromRemoteID(CanonicalRemoteID string) string {
 	return m[1]
 }
 
-func getURL(repo sourcegraph.OrgRepo, thread sourcegraph.Thread, utmSource string) string {
-	aboutValues := url.Values{}
-	if utmSource != "" {
-		aboutValues.Set("utm_source", utmSource)
+func (s *schemaResolver) getURL(ctx context.Context, threadID int32, commentID *int32, utmSource string) (*url.URL, error) {
+	var (
+		url *url.URL
+		err error
+	)
+	if commentID != nil {
+		url, err = s.shareCommentInternal(ctx, *commentID, false)
+	} else {
+		url, err = s.shareThreadInternal(ctx, threadID, false)
 	}
-
-	revision := thread.RepoRevision
-	// Prefer linking to a branch if it exists.
-	if thread.Branch != nil {
-		revision = *thread.Branch
+	if err != nil {
+		return nil, err
 	}
+	return withUTMSource(url, utmSource), nil
+}
 
-	values := url.Values{}
-	values.Set("repo", repo.CloneURL)
-	values.Set("vcs", "git")
-	values.Set("revision", revision)
-	values.Set("path", thread.File)
-	values.Set("thread", strconv.FormatInt(int64(thread.ID), 10))
-	return fmt.Sprintf("https://about.sourcegraph.com/open/?%s#open?%s", aboutValues.Encode(), values.Encode())
+func withUTMSource(u *url.URL, utmSource string) *url.URL {
+	q := u.Query()
+	q.Set("utm_source", utmSource)
+	u.RawQuery = q.Encode()
+	return u
 }
 
 // appendUnique returns value appended to values if value is not a key in unique.

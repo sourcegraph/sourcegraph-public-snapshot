@@ -62,6 +62,8 @@
 // ../../../migrations/1508795218_update_constraints.up.sql
 // ../../../migrations/1509051662_add_org_repo_clone_url.down.sql
 // ../../../migrations/1509051662_add_org_repo_clone_url.up.sql
+// ../../../migrations/1509482369_add_public_to_shared_items.down.sql
+// ../../../migrations/1509482369_add_public_to_shared_items.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1369,6 +1371,46 @@ func _1509051662_add_org_repo_clone_urlUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1509482369_add_public_to_shared_itemsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xce\x48\x2c\x4a\x4d\x89\xcf\x2c\x49\xcd\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x2a\x28\x4d\xca\xc9\x4c\x56\xb2\xe6\x02\x04\x00\x00\xff\xff\xd1\xea\x8f\x7b\x2f\x00\x00\x00")
+
+func _1509482369_add_public_to_shared_itemsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1509482369_add_public_to_shared_itemsDownSql,
+		"1509482369_add_public_to_shared_items.down.sql",
+	)
+}
+
+func _1509482369_add_public_to_shared_itemsDownSql() (*asset, error) {
+	bytes, err := _1509482369_add_public_to_shared_itemsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1509482369_add_public_to_shared_items.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1509482369_add_public_to_shared_itemsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xce\x48\x2c\x4a\x4d\x89\xcf\x2c\x49\xcd\x2d\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x2a\x28\x4d\xca\xc9\x4c\x56\x52\x48\xca\xcf\xcf\x49\x4d\xcc\x53\xf0\xf3\x0f\x51\xf0\x0b\xf5\xf1\x51\x70\x71\x75\x73\x0c\xf5\x09\x51\x50\x4f\x53\xb7\xe6\x02\x04\x00\x00\xff\xff\x32\x5f\x81\x50\x4b\x00\x00\x00")
+
+func _1509482369_add_public_to_shared_itemsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1509482369_add_public_to_shared_itemsUpSql,
+		"1509482369_add_public_to_shared_items.up.sql",
+	)
+}
+
+func _1509482369_add_public_to_shared_itemsUpSql() (*asset, error) {
+	bytes, err := _1509482369_add_public_to_shared_itemsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1509482369_add_public_to_shared_items.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1483,6 +1525,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1508795218_update_constraints.up.sql":            _1508795218_update_constraintsUpSql,
 	"1509051662_add_org_repo_clone_url.down.sql":      _1509051662_add_org_repo_clone_urlDownSql,
 	"1509051662_add_org_repo_clone_url.up.sql":        _1509051662_add_org_repo_clone_urlUpSql,
+	"1509482369_add_public_to_shared_items.down.sql":  _1509482369_add_public_to_shared_itemsDownSql,
+	"1509482369_add_public_to_shared_items.up.sql":    _1509482369_add_public_to_shared_itemsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1588,6 +1632,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1508795218_update_constraints.up.sql":            &bintree{_1508795218_update_constraintsUpSql, map[string]*bintree{}},
 	"1509051662_add_org_repo_clone_url.down.sql":      &bintree{_1509051662_add_org_repo_clone_urlDownSql, map[string]*bintree{}},
 	"1509051662_add_org_repo_clone_url.up.sql":        &bintree{_1509051662_add_org_repo_clone_urlUpSql, map[string]*bintree{}},
+	"1509482369_add_public_to_shared_items.down.sql":  &bintree{_1509482369_add_public_to_shared_itemsDownSql, map[string]*bintree{}},
+	"1509482369_add_public_to_shared_items.up.sql":    &bintree{_1509482369_add_public_to_shared_itemsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

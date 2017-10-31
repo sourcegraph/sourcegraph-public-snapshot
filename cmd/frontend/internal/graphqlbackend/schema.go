@@ -102,6 +102,15 @@ type Mutation {
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
+
+	# This method is the same as addCommentToThread, the only difference is
+	# that authentication is based on the secret ULID instead of the current
+	# user.
+	#
+	# 🚨 SECURITY: Every field of the return type here is accessible publicly
+	# given a shared item URL.
+	addCommentToThreadShared(ulid: String!, threadID: Int!, contents: String!): SharedItemThread!
+
 	shareThread(threadID: Int!): String!
 	shareComment(commentID: Int!): String!
 	createOrg(name: String!, displayName: String!): Org!
@@ -158,6 +167,7 @@ type SearchScope2 {
 type SharedItem {
 	# who shared the item.
 	author: SharedItemUser!
+	public: Boolean!
 	thread: SharedItemThread!
 
 	# present only if the shared item was a specific comment.

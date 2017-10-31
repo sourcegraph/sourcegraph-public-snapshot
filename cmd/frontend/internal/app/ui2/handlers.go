@@ -325,11 +325,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "OrgRepos.GetByID")
 	}
 
-	// TODO(slimsag): Store in DB whether or not a shared item is public
-	// ("private URL") or for org-members only.
-	public := false
-
-	if !public {
+	if !sharedItem.Public {
 		actor := actor.FromContext(r.Context())
 		if !actor.IsAuthenticated() {
 			u := &url.URL{

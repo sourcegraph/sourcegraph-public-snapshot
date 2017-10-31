@@ -1,0 +1,26 @@
+.comments-input {
+    padding: 1rem;
+    border-bottom: 1px solid #212C45;
+
+    &__text-box {
+        min-height: 7rem;
+    }
+    &__bottom-container {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    &__button {
+        margin-left: .5rem;
+    }
+    &__markdown-supported {
+        flex: 1;
+    }
+    &__error {
+        flex: 10;
+        display: flex;
+        padding: .5rem;
+    }
+    &__error-icon {
+        margin-right: .25rem;
+    }
+}

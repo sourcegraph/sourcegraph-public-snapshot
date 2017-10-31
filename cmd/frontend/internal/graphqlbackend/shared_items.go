@@ -9,6 +9,7 @@ import (
 
 type sharedItemResolver struct {
 	authorUserID string
+	public       bool
 	thread       *threadResolver
 	comment      *commentResolver
 }
@@ -19,6 +20,10 @@ func (s *sharedItemResolver) Author(ctx context.Context) (*userResolver, error) 
 		return nil, err
 	}
 	return &userResolver{user, actor.FromContext(ctx)}, nil
+}
+
+func (s *sharedItemResolver) Public(ctx context.Context) bool {
+	return s.public
 }
 
 func (s *sharedItemResolver) Thread(ctx context.Context) *threadResolver {
@@ -41,10 +46,6 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// TODO(slimsag): Store in DB whether or not a shared item is public
-	// ("private URL") or for org-members only.
-	public := false
-
 	switch {
 	case item.CommentID != nil:
 		comment, err := store.Comments.GetByID(ctx, *item.CommentID)
@@ -60,7 +61,7 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 			return nil, err
 		}
 
-		if !public {
+		if !item.Public {
 			// 🚨 SECURITY: verify that the user is in the org.
 			actor := actor.FromContext(ctx)
 			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
@@ -75,6 +76,7 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 		}
 		return &sharedItemResolver{
 			item.AuthorUserID,
+			item.Public,
 			&threadResolver{org, orgRepo, thread},
 			&commentResolver{org, orgRepo, thread, comment},
 		}, nil
@@ -88,7 +90,7 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 			return nil, err
 		}
 
-		if !public {
+		if !item.Public {
 			// 🚨 SECURITY: verify that the current user is in the org.
 			actor := actor.FromContext(ctx)
 			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
@@ -103,6 +105,7 @@ func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
 		}
 		return &sharedItemResolver{
 			item.AuthorUserID,
+			item.Public,
 			&threadResolver{org, orgRepo, thread},
 			nil,
 		}, nil

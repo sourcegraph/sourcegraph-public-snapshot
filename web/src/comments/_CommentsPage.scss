@@ -1,5 +1,7 @@
 @import './Comment';
 @import './CodeView';
+@import './CommentsInput';
+@import './SecurityWidget';
 
 .comments-page {
     flex: 1 1 auto;
@@ -48,6 +50,13 @@
         width: 21.3125rem;
         display: block;
         margin: auto;
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+    &__sign-in {
+        display: block;
+        margin: auto;
+        width: 10rem;
         margin-top: .5rem;
         margin-bottom: .5rem;
     }

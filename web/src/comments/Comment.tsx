@@ -9,6 +9,7 @@ import { UserAvatar } from '../settings/user/UserAvatar'
 interface Props {
     comment: GQL.ISharedItemComment
     location: H.Location
+    forceTargeted: boolean
 }
 
 interface State {
@@ -39,7 +40,7 @@ export class Comment extends React.Component<Props, State> {
         const shareLinkHref = shareUrl.pathname + shareUrl.search + shareUrl.hash
 
         // Check if this comment is targeted.
-        const isTargeted = new URLSearchParams(loc.search).get('id') === String(this.props.comment.id)
+        const isTargeted = this.props.forceTargeted || new URLSearchParams(loc.search).get('id') === String(this.props.comment.id)
 
         return (
             <div className={`comment${isTargeted ? ' comment--targeted' : ''}`} ref={isTargeted ? this.setScrollToElement : undefined}>

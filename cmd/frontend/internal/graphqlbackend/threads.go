@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -351,7 +352,7 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 			if err != nil {
 				return err
 			}
-			results, err = notifyNewComment(ctx, *repo, *newThread, nil, *comment, *user, *org)
+			results, err = s.notifyNewComment(ctx, *repo, *newThread, nil, *comment, *user, *org)
 			if err != nil {
 				return err
 			}
@@ -366,7 +367,12 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		} else {
 			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
-			go client.NotifyOnThread(uResolver, org, repo, newThread, comment, results.emails, getURL(*repo, *newThread, "slack"))
+			commentURL, err := s.getURL(ctx, newThread.ID, &comment.ID, "slack")
+			if err != nil {
+				log15.Error("graphqlbackend.CreateThread: getURL failed", "error", err)
+			} else {
+				go client.NotifyOnThread(uResolver, org, repo, newThread, comment, results.emails, commentURL.String())
+			}
 		}
 	} /* else {
 		// Creating a thread without Contents (a comment) means it is a code
@@ -376,7 +382,7 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	return &threadResolver{org, repo, newThread}, nil
 }
 
-func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
+func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	ThreadID int32
 	Archived *bool
 }) (*threadResolver, error) {
@@ -417,39 +423,52 @@ func (*schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		notifyThreadArchived(ctx, *repo, *thread, comments, *user)
+		s.utilNotifyThreadArchived(ctx, *repo, *thread, comments, *user)
 	}
 
 	return &threadResolver{org, repo, thread}, nil
 }
 
-func (*schemaResolver) ShareThread(ctx context.Context, args *struct {
+func (s *schemaResolver) ShareThread(ctx context.Context, args *struct {
 	ThreadID int32
 }) (string, error) {
-	thread, err := store.Threads.Get(ctx, args.ThreadID)
+	u, err := s.shareThreadInternal(ctx, args.ThreadID, true)
 	if err != nil {
-		return "", err
+		return "", nil
+	}
+	return u.String(), nil
+}
+
+// TODO(slimsag): expose the public boolean as a graphql parameter and remove this internal function call
+func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, public bool) (*url.URL, error) {
+	thread, err := store.Threads.Get(ctx, threadID)
+	if err != nil {
+		return nil, err
 	}
 
 	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
 	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
 		AuthorUserID: actor.UID,
-		ThreadID:     &args.ThreadID,
+		Public:       public,
+		ThreadID:     &threadID,
 	})
 }
 
-func notifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
-	url := getURL(repo, thread, "email")
+func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
+	url, err := s.getURL(ctx, thread.ID, nil, "email")
+	if err != nil {
+		return err
+	}
 	if !notif.EmailIsConfigured() {
 		return nil
 	}

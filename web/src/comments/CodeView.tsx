@@ -47,12 +47,24 @@ const phonyAfterLines = [
     '}',
 ]
 
+/**
+ * splitLines splits the given plaintext or HTML thread lines by a newline. If
+ * the string is empty, an empty array is returned.
+ * @param linesToSplit the lines to split
+ */
+const splitLines = (linesToSplit: string) => {
+    if (linesToSplit === '') {
+        return []
+    }
+    return linesToSplit.split('\n')
+}
+
 const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
     const startLine = sharedItem.thread.startLine
     const threadLines = sharedItem.thread.lines
-    const htmlBefore = threadLines ? threadLines.htmlBefore.split('\n') : phonyBeforeLines
-    const html = threadLines ? threadLines.html.split('\n') : phonyLines
-    const htmlAfter = threadLines ? threadLines.htmlAfter.split('\n') : phonyAfterLines
+    const htmlBefore = threadLines ? splitLines(threadLines.htmlBefore) : phonyBeforeLines
+    const html = threadLines ? splitLines(threadLines.html) : phonyLines
+    const htmlAfter = threadLines ? splitLines(threadLines.htmlAfter) : phonyAfterLines
     const lines = [
         ...htmlBefore.map((line: string, i: number) => ({
             number: startLine - (htmlBefore.length - i),

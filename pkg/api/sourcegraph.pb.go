@@ -464,11 +464,10 @@ type Comment struct {
 // is also just a thread.
 type SharedItem struct {
 	ULID         string `json:"ULID"`
+	Public       bool   `json:"public"`
 	AuthorUserID string `json:"AuthorUserID"`
-
-	// Only one of the below is present.
-	ThreadID  *int32 `json:"ThreadID,omitempty"`
-	CommentID *int32 `json:"CommentID,omitempty"`
+	ThreadID     *int32 `json:"ThreadID,omitempty"`
+	CommentID    *int32 `json:"CommentID,omitempty"` // optional
 }
 
 type Org struct {

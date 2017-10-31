@@ -3,29 +3,23 @@ package localstore
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"testing"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type MockSharedItems struct {
-	Create func(ctx context.Context, item *sourcegraph.SharedItem) (string, error)
+	Create func(ctx context.Context, item *sourcegraph.SharedItem) (*url.URL, error)
 	Get    func(ctx context.Context, ulid string) (*sourcegraph.SharedItem, error)
 }
 
 func (s *MockSharedItems) MockCreate(t *testing.T) (called *bool, calledWith *sourcegraph.SharedItem) {
 	called = new(bool)
 	calledWith = new(sourcegraph.SharedItem)
-	s.Create = func(ctx context.Context, item *sourcegraph.SharedItem) (string, error) {
+	s.Create = func(ctx context.Context, item *sourcegraph.SharedItem) (*url.URL, error) {
 		*called, *calledWith = true, *item
-		switch {
-		case item.ThreadID != nil:
-			return fmt.Sprintf("ulid-thread-%d", item.ThreadID), nil
-		case item.CommentID != nil:
-			return fmt.Sprintf("ulid-comment-%d", item.CommentID), nil
-		default:
-			panic("never here")
-		}
+		return &url.URL{Path: fmt.Sprintf("ulid-thread-%d-comment-%d", item.ThreadID, item.CommentID)}, nil
 	}
 	return called, calledWith
 }

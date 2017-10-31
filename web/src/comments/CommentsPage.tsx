@@ -4,7 +4,7 @@ import LockIcon from '@sourcegraph/icons/lib/Lock'
 import * as H from 'history'
 import * as React from 'react'
 import { match } from 'react-router'
-import { Redirect } from 'react-router-dom'
+import { Link, Redirect } from 'react-router-dom'
 import reactive from 'rx-component'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
@@ -13,6 +13,7 @@ import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/mergeMap'
 import 'rxjs/add/operator/scan'
 import { Observable } from 'rxjs/Observable'
+import { Subject } from 'rxjs/Subject'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoNav } from '../repo/RepoNav'
@@ -20,6 +21,8 @@ import { toEditorURL } from '../util/url'
 import { EPERMISSIONDENIED, fetchSharedItem } from './backend'
 import { CodeView } from './CodeView'
 import { Comment } from './Comment'
+import { CommentsInput } from './CommentsInput'
+import { SecurityWidget } from './SecurityWidget'
 
 const SharedItemNotFound = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, we can&#39;t find anything here.' />
 
@@ -31,6 +34,8 @@ interface Props {
 
 interface State {
     sharedItem?: GQL.ISharedItem | null
+    highlightLastComment?: boolean
+    ulid: string
     location: H.Location
     history: H.History
     error?: any
@@ -41,8 +46,11 @@ type Update = (s: State) => State
 /**
  * Renders a shared code comment's thread.
  */
-export const CommentsPage = reactive<Props>(props =>
-    Observable.merge(
+export const CommentsPage = reactive<Props>(props => {
+    const threadUpdates = new Subject<GQL.ISharedItemThread>()
+    const nextThreadUpdate = (updatedThread: GQL.ISharedItemThread) => threadUpdates.next(updatedThread)
+
+    return Observable.merge(
         props
             .map(({ location, history }): Update => state => ({ ...state, location, history })),
 
@@ -51,15 +59,25 @@ export const CommentsPage = reactive<Props>(props =>
             .distinctUntilChanged()
             .mergeMap(ulid =>
                 fetchSharedItem(ulid)
-                    .map((sharedItem): Update => state => ({ ...state, sharedItem }))
+                    .map((sharedItem): Update => state => ({ ...state, sharedItem, ulid, highlightLastComment: false }))
                     .catch((error): Update[] => {
                         console.error(error)
-                        return [state => ({ ...state, error })]
+                        return [state => ({ ...state, error, ulid, highlightLastComment: false })]
                     })
-            )
+            ),
+
+        threadUpdates
+            .map((thread): Update => state => ({
+                ...state,
+                sharedItem: state.sharedItem && {
+                    ...state.sharedItem,
+                    thread,
+                },
+                highlightLastComment: true,
+            }))
     )
         .scan<Update, State>((state: State, update: Update) => update(state), {} as State)
-        .map(({ sharedItem, location, history, error }: State): JSX.Element | null => {
+        .map(({ sharedItem, highlightLastComment, ulid, location, history, error }: State): JSX.Element | null => {
             if (error) {
                 if (error.code === EPERMISSIONDENIED) {
                     return <HeroPage icon={LockIcon} title='Permission denied.' subtitle={'You must be a member of the organization to view this page.'} />
@@ -75,11 +93,13 @@ export const CommentsPage = reactive<Props>(props =>
             }
 
             // If not logged in, redirect to sign in
-            if (!window.context.user) {
-                const newUrl = new URL(window.location.href)
-                newUrl.pathname = '/sign-in'
-                newUrl.searchParams.set('returnTo', window.location.href)
-                return <Redirect to={newUrl.pathname + newUrl.search} />
+            const signedIn = window.context.user
+            const newUrl = new URL(window.location.href)
+            newUrl.pathname = '/sign-in'
+            newUrl.searchParams.set('returnTo', window.location.href)
+            const signInURL = newUrl.pathname + newUrl.search
+            if (!sharedItem.public && !signedIn) {
+                return <Redirect to={signInURL} />
             }
 
             const editorURL = toEditorURL(
@@ -124,19 +144,35 @@ export const CommentsPage = reactive<Props>(props =>
                             </div>
                         </div>}
                         {sharedItem && CodeView(sharedItem)}
-                        {sharedItem && sharedItem.thread.comments.map(comment =>
-                            <Comment location={location} comment={comment} key={comment.id} />
+                        {sharedItem && sharedItem.thread.comments.map((comment, index) =>
+                            <Comment
+                                location={location}
+                                comment={comment}
+                                key={comment.id}
+                                forceTargeted={highlightLastComment && index === sharedItem.thread.comments.length - 1 || false}
+                            />
                         )}
-                        {sharedItem &&
+                        {sharedItem && sharedItem.thread.comments.length === 0 &&
                             <button className='btn btn-primary btn-block comments-page__reply-in-editor' onClick={openEditor}>
-                                {sharedItem.thread.comments.length === 0 ? 'Open in Sourcegraph Editor' : 'Reply in Sourcegraph Editor'}
+                                Open in Sourcegraph Editor
                             </button>
                         }
+                        {sharedItem && sharedItem.thread.comments.length !== 0 &&
+                            (signedIn ? <CommentsInput
+                                onOpenEditor={openEditor}
+                                threadID={sharedItem.thread.id}
+                                ulid={ulid}
+                                onThreadUpdated={nextThreadUpdate}
+                            /> : <Link className='btn btn-primary comments-page__sign-in' to={signInURL}>
+                                    Sign in to comment
+                                </Link>)
+                        }
+                        {sharedItem && SecurityWidget(sharedItem)}
                     </div>
                 </div>
             )
         })
-)
+})
 
 function getPageTitle(sharedItem: GQL.ISharedItem): string | undefined {
     const title = sharedItem.comment ? sharedItem.comment.title : sharedItem.thread.title
