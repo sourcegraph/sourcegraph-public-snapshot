@@ -162,7 +162,7 @@ export class SearchScope extends React.Component<Props, State> {
                         const [repoPath] = match.params.repoRev!.split('@')
                         scopes.push({
                             name: `This repository (${path.basename(repoPath)})`,
-                            value: `repo:${repoPath}`,
+                            value: `repo:^${escapeRegexp(repoPath)}$`,
                         })
                         break
                     }
@@ -172,7 +172,7 @@ export class SearchScope extends React.Component<Props, State> {
 
                         scopes.push({
                             name: `This repository (${path.basename(repoPath)})`,
-                            value: `repo:${repoPath}`,
+                            value: `repo:^${escapeRegexp(repoPath)}$`,
                         })
 
                         if (match.params.filePath) {
@@ -180,7 +180,7 @@ export class SearchScope extends React.Component<Props, State> {
                             if (dirname !== '.') {
                                 scopes.push({
                                     name: `This directory (${path.basename(dirname)})`,
-                                    value: `repo:${repoPath} file:^${escapeRegexp(dirname)}/`,
+                                    value: `repo:^${escapeRegexp(repoPath)}$ file:^${escapeRegexp(dirname)}/`,
                                 })
                             }
                         }

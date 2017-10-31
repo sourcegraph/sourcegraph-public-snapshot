@@ -63,8 +63,8 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 	suggesters = append(suggesters, showRepoSuggestions)
 
 	showFileSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
-		// If only repos and files are specified (and at most 1 term), then show file suggestions.
-		hasRepoOrFileFields := len(r.query.fieldValues[searchFieldRepo]) > 0 || len(r.query.fieldValues[searchFieldFile]) > 0
+		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
+		hasRepoOrFileFields := len(r.query.fieldValues[searchFieldRepoGroup]) > 0 || len(r.query.fieldValues[searchFieldRepo]) > 0 || len(r.query.fieldValues[searchFieldFile]) > 0
 		if hasRepoOrFileFields && len(r.query.fieldValues[""]) <= 1 && len(r.query.unknownFields) == 0 {
 			return r.resolveFiles(ctx)
 		}

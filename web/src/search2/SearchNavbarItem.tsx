@@ -62,43 +62,45 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         // Preserve search options ('q' and 'sq' query parameters) as the
         // user navigates, without requiring every <a href> value to contain
         // the URL query.
-        const unlisten = props.history.listen((location, action) => {
-            const search = new URLSearchParams(location.search)
+        this.subscriptions.add(
+            routeChanges.subscribe(props => {
+                const search = new URLSearchParams(props.location.search)
 
-            let keepSearchOptionsParams = false
-            for (const route of routes) {
-                const match = matchPath<{ repoRev?: string, filePath?: string }>(location.pathname, route)
-                if (match) {
-                    switch (match.path) {
-                        case '/:repoRev+': {
-                            keepSearchOptionsParams = true
-                            break
+                let keepSearchOptionsParams = false
+                for (const route of routes) {
+                    const match = matchPath<{ repoRev?: string, filePath?: string }>(props.location.pathname, route)
+                    if (match) {
+                        switch (match.path) {
+                            case '/:repoRev+': {
+                                keepSearchOptionsParams = true
+                                break
+                            }
+                            case '/:repoRev+/-/blob/:filePath+': {
+                                keepSearchOptionsParams = true
+                                break
+                            }
+                            case '/:repoRev+/-/tree/:filePath+': {
+                                keepSearchOptionsParams = true
+                                break
+                            }
+                            case '/search': {
+                                keepSearchOptionsParams = false
+                            }
                         }
-                        case '/:repoRev+/-/blob/:filePath+': {
-                            keepSearchOptionsParams = true
-                            break
-                        }
-                        case '/:repoRev+/-/tree/:filePath+': {
-                            keepSearchOptionsParams = true
-                            break
-                        }
-                        case '/search': {
-                            keepSearchOptionsParams = false
-                        }
+                        break
                     }
-                    break
                 }
-            }
-            if (!keepSearchOptionsParams) { return }
+                if (!keepSearchOptionsParams) { return }
 
-            if (!search.has('q') && !search.has('sq')) {
-                const searchOptions = parseSearchURLQuery(this.props.location.search)
-                if (searchOptions.query || searchOptions.scopeQuery) {
-                    props.history.replace('?' + buildSearchURLQuery(searchOptions), location.state)
+                if (!search.has('q') && !search.has('sq')) {
+                    const searchOptions = parseSearchURLQuery(this.props.location.search)
+                    if (searchOptions.query || searchOptions.scopeQuery) {
+                        const urlWithSearchQueryParams = '?' + buildSearchURLQuery(searchOptions) + props.location.hash
+                        props.history.replace(urlWithSearchQueryParams, props.location.state)
+                    }
                 }
-            }
-        })
-        this.subscriptions.add(unlisten)
+            })
+        )
     }
 
     public componentDidMount(): void {

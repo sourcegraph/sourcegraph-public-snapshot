@@ -119,7 +119,13 @@ type searchResolver2 struct {
 	userQuery resolvedQuery // the user query only (ONLY USE for UX hints)
 }
 
+var mockResolveRepoGroups func() (map[string][]*sourcegraph.Repo, error)
+
 func (r *searchResolver2) resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
+	if mockResolveRepoGroups != nil {
+		return mockResolveRepoGroups()
+	}
+
 	var active, inactive []*sourcegraph.Repo
 	if len(inactiveReposMap) != 0 {
 		var err error
