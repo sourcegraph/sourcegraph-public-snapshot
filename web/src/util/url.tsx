@@ -5,36 +5,80 @@ type Modal = 'references'
 type ModalMode = 'local' | 'external'
 
 /**
- * Represents a line or a position. Forbids a character without a line (which would
- * not make any sense).
+ * Represents a line, a position, a line range, or a position range. It forbids
+ * just a character, or a range from a line to a position or vice versa (such as
+ * "L1-2:3" or "L1:2-3"), none of which would make much sense.
  */
-export type LineOrPosition =
-    { line?: undefined, character?: undefined } |
-    { line: number, character?: number }
+export type LineOrPositionOrRange =
+    { line?: undefined, character?: undefined, endLine?: undefined, endCharacter?: undefined } |
+    { line: number, character?: number, endLine?: undefined, endCharacter?: undefined } |
+    { line: number, character?: undefined, endLine?: number, endCharacter?: undefined } |
+    { line: number, character: number, endLine: number, endCharacter: number }
 
-export function parseHash(hash: string): LineOrPosition & { modal?: Modal, modalMode?: ModalMode } {
+export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal, modalMode?: ModalMode } {
     if (hash.startsWith('#')) {
         hash = hash.substr('#'.length)
     }
-    if (!/^L[0-9]+($|(:[0-9]+($|(\$references($|(:(local|external)$))))))/.test(hash)) {
+    if (!/^L[0-9]+(:[0-9]+)?($|((-[0-9]+(:[0-9]+)?)?($|(\$references($|(:(local|external)$))))))/.test(hash)) {
         // invalid hash
         return {}
     }
 
-    const lineCharModalInfo = hash.split('$') // e.g. "L17:19$references:external"
-    const lineChar = lineCharModalInfo[0].split('L')
-    const coords = lineChar[1].split(':')
-    const line = parseInt(coords[0], 10) // 17
-    const character = coords[1] ? parseInt(coords[1], 10) : undefined // 19
+    const lineCharModalInfo = hash.split('$') // e.g. "L17:19-21:23$references:external"
+
+    // Parse the line or position range, ensuring we don't get an inconsistent result
+    // (such as L1-2:3, a range from a line to a position).
+    let line: number | undefined // 17
+    let character: number | undefined // 19
+    let endLine: number | undefined // 21
+    let endCharacter: number | undefined // 23
+    if (lineCharModalInfo[0].startsWith('L')) {
+        const posOrRangeString = lineCharModalInfo[0].slice(1)
+        const [startString, endString] = posOrRangeString.split('-', 2)
+        if (startString) {
+            ({ line, character } = parseLineOrPosition(startString))
+        }
+        if (endString) {
+            ({ line: endLine, character: endCharacter } = parseLineOrPosition(endString))
+        }
+    }
+    let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
+    if (typeof line === 'undefined' || (typeof endLine !== 'undefined' && typeof character !== typeof endCharacter)) {
+        lpr = {}
+    } else if (typeof character === 'undefined') {
+        lpr = typeof endLine === 'undefined' ? { line } : { line, endLine }
+    } else if (typeof endLine === 'undefined' || typeof endCharacter === 'undefined') {
+        lpr = { line, character }
+    } else {
+        lpr = { line, character, endLine, endCharacter }
+    }
 
     if (!lineCharModalInfo[1]) {
-        return { line, character }
+        return lpr
     }
 
     const modalInfo = lineCharModalInfo[1].split(':')
     const modal = modalInfo[0] as Modal // "references"
     const modalMode = modalInfo[1] as ModalMode || 'local' // "external"
-    return { line, character, modal, modalMode }
+    return { ...lpr, modal, modalMode }
+}
+
+function parseLineOrPosition(str: string): { line: undefined, character: undefined } | { line: number, character?: number } {
+    const parts = str.split(':', 2)
+    let line: number | undefined
+    let character: number | undefined
+    if (parts.length >= 1) {
+        line = parseInt(parts[0], 10)
+    }
+    if (parts.length === 2) {
+        character = parseInt(parts[1], 10)
+    }
+    line = typeof line === 'number' && isNaN(line) ? undefined : line
+    character = typeof character === 'number' && isNaN(character) ? undefined : character
+    if (typeof line === 'undefined') {
+        return { line: undefined, character: undefined }
+    }
+    return { line, character }
 }
 
 function toPositionHash(position?: Position): string {
