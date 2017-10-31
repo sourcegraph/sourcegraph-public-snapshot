@@ -118,7 +118,7 @@ export class SearchResults extends React.Component<Props, State> {
                 alertTitle = ''
                 alertDetails = 'Enter terms to search...'
             } else if (this.state.error.message.includes('no repositories included')) {
-                alertTitle = 'No repositories matched'
+                alertTitle = 'No repositories matched by current filters'
                 alertDetails = querySuggestionForAllReposExcluded(parseSearchURLQuery(this.props.location.search))
             } else {
                 alertTitle = 'Something went wrong!'
