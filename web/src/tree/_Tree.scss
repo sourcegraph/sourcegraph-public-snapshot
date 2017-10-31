@@ -5,6 +5,9 @@
     overflow: auto;
     white-space: pre;
 
+    resize: horizontal;
+    min-width: 10rem;
+
     &:focus {
         outline: none;
     }
