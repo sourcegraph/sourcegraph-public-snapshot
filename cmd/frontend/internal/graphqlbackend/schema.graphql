@@ -115,7 +115,7 @@ type Root {
 	repositories(query: String = ""): [Repository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
-	activeRepos(): ActiveRepoResults!
+	activeRepos: ActiveRepoResults!
 	search(query: String = "", repositories: [String!]!, first: Int): [SearchResult!]!
 	searchRepos(query: SearchQuery!, repositories: [RepositoryRevision!]!): SearchResults!
 	searchProfiles: [SearchProfile!]!
