@@ -9,9 +9,9 @@ import (
 )
 
 type MockOrgRepos struct {
-	GetByID        func(ctx context.Context, id int32) (*sourcegraph.OrgRepo, error)
-	GetByRemoteURI func(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error)
-	Create         func(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sourcegraph.OrgRepo, error)
+	GetByID                func(ctx context.Context, id int32) (*sourcegraph.OrgRepo, error)
+	GetByCanonicalRemoteID func(ctx context.Context, orgID int32, CanonicalRemoteID string) (*sourcegraph.OrgRepo, error)
+	Create                 func(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sourcegraph.OrgRepo, error)
 }
 
 func (s *MockOrgRepos) MockGetByID_Return(t *testing.T, returns *sourcegraph.OrgRepo, returnsErr error) (called *bool) {
@@ -23,9 +23,9 @@ func (s *MockOrgRepos) MockGetByID_Return(t *testing.T, returns *sourcegraph.Org
 	return
 }
 
-func (s *MockOrgRepos) MockGetByRemoteURI_Return(t *testing.T, returns *sourcegraph.OrgRepo, returnsErr error) (called *bool) {
+func (s *MockOrgRepos) MockGetByCanonicalRemoteID_Return(t *testing.T, returns *sourcegraph.OrgRepo, returnsErr error) (called *bool) {
 	called = new(bool)
-	s.GetByRemoteURI = func(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error) {
+	s.GetByCanonicalRemoteID = func(ctx context.Context, orgID int32, CanonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
 		*called = true
 		return returns, returnsErr
 	}

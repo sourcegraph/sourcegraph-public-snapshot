@@ -90,7 +90,9 @@ input ThreadLinesInput {
 type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
 	# TODO make linesRevision and repoRevision required after removing revision.
-	createThread(orgID: Int!, remoteURI: String!, file: String!, repoRevision: String, linesRevision: String, revision: String, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
+	# TODO make canonicalRemoteID required after removing remoteURI.
+	# TODO make cloneURL required.
+	createThread(orgID: Int!, remoteURI: String, canonicalRemoteID: String, cloneURL: String, file: String!, repoRevision: String, linesRevision: String, revision: String, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
@@ -516,9 +518,11 @@ type Org {
 	members: [OrgMember!]!
 	latestSettings: OrgSettings
 	repos: [OrgRepo!]!
-	repo(remoteURI: String!): OrgRepo
+	# TODO make canonicalRemoteID required after removing remoteURI.
+	repo(remoteURI: String, canonicalRemoteID: String): OrgRepo
 	threads(limit: Int): [Thread!]! @deprecated(reason: "To be replaced by threads2")
-	threads2(repoRemoteURI: String, branch: String, file: String, limit: Int): ThreadConnection!
+	# TODO make repoCanonicalRemoteID required after removing repoRemoteURI.
+	threads2(repoRemoteURI: String, repoCanonicalRemoteID: String, branch: String, file: String, limit: Int): ThreadConnection!
 	tags: [OrgTag!]!
 }
 
@@ -542,7 +546,8 @@ type OrgInviteStatus {
 type OrgRepo {
 	id: Int!
 	org: Org!
-	remoteUri: String!
+	remoteURI: String! @deprecated(reason: "use canonicalRemoteID instead")
+	canonicalRemoteID: String!
 	createdAt: String!
 	updatedAt: String!
 	threads(file: String, branch: String, limit: Int): [Thread!]! @deprecated(reason: "To be replaced by threads2")

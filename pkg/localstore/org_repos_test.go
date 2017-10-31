@@ -34,7 +34,7 @@ func TestLocalRepos_Validate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		testRepo.RemoteURI = test.uri
+		testRepo.CanonicalRemoteID = test.uri
 		testRepo.OrgID = 1
 		err := validateRepo(testRepo)
 		if test.isValid && err != nil {

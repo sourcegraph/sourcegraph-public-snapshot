@@ -235,20 +235,22 @@ type threadLines struct {
 }
 
 func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
-	OrgID          int32
-	RemoteURI      string
-	File           string
-	RepoRevision   *string
-	LinesRevision  *string
-	Revision       *string
-	Branch         *string
-	StartLine      int32
-	EndLine        int32
-	StartCharacter int32
-	EndCharacter   int32
-	RangeLength    int32
-	Contents       string
-	Lines          *threadLines
+	OrgID             int32
+	RemoteURI         *string // DEPRECATED: to be replaced by CanonicalRemoteID.
+	CanonicalRemoteID *string
+	CloneURL          *string
+	File              string
+	RepoRevision      *string
+	LinesRevision     *string
+	Revision          *string
+	Branch            *string
+	StartLine         int32
+	EndLine           int32
+	StartCharacter    int32
+	EndCharacter      int32
+	RangeLength       int32
+	Contents          string
+	Lines             *threadLines
 }) (*threadResolver, error) {
 	// Sort out the revision args. This is temporary until args.Revision is phased out.
 	if args.RepoRevision == nil && args.LinesRevision == nil {
@@ -267,11 +269,35 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	repo, err := store.OrgRepos.GetByRemoteURI(ctx, args.OrgID, args.RemoteURI)
+	if args.RemoteURI == nil && args.CanonicalRemoteID == nil {
+		return nil, errors.New("canonicalRemoteID required")
+	}
+	var cloneURL string
+	if args.RemoteURI != nil {
+		args.CanonicalRemoteID = args.RemoteURI
+		// Convert remoteURI into the correct vendor-specific format.
+		//
+		// TODO client will be expected to supply CanonicalRemoteID in
+		// the correct format and this logic can be removed.
+		if strings.HasPrefix(*args.RemoteURI, "github.com") {
+			cloneURL = "github://" + *args.RemoteURI
+		} else if strings.HasPrefix(*args.RemoteURI, "bitbucket.org") {
+			cloneURL = "bitbucketcloud://" + *args.RemoteURI
+		} else {
+			cloneURL = "https://" + *args.RemoteURI
+		}
+	} else {
+		if args.CloneURL == nil {
+			return nil, errors.New("cloneURL required")
+		}
+		cloneURL = *args.CloneURL
+	}
+	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID, *args.CanonicalRemoteID)
 	if err == store.ErrRepoNotFound {
 		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
-			RemoteURI: args.RemoteURI,
-			OrgID:     args.OrgID,
+			CanonicalRemoteID: *args.CanonicalRemoteID,
+			CloneURL:          cloneURL,
+			OrgID:             args.OrgID,
 		})
 	}
 	if err != nil {
@@ -442,7 +468,7 @@ func notifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread 
 		return err
 	}
 
-	repoName := repoNameFromURI(repo.RemoteURI)
+	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
 	for _, email := range emails {
 		var subject string
 		if first != nil {

@@ -60,6 +60,8 @@
 // ../../../migrations/1508361685_add_phabricator_repos.up.sql
 // ../../../migrations/1508795218_update_constraints.down.sql
 // ../../../migrations/1508795218_update_constraints.up.sql
+// ../../../migrations/1509051662_add_org_repo_clone_url.down.sql
+// ../../../migrations/1509051662_add_org_repo_clone_url.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1327,6 +1329,46 @@ func _1508795218_update_constraintsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1509051662_add_org_repo_clone_urlDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcc\x3d\x0a\x02\x31\x10\x40\xe1\xda\x39\xc5\x30\xd7\x48\x95\x5d\x07\x59\xc8\x8f\x84\x58\x87\x25\x06\x09\xc4\x8c\x8c\x7a\x7f\x11\x6c\x2d\x5f\xf1\xbe\x85\x4f\x5b\x30\x00\xd6\x65\x4e\x98\xed\xe2\x18\x49\xf4\x56\xb4\x3d\xe4\x49\x70\x48\x1c\xac\x67\xa4\xba\x4f\x99\xbd\xee\xa3\x68\xbb\xcb\xab\x95\x7e\x25\xcc\x11\xe9\x97\x6f\xed\x64\xfe\x33\xc7\x14\xcf\xb8\x46\x77\xf1\x01\xa9\x0e\x99\xdf\x63\x90\x01\x58\xa3\xf7\x5b\x36\xf0\x09\x00\x00\xff\xff\x42\x0e\x47\xad\x8a\x00\x00\x00")
+
+func _1509051662_add_org_repo_clone_urlDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1509051662_add_org_repo_clone_urlDownSql,
+		"1509051662_add_org_repo_clone_url.down.sql",
+	)
+}
+
+func _1509051662_add_org_repo_clone_urlDownSql() (*asset, error) {
+	bytes, err := _1509051662_add_org_repo_clone_urlDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1509051662_add_org_repo_clone_url.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1509051662_add_org_repo_clone_urlUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x52\xdf\x6f\xda\x30\x18\x7c\x8e\xff\x8a\x53\xb4\x29\x41\xe3\xc7\x7b\xd1\x34\x85\x60\xad\xa8\x21\x54\x60\xb4\x87\x6d\x45\xc6\xf9\x20\x56\x93\x18\xd9\x4e\xb7\xa7\xfd\xed\x53\x60\x03\xba\xb6\x7b\x4b\x7c\xf7\x9d\xef\xee\xf3\x84\x7f\x9e\xe5\x63\xc6\x92\x4c\xf0\x25\x44\x32\xc9\x38\x42\x63\xf7\x1b\x4b\x07\xe3\x42\x24\xd3\x29\xd2\x45\xb6\x9e\xe7\x08\x55\x65\x1a\xda\xb4\xb6\x0a\xe1\xe9\xa7\x1f\x33\x36\x18\x60\x22\xd5\xe3\x4e\x57\x15\xce\x28\x94\xa9\xda\xba\xc1\x0f\xed\x4b\xec\x8c\xad\xc9\xc2\x52\x6d\x7c\x87\x6a\x14\xd2\xcb\x21\xba\xd1\x7b\x4b\x07\x6a\x0a\xf8\x92\xa0\x8c\xb5\xa4\x3c\x9e\xa8\x29\x8c\x1d\xb8\x03\x29\xbd\xd3\x0a\x4e\x95\x54\x93\x43\xbc\xd7\xbe\x6c\xb7\x37\xa3\x51\x27\x89\xd3\xdf\x50\x99\xba\x7f\x94\xda\x6a\xbf\x6d\xd5\x23\x79\x55\x99\xb6\xf8\xcb\x3a\x9f\x0e\x8d\xdd\xf7\x20\x9b\x02\xd2\xb9\xb6\xa6\xe3\x95\x96\x9c\x87\xb4\x84\xd2\xfb\x83\x1b\xb2\xf5\xfd\x34\x11\xcf\xd2\xb3\x60\xc5\xc5\x55\xb0\x8f\x88\xd3\x64\xc5\x59\x10\x7c\xb9\xe5\xf9\x75\xa8\x6c\x76\xc7\x11\x5d\x5c\xbd\x8f\x20\x3a\x8a\x32\x8d\x92\x3e\x8e\xce\xee\xa3\xfe\xd5\x58\xef\x4d\xa5\x67\xce\xff\x15\x7b\x11\xf6\x85\x28\xcf\x56\xfc\x4c\x3f\xc6\x7b\x85\xc5\xf3\x69\xef\xed\xcd\xb3\xe0\x04\xbc\xb2\xfc\xae\x94\x7c\x21\x90\xaf\xb3\xac\xcf\x82\xd3\x13\xc9\x57\x62\x99\xcc\xf2\xab\xba\x36\x4f\xb2\xd2\x05\xd2\x5b\x9e\xde\x21\xbe\xb4\xf8\x0b\xd1\x43\xfc\xf5\xe1\x9b\xfb\xfe\xe1\x66\x34\xea\x7d\x3a\x7d\xbe\x8b\xfe\x6b\x66\xc9\xf3\x64\xce\x11\x5e\x12\x84\x10\x0b\x84\x4a\x36\xa6\xd1\x4a\x56\x9b\x3f\x88\x2e\xc2\x31\x63\xe9\x62\x3e\x9f\x89\x31\xfb\x1d\x00\x00\xff\xff\xa7\x16\x09\xd3\xdf\x02\x00\x00")
+
+func _1509051662_add_org_repo_clone_urlUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1509051662_add_org_repo_clone_urlUpSql,
+		"1509051662_add_org_repo_clone_url.up.sql",
+	)
+}
+
+func _1509051662_add_org_repo_clone_urlUpSql() (*asset, error) {
+	bytes, err := _1509051662_add_org_repo_clone_urlUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1509051662_add_org_repo_clone_url.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1439,6 +1481,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1508361685_add_phabricator_repos.up.sql":         _1508361685_add_phabricator_reposUpSql,
 	"1508795218_update_constraints.down.sql":          _1508795218_update_constraintsDownSql,
 	"1508795218_update_constraints.up.sql":            _1508795218_update_constraintsUpSql,
+	"1509051662_add_org_repo_clone_url.down.sql":      _1509051662_add_org_repo_clone_urlDownSql,
+	"1509051662_add_org_repo_clone_url.up.sql":        _1509051662_add_org_repo_clone_urlUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1542,6 +1586,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1508361685_add_phabricator_repos.up.sql":         &bintree{_1508361685_add_phabricator_reposUpSql, map[string]*bintree{}},
 	"1508795218_update_constraints.down.sql":          &bintree{_1508795218_update_constraintsDownSql, map[string]*bintree{}},
 	"1508795218_update_constraints.up.sql":            &bintree{_1508795218_update_constraintsUpSql, map[string]*bintree{}},
+	"1509051662_add_org_repo_clone_url.down.sql":      &bintree{_1509051662_add_org_repo_clone_urlDownSql, map[string]*bintree{}},
+	"1509051662_add_org_repo_clone_url.up.sql":        &bintree{_1509051662_add_org_repo_clone_urlUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

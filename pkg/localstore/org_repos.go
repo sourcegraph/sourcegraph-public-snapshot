@@ -11,20 +11,20 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// validRemoteURI matches a relative path, with the first component being a
+// validCanonicalRemoteID matches a relative path, with the first component being a
 // valid domain, e.g. "github.com/gorilla/mux".
-var validRemoteURI = regexp.MustCompile(`^[^/@]+(\.[^/]+)+(:\d+)?(/[^/]+)+$`)
+var validCanonicalRemoteID = regexp.MustCompile(`^[^/@]+(\.[^/]+)+(:\d+)?(/[^/]+)+$`)
 
 func validateRepo(repo *sourcegraph.OrgRepo) error {
-	if repo.RemoteURI == "" {
-		return errors.New("error creating local repo: RemoteURI required")
+	if repo.CanonicalRemoteID == "" {
+		return errors.New("error creating local repo: CanonicalRemoteID required")
 	}
-	matched := validRemoteURI.MatchString(repo.RemoteURI)
+	matched := validCanonicalRemoteID.MatchString(repo.CanonicalRemoteID)
 	if !matched {
-		return fmt.Errorf("error creating local repo %s: not a valid remote uri", repo.RemoteURI)
+		return fmt.Errorf("error creating local repo %s: not a valid remote uri", repo.CanonicalRemoteID)
 	}
 	if repo.OrgID == 0 {
-		return fmt.Errorf("error creating local repo %s: OrgID required", repo.RemoteURI)
+		return fmt.Errorf("error creating local repo %s: OrgID required", repo.CanonicalRemoteID)
 	}
 	return nil
 }
@@ -42,11 +42,11 @@ func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.Or
 	return r.getBySQL(ctx, "WHERE org_id=$1 AND deleted_at IS NULL", orgID)
 }
 
-func (r *orgRepos) GetByRemoteURI(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error) {
-	if Mocks.OrgRepos.GetByRemoteURI != nil {
-		return Mocks.OrgRepos.GetByRemoteURI(ctx, orgID, remoteURI)
+func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, CanonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
+	if Mocks.OrgRepos.GetByCanonicalRemoteID != nil {
+		return Mocks.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, CanonicalRemoteID)
 	}
-	return r.getOneBySQL(ctx, "WHERE org_id=$1 AND remote_uri=$2 AND deleted_at IS NULL LIMIT 1", orgID, remoteURI)
+	return r.getOneBySQL(ctx, "WHERE org_id=$1 AND canonical_remote_id=$2 AND deleted_at IS NULL LIMIT 1", orgID, CanonicalRemoteID)
 }
 
 func (r *orgRepos) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgRepo, error) {
@@ -76,8 +76,8 @@ func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sou
 	// orgID is temporarily nullable while we support both orgs and access tokens.
 	// TODO(nick): make org_id non-null when dropping support for access tokens.
 	err = globalDB.QueryRow(
-		"INSERT INTO org_repos(remote_uri, org_id, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
-		newRepo.RemoteURI, newRepo.OrgID, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
+		"INSERT INTO org_repos(canonical_remote_id, org_id, clone_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
+		newRepo.CanonicalRemoteID, newRepo.OrgID, newRepo.CloneURL, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sou
 
 // getBySQL returns org repos matching the SQL query, if any exist.
 func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgRepo, error) {
-	rows, err := globalDB.Query("SELECT id, remote_uri, org_id, created_at, updated_at FROM org_repos "+query, args...)
+	rows, err := globalDB.Query("SELECT id, canonical_remote_id, clone_url, org_id, created_at, updated_at FROM org_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}
 		// orgID is temporarily nullable while we support both orgs and access tokens.
 		// TODO(nick): make org_id non-null when dropping support for access tokens.
 		var orgID sql.NullInt64
-		err := rows.Scan(&repo.ID, &repo.RemoteURI, &orgID, &repo.CreatedAt, &repo.UpdatedAt)
+		err := rows.Scan(&repo.ID, &repo.CanonicalRemoteID, &repo.CloneURL, &orgID, &repo.CreatedAt, &repo.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

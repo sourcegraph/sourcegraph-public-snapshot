@@ -20,8 +20,17 @@ func (o *orgRepoResolver) Org() *orgResolver {
 	return &orgResolver{o.org}
 }
 
+// DEPRECATED: to be replaced by CanonicalRemoteID.
 func (o *orgRepoResolver) RemoteURI() string {
-	return o.repo.RemoteURI
+	return o.repo.CanonicalRemoteID
+}
+
+func (o *orgRepoResolver) CanonicalRemoteID() string {
+	return o.repo.CanonicalRemoteID
+}
+
+func (o *orgRepoResolver) CloneURL() string {
+	return o.repo.CloneURL
 }
 
 func (o *orgRepoResolver) CreatedAt() string {

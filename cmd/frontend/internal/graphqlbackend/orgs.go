@@ -81,10 +81,11 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	Limit *int32
 }) ([]*threadResolver, error) {
 	connection, err := o.Threads2(ctx, &struct {
-		RepoRemoteURI *string
-		Branch        *string
-		File          *string
-		Limit         *int32
+		RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
+		RepoCanonicalRemoteID *string
+		Branch                *string
+		File                  *string
+		Limit                 *int32
 	}{
 		Limit: args.Limit,
 	})
@@ -95,15 +96,22 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 }
 
 func (o *orgResolver) Threads2(ctx context.Context, args *struct {
-	RepoRemoteURI *string
-	Branch        *string
-	File          *string
-	Limit         *int32
+	RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
+	RepoCanonicalRemoteID *string
+	Branch                *string
+	File                  *string
+	Limit                 *int32
 }) (*threadConnectionResolver, error) {
 	var repo *sourcegraph.OrgRepo
+	if args.RepoRemoteURI == nil && args.RepoCanonicalRemoteID == nil {
+		return nil, errors.New("repoCanonicalRemoteID required")
+	}
 	if args.RepoRemoteURI != nil {
+		args.RepoCanonicalRemoteID = args.RepoRemoteURI
+	}
+	if args.RepoCanonicalRemoteID != nil {
 		var err error
-		repo, err = getOrgRepo(ctx, o.org.ID, *args.RepoRemoteURI)
+		repo, err = getOrgRepo(ctx, o.org.ID, *args.RepoCanonicalRemoteID)
 		if err != nil {
 			return nil, err
 		}
@@ -124,17 +132,24 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
 }
 
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
-	RemoteURI string
+	RemoteURI         *string // DEPRECATED: use CanonicalRemoteID instead.
+	CanonicalRemoteID *string
 }) (*orgRepoResolver, error) {
-	orgRepo, err := getOrgRepo(ctx, o.org.ID, args.RemoteURI)
+	if args.RemoteURI == nil && args.CanonicalRemoteID == nil {
+		return nil, errors.New("canonicalRemoteID required")
+	}
+	if args.RemoteURI != nil {
+		args.CanonicalRemoteID = args.RemoteURI
+	}
+	orgRepo, err := getOrgRepo(ctx, o.org.ID, *args.CanonicalRemoteID)
 	if err != nil {
 		return nil, err
 	}
 	return &orgRepoResolver{o.org, orgRepo}, nil
 }
 
-func getOrgRepo(ctx context.Context, orgID int32, remoteURI string) (*sourcegraph.OrgRepo, error) {
-	orgRepo, err := store.OrgRepos.GetByRemoteURI(ctx, orgID, remoteURI)
+func getOrgRepo(ctx context.Context, orgID int32, CanonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
+	orgRepo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, CanonicalRemoteID)
 	if err == store.ErrRepoNotFound {
 		// We don't want to create org repos just because an org member queried for threads
 		// and we don't want the client to think this is an error.

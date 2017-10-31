@@ -405,11 +405,12 @@ type User struct {
 // OrgRepo represents a repo that exists on a native client's filesystem, but
 // does not necessarily have its contents cloned to a remote Sourcegraph server.
 type OrgRepo struct {
-	ID        int32
-	RemoteURI string
-	OrgID     int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                int32
+	CanonicalRemoteID string
+	CloneURL          string
+	OrgID             int32
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 type ThreadLines struct {

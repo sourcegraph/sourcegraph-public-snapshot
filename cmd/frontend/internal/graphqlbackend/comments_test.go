@@ -241,8 +241,8 @@ func TestComments_Create(t *testing.T) {
 	ctx := context.Background()
 
 	repo := sourcegraph.OrgRepo{
-		ID:        1,
-		RemoteURI: "github.com/foo/bar",
+		ID:                1,
+		CanonicalRemoteID: "github.com/foo/bar",
 	}
 	thread := sourcegraph.Thread{
 		ID:             1,
@@ -304,7 +304,7 @@ func TestComments_CreateAccessDenied(t *testing.T) {
 	}
 }
 
-func TestRepoNameFromURI(t *testing.T) {
+func TestRepoNameFromRemoteID(t *testing.T) {
 	tests := []struct {
 		In  string
 		Out string
@@ -315,7 +315,7 @@ func TestRepoNameFromURI(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		out := repoNameFromURI(test.In)
+		out := repoNameFromRemoteID(test.In)
 		if out != test.Out {
 			t.Errorf("\n   input: \"%s\"\nexpected: \"%s\"\n     got: \"%s\"", test.In, test.Out, out)
 		}

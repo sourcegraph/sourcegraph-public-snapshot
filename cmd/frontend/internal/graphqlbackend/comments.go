@@ -174,7 +174,7 @@ func notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sour
 		return nil, err
 	}
 
-	repoName := repoNameFromURI(repo.RemoteURI)
+	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
 	contents := strings.Replace(html.EscapeString(comment.Contents), "\n", "<br>", -1)
 	mentions := usernamesFromMentions(comment.Contents)
 	for _, m := range mentions {
@@ -293,10 +293,10 @@ func usernamesFromMentions(contents string) []string {
 	return usernames
 }
 
-func repoNameFromURI(remoteURI string) string {
-	m := strings.SplitN(remoteURI, "/", 2)
+func repoNameFromRemoteID(CanonicalRemoteID string) string {
+	m := strings.SplitN(CanonicalRemoteID, "/", 2)
 	if len(m) < 2 {
-		return remoteURI
+		return CanonicalRemoteID
 	}
 	return m[1]
 }
@@ -313,9 +313,8 @@ func getURL(repo sourcegraph.OrgRepo, thread sourcegraph.Thread, utmSource strin
 		revision = *thread.Branch
 	}
 
-	cloneURL := fmt.Sprintf("https://%s", repo.RemoteURI)
 	values := url.Values{}
-	values.Set("repo", cloneURL)
+	values.Set("repo", repo.CloneURL)
 	values.Set("vcs", "git")
 	values.Set("revision", revision)
 	values.Set("path", thread.File)

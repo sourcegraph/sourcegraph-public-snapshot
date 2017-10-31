@@ -15,16 +15,17 @@ func TestThreads_Create(t *testing.T) {
 	ctx := context.Background()
 
 	wantRepo := sourcegraph.OrgRepo{
-		RemoteURI: "test",
+		CanonicalRemoteID: "test",
+		CloneURL:          "https://test.com/test",
 	}
 	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
 	store.Mocks.Users.MockGetByAuth0ID_Return(t, &sourcegraph.User{}, nil)
-	store.Mocks.OrgRepos.MockGetByRemoteURI_Return(t, nil, store.ErrRepoNotFound)
+	store.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, store.ErrRepoNotFound)
 	repoCreateCalled, repoCreateCalledWith := store.Mocks.OrgRepos.MockCreate_Return(t, &sourcegraph.OrgRepo{
-		ID:        1,
-		RemoteURI: wantRepo.RemoteURI,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:                1,
+		CanonicalRemoteID: wantRepo.CanonicalRemoteID,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
 	}, nil)
 
 	store.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
@@ -40,26 +41,29 @@ func TestThreads_Create(t *testing.T) {
 
 	r := &schemaResolver{}
 	_, err := r.CreateThread(ctx, &struct {
-		OrgID          int32
-		RemoteURI      string
-		File           string
-		RepoRevision   *string
-		LinesRevision  *string
-		Revision       *string
-		Branch         *string
-		StartLine      int32
-		EndLine        int32
-		StartCharacter int32
-		EndCharacter   int32
-		RangeLength    int32
-		Contents       string
-		Lines          *threadLines
+		OrgID             int32
+		RemoteURI         *string
+		CanonicalRemoteID *string
+		CloneURL          *string
+		File              string
+		RepoRevision      *string
+		LinesRevision     *string
+		Revision          *string
+		Branch            *string
+		StartLine         int32
+		EndLine           int32
+		StartCharacter    int32
+		EndCharacter      int32
+		RangeLength       int32
+		Contents          string
+		Lines             *threadLines
 	}{
-		RemoteURI:     wantRepo.RemoteURI,
-		File:          "foo.go",
-		RepoRevision:  &repoRev,
-		LinesRevision: &lineRev,
-		Contents:      "Hello",
+		CanonicalRemoteID: &wantRepo.CanonicalRemoteID,
+		CloneURL:          &wantRepo.CloneURL,
+		File:              "foo.go",
+		RepoRevision:      &repoRev,
+		LinesRevision:     &lineRev,
+		Contents:          "Hello",
 	})
 
 	if err != nil {
@@ -78,7 +82,7 @@ func TestThreads_Create(t *testing.T) {
 
 func TestThreads_Update(t *testing.T) {
 	wantRepo := sourcegraph.OrgRepo{
-		RemoteURI: "test",
+		CanonicalRemoteID: "test",
 	}
 
 	store.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)

@@ -65,17 +65,20 @@ Foreign-key constraints:
 
 # Table "public.org_repos"
 ```
-   Column   |           Type           |                        Modifiers                         
-------------+--------------------------+----------------------------------------------------------
- id         | bigint                   | not null default nextval('local_repos_id_seq'::regclass)
- remote_uri | citext                   | 
- created_at | timestamp with time zone | not null default now()
- updated_at | timestamp with time zone | not null default now()
- deleted_at | timestamp with time zone | 
- org_id     | integer                  | 
+       Column        |           Type           |                        Modifiers                         
+---------------------+--------------------------+----------------------------------------------------------
+ id                  | bigint                   | not null default nextval('local_repos_id_seq'::regclass)
+ canonical_remote_id | citext                   | 
+ created_at          | timestamp with time zone | not null default now()
+ updated_at          | timestamp with time zone | not null default now()
+ deleted_at          | timestamp with time zone | 
+ org_id              | integer                  | 
+ clone_url           | text                     | not null
 Indexes:
     "local_repos_pkey" PRIMARY KEY, btree (id)
-    "local_repos_remote_uri_idx" btree (remote_uri)
+    "local_repos_remote_uri_idx" btree (canonical_remote_id)
+Check constraints:
+    "clone_url_valid" CHECK (clone_url ~ '^([^\s]+://)?[^\s]+$'::text)
 
 ```
 
