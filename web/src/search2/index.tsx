@@ -13,9 +13,7 @@ export interface SearchOptions {
 export function buildSearchURLQuery(options: SearchOptions): string {
     const searchParams = new URLSearchParams()
     searchParams.set('q', options.query)
-    if (options.scopeQuery) {
-        searchParams.set('sq', options.scopeQuery)
-    }
+    searchParams.set('sq', options.scopeQuery || '')
     return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
