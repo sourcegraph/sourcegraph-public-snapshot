@@ -90,6 +90,96 @@ func TestSearch2Suggestions(t *testing.T) {
 		}
 	})
 
+	t.Run("repogroup: and single term", func(t *testing.T) {
+		var mu sync.Mutex
+		listOpts := sourcegraph.ListOptions{PerPage: listOpts.PerPage + 2} // 2 more because repogroup has 2 members
+		var calledReposListReposInGroup, calledReposListFooRepo3 bool
+		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+			mu.Lock()
+			defer mu.Unlock()
+			wantReposInGroup := &store.RepoListOp{IncludePatterns: []string{`(^foo-repo1$)|(^repo3$)`}, ListOptions: listOpts}    // when treating term as repo: field
+			wantFooRepo3 := &store.RepoListOp{IncludePatterns: []string{"foo", `(^foo-repo1$)|(^repo3$)`}, ListOptions: listOpts} // when treating term as repo: field
+			if reflect.DeepEqual(op, wantReposInGroup) {
+				calledReposListReposInGroup = true
+				return []*sourcegraph.Repo{{URI: "foo-repo1"}, {URI: "repo3"}}, nil
+			} else if reflect.DeepEqual(op, wantFooRepo3) {
+				calledReposListFooRepo3 = true
+				return []*sourcegraph.Repo{{URI: "foo-repo1"}}, nil
+			}
+			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
+			return nil, nil
+		}
+		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		calledSearchRepos := false
+		mockSearchRepos = func(args *repoSearchArgs) (*searchResults, error) {
+			mu.Lock()
+			defer mu.Unlock()
+			calledSearchRepos = true
+			if want := "foo"; args.Query.Pattern != want {
+				t.Errorf("got %q, want %q", args.Query.Pattern, want)
+			}
+			return &searchResults{
+				results: []*fileMatch{
+					{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match"},
+				},
+			}, nil
+		}
+		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
+		defer func() { mockSearchRepos = nil }()
+		mockSearchFilesForRepoURI = func(query string, repoURI string, limit int) ([]*searchResultResolver, error) {
+			mu.Lock()
+			defer mu.Unlock()
+			if want := ""; query != want {
+				t.Errorf("got %q, want %q", query, want)
+			}
+			if repoURI == "foo-repo1" {
+				calledSearchFilesFoo = true
+				return []*searchResultResolver{
+					{result: &fileResolver{path: "dir/foo-repo1-file-name-match", commit: commitSpec{RepoID: 1}}, score: 1},
+					{result: &fileResolver{path: "dir/qux-file", commit: commitSpec{RepoID: 1}}, score: 1},
+				}, nil
+			} else if repoURI == "repo3" {
+				calledSearchFilesRepo3 = true
+				return []*searchResultResolver{
+					{result: &fileResolver{path: "dir/foo-repo3-file-name-match", commit: commitSpec{RepoID: 1}}, score: 2},
+					{result: &fileResolver{path: "dir/qux-file", commit: commitSpec{RepoID: 1}}, score: 1},
+				}, nil
+			}
+			t.Errorf("got %q, want %q or %q", repoURI, "foo-repo1", "repo3")
+			return nil, nil
+		}
+		defer func() { mockSearchFilesForRepoURI = nil }()
+		calledResolveRepoGroups := false
+		defer func() { mockResolveRepoGroups = nil }()
+		mockResolveRepoGroups = func() (map[string][]*sourcegraph.Repo, error) {
+			mu.Lock()
+			defer mu.Unlock()
+			calledResolveRepoGroups = true
+			return map[string][]*sourcegraph.Repo{
+				"sample": []*sourcegraph.Repo{{URI: "foo-repo1"}, {URI: "repo3"}},
+			}, nil
+		}
+		testSuggestions(t, "foo", "repogroup:sample", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
+		if !calledReposListReposInGroup {
+			t.Error("!calledReposListReposInGroup")
+		}
+		if !calledReposListFooRepo3 {
+			t.Error("!calledReposListFooRepo3")
+		}
+		if !calledSearchRepos {
+			t.Error("!calledSearchRepos")
+		}
+		if !calledSearchFilesFoo {
+			t.Error("!calledSearchFilesFoo")
+		}
+		if !calledSearchFilesRepo3 {
+			t.Error("!calledSearchFilesRepo3")
+		}
+		if !calledResolveRepoGroups {
+			t.Error("!calledResolveRepoGroups")
+		}
+	})
+
 	t.Run("repo: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
