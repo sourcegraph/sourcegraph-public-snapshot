@@ -15,7 +15,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { Repo } from '../repo/index'
 import { toBlobURL, toTreeURL } from '../util/url'
 import { createTreeStore, TreeStore } from './store'
-import { getParentDir, scrollIntoView } from './util'
+import { getParentDir, isEqualOrAncestor, scrollIntoView } from './util'
 
 export interface Props extends Repo {
     history: H.History
@@ -32,7 +32,7 @@ const treePadding = (depth: number, directory: boolean) => ({
 function closeDirectory(store: TreeStore, dir: string): void {
     const state = store.getValue()
     let next = state.shownSubpaths
-    for (const path of state.shownSubpaths.toArray().filter(path => path.startsWith(dir))) {
+    for (const path of state.shownSubpaths.toArray().filter(path => isEqualOrAncestor(path, dir))) {
         next = next.remove(path)
     }
     store.setState({ ...state, shownSubpaths: next, selectedPath: dir, selectedDir: dir })
@@ -286,11 +286,7 @@ class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         if (isParentOfSelection) {
             return true
         }
-        if (this.state.selectedDir === this.props.currSubpath) {
-            // was previously selecting
-            return true
-        }
-        if (this.state.selectedDir.indexOf(this.props.currSubpath) !== -1) {
+        if (isEqualOrAncestor(this.state.selectedDir, this.props.currSubpath)) {
             // was previously in the layer
             return true
         }
@@ -417,10 +413,7 @@ class LayerTile extends React.Component<TileProps, {}> {
             // short circuit
             return false
         }
-        if (this.props.selectedDir === this.props.currSubpath && lastValid) {
-            return true
-        }
-        if (this.props.selectedDir.indexOf(this.props.currSubpath) !== -1 && lastValid) {
+        if (isEqualOrAncestor(this.props.selectedDir, this.props.currSubpath) && lastValid) {
             return true
         }
         if (nextProps.selectedDir === nextProps.currSubpath && this.validTokenRange(nextProps)) {
@@ -443,7 +436,7 @@ class LayerTile extends React.Component<TileProps, {}> {
                 // Don't need to show subpath in the directory we're already in
                 continue
             }
-            if (subpathToShow.startsWith(prefix)) {
+            if (isEqualOrAncestor(subpathToShow, prefix)) {
                 return true
             }
         }
