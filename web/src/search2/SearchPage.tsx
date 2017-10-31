@@ -75,7 +75,7 @@ export class SearchPage extends React.Component<Props, State> {
                             value={this.state.userQuery}
                             onChange={this.onUserQueryChange}
                             scopeQuery={this.state.scopeQuery}
-                            appendQueryForSuggestions={this.state.fieldsQuery}
+                            prependQueryForSuggestions={this.state.fieldsQuery}
                             autoFocus={'cursor-at-end'}
                         />
                         <SearchScope location={this.props.location} value={this.state.scopeQuery} onChange={this.onScopeQueryChange} />
@@ -102,7 +102,7 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        const query = [this.state.userQuery, this.state.fieldsQuery].filter(s => !!s).join(' ')
+        const query = [this.state.fieldsQuery, this.state.userQuery].filter(s => !!s).join(' ')
         submitSearch(this.props.history, {
             query,
             scopeQuery: this.state.scopeQuery || '',

@@ -40,7 +40,7 @@ interface Props {
      * A string that is appended to the query input's query before
      * fetching suggestions.
      */
-    appendQueryForSuggestions?: string
+    prependQueryForSuggestions?: string
 
     /** Whether the input should be autofocused (and the behavior thereof) */
     autoFocus?: 'cursor-at-end'
@@ -113,7 +113,7 @@ export class QueryInput extends React.Component<Props, State> {
                     }
                     const suggestionsFetch = (() => {
                         const options: SearchOptions = {
-                            query: [this.props.value, this.props.appendQueryForSuggestions].filter(s => !!s).join(' '),
+                            query: [this.props.prependQueryForSuggestions, this.props.value].filter(s => !!s).join(' '),
                             scopeQuery: this.props.scopeQuery || '',
                         }
                         return fetchSuggestions(options)
