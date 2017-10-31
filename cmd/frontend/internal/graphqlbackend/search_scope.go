@@ -25,8 +25,8 @@ var (
 func defaultSearchScopesJSON() string {
 	var prependScope string
 	var defaultSearchScopes []*searchScope
-	useActiveInactiveRepos := inactiveRepos != ""
-	if envvar.DeploymentOnPrem() && useActiveInactiveRepos {
+	useActiveInactiveRepos := envvar.DeploymentOnPrem() && inactiveRepos != ""
+	if useActiveInactiveRepos {
 		prependScope = "repogroup:active "
 		defaultSearchScopes = append(defaultSearchScopes,
 			&searchScope{JName: "All active repos", JValue: "repogroup:active"},
