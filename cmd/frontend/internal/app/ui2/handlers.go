@@ -236,7 +236,8 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 		common.Title = title(common, r)
 
 		q := r.URL.Query()
-		if search := q.Get("q"); search != "" {
+		_, isNewQueryUX := q["sq"] // sq URL param is only set by new query UX in SearchNavbarItem.tsx
+		if search := q.Get("q"); search != "" && !isNewQueryUX {
 			// Redirect old search URLs:
 			//
 			// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7?q=ErrMethodMismatch&utm_source=chrome-extension
