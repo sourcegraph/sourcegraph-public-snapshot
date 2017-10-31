@@ -34,16 +34,20 @@
 
     &__sidebar {
         flex: 0 0 auto;
-        width: 0;
 
         display: flex;
         flex-direction: column;
         position: relative;
 
+        max-width: 60%;
+
         background: #1C2736;
 
-        &--open {
-            width: 16rem;
+        &:not(&--open) {
+            width: 0;
+        }
+        &--open .tree {
+            width: 14rem;
         }
     }
 
