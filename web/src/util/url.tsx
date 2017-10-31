@@ -1,5 +1,5 @@
 import { Position } from 'vscode-languageserver-types'
-import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from '../repo'
+import { AbsoluteRepoFile, PositionSpec, RangeSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from '../repo'
 
 type Modal = 'references'
 type ModalMode = 'local' | 'external'
@@ -81,11 +81,20 @@ function parseLineOrPosition(str: string): { line: undefined, character: undefin
     return { line, character }
 }
 
-function toPositionHash(position?: Position): string {
-    if (!position) {
-        return ''
+function toPositionOrRangeHash(ctx: Partial<PositionSpec> & Partial<RangeSpec>): string {
+    if (ctx.range) {
+        const emptyRange = ctx.range.start.line === ctx.range.end.line &&
+            ctx.range.start.character === ctx.range.end.character
+        return '#L' + (emptyRange ? toPositionHashComponent(ctx.range.start) : `${toPositionHashComponent(ctx.range.start)}-${toPositionHashComponent(ctx.range.end)}`)
     }
-    return '#L' + position.line + (position.character ? ':' + position.character : '')
+    if (ctx.position) {
+        return '#L' + toPositionHashComponent(ctx.position)
+    }
+    return ''
+}
+
+function toPositionHashComponent(position: Position): string {
+    return position.line.toString() + (position.character ? ':' + position.character : '')
 }
 
 function toReferencesHash(group: 'local' | 'external' | undefined): string {
@@ -106,13 +115,13 @@ export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}`
 }
 
-export function toPrettyBlobURL(ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
-    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionHash(ctx.position)}${toReferencesHash(ctx.referencesMode)}`
+export function toPrettyBlobURL(ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RangeSpec>): string {
+    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(ctx)}${toReferencesHash(ctx.referencesMode)}`
 }
 
 export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
-    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionHash(ctx.position)}${toReferencesHash(ctx.referencesMode)}`
+    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(ctx)}${toReferencesHash(ctx.referencesMode)}`
 }
 
 export function toTreeURL(ctx: RepoFile): string {

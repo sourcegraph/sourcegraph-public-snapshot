@@ -49,7 +49,7 @@ export function setLineBlame(data: BlameData): void {
 
     if (!data.hunks || data.hunks.length === 0) {
         if (data.loading) {
-            setLineBlameContent(data.ctx.position.line, 'loading ◌')
+            setLineBlameContent(data.ctx.range.start.line, 'loading ◌')
         }
         return
     }
@@ -66,5 +66,5 @@ export function setLineBlame(data: BlameData): void {
     const timeSince = formatDistance(authorDate, new Date(), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
 
-    setLineBlameContent(data.ctx.position.line, blameContent, hunk.rev)
+    setLineBlameContent(data.ctx.range.start.line, blameContent, hunk.rev)
 }

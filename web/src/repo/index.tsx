@@ -96,6 +96,11 @@ export interface RepoFilePosition extends RepoSpec, Partial<RevSpec>, Partial<Re
  */
 export interface AbsoluteRepoFilePosition extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec, FileSpec, PositionSpec, Partial<ReferencesModeSpec> { }
 
+/**
+ * A range in file at an exact commit
+ */
+export interface AbsoluteRepoFileRange extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec, FileSpec, RangeSpec, Partial<ReferencesModeSpec> { }
+
 const parsePosition = (str: string): Position => {
     const split = str.split(',')
     if (split.length === 1) {
@@ -188,6 +193,7 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     }
 
     let position: Position | undefined
+    let range: Range | undefined
     if (loc.hash) {
         const parsedHash = url.parseHash(loc.hash.substr('#'.length))
         if (parsedHash.line) {
@@ -195,10 +201,19 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
                 line: parsedHash.line,
                 character: parsedHash.character || 0,
             }
+            if (parsedHash.endLine) {
+                range = {
+                    start: position,
+                    end: {
+                        line: parsedHash.endLine,
+                        character: parsedHash.endCharacter || 0,
+                    },
+                }
+            }
         }
     }
 
-    return { repoPath, rev, commitID, filePath, position }
+    return { repoPath, rev, commitID, filePath, position, range }
 }
 
 const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + pos.character : '')
@@ -223,4 +238,17 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
 export function getCodeCell(line: number): HTMLElement {
     const table = document.querySelector('.blob > table') as HTMLTableElement
     return table.rows[line - 1]
+}
+
+/**
+ * Retrieves the <td> elements for the specified line range (inclusive) on
+ * the current document.
+ */
+export function getCodeCells(line: number, endLine: number = line): HTMLElement[] {
+    const table = document.querySelector('.blob > table') as HTMLTableElement
+    const rows: HTMLElement[] = []
+    for (let i = line; i <= endLine; i++) {
+        rows.push(table.rows[i - 1])
+    }
+    return rows
 }

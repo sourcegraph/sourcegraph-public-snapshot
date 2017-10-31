@@ -18,18 +18,23 @@ import 'rxjs/add/operator/zip'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { Position, Range } from 'vscode-languageserver-types'
 import { fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
 import { triggerBlame } from '../blame'
 import { events } from '../tracking/events'
 import { getPathExtension, supportedExtensions } from '../util'
-import { parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
-import { AbsoluteRepoFile, AbsoluteRepoFilePosition, getCodeCell } from './index'
+import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
+import { AbsoluteRepoFile, AbsoluteRepoFilePosition, AbsoluteRepoFileRange, getCodeCell, getCodeCells } from './index'
 import { convertNode, createTooltips, findElementWithOffset, getTableDataCell, getTargetLineAndOffset, hideTooltip, TooltipData, updateTooltip } from './tooltips'
 
 /**
  * Highlights a <td> element and updates the page URL if necessary.
  */
-function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+function updateLine(cells: HTMLElement | HTMLElement[], history: H.History, ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): void {
+    if (!Array.isArray(cells)) {
+        cells = [cells]
+    }
+
     triggerBlame(ctx, clickEvent)
 
     const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>
@@ -38,8 +43,10 @@ function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFile
         cellElem.style.backgroundColor = 'inherit'
     }
 
-    cell.style.backgroundColor = 'rgb(34, 44, 58)'
-    cell.classList.add('sg-highlighted')
+    for (const cell of cells) {
+        cell.style.backgroundColor = 'rgb(34, 44, 58)'
+        cell.classList.add('sg-highlighted')
+    }
 
     // Check URL change first, since this function can be called in response to
     // onhashchange.
@@ -55,11 +62,15 @@ function updateLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFile
 /**
  * The same as updateLine, but also scrolls the blob.l
  */
-function updateAndScrollToLine(cell: HTMLElement, history: H.History, ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+function updateAndScrollToLine(cell: HTMLElement | HTMLElement[], history: H.History, ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): void {
+    if (!Array.isArray(cell)) {
+        cell = [cell]
+    }
+
     updateLine(cell, history, ctx, clickEvent)
 
     // Scroll to the line.
-    scrollToCell(cell)
+    scrollToCell(cell[0])
 }
 
 function scrollToCell(cell: HTMLElement): void {
@@ -107,12 +118,14 @@ export class Blob extends React.Component<Props, State> {
         if (this.props.location.pathname === nextProps.location.pathname && (
             thisHash.character !== nextHash.character ||
             thisHash.line !== nextHash.line ||
+            thisHash.endCharacter !== nextHash.endCharacter ||
+            thisHash.endLine !== nextHash.endLine ||
             thisHash.modal !== nextHash.modal
         )) {
             if (!nextHash.modal) {
                 this.fixedTooltip.next(nextProps)
             } else {
-                // If showing modal, remove any tooltip then highlight the element for the given position.
+                // If showing modal, remove any tooltip then highlight the element for the given start position.
                 this.setFixedTooltip()
                 if (nextHash.line && nextHash.character) {
                     const el = findElementWithOffset(getCodeCell(nextHash.line!).childNodes[1]! as HTMLElement, nextHash.character!)
@@ -152,7 +165,7 @@ export class Blob extends React.Component<Props, State> {
 
         const prevHash = parseHash(this.props.location.hash)
         const nextHash = parseHash(nextProps.location.hash)
-        if (prevHash.line !== nextHash.line && nextProps.history.action === 'POP') {
+        if ((prevHash.line !== nextHash.line || prevHash.endLine !== nextHash.endLine) && nextProps.history.action === 'POP') {
             // If we don't need an update (the file hasn't changed, and we will *not* get into componentDidUpdate).
             // We still want to scroll if the hash is changed, but only on 'back' and 'forward' browser events (and not e.g. on each line click).
             this.scrollToLine(nextProps)
@@ -328,19 +341,56 @@ export class Blob extends React.Component<Props, State> {
                     if (!row) {
                         return
                     }
-                    const line = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
+
+                    const clickedLineNumber = target && target.classList.contains('line')
+
+                    const targetLine = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
                     const data = { target, loc: getTargetLineAndOffset(target, false) }
+                    const targetPos: Position = { line: targetLine, character: data.loc ? data.loc.character : 0 }
+
+                    // Expand selection if shift-click on line number.
+                    const shouldGrowSelectionLines = e.shiftKey && clickedLineNumber
+                    const currentRange: LineOrPositionOrRange = parseHash(this.props.location.hash)
+                    let newRange: Range
+                    if (shouldGrowSelectionLines) {
+                        // Always select entire lines when selecting by line (don't allow multi-line selection
+                        // to/from specific characters on the line).
+                        let start: Position = { line: currentRange.line || 1, character: 0 }
+                        let end: Position = { line: currentRange.endLine || start.line, character: 0 }
+
+                        // Ensure currentRange's start line is before its end.
+                        if (start.line > end.line || (start.line === end.line && start.character > end.character)) {
+                            const tmp = end
+                            end = start
+                            start = tmp
+                        }
+
+                        // TODO(sqs): remember selection anchor point to grow correctly, instead of
+                        // always growing from start
+                        if (targetPos.line < start.line || (targetPos.line === start.line && targetPos.character < start.character)) {
+                            newRange = { start: targetPos, end }
+                        } else {
+                            newRange = { start, end: targetPos }
+                        }
+                    } else {
+                        newRange = { start: targetPos, end: targetPos }
+                    }
+
+                    const rows = getCodeCells(newRange.start.line, newRange.end.line)
                     if (!data.loc) {
-                        return updateLine(row, this.props.history, {
+                        return updateLine(rows, this.props.history, {
                             repoPath: this.props.repoPath,
                             rev: this.props.rev,
                             commitID: this.props.commitID,
                             filePath: this.props.filePath,
-                            position: { line, character: 0 },
+                            range: newRange,
                         }, e)
                     }
-                    const ctx = { ...this.props, position: { line, character: data.loc!.character } }
-                    updateLine(row, this.props.history, ctx, e)
+                    const ctx = {
+                        ...this.props,
+                        range: newRange,
+                    }
+                    updateLine(rows, this.props.history, ctx, e)
                 })
         )
     }
@@ -363,14 +413,17 @@ export class Blob extends React.Component<Props, State> {
 
     private scrollToLine = (props: Props) => {
         const parsed = parseHash(props.location.hash)
-        const { line, character, modalMode } = parsed
+        const { line, character, endLine, endCharacter, modalMode } = parsed
         if (line) {
-            updateAndScrollToLine(getCodeCell(line), props.history, {
+            updateAndScrollToLine(getCodeCells(line, endLine), props.history, {
                 repoPath: props.repoPath,
                 rev: props.rev,
                 commitID: props.commitID,
                 filePath: props.filePath,
-                position: { line, character: character || 0 },
+                range: {
+                    start: { line, character: character || 0 },
+                    end: endLine ? { line: endLine, character: endCharacter || 0 } : { line, character: character || 0 },
+                },
                 referencesMode: modalMode,
             })
         }
@@ -425,12 +478,20 @@ export class Blob extends React.Component<Props, State> {
                 this.props.repoPath === defCtx.repoPath &&
                 (this.props.rev === defCtx.rev || this.props.commitID === defCtx.commitID) &&
                 this.props.filePath === defCtx.filePath &&
-                lastHash.line !== defCtx.position.line) {
+                (lastHash.line !== defCtx.position.line || lastHash.character !== defCtx.position.character ||
+                    lastHash.endLine !== defCtx.position.line || lastHash.endCharacter !== defCtx.position.character)) {
                 // Handles URL update + scroll to file (for j2d within same file).
                 // Since the defCtx rev/commitID may be undefined, use the resolved rev
                 // for the current file.
-                const ctx = { ...defCtx, commitID: this.props.commitID }
-                updateAndScrollToLine(getCodeCell(ctx.position.line), this.props.history, ctx)
+                const ctx = {
+                    ...defCtx,
+                    commitID: this.props.commitID,
+                    range: {
+                        start: { line: defCtx.position.line, character: defCtx.position.character || 0 },
+                        end: { line: defCtx.position.line, character: defCtx.position.character || 0 },
+                    },
+                } as AbsoluteRepoFileRange
+                updateAndScrollToLine(getCodeCell(ctx.range.start.line), this.props.history, ctx)
             } else {
                 this.setFixedTooltip()
                 this.props.history.push(toAbsoluteBlobURL(defCtx))
@@ -453,7 +514,13 @@ export class Blob extends React.Component<Props, State> {
         const parsed = parseHash(this.props.location.hash)
         if (parsed.line) {
             // Remove the character position so the fixed tooltip goes away.
-            const ctx = { ...this.props, position: { line: parsed.line, character: 0 } }
+            const ctx = {
+                ...this.props,
+                range: {
+                    start: { line: parsed.line, character: 0 },
+                    end: parsed.endLine ? { line: parsed.endLine, character: 0 } : { line: parsed.line, character: 0 },
+                },
+            } as AbsoluteRepoFileRange
             this.props.history.push(toPrettyBlobURL(ctx))
         } else {
             // Unset fixed tooltip if it exists (no URL update necessary).
