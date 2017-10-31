@@ -151,7 +151,7 @@ export class SearchFields extends React.Component<Props, State> {
                     </div>
                     <div
                         className='search-fields2__row-example'
-                        title='Tip: Surround the pattern with double quotes if it contains spaces, like so: regexp:"a b*c?"'
+                        title='Tip: Uses RE2 regexp syntax. Surround the pattern with double quotes if it contains spaces, like so: regexp:"a b*c?"'
                     >
                         regexp:(open|close)File\(
                     </div>
