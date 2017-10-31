@@ -4,7 +4,15 @@ import { AbsoluteRepoFile, PositionSpec, ReferencesModeSpec, Repo, RepoFile, Res
 type Modal = 'references'
 type ModalMode = 'local' | 'external'
 
-export function parseHash(hash: string): { line?: number, character?: number, modal?: Modal, modalMode?: ModalMode } {
+/**
+ * Represents a line or a position. Forbids a character without a line (which would
+ * not make any sense).
+ */
+export type LineOrPosition =
+    { line?: undefined, character?: undefined } |
+    { line: number, character?: number }
+
+export function parseHash(hash: string): LineOrPosition & { modal?: Modal, modalMode?: ModalMode } {
     if (hash.startsWith('#')) {
         hash = hash.substr('#'.length)
     }
