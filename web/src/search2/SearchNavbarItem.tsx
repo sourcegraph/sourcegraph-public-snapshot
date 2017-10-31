@@ -173,9 +173,10 @@ export class SearchNavbarItem extends React.Component<Props, State> {
      */
     private getStateFromProps(props: Props): State {
         const options = parseSearchURLQuery(props.location.search || '')
+        const noQuery = !options.query && !options.scopeQuery
         return {
             userQuery: options.query,
-            scopeQuery: options.scopeQuery,
+            scopeQuery: noQuery ? undefined : options.scopeQuery,
         }
     }
 }
