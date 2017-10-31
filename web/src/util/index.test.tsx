@@ -25,7 +25,7 @@ describe('util module', () => {
     })
 
     describe('url module', () => {
-        const linePosition = { line: 1, character: undefined }
+        const linePosition = { line: 1 }
         const lineCharPosition = { line: 1, character: 1 }
         const localRefMode = { ...lineCharPosition, modal: 'references', modalMode: 'local' }
         const externalRefMode = { ...lineCharPosition, modal: 'references', modalMode: 'external' }
@@ -44,6 +44,15 @@ describe('util module', () => {
             it('parses unexpectedly formatted hash', () => {
                 assert.deepEqual(parseHash('L-53'), {})
                 assert.deepEqual(parseHash('L53:'), {})
+                assert.deepEqual(parseHash('L1:2-'), {})
+                assert.deepEqual(parseHash('L1:2-3'), {})
+                assert.deepEqual(parseHash('L1:2-3:'), {})
+                assert.deepEqual(parseHash('L1:-3:'), {})
+                assert.deepEqual(parseHash('L1:-3:4'), {})
+                assert.deepEqual(parseHash('L1-2:3'), {})
+                assert.deepEqual(parseHash('L1-2:'), {})
+                assert.deepEqual(parseHash('L1:-2'), {})
+                assert.deepEqual(parseHash('L1:2--3:4'), {})
                 assert.deepEqual(parseHash('L53:a'), {})
                 assert.deepEqual(parseHash('L53:36$'), {})
                 assert.deepEqual(parseHash('L53:36$referencess'), {})
@@ -64,12 +73,17 @@ describe('util module', () => {
                 assert.deepEqual(parseHash('L1:1'), lineCharPosition)
             })
 
+            it('parses hash with range', () => {
+                assert.deepEqual(parseHash('L1-2'), { line: 1, endLine: 2 })
+                assert.deepEqual(parseHash('L1:2-3:4'), { line: 1, character: 2, endLine: 3, endCharacter: 4 })
+            })
+
             it('parses hash with local references', () => {
                 assert.deepEqual(parseHash('L1:1$references'), localRefMode)
                 assert.deepEqual(parseHash('L1:1$references:local'), localRefMode)
             })
 
-            it('parses hash with local references', () => {
+            it('parses hash with external references', () => {
                 assert.deepEqual(parseHash('L1:1$references:external'), externalRefMode)
             })
         })

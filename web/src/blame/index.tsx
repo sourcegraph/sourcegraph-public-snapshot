@@ -6,14 +6,14 @@ import 'rxjs/add/operator/take'
 import 'rxjs/add/operator/takeUntil'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { Observable } from 'rxjs/Observable'
-import { AbsoluteRepoFilePosition } from '../repo'
+import { AbsoluteRepoFilePosition, AbsoluteRepoFileRange } from '../repo'
 import { fetchPhabricatorRepo } from '../repo/backend'
 import { openFromJS } from '../util/url'
 import { fetchBlameFile } from './backend'
 import { clearLineBlameContent, setLineBlame } from './dom'
 
 export interface BlameData {
-    ctx: AbsoluteRepoFilePosition
+    ctx: AbsoluteRepoFileRange
     hunks: GQL.IHunk[]
     loading: boolean
 }
@@ -37,13 +37,13 @@ function measureTextWidth(text: string, font: string): number {
  * by data fetched for the most recent event. Use a BehaviorSubject b/c
  * maybeOpenCommit() needs to look at the current value.
  */
-const blameEvents = new BehaviorSubject<AbsoluteRepoFilePosition | null>(null)
+const blameEvents = new BehaviorSubject<AbsoluteRepoFileRange | null>(null)
 blameEvents
     .switchMap(ctx => {
         if (!ctx) {
             return []
         }
-        const fetch: Observable<BlameData> = fetchBlameFile({ ...ctx, position: { line: ctx.position.line, character: 0 } })
+        const fetch: Observable<BlameData> = fetchBlameFile({ ...ctx, position: { line: ctx.range.start.line, character: 0 } } as AbsoluteRepoFilePosition)
             .map(hunks => ({ ctx, loading: false, hunks: hunks || [] }))
         // show loading data after 250ms if the fetch has not resolved
         const loading: Observable<BlameData> = Observable.interval(250)
@@ -60,13 +60,13 @@ blameEvents
  * @param ctx the blame context
  * @param userTriggered the click event
  */
-function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): void {
     if (!clickEvent) {
         return
     }
     const prevCtx = blameEvents.getValue()
     const currentlyBlamed = document.querySelector('.blob td.code>.blame')
-    if (!prevCtx || prevCtx.position.line !== ctx.position.line || !currentlyBlamed) {
+    if (!prevCtx || prevCtx.range.start.line !== ctx.range.start.line || !currentlyBlamed) {
         return // Not clicking on a line with blame info already showing.
     }
     const rev = currentlyBlamed.getAttribute('data-blame-rev')
@@ -115,7 +115,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent)
     // TODO(future): For Umami Phabricator repos, the URL should be to Phabricator per #6487
 }
 
-export function triggerBlame(ctx: AbsoluteRepoFilePosition, clickEvent?: MouseEvent): void {
+export function triggerBlame(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): void {
     maybeOpenCommit(ctx, clickEvent) // important: must come before updating subject
     clearLineBlameContent()
     blameEvents.next(ctx)

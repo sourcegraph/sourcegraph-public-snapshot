@@ -2,6 +2,7 @@ import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import unescape from 'lodash/unescape'
 import marked from 'marked'
 import { Hover, MarkedString } from 'vscode-languageserver-types'
+import { urlWithoutSearchOptions } from '../search2'
 import { getModeFromExtension } from '../util'
 import { toAbsoluteBlobURL } from '../util/url'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from './index'
@@ -132,7 +133,10 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     j2dAction.style.display = 'block'
     j2dAction.href = data.defUrl ? data.defUrl : ''
 
-    if (data.defUrl && j2dAction.href !== window.location.href) {
+    // Omit the current location's search options when comparing, as those are cleared
+    // when we navigate.
+    const destinationIsCurrentLocation = j2dAction.href === urlWithoutSearchOptions(window.location)
+    if (data.defUrl && !destinationIsCurrentLocation) {
         j2dAction.style.cursor = 'pointer'
         j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrl) as AbsoluteRepoFilePosition)
     } else {
