@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
@@ -32,6 +33,8 @@ var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute 
 var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
 
 var phabricatorURL = env.Get("PHABRICATOR_URL", "", "URL for internal Phabricator instance (on-prem)")
+
+var useSearch2, _ = strconv.ParseBool(env.Get("USE_SEARCH2", "", "if truthy, enable search2 (new query ux) for all users"))
 
 func init() {
 	if phabricatorURL != "" {
@@ -75,6 +78,7 @@ type JSContext struct {
 	Auth0Domain         string                     `json:"auth0Domain"`
 	Auth0ClientID       string                     `json:"auth0ClientID"`
 	PhabricatorURL      string                     `json:"phabricatorURL"`
+	UseSearch2          bool                       `json:"useSearch2"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -148,6 +152,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Auth0Domain:         auth0.Domain,
 		Auth0ClientID:       auth0.Config.ClientID,
 		PhabricatorURL:      phabricatorURL,
+		UseSearch2:          useSearch2,
 	}
 }
 

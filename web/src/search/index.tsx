@@ -70,4 +70,4 @@ export function parseSearchURLQuery(query: string): SearchOptions {
     }
 }
 
-export const enableSearch2 = Boolean(window.localStorage.getItem('search2'))
+export const enableSearch2 = Boolean(window.context.useSearch2 || window.localStorage.getItem('search2'))
