@@ -546,7 +546,7 @@ type OrgInviteStatus {
 type OrgRepo {
 	id: Int!
 	org: Org!
-	remoteURI: String! @deprecated(reason: "use canonicalRemoteID instead")
+	remoteUri: String! @deprecated(reason: "use canonicalRemoteID instead")
 	canonicalRemoteID: String!
 	createdAt: String!
 	updatedAt: String!
