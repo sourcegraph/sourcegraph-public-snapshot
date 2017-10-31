@@ -103,9 +103,6 @@ func (o *orgResolver) Threads2(ctx context.Context, args *struct {
 	Limit                 *int32
 }) (*threadConnectionResolver, error) {
 	var repo *sourcegraph.OrgRepo
-	if args.RepoRemoteURI == nil && args.RepoCanonicalRemoteID == nil {
-		return nil, errors.New("repoCanonicalRemoteID required")
-	}
 	if args.RepoRemoteURI != nil {
 		args.RepoCanonicalRemoteID = args.RepoRemoteURI
 	}
