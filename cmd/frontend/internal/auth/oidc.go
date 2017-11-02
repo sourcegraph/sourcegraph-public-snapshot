@@ -225,12 +225,12 @@ func getActor(idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, err
 		log15.Warn("Could not parse userInfo claims", "error", err)
 	}
 
-	uid := idToken.Subject
+	provider := idToken.Issuer
+	uid := fmt.Sprintf("%s:%s", provider, idToken.Subject)
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
 	}
-	provider := idToken.Issuer
 	email := userInfo.Email
 	var displayName = claims.GivenName
 	if displayName == "" {
