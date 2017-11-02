@@ -92,7 +92,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		// If there is an error, we can continue to create the user session and redirect the user, but
 		// we should include the error message to the client so they know e.g. that the username they've
 		// requested is taken.
-		dbUser, userCreateErr = store.Users.Create(info.UserID, info.Email, username, displayName, &info.Picture)
+		dbUser, userCreateErr = store.Users.Create(info.UserID, info.Email, username, displayName, "", &info.Picture)
 	}
 
 	actor := &actor.Actor{

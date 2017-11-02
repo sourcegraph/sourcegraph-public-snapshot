@@ -71,6 +71,10 @@ func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Co
 	return authenticateByCookie(fakeRequest.WithContext(ctx))
 }
 
+func GetSession(r *http.Request) ([]byte, error) {
+	return actorSessionStore.GetSession(r)
+}
+
 func authenticateByCookie(r *http.Request) context.Context {
 	actorJSON, err := actorSessionStore.GetSession(r)
 	if err != nil {

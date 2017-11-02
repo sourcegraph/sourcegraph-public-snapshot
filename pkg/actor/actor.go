@@ -13,6 +13,8 @@ import (
 // Actor represents an agent that accesses resources. It can represent
 // an anonymous user or a logged-in user.
 type Actor struct {
+	// UID from the authentication provider. This uniquely identifies
+	// the actor's user within the context of the actor's provider.
 	UID string `json:",omitempty"`
 
 	// Login is the login of the currently authenticated user, if
@@ -27,12 +29,14 @@ type Actor struct {
 	Email string
 
 	// Provider is the ID provider that is the source of truth for this user's identity.
-	// It is either the URL of a SSO Provider or "self" if the user authenticated via
+	// It is either the URL of a SSO Provider or "" if the user authenticated via
 	// the native authentication flow.
 	Provider string
 
 	// AvatarURL is the URL to an avatar image for the user, if it is known.
 	AvatarURL string
+
+	// TODO: add an actor session expiry so if cookie stolen, can't be used for indefinite access. (Not here, somewhere else)
 
 	// GitHubConnected indicates if the actor has a GitHub account connected.
 	//

@@ -33,7 +33,7 @@ func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, secureCo
 
 	if oidcIDProvider != "" {
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
-		return newOIDCAuthHandler(createCtx, handler, secureCookie, appURL, nil)
+		return newOIDCAuthHandler(createCtx, handler, secureCookie, appURL)
 	}
 	if samlIDPMetadataURL != "" {
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")

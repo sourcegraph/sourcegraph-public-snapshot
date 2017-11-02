@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,10 +10,12 @@ import (
 
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/gorilla/csrf"
@@ -45,7 +46,7 @@ var (
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureCookie bool, appURL string, sessionStore *session.Store) (http.Handler, error) {
+func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureCookie bool, appURL string) (http.Handler, error) {
 	// Return an error if the OIDC parameters are unset or missing
 	if oidcIDProvider == "" {
 		return nil, errors.New("No OpenID Connect Provider specified")
@@ -54,17 +55,8 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureC
 		return nil, fmt.Errorf("OIDC Client ID or Client Secret was empty")
 	}
 
-	// Create a server-side session store for sessions managed by this handler.
-	if sessionStore == nil {
-		var err error
-		sessionStore, err = session.NewStore(oidcSessionCookieName, "token", secureCookie, nil)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Create handler for OIDC Authentication Code Flow endpoints
-	oidcHandler, err := newOIDCLoginHandler(createCtx, sessionStore, handler, appURL)
+	oidcHandler, err := newOIDCLoginHandler(createCtx, handler, appURL)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +69,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureC
 		}
 
 		// For all other URLs, check the session for validity.
-		s, err := sessionStore.GetSession(r)
+		s, err := session.GetSession(r)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error fetching session: %v", err), http.StatusInternalServerError)
 			return
@@ -85,21 +77,6 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureC
 
 		// If the session doesn't exist, redirect to  login (the beginning of the OIDC Authentication Code Flow).
 		if s == nil {
-			http.Redirect(w, r, authURLPrefix+"/login", http.StatusFound)
-			return
-		}
-
-		// Fetch the session token, if it exists. If there is an error, redirect to login.
-		var sessionTok oidcSession
-		if err := json.Unmarshal(s, &sessionTok); err != nil {
-			log15.Warn("Invalid session token", "err", err, "token", string(s))
-			http.Redirect(w, r, authURLPrefix+"/login", http.StatusFound)
-			return
-		}
-
-		// If our session has expired, redirect to login.
-		if time.Now().After(sessionTok.Expiry) {
-			sessionStore.DeleteSession(w, r)
 			http.Redirect(w, r, authURLPrefix+"/login", http.StatusFound)
 			return
 		}
@@ -113,7 +90,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureC
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func newOIDCLoginHandler(createCtx context.Context, sessionStore *session.Store, handler http.Handler, appURL string) (http.Handler, error) {
+func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
 	provider, err := oidc.NewProvider(createCtx, oidcIDProvider)
 	if err != nil {
 		return nil, err
@@ -123,7 +100,7 @@ func newOIDCLoginHandler(createCtx context.Context, sessionStore *session.Store,
 		ClientSecret: oidcClientSecret,
 		RedirectURL:  fmt.Sprintf("%s%s/%s", appURL, authURLPrefix, "callback"),
 		Endpoint:     provider.Endpoint(),
-		Scopes:       []string{oidc.ScopeOpenID},
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 	verifier := provider.Verifier(&oidc.Config{ClientID: oidcClientID})
 
@@ -210,25 +187,72 @@ func newOIDCLoginHandler(createCtx context.Context, sessionStore *session.Store,
 			return
 		}
 
-		// Create the session with the information from the ID Token and set the session cookie. Use the ID Token expiry as
-		// our session expiry.
-		sessionJSON, err := json.Marshal(oidcSession{
-			Issuer:  idToken.Issuer,
-			Subject: idToken.Subject,
-			Expiry:  idToken.Expiry,
-		})
+		userInfo, err := provider.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
 		if err != nil {
-			http.Error(w, "Could not marshal OAuth token to JSON", http.StatusInternalServerError)
+			http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err := sessionStore.StartNewSession(w, r, sessionJSON); err != nil {
+
+		actr, err := getActor(idToken, userInfo)
+		if err != nil {
+			log15.Error("Could not fetch user", "error", err)
+			http.Error(w, "Could not fetch user", http.StatusInternalServerError)
+			return
+		}
+		if err := session.StartNewSession(w, r, actr); err != nil {
 			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
 			return
 		}
+
 		// Redirect to homepage on login
 		http.Redirect(w, r, "/", http.StatusFound)
 	})
 	return http.StripPrefix(authURLPrefix, handlerutil.NewHandlerWithCSRFProtection(r)), nil
+}
+
+// getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
+// Because Actors must correspond to users in our DB, it creates the user in the DB if the user does noet yet
+// exist.
+func getActor(idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, error) {
+	var claims struct {
+		Name              string `json:"name"`
+		GivenName         string `json:"given_name"`
+		FamilyName        string `json:"family_name"`
+		PreferredUsername string `json:"preferred_username"`
+	}
+
+	if err := userInfo.Claims(&claims); err != nil {
+		log15.Warn("Could not parse userInfo claims", "error", err)
+	}
+
+	uid := idToken.Subject
+	login := claims.PreferredUsername
+	if login == "" {
+		login = userInfo.Email
+	}
+	provider := idToken.Issuer
+	email := userInfo.Email
+	var displayName = claims.GivenName
+	if displayName == "" {
+		if claims.Name == "" {
+			displayName = claims.Name
+		} else {
+			displayName = login
+		}
+	}
+	if i := strings.Index(login, "@"); i != -1 { // KLUDGE, TODO: relax constraint on username column in DB
+		login = login[:i]
+	}
+
+	usr, err := localstore.Users.GetByAuth0ID(uid)
+	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
+		usr, err = localstore.Users.Create(uid, email, login, displayName, provider, nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &actor.Actor{UID: usr.Auth0ID, Login: usr.Username, Provider: usr.Provider, Email: usr.Email}, nil
 }
 
 // oidcSession is the session information for a user session started via OIDC authentication.

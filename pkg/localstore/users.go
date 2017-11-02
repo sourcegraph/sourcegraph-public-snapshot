@@ -54,7 +54,7 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
-func (*users) Create(auth0ID, email, username, displayName string, avatarURL *string) (*sourcegraph.User, error) {
+func (*users) Create(auth0ID, email, username, displayName, provider string, avatarURL *string) (*sourcegraph.User, error) {
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
@@ -63,8 +63,8 @@ func (*users) Create(auth0ID, email, username, displayName string, avatarURL *st
 		avatarURLValue = sql.NullString{String: *avatarURL, Valid: true}
 	}
 	err := globalDB.QueryRow(
-		"INSERT INTO users(auth0_id, email, username, display_name, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		auth0ID, email, username, displayName, avatarURLValue, createdAt, updatedAt).Scan(&id)
+		"INSERT INTO users(auth0_id, email, username, display_name, provider, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt).Scan(&id)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -86,6 +86,7 @@ func (*users) Create(auth0ID, email, username, displayName string, avatarURL *st
 		Email:       email,
 		Username:    username,
 		DisplayName: displayName,
+		Provider:    provider,
 		AvatarURL:   avatarURL,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
@@ -137,7 +138,7 @@ func (u *users) GetByID(id int32) (*sourcegraph.User, error) {
 	return u.getOneBySQL("WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByAuth0ID(id string) (*sourcegraph.User, error) {
+func (u *users) GetByAuth0ID(id string /* TODO: add provider field here */) (*sourcegraph.User, error) {
 	if Mocks.Users.GetByAuth0ID != nil {
 		return Mocks.Users.GetByAuth0ID(id)
 	}
@@ -146,10 +147,6 @@ func (u *users) GetByAuth0ID(id string) (*sourcegraph.User, error) {
 
 func (u *users) GetByEmail(email string) (*sourcegraph.User, error) {
 	return u.getOneBySQL("WHERE email=$1 AND deleted_at IS NULL LIMIT 1", email)
-}
-
-func (u *users) GetByUsername(username string) (*sourcegraph.User, error) {
-	return u.getOneBySQL("WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
@@ -201,7 +198,7 @@ func (u *users) getOneBySQL(query string, args ...interface{}) (*sourcegraph.Use
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.Query("SELECT u.id, u.auth0_id, u.email, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
+	rows, err := globalDB.Query("SELECT u.id, u.auth0_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +208,7 @@ func (*users) getBySQL(query string, args ...interface{}) ([]*sourcegraph.User, 
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
