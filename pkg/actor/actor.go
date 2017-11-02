@@ -23,10 +23,15 @@ type Actor struct {
 	// it, as an optimization to avoid incurring the Users.Get call).
 	Login string `json:",omitempty"`
 
-	// Email is the primary email address of the user.
+	// Email is the primary email address of the user, if it is known.
 	Email string
 
-	// AvatarURL is the URL to an avatar image for the user.
+	// Provider is the ID provider that is the source of truth for this user's identity.
+	// It is either the URL of a SSO Provider or "self" if the user authenticated via
+	// the native authentication flow.
+	Provider string
+
+	// AvatarURL is the URL to an avatar image for the user, if it is known.
 	AvatarURL string
 
 	// GitHubConnected indicates if the actor has a GitHub account connected.

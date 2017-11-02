@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
+// actorSessionStore stores the actor-based user session.
 var actorSessionStore *Store
 
 // InitSessionStore initializes the session store.
