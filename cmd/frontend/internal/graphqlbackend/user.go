@@ -172,6 +172,9 @@ func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver
 }
 
 func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
+	if r.user == nil {
+		return nil, errors.New("Could not resolve tags on nil user")
+	}
 	tags, err := store.UserTags.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
