@@ -78,11 +78,20 @@ export const Org = reactive<Props>(props => {
                 },
             }))
             .withLatestFrom(currentUser)
-            .filter(([member, user]) => !!user && confirm(
-                user.id === member.userID
-                    ? `Leave this organization?`
-                    : `Remove ${member.user.displayName} from this organization?`
-            ))
+            .filter(([member, user]) => {
+                if (!user) {
+                    return false
+                }
+                if (member.org.members.length === 1) {
+                    return confirm(
+                        `You're the last member of ${member.org.displayName}. Leaving will delete the ${member.org.displayName} organization. Leave this organization?`
+                    )
+                }
+                if (user.id === member.userID) {
+                    return confirm(`Leave this organization?`)
+                }
+                return confirm(`Remove ${member.user.displayName} from this organization?`)
+            })
             .mergeMap(([memberToRemove, user]) =>
                 removeUserFromOrg(memberToRemove.org.id, memberToRemove.userID)
                     .concat([(state: State): State => ({
