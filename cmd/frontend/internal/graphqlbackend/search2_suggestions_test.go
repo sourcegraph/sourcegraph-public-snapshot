@@ -97,8 +97,8 @@ func TestSearch2Suggestions(t *testing.T) {
 		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			wantReposInGroup := &store.RepoListOp{IncludePatterns: []string{`(^foo-repo1$)|(^repo3$)`}, ListOptions: listOpts}    // when treating term as repo: field
-			wantFooRepo3 := &store.RepoListOp{IncludePatterns: []string{"foo", `(^foo-repo1$)|(^repo3$)`}, ListOptions: listOpts} // when treating term as repo: field
+			wantReposInGroup := &store.RepoListOp{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, ListOptions: listOpts}    // when treating term as repo: field
+			wantFooRepo3 := &store.RepoListOp{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, ListOptions: listOpts} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
 				return []*sourcegraph.Repo{{URI: "foo-repo1"}, {URI: "repo3"}}, nil

@@ -362,7 +362,17 @@ func unionRegExps(patterns []string) string {
 	if len(patterns) == 1 {
 		return patterns[0]
 	}
-	return "(" + strings.Join(patterns, ")|(") + ")"
+
+	// We only need to wrap the pattern in parentheses if it contains a "|" because
+	// "|" has the lowest precedence of any operator.
+	patterns2 := make([]string, len(patterns))
+	for i, p := range patterns {
+		if strings.Contains(p, "|") {
+			p = "(" + p + ")"
+		}
+		patterns2[i] = p
+	}
+	return strings.Join(patterns2, "|")
 }
 
 func withoutEmptyStrings(list []string) []string {
