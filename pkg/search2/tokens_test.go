@@ -14,10 +14,10 @@ func TestTokens_Extract(t *testing.T) {
 	}{
 		"simple": {
 			tokens: Tokens{
-				{Value: "a"},
-				{Field: "x", Value: "b"},
-				{Field: "xx", Value: "c"},
-				{Field: "y", Value: "d"},
+				{Value: Value{Value: "a"}},
+				{Field: "x", Value: Value{Value: "b"}},
+				{Field: "xx", Value: Value{Value: "c"}},
+				{Field: "y", Value: Value{Value: "d"}},
 			},
 			fieldAliases:  map[Field][]Field{"": {}, "xx": {"x"}},
 			fieldValues:   map[Field][]string{"": {"a"}, "xx": {"b", "c"}},
@@ -25,14 +25,14 @@ func TestTokens_Extract(t *testing.T) {
 		},
 		"minus": {
 			tokens: Tokens{
-				{Value: "a"},
-				{Field: "-", Value: "b"},
-				{Field: "x", Value: "c"},
-				{Field: "-x", Value: "d"},
-				{Field: "xx", Value: "e"},
-				{Field: "-xx", Value: "f"},
-				{Field: "y", Value: "g"},
-				{Field: "-y", Value: "h"},
+				{Value: Value{Value: "a"}},
+				{Field: "-", Value: Value{Value: "b"}},
+				{Field: "x", Value: Value{Value: "c"}},
+				{Field: "-x", Value: Value{Value: "d"}},
+				{Field: "xx", Value: Value{Value: "e"}},
+				{Field: "-xx", Value: Value{Value: "f"}},
+				{Field: "y", Value: Value{Value: "g"}},
+				{Field: "-y", Value: Value{Value: "h"}},
 			},
 			fieldAliases:  map[Field][]Field{"": {}, "-": {}, "xx": {"x"}, "-xx": {"-x"}},
 			fieldValues:   map[Field][]string{"": {"a"}, "-": {"b"}, "xx": {"c", "e"}, "-xx": {"d", "f"}},

@@ -12,6 +12,12 @@ type Token struct {
 	// Field is empty (or "-" if negated).
 	Field
 
+	// Value is the value of the field.
+	Value
+}
+
+// Value represents the value of a token.
+type Value struct {
 	// Value is the value of the token (e.g. "foo" in the token "x:foo").
 	Value string
 
@@ -59,7 +65,7 @@ func (ts Tokens) Extract(fieldAliases map[Field][]Field) (fieldValues map[Field]
 		}
 
 		values := fieldValues[field]
-		values = append(values, t.Value)
+		values = append(values, t.Value.Value)
 		fieldValues[field] = values
 	}
 
