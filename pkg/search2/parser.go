@@ -81,7 +81,7 @@ func Parse(query string) (tokens Tokens, err error) {
 					err = &ParseError{Character: i, Message: err.Error()}
 					return
 				}
-				tokens = append(tokens, Token{Field: field, Value: value})
+				tokens = append(tokens, Token{Field: field, Value: value, Quoted: true})
 				state = outer
 				field = ""
 				minus = false
@@ -114,7 +114,7 @@ func Parse(query string) (tokens Tokens, err error) {
 				return
 			}
 		}
-		tokens = append(tokens, Token{Field: field, Value: value})
+		tokens = append(tokens, Token{Field: field, Value: value, Quoted: state == quotedTerm})
 	}
 
 	if tokens == nil {

@@ -14,6 +14,10 @@ type Token struct {
 
 	// Value is the value of the token (e.g. "foo" in the token "x:foo").
 	Value string
+
+	// Quoted is whether the value was double-quoted (e.g., `x:"foo"` vs.
+	// `x:foo`).
+	Quoted bool
 }
 
 // Tokens is a list of tokens parsed from a query.
