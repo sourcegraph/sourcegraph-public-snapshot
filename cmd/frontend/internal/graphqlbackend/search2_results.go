@@ -14,7 +14,7 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 	}
 
 	var patternsToCombine []string
-	for _, term := range r.query.fieldValues[""] {
+	for _, term := range r.combinedQuery.fieldValues[""] {
 		if term.Value == "" {
 			continue
 		}
@@ -39,16 +39,16 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 	args := repoSearchArgs{
 		Query: &patternInfo{
 			IsRegExp:                     true,
-			IsCaseSensitive:              r.query.isCaseSensitive(),
+			IsCaseSensitive:              r.combinedQuery.isCaseSensitive(),
 			FileMatchLimit:               300,
 			Pattern:                      strings.Join(patternsToCombine, ".*?"), // "?" makes it prefer shorter matches
-			IncludePatterns:              r.query.fieldValues[searchFieldFile].Values(),
+			IncludePatterns:              r.combinedQuery.fieldValues[searchFieldFile].Values(),
 			PathPatternsAreRegExps:       true,
-			PathPatternsAreCaseSensitive: r.query.isCaseSensitive(),
+			PathPatternsAreCaseSensitive: r.combinedQuery.isCaseSensitive(),
 		},
 		Repositories: repos,
 	}
-	if excludePatterns := r.query.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
+	if excludePatterns := r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
 		pat := unionRegExps(excludePatterns)
 		args.Query.ExcludePattern = &pat
 	}

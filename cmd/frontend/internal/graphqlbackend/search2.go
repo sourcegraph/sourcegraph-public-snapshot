@@ -52,25 +52,24 @@ type searchArgs2 struct {
 
 // Search2 provides search results and suggestions.
 func (r *rootResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
-	query := args.Query
-	if args.ScopeQuery != "" {
-		query += " " + args.ScopeQuery
-	}
-	resolvedQuery, err := resolveQuery(query)
+	combinedQuery, err := resolveQuery(args.Query + " " + args.ScopeQuery)
 	if err != nil {
 		return nil, err
 	}
-
-	resolvedUserQuery, err := resolveQuery(args.Query)
+	query, err := resolveQuery(args.Query)
 	if err != nil {
 		return nil, err
 	}
-
+	scopeQuery, err := resolveQuery(args.ScopeQuery)
+	if err != nil {
+		return nil, err
+	}
 	return &searchResolver2{
-		root:      r,
-		args:      *args,
-		query:     *resolvedQuery,
-		userQuery: *resolvedUserQuery,
+		root:          r,
+		args:          *args,
+		combinedQuery: *combinedQuery,
+		query:         *query,
+		scopeQuery:    *scopeQuery,
 	}, nil
 }
 
@@ -112,8 +111,9 @@ type searchResolver2 struct {
 	root *rootResolver
 	args searchArgs2
 
-	query     resolvedQuery // the scope and user query combined
-	userQuery resolvedQuery // the user query only (ONLY USE for UX hints)
+	combinedQuery resolvedQuery // the scope and user query combined (most callers should use this)
+	query         resolvedQuery // the user query only
+	scopeQuery    resolvedQuery // the scope query only
 
 	// Cached resolveRepositories results.
 	reposMu     sync.Mutex
@@ -210,20 +210,20 @@ func (r *searchResolver2) doResolveRepositories(ctx context.Context, effectiveRe
 	if len(effectiveRepoFieldValues) > 0 {
 		includePatterns = effectiveRepoFieldValues
 	} else {
-		includePatterns = r.query.fieldValues[searchFieldRepo].Values()
+		includePatterns = r.combinedQuery.fieldValues[searchFieldRepo].Values()
 	}
 	if includePatterns != nil {
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
-	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)].Values()
+	excludePatterns := r.combinedQuery.fieldValues[minusField(searchFieldRepo)].Values()
 
 	maxRepoListSize := 30
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
-	if groupNames := r.query.fieldValues[searchFieldRepoGroup].Values(); len(groupNames) > 0 {
+	if groupNames := r.combinedQuery.fieldValues[searchFieldRepoGroup].Values(); len(groupNames) > 0 {
 		groups, err := r.resolveRepoGroups(ctx)
 		if err != nil {
 			return nil, nil, err
@@ -324,17 +324,17 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 		return nil, err
 	}
 
-	includePatterns := r.query.fieldValues[searchFieldFile].Values()
-	excludePattern := unionRegExps(r.query.fieldValues[minusField(searchFieldFile)].Values())
+	includePatterns := r.combinedQuery.fieldValues[searchFieldFile].Values()
+	excludePattern := unionRegExps(r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values())
 	pathOptions := pathmatch.CompileOptions{
 		RegExp:        true,
-		CaseSensitive: r.query.isCaseSensitive(),
+		CaseSensitive: r.combinedQuery.isCaseSensitive(),
 	}
 
 	// If a single term is specified in the user query, and no other file patterns,
 	// then treat it as an include pattern (which is a nice UX for users).
-	if len(r.userQuery.fieldValues[searchFieldTerm]) == 1 {
-		includePatterns = append(includePatterns, r.userQuery.fieldValues[searchFieldTerm][0].Value)
+	if len(r.query.fieldValues[searchFieldTerm]) == 1 {
+		includePatterns = append(includePatterns, r.query.fieldValues[searchFieldTerm][0].Value)
 	}
 
 	matchPath, err := pathmatch.CompilePathPatterns(includePatterns, excludePattern, pathOptions)
