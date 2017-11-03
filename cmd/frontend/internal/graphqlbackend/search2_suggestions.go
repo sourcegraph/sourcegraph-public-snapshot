@@ -77,7 +77,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		if len(r.query.fieldValues[""]) > 0 || len(r.query.fieldValues[searchFieldRegExp]) > 0 {
+		if len(r.query.fieldValues[""]) > 0 {
 			results, err := r.Results(ctx)
 			if err != nil {
 				if err == context.DeadlineExceeded {
