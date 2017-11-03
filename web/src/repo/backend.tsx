@@ -247,3 +247,83 @@ export const fetchPhabricatorRepo = memoizeObservable((ctx: { repoPath: string }
             return result.data.root.phabricatorRepo
         }), makeRepoURI
 )
+
+export const fetchDirTree = memoizeObservable((ctx: { repoPath: string, commitID: string, filePath: string }): Observable<GQL.ITree> =>
+    queryGraphQL(`query fetchDirectoryTree($repoPath: String, $commitID: String, $filePath: String) {
+        root {
+            repository(uri: $repoPath) {
+                commit(rev: $commitID) {
+                    commit {
+                        tree(path: $filePath) {
+                            directories {
+                                name
+                            }
+                            files {
+                                name
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }`
+        , ctx)
+        .map(result => {
+            if (result.errors) {
+                const errors = result.errors.map(e => e.message).join(', ')
+                throw new Error(errors)
+            }
+            if (
+                !result.data ||
+                !result.data.root ||
+                !result.data.root.repository ||
+                !result.data.root.repository.commit.commit ||
+                !result.data.root.repository.commit.commit.tree
+            ) {
+                throw new Error(`cannot locate directory tree.`)
+            }
+            return result.data.root.repository.commit.commit.tree
+        }), makeRepoURI)
+
+export const fetchFileCommitInfo = memoizeObservable((ctx: { repoPath: string, commitID: string, filePath: string }): Observable<GQL.ICommitInfo> =>
+    queryGraphQL(`query fetchFileCommitInfo($repoPath: String, $commitID: String, $filePath: String) {
+            root {
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            file(path: $filePath) {
+                                lastCommit {
+                                    rev
+                                    message
+                                    committer {
+                                        person {
+                                            name
+                                            avatarURL
+                                        }
+                                        date
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }`
+        , ctx)
+        .map(result => {
+            if (result.errors) {
+                const errors = result.errors.map(e => e.message).join(', ')
+                throw new Error(errors)
+            }
+            if (
+                !result.data ||
+                !result.data.root ||
+                !result.data.root.repository ||
+                !result.data.root.repository.commit.commit ||
+                !result.data.root.repository.commit.commit.file ||
+                !result.data.root.repository.commit.commit.file.lastCommit
+            ) {
+                throw new Error(`cannot locate file commit info.`)
+            }
+            return result.data.root.repository.commit.commit.file.lastCommit
+        }), makeRepoURI)

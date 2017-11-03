@@ -7,9 +7,8 @@ import (
 )
 
 type personResolver struct {
-	name         string
-	email        string
-	gravatarHash string
+	name  string
+	email string
 }
 
 func (r *personResolver) Name() string {
@@ -21,9 +20,18 @@ func (r *personResolver) Email() string {
 }
 
 func (r *personResolver) GravatarHash() string {
-	if r.email != "" {
+	return ConstructGravatarHash(r.email)
+}
+
+func (r *personResolver) AvatarURL() string {
+	return "https://www.gravatar.com/avatar/" + ConstructGravatarHash(r.email) + "?d=identicon"
+}
+
+// ConstructGravatarHash hashes the email into a gravatar hash
+func ConstructGravatarHash(email string) string {
+	if email != "" {
 		h := md5.New()
-		h.Write([]byte(strings.ToLower(r.email)))
+		h.Write([]byte(strings.ToLower(email)))
 		return fmt.Sprintf("%x", h.Sum(nil))
 	}
 

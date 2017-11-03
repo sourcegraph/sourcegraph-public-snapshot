@@ -23,6 +23,7 @@ interface RepoSubnavProps {
     revSwitcherDisabled?: boolean
     breadcrumbDisabled?: boolean
     phabricatorCallsign?: string
+    isDirectory: boolean
     /**
      * overrides the line number that 'View on GitHub' should link to. By
      * default, it is parsed from the current URL hash.
@@ -66,7 +67,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
                     <span className='repo-nav__action-text'>{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
                 </a>}
                 {
-                    this.props.filePath && this.props.repoPath.split('/')[0] === 'github.com' &&
+                    this.props.repoPath.split('/')[0] === 'github.com' &&
                     <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnCodeHostButtonClicked}>
                         <GitHubIcon className='icon-inline' />
                         <span className='repo-nav__action-text'>View on GitHub</span>
@@ -114,7 +115,13 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
 
     private urlToGitHub(): string {
         const line = this.props.line || parseHash(this.props.location.hash).line || undefined
-        return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line ? '#L' + line : ''}`
+        if (this.props.filePath) {
+            if (this.props.isDirectory) {
+                return `https://${this.props.repoPath}/tree/${this.props.rev || 'master'}/${this.props.filePath}`
+            }
+            return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line ? '#L' + line : ''}`
+        }
+        return `https://${this.props.repoPath}/tree/${this.props.rev || 'master'}/`
     }
 
     private urlToPhabricator(): string {

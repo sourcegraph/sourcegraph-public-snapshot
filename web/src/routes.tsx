@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { RouteProps } from 'react-router'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
@@ -9,7 +10,8 @@ import { SearchResults as SearchResults2 } from './search2/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
 
 export interface LayoutRouteProps extends RouteProps {
-    component: React.ComponentType<any>
+    component?: React.ComponentType<any>
+    render?: (props: any) => React.ReactNode
 
     /**
      * Whether or not to force the width of the page to be narrow. Otherwise
@@ -62,11 +64,11 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/:repoRev+/-/blob/:filePath+',
-        component: RepositoryResolver,
+        render: (props: any) => <RepositoryResolver {...props} isDirectory={false} />,
     },
     {
         path: '/:repoRev+/-/tree/:filePath+',
-        component: RepositoryResolver,
+        render: (props: any) => <RepositoryResolver {...props} isDirectory={true} />,
     },
     {
         path: '/:repoRev+',

@@ -2,13 +2,12 @@ import ChevronLeftIcon from '@sourcegraph/icons/lib/ChevronLeft'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ListIcon from '@sourcegraph/icons/lib/List'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/partition'
 import 'rxjs/add/operator/switchMap'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
@@ -26,6 +25,7 @@ import { TreeHeader } from '../tree/TreeHeader'
 import { parseHash } from '../util/url'
 import { fetchHighlightedFile, listAllFiles } from './backend'
 import { Blob } from './Blob'
+import { DirectoryPage } from './DirectoryPage'
 import { RepoNav } from './RepoNav'
 
 export interface Props {
@@ -38,6 +38,7 @@ export interface Props {
     onToggleFullWidth: () => void
     isFullWidth: boolean
     phabricatorCallsign?: string
+    isDirectory: boolean
 }
 
 interface State {
@@ -84,6 +85,7 @@ export class Repository extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         const parsedHash = parseHash(this.props.location.hash)
+        this.state.isDirectory = props.isDirectory || !props.filePath
         this.state.showRefs = parsedHash.modal === 'references'
         this.state.position = parsedHash.line ? { line: parsedHash.line!, character: parsedHash.character || 0 } : undefined
         this.subscriptions.add(
@@ -101,14 +103,13 @@ export class Repository extends React.Component<Props, State> {
                 )
         )
 
-        const [contentUpdatesWithFile, contentUpdatesWithoutFile] = Observable.merge(
-            this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
-            this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
-        ).partition(props => Boolean(props.filePath))
-
         // Transitions to routes with file should update file contents
         this.subscriptions.add(
-            contentUpdatesWithFile
+            Observable.merge(
+                this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
+                this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
+            )
+                .filter(props => !props.isDirectory && Boolean(props.filePath))
                 .switchMap(props =>
                     fetchHighlightedFile({
                         repoPath: props.repoPath,
@@ -133,12 +134,13 @@ export class Repository extends React.Component<Props, State> {
                 err => console.error(err)
                 )
         )
-        // Transitions to routes without file should unset file contents
         this.subscriptions.add(
-            contentUpdatesWithoutFile
-                .subscribe(() => {
-                    this.setState({ highlightedFile: undefined, highlightingError: undefined })
-                })
+            this.componentUpdates.subscribe(
+                props => this.setState({
+                    isDirectory: props.isDirectory || !props.filePath,
+                }),
+                err => console.error(err)
+            )
         )
     }
 
@@ -198,8 +200,8 @@ export class Repository extends React.Component<Props, State> {
                             {this.props.isFullWidth ? <ChevronLeftIcon /> : <ChevronRightIcon />}
                         </button>
                         {
-                            (!this.props.filePath || this.state.isDirectory) &&
-                            <HeroPage icon={RepoIcon} title={this.props.repoPath.split('/').slice(1).join('/')} subtitle='Select a file to begin browsing.' />
+                            this.state.isDirectory &&
+                            <DirectoryPage repoPath={this.props.repoPath} commitID={this.props.commitID} rev={this.props.rev} filePath={this.props.filePath || ''} />
                         }
                         {
                             this.state.highlightingError &&
@@ -214,11 +216,11 @@ export class Repository extends React.Component<Props, State> {
                                     {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
                             </p>
                         }
-                        {
-                            this.state.highlightedFile ?
+                        {!this.state.isDirectory &&
+                            (this.state.highlightedFile ?
                                 <Blob {...this.props} filePath={this.props.filePath!} html={this.state.highlightedFile.html} /> :
                                 /* render placeholder for layout before content is fetched */
-                                <div className='repository__blob-placeholder'></div>
+                                <div className='repository__blob-placeholder'></div>)
                         }
                         {
                             this.state.showRefs && this.state.position &&

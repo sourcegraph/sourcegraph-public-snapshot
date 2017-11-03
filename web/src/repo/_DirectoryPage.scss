@@ -1,0 +1,112 @@
+.dir-page, .dir-page-entry {
+    overflow-y: auto;
+    padding: 2rem;
+    color: $color-text;
+
+    &__head {
+        display: flex;
+        align-items: center;
+        font-weight: normal;
+        margin-bottom: 0px;
+
+        .icon-inline {
+            width: 1.35em;
+            height: 1.35em;
+        }
+    }
+
+    &__empty-cell{
+        padding: 0px!important;
+        margin: 0px;
+    }
+
+    &__head-commit-spacer-cell {
+        width: 2rem;
+    }
+
+    &__table {
+        border-collapse: collapse;
+        table-layout: fixed;
+        white-space: nowrap;
+
+        > thead tr {
+            border: none;
+        }
+    }
+
+    &__commit-message-cell {
+        color: $color-secondary;
+        width: 41%;
+
+        @media screen and (min-width: $media-xl) {
+            width: 46%;
+        }
+    }
+
+    &__committer-cell {
+        width: 19%;
+
+        @media screen and (min-width: $media-xl) {
+            width: 16%;
+        }
+
+        .avatar-icon {
+            height: 24px;
+            clip-path: circle(11px at 12px 12px);
+            margin-right: 0.75rem;
+        }
+
+        .avatar {
+            display: inline;
+        }
+    }
+
+    &__date-cell {
+        width: 14%;
+        @media screen and (min-width: $media-xl) {
+            width: 10%;
+        }
+    }
+
+    &__commit-hash-cell {
+        width: 10%;
+        font-family: monospace;
+        @media screen and (min-width: $media-xl) {
+            width: 8%;
+        }
+    }
+
+    &__name-cell, &__return-arrow-cell {
+        width: 16%;
+        @media screen and (min-width: $media-xl) {
+            width: 15%;
+        }
+
+        .truncated {
+            display: flex;
+            align-items: center;
+
+            .name-link {
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+        }
+    }
+
+    .icon-inline {
+        margin-right: .4rem;
+    }
+
+    &__row {
+        border-bottom: 1px solid #2A3A51;
+        &:hover {
+            background-color: rgba(57, 77, 105, 0.2);
+            color:white;
+
+            a, .dir-page__commit-message-cell, .dir-page-entry__commit-message-cell {
+                color:white;
+            }
+        }
+    }
+}

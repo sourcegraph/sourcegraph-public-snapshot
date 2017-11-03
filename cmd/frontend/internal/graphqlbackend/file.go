@@ -137,16 +137,29 @@ func (r *fileResolver) Commit(ctx context.Context) (*commitResolver, error) {
 	}, nil
 }
 
+func (r *fileResolver) LastCommit(ctx context.Context) (*commitInfoResolver, error) {
+	commits, err := r.commits(ctx, 1)
+	if err != nil {
+		return nil, err
+	}
+	return commits[0], nil
+}
+
 func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, error) {
+	return r.commits(ctx, 20)
+}
+
+func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*commitInfoResolver, error) {
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return nil, err
 	}
 
 	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head: vcs.CommitID(r.commit.DefaultBranch),
-		N:    20,
-		Path: r.path,
+		Head:    vcs.CommitID(r.commit.DefaultBranch),
+		N:       limit,
+		Path:    r.path,
+		NoTotal: true,
 	})
 	if err != nil {
 		return nil, err
@@ -157,17 +170,15 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, erro
 			rev: string(commit.ID),
 			author: &signatureResolver{
 				person: &personResolver{
-					name:         commit.Author.Name,
-					email:        commit.Author.Email,
-					gravatarHash: commit.Author.Email,
+					name:  commit.Author.Name,
+					email: commit.Author.Email,
 				},
 				date: commit.Author.Date.String(),
 			},
 			committer: &signatureResolver{
 				person: &personResolver{
-					name:         commit.Author.Name,
-					email:        commit.Author.Email,
-					gravatarHash: commit.Author.Email,
+					name:  commit.Author.Name,
+					email: commit.Author.Email,
 				},
 				date: commit.Committer.Date.String(),
 			},

@@ -1,6 +1,6 @@
 import formatDistance from 'date-fns/formatDistance'
-import parse from 'date-fns/parse'
 import { limitString } from '../util'
+import { parseCommitDateString } from '../util/time'
 import { BlameData } from './index'
 
 /**
@@ -58,12 +58,7 @@ export function setLineBlame(data: BlameData): void {
         return clearLineBlameContent()
     }
 
-    const authorDate = parse(
-        hunk.author.date,
-        'YYYY-MM-DD HH:mm:ss ZZ',
-        new Date()
-    )
-    const timeSince = formatDistance(authorDate, new Date(), { addSuffix: true })
+    const timeSince = formatDistance(parseCommitDateString(hunk.author.date), new Date(), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
 
     setLineBlameContent(data.ctx.range.start.line, blameContent, hunk.rev)

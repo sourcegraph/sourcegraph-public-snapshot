@@ -9,9 +9,8 @@ type hunkResolver struct {
 func (r *hunkResolver) Author() *signatureResolver {
 	return &signatureResolver{
 		person: &personResolver{
-			name:         r.hunk.Author.Name,
-			email:        r.hunk.Author.Email,
-			gravatarHash: r.hunk.Author.Email,
+			name:  r.hunk.Author.Name,
+			email: r.hunk.Author.Email,
 		},
 		date: r.hunk.Author.Date.String(),
 	}

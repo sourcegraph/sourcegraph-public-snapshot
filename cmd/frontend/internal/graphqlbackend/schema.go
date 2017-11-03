@@ -366,6 +366,7 @@ type Person {
 	name:  String!
 	email: String!
 	gravatarHash: String!
+	avatarURL: String!
 }
 
 type Tree {
@@ -375,6 +376,8 @@ type Tree {
 
 type Directory {
 	name: String!
+	commits: [CommitInfo!]!
+	lastCommit: CommitInfo!
 	tree: Tree!
 }
 
@@ -393,6 +396,7 @@ type File {
 	highlight(disableTimeout: Boolean!): HighlightedFile!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!
+	lastCommit: CommitInfo!
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
 	blameRaw(startLine: Int!, endLine: Int!): String!
 }

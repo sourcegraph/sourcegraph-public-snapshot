@@ -468,20 +468,11 @@ class LayerTile extends React.Component<TileProps, {}> {
                                             }
                                         }}
                                     >
-                                        <a
+                                        <Link
                                             className='tree__row-contents'
                                             data-tree-directory='true'
                                             data-tree-path={this.currentDirectory(dir)}
-                                            // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={e => {
-                                                if (!e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
-                                                    // Unless modifier key selected, clicking on a directory
-                                                    // should not update URL. The anchor makes it possible
-                                                    // to copy a link, or open a link to the directory in a new tab/window.
-                                                    e.preventDefault()
-                                                }
-                                            }}
-                                            href={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir) })}
+                                            to={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir) })}
                                             style={treePadding(this.props.depth, true)}
                                         >
                                             {
@@ -490,7 +481,7 @@ class LayerTile extends React.Component<TileProps, {}> {
                                                     <ChevronRightIcon className='icon-inline' />
                                             }
                                             <span className='tree__row-label'>{dir}</span>
-                                        </a>
+                                        </Link>
                                     </td>
                                 </tr>,
                                 this.showSubpath(dir) &&

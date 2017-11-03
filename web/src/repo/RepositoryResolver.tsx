@@ -22,6 +22,7 @@ interface Props {
     match: match<{ repoRev: string, filePath?: string }>
     onToggleFullWidth: () => void
     isFullWidth: boolean
+    isDirectory: boolean
 }
 
 interface State {
@@ -139,6 +140,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 history={this.props.history}
                 onToggleFullWidth={this.props.onToggleFullWidth}
                 isFullWidth={this.props.isFullWidth}
+                isDirectory={this.props.isDirectory}
                 phabricatorCallsign={this.state.phabricatorCallsign}
             />
         )
