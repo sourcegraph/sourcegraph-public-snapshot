@@ -2,9 +2,12 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -77,7 +80,9 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureC
 
 		// If the session doesn't exist, redirect to  login (the beginning of the OIDC Authentication Code Flow).
 		if s == nil {
-			http.Redirect(w, r, authURLPrefix+"/login", http.StatusFound)
+			redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
+			query := url.Values(map[string][]string{"redirect": []string{redirectURL.String()}})
+			http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
 			return
 		}
 
@@ -113,14 +118,14 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		// We use the CSRF token created by gorilla/csrf that is used for other app endpoints as the OIDC state parameter.
 		//
 		// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
-		state := csrf.Token(r)
+		state := (&authnState{CSRFToken: csrf.Token(r), Redirect: r.URL.Query().Get("redirect")}).Encode()
 		http.SetCookie(w, &http.Cookie{Name: oidcStateCookieName, Value: state, Expires: time.Now().Add(time.Minute * 15)})
 
 		// Redirect to the OP's Authorization Endpoint for authentication. The nonce is an optional
 		// string value used to associate a Client session with an ID Token and to mitigate replay attacks.
 		// Whereas the state parameter is used in validating the Authentication Request
 		// callback, the nonce is used in validating the response to the ID Token request.
-		// We use the CSRF token created by gorilla/csrf that is used for other app endpoints as the nonce value.
+		// We re-use the Authn request state as the nonce.
 		//
 		// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
 		http.Redirect(w, r, oauth2Config.AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
@@ -153,6 +158,13 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			return
 		}
 
+		// Decode state param value
+		var state authnState
+		if err := state.Decode(stateParam); err != nil {
+			http.Error(w, ssoErrMsg("OIDC state parameter was invalid", ""), http.StatusBadRequest)
+			return
+		}
+
 		// Exchange the code for an access token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
 		oauth2Token, err := oauth2Config.Exchange(ctx, r.URL.Query().Get("code"))
 		if err != nil {
@@ -180,8 +192,8 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		}
 
 		// Validate the nonce. The Verify method explicitly doesn't handle nonce validation, so we do that here.
-		// Since we set the nonce to be the same as the state in the Authentication Request,
-		// we just need to check for equality with the state param.
+		// We set the nonce to be the same as the state in the Authentication Request state, so we check for equality
+		// here.
 		if idToken.Nonce != stateParam {
 			http.Error(w, ssoErrMsg("Incorrect nonce value when fetching ID Token, possible replay attack", ""), http.StatusUnauthorized)
 			return
@@ -204,8 +216,20 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			return
 		}
 
-		// Redirect to homepage on login
-		http.Redirect(w, r, "/", http.StatusFound)
+		// Redirect to the page the user was trying to access before login. To prevent an open-redirect vulnerability,
+		// strip the host from the redirect URL, so only relative redirects are valid.
+		var redirect string
+		if redirectURL, err := url.Parse(state.Redirect); err == nil {
+			redirectURL.Scheme = ""
+			redirectURL.Host = ""
+			redirect = redirectURL.String()
+			if !strings.HasPrefix(redirect, "/") {
+				redirect = "/" + redirect
+			}
+		} else {
+			redirect = "/"
+		}
+		http.Redirect(w, r, redirect, http.StatusFound)
 	})
 	return http.StripPrefix(authURLPrefix, handlerutil.NewHandlerWithCSRFProtection(r)), nil
 }
@@ -274,3 +298,24 @@ func ssoErrMsg(err string, description interface{}) string {
 
 // mockVerifyIDToken mocks the OIDC ID Token verification step. It should only be set in tests.
 var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
+
+// authnState is the state parameter passed to the Authn request and returned in the Authn response callback.
+type authnState struct {
+	CSRFToken string `json:"csrfToken"`
+	Redirect  string `json:"redirect"` // TODO: should be checked to make sure redirect is relative
+}
+
+// Encode returns the base64-encoded JSON representation of the authn state.
+func (s *authnState) Encode() string {
+	b, _ := json.Marshal(s)
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+// Decode decodes the base64-encoded JSON representation of the authn state into the receiver.
+func (s *authnState) Decode(encoded string) error {
+	b, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, s)
+}
