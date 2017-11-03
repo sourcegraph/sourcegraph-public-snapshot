@@ -124,7 +124,7 @@ type searchResolver2 struct {
 
 var mockResolveRepoGroups func() (map[string][]*sourcegraph.Repo, error)
 
-func (r *searchResolver2) resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
+func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
@@ -196,7 +196,14 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 		}
 	}
 
-	repoRevs, repoResults, err := r.doResolveRepositories(ctx, effectiveRepoFieldValues)
+	repoFilters := effectiveRepoFieldValues
+	if repoFilters == nil {
+		repoFilters = r.combinedQuery.fieldValues[searchFieldRepo].Values()
+	}
+	minusRepoFilters := r.combinedQuery.fieldValues[minusField(searchFieldRepo)].Values()
+	repoGroupFilters := r.combinedQuery.fieldValues[searchFieldRepoGroup].Values()
+
+	repoRevs, repoResults, err := resolveRepositories(ctx, repoFilters, minusRepoFilters, repoGroupFilters)
 	if effectiveRepoFieldValues == nil {
 		r.repoRevs = repoRevs
 		r.repoResults = repoResults
@@ -205,26 +212,21 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	return repoRevs, repoResults, err
 }
 
-func (r *searchResolver2) doResolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) ([]*repositoryRevision, []*searchResultResolver, error) {
-	var includePatterns []string
-	if len(effectiveRepoFieldValues) > 0 {
-		includePatterns = effectiveRepoFieldValues
-	} else {
-		includePatterns = r.combinedQuery.fieldValues[searchFieldRepo].Values()
-	}
+func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) ([]*repositoryRevision, []*searchResultResolver, error) {
+	includePatterns := repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
-	excludePatterns := r.combinedQuery.fieldValues[minusField(searchFieldRepo)].Values()
+	excludePatterns := minusRepoFilters
 
 	maxRepoListSize := 30
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
-	if groupNames := r.combinedQuery.fieldValues[searchFieldRepoGroup].Values(); len(groupNames) > 0 {
-		groups, err := r.resolveRepoGroups(ctx)
+	if groupNames := repoGroupFilters; len(groupNames) > 0 {
+		groups, err := resolveRepoGroups(ctx)
 		if err != nil {
 			return nil, nil, err
 		}

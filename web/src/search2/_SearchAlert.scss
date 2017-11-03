@@ -1,0 +1,41 @@
+.search-alert {
+    width: 100%;
+    margin: 1.25rem 0;
+
+    @media (max-width: $media-md) {
+        padding: 0 1rem;
+    }
+
+    &__message {
+        margin-bottom: 1.25rem;
+    }
+    &__title {
+        font-size: 1.2rem;
+        margin-bottom: 0;
+    }
+    &__description {
+        font-size: 0.8rem;
+        color: #93A9C8;
+    }
+
+    &__proposed-queries {
+        list-style: none;
+    }
+    &__proposed-query {
+        margin-top: 1.1rem;
+        &-did-you-mean {
+            font-weight: bold;
+        }
+        &-link {
+            display: inline-block;
+            word-break: break-all;
+            padding: 0.1rem 0.3rem;
+            border: solid 1px rgba(255, 255, 255, 0.3);
+            border-radius: 0.125rem;
+            min-width: 3rem;
+        }
+        &-description {
+            font-size: 0.8rem;
+        }
+    }
+}

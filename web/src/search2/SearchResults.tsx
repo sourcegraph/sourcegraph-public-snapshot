@@ -4,7 +4,6 @@ import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/filter'
@@ -16,7 +15,8 @@ import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
 import { events, viewEvents } from '../tracking/events'
 import { searchText } from './backend'
-import { buildSearchURLQuery, parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { SearchAlert } from './SearchAlert'
 
 interface Props {
     location: H.Location
@@ -24,6 +24,7 @@ interface Props {
 
 interface State {
     results: GQL.IFileMatch[]
+    alert: GQL.ISearchAlert | null
     loading: boolean
     searchDuration?: number
     error?: Error
@@ -44,6 +45,7 @@ export class SearchResults extends React.Component<Props, State> {
 
     public state: State = {
         results: [],
+        alert: null,
         loading: true,
         limitHit: false,
         cloning: [],
@@ -86,7 +88,7 @@ export class SearchResults extends React.Component<Props, State> {
                             console.error(error)
                         })
                         .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
-                        .catch(error => [{ results: [], missing: [], cloning: [], limitHit: false, error, loading: false, searchDuration: undefined }])
+                        .catch(error => [{ results: [], alert: null, missing: [], cloning: [], limitHit: false, error, loading: false, searchDuration: undefined }])
                 })
                 .subscribe(
                 newState => this.setState(newState as State),
@@ -101,7 +103,7 @@ export class SearchResults extends React.Component<Props, State> {
                     const searchOptions = parseSearchURLQuery(props.location.search)
                     setTimeout(() => this.searchRequested.next(searchOptions))
                 })
-                .map(() => ({ results: [], missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined }))
+                .map(() => ({ results: [], alert: null, missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined }))
                 .subscribe(
                 newState => this.setState(newState as State),
                 err => console.error(err)
@@ -119,23 +121,21 @@ export class SearchResults extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
 
-        let alertTitle: string | JSX.Element | undefined
-        let alertDetails: string | JSX.Element | undefined
+        let alert: {
+            title: string;
+            description?: string | null;
+            proposedQueries?: GQL.ISearchQuery2Description[];
+        } | null = null
         if (this.state.error) {
             if (this.state.error.message.includes('no query terms or regexp specified')) {
-                alertTitle = ''
-                alertDetails = 'Enter terms to search...'
-            } else if (this.state.error.message.includes('no repositories included')) {
-                alertTitle = 'No repositories matched by current filters'
-                alertDetails = querySuggestionForAllReposExcluded(parseSearchURLQuery(this.props.location.search))
+                alert = { title: '', description: 'Enter terms to search...' }
             } else {
-                alertTitle = 'Something went wrong!'
-                alertDetails = upperFirst(this.state.error.message)
+                alert = { title: 'Something went wrong', description: upperFirst(this.state.error.message) }
             }
-        } else if (this.state.loading) {
-            alertTitle = <Loader className='icon-inline' />
-        } else if (this.state.results.length === 0 && this.state.missing.length === 0 && this.state.cloning.length === 0) {
-            alertTitle = 'No results'
+        } else if (this.state.alert) {
+            alert = this.state.alert
+        } else if (!this.state.loading && this.state.results.length === 0 && this.state.missing.length === 0 && this.state.cloning.length === 0) {
+            alert = { title: 'No results' }
         }
 
         let totalMatches = 0
@@ -181,12 +181,15 @@ export class SearchResults extends React.Component<Props, State> {
                         <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon} />
                     )
                 }
+                {this.state.loading && <Loader className='icon-inline' />}
                 {
-                    (alertTitle || alertDetails) &&
-                    <div className='search-results2__alert'>
-                        {alertTitle && <h1 className='search-results2__alert-title'>{alertTitle}</h1>}
-                        {alertDetails && <p className='search-results2__alert-details'>{alertDetails}</p>}
-                    </div>
+                    alert &&
+                    <SearchAlert
+                        title={alert.title}
+                        description={alert.description || undefined}
+                        proposedQueries={this.state.alert ? this.state.alert.proposedQueries : undefined}
+                        location={this.props.location}
+                    />
                 }
                 {
                     this.state.results.map((result, i) => {
@@ -228,57 +231,4 @@ export class SearchResults extends React.Component<Props, State> {
             </div>
         )
     }
-}
-
-function querySuggestionForAllReposExcluded(options: SearchOptions): string | JSX.Element | undefined {
-    const omitQueryFields = (query: string, omitField: string): string => query.split(' ').filter(token => !token.startsWith(omitField + ':')).join(' ')
-
-    let suggestion: SearchOptions | undefined
-    let reason: string | JSX.Element | undefined
-    if (!suggestion && options.query.includes('repogroup:') || options.scopeQuery.includes('repogroup:')) {
-        suggestion = {
-            query: omitQueryFields(options.query, 'repogroup'),
-            scopeQuery: omitQueryFields(options.scopeQuery, 'repogroup'),
-        }
-        reason = 'omitting the repository group filter'
-        if (options.scopeQuery.includes('repogroup:')) {
-            reason += ' in the search scope'
-        }
-    }
-
-    const repoFields = (options.query + ' ' + options.scopeQuery).split(' ').filter(token => token.startsWith('repo:'))
-    if (!suggestion && repoFields.length > 1) {
-        // Suggest union'ing multiple repo: field values, in case the user thought separate
-        // fields were OR'd not AND'd.
-        const values = repoFields.map(token => token.replace(/^repo:/, '')).filter(s => !!s)
-        suggestion = {
-            query: omitQueryFields(options.query, 'repo') + ` repo:${values.join('|')}`,
-            scopeQuery: omitQueryFields(options.scopeQuery, 'repo'),
-        }
-        reason = 'using a single pattern instead of multiple intersecting repo: filters'
-    }
-
-    if (!suggestion && repoFields.length === 1) {
-        const value = repoFields[0].replace(/^repo:/, '')
-        reason = (
-            <span>
-                The repo: filter value <code>{value}</code> matched no repositories.
-                Check that it is a valid regular expression that matches repository paths
-                such as <code>github.com/foo/bar</code> and <code>example.com/foo</code>.
-                For example, the following filter would match both: <code>repo:foo</code>.
-            </span>
-        )
-    }
-
-    if (suggestion) {
-        const url = '?' + buildSearchURLQuery(suggestion)
-        return (
-            <span>Did you mean: <Link className='search-results2__query-fix' to={url}>{suggestion.scopeQuery} {suggestion.query}</Link> {reason ? `(${reason})` : ''}</span>
-        )
-    }
-    if (reason) {
-        return reason
-    }
-
-    return undefined
 }

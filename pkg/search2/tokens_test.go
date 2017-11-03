@@ -93,3 +93,27 @@ func TestTokens_Extract(t *testing.T) {
 		})
 	}
 }
+
+func Test_FormatToken(t *testing.T) {
+	tests := map[string]struct {
+		field Field
+		value string
+	}{
+		"y":        {"", "y"},
+		`"y z"`:    {"", "y z"},
+		"-y":       {"-", "y"},
+		`-"y z"`:   {"-", "y z"},
+		"x:y":      {"x", "y"},
+		`x:"y z"`:  {"x", "y z"},
+		"-x:y":     {"-x", "y"},
+		`-x:"y z"`: {"-x", "y z"},
+	}
+	for want, token := range tests {
+		t.Run(want, func(t *testing.T) {
+			s := FormatToken(token.field, token.value)
+			if s != want {
+				t.Fatalf("got %q, want %q", s, want)
+			}
+		})
+	}
+}

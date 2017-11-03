@@ -126,3 +126,23 @@ func (ts Tokens) Extract() (fieldValues map[Field]Values) {
 	}
 	return
 }
+
+// FormatToken returns the string form of the specified token. It quotes the
+// value if needed.
+//
+// Caller that need to distinguish between quoted and unquoted values not use
+// this function because it does not offer control over the quoting behavior.
+func FormatToken(field Field, value string) string {
+	quoted := strconv.Quote(value)
+	needsQuoting := strings.ContainsAny(value, " \t\n") || quoted[1:len(quoted)-1] != value
+
+	prefix := string(field)
+	if field != "" && field != "-" {
+		prefix += ":"
+	}
+
+	if needsQuoting {
+		return prefix + quoted
+	}
+	return prefix + value
+}

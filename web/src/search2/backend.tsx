@@ -4,7 +4,7 @@ import { Observable } from 'rxjs/Observable'
 import { queryGraphQL } from '../backend/graphql'
 import { SearchOptions } from './index'
 
-export function searchText(options: SearchOptions): Observable<GQL.ISearchResults> {
+export function searchText(options: SearchOptions): Observable<GQL.ISearchResults2> {
     return queryGraphQL(`
             query Search2(
                 $query: String!,
@@ -23,6 +23,17 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                     preview
                                     lineNumber
                                     offsetAndLengths
+                                }
+                            }
+                            alert {
+                                title
+                                description
+                                proposedQueries {
+                                    description
+                                    query {
+                                        query
+                                        scopeQuery
+                                    }
                                 }
                             }
                         }

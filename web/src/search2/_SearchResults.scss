@@ -1,19 +1,8 @@
+@import './SearchAlert';
 
 .search-results2 {
     width: 100%;
     padding-top: 1rem;
-
-    &__alert {
-        width: 100%;
-        margin-top: 3rem;
-        text-align: center;
-        &-title {
-            text-align: inherit;
-        }
-        &-details {
-            margin-top: 1rem;
-        }
-    }
 
     &__header {
         display: flex;
@@ -44,10 +33,5 @@
 
     &__duration {
         margin-left: auto;
-    }
-
-    &__query-fix {
-        font-weight: bold;
-        text-decoration: underline;
     }
 }

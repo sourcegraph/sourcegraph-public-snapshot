@@ -7,10 +7,24 @@ import (
 	"strings"
 )
 
-func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
+type searchResults2 struct {
+	searchResults
+	alert *searchAlert
+}
+
+func (r searchResults2) Alert() *searchAlert { return r.alert }
+
+func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
 	repos, _, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
+	}
+	if len(repos) == 0 {
+		alert, err := r.alertForNoResolvedRepos(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &searchResults2{alert: alert}, nil
 	}
 
 	var patternsToCombine []string
@@ -32,9 +46,6 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 	if len(patternsToCombine) == 0 {
 		return nil, errors.New("no query terms or regexp specified")
 	}
-	if len(repos) == 0 {
-		return nil, errors.New("no repositories included")
-	}
 
 	args := repoSearchArgs{
 		Query: &patternInfo{
@@ -53,5 +64,10 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 		args.Query.ExcludePattern = &pat
 	}
 
-	return r.root.SearchRepos(ctx, &args)
+	var results *searchResults2
+	results1, err := r.root.SearchRepos(ctx, &args)
+	if results1 != nil {
+		results = &searchResults2{searchResults: *results1}
+	}
+	return results, err
 }
