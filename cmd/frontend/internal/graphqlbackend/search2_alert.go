@@ -67,7 +67,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0])
 
-		repos1, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
+		repos1, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters.Values())
-		repos2, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
+		repos2, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +102,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied your repo: filter.", repoGroupFilters[0])
 
-		repos1, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
+		repos1, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +123,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.description = fmt.Sprintf("No repositories satisfied all of your repo: filters.")
 
 		unionRepoFilter := unionRegExps(repoFilters.Values())
-		repos2, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
+		repos2, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
 		if err != nil {
 			return nil, err
 		}
@@ -152,6 +152,14 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 	}
 
 	return &a, nil
+}
+
+func (r *searchResolver2) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
+	// TODO(sqs): add repo filters based on the result set so far
+	return &searchAlert{
+		title:       "Too many matching repositories",
+		description: "Narrow your search with repo: filters to see results.",
+	}, nil
 }
 
 func omitQueryFields(r *searchResolver2, field search2.Field) searchQuery {

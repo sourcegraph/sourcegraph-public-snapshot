@@ -15,12 +15,19 @@ type searchResults2 struct {
 func (r searchResults2) Alert() *searchAlert { return r.alert }
 
 func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
-	repos, _, err := r.resolveRepositories(ctx, nil)
+	repos, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	if len(repos) == 0 {
 		alert, err := r.alertForNoResolvedRepos(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &searchResults2{alert: alert}, nil
+	}
+	if overLimit {
+		alert, err := r.alertForOverRepoLimit(ctx)
 		if err != nil {
 			return nil, err
 		}
