@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"time"
 
 	"encoding/base64"
 
@@ -104,7 +105,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 
 	// Write the session cookie.
-	if err := session.StartNewSession(w, r, actor); err != nil {
+	if err := session.StartNewSession(w, r, actor, time.Now().Add(28*24*time.Hour)); err != nil {
 		return err
 	}
 

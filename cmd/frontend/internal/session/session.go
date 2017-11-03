@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"strings"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -13,6 +14,11 @@ import (
 
 // actorSessionStore stores the actor-based user session.
 var actorSessionStore *Store
+
+type sessionInfo struct {
+	Actor  *actor.Actor `json:"actor"`
+	Expiry time.Time    `json:"expiry"`
+}
 
 // InitSessionStore initializes the session store.
 func InitSessionStore(secureCookie bool) {
@@ -23,14 +29,13 @@ func InitSessionStore(secureCookie bool) {
 	}
 }
 
-// StartNewSession starts a new session with authentication for the given uid.
-func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor) error {
-
-	actorJSON, err := json.Marshal(actor)
+// StartNewSession starts a new session with authentication for the given uid and a given expiration time.
+func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry time.Time) error {
+	sessionJSON, err := json.Marshal(sessionInfo{Actor: actor, Expiry: expiry})
 	if err != nil {
 		return err
 	}
-	actorSessionStore.StartNewSession(w, r, actorJSON)
+	actorSessionStore.StartNewSession(w, r, sessionJSON)
 	return nil
 }
 
@@ -48,7 +53,20 @@ func SessionCookie(r *http.Request) string {
 // future HTTP request via cookie.
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r)))
+		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
+	})
+}
+
+// CookieOrSessionMiddleware is like CookieMiddleware, but also inspects the HTTP Authorization
+// header for a session cookie and uses that if it exists.
+func CookieOrSessionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+		if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
+			next.ServeHTTP(w, r.WithContext(AuthenticateBySession(r.Context(), parts[1])))
+		} else {
+			next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
+		}
 	})
 }
 
@@ -60,7 +78,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := r.Header[textproto.CanonicalMIMEHeaderKey(headerName)]; ok {
-			r = r.WithContext(authenticateByCookie(r))
+			r = r.WithContext(authenticateByCookie(r, w))
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -69,35 +87,34 @@ func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler
 // AuthenticateBySession authenticates the context with the given session cookie.
 func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Context {
 	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{actorSessionStore.name + "=" + sessionCookie}}}
-	return authenticateByCookie(fakeRequest.WithContext(ctx))
+	return authenticateByCookie(fakeRequest.WithContext(ctx), nil)
 }
 
-// GetSession returns the session cookie value for the request. In addition to checking the request cookies,
-// it also checks the HTTP Authorization header (which the editor uses to authenticate).
-func GetSession(r *http.Request) ([]byte, error) {
-	parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-	if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
-		return []byte(parts[1]), nil
-	}
-	return actorSessionStore.GetSession(r)
-}
-
-func authenticateByCookie(r *http.Request) context.Context {
-	actorJSON, err := actorSessionStore.GetSession(r)
+// authenticateByCookie returns an authenticated Context using the session cookie in a request.
+// If the session is expired, we delete the session and the cookie.
+func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
+	sessionJSON, err := actorSessionStore.GetSession(r)
 	if err != nil {
 		log15.Error("error getting session", "error", err)
 		return r.Context()
 	}
 
-	if actorJSON == nil {
+	if sessionJSON == nil {
 		return r.Context()
 	}
 
-	var a actor.Actor
-	if err := json.Unmarshal(actorJSON, &a); err != nil {
-		log15.Error("error unmarshalling actor", "error", err)
+	var info sessionInfo
+	if err := json.Unmarshal(sessionJSON, &info); err != nil {
+		log15.Error("error unmarshalling session", "error", err)
 		return r.Context()
 	}
 
-	return actor.WithActor(r.Context(), &a)
+	if !info.Expiry.After(time.Now()) {
+		if w != nil {
+			actorSessionStore.DeleteSession(w, r)
+		}
+		return r.Context()
+	}
+
+	return actor.WithActor(r.Context(), info.Actor)
 }

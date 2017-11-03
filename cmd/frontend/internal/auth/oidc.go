@@ -64,22 +64,15 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureC
 		return nil, err
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return session.CookieOrSessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// If the path is under the authentication path, serve the OIDC Authentication Code Flow handler
 		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/") {
 			oidcHandler.ServeHTTP(w, r)
 			return
 		}
 
-		// For all other URLs, check the session for validity.
-		s, err := session.GetSession(r)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error fetching session: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		// If the session doesn't exist, redirect to  login (the beginning of the OIDC Authentication Code Flow).
-		if s == nil {
+		// If not authenticated, redirect to login and begin the OIDC Authn flow.
+		if actr := actor.FromContext(r.Context()); actr == nil || !actr.IsAuthenticated() {
 			redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
 			query := url.Values(map[string][]string{"redirect": []string{redirectURL.String()}})
 			http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
@@ -88,7 +81,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureC
 
 		// At this point, we've verified that the request has a valid sesssion, so serve the requested resource.
 		handler.ServeHTTP(w, r)
-	}), nil
+	})), nil
 }
 
 // newOIDCLoginHandler returns a handler that defines the necessary endpoints for the OIDC Authentication Code Flow
@@ -211,7 +204,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			http.Error(w, "Could not fetch user", http.StatusInternalServerError)
 			return
 		}
-		if err := session.StartNewSession(w, r, actr); err != nil {
+		if err := session.StartNewSession(w, r, actr, idToken.Expiry); err != nil {
 			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
 			return
 		}
