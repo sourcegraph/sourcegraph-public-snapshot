@@ -288,12 +288,6 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		return nil, nil, err
 	}
 
-	// TODO(sqs): hack because Repos.List does not respect ListOptions.PerPage due to
-	// it wanting to sort the results using its scorer.
-	if len(repos.Repos) > maxRepoListSize {
-		repos.Repos = repos.Repos[:maxRepoListSize]
-	}
-
 	repoRevisions := make([]*repositoryRevision, 0, len(repos.Repos))
 	repoResolvers := make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {

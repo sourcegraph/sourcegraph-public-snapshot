@@ -323,8 +323,11 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
 
-	// fetch matching repos unordered
-	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s LIMIT 1000", sqlf.Join(conds, "AND")))
+	// fetch matching repos
+	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
+		sqlf.Join(conds, "AND"),
+		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
+	))
 
 	if err != nil {
 		return nil, err
@@ -341,18 +344,6 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		}
 	} else {
 		repos = rawRepos
-	}
-
-	// pagination
-	if opt.Page > 0 {
-		start := (opt.Page - 1) * opt.PerPage
-		if int(start) >= len(repos) {
-			return nil, nil
-		}
-		repos = repos[start:]
-		if len(repos) > int(opt.PerPage) {
-			repos = repos[:opt.PerPage]
-		}
 	}
 
 	return repos, nil
