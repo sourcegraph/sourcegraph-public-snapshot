@@ -14,9 +14,6 @@ import (
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
 var appHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -88,10 +85,6 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 	oidcIDProvider = oidcIDServer.URL
 	oidcClientID = "aaaaaaaaaaaaaa"
 	oidcClientSecret = "aaaaaaaaaaaaaaaaaaaaaaaaa"
-	testOIDCSessionStore, err := session.NewStore(oidcSessionCookieName, "token", false, sessions.NewFilesystemStore(tempdir, securecookie.GenerateRandomKey(2048)))
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
@@ -105,7 +98,7 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 	}
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), appHandler, false, appURL, testOIDCSessionStore)
+	authedHandler, err := newOIDCAuthHandler(context.Background(), appHandler, false, appURL)
 	if err != nil {
 		t.Fatal(err)
 	}

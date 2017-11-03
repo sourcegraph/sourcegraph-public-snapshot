@@ -8,53 +8,75 @@ import (
 	"strings"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
+	"github.com/boj/redistore"
+	"github.com/gorilla/sessions"
 )
 
-// actorSessionStore stores the actor-based user session.
-var actorSessionStore *Store
+var sessionStore sessions.Store
+var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "redis-store:6379", "redis used for storing sessions")
+var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 
+// sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
+// enforce the maxAge field in its session store implementations, so we include the expiry here.
 type sessionInfo struct {
 	Actor  *actor.Actor `json:"actor"`
 	Expiry time.Time    `json:"expiry"`
 }
 
 // InitSessionStore initializes the session store.
-func InitSessionStore(secureCookie bool) {
-	var err error
-	actorSessionStore, err = NewStore("sg-session", "actor", secureCookie, nil)
-	if err != nil {
-		panic(err)
+func InitSessionStore(secureCookie bool, underlyingStore sessions.Store) {
+	if sessionStoreRedis == "" {
+		sessionStoreRedis = ":6379"
+	}
+	if underlyingStore == nil {
+		rstore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
+		if err != nil {
+			panic(err)
+		}
+		rstore.Options.Path = "/"
+		rstore.Options.HttpOnly = true
+		rstore.Options.Secure = secureCookie
+		sessionStore = rstore
+	} else {
+		sessionStore = underlyingStore
 	}
 }
 
-// StartNewSession starts a new session with authentication for the given uid and a given expiration time.
+// StartNewSession starts a new session with authentication for the given uid.
 func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry time.Time) error {
-	sessionJSON, err := json.Marshal(sessionInfo{Actor: actor, Expiry: expiry})
+	DeleteSession(w, r)
+
+	session, err := sessionStore.New(&http.Request{}, "sg-session") // workaround: not passing the request forces a new session
+	if err != nil {
+		log15.Error("error creating session", "error", err)
+	}
+	actorJSON, err := json.Marshal(sessionInfo{Actor: actor, Expiry: expiry})
 	if err != nil {
 		return err
 	}
-	actorSessionStore.StartNewSession(w, r, sessionJSON)
+	session.Values["actor"] = actorJSON
+	if err = session.Save(r, w); err != nil {
+		log15.Error("error saving session", "error", err)
+	}
+
 	return nil
 }
 
 // DeleteSession deletes the current session.
 func DeleteSession(w http.ResponseWriter, r *http.Request) {
-	actorSessionStore.DeleteSession(w, r)
-}
-
-// SessionCookie returns the session cookie from the header of the given request.
-func SessionCookie(r *http.Request) string {
-	return actorSessionStore.Cookie(r)
-}
-
-// CookieMiddleware is an http.Handler middleware that authenticates
-// future HTTP request via cookie.
-func CookieMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
-	})
+	session, err := sessionStore.Get(r, "sg-session")
+	if err != nil {
+		log15.Error("error getting session", "error", err)
+	}
+	session.Options.MaxAge = -1
+	if err = session.Save(r, w); err != nil {
+		log15.Error("error saving session", "error", err)
+	}
 }
 
 // CookieOrSessionMiddleware is like CookieMiddleware, but also inspects the HTTP Authorization
@@ -65,8 +87,16 @@ func CookieOrSessionMiddleware(next http.Handler) http.Handler {
 		if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
 			next.ServeHTTP(w, r.WithContext(AuthenticateBySession(r.Context(), parts[1])))
 		} else {
-			next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
+			next.ServeHTTP(w, r.WithContext(authenticateByCookie(r)))
 		}
+	})
+}
+
+// CookieMiddleware is an http.Handler middleware that authenticates
+// future HTTP request via cookie.
+func CookieMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r)))
 	})
 }
 
@@ -78,7 +108,7 @@ func CookieOrSessionMiddleware(next http.Handler) http.Handler {
 func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := r.Header[textproto.CanonicalMIMEHeaderKey(headerName)]; ok {
-			r = r.WithContext(authenticateByCookie(r, w))
+			r = r.WithContext(authenticateByCookie(r))
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -86,35 +116,38 @@ func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler
 
 // AuthenticateBySession authenticates the context with the given session cookie.
 func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Context {
-	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{actorSessionStore.name + "=" + sessionCookie}}}
-	return authenticateByCookie(fakeRequest.WithContext(ctx), nil)
+	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{"sg-session=" + sessionCookie}}}
+	return authenticateByCookie(fakeRequest.WithContext(ctx))
 }
 
-// authenticateByCookie returns an authenticated Context using the session cookie in a request.
-// If the session is expired, we delete the session and the cookie.
-func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
-	sessionJSON, err := actorSessionStore.GetSession(r)
+func authenticateByCookie(r *http.Request) context.Context {
+	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
 		log15.Error("error getting session", "error", err)
 		return r.Context()
 	}
 
-	if sessionJSON == nil {
-		return r.Context()
-	}
-
-	var info sessionInfo
-	if err := json.Unmarshal(sessionJSON, &info); err != nil {
-		log15.Error("error unmarshalling session", "error", err)
-		return r.Context()
-	}
-
-	if !info.Expiry.After(time.Now()) {
-		if w != nil {
-			actorSessionStore.DeleteSession(w, r)
+	if actorJSON, ok := session.Values["actor"]; ok {
+		var info sessionInfo
+		if err := json.Unmarshal(actorJSON.([]byte), &info); err != nil {
+			log15.Error("error unmarshalling actor", "error", err)
+			return r.Context()
 		}
-		return r.Context()
+
+		if info.Actor == nil || info.Expiry.Before(time.Now()) {
+			return actor.WithActor(r.Context(), &actor.Actor{})
+		}
+		return actor.WithActor(r.Context(), info.Actor)
 	}
 
-	return actor.WithActor(r.Context(), info.Actor)
+	return r.Context()
+}
+
+// SessionCookie returns the session cookie from the header of the given request.
+func SessionCookie(r *http.Request) string {
+	c, err := r.Cookie("sg-session")
+	if err != nil {
+		return ""
+	}
+	return c.Value
 }
