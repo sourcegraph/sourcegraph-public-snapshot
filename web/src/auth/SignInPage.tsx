@@ -113,6 +113,11 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     </button>
                 </div>
                 <small className='form-text'>Existing users who signed in via GitHub: please sign up for a Sourcegraph account.</small>
+                {this.state.mode === 'signup' &&
+                    <small className='form-text sign-in-page__terms'>
+                        By signing up, you agree to our <a href='https://about.sourcegraph.com/terms' target='_blank'>Terms of
+                        Service</a> and <a href='https://about.sourcegraph.com/privacy' target='_blank'>Privacy Policy</a>.
+                    </small>}
                 {this.state.loading && <div className='login-signup-form__loader'><Loader className='icon-inline' /></div>}
             </form>
         )

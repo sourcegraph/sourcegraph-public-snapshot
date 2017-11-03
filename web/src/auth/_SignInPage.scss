@@ -6,6 +6,13 @@
     overflow: hidden;
     border-top-left-radius: 0.25rem;
     border-top-right-radius: 0.25rem;
+
+    &__terms {
+        a:not(:hover) {
+            color: $color-primary;
+        }
+        margin-top: 1rem;
+    }
 }
 
 .login-signup-form {
