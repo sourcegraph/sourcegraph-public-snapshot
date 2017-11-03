@@ -11,7 +11,7 @@ import (
 )
 
 func TestSearch2Suggestions(t *testing.T) {
-	listOpts := sourcegraph.ListOptions{PerPage: 30}
+	listOpts := sourcegraph.ListOptions{PerPage: int32(maxReposToSearch + 1)}
 
 	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
 		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
@@ -92,7 +92,6 @@ func TestSearch2Suggestions(t *testing.T) {
 
 	t.Run("repogroup: and single term", func(t *testing.T) {
 		var mu sync.Mutex
-		listOpts := sourcegraph.ListOptions{PerPage: listOpts.PerPage + 2} // 2 more because repogroup has 2 members
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
 		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
 			mu.Lock()

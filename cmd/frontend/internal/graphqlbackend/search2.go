@@ -244,7 +244,9 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
 		// Ensure we don't omit any repos explicitly included via a repo group.
-		maxRepoListSize += len(patterns)
+		if len(patterns) > maxRepoListSize {
+			maxRepoListSize = len(patterns)
+		}
 	}
 
 	// Treat an include pattern with a suffix of "@rev" as meaning that all
