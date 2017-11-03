@@ -83,19 +83,18 @@ func resolveQuery(query string) (*resolvedQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	fieldValues, unknownFields := tokens.Extract(searchFieldAliases)
+	tokens.Normalize(searchFieldAliases)
+	fieldValues := tokens.Extract()
 
 	return &resolvedQuery{
-		tokens:        tokens,
-		fieldValues:   fieldValues,
-		unknownFields: unknownFields,
+		tokens:      tokens,
+		fieldValues: fieldValues,
 	}, nil
 }
 
 type resolvedQuery struct {
-	tokens        search2.Tokens
-	fieldValues   map[search2.Field]search2.Values
-	unknownFields []search2.Field
+	tokens      search2.Tokens
+	fieldValues map[search2.Field]search2.Values
 }
 
 func (q resolvedQuery) isCaseSensitive() bool {

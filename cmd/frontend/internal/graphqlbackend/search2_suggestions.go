@@ -32,11 +32,6 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchResultResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if hasUnknownFields := len(r.query.unknownFields) > 0; hasUnknownFields {
-		log15.Info("query with unknown fields", "query", r.args.Query, "scopeQuery", r.args.ScopeQuery)
-		return nil, nil
-	}
-
 	if len(r.query.tokens) == 0 {
 		return nil, nil
 	}
@@ -65,7 +60,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 	showFileSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
 		hasRepoOrFileFields := len(r.query.fieldValues[searchFieldRepoGroup]) > 0 || len(r.query.fieldValues[searchFieldRepo]) > 0 || len(r.query.fieldValues[searchFieldFile]) > 0
-		if hasRepoOrFileFields && len(r.query.fieldValues[""]) <= 1 && len(r.query.unknownFields) == 0 {
+		if hasRepoOrFileFields && len(r.query.fieldValues[""]) <= 1 {
 			return r.resolveFiles(ctx)
 		}
 		return nil, nil
