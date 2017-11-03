@@ -20,10 +20,10 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 	// expands the result set. This is not a critical issue, but it should be
 	// made consistent.
 	var patternsToCombine []string
-	if termPattern := patternForQueryTerms(withoutEmptyStrings(r.query.fieldValues[""])); termPattern != "" {
+	if termPattern := patternForQueryTerms(withoutEmptyStrings(r.query.fieldValues[""].Values())); termPattern != "" {
 		patternsToCombine = append(patternsToCombine, termPattern)
 	}
-	for _, pattern := range withoutEmptyStrings(r.query.fieldValues[searchFieldRegExp]) {
+	for _, pattern := range withoutEmptyStrings(r.query.fieldValues[searchFieldRegExp].Values()) {
 		patternsToCombine = append(patternsToCombine, pattern)
 	}
 
@@ -40,13 +40,13 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 			IsCaseSensitive:              r.query.isCaseSensitive(),
 			FileMatchLimit:               300,
 			Pattern:                      unionRegExps(patternsToCombine),
-			IncludePatterns:              r.query.fieldValues[searchFieldFile],
+			IncludePatterns:              r.query.fieldValues[searchFieldFile].Values(),
 			PathPatternsAreRegExps:       true,
 			PathPatternsAreCaseSensitive: r.query.isCaseSensitive(),
 		},
 		Repositories: repos,
 	}
-	if excludePatterns := r.query.fieldValues[minusField(searchFieldFile)]; len(excludePatterns) > 0 {
+	if excludePatterns := r.query.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
 		pat := unionRegExps(excludePatterns)
 		args.Query.ExcludePattern = &pat
 	}

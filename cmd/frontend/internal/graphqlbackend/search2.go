@@ -96,12 +96,12 @@ func resolveQuery(query string) (*resolvedQuery, error) {
 
 type resolvedQuery struct {
 	tokens        search2.Tokens
-	fieldValues   map[search2.Field][]string
+	fieldValues   map[search2.Field]search2.Values
 	unknownFields []search2.Field
 }
 
 func (q resolvedQuery) isCaseSensitive() bool {
-	for _, s := range q.fieldValues[searchFieldCase] {
+	for _, s := range q.fieldValues[searchFieldCase].Values() {
 		v, _ := strconv.ParseBool(s)
 		v = v || (s == "yes" || s == "y")
 		if v {
@@ -187,20 +187,20 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	if len(effectiveRepoFieldValues) > 0 {
 		includePatterns = effectiveRepoFieldValues
 	} else {
-		includePatterns = r.query.fieldValues[searchFieldRepo]
+		includePatterns = r.query.fieldValues[searchFieldRepo].Values()
 	}
 	if includePatterns != nil {
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
-	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)]
+	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)].Values()
 
 	maxRepoListSize := 30
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
-	if groupNames := r.query.fieldValues[searchFieldRepoGroup]; len(groupNames) > 0 {
+	if groupNames := r.query.fieldValues[searchFieldRepoGroup].Values(); len(groupNames) > 0 {
 		groups, err := r.resolveRepoGroups(ctx)
 		if err != nil {
 			return nil, nil, err
@@ -301,8 +301,8 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 		return nil, err
 	}
 
-	includePatterns := r.query.fieldValues[searchFieldFile]
-	excludePattern := unionRegExps(r.query.fieldValues[minusField(searchFieldFile)])
+	includePatterns := r.query.fieldValues[searchFieldFile].Values()
+	excludePattern := unionRegExps(r.query.fieldValues[minusField(searchFieldFile)].Values())
 	pathOptions := pathmatch.CompileOptions{
 		RegExp:        true,
 		CaseSensitive: r.query.isCaseSensitive(),
@@ -311,7 +311,7 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 	// If a single term is specified in the user query, and no other file patterns,
 	// then treat it as an include pattern (which is a nice UX for users).
 	if len(r.userQuery.fieldValues[searchFieldTerm]) == 1 {
-		includePatterns = append(includePatterns, r.userQuery.fieldValues[searchFieldTerm][0])
+		includePatterns = append(includePatterns, r.userQuery.fieldValues[searchFieldTerm][0].Value)
 	}
 
 	matchPath, err := pathmatch.CompilePathPatterns(includePatterns, excludePattern, pathOptions)

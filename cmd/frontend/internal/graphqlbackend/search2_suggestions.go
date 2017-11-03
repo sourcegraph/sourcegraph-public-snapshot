@@ -49,9 +49,9 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 
 		var effectiveRepoFieldValues []string
 		if len(r.userQuery.fieldValues[searchFieldTerm]) == 1 && len(r.userQuery.fieldValues) == 1 {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.userQuery.fieldValues[searchFieldTerm][0])
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.userQuery.fieldValues[searchFieldTerm][0].Value)
 		} else if len(r.query.fieldValues[searchFieldRepo]) > 0 && ((len(r.query.fieldValues[searchFieldRepoGroup]) > 0 && len(r.query.fieldValues) == 2) || (len(r.query.fieldValues[searchFieldRepoGroup]) == 0 && len(r.query.fieldValues) == 1)) {
-			effectiveRepoFieldValues = r.query.fieldValues[searchFieldRepo]
+			effectiveRepoFieldValues = r.query.fieldValues[searchFieldRepo].Values()
 		}
 
 		if len(effectiveRepoFieldValues) > 0 {
