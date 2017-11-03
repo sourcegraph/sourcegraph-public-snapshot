@@ -69,9 +69,8 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 // documentation for repos.Get for the contract on the freshness of
 // the data returned.
 //
-// If the repository doesn't already exist in the db, this method will
-// add it to the db if the repo exists and start cloning, but will
-// not wait for cloning to finish before returning.
+// If the repository doesn't already have an entry in the db, this method will
+// add it to the db if the repo exists.
 //
 // If the repository already exists in the db, that information is returned
 // and no effort is made to detect if the repo is cloned or cloning.
