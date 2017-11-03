@@ -115,6 +115,12 @@ type searchResolver2 struct {
 
 	query     resolvedQuery // the scope and user query combined
 	userQuery resolvedQuery // the user query only (ONLY USE for UX hints)
+
+	// Cached resolveRepositories results.
+	reposMu     sync.Mutex
+	repoRevs    []*repositoryRevision
+	repoResults []*searchResultResolver
+	repoErr     error
 }
 
 var mockResolveRepoGroups func() (map[string][]*sourcegraph.Repo, error)
@@ -180,7 +186,27 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	return sampleRepos, nil
 }
 
+// resolveRepositories calls doResolveRepositories, caching the result for the common
+// case where effectiveRepoFieldValues == nil.
 func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) ([]*repositoryRevision, []*searchResultResolver, error) {
+	if effectiveRepoFieldValues == nil {
+		r.reposMu.Lock()
+		defer r.reposMu.Unlock()
+		if r.repoRevs != nil || r.repoResults != nil || r.repoErr != nil {
+			return r.repoRevs, r.repoResults, r.repoErr
+		}
+	}
+
+	repoRevs, repoResults, err := r.doResolveRepositories(ctx, effectiveRepoFieldValues)
+	if effectiveRepoFieldValues == nil {
+		r.repoRevs = repoRevs
+		r.repoResults = repoResults
+		r.repoErr = err
+	}
+	return repoRevs, repoResults, err
+}
+
+func (r *searchResolver2) doResolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) ([]*repositoryRevision, []*searchResultResolver, error) {
 	var includePatterns []string
 	if len(effectiveRepoFieldValues) > 0 {
 		includePatterns = effectiveRepoFieldValues
