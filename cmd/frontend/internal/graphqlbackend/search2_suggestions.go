@@ -73,10 +73,16 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
-		// If terms are specified, then show files that have text matches.
+		// If terms are specified, then show files that have text matches. Set an aggressive timeout
+		// to avoid delaying repo and file suggestions for too long.
+		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+		defer cancel()
 		if len(r.query.fieldValues[""]) > 0 || len(r.query.fieldValues[searchFieldRegExp]) > 0 {
 			results, err := r.Results(ctx)
 			if err != nil {
+				if err == context.DeadlineExceeded {
+					err = nil // don't log as error below
+				}
 				return nil, err
 			}
 			if len(results.results) > *args.First {
@@ -92,6 +98,9 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 				uri := u.Host + u.Path
 				repo, err := localstore.Repos.GetByURI(ctx, uri)
 				if err != nil {
+					if err == context.DeadlineExceeded {
+						err = nil // don't log as error below
+					}
 					return nil, err
 				}
 
