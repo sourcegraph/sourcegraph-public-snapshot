@@ -13,9 +13,14 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
+)
+
+var (
+	maxReposToSearch, _ = strconv.Atoi(env.Get("MAX_REPOS_TO_SEARCH", "30", `the maximum number of repos to search across (the user is prompted to narrow their query if exceeded)`))
 )
 
 const (
@@ -220,7 +225,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	}
 	excludePatterns := minusRepoFilters
 
-	maxRepoListSize := 30
+	maxRepoListSize := maxReposToSearch
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
