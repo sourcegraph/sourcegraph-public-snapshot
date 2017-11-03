@@ -74,7 +74,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
 		// If terms are specified, then show files that have text matches.
-		if len(r.query.fieldValues[""]) > 0 {
+		if len(r.query.fieldValues[""]) > 0 || len(r.query.fieldValues[searchFieldRegExp]) > 0 {
 			results, err := r.Results(ctx)
 			if err != nil {
 				return nil, err
