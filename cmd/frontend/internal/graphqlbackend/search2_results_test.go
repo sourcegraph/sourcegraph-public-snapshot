@@ -55,7 +55,7 @@ func TestSearch2Results(t *testing.T) {
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) (*searchResults, error) {
 			calledSearchRepos = true
-			if want := `foo.*?bar`; args.Query.Pattern != want {
+			if want := `foo\d.*?bar\*`; args.Query.Pattern != want {
 				t.Errorf("got %q, want %q", args.Query.Pattern, want)
 			}
 			return &searchResults{
@@ -65,7 +65,7 @@ func TestSearch2Results(t *testing.T) {
 			}, nil
 		}
 		defer func() { mockSearchRepos = nil }()
-		testCallResults(t, "foo bar", []string{"dir/file:123"})
+		testCallResults(t, `foo\d "bar*"`, []string{"dir/file:123"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}
