@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/textproto"
+	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -71,7 +72,13 @@ func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Co
 	return authenticateByCookie(fakeRequest.WithContext(ctx))
 }
 
+// GetSession returns the session cookie value for the request. In addition to checking the request cookies,
+// it also checks the HTTP Authorization header (which the editor uses to authenticate).
 func GetSession(r *http.Request) ([]byte, error) {
+	parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+	if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
+		return []byte(parts[1]), nil
+	}
 	return actorSessionStore.GetSession(r)
 }
 
