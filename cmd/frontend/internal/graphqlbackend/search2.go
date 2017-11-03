@@ -25,7 +25,6 @@ const (
 	searchFieldFile      search2.Field = "file"
 	searchFieldRepoGroup search2.Field = "repogroup"
 	searchFieldTerm      search2.Field = ""
-	searchFieldRegExp    search2.Field = "regexp"
 	searchFieldCase      search2.Field = "case"
 )
 
@@ -36,7 +35,6 @@ var searchFieldAliases = map[search2.Field][]search2.Field{
 	minusField(searchFieldFile): {minusField("f")},
 	searchFieldRepoGroup:        {"g"},
 	searchFieldTerm:             {},
-	searchFieldRegExp:           {"re"},
 	searchFieldCase:             {},
 }
 

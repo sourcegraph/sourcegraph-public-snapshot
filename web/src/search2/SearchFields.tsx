@@ -23,9 +23,8 @@ export class SearchFields extends React.Component<Props, State> {
 
     private repoFieldInput: HTMLInputElement | null
     private fileFieldInput: HTMLInputElement | null
-    private termsFieldInput: HTMLInputElement | null
+    private patternsFieldInput: HTMLInputElement | null
     private quotedTermFieldInput: HTMLInputElement | null
-    private regexpFieldInput: HTMLInputElement | null
     private caseFieldInput: HTMLSelectElement | null
 
     constructor(props: Props) {
@@ -92,24 +91,24 @@ export class SearchFields extends React.Component<Props, State> {
                 </div>
                 <div className='search-fields2__row'>
                     <div className='search-fields2__row-label'>
-                        <label htmlFor='search-fields2__terms'>Terms:</label>
+                        <label htmlFor='search-fields2__patterns'>Patterns:</label>
                     </div>
                     <div className='search-fields2__row-input'>
                         <input
-                            id='search-fields2__terms'
+                            id='search-fields2__patterns'
                             className='search-fields2__input'
                             spellCheck={false}
                             autoCapitalize='off'
                             placeholder=''
-                            ref={e => this.termsFieldInput = e}
+                            ref={e => this.patternsFieldInput = e}
                             onChange={this.onInputChange}
                         />
                     </div>
                     <div
                         className='search-fields2__row-example'
-                        title='Same as typing into the search box. Lines containing these terms (in order) will be included in the search results.'
+                        title='Same as typing into the search box. Lines matching these regexp patterns (in order) will be included in the search results.'
                     >
-                        open file
+                        (open|close) file
                     </div>
                 </div>
                 <div className='search-fields2__row'>
@@ -132,28 +131,6 @@ export class SearchFields extends React.Component<Props, State> {
                         title='Tip: Escape double quotes and backslashes like so: "hello \\ \" world"'
                     >
                         "system error 123"
-                    </div>
-                </div>
-                <div className='search-fields2__row'>
-                    <div className='search-fields2__row-label'>
-                        <label htmlFor='search-fields2__regexp'>Regexp:</label>
-                    </div>
-                    <div className='search-fields2__row-input'>
-                        <input
-                            id='search-fields2__regexp'
-                            className='search-fields2__input'
-                            spellCheck={false}
-                            autoCapitalize='off'
-                            placeholder=''
-                            ref={e => this.regexpFieldInput = e}
-                            onChange={this.onInputChange}
-                        />
-                    </div>
-                    <div
-                        className='search-fields2__row-example'
-                        title='Tip: Uses RE2 regexp syntax. Surround the pattern with double quotes if it contains spaces, like so: regexp:"a b*c?"'
-                    >
-                        regexp:(open|close)File\(
                     </div>
                 </div>
                 <div className='search-fields2__row'>
@@ -187,14 +164,11 @@ export class SearchFields extends React.Component<Props, State> {
         if (this.fileFieldInput && this.fileFieldInput.value) {
             fieldsQueryParts.push(formatFieldForQuery('file', this.fileFieldInput.value))
         }
-        if (this.termsFieldInput && this.termsFieldInput.value) {
-            fieldsQueryParts.push(this.termsFieldInput.value)
+        if (this.patternsFieldInput && this.patternsFieldInput.value) {
+            fieldsQueryParts.push(this.patternsFieldInput.value)
         }
         if (this.quotedTermFieldInput && this.quotedTermFieldInput.value) {
             fieldsQueryParts.push(formatFieldForQuery('', this.quotedTermFieldInput.value))
-        }
-        if (this.regexpFieldInput && this.regexpFieldInput.value) {
-            fieldsQueryParts.push(formatFieldForQuery('regexp', this.regexpFieldInput.value))
         }
         if (this.caseFieldInput && this.caseFieldInput.value && this.caseFieldInput.value !== 'no') {
             fieldsQueryParts.push(formatFieldForQuery('case', this.caseFieldInput.value))
