@@ -7,7 +7,6 @@ import 'rxjs/add/operator/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { routes } from '../routes'
-import { viewEvents } from '../tracking/events'
 import { submitSearch } from './helpers'
 import { buildSearchURLQuery, parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
@@ -68,10 +67,6 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         this.subscriptions.add(
             props.history.listen(location => this.onLocationChange(location))
         )
-    }
-
-    public componentDidMount(): void {
-        viewEvents.Home.log()
     }
 
     public componentWillReceiveProps(newProps: Props): void {

@@ -105,6 +105,8 @@ export const events = {
     SearchGoToRepoSubmitted: new LoggableEvent('SearchGoToRepoSubmitted', EventCategories.Search, EventActions.Submit),
     SearchResultClicked: new LoggableEvent('SearchResultClicked', EventCategories.Search, EventActions.Click),
     SearchSuggestionSelected: new LoggableEvent('SearchSuggestionSelected', EventCategories.Search, EventActions.Click),
+    SearchResultsFetched: new LoggableEvent('SearchResultsFetched', EventCategories.Search, EventActions.Passive),
+    SearchResultsFetchFailed: new LoggableEvent('SearchResultsFetchFailed', EventCategories.Search, EventActions.Error),
 
     // External events
     RepoBadgeRedirected: new LoggableEvent('RepoBadgeRedirected', EventCategories.External, EventActions.Redirect),

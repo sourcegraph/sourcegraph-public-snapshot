@@ -74,11 +74,19 @@ export class SearchResults extends React.Component<Props, State> {
                                 setTimeout(() => this.searchRequested.next(searchOptions), 2000)
                             }
                         })
-                        .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
-                        .catch(error => {
+                        .do(res => events.SearchResultsFetched.log({
+                            code_search: {
+                                results: {
+                                    files_count: res.results.length,
+                                    matches_count: res.results.reduce((count, fileMatch) => count + fileMatch.lineMatches.length, 0),
+                                },
+                            },
+                        }), error => {
+                            events.SearchResultsFetchFailed.log({ code_search: { error_message: error.message } })
                             console.error(error)
-                            return [{ results: [], missing: [], cloning: [], limitHit: false, error, loading: false, searchDuration: undefined }]
                         })
+                        .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
+                        .catch(error => [{ results: [], missing: [], cloning: [], limitHit: false, error, loading: false, searchDuration: undefined }])
                 })
                 .subscribe(
                 newState => this.setState(newState as State),
