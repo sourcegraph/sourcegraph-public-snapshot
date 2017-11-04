@@ -34,7 +34,7 @@ var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app lan
 
 var phabricatorURL = env.Get("PHABRICATOR_URL", "", "URL for internal Phabricator instance (on-prem)")
 
-var useSearch2, _ = strconv.ParseBool(env.Get("USE_SEARCH2", "", "if truthy, enable search2 (new query ux) for all users"))
+var useSearch2, _ = strconv.ParseBool(env.Get("USE_SEARCH2", "t", "if truthy, enable search2 (new query ux) for all users"))
 
 func init() {
 	if phabricatorURL != "" {
