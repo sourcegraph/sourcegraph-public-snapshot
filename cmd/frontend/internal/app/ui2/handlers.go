@@ -11,7 +11,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
@@ -200,20 +199,13 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
-	if !envvar.DeploymentOnPrem() && !actor.FromContext(r.Context()).IsAuthenticated() {
-		// The user is not signed in and we are not on-prem so we are going to
-		// redirect to about.sourcegraph.com.
+	if (r.Host == "sourcegraph.com" || r.Host == "www.sourcegraph.com") && !actor.FromContext(r.Context()).IsAuthenticated() {
+		// The user is not signed in and tried to access our main site at sourcegraph.com.
+		// Redirect to about.sourcegraph.com so they see general info.
 		u, err := url.Parse(aboutRedirectScheme + "://" + aboutRedirectHost)
 		if err != nil {
 			return err
 		}
-		q := url.Values{}
-		if r.Host != "sourcegraph.com" {
-			// This allows about.sourcegraph.com to properly redirect back to
-			// dev or staging environment after sign in.
-			q.Set("host", r.Host)
-		}
-		u.RawQuery = q.Encode()
 		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
 		return nil
 	}
