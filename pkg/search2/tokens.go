@@ -1,6 +1,9 @@
 package search2
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // Field is the name of a field (e.g., "x" in the token "x:foo").
 //
@@ -18,8 +21,16 @@ type Token struct {
 	Value
 }
 
-// Tokens is a list of tokens parsed from a query.
-type Tokens []Token
+func (t Token) String() string {
+	switch t.Field {
+	case "":
+		return t.Value.String()
+	case "-":
+		return "-" + t.Value.String()
+	default:
+		return string(t.Field) + ":" + t.Value.String()
+	}
+}
 
 // Value represents the value of a token.
 type Value struct {
@@ -53,16 +64,34 @@ func (vs Values) Values() []string {
 	return ss
 }
 
-// Extract extracts field values and terms from the tokens list. The fieldAliases
-// argument specifies each valid field as a map key, and an optional list of its
-// aliases as the corresponding value. If an alias is ambiguous, it panics.
-//
-// To support terms (tokens without a field), include a "" key in fieldAliases (and
-// a "-" key to support negations of terms).
+// Tokens is a list of tokens parsed from a query.
+type Tokens []Token
+
+func (ts Tokens) String() string {
+	ss := make([]string, len(ts))
+	for i, t := range ts {
+		ss[i] = t.String()
+	}
+	return strings.Join(ss, " ")
+}
+
+// UnmarshalText implements encoding.TextMarshaler.
+func (ts *Tokens) UnmarshalText(text []byte) error {
+	tokens, err := Parse(string(text))
+	if err != nil {
+		return err
+	}
+	*ts = tokens
+	return nil
+}
+
+// Normalize modifies ts, dealiasing the field of each token based on fieldAliases.
+// The fieldAliases argument specifies each valid field as a map key, and an optional
+// list of its aliases as the corresponding value. If an alias is ambiguous, it panics.
 //
 // For example, if "x:foo" is shorthand for "expr:foo", then "x" is a field alias
 // of "expr".
-func (ts Tokens) Extract(fieldAliases map[Field][]Field) (fieldValues map[Field]Values, unknownFields []Field) {
+func (ts Tokens) Normalize(fieldAliases map[Field][]Field) {
 	fieldNames := map[Field]Field{}
 	for name := range fieldAliases {
 		fieldNames[name] = name
@@ -79,19 +108,41 @@ func (ts Tokens) Extract(fieldAliases map[Field][]Field) (fieldValues map[Field]
 		}
 	}
 
-	fieldValues = map[Field]Values{}
-
-	for _, t := range ts {
+	for i, t := range ts {
 		field, ok := fieldNames[t.Field]
-		if !ok {
-			unknownFields = append(unknownFields, t.Field)
-			continue
+		if ok {
+			ts[i].Field = field
 		}
+	}
+}
 
-		values := fieldValues[field]
+// Extract returns field values grouped by the field name.
+func (ts Tokens) Extract() (fieldValues map[Field]Values) {
+	fieldValues = map[Field]Values{}
+	for _, t := range ts {
+		values := fieldValues[t.Field]
 		values = append(values, t.Value)
-		fieldValues[field] = values
+		fieldValues[t.Field] = values
+	}
+	return
+}
+
+// FormatToken returns the string form of the specified token. It quotes the
+// value if needed.
+//
+// Caller that need to distinguish between quoted and unquoted values not use
+// this function because it does not offer control over the quoting behavior.
+func FormatToken(field Field, value string) string {
+	quoted := strconv.Quote(value)
+	needsQuoting := strings.ContainsAny(value, " \t\n") || quoted[1:len(quoted)-1] != value
+
+	prefix := string(field)
+	if field != "" && field != "-" {
+		prefix += ":"
 	}
 
-	return
+	if needsQuoting {
+		return prefix + quoted
+	}
+	return prefix + value
 }

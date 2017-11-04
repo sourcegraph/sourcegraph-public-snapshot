@@ -7,14 +7,28 @@ import (
 	"strings"
 )
 
-func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
+type searchResults2 struct {
+	searchResults
+	alert *searchAlert
+}
+
+func (r searchResults2) Alert() *searchAlert { return r.alert }
+
+func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
 	repos, _, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	if len(repos) == 0 {
+		alert, err := r.alertForNoResolvedRepos(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &searchResults2{alert: alert}, nil
+	}
 
 	var patternsToCombine []string
-	for _, term := range r.query.fieldValues[""] {
+	for _, term := range r.combinedQuery.fieldValues[""] {
 		if term.Value == "" {
 			continue
 		}
@@ -32,26 +46,28 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults, error) {
 	if len(patternsToCombine) == 0 {
 		return nil, errors.New("no query terms or regexp specified")
 	}
-	if len(repos) == 0 {
-		return nil, errors.New("no repositories included")
-	}
 
 	args := repoSearchArgs{
 		Query: &patternInfo{
 			IsRegExp:                     true,
-			IsCaseSensitive:              r.query.isCaseSensitive(),
+			IsCaseSensitive:              r.combinedQuery.isCaseSensitive(),
 			FileMatchLimit:               300,
 			Pattern:                      strings.Join(patternsToCombine, ".*?"), // "?" makes it prefer shorter matches
-			IncludePatterns:              r.query.fieldValues[searchFieldFile].Values(),
+			IncludePatterns:              r.combinedQuery.fieldValues[searchFieldFile].Values(),
 			PathPatternsAreRegExps:       true,
-			PathPatternsAreCaseSensitive: r.query.isCaseSensitive(),
+			PathPatternsAreCaseSensitive: r.combinedQuery.isCaseSensitive(),
 		},
 		Repositories: repos,
 	}
-	if excludePatterns := r.query.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
+	if excludePatterns := r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
 		pat := unionRegExps(excludePatterns)
 		args.Query.ExcludePattern = &pat
 	}
 
-	return r.root.SearchRepos(ctx, &args)
+	var results *searchResults2
+	results1, err := r.root.SearchRepos(ctx, &args)
+	if results1 != nil {
+		results = &searchResults2{searchResults: *results1}
+	}
+	return results, err
 }

@@ -52,25 +52,24 @@ type searchArgs2 struct {
 
 // Search2 provides search results and suggestions.
 func (r *rootResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
-	query := args.Query
-	if args.ScopeQuery != "" {
-		query += " " + args.ScopeQuery
-	}
-	resolvedQuery, err := resolveQuery(query)
+	combinedQuery, err := resolveQuery(args.Query + " " + args.ScopeQuery)
 	if err != nil {
 		return nil, err
 	}
-
-	resolvedUserQuery, err := resolveQuery(args.Query)
+	query, err := resolveQuery(args.Query)
 	if err != nil {
 		return nil, err
 	}
-
+	scopeQuery, err := resolveQuery(args.ScopeQuery)
+	if err != nil {
+		return nil, err
+	}
 	return &searchResolver2{
-		root:      r,
-		args:      *args,
-		query:     *resolvedQuery,
-		userQuery: *resolvedUserQuery,
+		root:          r,
+		args:          *args,
+		combinedQuery: *combinedQuery,
+		query:         *query,
+		scopeQuery:    *scopeQuery,
 	}, nil
 }
 
@@ -83,19 +82,18 @@ func resolveQuery(query string) (*resolvedQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	fieldValues, unknownFields := tokens.Extract(searchFieldAliases)
+	tokens.Normalize(searchFieldAliases)
+	fieldValues := tokens.Extract()
 
 	return &resolvedQuery{
-		tokens:        tokens,
-		fieldValues:   fieldValues,
-		unknownFields: unknownFields,
+		tokens:      tokens,
+		fieldValues: fieldValues,
 	}, nil
 }
 
 type resolvedQuery struct {
-	tokens        search2.Tokens
-	fieldValues   map[search2.Field]search2.Values
-	unknownFields []search2.Field
+	tokens      search2.Tokens
+	fieldValues map[search2.Field]search2.Values
 }
 
 func (q resolvedQuery) isCaseSensitive() bool {
@@ -113,8 +111,9 @@ type searchResolver2 struct {
 	root *rootResolver
 	args searchArgs2
 
-	query     resolvedQuery // the scope and user query combined
-	userQuery resolvedQuery // the user query only (ONLY USE for UX hints)
+	combinedQuery resolvedQuery // the scope and user query combined (most callers should use this)
+	query         resolvedQuery // the user query only
+	scopeQuery    resolvedQuery // the scope query only
 
 	// Cached resolveRepositories results.
 	reposMu     sync.Mutex
@@ -125,7 +124,7 @@ type searchResolver2 struct {
 
 var mockResolveRepoGroups func() (map[string][]*sourcegraph.Repo, error)
 
-func (r *searchResolver2) resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
+func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
@@ -197,7 +196,14 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 		}
 	}
 
-	repoRevs, repoResults, err := r.doResolveRepositories(ctx, effectiveRepoFieldValues)
+	repoFilters := effectiveRepoFieldValues
+	if repoFilters == nil {
+		repoFilters = r.combinedQuery.fieldValues[searchFieldRepo].Values()
+	}
+	minusRepoFilters := r.combinedQuery.fieldValues[minusField(searchFieldRepo)].Values()
+	repoGroupFilters := r.combinedQuery.fieldValues[searchFieldRepoGroup].Values()
+
+	repoRevs, repoResults, err := resolveRepositories(ctx, repoFilters, minusRepoFilters, repoGroupFilters)
 	if effectiveRepoFieldValues == nil {
 		r.repoRevs = repoRevs
 		r.repoResults = repoResults
@@ -206,26 +212,21 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	return repoRevs, repoResults, err
 }
 
-func (r *searchResolver2) doResolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) ([]*repositoryRevision, []*searchResultResolver, error) {
-	var includePatterns []string
-	if len(effectiveRepoFieldValues) > 0 {
-		includePatterns = effectiveRepoFieldValues
-	} else {
-		includePatterns = r.query.fieldValues[searchFieldRepo].Values()
-	}
+func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) ([]*repositoryRevision, []*searchResultResolver, error) {
+	includePatterns := repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
-	excludePatterns := r.query.fieldValues[minusField(searchFieldRepo)].Values()
+	excludePatterns := minusRepoFilters
 
 	maxRepoListSize := 30
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
-	if groupNames := r.query.fieldValues[searchFieldRepoGroup].Values(); len(groupNames) > 0 {
-		groups, err := r.resolveRepoGroups(ctx)
+	if groupNames := repoGroupFilters; len(groupNames) > 0 {
+		groups, err := resolveRepoGroups(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -325,17 +326,17 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 		return nil, err
 	}
 
-	includePatterns := r.query.fieldValues[searchFieldFile].Values()
-	excludePattern := unionRegExps(r.query.fieldValues[minusField(searchFieldFile)].Values())
+	includePatterns := r.combinedQuery.fieldValues[searchFieldFile].Values()
+	excludePattern := unionRegExps(r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values())
 	pathOptions := pathmatch.CompileOptions{
 		RegExp:        true,
-		CaseSensitive: r.query.isCaseSensitive(),
+		CaseSensitive: r.combinedQuery.isCaseSensitive(),
 	}
 
 	// If a single term is specified in the user query, and no other file patterns,
 	// then treat it as an include pattern (which is a nice UX for users).
-	if len(r.userQuery.fieldValues[searchFieldTerm]) == 1 {
-		includePatterns = append(includePatterns, r.userQuery.fieldValues[searchFieldTerm][0].Value)
+	if len(r.query.fieldValues[searchFieldTerm]) == 1 {
+		includePatterns = append(includePatterns, r.query.fieldValues[searchFieldTerm][0].Value)
 	}
 
 	matchPath, err := pathmatch.CompilePathPatterns(includePatterns, excludePattern, pathOptions)
@@ -363,7 +364,17 @@ func unionRegExps(patterns []string) string {
 	if len(patterns) == 1 {
 		return patterns[0]
 	}
-	return "(" + strings.Join(patterns, ")|(") + ")"
+
+	// We only need to wrap the pattern in parentheses if it contains a "|" because
+	// "|" has the lowest precedence of any operator.
+	patterns2 := make([]string, len(patterns))
+	for i, p := range patterns {
+		if strings.Contains(p, "|") {
+			p = "(" + p + ")"
+		}
+		patterns2[i] = p
+	}
+	return strings.Join(patterns2, "|")
 }
 
 func withoutEmptyStrings(list []string) []string {

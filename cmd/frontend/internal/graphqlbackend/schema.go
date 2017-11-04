@@ -146,10 +146,18 @@ type Root {
 }
 
 type Search2 {
-	results: SearchResults!
+	results: SearchResults2!
 	suggestions(first: Int): [SearchSuggestion2!]!
+}
 
-	# TODO(sqs): add unknownFields, query parse errors
+type SearchResults2 {
+	results: [FileMatch!]!
+	limitHit: Boolean!
+	cloning: [String!]!
+	missing: [String!]!
+
+	# An alert message that should be displayed before any results.
+	alert: SearchAlert
 }
 
 union SearchSuggestion2 = Repository|File
@@ -157,6 +165,25 @@ union SearchSuggestion2 = Repository|File
 type SearchScope2 {
 	name: String!
 	value: String!
+}
+
+# A search-related alert message.
+type SearchAlert {
+	title: String!
+	description: String
+
+	# "Did you mean: ____" query proposals
+	proposedQueries: [SearchQuery2Description!]
+}
+
+type SearchQuery2Description {
+	description: String
+	query: SearchQuery2!
+}
+
+type SearchQuery2 {
+	query: String!
+	scopeQuery: String!
 }
 
 # Represents a shared item (either a shared code comment OR code snippet).

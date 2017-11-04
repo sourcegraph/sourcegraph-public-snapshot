@@ -32,12 +32,7 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchResultResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if hasUnknownFields := len(r.query.unknownFields) > 0; hasUnknownFields {
-		log15.Info("query with unknown fields", "query", r.args.Query, "scopeQuery", r.args.ScopeQuery)
-		return nil, nil
-	}
-
-	if len(r.query.tokens) == 0 {
+	if len(r.combinedQuery.tokens) == 0 {
 		return nil, nil
 	}
 
@@ -48,10 +43,10 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		// * If only repo fields (except 1 term in user query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.userQuery.fieldValues[searchFieldTerm]) == 1 && len(r.userQuery.fieldValues) == 1 {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.userQuery.fieldValues[searchFieldTerm][0].Value)
-		} else if len(r.query.fieldValues[searchFieldRepo]) > 0 && ((len(r.query.fieldValues[searchFieldRepoGroup]) > 0 && len(r.query.fieldValues) == 2) || (len(r.query.fieldValues[searchFieldRepoGroup]) == 0 && len(r.query.fieldValues) == 1)) {
-			effectiveRepoFieldValues = r.query.fieldValues[searchFieldRepo].Values()
+		if len(r.query.fieldValues[searchFieldTerm]) == 1 && len(r.query.fieldValues) == 1 {
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.fieldValues[searchFieldTerm][0].Value)
+		} else if len(r.combinedQuery.fieldValues[searchFieldRepo]) > 0 && ((len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) > 0 && len(r.combinedQuery.fieldValues) == 2) || (len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) == 0 && len(r.combinedQuery.fieldValues) == 1)) {
+			effectiveRepoFieldValues = r.combinedQuery.fieldValues[searchFieldRepo].Values()
 		}
 
 		if len(effectiveRepoFieldValues) > 0 {
@@ -64,8 +59,8 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 
 	showFileSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
-		hasRepoOrFileFields := len(r.query.fieldValues[searchFieldRepoGroup]) > 0 || len(r.query.fieldValues[searchFieldRepo]) > 0 || len(r.query.fieldValues[searchFieldFile]) > 0
-		if hasRepoOrFileFields && len(r.query.fieldValues[""]) <= 1 && len(r.query.unknownFields) == 0 {
+		hasRepoOrFileFields := len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) > 0 || len(r.combinedQuery.fieldValues[searchFieldRepo]) > 0 || len(r.combinedQuery.fieldValues[searchFieldFile]) > 0
+		if hasRepoOrFileFields && len(r.combinedQuery.fieldValues[""]) <= 1 {
 			return r.resolveFiles(ctx)
 		}
 		return nil, nil
@@ -77,7 +72,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		if len(r.query.fieldValues[""]) > 0 {
+		if len(r.combinedQuery.fieldValues[""]) > 0 {
 			results, err := r.Results(ctx)
 			if err != nil {
 				if err == context.DeadlineExceeded {
