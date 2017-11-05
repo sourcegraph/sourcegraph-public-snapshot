@@ -4,7 +4,13 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-docker pull sourcegraph/syntect_server
+if [[ -z "${OFFLINE-}" ]] && ! docker pull sourcegraph/syntect_server; then
+	echo
+	echo Unable to pull latest container image for sourcegraph/syntect_server from the server.
+	echo
+	echo To run the dev server using the latest image available locally, rerun with OFFLINE=true.
+	exit 1
+fi
 
 GOBIN="$PWD"/vendor/.bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sqs/rego sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
 
