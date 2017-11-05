@@ -83,6 +83,7 @@ func configureAppURL() (*url.URL, error) {
 	return u, nil
 }
 
+// Main is the main entrypoint for the frontend server program.
 func Main() error {
 	log.SetFlags(0)
 	log.SetPrefix("")
