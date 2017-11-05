@@ -16,8 +16,7 @@
     "lint": "npm run tslint && npm run stylelint && npm run prettier",
     "tslint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
-    "prettier":
-      "prettier --config node_modules/@sourcegraph/prettierrc/.prettierrc '**/*.{json,js,ts?(x)}' --write --list-different"
+    "prettier": "prettier --config node_modules/@sourcegraph/prettierrc/.prettierrc '**/*.{json,js,ts?(x)}' --write --list-different"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",

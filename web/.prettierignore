@@ -1,5 +1,6 @@
 # Ignore generated files
 typings/graphqlschema.d.ts
 package-lock.json
+package.json
 out/
 ts-node-*
