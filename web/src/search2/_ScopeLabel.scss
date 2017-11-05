@@ -17,5 +17,8 @@
 
     &__query {
         font-weight: bold;
+        &-tip {
+            border-bottom: dotted 1px rgba(255, 255, 255, 0.25);
+        }
     }
 }

@@ -99,3 +99,21 @@ export function fetchSearchScopes(): Observable<GQL.ISearchScope2[]> {
         return data.root.searchScopes2
     })
 }
+
+export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
+    return queryGraphQL(`
+        query RepoGroups {
+            root {
+                repoGroups {
+                    name
+                    repositories
+                }
+            }
+        }
+    `).map(({ data, errors }) => {
+        if (!data || !data.root || !data.root.repoGroups) {
+            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+        }
+        return data.root.repoGroups
+    })
+}
