@@ -59,7 +59,11 @@ export function setLineBlame(data: BlameData): void {
     }
 
     const timeSince = formatDistance(parseCommitDateString(hunk.author.date), new Date(), { addSuffix: true })
-    const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(hunk.message, 80, true)} ${limitString(hunk.rev, 6, false)}`
+    const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(
+        hunk.message,
+        80,
+        true
+    )} ${limitString(hunk.rev, 6, false)}`
 
     setLineBlameContent(data.ctx.range.start.line, blameContent, hunk.rev)
 }

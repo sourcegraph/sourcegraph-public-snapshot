@@ -1,8 +1,5 @@
 {
-    "typescript.tsdk": "./node_modules/typescript/lib",
-    "tslint.nodePath": "./node_modules",
-    "files.associations": {
-      ".stylelintrc": "json"
-    },
-    "editor.formatOnSave": true
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "tslint.nodePath": "./node_modules",
+  "editor.formatOnSave": true
 }

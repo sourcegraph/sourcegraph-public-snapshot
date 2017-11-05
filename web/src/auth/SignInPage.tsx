@@ -29,7 +29,6 @@ interface LoginSignupFormState {
 }
 
 class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupFormState> {
-
     constructor(props: LoginSignupFormProps) {
         super(props)
         this.state = {
@@ -45,80 +44,105 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
 
     public render(): JSX.Element | null {
         return (
-            <form className='login-signup-form' onSubmit={this.handleSubmit}>
-                {this.state.errorDescription !== '' &&
-                    <p className='login-signup-form__error'>{this.state.errorDescription}</p>
-                }
-                <div className='login-signup-form__modes'>
-                    <span className={`login-signup-form__mode${this.state.mode === 'signin' ? '--active' : ''}`} onClick={this.setModeSignIn}>Sign in</span>
-                    <span className='login-signup-form__mode-divider'>|</span>
-                    <span className={`login-signup-form__mode${this.state.mode === 'signup' ? '--active' : ''}`} onClick={this.setModeSignUp}>Sign up</span>
+            <form className="login-signup-form" onSubmit={this.handleSubmit}>
+                {this.state.errorDescription !== '' && (
+                    <p className="login-signup-form__error">{this.state.errorDescription}</p>
+                )}
+                <div className="login-signup-form__modes">
+                    <span
+                        className={`login-signup-form__mode${this.state.mode === 'signin' ? '--active' : ''}`}
+                        onClick={this.setModeSignIn}
+                    >
+                        Sign in
+                    </span>
+                    <span className="login-signup-form__mode-divider">|</span>
+                    <span
+                        className={`login-signup-form__mode${this.state.mode === 'signup' ? '--active' : ''}`}
+                        onClick={this.setModeSignUp}
+                    >
+                        Sign up
+                    </span>
                 </div>
-                <div className='form-group'>
+                <div className="form-group">
                     <input
-                        className='ui-text-box login-signup-form__input'
+                        className="ui-text-box login-signup-form__input"
                         onChange={this.onEmailFieldChange}
                         value={this.state.email}
-                        type='email'
-                        placeholder='Email'
+                        type="email"
+                        placeholder="Email"
                         required={true}
                         disabled={this.state.loading || Boolean(this.props.prefilledEmail)}
                         spellCheck={false}
                     />
                 </div>
-                {
-                    this.state.mode === 'signup' &&
-                    <div className='form-group'>
+                {this.state.mode === 'signup' && (
+                    <div className="form-group">
                         <input
-                            className='ui-text-box login-signup-form__input'
+                            className="ui-text-box login-signup-form__input"
                             onChange={this.onUsernameFieldChange}
                             value={this.state.username}
-                            type='text'
+                            type="text"
                             required={true}
-                            placeholder='Username'
+                            placeholder="Username"
                             pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
                             disabled={this.state.loading}
                         />
                     </div>
-                }
-                <div className='form-group'>
+                )}
+                <div className="form-group">
                     <input
-                        className='ui-text-box login-signup-form__input'
+                        className="ui-text-box login-signup-form__input"
                         onChange={this.onPasswordFieldChange}
                         value={this.state.password}
                         required={true}
-                        type='password'
-                        placeholder='Password'
+                        type="password"
+                        placeholder="Password"
                         pattern={VALID_PASSWORD_REGEXP.toString().slice(1, -1)}
                         disabled={this.state.loading}
                     />
-                    {this.state.mode === 'signin' && <small className='form-text'><Link to='/password-reset'>Forgot password?</Link></small>}
+                    {this.state.mode === 'signin' && (
+                        <small className="form-text">
+                            <Link to="/password-reset">Forgot password?</Link>
+                        </small>
+                    )}
                 </div>
-                {
-                    this.state.mode === 'signup' &&
-                    <div className='form-group'>
+                {this.state.mode === 'signup' && (
+                    <div className="form-group">
                         <input
-                            className='ui-text-box login-signup-form__input'
+                            className="ui-text-box login-signup-form__input"
                             onChange={this.onDisplayNameFieldChange}
                             value={this.state.displayName}
-                            type='text'
-                            placeholder='Display name (optional)'
+                            type="text"
+                            placeholder="Display name (optional)"
                             disabled={this.state.loading}
                         />
                     </div>
-                }
-                <div className='form-group'>
-                    <button className='btn btn-primary btn-block' type='submit' disabled={this.state.loading}>
+                )}
+                <div className="form-group">
+                    <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
                         {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
                     </button>
                 </div>
-                <small className='form-text'>Existing users who signed in via GitHub: please sign up for a Sourcegraph account.</small>
-                {this.state.mode === 'signup' &&
-                    <small className='form-text sign-in-page__terms'>
-                        By signing up, you agree to our <a href='https://about.sourcegraph.com/terms' target='_blank'>Terms of
-                        Service</a> and <a href='https://about.sourcegraph.com/privacy' target='_blank'>Privacy Policy</a>.
-                    </small>}
-                {this.state.loading && <div className='login-signup-form__loader'><Loader className='icon-inline' /></div>}
+                <small className="form-text">
+                    Existing users who signed in via GitHub: please sign up for a Sourcegraph account.
+                </small>
+                {this.state.mode === 'signup' && (
+                    <small className="form-text sign-in-page__terms">
+                        By signing up, you agree to our{' '}
+                        <a href="https://about.sourcegraph.com/terms" target="_blank">
+                            Terms of Service
+                        </a>{' '}
+                        and{' '}
+                        <a href="https://about.sourcegraph.com/privacy" target="_blank">
+                            Privacy Policy
+                        </a>.
+                    </small>
+                )}
+                {this.state.loading && (
+                    <div className="login-signup-form__loader">
+                        <Loader className="icon-inline" />
+                    </div>
+                )}
             </form>
         )
     }
@@ -185,12 +209,15 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         switch (this.state.mode) {
             case 'signin':
                 events.InitiateSignIn.log()
-                webAuth.redirect.loginWithCredentials({
-                    connection: 'Sourcegraph',
-                    responseType: 'code',
-                    username: this.state.email,
-                    password: this.state.password,
-                }, authCallback)
+                webAuth.redirect.loginWithCredentials(
+                    {
+                        connection: 'Sourcegraph',
+                        responseType: 'code',
+                        username: this.state.email,
+                        password: this.state.password,
+                    },
+                    authCallback
+                )
                 break
             case 'signup':
                 events.InitiateSignUp.log({
@@ -202,16 +229,19 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         },
                     },
                 })
-                webAuth.redirect.signupAndLogin({
-                    connection: 'Sourcegraph',
-                    responseType: 'code',
-                    email: this.state.email,
-                    password: this.state.password,
-                    // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
-                    // user's name in Auth0. That's not an issue per-se, see more at
-                    // https://github.com/auth0/auth0.js/issues/70.
-                    user_metadata: { name: this.state.displayName || this.state.username },
-                }, authCallback)
+                webAuth.redirect.signupAndLogin(
+                    {
+                        connection: 'Sourcegraph',
+                        responseType: 'code',
+                        email: this.state.email,
+                        password: this.state.password,
+                        // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
+                        // user's name in Auth0. That's not an issue per-se, see more at
+                        // https://github.com/auth0/auth0.js/issues/70.
+                        user_metadata: { name: this.state.displayName || this.state.username },
+                    },
+                    authCallback
+                )
                 break
         }
     }
@@ -230,7 +260,6 @@ interface SignInPageState {
  * A landing page for the user to sign in or register, if not authed
  */
 export class SignInPage extends React.Component<SignInPageProps, SignInPageState> {
-
     constructor(props: SignInPageProps) {
         super(props)
         this.state = {
@@ -248,15 +277,15 @@ export class SignInPage extends React.Component<SignInPageProps, SignInPageState
 
     public render(): JSX.Element | null {
         if (window.context.user) {
-            return <Redirect to='/search' />
+            return <Redirect to="/search" />
         }
 
         return (
-            <div className='sign-in-page'>
+            <div className="sign-in-page">
                 <PageTitle title={this.props.location.pathname === '/sign-in' ? 'Sign in' : 'Sign up'} />
                 <HeroPage
                     icon={KeyIcon}
-                    title='Welcome to Sourcegraph'
+                    title="Welcome to Sourcegraph"
                     cta={
                         <LoginSignupForm
                             {...this.props}

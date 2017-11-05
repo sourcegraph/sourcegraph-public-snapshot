@@ -24,14 +24,18 @@ class EventLogger {
                     setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
                 }
             },
-            error => { /* noop */ }
+            error => {
+                /* noop */
+            }
         )
     }
 
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(user: GQL.IUser | { id: string, sourcegraphID: number | null, username: string | null, email: string | null }): void {
+    public updateUser(
+        user: GQL.IUser | { id: string; sourcegraphID: number | null; username: string | null; email: string | null }
+    ): void {
         this.setUserIds(user.sourcegraphID, user.id, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
@@ -90,7 +94,11 @@ class EventLogger {
             return
         }
 
-        const decoratedProps = { ...this.decorateEventProperties(eventProperties), page_name: pageTitle, page_title: pageTitle }
+        const decoratedProps = {
+            ...this.decorateEventProperties(eventProperties),
+            page_name: pageTitle,
+            page_title: pageTitle,
+        }
         telligent.track('view', decoratedProps)
         this.logToConsole(pageTitle, decoratedProps)
     }
@@ -104,7 +112,12 @@ class EventLogger {
             return
         }
 
-        const decoratedProps = { ...this.decorateEventProperties(eventProperties), eventLabel, eventCategory, eventAction }
+        const decoratedProps = {
+            ...this.decorateEventProperties(eventProperties),
+            eventLabel,
+            eventCategory,
+            eventAction,
+        }
         telligent.track(eventAction, decoratedProps)
         this.logToConsole(eventLabel, decoratedProps)
     }

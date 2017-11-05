@@ -3,7 +3,7 @@ import { pageViewQueryParameters } from './analyticsUtils'
 import { eventLogger } from './eventLogger'
 
 export class LoggableViewEvent {
-    constructor(private title: string) { }
+    constructor(private title: string) {}
     public log(props?: any): void {
         eventLogger.logViewEvent(this.title, { ...props, ...pageViewQueryParameters(window.location.href) })
     }
@@ -26,7 +26,7 @@ export const viewEvents = {
 }
 
 export class LoggableEvent {
-    constructor(private eventLabel: string, private eventCategory: string, private eventAction: string) { }
+    constructor(private eventLabel: string, private eventCategory: string, private eventAction: string) {}
     public log(props?: any): void {
         eventLogger.logEvent(this.eventCategory, this.eventAction, this.eventLabel, props)
     }
@@ -72,11 +72,31 @@ export const events = {
 
     // Marketing events
     SurveyReminderViewed: new LoggableEvent('SurveyReminderViewed', EventCategories.Marketing, EventActions.Passive),
-    SurveyReminderButtonClicked: new LoggableEvent('SurveyReminderButtonClicked', EventCategories.Marketing, EventActions.Click),
-    BrowserExtReminderViewed: new LoggableEvent('BrowserExtReminderViewed', EventCategories.Marketing, EventActions.Passive),
-    BrowserExtInstallClicked: new LoggableEvent('BrowserExtInstallClicked', EventCategories.Marketing, EventActions.Click),
-    BrowserExtInstallSuccess: new LoggableEvent('BrowserExtInstallSuccess', EventCategories.Marketing, EventActions.Success),
-    BrowserExtInstallFailed: new LoggableEvent('BrowserExtInstallFailed', EventCategories.Marketing, EventActions.Error),
+    SurveyReminderButtonClicked: new LoggableEvent(
+        'SurveyReminderButtonClicked',
+        EventCategories.Marketing,
+        EventActions.Click
+    ),
+    BrowserExtReminderViewed: new LoggableEvent(
+        'BrowserExtReminderViewed',
+        EventCategories.Marketing,
+        EventActions.Passive
+    ),
+    BrowserExtInstallClicked: new LoggableEvent(
+        'BrowserExtInstallClicked',
+        EventCategories.Marketing,
+        EventActions.Click
+    ),
+    BrowserExtInstallSuccess: new LoggableEvent(
+        'BrowserExtInstallSuccess',
+        EventCategories.Marketing,
+        EventActions.Success
+    ),
+    BrowserExtInstallFailed: new LoggableEvent(
+        'BrowserExtInstallFailed',
+        EventCategories.Marketing,
+        EventActions.Error
+    ),
 
     // Nav bar events
     ShareButtonClicked: new LoggableEvent('ShareButtonClicked', EventCategories.Sharing, EventActions.Click),
@@ -93,8 +113,16 @@ export const events = {
 
     // Refs panel events
     ShowAllRefsButtonClicked: new LoggableEvent('ShowAllRefsButtonClicked', EventCategories.Editor, EventActions.Click),
-    ShowLocalRefsButtonClicked: new LoggableEvent('ShowLocalRefsButtonClicked', EventCategories.Editor, EventActions.Click),
-    ShowExternalRefsButtonClicked: new LoggableEvent('ShowExternalRefsButtonClicked', EventCategories.Editor, EventActions.Click),
+    ShowLocalRefsButtonClicked: new LoggableEvent(
+        'ShowLocalRefsButtonClicked',
+        EventCategories.Editor,
+        EventActions.Click
+    ),
+    ShowExternalRefsButtonClicked: new LoggableEvent(
+        'ShowExternalRefsButtonClicked',
+        EventCategories.Editor,
+        EventActions.Click
+    ),
     GoToLocalRefClicked: new LoggableEvent('GoToLocalRefClicked', EventCategories.Editor, EventActions.Click),
     GoToExternalRefClicked: new LoggableEvent('GoToExternalRefClicked', EventCategories.Editor, EventActions.Click),
 

@@ -1,4 +1,3 @@
-
 import * as H from 'history'
 import { events } from '../tracking/events'
 import { buildSearchURLQuery, SearchOptions } from './index'

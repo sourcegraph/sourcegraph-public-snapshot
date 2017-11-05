@@ -19,7 +19,7 @@ import { Repository } from './Repository'
 interface Props {
     location: H.Location
     history: H.History
-    match: match<{ repoRev: string, filePath?: string }>
+    match: match<{ repoRev: string; filePath?: string }>
     onToggleFullWidth: () => void
     isFullWidth: boolean
     isDirectory: boolean
@@ -51,34 +51,34 @@ export class RepositoryResolver extends React.Component<Props, State> {
                     }
                     const [repoPath, rev] = props.match.params.repoRev.split('@')
                     // Defer Observable so it retries the request on resubscription
-                    return Observable.defer(() => resolveRev({ repoPath, rev }))
-                        // On a CloneInProgress error, retry after 5s
-                        .retryWhen(errors => errors
-                            .do(err => {
-                                if (err.code === ECLONEINPROGESS) {
-                                    // Display cloning screen to the user and retry
-                                    this.setState({ cloneInProgress: true })
-                                    return
-                                }
-                                if (err.code === EREPONOTFOUND) {
-                                    // Display 404to the user and do not retry
-                                    this.setState({ notFound: true })
-                                }
-                                // Don't retry other errors
-                                throw err
+                    return (
+                        Observable.defer(() => resolveRev({ repoPath, rev }))
+                            // On a CloneInProgress error, retry after 5s
+                            .retryWhen(errors =>
+                                errors
+                                    .do(err => {
+                                        if (err.code === ECLONEINPROGESS) {
+                                            // Display cloning screen to the user and retry
+                                            this.setState({ cloneInProgress: true })
+                                            return
+                                        }
+                                        if (err.code === EREPONOTFOUND) {
+                                            // Display 404to the user and do not retry
+                                            this.setState({ notFound: true })
+                                        }
+                                        // Don't retry other errors
+                                        throw err
+                                    })
+                                    .delay(1000)
+                            )
+                            // Log other errors but don't break the stream
+                            .catch(err => {
+                                console.error(err)
+                                return []
                             })
-                            .delay(1000)
-                        )
-                        // Log other errors but don't break the stream
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
+                    )
                 })
-                .subscribe(
-                commitID => this.setState({ commitID, cloneInProgress: false }),
-                err => console.error(err)
-                )
+                .subscribe(commitID => this.setState({ commitID, cloneInProgress: false }), err => console.error(err))
         )
         this.subscriptions.add(
             this.componentUpdates
@@ -87,17 +87,19 @@ export class RepositoryResolver extends React.Component<Props, State> {
                         return [null]
                     }
                     const [repoPath] = props.match.params.repoRev.split('@')
-                    return fetchPhabricatorRepo({ repoPath })
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
+                    return fetchPhabricatorRepo({ repoPath }).catch(err => {
+                        console.error(err)
+                        return []
+                    })
                 })
-                .subscribe(phabRepo => {
-                    if (phabRepo) {
-                        this.setState({ phabricatorCallsign: phabRepo.callsign })
-                    }
-                }, err => console.error(err))
+                .subscribe(
+                    phabRepo => {
+                        if (phabRepo) {
+                            this.setState({ phabricatorCallsign: phabRepo.callsign })
+                        }
+                    },
+                    err => console.error(err)
+                )
         )
     }
 
@@ -108,7 +110,12 @@ export class RepositoryResolver extends React.Component<Props, State> {
     public componentWillReceiveProps(nextProps: Props): void {
         if (this.props.match.params.repoRev !== nextProps.match.params.repoRev) {
             // clear state so the child won't render until the revision is resolved for new props
-            this.setState({ cloneInProgress: false, notFound: false, commitID: undefined, phabricatorCallsign: undefined })
+            this.setState({
+                cloneInProgress: false,
+                notFound: false,
+                commitID: undefined,
+                phabricatorCallsign: undefined,
+            })
             this.componentUpdates.next(nextProps)
         }
     }
@@ -120,10 +127,25 @@ export class RepositoryResolver extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const [repoPath, rev] = this.props.match.params.repoRev.split('@')
         if (this.state.notFound) {
-            return <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested URL was not found.' />
+            return (
+                <HeroPage
+                    icon={DirectionalSignIcon}
+                    title="404: Not Found"
+                    subtitle="Sorry, the requested URL was not found."
+                />
+            )
         }
         if (this.state.cloneInProgress) {
-            return <HeroPage icon={RepoIcon} title={repoPath.split('/').slice(1).join('/')} subtitle='Cloning in progress' />
+            return (
+                <HeroPage
+                    icon={RepoIcon}
+                    title={repoPath
+                        .split('/')
+                        .slice(1)
+                        .join('/')}
+                    subtitle="Cloning in progress"
+                />
+            )
         }
         if (this.props.match.params.repoRev && !this.state.commitID) {
             // commit not yet resolved but required if repoPath prop is provided;

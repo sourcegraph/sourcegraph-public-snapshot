@@ -1,12 +1,11 @@
-
 @import './Chip';
 @import './Suggestion';
 
 .search-box {
-    color: #93A9C8;
+    color: #93a9c8;
     padding: 0;
     border-radius: 0.25rem;
-    background-color: #1C2736;
+    background-color: #1c2736;
     padding-top: 0.5rem;
     width: 100%;
     overflow: hidden;
@@ -42,7 +41,7 @@
     &__query {
         display: flex;
         align-items: stretch;
-        background: #151D28;
+        background: #151d28;
         border-radius: 2px;
         margin-left: 0.5rem;
         margin-right: 0.5rem;
@@ -89,7 +88,7 @@
             display: none;
         }
         &::placeholder {
-            color: #93A9C8;
+            color: #93a9c8;
         }
     }
 
@@ -106,7 +105,7 @@
 
     &__no-matches {
         display: flex;
-        background-color: #1C2736;
+        background-color: #1c2736;
         padding: 0 1rem;
         height: 2.5rem;
         line-height: 2.5rem;
@@ -114,7 +113,7 @@
         white-space: nowrap;
         overflow: hidden;
         &-text {
-            margin-left: .5rem;
+            margin-left: 0.5rem;
         }
     }
 }

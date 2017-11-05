@@ -1,4 +1,3 @@
-
 import FileIcon from '@sourcegraph/icons/lib/File'
 import FileGlobIcon from '@sourcegraph/icons/lib/FileGlob'
 import Loader from '@sourcegraph/icons/lib/Loader'
@@ -38,7 +37,15 @@ import { events } from '../tracking/events'
 import { scrollIntoView } from '../util'
 import { fetchSuggestions } from './backend'
 import { Chip } from './Chip'
-import { buildSearchURLQuery, FileFilter, Filter, FilterType, parseSearchURLQuery, RepoFilter, SearchOptions } from './index'
+import {
+    buildSearchURLQuery,
+    FileFilter,
+    Filter,
+    FilterType,
+    parseSearchURLQuery,
+    RepoFilter,
+    SearchOptions,
+} from './index'
 import { Suggestion } from './Suggestion'
 
 function hasMagic(value: string): boolean {
@@ -71,7 +78,6 @@ interface Props {
 }
 
 interface State extends SearchOptions {
-
     /** Whether suggestions are shown or not */
     suggestionsVisible: boolean
 
@@ -88,7 +94,6 @@ interface State extends SearchOptions {
 const shortcutModifier = navigator.platform.startsWith('Mac') ? 'Ctrl' : 'Cmd'
 
 export class SearchBox extends React.Component<Props, State> {
-
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
 
@@ -135,21 +140,22 @@ export class SearchBox extends React.Component<Props, State> {
 
         // Reset SearchBox on route changes
         this.subscriptions.add(
-            routeChanges.subscribe(props => {
-                this.setState(this.getStateFromProps(props))
-            }, err => {
-                console.error(err)
-            })
+            routeChanges.subscribe(
+                props => {
+                    this.setState(this.getStateFromProps(props))
+                },
+                err => {
+                    console.error(err)
+                }
+            )
         )
 
         this.subscriptions.add(
             Observable.merge(
                 // Trigger new suggestions every time the input field is typed into
-                this.inputValues
-                    .do(query => this.setState({ query })),
+                this.inputValues.do(query => this.setState({ query })),
                 // Trigger new suggestions every time the input field is clicked
-                this.inputClicks
-                    .map(() => this.inputElement!.value),
+                this.inputClicks.map(() => this.inputElement!.value),
                 this.inputKeyDowns
                     // Defer to next tick to get the selection _after_ any selection change was dipatched (e.g. arrow keys)
                     .observeOn(asap)
@@ -176,14 +182,16 @@ export class SearchBox extends React.Component<Props, State> {
                             }
                             return Observable.of(fileFilter)
                         }
-                        return fetchSuggestions(query, this.state.filters)
-                            .map((item: GQL.SearchResult): Filter => {
-                                switch (item.__typename) {
-                                    case 'Repository': return { type: FilterType.Repo, value: item.uri }
-                                    case 'SearchProfile': return { type: FilterType.RepoGroup, value: item.name }
-                                    case 'File': return { type: FilterType.File, value: item.name }
-                                }
-                            })
+                        return fetchSuggestions(query, this.state.filters).map((item: GQL.SearchResult): Filter => {
+                            switch (item.__typename) {
+                                case 'Repository':
+                                    return { type: FilterType.Repo, value: item.uri }
+                                case 'SearchProfile':
+                                    return { type: FilterType.RepoGroup, value: item.name }
+                                case 'File':
+                                    return { type: FilterType.File, value: item.name }
+                            }
+                        })
                     })()
                         .toArray()
                         .map(suggestions => {
@@ -199,7 +207,12 @@ export class SearchBox extends React.Component<Props, State> {
                             }
                             return suggestions
                         })
-                        .map(suggestions => ({ suggestions, selectedSuggestion: -1, suggestionsVisible: true, loading: false }))
+                        .map(suggestions => ({
+                            suggestions,
+                            selectedSuggestion: -1,
+                            suggestionsVisible: true,
+                            loading: false,
+                        }))
                         .catch(err => {
                             console.error(err)
                             return []
@@ -209,44 +222,55 @@ export class SearchBox extends React.Component<Props, State> {
                     return Observable.merge(
                         suggestionsFetch,
                         // Show a loader if the fetch takes longer than 100ms
-                        Observable.of({ loading: true }).delay(100).takeUntil(suggestionsFetch)
+                        Observable.of({ loading: true })
+                            .delay(100)
+                            .takeUntil(suggestionsFetch)
                     )
                 })
                 // Abort suggestion display on route change
                 .takeUntil(routeChanges)
                 // But resubscribe afterwards
                 .repeat()
-                .subscribe(state => {
-                    this.setState(state as State)
-                }, err => {
-                    console.error(err)
-                })
+                .subscribe(
+                    state => {
+                        this.setState(state as State)
+                    },
+                    err => {
+                        console.error(err)
+                    }
+                )
         )
 
         // Quick-Open hotkeys
         this.subscriptions.add(
             Observable.fromEvent<KeyboardEvent>(window, 'keydown')
-                .filter(event =>
-                    // Slash shortcut (if no input element is focused)
-                    (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName))
-                    // Cmd/Ctrl+P shortcut
-                    || ((event.metaKey || event.ctrlKey) && event.key === 'p')
-                    // Cmd/Ctrl+Shift+F shortcut
-                    || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
+                .filter(
+                    event =>
+                        // Slash shortcut (if no input element is focused)
+                        (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
+                        // Cmd/Ctrl+P shortcut
+                        ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
+                        // Cmd/Ctrl+Shift+F shortcut
+                        ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
                 )
                 .switchMap(event => {
                     event.preventDefault()
                     // Use selection as query
                     const selection = window.getSelection().toString()
                     if (selection) {
-                        return new Observable<void>(observer => this.setState({
-                            query: selection,
-                            suggestions: [],
-                            selectedSuggestion: -1,
-                        }, () => {
-                            observer.next()
-                            observer.complete()
-                        }))
+                        return new Observable<void>(observer =>
+                            this.setState(
+                                {
+                                    query: selection,
+                                    suggestions: [],
+                                    selectedSuggestion: -1,
+                                },
+                                () => {
+                                    observer.next()
+                                    observer.complete()
+                                }
+                            )
+                        )
                     }
                     return [undefined]
                 })
@@ -260,12 +284,11 @@ export class SearchBox extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(document, 'click')
-                .subscribe(e => {
-                    if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
-                        this.setState({ suggestionsVisible: false })
-                    }
-                })
+            Observable.fromEvent<MouseEvent>(document, 'click').subscribe(e => {
+                if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
+                    this.setState({ suggestionsVisible: false })
+                }
+            })
         )
     }
 
@@ -287,104 +310,115 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const queryToCursor = this.inputElement ? this.state.query.substring(0, this.inputElement.selectionEnd) : this.state.query
+        const queryToCursor = this.inputElement
+            ? this.state.query.substring(0, this.inputElement.selectionEnd)
+            : this.state.query
 
-        const showNoMatches = this.state.query.length > 1
-            && !!this.state.suggestionsVisible
-            && this.state.suggestions.length === 0
-            && this.state.filters.length === 0
-            && !this.state.loading
+        const showNoMatches =
+            this.state.query.length > 1 &&
+            !!this.state.suggestionsVisible &&
+            this.state.suggestions.length === 0 &&
+            this.state.filters.length === 0 &&
+            !this.state.loading
 
-        const showSuggestions = this.state.query.length > 1
-            && !!this.state.suggestionsVisible
-            && this.state.suggestions.length !== 0
+        const showSuggestions =
+            this.state.query.length > 1 && !!this.state.suggestionsVisible && this.state.suggestions.length !== 0
 
         const showSpacer = !showNoMatches && !showSuggestions
 
         return (
             <form
-                className={'search-box' + (this.state.suggestionsVisible && (this.state.query || this.state.filters.length > 0) ? ' search-box--suggesting' : '')}
+                className={
+                    'search-box' +
+                    (this.state.suggestionsVisible && (this.state.query || this.state.filters.length > 0)
+                        ? ' search-box--suggesting'
+                        : '')
+                }
                 onSubmit={this.onSubmit}
-                ref={ref => this.containerElement = ref || undefined}
+                ref={ref => (this.containerElement = ref || undefined)}
             >
-                <div className='search-box__query'>
-
+                <div className="search-box__query">
                     {/* Search icon / Loader */}
-                    <div className='search-box__search-icon'>
-                        {this.state.loading ? <Loader className='icon-inline' /> : <SearchIcon className='icon-inline' />}
+                    <div className="search-box__search-icon">
+                        {this.state.loading ? (
+                            <Loader className="icon-inline" />
+                        ) : (
+                            <SearchIcon className="icon-inline" />
+                        )}
                     </div>
 
                     {/* Chips */}
-                    <div className='search-box__chips' ref={ref => this.chipsElement = ref || undefined}>
-                        {
-                            this.state.filters.map((filter, i) =>
+                    <div className="search-box__chips" ref={ref => (this.chipsElement = ref || undefined)}>
+                        {this.state.filters.map((filter, i) => (
+                            <Chip
+                                key={i}
+                                icon={getFilterIcon(filter)}
+                                label={getFilterLabel(filter)}
                                 // tslint:disable-next-line:jsx-no-lambda
-                                <Chip key={i} icon={getFilterIcon(filter)} label={getFilterLabel(filter)} onDelete={() => this.removeFilter(i)} />
-                            )
-                        }
+                                onDelete={() => this.removeFilter(i)}
+                            />
+                        ))}
                         <input
-                            type='search'
-                            className='search-box__input'
+                            type="search"
+                            className="search-box__input"
                             value={this.state.query}
                             onChange={this.onInputChange}
                             onKeyDown={this.onInputKeyDown}
                             onClick={this.onInputClick}
                             spellCheck={false}
-                            autoCapitalize='off'
-                            placeholder='Search'
-                            ref={ref => this.inputElement = ref!}
+                            autoCapitalize="off"
+                            placeholder="Search"
+                            ref={ref => (this.inputElement = ref!)}
                         />
                     </div>
-                    <label className='search-box__option' title={`Match case (${shortcutModifier}+C)`}>
-                        <input type='checkbox' checked={this.state.matchCase} onChange={this.toggleMatchCase} /><span>Aa</span>
+                    <label className="search-box__option" title={`Match case (${shortcutModifier}+C)`}>
+                        <input type="checkbox" checked={this.state.matchCase} onChange={this.toggleMatchCase} />
+                        <span>Aa</span>
                     </label>
-                    <label className='search-box__option' title={`Match whole word (${shortcutModifier}+W)`}>
-                        <input type='checkbox' checked={this.state.matchWord} onChange={this.toggleMatchWord} /><span><u>Ab</u></span>
+                    <label className="search-box__option" title={`Match whole word (${shortcutModifier}+W)`}>
+                        <input type="checkbox" checked={this.state.matchWord} onChange={this.toggleMatchWord} />
+                        <span>
+                            <u>Ab</u>
+                        </span>
                     </label>
-                    <label className='search-box__option' title={`Match regular expression (${shortcutModifier}+R)`}>
-                        <input type='checkbox' checked={this.state.matchRegex} onChange={this.toggleMatchRegex} /><span>.*</span>
+                    <label className="search-box__option" title={`Match regular expression (${shortcutModifier}+R)`}>
+                        <input type="checkbox" checked={this.state.matchRegex} onChange={this.toggleMatchRegex} />
+                        <span>.*</span>
                     </label>
                 </div>
-                {
-                    showSpacer &&
-                    <div className='search-box__spacer'></div>
-                }
-                {
-                    showNoMatches &&
-                    <div className='search-box__no-matches'>
-                        <ReportIcon className='icon-inline' />
-                        <div className='search-box__no-matches-text'>No matches</div>
+                {showSpacer && <div className="search-box__spacer" />}
+                {showNoMatches && (
+                    <div className="search-box__no-matches">
+                        <ReportIcon className="icon-inline" />
+                        <div className="search-box__no-matches-text">No matches</div>
                     </div>
-                }
+                )}
 
                 {/* Suggestions */}
-                {
-                    showSuggestions &&
-                    <ul className='search-box__suggestions' ref={this.setSuggestionListElement}>
-                        {
-                            this.state.suggestions.map((suggestion, i) => {
-                                const isSelected = this.state.selectedSuggestion === i
-                                const onRef = (ref: HTMLLIElement) => {
-                                    if (isSelected) {
-                                        this.selectedSuggestionElement = ref || undefined
-                                    }
+                {showSuggestions && (
+                    <ul className="search-box__suggestions" ref={this.setSuggestionListElement}>
+                        {this.state.suggestions.map((suggestion, i) => {
+                            const isSelected = this.state.selectedSuggestion === i
+                            const onRef = (ref: HTMLLIElement) => {
+                                if (isSelected) {
+                                    this.selectedSuggestionElement = ref || undefined
                                 }
-                                return (
-                                    <Suggestion
-                                        key={i}
-                                        icon={getFilterIcon(suggestion)}
-                                        label={getFilterLabel(suggestion)}
-                                        query={queryToCursor}
-                                        isSelected={isSelected}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        onClick={() => this.selectSuggestion(suggestion, '')}
-                                        liRef={onRef}
-                                    />
-                                )
-                            })
-                        }
+                            }
+                            return (
+                                <Suggestion
+                                    key={i}
+                                    icon={getFilterIcon(suggestion)}
+                                    label={getFilterLabel(suggestion)}
+                                    query={queryToCursor}
+                                    isSelected={isSelected}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.selectSuggestion(suggestion, '')}
+                                    liRef={onRef}
+                                />
+                            )
+                        })}
                     </ul>
-                }
+                )}
             </form>
         )
     }
@@ -406,17 +440,20 @@ export class SearchBox extends React.Component<Props, State> {
                 },
             },
         })
-        this.setState(prevState => ({
-            filters: prevState.filters.concat(suggestion),
-            suggestions: [],
-            selectedSuggestion: -1,
-            query: newQuery,
-        }), () => {
-            // Scroll chips so search input stays visible
-            if (this.chipsElement) {
-                this.chipsElement.scrollLeft = this.chipsElement.scrollWidth
+        this.setState(
+            prevState => ({
+                filters: prevState.filters.concat(suggestion),
+                suggestions: [],
+                selectedSuggestion: -1,
+                query: newQuery,
+            }),
+            () => {
+                // Scroll chips so search input stays visible
+                if (this.chipsElement) {
+                    this.chipsElement.scrollLeft = this.chipsElement.scrollWidth
+                }
             }
-        })
+        )
     }
 
     private focusInput(): void {
@@ -442,7 +479,7 @@ export class SearchBox extends React.Component<Props, State> {
         // see https://reacttraining.com/react-router/web/api/matchPath
         // and https://reacttraining.com/react-router/web/example/sidebar
         for (const route of routes) {
-            const match = matchPath<{ repoRev?: string, filePath?: string }>(props.location.pathname, route)
+            const match = matchPath<{ repoRev?: string; filePath?: string }>(props.location.pathname, route)
             if (match) {
                 switch (match.path) {
                     case '/search': {
@@ -515,7 +552,10 @@ export class SearchBox extends React.Component<Props, State> {
                 if (this.state.suggestions.length === 0) {
                     break
                 }
-                this.selectSuggestion(this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)], this.state.query.substr(event.currentTarget.selectionEnd))
+                this.selectSuggestion(
+                    this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)],
+                    this.state.query.substr(event.currentTarget.selectionEnd)
+                )
                 break
             }
             case 'Backspace': {
@@ -546,7 +586,12 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     private moveSelection(steps: number): void {
-        this.setState({ selectedSuggestion: Math.max(Math.min(this.state.selectedSuggestion + steps, this.state.suggestions.length - 1), -1) })
+        this.setState({
+            selectedSuggestion: Math.max(
+                Math.min(this.state.selectedSuggestion + steps, this.state.suggestions.length - 1),
+                -1
+            ),
+        })
     }
 
     /**
@@ -570,15 +615,25 @@ export class SearchBox extends React.Component<Props, State> {
                 },
             })
             this.props.history.push(path)
-        } else if (this.state.filters[0].type === FilterType.Repo || this.state.filters[0].type === FilterType.UnknownRepo) {
+        } else if (
+            this.state.filters[0].type === FilterType.Repo ||
+            this.state.filters[0].type === FilterType.UnknownRepo
+        ) {
             if (this.state.filters.length === 1) {
                 // Go to repo
                 events.SearchGoToRepoSubmitted.log()
                 this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}`)
-            } else if (this.state.filters[1].type === FilterType.File && this.state.filters.length === 2 && !hasMagic(this.state.filters[1].value)) {
+            } else if (
+                this.state.filters[1].type === FilterType.File &&
+                this.state.filters.length === 2 &&
+                !hasMagic(this.state.filters[1].value)
+            ) {
                 // Go to file
                 events.SearchGoToFileSubmitted.log()
-                this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}/-/blob/${(this.state.filters[1] as FileFilter).value}`)
+                this.props.history.push(
+                    `/${(this.state.filters[0] as RepoFilter).value}/-/blob/${(this.state.filters[1] as FileFilter)
+                        .value}`
+                )
             }
         }
     }

@@ -1,19 +1,18 @@
-
 .code-excerpt {
-
     font-family: Menlo;
 
     td.line {
         &::before {
             // draw line number with css so it cannot be copied to clipboard
             content: attr(data-line);
-            color: #31445E;
+            color: #31445e;
         }
 
-        color: #31445E;
+        color: #31445e;
     }
 
-    .line, .code {
+    .line,
+    .code {
         height: 20px;
         line-height: 20px;
         font-size: 12px;

@@ -5,7 +5,6 @@ import { getPathExtension } from './index'
 import { parseHash, toBlobURL, toPrettyBlobURL, toTreeURL } from './url'
 
 describe('util module', () => {
-
     describe('getPathExtension', () => {
         it('returns extension if normal path', () => {
             assert.deepEqual(getPathExtension('/foo/baz/bar.go'), 'go')
@@ -94,11 +93,17 @@ describe('util module', () => {
             })
 
             it('formats url for specified rev', () => {
-                assert.deepEqual(toPrettyBlobURL({ ...ctx, rev: 'branch' }), '/github.com/gorilla/mux@branch/-/blob/mux.go')
+                assert.deepEqual(
+                    toPrettyBlobURL({ ...ctx, rev: 'branch' }),
+                    '/github.com/gorilla/mux@branch/-/blob/mux.go'
+                )
             })
 
             it('formats url with position', () => {
-                assert.deepEqual(toPrettyBlobURL({ ...ctx, position: lineCharPosition }), '/github.com/gorilla/mux/-/blob/mux.go#L1:1')
+                assert.deepEqual(
+                    toPrettyBlobURL({ ...ctx, position: lineCharPosition }),
+                    '/github.com/gorilla/mux/-/blob/mux.go#L1:1'
+                )
             })
 
             it('formats url with references mode', () => {
@@ -111,18 +116,27 @@ describe('util module', () => {
 
         describe('toBlobURL', () => {
             it('formats url if commitID is specified', () => {
-                assert.deepEqual(toBlobURL(ctx), '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go')
+                assert.deepEqual(
+                    toBlobURL(ctx),
+                    '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go'
+                )
             })
 
             it('formats url if commitID is ommitted', () => {
                 assert.deepEqual(toBlobURL({ ...ctx, commitID: undefined }), '/github.com/gorilla/mux/-/blob/mux.go')
-                assert.deepEqual(toBlobURL({ ...ctx, commitID: undefined, rev: 'branch' }), '/github.com/gorilla/mux@branch/-/blob/mux.go')
+                assert.deepEqual(
+                    toBlobURL({ ...ctx, commitID: undefined, rev: 'branch' }),
+                    '/github.com/gorilla/mux@branch/-/blob/mux.go'
+                )
             })
         })
 
         describe('toAbsoluteBlobURL', () => {
             it('formats url', () => {
-                assert.deepEqual(toBlobURL(ctx), '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go')
+                assert.deepEqual(
+                    toBlobURL(ctx),
+                    '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go'
+                )
             })
 
             // other cases are gratuitious given tests for other URL functions
@@ -130,7 +144,10 @@ describe('util module', () => {
 
         describe('toTreeURL', () => {
             it('formats url', () => {
-                assert.deepEqual(toTreeURL(ctx), '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/tree/mux.go')
+                assert.deepEqual(
+                    toTreeURL(ctx),
+                    '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/tree/mux.go'
+                )
             })
 
             // other cases are gratuitious given tests for other URL functions

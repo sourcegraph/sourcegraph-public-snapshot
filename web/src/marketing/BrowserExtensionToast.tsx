@@ -12,8 +12,8 @@ declare global {
     interface Window {
         chrome?: {
             webstore: {
-                install: (link: string, success: () => void, error: (reason: string) => void) => void,
-            },
+                install: (link: string, success: () => void, error: (reason: string) => void) => void
+            }
         }
     }
 }
@@ -40,7 +40,8 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
         // Since this function checks if the Chrome ext has injected an element,
         // wait a few ms in case there's an unpredictable delay before checking.
         setTimeout(() => {
-            const visible = !hasBrowserExtensionInstalled() &&
+            const visible =
+                !hasBrowserExtensionInstalled() &&
                 !window.context.onPrem &&
                 localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
                 daysActiveCount === 1
@@ -58,10 +59,15 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
 
         return (
             <Toast
-                icon={<img className='logo-icon' src={this.props.browserLogoAsset} />}
-                title='Get Sourcegraph on GitHub'
-                subtitle={`Get code intelligence while browsing GitHub and reading PRs with the Sourcegraph ${this.props.browserName} extension`}
-                cta={<button type='button' className='btn btn-primary' onClick={this.onClickInstall}>Install</button>}
+                icon={<img className="logo-icon" src={this.props.browserLogoAsset} />}
+                title="Get Sourcegraph on GitHub"
+                subtitle={`Get code intelligence while browsing GitHub and reading PRs with the Sourcegraph ${this.props
+                    .browserName} extension`}
+                cta={
+                    <button type="button" className="btn btn-primary" onClick={this.onClickInstall}>
+                        Install
+                    </button>
+                }
                 onDismiss={this.onDismiss}
             />
         )
@@ -82,8 +88,8 @@ export class ChromeExtensionToast extends React.Component {
     public render(): JSX.Element | null {
         return (
             <BrowserExtensionToast
-                browserName='Chrome'
-                browserLogoAsset='/.assets/img/ui2/logo-chrome.svg'
+                browserName="Chrome"
+                browserLogoAsset="/.assets/img/ui2/logo-chrome.svg"
                 onClickInstall={this.onClickInstall}
             />
         )
@@ -93,7 +99,11 @@ export class ChromeExtensionToast extends React.Component {
         events.BrowserExtInstallClicked.log({ marketing: { browser: 'Chrome' } })
 
         if (window.chrome) {
-            window.chrome.webstore.install(CHROME_EXTENSION_STORE_LINK, () => this.onInstallExtensionSuccess(), () => this.onInstallExtensionFail())
+            window.chrome.webstore.install(
+                CHROME_EXTENSION_STORE_LINK,
+                () => this.onInstallExtensionSuccess(),
+                () => this.onInstallExtensionFail()
+            )
         } else {
             window.open(CHROME_EXTENSION_STORE_LINK, '_blank')
         }
@@ -121,8 +131,8 @@ export class FirefoxExtensionToast extends React.Component {
     public render(): JSX.Element | null {
         return (
             <BrowserExtensionToast
-                browserName='Firefox'
-                browserLogoAsset='/.assets/img/ui2/logo-firefox.svg'
+                browserName="Firefox"
+                browserLogoAsset="/.assets/img/ui2/logo-firefox.svg"
                 onClickInstall={this.onClickInstall}
             />
         )

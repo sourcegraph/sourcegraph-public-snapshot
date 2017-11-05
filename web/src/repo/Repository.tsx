@@ -87,20 +87,18 @@ export class Repository extends React.Component<Props, State> {
         const parsedHash = parseHash(this.props.location.hash)
         this.state.isDirectory = props.isDirectory || !props.filePath
         this.state.showRefs = parsedHash.modal === 'references'
-        this.state.position = parsedHash.line ? { line: parsedHash.line!, character: parsedHash.character || 0 } : undefined
+        this.state.position = parsedHash.line
+            ? { line: parsedHash.line!, character: parsedHash.character || 0 }
+            : undefined
         this.subscriptions.add(
             this.componentUpdates
                 .switchMap(props =>
-                    listAllFiles({ repoPath: props.repoPath, commitID: props.commitID })
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
+                    listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }).catch(err => {
+                        console.error(err)
+                        return []
+                    })
                 )
-                .subscribe(
-                (files: string[]) => this.setState({ files }),
-                err => console.error(err)
-                )
+                .subscribe((files: string[]) => this.setState({ files }), err => console.error(err))
         )
 
         // Transitions to routes with file should update file contents
@@ -116,29 +114,30 @@ export class Repository extends React.Component<Props, State> {
                         commitID: props.commitID,
                         filePath: props.filePath!,
                         disableTimeout: props.showHighlightingAnyway,
+                    }).catch(err => {
+                        this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
+                        console.error(err)
+                        return []
                     })
-                        .catch(err => {
-                            this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
-                            console.error(err)
-                            return []
-                        })
                 )
                 .subscribe(
-                result => this.setState({
-                    isDirectory: result.isDirectory,
-                    // file contents for a directory is a textual representation of the directory tree;
-                    // we prefer not to display that
-                    highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
-                    highlightingError: undefined,
-                }),
-                err => console.error(err)
+                    result =>
+                        this.setState({
+                            isDirectory: result.isDirectory,
+                            // file contents for a directory is a textual representation of the directory tree;
+                            // we prefer not to display that
+                            highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
+                            highlightingError: undefined,
+                        }),
+                    err => console.error(err)
                 )
         )
         this.subscriptions.add(
             this.componentUpdates.subscribe(
-                props => this.setState({
-                    isDirectory: props.isDirectory || !props.filePath,
-                }),
+                props =>
+                    this.setState({
+                        isDirectory: props.isDirectory || !props.filePath,
+                    }),
                 err => console.error(err)
             )
         )
@@ -174,58 +173,92 @@ export class Repository extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='repository'>
+            <div className="repository">
                 <PageTitle title={this.getPageTitle()} />
                 <RepoNav {...this.props} />
-                {IS_CHROME &&
-                    <ChromeExtensionToast />}
-                {IS_FIREFOX &&
-                    <FirefoxExtensionToast />}
+                {IS_CHROME && <ChromeExtensionToast />}
+                {IS_FIREFOX && <FirefoxExtensionToast />}
                 <SurveyToast />
-                <div className='repository__content'>
-                    <div id='explorer' className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}>
-                        <button type='button' className='btn btn-icon repository__sidebar-toggle' onClick={this.onTreeToggle}><ListIcon /></button>
-                        <TreeHeader title='File Explorer' onDismiss={this.onTreeToggle} />
+                <div className="repository__content">
+                    <div
+                        id="explorer"
+                        className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}
+                    >
+                        <button
+                            type="button"
+                            className="btn btn-icon repository__sidebar-toggle"
+                            onClick={this.onTreeToggle}
+                        >
+                            <ListIcon />
+                        </button>
+                        <TreeHeader title="File Explorer" onDismiss={this.onTreeToggle} />
                         <Tree
                             repoPath={this.props.repoPath}
                             rev={this.props.rev}
                             history={this.props.history}
-                            scrollRootSelector='#explorer'
+                            scrollRootSelector="#explorer"
                             selectedPath={this.props.filePath || ''}
                             paths={this.state.files || []}
                         />
                     </div>
-                    <div className='repository__viewer'>
-                        <button type='button' className='btn btn-icon repository__full-width-toggle' onClick={this.props.onToggleFullWidth} title='toggle full width'>
+                    <div className="repository__viewer">
+                        <button
+                            type="button"
+                            className="btn btn-icon repository__full-width-toggle"
+                            onClick={this.props.onToggleFullWidth}
+                            title="toggle full width"
+                        >
                             {this.props.isFullWidth ? <ChevronLeftIcon /> : <ChevronRightIcon />}
                         </button>
-                        {
-                            this.state.isDirectory &&
-                            <DirectoryPage repoPath={this.props.repoPath} commitID={this.props.commitID} rev={this.props.rev} filePath={this.props.filePath || ''} />
-                        }
-                        {
-                            this.state.highlightingError &&
-                            <HeroPage icon={ErrorIcon} title='' subtitle={'Error: ' + this.state.highlightingError.message} />
-                        }
-                        {
-                            this.state.highlightedFile && this.state.highlightedFile.aborted &&
-                            <p className='repository__blob-alert'>
-                                <ErrorIcon className='icon-inline' />
-                                Syntax highlighting for this file has been disabled because it took too long.
-                                    (<a href='' onClick={this.handleShowAnywayButtonClick}>show anyway</a>)
+                        {this.state.isDirectory && (
+                            <DirectoryPage
+                                repoPath={this.props.repoPath}
+                                commitID={this.props.commitID}
+                                rev={this.props.rev}
+                                filePath={this.props.filePath || ''}
+                            />
+                        )}
+                        {this.state.highlightingError && (
+                            <HeroPage
+                                icon={ErrorIcon}
+                                title=""
+                                subtitle={'Error: ' + this.state.highlightingError.message}
+                            />
+                        )}
+                        {this.state.highlightedFile &&
+                            this.state.highlightedFile.aborted && (
+                                <p className="repository__blob-alert">
+                                    <ErrorIcon className="icon-inline" />
+                                    Syntax highlighting for this file has been disabled because it took too long. (<a
+                                        href=""
+                                        onClick={this.handleShowAnywayButtonClick}
+                                    >
+                                        show anyway
+                                    </a>)
                                     {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
-                            </p>
-                        }
+                                </p>
+                            )}
                         {!this.state.isDirectory &&
-                            (this.state.highlightedFile ?
-                                <Blob {...this.props} filePath={this.props.filePath!} html={this.state.highlightedFile.html} /> :
+                            (this.state.highlightedFile ? (
+                                <Blob
+                                    {...this.props}
+                                    filePath={this.props.filePath!}
+                                    html={this.state.highlightedFile.html}
+                                />
+                            ) : (
                                 /* render placeholder for layout before content is fetched */
-                                <div className='repository__blob-placeholder'></div>)
-                        }
-                        {
-                            this.state.showRefs && this.state.position &&
-                            <ReferencesWidget {...{ ...this.props, filePath: this.props.filePath!, position: this.state.position! }} />
-                        }
+                                <div className="repository__blob-placeholder" />
+                            ))}
+                        {this.state.showRefs &&
+                            this.state.position && (
+                                <ReferencesWidget
+                                    {...{
+                                        ...this.props,
+                                        filePath: this.props.filePath!,
+                                        position: this.state.position!,
+                                    }}
+                                />
+                            )}
                     </div>
                 </div>
             </div>

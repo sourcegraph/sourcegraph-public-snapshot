@@ -40,7 +40,7 @@ interface PersistedState extends PersistableState {
     lastScopeValue?: string
 }
 
-interface State extends PersistableState { }
+interface State extends PersistableState {}
 
 export class SearchScope extends React.Component<Props, State> {
     private static REMOTE_SCOPES_STORAGE_KEY = 'SearchScope/remoteScopes'
@@ -68,16 +68,16 @@ export class SearchScope extends React.Component<Props, State> {
                 })
                 .map((scopes: GQL.ISearchScope2[]) => ({ remoteScopes: scopes }))
                 .subscribe(
-                newState =>
-                    this.setState(newState, () => {
-                        this.saveToLocalStorage()
+                    newState =>
+                        this.setState(newState, () => {
+                            this.saveToLocalStorage()
 
-                        // Default to 1st remote scope if none.
-                        if (this.props.value === undefined) {
-                            this.props.onChange(newState.remoteScopes[0].value)
-                        }
-                    }),
-                err => console.error(err)
+                            // Default to 1st remote scope if none.
+                            if (this.props.value === undefined) {
+                                this.props.onChange(newState.remoteScopes[0].value)
+                            }
+                        }),
+                    err => console.error(err)
                 )
         )
     }
@@ -101,19 +101,19 @@ export class SearchScope extends React.Component<Props, State> {
         const scopes = this.getScopes()
 
         return (
-            <div
-                className='search-scope2'
-            >
+            <div className="search-scope2">
                 <select
-                    className='search-scope2__select ui-text-box'
+                    className="search-scope2__select ui-text-box"
                     onChange={this.onChange}
                     value={this.props.value}
-                    ref={e => this.selectElement = e}
-                    title='Search scope'
+                    ref={e => (this.selectElement = e)}
+                    title="Search scope"
                 >
-                    {scopes.map((scope, i) =>
-                        <option key={i} value={scope.value}>{scope.name}</option>
-                    )}
+                    {scopes.map((scope, i) => (
+                        <option key={i} value={scope.value}>
+                            {scope.name}
+                        </option>
+                    ))}
                 </select>
             </div>
         )
@@ -127,7 +127,7 @@ export class SearchScope extends React.Component<Props, State> {
         const allScopes: ISearchScope[] = []
 
         if (this.state.remoteScopes) {
-            allScopes.push(... this.state.remoteScopes)
+            allScopes.push(...this.state.remoteScopes)
         }
 
         allScopes.push(...this.getScopesForCurrentRoute())
@@ -154,7 +154,7 @@ export class SearchScope extends React.Component<Props, State> {
         // see https://reacttraining.com/react-router/web/api/matchPath
         // and https://reacttraining.com/react-router/web/example/sidebar
         for (const route of routes) {
-            const match = matchPath<{ repoRev?: string, filePath?: string }>(this.props.location.pathname, route)
+            const match = matchPath<{ repoRev?: string; filePath?: string }>(this.props.location.pathname, route)
             if (match) {
                 switch (match.path) {
                     case '/:repoRev+': {
@@ -210,20 +210,29 @@ export class SearchScope extends React.Component<Props, State> {
     private loadFromLocalStorage(): PersistedState {
         const readItem = <T extends {}>(key: string, validate: (data: T) => boolean): T | undefined => {
             const raw = localStorage.getItem(key)
-            if (raw === null) { return undefined }
+            if (raw === null) {
+                return undefined
+            }
 
             try {
                 const data = JSON.parse(raw)
-                if (data !== undefined && data !== null && validate(data)) { return data }
-            } catch (err) { /* noop */ }
+                if (data !== undefined && data !== null && validate(data)) {
+                    return data
+                }
+            } catch (err) {
+                /* noop */
+            }
 
             // Else invalid data.
             localStorage.removeItem(key)
             return undefined
         }
 
-        const validate = (data: ISearchScope): boolean => typeof data.name === 'string' && typeof data.value === 'string'
-        const remoteScopes = readItem<ISearchScope[]>(SearchScope.REMOTE_SCOPES_STORAGE_KEY, data => data.every(validate))
+        const validate = (data: ISearchScope): boolean =>
+            typeof data.name === 'string' && typeof data.value === 'string'
+        const remoteScopes = readItem<ISearchScope[]>(SearchScope.REMOTE_SCOPES_STORAGE_KEY, data =>
+            data.every(validate)
+        )
         const lastScopeValue = readItem<string>(SearchScope.LAST_SCOPE_STORAGE_KEY, s => typeof s === 'string')
         return { remoteScopes, lastScopeValue }
     }

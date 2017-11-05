@@ -1,4 +1,3 @@
-
 export enum FilterType {
     Repo = 'repo',
     UnknownRepo = 'unknownrepo',

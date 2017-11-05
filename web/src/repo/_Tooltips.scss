@@ -1,14 +1,14 @@
 .tooltip {
-    background-color: #1C2736;
+    background-color: #1c2736;
     max-width: 450px;
     min-width: 275px;
-    border: solid 1px #2A3A51;
-    color: #93A9C8;
+    border: solid 1px #2a3a51;
+    color: #93a9c8;
     z-index: 100;
     position: absolute;
     overflow: auto;
     border-radius: 3px;
-    box-shadow: 0 3px 12px rgba(27,31,35,0.15);
+    box-shadow: 0 3px 12px rgba(27, 31, 35, 0.15);
     font-size: 12px;
     line-height: 20px;
 
@@ -22,21 +22,21 @@
 
     &__divider {
         display: flex;
-        border-bottom: 1px solid #2A3A51;
-        padding: .5rem;
+        border-bottom: 1px solid #2a3a51;
+        padding: 0.5rem;
     }
 
     &__doc {
-        padding: .5rem;
+        padding: 0.5rem;
         max-height: 150px;
         overflow: auto;
         margin-bottom: 0px;
 
         font-family: system;
-        border-bottom: 1px solid #2A3A51;
+        border-bottom: 1px solid #2a3a51;
 
         p:not(:first-child) {
-            margin-top: .5rem
+            margin-top: 0.5rem;
         }
     }
 
@@ -50,11 +50,11 @@
         flex: 1;
         cursor: pointer;
         text-decoration: none;
-        padding: .5rem;
-        color: #FFFFFF;
+        padding: 0.5rem;
+        color: #ffffff;
 
         &:not(:last-child) {
-            border-right: 1px solid #2A3A51;
+            border-right: 1px solid #2a3a51;
         }
 
         &:hover {
@@ -64,8 +64,8 @@
 
     &__more-actions {
         font-style: italic;
-        color: #FFFFFF;
-        padding: .5rem;
+        color: #ffffff;
+        padding: 0.5rem;
         font-family: system;
     }
 
@@ -74,7 +74,7 @@
         margin-left: 10px;
 
         &:hover {
-            color: #FFFFFF;
+            color: #ffffff;
         }
         svg {
             fill: currentColor;
@@ -82,7 +82,7 @@
     }
 
     &__loading {
-        padding: .5rem;
+        padding: 0.5rem;
         font-family: system;
     }
 

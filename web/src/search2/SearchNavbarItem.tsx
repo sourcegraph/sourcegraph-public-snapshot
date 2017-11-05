@@ -51,22 +51,21 @@ export class SearchNavbarItem extends React.Component<Props, State> {
 
         // Reset on route changes
         this.subscriptions.add(
-            routeChanges.subscribe(props => {
-                this.setState(this.getStateFromProps(props))
-            }, err => {
-                console.error(err)
-            })
+            routeChanges.subscribe(
+                props => {
+                    this.setState(this.getStateFromProps(props))
+                },
+                err => {
+                    console.error(err)
+                }
+            )
         )
 
         // Listen to location changes in both ways. Depending on the source of the
         // history event, it might be seen first by one or the other. If we don't
         // listen for both, then we might receive some events too late.
-        this.subscriptions.add(
-            routeChanges.subscribe(props => this.onLocationChange(props.location))
-        )
-        this.subscriptions.add(
-            props.history.listen(location => this.onLocationChange(location))
-        )
+        this.subscriptions.add(routeChanges.subscribe(props => this.onLocationChange(props.location)))
+        this.subscriptions.add(props.history.listen(location => this.onLocationChange(location)))
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -84,11 +83,8 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         const autoFocus = this.props.location.pathname === '/search'
 
         return (
-            <form
-                className='search2 search-navbar-item2'
-                onSubmit={this.onSubmit}
-            >
-                <div className='search-navbar-item2__row'>
+            <form className="search2 search-navbar-item2" onSubmit={this.onSubmit}>
+                <div className="search-navbar-item2__row">
                     <QueryInput
                         {...this.props}
                         value={this.state.userQuery}
@@ -98,8 +94,12 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                     />
                     <SearchButton />
                 </div>
-                <div className='search-navbar-item2__row'>
-                    <SearchScope location={this.props.location} value={this.state.scopeQuery} onChange={this.onScopeQueryChange} />
+                <div className="search-navbar-item2__row">
+                    <SearchScope
+                        location={this.props.location}
+                        value={this.state.scopeQuery}
+                        onChange={this.onScopeQueryChange}
+                    />
                     <ScopeLabel scopeQuery={this.state.scopeQuery} />
                 </div>
             </form>
@@ -114,7 +114,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
 
         let keepSearchOptionsParams = false
         for (const route of routes) {
-            const match = matchPath<{ repoRev?: string, filePath?: string }>(location.pathname, route)
+            const match = matchPath<{ repoRev?: string; filePath?: string }>(location.pathname, route)
             if (match) {
                 switch (match.path) {
                     case '/:repoRev+': {
@@ -136,7 +136,9 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                 break
             }
         }
-        if (!keepSearchOptionsParams) { return }
+        if (!keepSearchOptionsParams) {
+            return
+        }
 
         if (!search.has('q') && !search.has('sq')) {
             const searchOptions = parseSearchURLQuery(this.props.location.search)

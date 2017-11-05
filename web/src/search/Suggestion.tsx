@@ -1,9 +1,7 @@
-
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 
 export interface SuggestionProps {
-
     icon: React.ComponentType<{ className: string }>
 
     label: string
@@ -26,18 +24,22 @@ export const Suggestion = (props: SuggestionProps) => {
     const parts = props.label.split(splitRegexp)
     const Icon = props.icon
     return (
-        <li className={'suggestion' + (props.isSelected ? ' suggestion--selected' : '')} onClick={props.onClick} ref={props.liRef}>
-            <Icon className='icon-inline' />
-            <div className='suggestion__label'>
-                {
-                    parts.map((part, i) =>
-                        <span key={i} className={part.toLowerCase() === lowerQuery ? 'suggestion__highlighted-query' : ''}>
-                            {part}
-                        </span>
-                    )
-                }
+        <li
+            className={'suggestion' + (props.isSelected ? ' suggestion--selected' : '')}
+            onClick={props.onClick}
+            ref={props.liRef}
+        >
+            <Icon className="icon-inline" />
+            <div className="suggestion__label">
+                {parts.map((part, i) => (
+                    <span key={i} className={part.toLowerCase() === lowerQuery ? 'suggestion__highlighted-query' : ''}>
+                        {part}
+                    </span>
+                ))}
             </div>
-            <div className='suggestion__tip' hidden={!props.isSelected}><kbd>enter</kbd> to add as filter</div>
+            <div className="suggestion__tip" hidden={!props.isSelected}>
+                <kbd>enter</kbd> to add as filter
+            </div>
         </li>
     )
 }

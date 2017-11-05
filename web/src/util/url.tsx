@@ -10,12 +10,12 @@ type ModalMode = 'local' | 'external'
  * "L1-2:3" or "L1:2-3"), none of which would make much sense.
  */
 export type LineOrPositionOrRange =
-    { line?: undefined, character?: undefined, endLine?: undefined, endCharacter?: undefined } |
-    { line: number, character?: number, endLine?: undefined, endCharacter?: undefined } |
-    { line: number, character?: undefined, endLine?: number, endCharacter?: undefined } |
-    { line: number, character: number, endLine: number, endCharacter: number }
+    | { line?: undefined; character?: undefined; endLine?: undefined; endCharacter?: undefined }
+    | { line: number; character?: number; endLine?: undefined; endCharacter?: undefined }
+    | { line: number; character?: undefined; endLine?: number; endCharacter?: undefined }
+    | { line: number; character: number; endLine: number; endCharacter: number }
 
-export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal, modalMode?: ModalMode } {
+export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal; modalMode?: ModalMode } {
     if (hash.startsWith('#')) {
         hash = hash.substr('#'.length)
     }
@@ -36,10 +36,14 @@ export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal
         const posOrRangeString = lineCharModalInfo[0].slice(1)
         const [startString, endString] = posOrRangeString.split('-', 2)
         if (startString) {
-            ({ line, character } = parseLineOrPosition(startString))
+            const parsed = parseLineOrPosition(startString)
+            line = parsed.line
+            character = parsed.character
         }
         if (endString) {
-            ({ line: endLine, character: endCharacter } = parseLineOrPosition(endString))
+            const parsed = parseLineOrPosition(endString)
+            endLine = parsed.line
+            endCharacter = parsed.character
         }
     }
     let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
@@ -59,11 +63,13 @@ export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal
 
     const modalInfo = lineCharModalInfo[1].split(':')
     const modal = modalInfo[0] as Modal // "references"
-    const modalMode = modalInfo[1] as ModalMode || 'local' // "external"
+    const modalMode = (modalInfo[1] as ModalMode) || 'local' // "external"
     return { ...lpr, modal, modalMode }
 }
 
-function parseLineOrPosition(str: string): { line: undefined, character: undefined } | { line: number, character?: number } {
+function parseLineOrPosition(
+    str: string
+): { line: undefined; character: undefined } | { line: number; character?: number } {
     const parts = str.split(':', 2)
     let line: number | undefined
     let character: number | undefined
@@ -83,9 +89,14 @@ function parseLineOrPosition(str: string): { line: undefined, character: undefin
 
 function toPositionOrRangeHash(ctx: Partial<PositionSpec> & Partial<RangeSpec>): string {
     if (ctx.range) {
-        const emptyRange = ctx.range.start.line === ctx.range.end.line &&
-            ctx.range.start.character === ctx.range.end.character
-        return '#L' + (emptyRange ? toPositionHashComponent(ctx.range.start) : `${toPositionHashComponent(ctx.range.start)}-${toPositionHashComponent(ctx.range.end)}`)
+        const emptyRange =
+            ctx.range.start.line === ctx.range.end.line && ctx.range.start.character === ctx.range.end.character
+        return (
+            '#L' +
+            (emptyRange
+                ? toPositionHashComponent(ctx.range.start)
+                : `${toPositionHashComponent(ctx.range.start)}-${toPositionHashComponent(ctx.range.end)}`)
+        )
     }
     if (ctx.position) {
         return '#L' + toPositionHashComponent(ctx.position)
@@ -115,13 +126,19 @@ export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}`
 }
 
-export function toPrettyBlobURL(ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RangeSpec>): string {
-    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(ctx)}${toReferencesHash(ctx.referencesMode)}`
+export function toPrettyBlobURL(
+    ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RangeSpec>
+): string {
+    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
+        ctx
+    )}${toReferencesHash(ctx.referencesMode)}`
 }
 
 export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
-    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(ctx)}${toReferencesHash(ctx.referencesMode)}`
+    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
+        ctx
+    )}${toReferencesHash(ctx.referencesMode)}`
 }
 
 export function toTreeURL(ctx: RepoFile): string {
@@ -129,7 +146,13 @@ export function toTreeURL(ctx: RepoFile): string {
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/tree/${ctx.filePath}`
 }
 
-export function toEditorURL(repoPath: string, rev?: string, filePath?: string, position?: { line?: number }, thread?: number): string {
+export function toEditorURL(
+    repoPath: string,
+    rev?: string,
+    filePath?: string,
+    position?: { line?: number },
+    thread?: number
+): string {
     let query = 'repo=' + encodeURIComponent('ssh://git@' + repoPath + '.git')
     query += '&vcs=git'
     if (rev) {

@@ -64,7 +64,7 @@
     }
 
     &__instructions {
-        background: #1C2736;
+        background: #1c2736;
         border-radius: 0.25rem;
         width: 100%;
         margin-top: 1rem;
@@ -90,7 +90,8 @@
         flex-wrap: wrap;
     }
 
-    &__instruction, &__explanation {
+    &__instruction,
+    &__explanation {
         flex: none;
         width: 50%;
         @media (max-width: $media-md) {

@@ -1,4 +1,3 @@
-
 @import '../components/Breadcrumb';
 
 .repo-nav {
@@ -21,14 +20,14 @@
     &__action {
         display: flex;
         align-items: center;
-        color: #93A9C8;
+        color: #93a9c8;
         margin-left: 1rem;
         cursor: pointer;
         white-space: nowrap;
         text-overflow: ellipsis;
 
         &-text {
-            margin-left: .5rem;
+            margin-left: 0.5rem;
             @media (max-width: $media-md) {
                 display: none;
             }

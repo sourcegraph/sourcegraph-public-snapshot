@@ -2,7 +2,7 @@
     &__code {
         display: block;
         padding: 1rem 0;
-        background: #141A2A;
+        background: #141a2a;
         width: 100%;
         overflow-x: auto;
         table-layout: fixed;
@@ -15,10 +15,11 @@
         font-size: 12px;
         line-height: 20px;
         &--main {
-            background: #0D111C;
+            background: #0d111c;
         }
-        &--before, &--after {
-            background: #141A2A;
+        &--before,
+        &--after {
+            background: #141a2a;
         }
     }
     &__line-content {
@@ -44,7 +45,7 @@
     }
     &__chat-icon {
         height: 1rem;
-        color: #8296C4;
+        color: #8296c4;
         margin-right: 0.42em;
         .icon {
             width: 1.125rem;

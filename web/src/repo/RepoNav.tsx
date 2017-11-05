@@ -46,47 +46,78 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(currentUser.subscribe(
-            user => {
+        this.subscriptions.add(
+            currentUser.subscribe(user => {
                 this.setState({ editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta') })
-            }
-        ))
+            })
+        )
     }
 
     public render(): JSX.Element | null {
-        const editorUrl = this.props.customEditorURL || toEditorURL(this.props.repoPath, this.props.commitID, this.props.filePath, parseHash(this.props.location.hash))
+        const editorUrl =
+            this.props.customEditorURL ||
+            toEditorURL(
+                this.props.repoPath,
+                this.props.commitID,
+                this.props.filePath,
+                parseHash(this.props.location.hash)
+            )
         return (
-            <div className='repo-nav'>
+            <div className="repo-nav">
                 {/* TODO Don't assume master! */}
-                <RevSwitcher history={this.props.history} rev={this.props.rev || 'master'} repoPath={this.props.repoPath} disabled={this.props.revSwitcherDisabled} />
-                <span className='repo-nav__path'>
+                <RevSwitcher
+                    history={this.props.history}
+                    rev={this.props.rev || 'master'}
+                    repoPath={this.props.repoPath}
+                    disabled={this.props.revSwitcherDisabled}
+                />
+                <span className="repo-nav__path">
                     <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
                 </span>
-                {!this.props.hideCopyLink && <a href='' className='repo-nav__action' onClick={this.onShareButtonClick} title='Copy link'>
-                    <CopyIcon className='icon-inline' />
-                    <span className='repo-nav__action-text'>{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
-                </a>}
-                {
-                    this.props.repoPath.split('/')[0] === 'github.com' &&
-                    <a href={this.urlToGitHub()} target='_blank' className='repo-nav__action' title='View on GitHub' onClick={this.onViewOnCodeHostButtonClicked}>
-                        <GitHubIcon className='icon-inline' />
-                        <span className='repo-nav__action-text'>View on GitHub</span>
+                {!this.props.hideCopyLink && (
+                    <a href="" className="repo-nav__action" onClick={this.onShareButtonClick} title="Copy link">
+                        <CopyIcon className="icon-inline" />
+                        <span className="repo-nav__action-text">{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
                     </a>
-                }
-                {
-                    this.props.filePath && this.props.phabricatorCallsign &&
-                    <a href={this.urlToPhabricator()} target='_blank' className='repo-nav__action' title='View on Phabricator' onClick={this.onViewOnCodeHostButtonClicked}>
-                        <PhabricatorIcon className='icon-inline' />
-                        <span className='repo-nav__action-text'>View on Phabricator</span>
+                )}
+                {this.props.repoPath.split('/')[0] === 'github.com' && (
+                    <a
+                        href={this.urlToGitHub()}
+                        target="_blank"
+                        className="repo-nav__action"
+                        title="View on GitHub"
+                        onClick={this.onViewOnCodeHostButtonClicked}
+                    >
+                        <GitHubIcon className="icon-inline" />
+                        <span className="repo-nav__action-text">View on GitHub</span>
                     </a>
-                }
-                {
-                    this.props.repoPath && this.state.editorBeta &&
-                    <a href={editorUrl} target='sourcegraphapp' className='repo-nav__action' title='Open in Sourcegraph Editor' onClick={this.onOpenOnDesktopClicked}>
-                        <ComputerIcon className='icon-inline' />
-                        <span className='repo-nav__action-text'>Open in Sourcegraph Editor</span>
-                    </a>
-                }
+                )}
+                {this.props.filePath &&
+                    this.props.phabricatorCallsign && (
+                        <a
+                            href={this.urlToPhabricator()}
+                            target="_blank"
+                            className="repo-nav__action"
+                            title="View on Phabricator"
+                            onClick={this.onViewOnCodeHostButtonClicked}
+                        >
+                            <PhabricatorIcon className="icon-inline" />
+                            <span className="repo-nav__action-text">View on Phabricator</span>
+                        </a>
+                    )}
+                {this.props.repoPath &&
+                    this.state.editorBeta && (
+                        <a
+                            href={editorUrl}
+                            target="sourcegraphapp"
+                            className="repo-nav__action"
+                            title="Open in Sourcegraph Editor"
+                            onClick={this.onOpenOnDesktopClicked}
+                        >
+                            <ComputerIcon className="icon-inline" />
+                            <span className="repo-nav__action-text">Open in Sourcegraph Editor</span>
+                        </a>
+                    )}
             </div>
         )
     }
@@ -119,7 +150,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             if (this.props.isDirectory) {
                 return `https://${this.props.repoPath}/tree/${this.props.rev || 'master'}/${this.props.filePath}`
             }
-            return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line ? '#L' + line : ''}`
+            return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line
+                ? '#L' + line
+                : ''}`
         }
         return `https://${this.props.repoPath}/tree/${this.props.rev || 'master'}/`
     }

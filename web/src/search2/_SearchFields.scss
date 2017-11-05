@@ -10,7 +10,7 @@
         width: 100%;
         &-example {
             flex: 0 0 13rem;
-            color: #93A9C8;
+            color: #93a9c8;
         }
     }
     &__header {
@@ -50,13 +50,13 @@
         padding: 0 0.35rem;
         border: solid 1px rgb(51, 68, 90);
         outline: none;
-        background: #1C2736;
+        background: #1c2736;
         color: white;
         &::placeholder {
             color: rgb(62, 82, 104);
         }
         &:focus {
-            border: solid 1px #1C7CD6;
+            border: solid 1px #1c7cd6;
         }
         &-select {
             padding-top: 0.19rem;

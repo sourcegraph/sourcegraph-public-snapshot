@@ -8,11 +8,11 @@ export interface ChipProps {
 }
 
 export const Chip = (props: ChipProps) => (
-    <span className='chip'>
-        <props.icon className='icon-inline' />
-        <span className='chip__label'>{props.label}</span>
-        <button type='button' className='btn btn-icon chip__delete-button' onClick={props.onDelete}>
-            <CloseIcon className='icon-inline' />
+    <span className="chip">
+        <props.icon className="icon-inline" />
+        <span className="chip__label">{props.label}</span>
+        <button type="button" className="btn btn-icon chip__delete-button" onClick={props.onDelete}>
+            <CloseIcon className="icon-inline" />
         </button>
     </span>
 )

@@ -38,16 +38,16 @@ export class DirectoryPageEntry extends React.Component<Props, State> {
             this.componentUpdates
                 .filter(() => this.isVisible)
                 .switchMap(props =>
-                    fetchFileCommitInfo(props)
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
+                    fetchFileCommitInfo(props).catch(err => {
+                        console.error(err)
+                        return []
+                    })
                 )
-                .subscribe(commitInfo => {
-                    this.setState({ commitInfo })
-                },
-                err => console.error(err)
+                .subscribe(
+                    commitInfo => {
+                        this.setState({ commitInfo })
+                    },
+                    err => console.error(err)
                 )
         )
     }
@@ -68,71 +68,68 @@ export class DirectoryPageEntry extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const lastCommit = this.state.commitInfo
         const person = lastCommit && lastCommit.committer && lastCommit.committer.person && lastCommit.committer.person
-        const date = lastCommit && lastCommit.committer &&
+        const date =
+            lastCommit &&
+            lastCommit.committer &&
             formatDistance(parseCommitDateString(lastCommit.committer.date), new Date(), { addSuffix: true })
 
         return (
             <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
-                <tr className='dir-page-entry__row'>
+                <tr className="dir-page-entry__row">
                     <td
-                        className='dir-page-entry__name-cell'
+                        className="dir-page-entry__name-cell"
                         colSpan={2}
                         title={this.getLastPathPart(this.props.filePath)}
                     >
-                        <span className='truncated'>
-                            {this.props.isDirectory ?
-                                <FolderIcon className='icon-inline' /> :
-                                <FileIcon className='icon-inline' />
-                            }
-                            {this.props.isDirectory ?
+                        <span className="truncated">
+                            {this.props.isDirectory ? (
+                                <FolderIcon className="icon-inline" />
+                            ) : (
+                                <FileIcon className="icon-inline" />
+                            )}
+                            {this.props.isDirectory ? (
                                 <Link
                                     to={toTreeURL({
-                                        repoPath: this.props.repoPath, filePath: this.props.filePath,
+                                        repoPath: this.props.repoPath,
+                                        filePath: this.props.filePath,
                                         rev: this.props.rev,
                                     })}
                                     className={'name-link'}
                                 >
                                     {this.getLastPathPart(this.props.filePath)}
                                 </Link>
-                                :
+                            ) : (
                                 <Link
                                     to={toBlobURL({
-                                        repoPath: this.props.repoPath, filePath: this.props.filePath,
+                                        repoPath: this.props.repoPath,
+                                        filePath: this.props.filePath,
                                         rev: this.props.rev,
                                     })}
                                     className={'name-link'}
                                 >
                                     {this.getLastPathPart(this.props.filePath)}
                                 </Link>
-                            }
+                            )}
                         </span>
                     </td>
-                    <td
-                        className='dir-page-entry-entry__commit-message-cell'
-                        title={lastCommit && lastCommit.message}
-                    >
+                    <td className="dir-page-entry-entry__commit-message-cell" title={lastCommit && lastCommit.message}>
                         {lastCommit && lastCommit.message}
                     </td>
-                    <td
-                        className='dir-page-entry__committer-cell'
-                        title={person ? person.name : undefined}
-                    >
+                    <td className="dir-page-entry__committer-cell" title={person ? person.name : undefined}>
                         {person && <UserAvatar user={person} />}
                         {person && person.name}
                     </td>
-                    <td
-                        className='dir-page-entry__date-cell'
-                        title={date ? date : undefined}
-                    >
+                    <td className="dir-page-entry__date-cell" title={date ? date : undefined}>
                         {date}
                     </td>
                     <td
-                        className='dir-page-entry__commit-hash-cell'
+                        className="dir-page-entry__commit-hash-cell"
                         title={lastCommit && lastCommit.rev.substring(0, 7)}
                     >
                         <Link
                             to={toBlobURL({
-                                repoPath: this.props.repoPath, filePath: this.props.filePath,
+                                repoPath: this.props.repoPath,
+                                filePath: this.props.filePath,
                                 rev: lastCommit && lastCommit.rev,
                             })}
                         >

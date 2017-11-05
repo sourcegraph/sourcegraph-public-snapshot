@@ -48,20 +48,29 @@ export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<
         return Promise.resolve({ contents: [] })
     }
 
-    const body = wrapLSP({
-        method: 'textDocument/hover',
-        params: {
-            textDocument: {
-                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-            },
-            position: {
-                character: pos.position.character! - 1,
-                line: pos.position.line - 1,
+    const body = wrapLSP(
+        {
+            method: 'textDocument/hover',
+            params: {
+                textDocument: {
+                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                },
+                position: {
+                    character: pos.position.character! - 1,
+                    line: pos.position.line - 1,
+                },
             },
         },
-    }, pos, pos.filePath)
+        pos,
+        pos.filePath
+    )
 
-    return fetch(`/.api/xlang/textDocument/hover`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/hover`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: getHeaders(),
+        credentials: 'same-origin',
+    })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
@@ -77,20 +86,29 @@ export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pro
         return Promise.resolve([])
     }
 
-    const body = wrapLSP({
-        method: 'textDocument/definition',
-        params: {
-            textDocument: {
-                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-            },
-            position: {
-                character: pos.position.character! - 1,
-                line: pos.position.line - 1,
+    const body = wrapLSP(
+        {
+            method: 'textDocument/definition',
+            params: {
+                textDocument: {
+                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                },
+                position: {
+                    character: pos.position.character! - 1,
+                    line: pos.position.line - 1,
+                },
             },
         },
-    }, pos, pos.filePath)
+        pos,
+        pos.filePath
+    )
 
-    return fetch(`/.api/xlang/textDocument/definition`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/definition`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: getHeaders(),
+        credentials: 'same-origin',
+    })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
@@ -101,46 +119,52 @@ export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pro
 }, makeRepoURI)
 
 export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | null> {
-    return fetchDefinition(pos)
-        .then(def => {
-            const defArray = Array.isArray(def) ? def : [def]
-            def = defArray[0]
-            if (!def) {
-                return null
-            }
+    return fetchDefinition(pos).then(def => {
+        const defArray = Array.isArray(def) ? def : [def]
+        def = defArray[0]
+        if (!def) {
+            return null
+        }
 
-            const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
-            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
-            if (uri.repoPath === pos.repoPath && uri.commitID === pos.commitID) {
-                // Use pretty rev from the current context for same-repo J2D.
-                uri.rev = pos.rev
-                return toPrettyBlobURL(uri)
-            }
-            return toAbsoluteBlobURL(uri)
-        })
+        const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
+        uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+        if (uri.repoPath === pos.repoPath && uri.commitID === pos.commitID) {
+            // Use pretty rev from the current context for same-repo J2D.
+            uri.rev = pos.rev
+            return toPrettyBlobURL(uri)
+        }
+        return toAbsoluteBlobURL(uri)
+    })
 }
 
-export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<{ location: any, symbol: any } | null> => {
-    const body = wrapLSP({
-        method: 'textDocument/xdefinition',
-        params: {
-            textDocument: {
-                uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-            },
-            position: {
-                character: pos.position.character! - 1,
-                line: pos.position.line - 1,
+type XDefinitionResponse = { location: any; symbol: any } | null
+export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<XDefinitionResponse> => {
+    const body = wrapLSP(
+        {
+            method: 'textDocument/xdefinition',
+            params: {
+                textDocument: {
+                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                },
+                position: {
+                    character: pos.position.character! - 1,
+                    line: pos.position.line - 1,
+                },
             },
         },
-    }, pos, pos.filePath)
+        pos,
+        pos.filePath
+    )
 
-    return fetch(`/.api/xlang/textDocument/xdefinition`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/xdefinition`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: getHeaders(),
+        credentials: 'same-origin',
+    })
         .then(resp => resp.json())
         .then(json => {
-            if (!json ||
-                !json[1] ||
-                !json[1].result ||
-                !json[1].result[0]) {
+            if (!json || !json[1] || !json[1].result || !json[1].result[0]) {
                 return null
             }
             return json[1].result[0]
@@ -152,23 +176,32 @@ export const fetchReferences = memoizeAsync((ctx: AbsoluteRepoFilePosition): Pro
     if (!supportedExtensions.has(ext)) {
         return Promise.resolve([])
     }
-    const body = wrapLSP({
-        method: 'textDocument/references',
-        params: {
-            textDocument: {
-                uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+    const body = wrapLSP(
+        {
+            method: 'textDocument/references',
+            params: {
+                textDocument: {
+                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                },
+                position: {
+                    character: ctx.position.character! - 1,
+                    line: ctx.position.line - 1,
+                },
+                context: {
+                    includeDeclaration: true,
+                },
             },
-            position: {
-                character: ctx.position.character! - 1,
-                line: ctx.position.line - 1,
-            },
-            context: {
-                includeDeclaration: true,
-            },
-        },
-    } as any, ctx, ctx.filePath)
+        } as any,
+        ctx,
+        ctx.filePath
+    )
 
-    return fetch(`/.api/xlang/textDocument/references`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/textDocument/references`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: getHeaders(),
+        credentials: 'same-origin',
+    })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
@@ -255,16 +288,25 @@ export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<L
         return Promise.resolve([])
     }
 
-    const body = wrapLSP({
-        method: 'workspace/xreferences',
-        params: {
-            hints: ctx.hints,
-            query: ctx.query,
-            limit: ctx.limit,
+    const body = wrapLSP(
+        {
+            method: 'workspace/xreferences',
+            params: {
+                hints: ctx.hints,
+                query: ctx.query,
+                limit: ctx.limit,
+            },
         },
-    }, { repoPath: ctx.repoPath, commitID: ctx.commitID }, ctx.filePath)
+        { repoPath: ctx.repoPath, commitID: ctx.commitID },
+        ctx.filePath
+    )
 
-    return fetch(`/.api/xlang/workspace/xreferences`, { method: 'POST', body: JSON.stringify(body), headers: { ...window.context.xhrHeaders }, credentials: 'same-origin' })
+    return fetch(`/.api/xlang/workspace/xreferences`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: getHeaders(),
+        credentials: 'same-origin',
+    })
         .then(resp => resp.json())
         .then(json => {
             if (!json || !json[1] || !json[1].result) {
@@ -273,3 +315,11 @@ export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<L
             return json[1].result.map((data: ReferenceInformation) => data.reference)
         })
 }, ctx => makeRepoURI(ctx) + '___' + JSON.stringify(ctx.query) + '___' + ctx.limit)
+
+function getHeaders(): Headers {
+    const headers = new Headers()
+    for (const [key, value] of Object.entries(window.context.xhrHeaders)) {
+        headers.set(key, value)
+    }
+    return headers
+}

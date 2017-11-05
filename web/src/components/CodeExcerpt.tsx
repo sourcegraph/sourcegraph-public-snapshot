@@ -49,7 +49,11 @@ export class CodeExcerpt extends React.Component<Props, State> {
     public getPreviewWindowLines(): number[] {
         const targetLine = this.props.position.line
         let res = [targetLine]
-        for (let i = targetLine - this.props.previewWindowExtraLines!; i < targetLine + this.props.previewWindowExtraLines! + 1; ++i) {
+        for (
+            let i = targetLine - this.props.previewWindowExtraLines!;
+            i < targetLine + this.props.previewWindowExtraLines! + 1;
+            ++i
+        ) {
             if (i > 0 && i < targetLine) {
                 res = [i].concat(res)
             }
@@ -76,27 +80,26 @@ export class CodeExcerpt extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
-                <div className='code-excerpt'>
-                    {
-                        this.state.blobLines &&
-                        <div ref={this.setTableContainerElement} dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }} />
-                    }
-                    {
-                        !this.state.blobLines &&
-                        <table >
+                <div className="code-excerpt">
+                    {this.state.blobLines && (
+                        <div
+                            ref={this.setTableContainerElement}
+                            dangerouslySetInnerHTML={{ __html: this.makeTableHTML() }}
+                        />
+                    )}
+                    {!this.state.blobLines && (
+                        <table>
                             <tbody>
-                                {
-                                    this.getPreviewWindowLines().map(i =>
-                                        <tr key={i}>
-                                            <td className='line'>{i + 1}</td>
-                                            {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                            <td className='code'> </td>
-                                        </tr>
-                                    )
-                                }
+                                {this.getPreviewWindowLines().map(i => (
+                                    <tr key={i}>
+                                        <td className="line">{i + 1}</td>
+                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                        <td className="code"> </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
-                    }
+                    )}
                 </div>
             </VisibilitySensor>
         )
@@ -112,15 +115,14 @@ export class CodeExcerpt extends React.Component<Props, State> {
             commitID: props.commitID,
             filePath: props.filePath,
             disableTimeout: true,
-        })
-            .subscribe(
+        }).subscribe(
             lines => {
                 this.setState({ blobLines: lines })
             },
             err => {
                 console.error('failed to fetch blob content', err)
             }
-            )
+        )
     }
 
     private makeTableHTML(): string {

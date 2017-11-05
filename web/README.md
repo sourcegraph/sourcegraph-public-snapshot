@@ -1,11 +1,13 @@
 
 # Sourcegraph WebApp
 
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+
 ## Components
 
  - Try to do one component per file. This makes it easy to encapsulate corresponding styles.
  - Don't pass arrow functions as React bindings unless unavoidable
- 
+
 ## Styles
 
  - Styles are written in SCSS
@@ -24,3 +26,8 @@
  - Prefer flexbox over absolute positioning
  - Avoid styling the children of your components. This couples your component to the implementation of the child
  - Order your rules so that layout rules (that describe how the component is layed out to its parents) come first, then rules that describe the layout of its children, and finally visual details.
+
+## Formatting
+
+We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
+`npm run prettier` will check & autoformat all code. It is also run as part of `npm run lint`.

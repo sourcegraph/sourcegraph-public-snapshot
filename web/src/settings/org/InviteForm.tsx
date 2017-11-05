@@ -33,7 +33,6 @@ interface State {
 type Update = (state: State) => State
 
 export const InviteForm = reactive<Props>(props => {
-
     const submits = new Subject<React.FormEvent<HTMLFormElement>>()
     const nextSubmit = (e: React.FormEvent<HTMLFormElement>) => submits.next(e)
 
@@ -43,29 +42,34 @@ export const InviteForm = reactive<Props>(props => {
     const orgID = props.map(({ orgID }) => orgID)
 
     return Observable.merge<Update>(
+        orgID.map(orgID => (state: State): State => ({ ...state, orgID })),
 
-        orgID
-            .map(orgID => (state: State): State => ({ ...state, orgID })),
-
-        emailChanges
-            .map(email => (state: State): State => ({ ...state, email })),
+        emailChanges.map(email => (state: State): State => ({ ...state, email })),
 
         submits
             .do(e => e.preventDefault())
             .withLatestFrom(orgID, emailChanges)
-            .do(([, orgId, email]) => events.InviteOrgMemberClicked.log({
-                organization: {
-                    invite: {
-                        user_email: email,
+            .do(([, orgId, email]) =>
+                events.InviteOrgMemberClicked.log({
+                    organization: {
+                        invite: {
+                            user_email: email,
+                        },
+                        org_id: orgId,
                     },
-                    org_id: orgId,
-                },
-            }))
+                })
+            )
             .mergeMap(([, orgID, email]) =>
                 inviteUser(email, orgID)
                     .mergeMap(() =>
                         // Reset email, reenable submit button, flash "invited" text
-                        Observable.of((state: State): State => ({ ...state, loading: false, error: undefined, email: '', invited: true }))
+                        Observable.of((state: State): State => ({
+                            ...state,
+                            loading: false,
+                            error: undefined,
+                            email: '',
+                            invited: true,
+                        }))
                             // Hide "invited" text again after 1s
                             .concat(Observable.of<Update>(state => ({ ...state, invited: false })).delay(1000))
                     )
@@ -74,26 +78,37 @@ export const InviteForm = reactive<Props>(props => {
                     .catch(error => [(state: State): State => ({ ...state, loading: false, error })])
             )
     )
-        .scan<Update, State>((state: State, update: Update) => update(state), { invited: false, loading: false, email: '' } as State)
+        .scan<Update, State>((state: State, update: Update) => update(state), {
+            invited: false,
+            loading: false,
+            email: '',
+        } as State)
         .map(({ loading, email, invited, error }) => (
-            <form className='invite-form' onSubmit={nextSubmit}>
-                <div className='invite-form__container'>
+            <form className="invite-form" onSubmit={nextSubmit}>
+                <div className="invite-form__container">
                     <input
-                        type='email'
-                        className='ui-text-box invite-form__email'
-                        placeholder='newmember@yourcompany.com'
+                        type="email"
+                        className="ui-text-box invite-form__email"
+                        placeholder="newmember@yourcompany.com"
                         onChange={nextEmailChange}
                         value={email}
                         required={true}
                         spellCheck={false}
                         size={30}
                     />
-                    <button type='submit' disabled={loading} className='btn btn-primary invite-form__submit-button'>Invite</button>
+                    <button type="submit" disabled={loading} className="btn btn-primary invite-form__submit-button">
+                        Invite
+                    </button>
                 </div>
-                {loading && <LoaderIcon className='icon-inline' />}
-                {error && <div className='text-error'><small>{error.message}</small></div>}
-                <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}><small>Invited!</small></div>
+                {loading && <LoaderIcon className="icon-inline" />}
+                {error && (
+                    <div className="text-error">
+                        <small>{error.message}</small>
+                    </div>
+                )}
+                <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}>
+                    <small>Invited!</small>
+                </div>
             </form>
         ))
-
 })

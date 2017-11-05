@@ -1,4 +1,3 @@
-
 @import './Suggestion';
 
 .query-input2 {
@@ -8,17 +7,17 @@
     &__input {
         width: 100%;
         height: 100%;
-        background-color: #1C2736;
+        background-color: #1c2736;
         -webkit-appearance: none;
         border: solid 1px rgb(51, 68, 90);
         outline: none;
         color: white;
         font-size: inherit;
         &::placeholder {
-            color: #93A9C8;
+            color: #93a9c8;
         }
         &:focus {
-            border-color: #1C7CD6;
+            border-color: #1c7cd6;
         }
     }
 
@@ -30,7 +29,7 @@
         margin: 0;
         overflow-y: auto;
         overflow-y: overlay;
-        background-color: #1C2736;
+        background-color: #1c2736;
         border: solid 1px rgb(27, 84, 138);
         border-top: none;
     }

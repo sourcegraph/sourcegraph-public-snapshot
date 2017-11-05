@@ -36,10 +36,7 @@ export class UserAvatar extends React.Component<Props, State> {
             this.setState({ user: this.props.user })
         } else {
             this.subscriptions.add(
-                currentUser.subscribe(
-                    user => this.setState({ user }),
-                    error => console.error(error)
-                )
+                currentUser.subscribe(user => this.setState({ user }), error => console.error(error))
             )
         }
     }
@@ -61,13 +58,18 @@ export class UserAvatar extends React.Component<Props, State> {
             if (this.props.size) {
                 url.searchParams.set('s', this.props.size + '')
             }
-            avatar = <img className='avatar-icon' src={url.href} />
+            avatar = <img className="avatar-icon" src={url.href} />
         } else {
             avatar = <UserWomanAlternateIcon />
         }
 
         return (
-            <div onClick={this.props.onClick} className={`avatar${this.props.className ? ' ' + this.props.className : ''}`}>{avatar}</div>
+            <div
+                onClick={this.props.onClick}
+                className={`avatar${this.props.className ? ' ' + this.props.className : ''}`}
+            >
+                {avatar}
+            </div>
         )
     }
 }

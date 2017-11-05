@@ -22,10 +22,14 @@ let findRefsAction: HTMLAnchorElement
 let moreContext: HTMLElement
 
 // tslint:disable-next-line:max-line-length
-const closeIconSVG = '<svg width="10px" height="10px"><path xmlns="http://www.w3.org/2000/svg" id="path0_fill" d="M 7.8565 7.86521C 7.66117 8.06054 7.3445 8.06054 7.14917 7.86521L 3.99917 4.71521L 0.851833 7.86254C 0.655167 8.05721 0.3385 8.05521 0.1445 7.85854C -0.0481667 7.66388 -0.0481667 7.34988 0.1445 7.15454L 3.29183 4.00721L 0.145167 0.860543C -0.0475001 0.663209 -0.0428332 0.346543 0.155167 0.153876C 0.349167 -0.0347905 0.6585 -0.0347905 0.8525 0.153876L 3.99917 3.30054L 7.1485 0.151209C 7.34117 -0.0467907 7.65783 -0.0507906 7.85583 0.141876C 8.05383 0.334543 8.05783 0.651209 7.86517 0.849209C 7.86183 0.852543 7.85917 0.855209 7.85583 0.858543L 4.7065 4.00788L 7.8565 7.15788C 8.05183 7.35321 8.0525 7.66988 7.8565 7.86521Z" /></svg >'
+const closeIconSVG =
+    '<svg width="10px" height="10px"><path xmlns="http://www.w3.org/2000/svg" id="path0_fill" d="M 7.8565 7.86521C 7.66117 8.06054 7.3445 8.06054 7.14917 7.86521L 3.99917 4.71521L 0.851833 7.86254C 0.655167 8.05721 0.3385 8.05521 0.1445 7.85854C -0.0481667 7.66388 -0.0481667 7.34988 0.1445 7.15454L 3.29183 4.00721L 0.145167 0.860543C -0.0475001 0.663209 -0.0428332 0.346543 0.155167 0.153876C 0.349167 -0.0347905 0.6585 -0.0347905 0.8525 0.153876L 3.99917 3.30054L 7.1485 0.151209C 7.34117 -0.0467907 7.65783 -0.0507906 7.85583 0.141876C 8.05383 0.334543 8.05783 0.651209 7.86517 0.849209C 7.86183 0.852543 7.85917 0.855209 7.85583 0.858543L 4.7065 4.00788L 7.8565 7.15788C 8.05183 7.35321 8.0525 7.66988 7.8565 7.86521Z" /></svg >'
 // tslint:disable-next-line:max-line-length
-const referencesIconSVG = '<svg width="12px" height="8px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path15_fill" d="M 6.00625 8C 2.33125 8 0.50625 5.075 0.05625 4.225C -0.01875 4.075 -0.01875 3.9 0.05625 3.775C 0.50625 2.925 2.33125 0 6.00625 0C 9.68125 0 11.5063 2.925 11.9563 3.775C 12.0312 3.925 12.0312 4.1 11.9563 4.225C 11.5063 5.075 9.68125 8 6.00625 8ZM 6.00625 1.25C 4.48125 1.25 3.25625 2.475 3.25625 4C 3.25625 5.525 4.48125 6.75 6.00625 6.75C 7.53125 6.75 8.75625 5.525 8.75625 4C 8.75625 2.475 7.53125 1.25 6.00625 1.25ZM 6.00625 5.75C 5.03125 5.75 4.25625 4.975 4.25625 4C 4.25625 3.025 5.03125 2.25 6.00625 2.25C 6.98125 2.25 7.75625 3.025 7.75625 4C 7.75625 4.975 6.98125 5.75 6.00625 5.75Z"/></svg>'
-const definitionIconSVG = '<svg width="11px" height="9px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path10_fill" d="M 6.325 8.4C 6.125 8.575 5.8 8.55 5.625 8.325C 5.55 8.25 5.5 8.125 5.5 8L 5.5 6C 2.95 6 1.4 6.875 0.825 8.7C 0.775 8.875 0.6 9 0.425 9C 0.2 9 -4.44089e-16 8.8 -4.44089e-16 8.575C -4.44089e-16 8.575 -4.44089e-16 8.575 -4.44089e-16 8.55C 0.125 4.825 1.925 2.675 5.5 2.5L 5.5 0.5C 5.5 0.225 5.725 8.88178e-16 6 8.88178e-16C 6.125 8.88178e-16 6.225 0.05 6.325 0.125L 10.825 3.875C 11.025 4.05 11.075 4.375 10.9 4.575C 10.875 4.6 10.85 4.625 10.825 4.65L 6.325 8.4Z"/></svg>'
+const referencesIconSVG =
+    '<svg width="12px" height="8px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path15_fill" d="M 6.00625 8C 2.33125 8 0.50625 5.075 0.05625 4.225C -0.01875 4.075 -0.01875 3.9 0.05625 3.775C 0.50625 2.925 2.33125 0 6.00625 0C 9.68125 0 11.5063 2.925 11.9563 3.775C 12.0312 3.925 12.0312 4.1 11.9563 4.225C 11.5063 5.075 9.68125 8 6.00625 8ZM 6.00625 1.25C 4.48125 1.25 3.25625 2.475 3.25625 4C 3.25625 5.525 4.48125 6.75 6.00625 6.75C 7.53125 6.75 8.75625 5.525 8.75625 4C 8.75625 2.475 7.53125 1.25 6.00625 1.25ZM 6.00625 5.75C 5.03125 5.75 4.25625 4.975 4.25625 4C 4.25625 3.025 5.03125 2.25 6.00625 2.25C 6.98125 2.25 7.75625 3.025 7.75625 4C 7.75625 4.975 6.98125 5.75 6.00625 5.75Z"/></svg>'
+// tslint:disable-next-line:max-line-length
+const definitionIconSVG =
+    '<svg width="11px" height="9px"><path fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg" id="path10_fill" d="M 6.325 8.4C 6.125 8.575 5.8 8.55 5.625 8.325C 5.55 8.25 5.5 8.125 5.5 8L 5.5 6C 2.95 6 1.4 6.875 0.825 8.7C 0.775 8.875 0.6 9 0.425 9C 0.2 9 -4.44089e-16 8.8 -4.44089e-16 8.575C -4.44089e-16 8.575 -4.44089e-16 8.575 -4.44089e-16 8.55C 0.125 4.825 1.925 2.675 5.5 2.5L 5.5 0.5C 5.5 0.225 5.725 8.88178e-16 6 8.88178e-16C 6.125 8.88178e-16 6.225 0.05 6.325 0.125L 10.825 3.875C 11.025 4.05 11.075 4.375 10.9 4.575C 10.875 4.6 10.85 4.625 10.825 4.65L 6.325 8.4Z"/></svg>'
 
 export interface TooltipData extends Partial<Hover> {
     target: HTMLElement
@@ -148,10 +152,6 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     findRefsAction.onclick = actions.references(ctx)
 
     if (ctx) {
-        let revString = ''
-        if (ctx.commitID) {
-            revString = `@${ctx.commitID}`
-        }
         findRefsAction.href = toAbsoluteBlobURL({ ...ctx, referencesMode: 'local' })
     } else {
         findRefsAction.href = ''
@@ -236,13 +236,13 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 
     // Anchor the tooltip vertically.
     const tooltipBound = tooltip.getBoundingClientRect()
-    const relTop = (targetBound.top + scrollingElement.scrollTop) - scrollingElementBound.top
+    const relTop = targetBound.top + scrollingElement.scrollTop - scrollingElementBound.top
     const margin = 5
     let tooltipTop = relTop - (tooltipBound.height + margin)
-    if ((tooltipTop - scrollingElement.scrollTop) < 0) {
+    if (tooltipTop - scrollingElement.scrollTop < 0) {
         // Tooltip wouldn't be visible from the top, so display it at the
         // bottom.
-        const relBottom = (targetBound.bottom + scrollingElement.scrollTop) - scrollingElementBound.top
+        const relBottom = targetBound.bottom + scrollingElement.scrollTop - scrollingElementBound.top
         tooltipTop = relBottom + margin
     }
     tooltip.style.top = tooltipTop + 'px'
@@ -371,7 +371,7 @@ export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement 
     }
     while (target && target.tagName !== 'TD' && target.tagName !== 'BODY') {
         // Find ancestor which wraps the whole line of code, not just the target token.
-        target = (target.parentNode as HTMLElement)
+        target = target.parentNode as HTMLElement
     }
     if (target.tagName === 'TD') {
         return target as HTMLTableDataCellElement
@@ -420,7 +420,10 @@ export function findElementWithOffset(cell: HTMLElement, offset: number): HTMLEl
  * @param target The element to compute line & character offset for.
  * @param ignoreFirstChar Whether to ignore the first character on a line when computing character offset.
  */
-export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = false): { line: number, character: number, word: string } | undefined {
+export function getTargetLineAndOffset(
+    target: HTMLElement,
+    ignoreFirstChar = false
+): { line: number; character: number; word: string } | undefined {
     const origTarget = target
     if (target.tagName === 'TD') {
         // Short-circuit; we are hovering over a line of code, but no token in particular.
@@ -428,7 +431,7 @@ export function getTargetLineAndOffset(target: HTMLElement, ignoreFirstChar = fa
     }
     while (target && target.tagName !== 'TD' && target.tagName !== 'BODY') {
         // Find ancestor which wraps the whole line of code, not just the target token.
-        target = (target.parentNode as HTMLElement)
+        target = target.parentNode as HTMLElement
     }
     if (!target || target.tagName !== 'TD') {
         // Make sure we're looking at an element we've annotated line number for (otherwise we have no idea )

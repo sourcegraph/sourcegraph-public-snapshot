@@ -1,25 +1,25 @@
 @keyframes highlight {
     0% {
-        background: #2A3A51
+        background: #2a3a51;
     }
     100% {
         background: none;
     }
 }
 
-.comment{
+.comment {
     width: 100%;
-    padding: .5rem;
-    border-bottom: 1px solid #212C45;
+    padding: 0.5rem;
+    border-bottom: 1px solid #212c45;
     &:first-of-type {
-        border-top: 1px solid #212C45;
+        border-top: 1px solid #212c45;
     }
-    &--targeted{
+    &--targeted {
         animation: highlight 3s;
     }
     &__top-area {
         display: flex;
-        font-size: .75rem;
+        font-size: 0.75rem;
         line-height: 1rem;
     }
     &__author {
@@ -30,21 +30,23 @@
         height: 1rem;
     }
     &__author-name {
-        padding-left: .25rem;
+        padding-left: 0.25rem;
     }
     &__content {
         margin-left: 1.25rem;
-        p, pre {
+        p,
+        pre {
             margin-bottom: 0;
         }
-        code, pre {
-            background: #141A2A;
+        code,
+        pre {
+            background: #141a2a;
         }
         pre {
-            padding: .5rem;
+            padding: 0.5rem;
         }
         code {
-            padding: .25rem;
+            padding: 0.25rem;
         }
     }
     &__share {

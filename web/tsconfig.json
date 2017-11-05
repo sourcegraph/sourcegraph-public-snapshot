@@ -5,20 +5,11 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "lib": [
-      "es2017",
-      "es2017.object",
-      "dom",
-      "dom.iterable"
-    ],
+    "lib": ["es2017", "es2017.object", "dom", "dom.iterable"],
     "jsx": "react",
     "sourceMap": true,
     "noEmit": true,
     "downlevelIteration": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/date-fns"
-    ],
     "plugins": [
       {
         "name": "tslint-language-service"

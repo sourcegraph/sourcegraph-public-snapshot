@@ -25,7 +25,7 @@ export interface Props extends Repo {
 }
 
 const treePadding = (depth: number, directory: boolean) => ({
-    paddingLeft: (depth * 12 + (directory ? 0 : 12) + 12) + 'px',
+    paddingLeft: depth * 12 + (directory ? 0 : 12) + 12 + 'px',
     paddingRight: '16px',
 })
 
@@ -155,7 +155,9 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public selectElement(el: HTMLElement): void {
-        const root = (this.props.scrollRootSelector ? document.querySelector(this.props.scrollRootSelector) : document.querySelector('.tree-container')) as HTMLElement
+        const root = (this.props.scrollRootSelector
+            ? document.querySelector(this.props.scrollRootSelector)
+            : document.querySelector('.tree-container')) as HTMLElement
         scrollIntoView(el, root)
         const path = el.getAttribute('data-tree-path')!
         this.store.setState({ ...this.store.getValue(), selectedPath: path, selectedDir: getParentDir(path) })
@@ -165,7 +167,7 @@ export class Tree extends React.PureComponent<Props, {}> {
         return document.querySelector(`a[data-tree-path="${path}"]`) as any
     }
 
-    public locateDomNodeInCollection(path: string): { items: HTMLElement[], i: number } | undefined {
+    public locateDomNodeInCollection(path: string): { items: HTMLElement[]; i: number } | undefined {
         const items = document.querySelectorAll('.tree__row-contents') as any
         let i = 0
         for (i; i < items.length; ++i) {
@@ -204,12 +206,19 @@ export class Tree extends React.PureComponent<Props, {}> {
                 let curr = ''
                 const split = selectedPath.split('/')
                 for (const part of split) {
-                    if (curr !== '') { curr += '/' }
+                    if (curr !== '') {
+                        curr += '/'
+                    }
                     curr += part
                     shownSubpaths = shownSubpaths.add(curr)
                 }
             }
-            this.store.setState({ ...this.store.getValue(), shownSubpaths, selectedPath, selectedDir: getParentDir(selectedPath) })
+            this.store.setState({
+                ...this.store.getValue(),
+                shownSubpaths,
+                selectedPath,
+                selectedDir: getParentDir(selectedPath),
+            })
             setTimeout(() => {
                 if (selectedPath) {
                     const el = this.locateDomNode(nextProps.selectedPath!)
@@ -226,21 +235,21 @@ export class Tree extends React.PureComponent<Props, {}> {
         return (
             rect.top >= 0 &&
             rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) /*or $(window).height() */ &&
             rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
         )
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className='tree' tabIndex={1} onKeyDown={this.onKeyDown}>
+            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
                 <TreeLayer
                     history={this.props.history}
                     repoPath={this.props.repoPath}
                     rev={this.props.rev}
                     pathSplits={this.pathSplits}
                     store={this.store}
-                    currSubpath=''
+                    currSubpath=""
                 />
             </div>
         )
@@ -341,26 +350,40 @@ class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     <tbody>
                         <tr>
                             <td>
-                                {
-                                    this.tile(Object.keys(this.subfilesByDir)).map((dirs, i) => {
-                                        const subfilesByDir: _.Dictionary<string[][]> = {}
-                                        let subfiles: string[][] = []
-                                        for (const dir of dirs) {
-                                            subfiles = subfiles.concat(this.subfilesByDir[dir])
-                                            subfilesByDir[dir] = this.subfilesByDir[dir]
-                                        }
-                                        return <LayerTile key={i} {...this.props} {...this.state} depth={this.depth} files={[]} subfiles={subfiles} subfilesByDir={subfilesByDir} />
-                                    })
-                                }
+                                {this.tile(Object.keys(this.subfilesByDir)).map((dirs, i) => {
+                                    const subfilesByDir: _.Dictionary<string[][]> = {}
+                                    let subfiles: string[][] = []
+                                    for (const dir of dirs) {
+                                        subfiles = subfiles.concat(this.subfilesByDir[dir])
+                                        subfilesByDir[dir] = this.subfilesByDir[dir]
+                                    }
+                                    return (
+                                        <LayerTile
+                                            key={i}
+                                            {...this.props}
+                                            {...this.state}
+                                            depth={this.depth}
+                                            files={[]}
+                                            subfiles={subfiles}
+                                            subfilesByDir={subfilesByDir}
+                                        />
+                                    )
+                                })}
                             </td>
                         </tr>
                         <tr>
                             <td>
-                                {
-                                    this.tile(this.files).map((files, i) =>
-                                        <LayerTile key={i} {...this.props} {...this.state} depth={this.depth} files={files} subfiles={[]} subfilesByDir={{}} />
-                                    )
-                                }
+                                {this.tile(this.files).map((files, i) => (
+                                    <LayerTile
+                                        key={i}
+                                        {...this.props}
+                                        {...this.state}
+                                        depth={this.depth}
+                                        files={files}
+                                        subfiles={[]}
+                                        subfilesByDir={{}}
+                                    />
+                                ))}
                             </td>
                         </tr>
                     </tbody>
@@ -449,42 +472,57 @@ class LayerTile extends React.Component<TileProps, {}> {
 
     public render(): JSX.Element | null {
         return (
-            <table className='tile' style={{ width: '100%' }}>
+            <table className="tile" style={{ width: '100%' }}>
                 <tbody>
-                    {
-                        flatten(Object.keys(this.props.subfilesByDir).map((dir, i) =>
-                            [
-                                <tr key={i} className={this.currentDirectory(dir) === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}>
-                                    <td
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        onClick={() => {
-                                            const state = this.props.store.getValue()
-                                            const path = this.currentDirectory(dir)
-                                            const isShown = state.shownSubpaths.contains(path)
-                                            if (isShown) {
-                                                closeDirectory(this.props.store, path)
-                                            } else {
-                                                this.props.store.setState({ ...state, shownSubpaths: state.shownSubpaths.add(path), selectedPath: path, selectedDir: path })
-                                            }
-                                        }}
+                    {flatten(
+                        Object.keys(this.props.subfilesByDir).map((dir, i) => [
+                            <tr
+                                key={i}
+                                className={
+                                    this.currentDirectory(dir) === this.props.selectedPath
+                                        ? 'tree__row--selected'
+                                        : 'tree__row'
+                                }
+                            >
+                                <td
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => {
+                                        const state = this.props.store.getValue()
+                                        const path = this.currentDirectory(dir)
+                                        const isShown = state.shownSubpaths.contains(path)
+                                        if (isShown) {
+                                            closeDirectory(this.props.store, path)
+                                        } else {
+                                            this.props.store.setState({
+                                                ...state,
+                                                shownSubpaths: state.shownSubpaths.add(path),
+                                                selectedPath: path,
+                                                selectedDir: path,
+                                            })
+                                        }
+                                    }}
+                                >
+                                    <Link
+                                        className="tree__row-contents"
+                                        data-tree-directory="true"
+                                        data-tree-path={this.currentDirectory(dir)}
+                                        to={toTreeURL({
+                                            repoPath: this.props.repoPath,
+                                            rev: this.props.rev,
+                                            filePath: this.currentDirectory(dir),
+                                        })}
+                                        style={treePadding(this.props.depth, true)}
                                     >
-                                        <Link
-                                            className='tree__row-contents'
-                                            data-tree-directory='true'
-                                            data-tree-path={this.currentDirectory(dir)}
-                                            to={toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.currentDirectory(dir) })}
-                                            style={treePadding(this.props.depth, true)}
-                                        >
-                                            {
-                                                this.props.shownSubpaths.contains(this.currentDirectory(dir)) ?
-                                                    <ChevronDownIcon className='icon-inline' /> :
-                                                    <ChevronRightIcon className='icon-inline' />
-                                            }
-                                            <span className='tree__row-label'>{dir}</span>
-                                        </Link>
-                                    </td>
-                                </tr>,
-                                this.showSubpath(dir) &&
+                                        {this.props.shownSubpaths.contains(this.currentDirectory(dir)) ? (
+                                            <ChevronDownIcon className="icon-inline" />
+                                        ) : (
+                                            <ChevronRightIcon className="icon-inline" />
+                                        )}
+                                        <span className="tree__row-label">{dir}</span>
+                                    </Link>
+                                </td>
+                            </tr>,
+                            this.showSubpath(dir) && (
                                 <tr key={'layer-' + i}>
                                     <td>
                                         <TreeLayer
@@ -493,29 +531,39 @@ class LayerTile extends React.Component<TileProps, {}> {
                                             repoPath={this.props.repoPath}
                                             rev={this.props.rev}
                                             store={this.props.store}
-                                            pathSplits={this.props.pathSplits.filter(split => split[this.props.depth] === dir)}
+                                            pathSplits={this.props.pathSplits.filter(
+                                                split => split[this.props.depth] === dir
+                                            )}
                                             currSubpath={this.currentDirectory(dir)}
                                         />
                                     </td>
-                                </tr>,
-                            ]))
-                    }
-                    {
-                        this.props.files.map((file, i) => {
-                            const path = file.join('/')
-                            return <tr key={i} className={path === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}>
+                                </tr>
+                            ),
+                        ])
+                    )}
+                    {this.props.files.map((file, i) => {
+                        const path = file.join('/')
+                        return (
+                            <tr
+                                key={i}
+                                className={path === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}
+                            >
                                 <td style={treePadding(this.props.depth, false)}>
                                     <Link
-                                        className='tree__row-contents'
-                                        to={toBlobURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: path })}
+                                        className="tree__row-contents"
+                                        to={toBlobURL({
+                                            repoPath: this.props.repoPath,
+                                            rev: this.props.rev,
+                                            filePath: path,
+                                        })}
                                         data-tree-path={path}
                                     >
                                         {file[file.length - 1]}
                                     </Link>
                                 </td>
                             </tr>
-                        })
-                    }
+                        )
+                    })}
                 </tbody>
             </table>
         )

@@ -1,5 +1,3 @@
 {
-  "extends": [
-    "@sourcegraph/tslint-config"
-  ]
+  "extends": ["@sourcegraph/tslint-config"]
 }

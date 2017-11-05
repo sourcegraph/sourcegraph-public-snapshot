@@ -40,20 +40,36 @@ export class Comment extends React.Component<Props, State> {
         const shareLinkHref = shareUrl.pathname + shareUrl.search + shareUrl.hash
 
         // Check if this comment is targeted.
-        const isTargeted = this.props.forceTargeted || new URLSearchParams(loc.search).get('id') === String(this.props.comment.id)
+        const isTargeted =
+            this.props.forceTargeted || new URLSearchParams(loc.search).get('id') === String(this.props.comment.id)
 
         return (
-            <div className={`comment${isTargeted ? ' comment--targeted' : ''}`} ref={isTargeted ? this.setScrollToElement : undefined}>
-                <div className='comment__top-area'>
-                    <span className='comment__author' title={comment.author.username || undefined}>
-                        <UserAvatar size={16} user={comment.author} className='comment__author-avatar' />
-                        <span className='comment__author-name'>{comment.author.displayName ? comment.author.displayName : comment.author.username}</span>
+            <div
+                className={`comment${isTargeted ? ' comment--targeted' : ''}`}
+                ref={isTargeted ? this.setScrollToElement : undefined}
+            >
+                <div className="comment__top-area">
+                    <span className="comment__author" title={comment.author.username || undefined}>
+                        <UserAvatar size={16} user={comment.author} className="comment__author-avatar" />
+                        <span className="comment__author-name">
+                            {comment.author.displayName ? comment.author.displayName : comment.author.username}
+                        </span>
                     </span>
-                    <Link to={shareLinkHref} className='comment__share' title='Copy link to this comment' onClick={this.onShareLinkClick}>
+                    <Link
+                        to={shareLinkHref}
+                        className="comment__share"
+                        title="Copy link to this comment"
+                        onClick={this.onShareLinkClick}
+                    >
                         {this.state.copiedLink ? 'Copied link to clipboard!' : timeSince}
                     </Link>
                 </div>
-                <div className='comment__content' dangerouslySetInnerHTML={{ __html: marked(comment.contents, { gfm: true, breaks: true, sanitize: true }) }}></div>
+                <div
+                    className="comment__content"
+                    dangerouslySetInnerHTML={{
+                        __html: marked(comment.contents, { gfm: true, breaks: true, sanitize: true }),
+                    }}
+                />
             </div>
         )
     }

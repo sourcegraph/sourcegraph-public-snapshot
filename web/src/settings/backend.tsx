@@ -13,7 +13,8 @@ import { events } from '../tracking/events'
  * @return Observable that emits the org or `null` if it doesn't exist
  */
 export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
-    return queryGraphQL(`
+    return queryGraphQL(
+        `
         query Org($id: Int!) {
             root {
                 org(id: $id) {
@@ -38,13 +39,14 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                 }
             }
         }
-    `, { id })
-        .map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.org) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            return data.root.org
-        })
+    `,
+        { id }
+    ).map(({ data, errors }) => {
+        if (!data || !data.root || !data.root.org) {
+            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+        }
+        return data.root.org
+    })
 }
 
 export interface CreateOrgOptions {
@@ -65,7 +67,8 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
                 throw new Error('User must be signed in.')
             }
 
-            return mutateGraphQL(`
+            return mutateGraphQL(
+                `
                 mutation createOrg(
                     $name: String!,
                     $displayName: String!
@@ -75,7 +78,9 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
                         name
                     }
                 }
-            `, options)
+            `,
+                options
+            )
         })
         .mergeMap(({ data, errors }) => {
             if (!data || !data.createOrg) {
@@ -117,7 +122,8 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                 ...options,
                 avatarUrl: user.avatarURL,
             }
-            return mutateGraphQL(`
+            return mutateGraphQL(
+                `
                 mutation createUser(
                     $username: String!,
                     $displayName: String!,
@@ -129,7 +135,9 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                         username
                     }
                 }
-            `, variables)
+            `,
+                variables
+            )
         })
         .map(({ data, errors }) => {
             if (!data || !data.createUser) {
@@ -173,7 +181,8 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 ...options,
                 avatarUrl: options.avatarUrl || user.avatarURL,
             }
-            return mutateGraphQL(`
+            return mutateGraphQL(
+                `
                 mutation updateUser(
                     $username: String!,
                     $displayName: String!,
@@ -185,7 +194,9 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                         username
                     }
                 }
-            `, variables)
+            `,
+                variables
+            )
         })
         .map(({ data, errors }) => {
             if (!data || !data.updateUser) {
@@ -226,13 +237,16 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
                 email,
                 orgID,
             }
-            return mutateGraphQL(`
+            return mutateGraphQL(
+                `
                 mutation inviteUser($email: String!, $orgID: Int!) {
                     inviteUser(email: $email, orgID: $orgID) {
                         alwaysNil
                     }
                 }
-            `, variables)
+            `,
+                variables
+            )
         })
         .map(({ data, errors }) => {
             const eventData = {
@@ -272,7 +286,8 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
             if (!user) {
                 throw new Error('User must be signed in')
             }
-            return mutateGraphQL(`
+            return mutateGraphQL(
+                `
                 mutation AcceptUserInvite {
                     acceptUserInvite(
                         inviteToken: $inviteToken
@@ -280,7 +295,9 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
                         emailVerified
                     }
                 }
-            `, options)
+            `,
+                options
+            )
         })
         .map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {
@@ -299,33 +316,35 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
  * @return An Observable that does emits `undefined` when done, then completes
  */
 export function removeUserFromOrg(orgID: number, userID: string): Observable<never> {
-    return mutateGraphQL(`
+    return mutateGraphQL(
+        `
         mutation removeUserFromOrg {
             removeUserFromOrg(userID: $userID, orgID: $orgID) {
                 alwaysNil
             }
         }
-    `, {
+    `,
+        {
             userID,
             orgID,
-        })
-        .mergeMap(({ data, errors }) => {
-            const eventData = {
-                organization: {
-                    remove: {
-                        auth0_id: userID,
-                    },
-                    org_id: orgID,
+        }
+    ).mergeMap(({ data, errors }) => {
+        const eventData = {
+            organization: {
+                remove: {
+                    auth0_id: userID,
                 },
-            }
-            if (errors && errors.length > 0) {
-                events.RemoveOrgMemberFailed.log(eventData)
-                throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
-            }
-            events.OrgMemberRemoved.log(eventData)
-            // Reload user data
-            return fetchCurrentUser()
-        })
+                org_id: orgID,
+            },
+        }
+        if (errors && errors.length > 0) {
+            events.RemoveOrgMemberFailed.log(eventData)
+            throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
+        }
+        events.OrgMemberRemoved.log(eventData)
+        // Reload user data
+        return fetchCurrentUser()
+    })
 }
 
 /**
@@ -349,13 +368,16 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
                 displayName,
                 slackWebhookURL,
             }
-            return mutateGraphQL(`
+            return mutateGraphQL(
+                `
                 mutation updateOrg($orgID: Int!, $displayName: String, $slackWebhookURL: String) {
                     updateOrg(orgID: $orgID, displayName: $displayName, slackWebhookURL: $slackWebhookURL) {
                         id
                     }
                 }
-            `, variables)
+            `,
+                variables
+            )
         })
         .map(({ data, errors }) => {
             const eventData = {

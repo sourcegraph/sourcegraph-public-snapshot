@@ -1,4 +1,3 @@
-
 // Polyfill URL because Chrome and Firefox are not spec-compliant
 // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
 import './util/polyfill'
@@ -47,27 +46,42 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='layout'>
+            <div className="layout">
                 <Navbar location={this.props.location} history={this.props.history} />
                 <Switch>
-                    {
-                        routes.map((route, i) => {
-                            const isFullWidth = !route.forceNarrowWidth && this.state.isFullWidth
-                            const Component = route.component
-                            return <Route
+                    {routes.map((route, i) => {
+                        const isFullWidth = !route.forceNarrowWidth && this.state.isFullWidth
+                        const Component = route.component
+                        return (
+                            <Route
                                 {...route}
                                 key={i}
                                 component={undefined}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={props => (
-                                    <div className={`layout__app-router-container layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`}>
-                                        {Component && <Component {...props} onToggleFullWidth={this.onToggleFullWidth} isFullWidth={isFullWidth} />}
-                                        {route.render && route.render({ ...props, onToggleFullWidth: this.onToggleFullWidth, isFullWidth })}
+                                    <div
+                                        className={`layout__app-router-container layout__app-router-container--${isFullWidth
+                                            ? 'full-width'
+                                            : 'restricted'}`}
+                                    >
+                                        {Component && (
+                                            <Component
+                                                {...props}
+                                                onToggleFullWidth={this.onToggleFullWidth}
+                                                isFullWidth={isFullWidth}
+                                            />
+                                        )}
+                                        {route.render &&
+                                            route.render({
+                                                ...props,
+                                                onToggleFullWidth: this.onToggleFullWidth,
+                                                isFullWidth,
+                                            })}
                                     </div>
                                 )}
                             />
-                        })
-                    }
+                        )
+                    })}
                 </Switch>
             </div>
         )
@@ -106,7 +120,6 @@ const SearchRouter12 = enableSearch2 ? SearchRouter2 : SearchRouter
  * the search query (e.g. '?q=foo') is in URL.
  */
 class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { returnTo: string }> {
-
     constructor(props: RouteComponentProps<{}>) {
         super(props)
         const searchParams = new URLSearchParams(this.props.location.search)
@@ -129,7 +142,7 @@ class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { retu
         }
         return (
             <Switch>
-                <Route path='/search' exact={true} component={SearchRouter12} />
+                <Route path="/search" exact={true} component={SearchRouter12} />
                 <Route component={Layout} />
             </Switch>
         )
@@ -144,7 +157,6 @@ interface AppState {
  * The root component
  */
 class App extends React.Component<{}, AppState> {
-
     constructor(props: {}) {
         super(props)
         this.state = {}
@@ -168,28 +180,30 @@ class App extends React.Component<{}, AppState> {
             let subtitle: JSX.Element | undefined
             if (errorID) {
                 subtitle = (
-                    <p>Sorry, there's been a problem. Please <a href='mailto:support@sourcegraph.com'>contact us</a> and include the error ID:
-                        <span className='error-id'>{errorID}</span>
+                    <p>
+                        Sorry, there's been a problem. Please <a href="mailto:support@sourcegraph.com">contact us</a>{' '}
+                        and include the error ID:
+                        <span className="error-id">{errorID}</span>
                     </p>
                 )
             }
             if (errorMessage) {
                 subtitle = (
-                    <div className='app__error'>
+                    <div className="app__error">
                         {subtitle}
                         {subtitle && <hr />}
                         <pre>{errorMessage}</pre>
                     </div>
                 )
             } else {
-                subtitle = <div className='app__error'>{subtitle}</div>
+                subtitle = <div className="app__error">{subtitle}</div>
             }
             return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
         }
 
         return (
             <BrowserRouter>
-                <Route path='/' component={BackfillRedirector} />
+                <Route path="/" component={BackfillRedirector} />
             </BrowserRouter>
         )
     }

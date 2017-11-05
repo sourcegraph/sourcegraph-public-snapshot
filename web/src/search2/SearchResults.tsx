@@ -42,7 +42,6 @@ function pluralize(str: string, n: number): string {
 }
 
 export class SearchResults extends React.Component<Props, State> {
-
     public state: State = {
         results: [],
         alert: null,
@@ -76,24 +75,39 @@ export class SearchResults extends React.Component<Props, State> {
                                 setTimeout(() => this.searchRequested.next(searchOptions), 2000)
                             }
                         })
-                        .do(res => events.SearchResultsFetched.log({
-                            code_search: {
-                                results: {
-                                    files_count: res.results.length,
-                                    matches_count: res.results.reduce((count, fileMatch) => count + fileMatch.lineMatches.length, 0),
-                                },
-                            },
-                        }), error => {
-                            events.SearchResultsFetchFailed.log({ code_search: { error_message: error.message } })
-                            console.error(error)
-                        })
+                        .do(
+                            res =>
+                                events.SearchResultsFetched.log({
+                                    code_search: {
+                                        results: {
+                                            files_count: res.results.length,
+                                            matches_count: res.results.reduce(
+                                                (count, fileMatch) => count + fileMatch.lineMatches.length,
+                                                0
+                                            ),
+                                        },
+                                    },
+                                }),
+                            error => {
+                                events.SearchResultsFetchFailed.log({ code_search: { error_message: error.message } })
+                                console.error(error)
+                            }
+                        )
                         .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
-                        .catch(error => [{ results: [], alert: null, missing: [], cloning: [], limitHit: false, error, loading: false, searchDuration: undefined }])
+                        .catch(error => [
+                            {
+                                results: [],
+                                alert: null,
+                                missing: [],
+                                cloning: [],
+                                limitHit: false,
+                                error,
+                                loading: false,
+                                searchDuration: undefined,
+                            },
+                        ])
                 })
-                .subscribe(
-                newState => this.setState(newState as State),
-                err => console.error(err)
-                )
+                .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
 
         this.subscriptions.add(
@@ -103,11 +117,17 @@ export class SearchResults extends React.Component<Props, State> {
                     const searchOptions = parseSearchURLQuery(props.location.search)
                     setTimeout(() => this.searchRequested.next(searchOptions))
                 })
-                .map(() => ({ results: [], alert: null, missing: [], cloning: [], limitHit: false, error: undefined, loading: true, searchDuration: undefined }))
-                .subscribe(
-                newState => this.setState(newState as State),
-                err => console.error(err)
-                )
+                .map(() => ({
+                    results: [],
+                    alert: null,
+                    missing: [],
+                    cloning: [],
+                    limitHit: false,
+                    error: undefined,
+                    loading: true,
+                    searchDuration: undefined,
+                }))
+                .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
     }
 
@@ -120,11 +140,10 @@ export class SearchResults extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-
         let alert: {
-            title: string;
-            description?: string | null;
-            proposedQueries?: GQL.ISearchQuery2Description[];
+            title: string
+            description?: string | null
+            proposedQueries?: GQL.ISearchQuery2Description[]
         } | null = null
         if (this.state.error) {
             if (this.state.error.message.includes('no query terms or regexp specified')) {
@@ -134,7 +153,12 @@ export class SearchResults extends React.Component<Props, State> {
             }
         } else if (this.state.alert) {
             alert = this.state.alert
-        } else if (!this.state.loading && this.state.results.length === 0 && this.state.missing.length === 0 && this.state.cloning.length === 0) {
+        } else if (
+            !this.state.loading &&
+            this.state.results.length === 0 &&
+            this.state.missing.length === 0 &&
+            this.state.cloning.length === 0
+        ) {
             alert = { title: 'No results' }
         }
 
@@ -158,63 +182,57 @@ export class SearchResults extends React.Component<Props, State> {
         const searchOptions = parseSearchURLQuery(this.props.location.search)
 
         return (
-            <div className='search-results2'>
-                {
-                    this.state.results.length > 0 &&
-                    <div className='search-results2__header'>
-                        <div className='search-results2__badge'>{numberWithCommas(totalResults)}</div>
-                        <div className='search-results2__label'>{pluralize('result', totalResults)} in</div>
-                        <div className='search-results2__badge'>{numberWithCommas(totalFiles)}</div>
-                        <div className='search-results2__label'>{pluralize('file', totalFiles)}  in</div>
-                        <div className='search-results2__badge'>{numberWithCommas(totalRepos)}</div>
-                        <div className='search-results2__label'>{pluralize('repo', totalRepos)} </div>
-                        <div className='search-results2__duration'>{this.state.searchDuration! / 1000} seconds</div>
+            <div className="search-results2">
+                {this.state.results.length > 0 && (
+                    <div className="search-results2__header">
+                        <div className="search-results2__badge">{numberWithCommas(totalResults)}</div>
+                        <div className="search-results2__label">{pluralize('result', totalResults)} in</div>
+                        <div className="search-results2__badge">{numberWithCommas(totalFiles)}</div>
+                        <div className="search-results2__label">{pluralize('file', totalFiles)} in</div>
+                        <div className="search-results2__badge">{numberWithCommas(totalRepos)}</div>
+                        <div className="search-results2__label">{pluralize('repo', totalRepos)} </div>
+                        <div className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</div>
                     </div>
-                }
-                {
-                    this.state.cloning.map((repoPath, i) =>
-                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />
-                    )
-                }
-                {
-                    this.state.missing.map((repoPath, i) =>
-                        <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon} />
-                    )
-                }
-                {this.state.loading && <Loader className='icon-inline' />}
-                {
-                    alert &&
+                )}
+                {this.state.cloning.map((repoPath, i) => (
+                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />
+                ))}
+                {this.state.missing.map((repoPath, i) => (
+                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon} />
+                ))}
+                {this.state.loading && <Loader className="icon-inline" />}
+                {alert && (
                     <SearchAlert
                         title={alert.title}
                         description={alert.description || undefined}
                         proposedQueries={this.state.alert ? this.state.alert.proposedQueries : undefined}
                         location={this.props.location}
                     />
-                }
-                {
-                    this.state.results.map((result, i) => {
-                        const prevTotal = totalMatches
-                        totalMatches += result.lineMatches.length
-                        const parsed = new URL(result.resource)
-                        const repoPath = parsed.hostname + parsed.pathname
-                        const rev = parsed.search.substr('?'.length)
-                        const filePath = parsed.hash.substr('#'.length)
-                        const refs = result.lineMatches.map(match => ({
-                            range: {
-                                start: {
-                                    character: match.offsetAndLengths[0][0],
-                                    line: match.lineNumber,
-                                },
-                                end: {
-                                    character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
-                                    line: match.lineNumber,
-                                },
+                )}
+                {this.state.results.map((result, i) => {
+                    const prevTotal = totalMatches
+                    totalMatches += result.lineMatches.length
+                    const parsed = new URL(result.resource)
+                    const repoPath = parsed.hostname + parsed.pathname
+                    const rev = parsed.search.substr('?'.length)
+                    const filePath = parsed.hash.substr('#'.length)
+                    const refs = result.lineMatches.map(match => ({
+                        range: {
+                            start: {
+                                character: match.offsetAndLengths[0][0],
+                                line: match.lineNumber,
                             },
-                            uri: result.resource,
-                            repoURI: repoPath,
-                        }))
+                            end: {
+                                character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
+                                line: match.lineNumber,
+                            },
+                        },
+                        uri: result.resource,
+                        repoURI: repoPath,
+                    }))
 
-                        return <ReferencesGroup
+                    return (
+                        <ReferencesGroup
                             hidden={prevTotal > 500}
                             repoPath={repoPath}
                             localRev={rev}
@@ -226,8 +244,8 @@ export class SearchResults extends React.Component<Props, State> {
                             onSelect={logEvent}
                             searchOptions={searchOptions}
                         />
-                    })
-                }
+                    )
+                })}
             </div>
         )
     }

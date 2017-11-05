@@ -9,7 +9,10 @@ import { Observable } from 'rxjs/Observable'
  * @param resolver If resolver provided, it determines the cache key for storing the result based on
  * the first argument provided to the memoized function.
  */
-export function memoizeAsync<P, T>(func: (params: P) => Promise<T>, resolver?: (params: P) => string): (params: P, force?: boolean) => Promise<T> {
+export function memoizeAsync<P, T>(
+    func: (params: P) => Promise<T>,
+    resolver?: (params: P) => string
+): (params: P, force?: boolean) => Promise<T> {
     const cache = new Map<string, Promise<T>>()
     return (params: P, force = false) => {
         const key = resolver ? resolver(params) : params.toString()
@@ -17,11 +20,10 @@ export function memoizeAsync<P, T>(func: (params: P) => Promise<T>, resolver?: (
         if (!force && hit) {
             return hit
         }
-        const p = func(params)
-            .catch(e => {
-                cache.delete(key)
-                throw e
-            })
+        const p = func(params).catch(e => {
+            cache.delete(key)
+            throw e
+        })
         cache.set(key, p)
         return p
     }
@@ -34,7 +36,10 @@ export function memoizeAsync<P, T>(func: (params: P) => Promise<T>, resolver?: (
  * @param resolver If resolver provided, it determines the cache key for storing the result based on
  * the first argument provided to the memoized function.
  */
-export function memoizeObservable<P, T>(func: (params: P) => Observable<T>, resolver?: (params: P) => string): (params: P, force?: boolean) => Observable<T> {
+export function memoizeObservable<P, T>(
+    func: (params: P) => Observable<T>,
+    resolver?: (params: P) => string
+): (params: P, force?: boolean) => Observable<T> {
     const cache = new Map<string, Observable<T>>()
     return (params: P, force = false) => {
         const key = resolver ? resolver(params) : params.toString()

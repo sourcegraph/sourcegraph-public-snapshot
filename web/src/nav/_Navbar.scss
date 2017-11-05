@@ -8,14 +8,15 @@
     align-items: center;
     justify-content: space-between;
 
-    background-color: #1C2736;
+    background-color: #1c2736;
 
     &__right {
         display: flex;
         padding-right: 1rem;
         justify-content: flex-end;
 
-        .avatar, .avatar-icon {
+        .avatar,
+        .avatar-icon {
             width: 2rem;
             height: 2rem;
         }
@@ -34,8 +35,12 @@
         &:hover {
             animation: spin 0.5s ease-in-out 1;
             @keyframes spin {
-                50% { transform: rotate(180deg) scale(1.2) }
-                100% { transform: rotate(180deg) scale(1) }
+                50% {
+                    transform: rotate(180deg) scale(1.2);
+                }
+                100% {
+                    transform: rotate(180deg) scale(1);
+                }
             }
         }
     }

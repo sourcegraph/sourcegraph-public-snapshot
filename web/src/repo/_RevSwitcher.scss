@@ -1,5 +1,4 @@
 .rev-switcher {
-
     height: 1.5rem;
     width: 7rem;
     margin-left: 0.25rem;
@@ -10,9 +9,9 @@
         width: 100%;
         display: flex;
 
-        border: 1px solid #93A9C8;
-        padding-left: .5rem;
-        border-radius: .125rem;
+        border: 1px solid #93a9c8;
+        padding-left: 0.5rem;
+        border-radius: 0.125rem;
         user-select: none;
         transition: all 100ms ease-in;
 
@@ -67,15 +66,15 @@
         overflow-y: auto;
 
         background: #233043;
-        border-radius: .25rem;
-        border: 1px solid #2A3A51;
+        border-radius: 0.25rem;
+        border: 1px solid #2a3a51;
     }
 
     &__rev {
         display: flex;
         width: 100%;
 
-        padding: .25rem .5rem;
+        padding: 0.25rem 0.5rem;
         white-space: nowrap;
         overflow: hidden;
 
@@ -83,18 +82,18 @@
         cursor: pointer;
 
         &:hover {
-            background: #2A3A51;
+            background: #2a3a51;
             color: white;
         }
 
         &--selected {
-            background: #2A3A51;
+            background: #2a3a51;
         }
     }
 
     &__rev-icon {
         flex: none;
-        margin-right: .25rem;
+        margin-right: 0.25rem;
     }
 
     &__rev-name {

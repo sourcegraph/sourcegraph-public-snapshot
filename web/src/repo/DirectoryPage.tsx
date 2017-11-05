@@ -39,31 +39,31 @@ export class DirectoryPage extends React.Component<Props, State> {
             this.componentUpdates
                 .do(() => this.setState({ dirTree: undefined }))
                 .switchMap(props =>
-                    fetchDirTree(props)
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
+                    fetchDirTree(props).catch(err => {
+                        console.error(err)
+                        return []
+                    })
                 )
-                .subscribe(dirTree => {
-                    this.setState({ dirTree })
-                },
-                err => console.error(err)
+                .subscribe(
+                    dirTree => {
+                        this.setState({ dirTree })
+                    },
+                    err => console.error(err)
                 )
         )
         this.subscriptions.add(
             this.componentUpdates
                 .switchMap(props =>
-                    fetchFileCommitInfo(props)
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
+                    fetchFileCommitInfo(props).catch(err => {
+                        console.error(err)
+                        return []
+                    })
                 )
-                .subscribe(dirCommitInfo => {
-                    this.setState({ dirCommitInfo })
-                },
-                err => console.error(err)
+                .subscribe(
+                    dirCommitInfo => {
+                        this.setState({ dirCommitInfo })
+                    },
+                    err => console.error(err)
                 )
         )
     }
@@ -84,7 +84,9 @@ export class DirectoryPage extends React.Component<Props, State> {
         const { dirTree } = this.state
         const lastCommit = this.state.dirCommitInfo
         const person = lastCommit && lastCommit.committer && lastCommit.committer.person && lastCommit.committer.person
-        const date = lastCommit && lastCommit.committer &&
+        const date =
+            lastCommit &&
+            lastCommit.committer &&
             formatDistance(parseCommitDateString(lastCommit.committer.date), new Date(), { addSuffix: true })
 
         if (!dirTree) {
@@ -92,101 +94,95 @@ export class DirectoryPage extends React.Component<Props, State> {
         }
 
         return (
-            <div className='dir-page'>
-                <h1 className='dir-page__head'>
-                    <FolderIcon className='icon-inline' />
+            <div className="dir-page">
+                <h1 className="dir-page__head">
+                    <FolderIcon className="icon-inline" />
                     <span>{this.getLastPathPart()}</span>
                 </h1>
-                <table className='dir-page__table table'>
+                <table className="dir-page__table table">
                     <thead>
                         <tr>
                             {/* empty tds set the structure for the rest of the table to follow */}
-                            <td className='dir-page__head-commit-spacer-cell dir-page__empty-cell' />
-                            <td className='dir-page__name-cell dir-page__empty-cell' />
-                            <td className='dir-page__commit-message-cell dir-page__empty-cell' />
-                            <td className='dir-page__committer-cell dir-page__empty-cell' />
-                            <td className='dir-page__date-cell dir-page__empty-cell' />
-                            <td className='dir-page__commit-hash-cell dir-page__empty-cell' />
+                            <td className="dir-page__head-commit-spacer-cell dir-page__empty-cell" />
+                            <td className="dir-page__name-cell dir-page__empty-cell" />
+                            <td className="dir-page__commit-message-cell dir-page__empty-cell" />
+                            <td className="dir-page__committer-cell dir-page__empty-cell" />
+                            <td className="dir-page__date-cell dir-page__empty-cell" />
+                            <td className="dir-page__commit-hash-cell dir-page__empty-cell" />
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className='dir-page__head-commit'>
-                            <td className='dir-page__head-commit-spacer-cell' />
-                            <td
-                                colSpan={2}
-                                title={lastCommit && lastCommit.message}
-                            >
+                        <tr className="dir-page__head-commit">
+                            <td className="dir-page__head-commit-spacer-cell" />
+                            <td colSpan={2} title={lastCommit && lastCommit.message}>
                                 {lastCommit && lastCommit.message}
                             </td>
-                            <td className='dir-page__committer-cell'>
+                            <td className="dir-page__committer-cell">
                                 {person && <UserAvatar user={person} />}
                                 {person && person.name}
                             </td>
                             <td>{date}</td>
                             <td
-                                className='dir-page__commit-hash-cell'
+                                className="dir-page__commit-hash-cell"
                                 title={lastCommit && lastCommit.rev.substring(0, 7)}
                             >
-                                {lastCommit &&
+                                {lastCommit && (
                                     <Link
                                         to={toTreeURL({
-                                            repoPath: this.props.repoPath, filePath: this.props.filePath,
+                                            repoPath: this.props.repoPath,
+                                            filePath: this.props.filePath,
                                             rev: lastCommit && lastCommit.rev,
                                         })}
                                     >
                                         {lastCommit.rev.substring(0, 7)}
                                     </Link>
-                                }
+                                )}
                             </td>
                         </tr>
-                        {this.props.filePath ?
+                        {this.props.filePath ? (
                             <tr>
-                                <td
-                                    className='dir-page__return-arrow-cell'
-                                    colSpan={6}
-                                >
+                                <td className="dir-page__return-arrow-cell" colSpan={6}>
                                     <span>
                                         <Link
-                                            to={this.getParentPath() ?
-                                                toTreeURL({
-                                                    repoPath: this.props.repoPath, filePath: this.getParentPath(),
-                                                    rev: this.props.rev,
-                                                }) :
-                                                toPrettyRepoURL({
-                                                    repoPath: this.props.repoPath,
-                                                    rev: this.props.rev,
-                                                })
+                                            to={
+                                                this.getParentPath()
+                                                    ? toTreeURL({
+                                                          repoPath: this.props.repoPath,
+                                                          filePath: this.getParentPath(),
+                                                          rev: this.props.rev,
+                                                      })
+                                                    : toPrettyRepoURL({
+                                                          repoPath: this.props.repoPath,
+                                                          rev: this.props.rev,
+                                                      })
                                             }
                                         >
-                                            <ArrowUpParentIcon className='icon-inline' /> ..
+                                            <ArrowUpParentIcon className="icon-inline" /> ..
                                         </Link>
                                     </span>
                                 </td>
-                            </tr> : null
-                        }
-                        {
-                            dirTree.directories.map((dir, i) =>
-                                <DirectoryPageEntry
-                                    isDirectory={true}
-                                    key={i}
-                                    repoPath={this.props.repoPath}
-                                    filePath={[this.props.filePath, dir.name].filter(s => !!s).join('/')}
-                                    commitID={this.props.commitID}
-                                    rev={this.props.rev}
-                                />
-                            )}
-                        {
-                            dirTree.files.map((file, i) =>
-                                <DirectoryPageEntry
-                                    isDirectory={false}
-                                    key={i}
-                                    repoPath={this.props.repoPath}
-                                    filePath={[this.props.filePath, file.name].filter(s => !!s).join('/')}
-                                    commitID={this.props.commitID}
-                                    rev={this.props.rev}
-                                />
-                            )
-                        }
+                            </tr>
+                        ) : null}
+                        {dirTree.directories.map((dir, i) => (
+                            <DirectoryPageEntry
+                                isDirectory={true}
+                                key={i}
+                                repoPath={this.props.repoPath}
+                                filePath={[this.props.filePath, dir.name].filter(s => !!s).join('/')}
+                                commitID={this.props.commitID}
+                                rev={this.props.rev}
+                            />
+                        ))}
+                        {dirTree.files.map((file, i) => (
+                            <DirectoryPageEntry
+                                isDirectory={false}
+                                key={i}
+                                repoPath={this.props.repoPath}
+                                filePath={[this.props.filePath, file.name].filter(s => !!s).join('/')}
+                                commitID={this.props.commitID}
+                                rev={this.props.rev}
+                            />
+                        ))}
                     </tbody>
                 </table>
             </div>

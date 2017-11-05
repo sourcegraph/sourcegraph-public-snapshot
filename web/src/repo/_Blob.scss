@@ -1,4 +1,3 @@
-
 .blob {
     flex: 1 1 50%;
     min-height: 0;
@@ -12,7 +11,7 @@
         border-collapse: collapse;
 
         white-space: pre;
-        background-color: #0E121B;
+        background-color: #0e121b;
         font-family: 'Menlo';
         font-size: 12px;
         line-height: 20px;
@@ -22,17 +21,18 @@
         &::before {
             // draw line number with css so it cannot be copied to clipboard
             content: attr(data-line);
-            color: #31445E;
+            color: #31445e;
         }
 
-        color: #31445E;
+        color: #31445e;
         text-align: right;
         padding-left: 1rem;
         min-width: 3em;
         user-select: none;
     }
 
-    td.line, td.code {
+    td.line,
+    td.code {
         padding: 0;
     }
 
@@ -40,11 +40,15 @@
         width: 100%;
         padding-left: 1rem;
         white-space: pre;
-        >.blame {
+        > .blame {
             &::before {
                 content: attr(data-blame);
                 cursor: pointer;
-                background-color: rgb(34, 44, 58); // extends background color for highlighted code to overflown blame content
+                background-color: rgb(
+                    34,
+                    44,
+                    58
+                ); // extends background color for highlighted code to overflown blame content
                 display: inline-block;
             }
             color: #464d57;
@@ -55,7 +59,7 @@
     }
 
     .right {
-        background-color: #151D28;
+        background-color: #151d28;
         flex: 4;
     }
 }

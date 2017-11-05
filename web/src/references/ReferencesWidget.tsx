@@ -34,7 +34,6 @@ import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
 
 interface ReferenceGroupProps {
-
     repoPath: string
 
     /**
@@ -84,70 +83,79 @@ export class ReferencesGroup extends React.Component<ReferenceGroupProps, Refere
         let refs: JSX.Element | null = null
         if (!this.state.hidden) {
             refs = (
-                <div className='references-group__list'>
-                    {
-                        (this.props.refs || [])
-                            .sort((a, b) => {
-                                if (a.range.start.line < b.range.start.line) {
+                <div className="references-group__list">
+                    {(this.props.refs || [])
+                        .sort((a, b) => {
+                            if (a.range.start.line < b.range.start.line) {
+                                return -1
+                            }
+                            if (a.range.start.line === b.range.start.line) {
+                                if (a.range.start.character < b.range.start.character) {
                                     return -1
                                 }
-                                if (a.range.start.line === b.range.start.line) {
-                                    if (a.range.start.character < b.range.start.character) {
-                                        return -1
-                                    }
-                                    if (a.range.start.character === b.range.start.character) {
-                                        return 0
-                                    }
-                                    return 1
+                                if (a.range.start.character === b.range.start.character) {
+                                    return 0
                                 }
                                 return 1
-                            })
-                            .map((ref, i) => {
-                                const uri = new URL(ref.uri)
-                                const rev = this.props.isLocal ? this.props.localRev : uri.search.substr('?'.length)
-                                const position = {
-                                    line: ref.range.start.line + 1,
-                                    character: ref.range.start.character + 1,
-                                }
-                                return (
-                                    <Link
-                                        to={toPrettyBlobURL({
-                                            repoPath: uri.hostname + uri.pathname,
-                                            rev,
-                                            filePath: uri.hash.substr('#'.length),
-                                            position,
-                                        })}
-                                        key={i}
-                                        className='references-group__reference'
-                                        onClick={this.onSelect}
-                                    >
-                                        <CodeExcerpt
-                                            repoPath={uri.hostname + uri.pathname}
-                                            commitID={uri.search.substr('?'.length)}
-                                            filePath={uri.hash.substr('#'.length)}
-                                            position={{ line: ref.range.start.line, character: ref.range.start.character }}
-                                            highlightLength={ref.range.end.character - ref.range.start.character}
-                                            previewWindowExtraLines={1}
-                                        />
-                                    </Link>
-                                )
-                            })
-                    }
+                            }
+                            return 1
+                        })
+                        .map((ref, i) => {
+                            const uri = new URL(ref.uri)
+                            const rev = this.props.isLocal ? this.props.localRev : uri.search.substr('?'.length)
+                            const position = {
+                                line: ref.range.start.line + 1,
+                                character: ref.range.start.character + 1,
+                            }
+                            return (
+                                <Link
+                                    to={toPrettyBlobURL({
+                                        repoPath: uri.hostname + uri.pathname,
+                                        rev,
+                                        filePath: uri.hash.substr('#'.length),
+                                        position,
+                                    })}
+                                    key={i}
+                                    className="references-group__reference"
+                                    onClick={this.onSelect}
+                                >
+                                    <CodeExcerpt
+                                        repoPath={uri.hostname + uri.pathname}
+                                        commitID={uri.search.substr('?'.length)}
+                                        filePath={uri.hash.substr('#'.length)}
+                                        position={{ line: ref.range.start.line, character: ref.range.start.character }}
+                                        highlightLength={ref.range.end.character - ref.range.start.character}
+                                        previewWindowExtraLines={1}
+                                    />
+                                </Link>
+                            )
+                        })}
                 </div>
             )
         }
 
         const Icon = this.props.icon
         return (
-            <div className='references-group'>
-                <div className={'references-group__title' + ((this.props.refs || []).length > 0 ? ' references-group__title--expandable' : '')} onClick={this.toggle}>
-                    <Icon className='icon-inline' />
-                    <RepoBreadcrumb repoPath={this.props.repoPath} rev={this.props.localRev} filePath={this.props.filePath} />
-                    {
-                        (this.props.refs || []).length > 0 && (
-                            this.state.hidden ? <ChevronRightIcon className='icon-inline' /> : <ChevronDownIcon className='icon-inline' />
-                        )
+            <div className="references-group">
+                <div
+                    className={
+                        'references-group__title' +
+                        ((this.props.refs || []).length > 0 ? ' references-group__title--expandable' : '')
                     }
+                    onClick={this.toggle}
+                >
+                    <Icon className="icon-inline" />
+                    <RepoBreadcrumb
+                        repoPath={this.props.repoPath}
+                        rev={this.props.localRev}
+                        filePath={this.props.filePath}
+                    />
+                    {(this.props.refs || []).length > 0 &&
+                        (this.state.hidden ? (
+                            <ChevronRightIcon className="icon-inline" />
+                        ) : (
+                            <ChevronDownIcon className="icon-inline" />
+                        ))}
                 </div>
                 {refs}
             </div>
@@ -189,37 +197,39 @@ export class ReferencesWidget extends React.Component<Props, State> {
         this.state.group = parsedHash.modalMode ? parsedHash.modalMode : 'local'
         this.subscriptions.add(
             this.componentUpdates
-                .switchMap(props => Observable.merge(
-                    Observable.fromPromise(fetchReferences(props))
-                        .map(refs => ({ references: refs } as State))
-                        .catch(e => {
-                            console.error(e)
-                            return []
-                        })
-                        .concat([{ loadingLocal: false } as State]),
-                    fetchExternalReferences(props)
-                        .map(refs => ({ references: refs } as State))
-                        .catch(e => {
-                            console.error(e)
-                            return []
-                        })
-                        .concat([{ loadingExternal: false } as State])
-                ))
+                .switchMap(props =>
+                    Observable.merge(
+                        Observable.fromPromise(fetchReferences(props))
+                            .map(refs => ({ references: refs } as State))
+                            .catch(e => {
+                                console.error(e)
+                                return []
+                            })
+                            .concat([{ loadingLocal: false } as State]),
+                        fetchExternalReferences(props)
+                            .map(refs => ({ references: refs } as State))
+                            .catch(e => {
+                                console.error(e)
+                                return []
+                            })
+                            .concat([{ loadingExternal: false } as State])
+                    )
+                )
                 .bufferTime(500)
                 .filter(updates => updates.length > 0)
                 .scan(
-                (currState, updates) => {
-                    let newState = currState
-                    for (const update of updates) {
-                        if (update.references) {
-                            newState = { ...newState, references: newState.references.concat(update.references) }
-                        } else {
-                            newState = { ...newState, ...update }
+                    (currState, updates) => {
+                        let newState = currState
+                        for (const update of updates) {
+                            if (update.references) {
+                                newState = { ...newState, references: newState.references.concat(update.references) }
+                            } else {
+                                newState = { ...newState, ...update }
+                            }
                         }
-                    }
-                    return newState
-                },
-                { references: [], loadingLocal: true, loadingExternal: true } as State
+                        return newState
+                    },
+                    { references: [], loadingLocal: true, loadingExternal: true } as State
                 )
                 .subscribe(state => this.setState(state))
         )
@@ -231,7 +241,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
 
     public componentWillReceiveProps(nextProps: Props): void {
         const parsedHash = parseHash(nextProps.location.hash)
-        if ((parsedHash.modalMode && parsedHash.modalMode !== this.state.group)) {
+        if (parsedHash.modalMode && parsedHash.modalMode !== this.state.group) {
             this.setState({ group: parsedHash.modalMode })
         }
         if (isEqual(omit(this.props, 'rev'), omit(nextProps, 'rev'))) {
@@ -293,36 +303,41 @@ export class ReferencesWidget extends React.Component<Props, State> {
         const ctx: RepoFilePosition = this.props
 
         return (
-            <div className='references-widget'>
-                <div className='references-widget__title-bar'>
+            <div className="references-widget">
+                <div className="references-widget__title-bar">
                     <Link
-                        className={'references-widget__title-bar-group' + (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')}
+                        className={
+                            'references-widget__title-bar-group' +
+                            (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')
+                        }
                         to={toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
                         onClick={this.onLocalRefsButtonClick}
                     >
                         This repository
                     </Link>
-                    <div className='references-widget__badge'>{localRefCount}</div>
+                    <div className="references-widget__badge">{localRefCount}</div>
                     <Link
-                        className={'references-widget__title-bar-group' + (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')}
+                        className={
+                            'references-widget__title-bar-group' +
+                            (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')
+                        }
                         to={toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
                         onClick={this.onShowExternalRefsButtonClick}
                     >
                         Other repositories
                     </Link>
-                    <div className='references-widget__badge'>{externalRefCount}</div>
-                    <span className='references-widget__close-icon' onClick={this.onDismiss}>
-                        <CloseIcon className='icon-inline' />
+                    <div className="references-widget__badge">{externalRefCount}</div>
+                    <span className="references-widget__close-icon" onClick={this.onDismiss}>
+                        <CloseIcon className="icon-inline" />
                     </span>
                 </div>
-                {
-                    isEmptyGroup() && <div className='references-widget__placeholder'>
+                {isEmptyGroup() && (
+                    <div className="references-widget__placeholder">
                         {this.isLoading(this.state.group) ? 'Working...' : 'No results'}
                     </div>
-                }
-                <div className='references-widget__groups'>
-                    {
-                        this.state.group === 'local' &&
+                )}
+                <div className="references-widget__groups">
+                    {this.state.group === 'local' && (
                         <VirtualList
                             initItemsToShow={3}
                             items={localRefs.sort().map((uri, i) => {
@@ -341,12 +356,12 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                 )
                             })}
                         />
-                    }
-                    {
-                        this.state.group === 'external' &&
+                    )}
+                    {this.state.group === 'external' && (
                         <VirtualList
                             initItemsToShow={3}
-                            items={externalRefs.map((uri, i) => { /* don't sort, to avoid jerky UI as new repo results come in */
+                            items={externalRefs.map((uri, i) => {
+                                /* don't sort, to avoid jerky UI as new repo results come in */
                                 const parsed = new URL(uri)
                                 return (
                                     <ReferencesGroup
@@ -361,7 +376,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
                                 )
                             })}
                         />
-                    }
+                    )}
                 </div>
             </div>
         )

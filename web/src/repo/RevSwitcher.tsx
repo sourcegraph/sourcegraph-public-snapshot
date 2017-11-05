@@ -80,7 +80,6 @@ interface Item {
 }
 
 export class RevSwitcher extends React.Component<Props, State> {
-
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
 
@@ -116,33 +115,40 @@ export class RevSwitcher extends React.Component<Props, State> {
         this.subscriptions.add(
             Observable.merge(
                 // Fetch the list of all branches/tags for the repo initially.
-                this.componentUpdates
-                    .filter(props => !props.disabled)
-                    .switchMap(props =>
-                        fetchRepoRevisions({ repoPath: props.repoPath })
-                            .catch(err => {
-                                console.error(err)
-                                return []
-                            })
-                            .map((repoRevisions: RepoRevisions) => {
-                                const combined = [
-                                    ...repoRevisions.branches.map((branch): Item => ({ rev: branch, type: 'branch' })),
-                                    ...repoRevisions.tags.map((tag): Item => ({ rev: tag, type: 'tag' })),
-                                ]
+                this.componentUpdates.filter(props => !props.disabled).switchMap(props =>
+                    fetchRepoRevisions({ repoPath: props.repoPath })
+                        .catch(err => {
+                            console.error(err)
+                            return []
+                        })
+                        .map((repoRevisions: RepoRevisions) => {
+                            const combined = [
+                                ...repoRevisions.branches.map((branch): Item => ({ rev: branch, type: 'branch' })),
+                                ...repoRevisions.tags.map((tag): Item => ({ rev: tag, type: 'tag' })),
+                            ]
 
-                                return { repoRevisions: combined, visible: combined, query: props.rev, queryIsCommit: false } as State
-                            })
-                    ),
+                            return {
+                                repoRevisions: combined,
+                                visible: combined,
+                                query: props.rev,
+                                queryIsCommit: false,
+                            } as State
+                        })
+                ),
 
                 // Always reset the queryIsCommit state when the user updated the query.
-                this.inputChanges
-                    .mapTo({ queryIsCommit: false } as State),
+                this.inputChanges.mapTo({ queryIsCommit: false } as State),
 
                 // Find out if the query is a commit ID.
                 this.inputChanges
                     .filter(query => !this.props.disabled)
                     // We're only interested in query if it is a commit ID, not a branch or tag.
-                    .filter(query => query !== '' && (!this.state.repoRevisions || !this.state.repoRevisions.some(item => item.rev.includes(query))))
+                    .filter(
+                        query =>
+                            query !== '' &&
+                            (!this.state.repoRevisions ||
+                                !this.state.repoRevisions.some(item => item.rev.includes(query)))
+                    )
                     .switchMap(query =>
                         resolveRev({ repoPath: this.props.repoPath, rev: query })
                             .map(query => ({ queryIsCommit: true } as State))
@@ -155,48 +161,43 @@ export class RevSwitcher extends React.Component<Props, State> {
                     ),
 
                 // Filter branches/tags based on updated user query.
-                this.inputChanges
-                    .map(query => {
-                        if (!this.state.repoRevisions) {
-                            return {} as State
-                        }
-                        const visible = this.state.repoRevisions
-                            .filter(item => item.rev.includes(query))
-                            // Assign score to each item.
-                            .map(item => ({ ...item, score: score(item.rev, query) }))
-                            // Remove items with zero zero (no match).
-                            .filter(item => item.score > 0)
-                            // Sort by sort value.
-                            .sort((a, b) => {
-                                if (a.score !== b.score) {
-                                    return b.score - a.score
-                                }
+                this.inputChanges.map(query => {
+                    if (!this.state.repoRevisions) {
+                        return {} as State
+                    }
+                    const visible = this.state.repoRevisions
+                        .filter(item => item.rev.includes(query))
+                        // Assign score to each item.
+                        .map(item => ({ ...item, score: score(item.rev, query) }))
+                        // Remove items with zero zero (no match).
+                        .filter(item => item.score > 0)
+                        // Sort by sort value.
+                        .sort((a, b) => {
+                            if (a.score !== b.score) {
+                                return b.score - a.score
+                            }
 
-                                // Scores are identical so prefer shorter length strings.
-                                return a.rev.length - b.rev.length
-                            })
+                            // Scores are identical so prefer shorter length strings.
+                            return a.rev.length - b.rev.length
+                        })
 
-                        return { visible, query } as State
-                    })
+                    return { visible, query } as State
+                })
             )
                 .map(state => ({ ...state, selection: 0 }))
-                .subscribe(
-                state => this.setState(state),
-                err => console.error(err)
-                )
+                .subscribe(state => this.setState(state), err => console.error(err))
         )
     }
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
         this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(document, 'click')
-                .subscribe(e => {
-                    if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
-                        // Click outside of our component.
-                        this.hide()
-                    }
-                })
+            Observable.fromEvent<MouseEvent>(document, 'click').subscribe(e => {
+                if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
+                    // Click outside of our component.
+                    this.hide()
+                }
+            })
         )
     }
 
@@ -215,43 +216,52 @@ export class RevSwitcher extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='rev-switcher' ref={this.onRef}>
-                <div className={`rev-switcher__rev-display${this.props.disabled ? ' rev-switcher__rev-display--disabled' : ''}`} onClick={this.onInputFocus}>
+            <div className="rev-switcher" ref={this.onRef}>
+                <div
+                    className={`rev-switcher__rev-display${this.props.disabled
+                        ? ' rev-switcher__rev-display--disabled'
+                        : ''}`}
+                    onClick={this.onInputFocus}
+                >
                     <input
-                        className='rev-switcher__input'
-                        type='text'
-                        placeholder='git revision'
+                        className="rev-switcher__input"
+                        type="text"
+                        placeholder="git revision"
                         onChange={this.onInputChange}
                         onFocus={this.onInputFocus}
                         onKeyDown={this.onInputKeyDown}
                         value={this.state.query}
                         disabled={this.props.disabled}
-                        ref={ref => this.inputElement = ref || undefined}
+                        ref={ref => (this.inputElement = ref || undefined)}
                     />
-                    {!this.props.disabled && <CaretDownIcon className='icon-inline rev-switcher__dropdown-icon' />}
+                    {!this.props.disabled && <CaretDownIcon className="icon-inline rev-switcher__dropdown-icon" />}
                 </div>
-                {
-                    this.state.showSwitcher &&
-                    <ul className='rev-switcher__revs' ref={this.setListElement}>
-                        {
-                            this.getVisible().map((item, index) => (
-                                <li
-                                    className={'rev-switcher__rev' + (index === this.state.selection ? ' rev-switcher__rev--selected' : '')}
-                                    key={item.rev}
-                                    title={item.rev}
-                                    ref={index === this.state.selection ? this.setSelectedElement : undefined}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onClick={() => this.chooseIndex(index)}
-                                >
-                                    {item.type === 'commit' && <CommitIcon className='icon-inline rev-switcher__rev-icon' />}
-                                    {item.type === 'branch' && <BranchIcon className='icon-inline rev-switcher__rev-icon' />}
-                                    {item.type === 'tag' && <TagIcon className='icon-inline rev-switcher__rev-icon' />}
-                                    <span className='rev-switcher__rev-name'>{item.rev}</span>
-                                </li>
-                            ))
-                        }
+                {this.state.showSwitcher && (
+                    <ul className="rev-switcher__revs" ref={this.setListElement}>
+                        {this.getVisible().map((item, index) => (
+                            <li
+                                className={
+                                    'rev-switcher__rev' +
+                                    (index === this.state.selection ? ' rev-switcher__rev--selected' : '')
+                                }
+                                key={item.rev}
+                                title={item.rev}
+                                ref={index === this.state.selection ? this.setSelectedElement : undefined}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                onClick={() => this.chooseIndex(index)}
+                            >
+                                {item.type === 'commit' && (
+                                    <CommitIcon className="icon-inline rev-switcher__rev-icon" />
+                                )}
+                                {item.type === 'branch' && (
+                                    <BranchIcon className="icon-inline rev-switcher__rev-icon" />
+                                )}
+                                {item.type === 'tag' && <TagIcon className="icon-inline rev-switcher__rev-icon" />}
+                                <span className="rev-switcher__rev-name">{item.rev}</span>
+                            </li>
+                        ))}
                     </ul>
-                }
+                )}
             </div>
         )
     }

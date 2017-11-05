@@ -33,7 +33,6 @@ interface State {
  * The search page
  */
 export class SearchPage extends React.Component<Props, State> {
-
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -49,27 +48,33 @@ export class SearchPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='search-page2'>
+            <div className="search-page2">
                 <PageTitle title={this.getPageTitle()} />
-                <div className='search-page2__nav'>
-                    {!window.context.user && <a href='https://about.sourcegraph.com' className='search-page2__nav-link'>About</a>}
-                    <div className='search-page2__nav-auth'>
-                        {
-                            // if on-prem, never show a user avatar or sign-in button
-                            window.context.onPrem ?
-                                null :
-                                window.context.user ?
-                                    <Link to='/settings'><UserAvatar size={64} /></Link> :
-                                    <Link to='/sign-in' className='btn btn-primary'>Sign in</Link>
-                        }
+                <div className="search-page2__nav">
+                    {!window.context.user && (
+                        <a href="https://about.sourcegraph.com" className="search-page2__nav-link">
+                            About
+                        </a>
+                    )}
+                    <div className="search-page2__nav-auth">
+                        {// if on-prem, never show a user avatar or sign-in button
+                        window.context.onPrem ? null : window.context.user ? (
+                            <Link to="/settings">
+                                <UserAvatar size={64} />
+                            </Link>
+                        ) : (
+                            <Link to="/sign-in" className="btn btn-primary">
+                                Sign in
+                            </Link>
+                        )}
                     </div>
                 </div>
-                <img className='search-page2__logo' src={`${window.context.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`} />
-                <form
-                    className='search2 search-page2__container'
-                    onSubmit={this.onSubmit}
-                >
-                    <div className='search-page2__input-container'>
+                <img
+                    className="search-page2__logo"
+                    src={`${window.context.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`}
+                />
+                <form className="search2 search-page2__container" onSubmit={this.onSubmit}>
+                    <div className="search-page2__input-container">
                         <QueryInput
                             {...this.props}
                             value={this.state.userQuery}
@@ -78,7 +83,11 @@ export class SearchPage extends React.Component<Props, State> {
                             prependQueryForSuggestions={this.state.fieldsQuery}
                             autoFocus={'cursor-at-end'}
                         />
-                        <SearchScope location={this.props.location} value={this.state.scopeQuery} onChange={this.onScopeQueryChange} />
+                        <SearchScope
+                            location={this.props.location}
+                            value={this.state.scopeQuery}
+                            onChange={this.onScopeQueryChange}
+                        />
                         <SearchButton />
                     </div>
                     <ScopeLabel scopeQuery={this.state.scopeQuery} />

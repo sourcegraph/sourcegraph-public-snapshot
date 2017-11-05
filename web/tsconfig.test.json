@@ -4,9 +4,5 @@
     "noEmit": false,
     "outDir": "./out"
   },
-  "include": [
-    "typings/**/*.d.ts",
-    "src/**/*.test.tsx",
-    "src/**/*.test.ts"
-  ]
+  "include": ["typings/**/*.d.ts", "src/**/*.test.tsx", "src/**/*.test.ts"]
 }

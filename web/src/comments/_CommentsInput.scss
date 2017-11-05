@@ -1,6 +1,6 @@
 .comments-input {
     padding: 1rem;
-    border-bottom: 1px solid #212C45;
+    border-bottom: 1px solid #212c45;
 
     &__text-box {
         min-height: 7rem;
@@ -10,7 +10,7 @@
         flex-wrap: wrap;
     }
     &__button {
-        margin-left: .5rem;
+        margin-left: 0.5rem;
     }
     &__markdown-supported {
         flex: 1;
@@ -18,9 +18,9 @@
     &__error {
         flex: 10;
         display: flex;
-        padding: .5rem;
+        padding: 0.5rem;
     }
     &__error-icon {
-        margin-right: .25rem;
+        margin-right: 0.25rem;
     }
 }

@@ -55,35 +55,36 @@ const gqlThread = `
  * @return Observable that emits the item or `null` if it doesn't exist
  */
 export function fetchSharedItem(ulid: string): Observable<GQL.ISharedItem | null> {
-    return queryGraphQL(`
-        query SharedItem($ulid: String!) {
-            root {
-                sharedItem(ulid: $ulid) {
-                    author {
-                        displayName
-                    }
-                    public
-                    thread {
-                        ${gqlThread}
-                    }
-                    comment {
-                        id
-                        title
+    return queryGraphQL(
+        `query SharedItem($ulid: String!) {
+                root {
+                    sharedItem(ulid: $ulid) {
+                        author {
+                            displayName
+                        }
+                        public
+                        thread {
+                            ${gqlThread}
+                        }
+                        comment {
+                            id
+                            title
+                        }
                     }
                 }
             }
+        `,
+        { ulid }
+    ).map(({ data, errors }) => {
+        if (!data || !data.root || errors) {
+            // TODO(slimsag): string comparison is bad practice, remove this
+            if (errors && errors[0].message === 'permission denied') {
+                throw new PermissionDeniedError()
+            }
+            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
         }
-    `, { ulid })
-        .map(({ data, errors }) => {
-            if (!data || !data.root || errors) {
-                // TODO(slimsag): string comparison is bad practice, remove this
-                if (errors && errors[0].message === 'permission denied') {
-                    throw new PermissionDeniedError()
-                }
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            return data.root.sharedItem
-        })
+        return data.root.sharedItem
+    })
 }
 
 /**
@@ -91,18 +92,22 @@ export function fetchSharedItem(ulid: string): Observable<GQL.ISharedItem | null
  *
  * @return Observable that emits the updated thread.
  */
-export function addCommentToThread(threadID: number, contents: string, ulid: string): Observable<GQL.ISharedItemThread> {
-    return mutateGraphQL(`
-        mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!) {
+export function addCommentToThread(
+    threadID: number,
+    contents: string,
+    ulid: string
+): Observable<GQL.ISharedItemThread> {
+    return mutateGraphQL(
+        `mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!) {
             addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
                 ${gqlThread}
             }
+        }`,
+        { threadID, contents, ulid }
+    ).map(({ data, errors }) => {
+        if (!data || !data.addCommentToThreadShared) {
+            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
         }
-    `, { threadID, contents, ulid })
-        .map(({ data, errors }) => {
-            if (!data || !data.addCommentToThreadShared) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            return data.addCommentToThreadShared
-        })
+        return data.addCommentToThreadShared
+    })
 }

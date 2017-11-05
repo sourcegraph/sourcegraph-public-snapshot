@@ -1,21 +1,21 @@
 .settings-sidebar {
     flex: 0 0 auto;
     width: 15.75rem;
-    background-color: #1C2736;
+    background-color: #1c2736;
 
     display: flex;
     flex-direction: column;
     white-space: nowrap;
 
     &__header {
-        color: #93A9C8;
+        color: #93a9c8;
         display: flex;
         align-items: center;
         padding: 0.5rem;
         vertical-align: middle;
-        background: #151C28;
+        background: #151c28;
         &-account-settings {
-            background: #1C2736;
+            background: #1c2736;
         }
     }
 
@@ -35,27 +35,27 @@
     }
 
     &__item {
-
         width: 100%;
         list-style: none;
         user-select: none;
         display: flex;
         flex-direction: column;
 
-        &-header, &-link {
+        &-header,
+        &-link {
             height: 100%;
-            padding: .5rem 0;
+            padding: 0.5rem 0;
             display: flex;
             align-items: center;
         }
 
         &-link:hover {
-            background-color: rgba(42,58,81,0.7);
+            background-color: rgba(42, 58, 81, 0.7);
         }
 
         &-icon {
-            margin-right: .5rem;
-            margin-left: .5rem;
+            margin-right: 0.5rem;
+            margin-left: 0.5rem;
         }
 
         .avatar {
@@ -64,11 +64,11 @@
         }
 
         &--active {
-            background: #1C7CD6;
-            color: #F2F4F8;
+            background: #1c7cd6;
+            color: #f2f4f8;
             &:hover {
-                background: #1C7CD6;
-                color: #F2F4F8;
+                background: #1c7cd6;
+                color: #f2f4f8;
             }
         }
     }
@@ -79,8 +79,8 @@
         &-avatar-column {
             flex: 0 0 auto;
             display: flex;
-            padding-left: .5rem;
-            margin-right: .5rem;
+            padding-left: 0.5rem;
+            margin-right: 0.5rem;
         }
         &-content {
             display: flex;
@@ -94,16 +94,16 @@
     }
 
     &__download-editor {
-        border-top: 1px solid #2B3750;
+        border-top: 1px solid #2b3750;
         padding: 0.5rem;
         text-align: center;
         &-button {
-            background-color: #2B3750;
-            color: #93A9C8;
+            background-color: #2b3750;
+            color: #93a9c8;
         }
         &-button:hover {
-            background-color: rgba(42,58,81,0.7);
-            color: #F2F4F8;
+            background-color: rgba(42, 58, 81, 0.7);
+            color: #f2f4f8;
         }
     }
 }

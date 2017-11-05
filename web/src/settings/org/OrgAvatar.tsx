@@ -9,8 +9,6 @@ interface Props {
  */
 export class OrgAvatar extends React.Component<Props> {
     public render(): JSX.Element | null {
-        return (
-            <div className='org-avatar'>{this.props.org.substr(0, 2).toUpperCase()}</div>
-        )
+        return <div className="org-avatar">{this.props.org.substr(0, 2).toUpperCase()}</div>
     }
 }

@@ -21,8 +21,7 @@ export class SurveyToast extends React.Component<{}, State> {
         super()
         this.state = {
             user: null,
-            visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
-            daysActiveCount === 3,
+            visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount === 3,
         }
         if (this.state.visible) {
             events.SurveyReminderViewed.log({ marketing: { sessionCount: daysActiveCount } })
@@ -30,11 +29,7 @@ export class SurveyToast extends React.Component<{}, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            currentUser.subscribe(
-                user => this.setState({ user })
-            )
-        )
+        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
     }
 
     public componentWillUnmount(): void {
@@ -48,15 +43,25 @@ export class SurveyToast extends React.Component<{}, State> {
 
         return (
             <Toast
-                icon={<EmojiIcon className='icon-inline' />}
-                title='Tell us what you think'
-                subtitle='How likely is it that you would recommend Sourcegraph to a friend?'
+                icon={<EmojiIcon className="icon-inline" />}
+                title="Tell us what you think"
+                subtitle="How likely is it that you would recommend Sourcegraph to a friend?"
                 cta={
-                    <div>{
-                        Array(11).fill(1).map((_, i) =>
-                            // tslint:disable-next-line:jsx-no-lambda
-                            <button type='button' key={i} className='btn btn-primary toast__rating-btn' onClick={() => this.onClickSurvey(i)}>{i}</button>)
-                    }</div>
+                    <div>
+                        {Array(11)
+                            .fill(1)
+                            .map((_, i) => (
+                                <button
+                                    type="button"
+                                    key={i}
+                                    className="btn btn-primary toast__rating-btn"
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.onClickSurvey(i)}
+                                >
+                                    {i}
+                                </button>
+                            ))}
+                    </div>
                 }
                 onDismiss={this.onDismiss}
             />

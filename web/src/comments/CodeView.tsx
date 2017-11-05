@@ -28,11 +28,7 @@ const phonyBeforeLines = [
  * them) and we need *some code* to render with a heavy CSS blur to imply that
  * code would normally be there.
  */
-const phonyLines = [
-    '	return &fileResolver{',
-    '		commit: r.commit,',
-    '		name:   path.Base(args.Path),',
-]
+const phonyLines = ['	return &fileResolver{', '		commit: r.commit,', '		name:   path.Base(args.Path),']
 
 /**
  * Phony 'after' lines.
@@ -41,11 +37,7 @@ const phonyLines = [
  * them) and we need *some code* to render with a heavy CSS blur to imply that
  * code would normally be there.
  */
-const phonyAfterLines = [
-    '		path:   args.Path,',
-    '	}, nil',
-    '}',
-]
+const phonyAfterLines = ['		path:   args.Path,', '	}, nil', '}']
 
 /**
  * splitLines splits the given plaintext or HTML thread lines by a newline. If
@@ -94,14 +86,22 @@ export function CodeView(sharedItem: GQL.ISharedItem): JSX.Element | null {
     return (
         <table className={`code-view__code${sharedItem.thread.lines ? '' : ' code-view__code--blurry'}`}>
             <tbody>
-                {itemToLines(sharedItem).map((line: Line) => <tr className={line.className} key={line.number}>
-                    <td className={`code-view__line-number${!isSnippet && line.isStartLine ? ' code-view__line-number--start-line' : ''}`}>
-                        {!isSnippet && line.isStartLine && <ChatIcon className='code-view__chat-icon icon-inline' />}
-                        {line.number}
-                    </td>
-                    <td className='code-view__line-content'><pre className='code-view__pre' dangerouslySetInnerHTML={{ __html: line.content }}></pre></td>
-                </tr>
-                )}
+                {itemToLines(sharedItem).map((line: Line) => (
+                    <tr className={line.className} key={line.number}>
+                        <td
+                            className={`code-view__line-number${!isSnippet && line.isStartLine
+                                ? ' code-view__line-number--start-line'
+                                : ''}`}
+                        >
+                            {!isSnippet &&
+                                line.isStartLine && <ChatIcon className="code-view__chat-icon icon-inline" />}
+                            {line.number}
+                        </td>
+                        <td className="code-view__line-content">
+                            <pre className="code-view__pre" dangerouslySetInnerHTML={{ __html: line.content }} />
+                        </td>
+                    </tr>
+                ))}
             </tbody>
         </table>
     )

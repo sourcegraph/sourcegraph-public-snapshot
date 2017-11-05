@@ -16,17 +16,29 @@ export class Breadcrumb extends React.Component<Props, {}> {
             const link = this.props.partToUrl(i)
             const className = `part ${this.props.partToClassName ? this.props.partToClassName(i) : ''}`
             if (link) {
-                spans.push(<Link key={i} className={className} to={link} title={part}>{part}</Link>)
+                spans.push(
+                    <Link key={i} className={className} to={link} title={part}>
+                        {part}
+                    </Link>
+                )
             } else {
-                spans.push(<span key={i} className={className} title={part}>{part}</span>)
+                spans.push(
+                    <span key={i} className={className} title={part}>
+                        {part}
+                    </span>
+                )
             }
             if (i < parts.length - 1) {
-                spans.push(<span key={'sep' + i} className='breadcrumb__separator'>/</span>)
+                spans.push(
+                    <span key={'sep' + i} className="breadcrumb__separator">
+                        /
+                    </span>
+                )
             }
         }
         return (
             // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-            <span className='breadcrumb'>{...spans}</span>
+            <span className="breadcrumb">{spans}</span>
         )
     }
 }
@@ -40,15 +52,27 @@ export interface RepoBreadcrumbProps {
 
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     public render(): JSX.Element | null {
-        const trimmedUri = this.props.repoPath.split('/').slice(1).join('/') // remove first path part
-        return <Breadcrumb path={trimmedUri + (this.props.filePath ? '/' + this.props.filePath : '')} partToUrl={this.partToUrl} partToClassName={this.partToClassName} />
+        const trimmedUri = this.props.repoPath
+            .split('/')
+            .slice(1)
+            .join('/') // remove first path part
+        return (
+            <Breadcrumb
+                path={trimmedUri + (this.props.filePath ? '/' + this.props.filePath : '')}
+                partToUrl={this.partToUrl}
+                partToClassName={this.partToClassName}
+            />
+        )
     }
 
     private partToUrl = (i: number): string | undefined => {
         if (this.props.disableLinks) {
             return undefined
         }
-        const trimmedUri = this.props.repoPath.split('/').slice(1).join('/') // remove first path part
+        const trimmedUri = this.props.repoPath
+            .split('/')
+            .slice(1)
+            .join('/') // remove first path part
         const uriParts = trimmedUri.split('/')
         if (i < uriParts.length - 1) {
             return undefined
@@ -60,7 +84,11 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
             const j = i - uriParts.length
             const pathParts = this.props.filePath.split('/')
             if (j < pathParts.length - 1) {
-                return toTreeURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: pathParts.slice(0, j + 1).join('/') })
+                return toTreeURL({
+                    repoPath: this.props.repoPath,
+                    rev: this.props.rev,
+                    filePath: pathParts.slice(0, j + 1).join('/'),
+                })
             }
             return toBlobURL({ repoPath: this.props.repoPath, rev: this.props.rev, filePath: this.props.filePath })
         }
@@ -68,7 +96,10 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     }
 
     private partToClassName = (i: number) => {
-        const trimmedUri = this.props.repoPath.split('/').slice(1).join('/') // remove first path part
+        const trimmedUri = this.props.repoPath
+            .split('/')
+            .slice(1)
+            .join('/') // remove first path part
         const uriParts = trimmedUri.split('/')
         if (i < uriParts.length) {
             return 'part-repo'

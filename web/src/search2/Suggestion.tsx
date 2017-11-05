@@ -62,7 +62,6 @@ const iconForType: { [key: string]: React.ComponentType<{ className: string }> }
 }
 
 export interface SuggestionProps {
-
     suggestion: Suggestion
 
     isSelected?: boolean
@@ -78,11 +77,17 @@ export const SuggestionItem = (props: SuggestionProps) => {
     const Icon = iconForType[props.suggestion.type]
     const suggestion = props.suggestion
     return (
-        <li className={'suggestion2' + (props.isSelected ? ' suggestion2--selected' : '')} onClick={props.onClick} ref={props.liRef}>
-            <Icon className='icon-inline' />
-            <div className='suggestion2__title'>{suggestion.title}</div>
-            <div className='suggestion2__description'>{suggestion.description}</div>
-            <div className='suggestion2__action' hidden={!props.isSelected}><kbd>enter</kbd> {suggestion.urlLabel}</div>
+        <li
+            className={'suggestion2' + (props.isSelected ? ' suggestion2--selected' : '')}
+            onClick={props.onClick}
+            ref={props.liRef}
+        >
+            <Icon className="icon-inline" />
+            <div className="suggestion2__title">{suggestion.title}</div>
+            <div className="suggestion2__description">{suggestion.description}</div>
+            <div className="suggestion2__action" hidden={!props.isSelected}>
+                <kbd>enter</kbd> {suggestion.urlLabel}
+            </div>
         </li>
     )
 }

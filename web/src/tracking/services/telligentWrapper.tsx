@@ -1,4 +1,3 @@
-
 declare global {
     interface Window {
         telligent(...args: any[]): void

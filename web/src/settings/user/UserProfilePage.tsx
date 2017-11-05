@@ -49,10 +49,17 @@ export class UserProfilePage extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(currentUser.subscribe(
-            user => this.setState({ user, username: (user && user.username) || '', displayName: (user && user.displayName) || '' }),
-            error => this.setState({ error })
-        ))
+        this.subscriptions.add(
+            currentUser.subscribe(
+                user =>
+                    this.setState({
+                        user,
+                        username: (user && user.username) || '',
+                        displayName: (user && user.displayName) || '',
+                    }),
+                error => this.setState({ error })
+            )
+        )
         this.subscriptions.add(
             this.submits
                 .do(event => {
@@ -61,18 +68,22 @@ export class UserProfilePage extends React.Component<Props, State> {
                 })
                 .filter(event => event.currentTarget.checkValidity())
                 .do(() => this.setState({ loading: true }))
-                .mergeMap(event =>
-                    this.requireBackfill() ?
-                        createUser({ username: this.state.username, displayName: this.state.displayName || this.state.username })
-                            .do(() => window.context.requireUserBackfill = false)
-                            .catch(this.handleError) :
-                        updateUser({ username: this.state.username, displayName: this.state.displayName })
-                            .catch(this.handleError)
+                .mergeMap(
+                    event =>
+                        this.requireBackfill()
+                            ? createUser({
+                                  username: this.state.username,
+                                  displayName: this.state.displayName || this.state.username,
+                              })
+                                  .do(() => (window.context.requireUserBackfill = false))
+                                  .catch(this.handleError)
+                            : updateUser({ username: this.state.username, displayName: this.state.displayName }).catch(
+                                  this.handleError
+                              )
                 )
                 .do(() => this.setState({ loading: false, error: undefined, saved: true }))
                 .mergeMap(() => fetchCurrentUser().concat([null]))
-                .subscribe(
-                () => {
+                .subscribe(() => {
                     const searchParams = new URLSearchParams(this.props.location.search)
                     const returnTo = searchParams.get('returnTo')
                     if (returnTo) {
@@ -82,9 +93,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                         // just take back to settings
                         this.props.history.replace('/settings')
                     }
-                },
-                this.handleError
-                )
+                }, this.handleError)
         )
     }
 
@@ -94,61 +103,74 @@ export class UserProfilePage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className='user-profile-page'>
-                <PageTitle title='Profile' />
+            <div className="user-profile-page">
+                <PageTitle title="Profile" />
                 <h1>Your profile</h1>
-                {this.requireBackfill() && <p className='alert alert-danger'>Please complete your profile to continue using Sourcegraph.</p>}
-                {this.state.error && <p className='alert alert-danger'>{upperFirst(this.state.error.message)}</p>}
-                {this.state.saved && <p className='alert alert-success'>Profile saved!</p>}
-                <form className='user-profile-page__form' onSubmit={this.handleSubmit}>
-                    <div className='user-profile-page__avatar-row'>
-                        <div className='user-profile-page__avatar-column'>
+                {this.requireBackfill() && (
+                    <p className="alert alert-danger">Please complete your profile to continue using Sourcegraph.</p>
+                )}
+                {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
+                {this.state.saved && <p className="alert alert-success">Profile saved!</p>}
+                <form className="user-profile-page__form" onSubmit={this.handleSubmit}>
+                    <div className="user-profile-page__avatar-row">
+                        <div className="user-profile-page__avatar-column">
                             <UserAvatar />
                         </div>
-                        <div className='form-group'>
+                        <div className="form-group">
                             <label>Username</label>
                             <input
-                                type='text'
-                                className='ui-text-box'
+                                type="text"
+                                className="ui-text-box"
                                 value={this.state.username}
                                 onChange={this.onUsernameFieldChange}
                                 pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
                                 required={true}
                                 disabled={this.state.loading}
                                 spellCheck={false}
-                                placeholder='Username'
+                                placeholder="Username"
                             />
-                            <small className='form-text'>A username consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen</small>
+                            <small className="form-text">
+                                A username consists of letters, numbers, hyphens (-) and may not begin or end with a
+                                hyphen
+                            </small>
                         </div>
                     </div>
-                    <div className='form-group'>
+                    <div className="form-group">
                         <label>Email</label>
                         <input
                             readOnly={true}
-                            type='email'
-                            className='ui-text-box'
-                            value={this.state.user && this.state.user.email || ''}
+                            type="email"
+                            className="ui-text-box"
+                            value={(this.state.user && this.state.user.email) || ''}
                             disabled={true}
                             spellCheck={false}
-                            placeholder='Email'
+                            placeholder="Email"
                         />
                     </div>
-                    <div className='form-group'>
+                    <div className="form-group">
                         <label>Display name (optional)</label>
                         <input
-                            type='text'
-                            className='ui-text-box'
+                            type="text"
+                            className="ui-text-box"
                             value={this.state.displayName}
                             onChange={this.onDisplayNameFieldChange}
                             disabled={this.state.loading}
                             spellCheck={false}
-                            placeholder='Display name'
+                            placeholder="Display name"
                         />
                     </div>
-                    <button className='btn btn-primary user-profile-page__button' type='submit' disabled={this.state.loading}>
+                    <button
+                        className="btn btn-primary user-profile-page__button"
+                        type="submit"
+                        disabled={this.state.loading}
+                    >
                         Update profile
                     </button>
-                    {this.state.loading && <div className='icon-inline'><Loader className='icon-inline' /></div>}
+                    {this.state.loading && (
+                        <div className="icon-inline">
+                            <Loader className="icon-inline" />
+                        </div>
+                    )}
                 </form>
             </div>
         )

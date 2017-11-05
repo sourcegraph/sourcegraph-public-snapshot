@@ -1,0 +1,16 @@
+{
+  "tabWidth": 4,
+  "printWidth": 120,
+  "semi": false,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "overrides": [
+    {
+      "files": "*.json",
+      "options": {
+        "tabWidth": 2,
+        "parser": "json"
+      }
+    }
+  ]
+}

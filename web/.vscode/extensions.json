@@ -1,7 +1,3 @@
 {
-  "recommendations": [
-    "eg2.ts-tslint",
-    "EditorConfig.EditorConfig",
-    "shinnn.stylelint"
-  ]
+  "recommendations": ["eg2.ts-tslint", "EditorConfig.EditorConfig", "shinnn.stylelint"]
 }

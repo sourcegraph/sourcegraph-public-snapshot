@@ -11,7 +11,13 @@ import { Org } from './org/Org'
 import { SettingsSidebar } from './SettingsSidebar'
 import { UserProfilePage } from './user/UserProfilePage'
 
-const SettingsNotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title='404: Not Found' subtitle='Sorry, the requested settings page was not found.' />
+const SettingsNotFoundPage = () => (
+    <HeroPage
+        icon={DirectionalSignIcon}
+        title="404: Not Found"
+        subtitle="Sorry, the requested settings page was not found."
+    />
+)
 
 interface SettingsPageProps {
     history: H.History
@@ -34,13 +40,17 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
             return <Redirect to={newUrl.pathname + newUrl.search} />
         }
         return (
-            <div className='settings-page'>
+            <div className="settings-page">
                 <SettingsSidebar history={this.props.history} location={this.props.location} />
-                <div className='settings-page__content'>
+                <div className="settings-page__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
                         <Route path={this.props.match.url} exact={true} component={UserProfilePage} />
-                        <Route path={`${this.props.match.url}/accept-invite`} component={AcceptInvitePage} exact={true} />
+                        <Route
+                            path={`${this.props.match.url}/accept-invite`}
+                            component={AcceptInvitePage}
+                            exact={true}
+                        />
                         <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
                         <Route path={`${this.props.match.url}/orgs/new`} component={NewOrg} exact={true} />
                         <Route path={`${this.props.match.url}/orgs/:orgName`} component={Org} exact={true} />

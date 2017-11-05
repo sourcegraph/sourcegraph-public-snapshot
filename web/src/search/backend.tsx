@@ -28,17 +28,16 @@ function fetchSearchProfiles(): Observable<GQL.ISearchProfile> {
                 }
             }
         }
-    `)
-        .mergeMap(({ data, errors }) => {
-            if (!data || !data.root || !data.root.searchProfiles) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            // Save in the cache
-            for (const profile of data.root.searchProfiles) {
-                searchProfileRepos.set(profile.name, profile.repositories.map(repo => repo.uri))
-            }
-            return data!.root.searchProfiles
-        })
+    `).mergeMap(({ data, errors }) => {
+        if (!data || !data.root || !data.root.searchProfiles) {
+            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+        }
+        // Save in the cache
+        for (const profile of data.root.searchProfiles) {
+            searchProfileRepos.set(profile.name, profile.repositories.map(repo => repo.uri))
+        }
+        return data!.root.searchProfiles
+    })
 }
 
 export function searchText(params: SearchOptions): Observable<GQL.ISearchResults> {
@@ -48,20 +47,26 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
     return Observable.merge(
         // From repo filters
         Observable.from(params.filters)
-            .filter((filter: Filter): filter is RepoFilter => filter.type === FilterType.Repo || filter.type === FilterType.UnknownRepo)
+            .filter(
+                (filter: Filter): filter is RepoFilter =>
+                    filter.type === FilterType.Repo || filter.type === FilterType.UnknownRepo
+            )
             .map(filter => filter.value),
         // From search profiles
         Observable.from(params.filters)
             .filter((filter: Filter): filter is RepoGroupFilter => filter.type === FilterType.RepoGroup)
             .map(filter => filter.value)
             // Try to expand the search profile from the cache
-            .mergeMap(name => searchProfileRepos.get(name) ||
-                // If not found, subscribe to the fetch and try again
-                searchProfilesFetch
-                    .concat(Observable.defer(() =>
-                        // If still not found, ignore
-                        Observable.from(searchProfileRepos.get(name) || [])
-                    ))
+            .mergeMap(
+                name =>
+                    searchProfileRepos.get(name) ||
+                    // If not found, subscribe to the fetch and try again
+                    searchProfilesFetch.concat(
+                        Observable.defer(() =>
+                            // If still not found, ignore
+                            Observable.from(searchProfileRepos.get(name) || [])
+                        )
+                    )
             )
     )
         .map(repo => ({ repo }))
@@ -70,7 +75,8 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
             const filePatterns = params.filters.filter(f => f.type === FilterType.File).map(f => f.value)
             const [excludePatterns, includePatterns] = partition(filePatterns, pattern => pattern[0] === '!')
             const includePattern = includePatterns.length > 0 ? '{' + includePatterns.join(',') + '}' : ''
-            const excludePattern = excludePatterns.length > 0 ? '{' + excludePatterns.map(p => p.substr(1)).join(',') + '}' : ''
+            const excludePattern =
+                excludePatterns.length > 0 ? '{' + excludePatterns.map(p => p.substr(1)).join(',') + '}' : ''
             return {
                 pattern: params.query,
                 fileMatchLimit: 500,
@@ -82,45 +88,48 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
                 excludePattern,
             }
         })
-        .mergeMap(variables => queryGraphQL(`
-            query SearchText(
-                $pattern: String!,
-                $fileMatchLimit: Int!,
-                $isRegExp: Boolean!,
-                $isWordMatch: Boolean!,
-                $repositories: [RepositoryRevision!]!,
-                $isCaseSensitive: Boolean!,
-                $includePattern: String!,
-                $excludePattern: String!,
-            ) {
-                root {
-                    searchRepos(
-                        repositories: $repositories,
-                        query: {
-                            pattern: $pattern,
-                            isRegExp: $isRegExp,
-                            fileMatchLimit: $fileMatchLimit,
-                            isWordMatch: $isWordMatch,
-                            isCaseSensitive: $isCaseSensitive,
-                            includePattern: $includePattern,
-                            excludePattern: $excludePattern,
-                    }) {
-                        limitHit
-                        missing
-                        cloning
-                        results {
-                            resource
+        .mergeMap(variables =>
+            queryGraphQL(
+                `query SearchText(
+                    $pattern: String!,
+                    $fileMatchLimit: Int!,
+                    $isRegExp: Boolean!,
+                    $isWordMatch: Boolean!,
+                    $repositories: [RepositoryRevision!]!,
+                    $isCaseSensitive: Boolean!,
+                    $includePattern: String!,
+                    $excludePattern: String!,
+                ) {
+                    root {
+                        searchRepos(
+                            repositories: $repositories,
+                            query: {
+                                pattern: $pattern,
+                                isRegExp: $isRegExp,
+                                fileMatchLimit: $fileMatchLimit,
+                                isWordMatch: $isWordMatch,
+                                isCaseSensitive: $isCaseSensitive,
+                                includePattern: $includePattern,
+                                excludePattern: $excludePattern,
+                        }) {
                             limitHit
-                            lineMatches {
-                                preview
-                                lineNumber
-                                offsetAndLengths
+                            missing
+                            cloning
+                            results {
+                                resource
+                                limitHit
+                                lineMatches {
+                                    preview
+                                    lineNumber
+                                    offsetAndLengths
+                                }
                             }
                         }
                     }
-                }
-            }
-        `, variables))
+                }`,
+                variables
+            )
+        )
         .map(({ data, errors }) => {
             if (!data || !data.root || !data.root.searchRepos) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -130,8 +139,8 @@ export function searchText(params: SearchOptions): Observable<GQL.ISearchResults
 }
 
 export function fetchSuggestions(query: string, filters: Filter[]): Observable<GQL.SearchResult> {
-    return queryGraphQL(`
-        query SearchRepos($query: String!) {
+    return queryGraphQL(
+        `query SearchRepos($query: String!) {
             root {
                 search(query: $query, repositories: $repositories) {
                     ... on Repository {
@@ -151,22 +160,24 @@ export function fetchSuggestions(query: string, filters: Filter[]): Observable<G
                     }
                 }
             }
-        }
-    `, {
+        }`,
+        {
             query,
             repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
-        })
-        .mergeMap(({ data, errors }) => {
-            if (!data || !data.root.search) {
-                const message = errors ? errors.map(e => e.message).join('\n') : 'Incomplete response from GraphQL search endpoint'
-                throw Object.assign(new Error(message), { errors })
+        }
+    ).mergeMap(({ data, errors }) => {
+        if (!data || !data.root.search) {
+            const message = errors
+                ? errors.map(e => e.message).join('\n')
+                : 'Incomplete response from GraphQL search endpoint'
+            throw Object.assign(new Error(message), { errors })
+        }
+        for (const item of data.root.search) {
+            // Cache SearchProfile repositories to speed up expanding them on the search results page
+            if (item.__typename === 'SearchProfile') {
+                searchProfileRepos.set(item.name, item.repositories.map(repo => repo.uri))
             }
-            for (const item of data.root.search) {
-                // Cache SearchProfile repositories to speed up expanding them on the search results page
-                if (item.__typename === 'SearchProfile') {
-                    searchProfileRepos.set(item.name, item.repositories.map(repo => repo.uri))
-                }
-            }
-            return data.root.search
-        })
+        }
+        return data.root.search
+    })
 }

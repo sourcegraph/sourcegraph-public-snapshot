@@ -37,14 +37,16 @@ export class VirtualList extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div>
-                {
-                    this.props.items.slice(0, this.state.itemsToShow).map((item, i) =>
+                {this.props.items.slice(0, this.state.itemsToShow).map((item, i) => (
+                    <VisibilitySensor
+                        key={i}
                         // tslint:disable-next-line:jsx-no-lambda
-                        <VisibilitySensor key={i} onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, i)} partialVisibility={true}>
-                            {item}
-                        </VisibilitySensor>
-                    )
-                }
+                        onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, i)}
+                        partialVisibility={true}
+                    >
+                        {item}
+                    </VisibilitySensor>
+                ))}
             </div>
         )
     }

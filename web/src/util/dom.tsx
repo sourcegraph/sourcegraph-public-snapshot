@@ -45,7 +45,13 @@ interface HighlightResult {
  * @param start the offset character where highlting starts.
  * @param lenght the number of characters to highlight.
  */
-function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: number, length: number, w: Window): HighlightResult {
+function highlightNodeHelper(
+    currNode: HTMLElement,
+    currOffset: number,
+    start: number,
+    length: number,
+    w: Window
+): HighlightResult {
     // typescript doesn't define Node on the Window, although it exists (and must be used e.g. when we are passed a Window from jsdom)
     const Node = (w as any).Node as Node
 
@@ -124,7 +130,13 @@ function highlightNodeHelper(currNode: HTMLElement, currOffset: number, start: n
 
             case Node.ELEMENT_NODE: {
                 const elementNode = child as HTMLElement
-                const res = highlightNodeHelper(elementNode, currOffset, start + charsHighlighted, length - charsHighlighted, w)
+                const res = highlightNodeHelper(
+                    elementNode,
+                    currOffset,
+                    start + charsHighlighted,
+                    length - charsHighlighted,
+                    w
+                )
                 if (res.highlightingCompleted) {
                     return res
                 } else {

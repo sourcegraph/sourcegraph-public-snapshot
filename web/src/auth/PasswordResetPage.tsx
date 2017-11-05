@@ -26,26 +26,26 @@ class PasswordResetForm extends React.Component<{}, State> {
 
     public render(): JSX.Element | null {
         if (this.state.didReset) {
-            return <p className='password-reset-page__reset-confirm'>Password reset email sent.</p>
+            return <p className="password-reset-page__reset-confirm">Password reset email sent.</p>
         }
         return (
-            <form className='password-reset-page__form' onSubmit={this.handleSubmit}>
-                {this.state.error !== '' &&
-                    <p className='password-reset-page__error'>{this.state.error}</p>
-                }
+            <form className="password-reset-page__form" onSubmit={this.handleSubmit}>
+                {this.state.error !== '' && <p className="password-reset-page__error">{this.state.error}</p>}
                 <p>Enter your email address and we will send you a link to reset your password.</p>
-                <div className='form-group'>
+                <div className="form-group">
                     <input
-                        className='ui-text-box'
+                        className="ui-text-box"
                         onChange={this.onEmailFieldChange}
                         value={this.state.email}
-                        type='email'
+                        type="email"
                         spellCheck={false}
-                        placeholder='Email'
+                        placeholder="Email"
                         required={true}
                     />
                 </div>
-                <button className='btn btn-primary btn-block' type='submit'>Reset Password</button>
+                <button className="btn btn-primary btn-block" type="submit">
+                    Reset Password
+                </button>
             </form>
         )
     }
@@ -57,17 +57,20 @@ class PasswordResetForm extends React.Component<{}, State> {
     private handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
-        webAuth.changePassword({
-            connection: 'Sourcegraph',
-            email: this.state.email,
-        }, (err, authResult) => {
-            if (err) {
-                console.error('auth error: ', err)
-                this.setState({ error: (err as any).description })
-            } else {
-                this.setState({ didReset: true })
+        webAuth.changePassword(
+            {
+                connection: 'Sourcegraph',
+                email: this.state.email,
+            },
+            (err, authResult) => {
+                if (err) {
+                    console.error('auth error: ', err)
+                    this.setState({ error: (err as any).description })
+                } else {
+                    this.setState({ didReset: true })
+                }
             }
-        })
+        )
     }
 }
 
@@ -75,12 +78,16 @@ class PasswordResetForm extends React.Component<{}, State> {
  * A landing page for the user request a password reset.
  */
 export class PasswordResetPage extends React.Component {
-
     public render(): JSX.Element | null {
         return (
-            <div className='password-reset-page'>
-                <PageTitle title='Reset password' />
-                <HeroPage icon={KeyIcon} title='Sourcegraph' subtitle='Sign in or sign up to create an account' cta={<PasswordResetForm />} />
+            <div className="password-reset-page">
+                <PageTitle title="Reset password" />
+                <HeroPage
+                    icon={KeyIcon}
+                    title="Sourcegraph"
+                    subtitle="Sign in or sign up to create an account"
+                    cta={<PasswordResetForm />}
+                />
             </div>
         )
     }

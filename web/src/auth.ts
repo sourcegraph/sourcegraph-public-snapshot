@@ -44,8 +44,7 @@ export function fetchCurrentUser(): Observable<never> {
                     }
                 }
             }
-        }
-    `)
+        }`)
         .do(result => {
             if (!result.data) {
                 throw new Error('invalid response received from graphql endpoint')

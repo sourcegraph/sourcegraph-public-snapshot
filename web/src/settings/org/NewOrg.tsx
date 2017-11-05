@@ -18,7 +18,6 @@ export interface Props {
 }
 
 export interface State {
-
     /**
      * Current value of the organization name input
      */
@@ -38,7 +37,6 @@ export interface State {
 }
 
 export class NewOrg extends React.Component<Props, State> {
-
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
 
@@ -60,68 +58,75 @@ export class NewOrg extends React.Component<Props, State> {
                 })
                 .filter(event => event.currentTarget.checkValidity())
                 .mergeMap(event =>
-                    createOrg(this.state)
-                        .catch(error => {
-                            console.error(error)
-                            this.setState({ error })
-                            return []
-                        })
+                    createOrg(this.state).catch(error => {
+                        console.error(error)
+                        this.setState({ error })
+                        return []
+                    })
                 )
-                .subscribe(org => {
-                    this.props.history.push(`/settings/orgs/${org.name}`)
-                }, error => {
-                    console.error(error)
-                })
+                .subscribe(
+                    org => {
+                        this.props.history.push(`/settings/orgs/${org.name}`)
+                    },
+                    error => {
+                        console.error(error)
+                    }
+                )
         )
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className='new-organization'>
-                <form className='settings-form' onSubmit={this.onSubmit}>
-
+            <div className="new-organization">
+                <form className="settings-form" onSubmit={this.onSubmit}>
                     <h1>Create a new organization</h1>
 
                     <p>
-                        Create a Sourcegraph organization to bring the discussion to the code.
-                        Learn more about <a href='https://about.sourcegraph.com/products/editor' target='_blank'>collaboration in Sourcegraph</a>.
+                        Create a Sourcegraph organization to bring the discussion to the code. Learn more about{' '}
+                        <a href="https://about.sourcegraph.com/products/editor" target="_blank">
+                            collaboration in Sourcegraph
+                        </a>.
                     </p>
-                    {this.state.error && <p className='form-text text-error'>{upperFirst(this.state.error.message)}</p>}
-                    <div className='form-group'>
+                    {this.state.error && <p className="form-text text-error">{upperFirst(this.state.error.message)}</p>}
+                    <div className="form-group">
                         <label>Organization name</label>
                         <input
-                            type='text'
-                            className='ui-text-box'
-                            placeholder='acme-corp'
+                            type="text"
+                            className="ui-text-box"
+                            placeholder="acme-corp"
                             pattern={VALID_ORG_NAME_REGEXP.toString().slice(1, -1)}
                             required={true}
-                            autoCorrect='off'
-                            autoComplete='off'
+                            autoCorrect="off"
+                            autoComplete="off"
                             autoFocus={true}
                             value={this.state.name}
                             onChange={this.onNameChange}
                             disabled={this.state.loading}
                         />
-                        <small className='form-text'>An organization name consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen</small>
+                        <small className="form-text">
+                            An organization name consists of letters, numbers, hyphens (-) and may not begin or end with
+                            a hyphen
+                        </small>
                     </div>
 
-                    <div className='form-group'>
+                    <div className="form-group">
                         <label>Display name</label>
                         <input
-                            type='text'
-                            className='ui-text-box'
-                            placeholder='ACME Corporation'
+                            type="text"
+                            className="ui-text-box"
+                            placeholder="ACME Corporation"
                             required={true}
-                            autoCorrect='off'
+                            autoCorrect="off"
                             value={this.state.displayName}
                             onChange={this.onDisplayNameChange}
                             disabled={this.state.loading}
                         />
                     </div>
 
-                    <button type='submit' className='btn btn-primary' disabled={this.state.loading}>Create organization</button>
-                    {this.state.loading && <LoaderIcon className='icon-inline' />}
-
+                    <button type="submit" className="btn btn-primary" disabled={this.state.loading}>
+                        Create organization
+                    </button>
+                    {this.state.loading && <LoaderIcon className="icon-inline" />}
                 </form>
             </div>
         )

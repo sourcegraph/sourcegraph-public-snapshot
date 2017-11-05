@@ -1,4 +1,3 @@
-
 /**
  * Regular expression to identify valid organization names.
  */

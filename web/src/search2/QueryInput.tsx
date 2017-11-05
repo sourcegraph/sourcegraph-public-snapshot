@@ -116,11 +116,17 @@ export class QueryInput extends React.Component<Props, State> {
                             query: [this.props.prependQueryForSuggestions, this.props.value].filter(s => !!s).join(' '),
                             scopeQuery: this.props.scopeQuery || '',
                         }
-                        return fetchSuggestions(options)
-                            .map((suggestion: GQL.SearchSuggestion2) => createSuggestion(suggestion, options))
+                        return fetchSuggestions(options).map((suggestion: GQL.SearchSuggestion2) =>
+                            createSuggestion(suggestion, options)
+                        )
                     })()
                         .toArray()
-                        .map((suggestions: Suggestion[]) => ({ suggestions, selectedSuggestion: -1, hideSuggestions: false, loading: false }))
+                        .map((suggestions: Suggestion[]) => ({
+                            suggestions,
+                            selectedSuggestion: -1,
+                            hideSuggestions: false,
+                            loading: false,
+                        }))
                         .catch((err: Error) => {
                             console.error(err)
                             return []
@@ -130,44 +136,55 @@ export class QueryInput extends React.Component<Props, State> {
                     return Observable.merge(
                         suggestionsFetch,
                         // Show a loader if the fetch takes longer than 100ms
-                        Observable.of({ loading: true }).delay(100).takeUntil(suggestionsFetch)
+                        Observable.of({ loading: true })
+                            .delay(100)
+                            .takeUntil(suggestionsFetch)
                     )
                 })
                 // Abort suggestion display on route change or suggestion hiding
                 .takeUntil(this.suggestionsHidden)
                 // But resubscribe afterwards
                 .repeat()
-                .subscribe(state => {
-                    this.setState(state as State)
-                }, err => {
-                    console.error(err)
-                })
+                .subscribe(
+                    state => {
+                        this.setState(state as State)
+                    },
+                    err => {
+                        console.error(err)
+                    }
+                )
         )
 
         // Quick-Open hotkeys
         this.subscriptions.add(
             Observable.fromEvent<KeyboardEvent>(window, 'keydown')
-                .filter(event =>
-                    // Slash shortcut (if no input element is focused)
-                    (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName))
-                    // Cmd/Ctrl+P shortcut
-                    || ((event.metaKey || event.ctrlKey) && event.key === 'p')
-                    // Cmd/Ctrl+Shift+F shortcut
-                    || ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
+                .filter(
+                    event =>
+                        // Slash shortcut (if no input element is focused)
+                        (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
+                        // Cmd/Ctrl+P shortcut
+                        ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
+                        // Cmd/Ctrl+Shift+F shortcut
+                        ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
                 )
                 .switchMap(event => {
                     event.preventDefault()
                     // Use selection as query
                     const selection = window.getSelection().toString()
                     if (selection) {
-                        return new Observable<void>(observer => this.setState({
-                            // query: selection, TODO(sqs): add back this behavior
-                            suggestions: [],
-                            selectedSuggestion: -1,
-                        }, () => {
-                            observer.next()
-                            observer.complete()
-                        }))
+                        return new Observable<void>(observer =>
+                            this.setState(
+                                {
+                                    // query: selection, TODO(sqs): add back this behavior
+                                    suggestions: [],
+                                    selectedSuggestion: -1,
+                                },
+                                () => {
+                                    observer.next()
+                                    observer.complete()
+                                }
+                            )
+                        )
                     }
                     return [undefined]
                 })
@@ -199,50 +216,48 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const showSuggestions = this.props.value.length >= QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH
-            && this.state.inputFocused
-            && !this.state.hideSuggestions
-            && this.state.suggestions.length !== 0
+        const showSuggestions =
+            this.props.value.length >= QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH &&
+            this.state.inputFocused &&
+            !this.state.hideSuggestions &&
+            this.state.suggestions.length !== 0
 
         return (
-            <div className='query-input2'>
+            <div className="query-input2">
                 <input
-                    className='query-input2__input'
+                    className="query-input2__input"
                     value={this.props.value}
                     onChange={this.onInputChange}
                     onKeyDown={this.onInputKeyDown}
                     onFocus={this.onInputFocus}
                     onBlur={this.onInputBlur}
                     spellCheck={false}
-                    autoCapitalize='off'
-                    placeholder='Search code...'
-                    ref={ref => this.inputElement = ref!}
+                    autoCapitalize="off"
+                    placeholder="Search code..."
+                    ref={ref => (this.inputElement = ref!)}
                 />
-                {
-                    showSuggestions &&
-                    <ul className='query-input2__suggestions' ref={this.setSuggestionListElement}>
-                        {
-                            this.state.suggestions.map((suggestion, i) => {
-                                const isSelected = this.state.selectedSuggestion === i
-                                const onRef = (ref: HTMLLIElement) => {
-                                    if (isSelected) {
-                                        this.selectedSuggestionElement = ref || undefined
-                                    }
+                {showSuggestions && (
+                    <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
+                        {this.state.suggestions.map((suggestion, i) => {
+                            const isSelected = this.state.selectedSuggestion === i
+                            const onRef = (ref: HTMLLIElement) => {
+                                if (isSelected) {
+                                    this.selectedSuggestionElement = ref || undefined
                                 }
-                                return (
-                                    <SuggestionItem
-                                        key={i}
-                                        suggestion={suggestion}
-                                        isSelected={isSelected}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        onClick={() => this.selectSuggestion(suggestion)}
-                                        liRef={onRef}
-                                    />
-                                )
-                            })
-                        }
+                            }
+                            return (
+                                <SuggestionItem
+                                    key={i}
+                                    suggestion={suggestion}
+                                    isSelected={isSelected}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.selectSuggestion(suggestion)}
+                                    liRef={onRef}
+                                />
+                            )
+                        })}
                     </ul>
-                }
+                )}
             </div>
         )
     }
@@ -329,6 +344,11 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private moveSelection(steps: number): void {
-        this.setState({ selectedSuggestion: Math.max(Math.min(this.state.selectedSuggestion + steps, this.state.suggestions.length - 1), -1) })
+        this.setState({
+            selectedSuggestion: Math.max(
+                Math.min(this.state.selectedSuggestion + steps, this.state.suggestions.length - 1),
+                -1
+            ),
+        })
     }
 }

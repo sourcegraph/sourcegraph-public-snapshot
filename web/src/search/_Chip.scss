@@ -1,6 +1,4 @@
-
 .chip {
-
     flex: 1 0 auto;
     margin-top: 0.25rem;
     margin-right: 0.25rem;
@@ -14,12 +12,11 @@
     vertical-align: top;
     white-space: nowrap;
 
-    background-color: #2A3A51;
+    background-color: #2a3a51;
     border-radius: 2px;
     color: white;
 
     &__label {
-
         flex: 0 1 auto;
         margin-left: 0.5rem;
         display: inline-block;
@@ -36,7 +33,6 @@
     }
 
     &__delete-button {
-
         padding: 0;
         margin-left: 0.25rem;
     }

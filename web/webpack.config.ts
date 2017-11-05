@@ -5,7 +5,6 @@ import * as webpack from 'webpack'
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
 const plugins: webpack.Plugin[] = [
-
     // Uncomment to analyze bundle size
     // new BundleAnalyzerPlugin(),
 
@@ -15,51 +14,53 @@ const plugins: webpack.Plugin[] = [
             console.log('Begin compile at ' + new Date())
             cb()
         })
-    }
+    },
 ]
 
 if (process.env.NODE_ENV === 'production') {
     plugins.push(
         new webpack.DefinePlugin({
             'process.env': {
-                NODE_ENV: JSON.stringify('production')
-            }
+                NODE_ENV: JSON.stringify('production'),
+            },
         }),
         new webpack.optimize.UglifyJsPlugin({
-            sourceMap: false
+            sourceMap: false,
         })
     )
 } else {
     plugins.push(
         new webpack.DefinePlugin({
             'process.env': {
-                NODE_ENV: JSON.stringify('development')
-            }
+                NODE_ENV: JSON.stringify('development'),
+            },
         })
     )
 }
 
-plugins.push(new ExtractTextPlugin({
-    filename: 'ui/assets/dist/[name].bundle.css',
-    allChunks: true
-}))
+plugins.push(
+    new ExtractTextPlugin({
+        filename: 'ui/assets/dist/[name].bundle.css',
+        allChunks: true,
+    })
+)
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
 const config: webpack.Configuration = {
     entry: {
         app: path.join(__dirname, 'src/app.tsx'),
-        style: path.join(__dirname, 'src/app.scss')
+        style: path.join(__dirname, 'src/app.scss'),
     },
     output: {
         path: path.join(__dirname, '../ui/assets/scripts'),
         filename: '[name].bundle.js',
-        chunkFilename: '[id].chunk.js'
+        chunkFilename: '[id].chunk.js',
     },
     devtool,
     plugins,
     resolve: {
-        extensions: ['.ts', '.tsx', '.js']
+        extensions: ['.ts', '.tsx', '.js'],
     },
     module: {
         loaders: [
@@ -74,14 +75,14 @@ const config: webpack.Configuration = {
                                 module: 'esnext',
                                 noEmit: false,
                             },
-                            transpileOnly: process.env.DISABLE_TYPECHECKING === 'true'
-                        }
-                    }
-                ]
+                            transpileOnly: process.env.DISABLE_TYPECHECKING === 'true',
+                        },
+                    },
+                ],
             },
             {
                 test: /\.jsx?$/,
-                loader: 'babel-loader'
+                loader: 'babel-loader',
             },
             {
                 // sass / scss loader for webpack
@@ -92,13 +93,13 @@ const config: webpack.Configuration = {
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: [__dirname + '/node_modules']
-                        }
-                    }
-                ])
-            }
-        ]
-    } as webpack.OldModule
+                            includePaths: [__dirname + '/node_modules'],
+                        },
+                    },
+                ]),
+            },
+        ],
+    } as webpack.OldModule,
 }
 
 export default config

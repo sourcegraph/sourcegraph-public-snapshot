@@ -4,14 +4,14 @@ It should import all component stylesheets
 */
 
 $color-page-background: #233043;
-$color-text:      #C9D4E3;
-$color-secondary: #93A9C8;
-$color-success:   #0CA678;
-$color-primary:   #1C7CD6;
-$color-error:     #f03e3e;
+$color-text: #c9d4e3;
+$color-secondary: #93a9c8;
+$color-success: #0ca678;
+$color-primary: #1c7cd6;
+$color-error: #f03e3e;
 
-$color-light-page-background: #F2F4F8;
-$color-light-text:      #39496A;
+$color-light-page-background: #f2f4f8;
+$color-light-text: #39496a;
 
 // Media breakpoints
 $media-sm: 576px;
@@ -32,7 +32,8 @@ $media-xl: 1200px;
     font-family: system;
     font-style: normal;
     font-weight: 300;
-    src: local(-apple-system), local(BlinkMacSystemFont), local("Segoe UI"), local(Helvetica), local(Arial), local(sans-serif), local("Apple Color Emoji"), local("Segoe UI Emoji"), local("Segoe UI Symbol");
+    src: local(-apple-system), local(BlinkMacSystemFont), local('Segoe UI'), local(Helvetica), local(Arial),
+        local(sans-serif), local('Apple Color Emoji'), local('Segoe UI Emoji'), local('Segoe UI Symbol');
 }
 
 * {
@@ -130,7 +131,7 @@ body {
     align-items: center;
     svg {
         // 14px font size -> 24px icon size
-        width:  1.7142857143em;
+        width: 1.7142857143em;
         height: 1.7142857143em;
         // Match color of the text
         fill: currentColor;
@@ -148,14 +149,14 @@ kbd {
     line-height: 1.5;
     height: 1.125rem;
     font-size: 0.8em;
-    background-color: #93A9C8;
-    color: #2A3A51;
+    background-color: #93a9c8;
+    color: #2a3a51;
     padding: 0 0.25rem;
     margin: 0 0.125rem;
     vertical-align: middle;
-    border-bottom-color: #5D7EAC;
+    border-bottom-color: #5d7eac;
     border-radius: 3px;
-    box-shadow: inset 0 -2px 0 #5D7EAC;
+    box-shadow: inset 0 -2px 0 #5d7eac;
 }
 
 .ui-title {
@@ -166,7 +167,7 @@ kbd {
 
 a {
     outline: 0;
-    color: #93A9C8;
+    color: #93a9c8;
     transition: color 100ms ease-out;
     text-decoration: none;
     &:hover {
@@ -177,7 +178,7 @@ a {
 
 h1 {
     font-size: 1.5rem;
-    line-height: 2.0rem;
+    line-height: 2rem;
     margin: 0 0 1rem;
 }
 
@@ -199,7 +200,7 @@ h1 {
     outline: none;
     &:focus {
         outline: none;
-        box-shadow: 0 0 0 2px rgba($color-primary, .5);
+        box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
 }
 
@@ -237,7 +238,7 @@ h1 {
 .light a,
 .light .btn-icon {
     &:hover {
-        color: #070A0D;
+        color: #070a0d;
     }
 }
 
@@ -248,9 +249,9 @@ h1 {
 }
 
 .ui-text-box {
-    background-color: #0E121B;
-    border: 1px solid #2B3750;
-    color: #FFFFFF;
+    background-color: #0e121b;
+    border: 1px solid #2b3750;
+    color: #ffffff;
     font-size: inherit;
     border-radius: 2px;
     padding: 0.5rem 1rem;
@@ -265,10 +266,11 @@ h1 {
     }
     &:disabled {
         cursor: not-allowed;
-        background-color: #1D2535;
-        color: #A2B0CD;
+        background-color: #1d2535;
+        color: #a2b0cd;
     }
-    &:valid, &:placeholder-shown {
+    &:valid,
+    &:placeholder-shown {
         + .invalid-feedback {
             display: none;
         }
@@ -323,12 +325,13 @@ h1 {
     }
 
     tr {
-        border-bottom: 1px solid #2A3A51;
+        border-bottom: 1px solid #2a3a51;
         transition: background 100ms ease-out;
     }
 
-    th, td {
-        padding: .45rem;
+    th,
+    td {
+        padding: 0.45rem;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -354,14 +357,14 @@ h1 {
         &-id {
             font-family: 'Menlo';
             background-color: rgb(36, 49, 66);
-            padding: .3em;
+            padding: 0.3em;
             border-radius: 2px;
         }
 
         > hr {
             margin-top: 1rem;
             margin-bottom: 1rem;
-            border-color: #93A9C8;
+            border-color: #93a9c8;
         }
 
         &-text {
@@ -373,17 +376,17 @@ h1 {
 }
 
 .alert {
-    border-radius: .25rem;
-    padding: .5rem;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
     &-success {
-        border: 1px solid #37B24D;
+        border: 1px solid #37b24d;
         background: rgba(43, 138, 62, 0.5);
-        color: #F2F4F8;
+        color: #f2f4f8;
     }
-    &-danger{
-        border: 1px solid #F03E3E;
+    &-danger {
+        border: 1px solid #f03e3e;
         background: rgba(201, 42, 42, 0.5);
-        color: #F2F4F8;
+        color: #f2f4f8;
     }
 }
 
