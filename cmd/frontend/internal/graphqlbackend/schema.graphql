@@ -132,6 +132,7 @@ type Root {
 	searchProfiles: [SearchProfile!]!
 	search2(query: String = "", scopeQuery: String = ""): Search2
 	searchScopes2: [SearchScope2!]!
+	repoGroups: [RepoGroup!]!
 	revealCustomerCompany(ip: String!): CompanyProfile
 	org(id: Int!): Org!
 	sharedItem(ulid: String!): SharedItem
@@ -178,6 +179,13 @@ type SearchQuery2Description {
 type SearchQuery2 {
 	query: String!
 	scopeQuery: String!
+}
+
+# A group of repositories. This is the new name of SearchProfile; otherwise
+# it is the same.
+type RepoGroup {
+	name: String!
+	repositories: [String!]!
 }
 
 # Represents a shared item (either a shared code comment OR code snippet).
