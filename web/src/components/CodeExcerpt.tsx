@@ -14,7 +14,7 @@ interface State {
     blobLines?: string[]
 }
 
-export class CodeExcerpt extends React.Component<Props, State> {
+export class CodeExcerpt extends React.PureComponent<Props, State> {
     private tableContainerElement: HTMLElement | null
     private isVisible = false
 

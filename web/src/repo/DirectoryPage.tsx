@@ -1,9 +1,11 @@
 import ArrowUpParentIcon from '@sourcegraph/icons/lib/ArrowUpParent'
 import FolderIcon from '@sourcegraph/icons/lib/Folder'
 import formatDistance from 'date-fns/formatDistance'
+import isEqual from 'lodash/isEqual'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/do'
 import 'rxjs/add/operator/switchMap'
 import { Subject } from 'rxjs/Subject'
@@ -29,7 +31,7 @@ interface State {
     dirCommitInfo?: GQL.ICommitInfo
 }
 
-export class DirectoryPage extends React.Component<Props, State> {
+export class DirectoryPage extends React.PureComponent<Props, State> {
     public state: State = {}
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -37,34 +39,27 @@ export class DirectoryPage extends React.Component<Props, State> {
         super(props)
         this.subscriptions.add(
             this.componentUpdates
-                .do(() => this.setState({ dirTree: undefined }))
+                .distinctUntilChanged(isEqual)
+                .do(() => this.state.dirTree && this.setState({ dirTree: undefined }))
                 .switchMap(props =>
                     fetchDirTree(props).catch(err => {
                         console.error(err)
                         return []
                     })
                 )
-                .subscribe(
-                    dirTree => {
-                        this.setState({ dirTree })
-                    },
-                    err => console.error(err)
-                )
+                .subscribe(dirTree => this.setState({ dirTree }), err => console.error(err))
         )
         this.subscriptions.add(
             this.componentUpdates
+                .distinctUntilChanged(isEqual)
+                .do(() => this.state.dirCommitInfo && this.setState({ dirCommitInfo: undefined }))
                 .switchMap(props =>
                     fetchFileCommitInfo(props).catch(err => {
                         console.error(err)
                         return []
                     })
                 )
-                .subscribe(
-                    dirCommitInfo => {
-                        this.setState({ dirCommitInfo })
-                    },
-                    err => console.error(err)
-                )
+                .subscribe(dirCommitInfo => this.setState({ dirCommitInfo }), err => console.error(err))
         )
     }
 

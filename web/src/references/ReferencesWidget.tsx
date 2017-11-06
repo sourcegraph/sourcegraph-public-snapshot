@@ -15,6 +15,7 @@ import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/bufferTime'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/concat'
+import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/scan'
@@ -26,7 +27,7 @@ import { Location } from 'vscode-languageserver-types'
 import { fetchReferences } from '../backend/lsp'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
-import { VirtualList } from '../components/VIrtualList'
+import { VirtualList } from '../components/VirtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
 import { SearchOptions } from '../search2'
 import { events } from '../tracking/events'
@@ -73,7 +74,7 @@ interface ReferenceGroupState {
     hidden?: boolean
 }
 
-export class ReferencesGroup extends React.Component<ReferenceGroupProps, ReferenceGroupState> {
+export class ReferencesGroup extends React.PureComponent<ReferenceGroupProps, ReferenceGroupState> {
     constructor(props: ReferenceGroupProps) {
         super(props)
         this.state = { hidden: props.hidden }
@@ -181,7 +182,7 @@ interface State {
     loadingExternal: boolean
 }
 
-export class ReferencesWidget extends React.Component<Props, State> {
+export class ReferencesWidget extends React.PureComponent<Props, State> {
     public state: State = {
         group: 'local',
         references: [],
@@ -197,6 +198,7 @@ export class ReferencesWidget extends React.Component<Props, State> {
         this.state.group = parsedHash.modalMode ? parsedHash.modalMode : 'local'
         this.subscriptions.add(
             this.componentUpdates
+                .distinctUntilChanged(isEqual)
                 .switchMap(props =>
                     Observable.merge(
                         Observable.fromPromise(fetchReferences(props))
