@@ -1,21 +1,17 @@
 package session
 
 import (
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 func TestStartDeleteSession(t *testing.T) {
-	cleanup := resetMockSessionStore(t)
+	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
 	// Start new session
@@ -104,7 +100,7 @@ func TestStartDeleteSession(t *testing.T) {
 }
 
 func TestSessionExpiry(t *testing.T) {
-	cleanup := resetMockSessionStore(t)
+	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
 	// Start new session
@@ -139,7 +135,7 @@ func TestSessionExpiry(t *testing.T) {
 }
 
 func TestCookieMiddleware(t *testing.T) {
-	cleanup := resetMockSessionStore(t)
+	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
 	actors := []*actor.Actor{{UID: "test-actor-123"}, {UID: "test-actor-456"}}
@@ -185,7 +181,7 @@ func TestCookieMiddleware(t *testing.T) {
 }
 
 func TestCookieOrSessionMiddleware(t *testing.T) {
-	cleanup := resetMockSessionStore(t)
+	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
 	actors := []*actor.Actor{{UID: "test-actor-123"}, {UID: "test-actor-456"}}
@@ -243,24 +239,5 @@ func TestCookieOrSessionMiddleware(t *testing.T) {
 				t.Errorf("on authenticated request, got actor %+v, expected %+v", gotActor, testcase.expActor)
 			}
 		})).ServeHTTP(httptest.NewRecorder(), testcase.req)
-	}
-}
-
-func resetMockSessionStore(t *testing.T) (cleanup func()) {
-	var err error
-	tempdir, err := ioutil.TempDir("", "sourcegraph-oidc-test")
-	if err != nil {
-		return func() {}
-	}
-
-	defer func() {
-		if err != nil {
-			os.RemoveAll(tempdir)
-		}
-	}()
-
-	InitSessionStore(false, sessions.NewFilesystemStore(tempdir, securecookie.GenerateRandomKey(2048)))
-	return func() {
-		os.RemoveAll(tempdir)
 	}
 }
