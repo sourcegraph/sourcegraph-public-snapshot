@@ -29,12 +29,14 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 	var id int32
 	var err error
 	if authorUserID != "" {
-		err = globalDB.QueryRow(
+		err = globalDB.QueryRowContext(
+			ctx,
 			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
 			threadID, contents, createdAt, updatedAt, authorUserID, authorName, authorEmail).Scan(&id)
 	} else {
 		// deprecated code path
-		err = globalDB.QueryRow(
+		err = globalDB.QueryRowContext(
+			ctx,
 			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
 			threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
 	}
@@ -71,7 +73,7 @@ func (c *comments) GetAllForThread(ctx context.Context, threadID int32) ([]*sour
 
 // getBySQL returns comments matching the SQL query, if any exist.
 func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Comment, error) {
-	rows, err := globalDB.Query("SELECT id, thread_id, author_user_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT id, thread_id, author_user_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
 	if err != nil {
 		return nil, err
 	}

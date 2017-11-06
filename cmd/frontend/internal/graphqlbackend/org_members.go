@@ -41,7 +41,7 @@ func (m *orgMemberResolver) UserID() string {
 
 // DEPRECATED (use embedded User instead).
 func (m *orgMemberResolver) Username() string {
-	user, err := localstore.Users.GetByAuth0ID(m.UserID())
+	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
 	if err != nil {
 		return ""
 	}
@@ -50,7 +50,7 @@ func (m *orgMemberResolver) Username() string {
 
 // DEPRECATED (use embedded User instead).
 func (m *orgMemberResolver) Email() string {
-	user, err := localstore.Users.GetByAuth0ID(m.UserID())
+	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
 	if err != nil {
 		return ""
 	}
@@ -59,7 +59,7 @@ func (m *orgMemberResolver) Email() string {
 
 // DEPRECATED (use embedded User instead).
 func (m *orgMemberResolver) DisplayName() string {
-	user, err := localstore.Users.GetByAuth0ID(m.UserID())
+	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
 	if err != nil {
 		return ""
 	}
@@ -68,7 +68,7 @@ func (m *orgMemberResolver) DisplayName() string {
 
 // DEPRECATED (use embedded User instead).
 func (m *orgMemberResolver) AvatarURL() *string {
-	user, err := localstore.Users.GetByAuth0ID(m.UserID())
+	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
 	if err != nil {
 		return nil
 	}
@@ -78,7 +78,7 @@ func (m *orgMemberResolver) AvatarURL() *string {
 func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
 	if m.user == nil {
 		var err error
-		m.user, err = localstore.Users.GetByAuth0ID(m.UserID())
+		m.user, err = localstore.Users.GetByAuth0ID(ctx, m.UserID())
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []string)
 		if _, ok := exclude[m.UserID]; ok {
 			continue
 		}
-		user, err := store.Users.GetByAuth0ID(m.UserID)
+		user, err := store.Users.GetByAuth0ID(ctx, m.UserID)
 		if err != nil {
 			// This shouldn't happen, but we don't want to prevent the notification,
 			// so swallow the error.

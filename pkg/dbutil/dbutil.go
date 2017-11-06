@@ -21,7 +21,7 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 		span.Finish()
 	}()
 
-	tx, err := db.Begin()
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}

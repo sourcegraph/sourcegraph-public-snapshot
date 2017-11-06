@@ -58,7 +58,7 @@ func (o *orgSettings) GetLatestByOrgID(ctx context.Context, orgID int32) (*sourc
 }
 
 func (o *orgSettings) getLatestByOrgID(ctx context.Context, queryTarget queryable, orgID int32) (*sourcegraph.OrgSettings, error) {
-	rows, err := queryTarget.Query(getLatestByOrgIDSql, orgID)
+	rows, err := queryTarget.QueryContext(ctx, getLatestByOrgIDSql, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (o *orgSettings) getLatestByOrgID(ctx context.Context, queryTarget queryabl
 // queryable allows us to reuse the same logic for certain operations both
 // inside and outside an explicit transaction.
 type queryable interface {
-	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
 const getLatestByOrgIDSql = "SELECT id, org_id, author_auth0_id, contents, created_at FROM org_settings WHERE org_id = $1 ORDER BY id DESC LIMIT 1"

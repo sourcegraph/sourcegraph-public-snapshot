@@ -125,7 +125,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	backfill := false
 	if user != nil && !envvar.DeploymentOnPrem() {
-		_, err := store.Users.GetByAuth0ID(actor.UID)
+		_, err := store.Users.GetByAuth0ID(req.Context(), actor.UID)
 		if _, ok := err.(store.ErrUserNotFound); ok {
 			backfill = true
 		}
