@@ -606,10 +606,10 @@
 			"revisionTime": "2016-08-16T22:23:38Z"
 		},
 		{
-			"checksumSHA1": "/bme7EZUgPHRcE433mhhCywTY0Y=",
+			"checksumSHA1": "dxwmtflRNX8Q+gtB5EchmMwFnpQ=",
 			"path": "github.com/gorilla/sessions",
-			"revision": "7ab2742f1e374be6675e9a4eca54fe529221ae3a",
-			"revisionTime": "2016-09-01T06:18:54Z"
+			"revision": "a3acf13e802c358d65f249324d14ed24aac11370",
+			"revisionTime": "2017-10-08T21:47:40Z"
 		},
 		{
 			"checksumSHA1": "7VSeAa7CSmr5bWAQkLYYndZJQG4=",
