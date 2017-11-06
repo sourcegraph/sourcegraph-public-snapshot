@@ -45,14 +45,6 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 	File   *string
 	Branch *string
 	Limit  *int32
-}) ([]*threadResolver, error) {
-	return o.Threads2(ctx, args).Nodes(ctx)
-}
-
-func (o *orgRepoResolver) Threads2(ctx context.Context, args *struct {
-	File   *string
-	Branch *string
-	Limit  *int32
 }) *threadConnectionResolver {
 	return &threadConnectionResolver{o.org, o.repo, args.File, args.Branch, args.Limit}
 }
