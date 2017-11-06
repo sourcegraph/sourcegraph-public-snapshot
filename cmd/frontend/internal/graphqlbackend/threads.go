@@ -511,7 +511,7 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
 			gochimp.Var{Name: "THREAD_ID", Content: strconv.Itoa(int(thread.ID))},
-			gochimp.Var{Name: "THREAD_URL", Content: url},
+			gochimp.Var{Name: "THREAD_URL", Content: url.String()},
 		})
 	}
 	return nil
