@@ -39,7 +39,7 @@
         color: $color-secondary;
         width: 41%;
 
-        @media screen and (min-width: $media-xl) {
+        @media screen and (min-width: $media-xxl) {
             width: 46%;
         }
     }
@@ -47,7 +47,7 @@
     &__committer-cell {
         width: 19%;
 
-        @media screen and (min-width: $media-xl) {
+        @media screen and (min-width: $media-xxl) {
             width: 16%;
         }
 
@@ -64,7 +64,7 @@
 
     &__date-cell {
         width: 14%;
-        @media screen and (min-width: $media-xl) {
+        @media screen and (min-width: $media-xxl) {
             width: 10%;
         }
     }
@@ -72,7 +72,7 @@
     &__commit-hash-cell {
         width: 10%;
         font-family: monospace;
-        @media screen and (min-width: $media-xl) {
+        @media screen and (min-width: $media-xxl) {
             width: 8%;
         }
     }
@@ -80,7 +80,7 @@
     &__name-cell,
     &__return-arrow-cell {
         width: 16%;
-        @media screen and (min-width: $media-xl) {
+        @media screen and (min-width: $media-xxl) {
             width: 15%;
         }
 
