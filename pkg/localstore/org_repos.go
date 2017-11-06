@@ -75,7 +75,8 @@ func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sou
 
 	// orgID is temporarily nullable while we support both orgs and access tokens.
 	// TODO(nick): make org_id non-null when dropping support for access tokens.
-	err = globalDB.QueryRow(
+	err = globalDB.QueryRowContext(
+		ctx,
 		"INSERT INTO org_repos(canonical_remote_id, org_id, clone_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
 		newRepo.CanonicalRemoteID, newRepo.OrgID, newRepo.CloneURL, newRepo.CreatedAt, newRepo.UpdatedAt).Scan(&newRepo.ID)
 	if err != nil {
@@ -87,7 +88,7 @@ func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sou
 
 // getBySQL returns org repos matching the SQL query, if any exist.
 func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgRepo, error) {
-	rows, err := globalDB.Query("SELECT id, canonical_remote_id, clone_url, org_id, created_at, updated_at FROM org_repos "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT id, canonical_remote_id, clone_url, org_id, created_at, updated_at FROM org_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}

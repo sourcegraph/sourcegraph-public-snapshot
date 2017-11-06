@@ -54,7 +54,7 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
-func (*users) Create(auth0ID, email, username, displayName string, avatarURL *string) (*sourcegraph.User, error) {
+func (*users) Create(ctx context.Context, auth0ID, email, username, displayName string, avatarURL *string) (*sourcegraph.User, error) {
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
@@ -62,7 +62,8 @@ func (*users) Create(auth0ID, email, username, displayName string, avatarURL *st
 	if avatarURL != nil {
 		avatarURLValue = sql.NullString{String: *avatarURL, Valid: true}
 	}
-	err := globalDB.QueryRow(
+	err := globalDB.QueryRowContext(
+		ctx,
 		"INSERT INTO users(auth0_id, email, username, display_name, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
 		auth0ID, email, username, displayName, avatarURLValue, createdAt, updatedAt).Scan(&id)
 	if err != nil {
@@ -92,19 +93,19 @@ func (*users) Create(auth0ID, email, username, displayName string, avatarURL *st
 	}, nil
 }
 
-func (u *users) Update(id int32, username *string, displayName *string, avatarURL *string) (*sourcegraph.User, error) {
+func (u *users) Update(ctx context.Context, id int32, username *string, displayName *string, avatarURL *string) (*sourcegraph.User, error) {
 	if username == nil && displayName == nil && avatarURL == nil {
 		return nil, errors.New("no update values provided")
 	}
 
-	user, err := u.GetByID(id)
+	user, err := u.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	if username != nil {
 		user.Username = *username
-		if _, err := globalDB.Exec("UPDATE users SET username=$1 WHERE id=$2", user.Username, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET username=$1 WHERE id=$2", user.Username, id); err != nil {
 			if pqErr, ok := err.(*pq.Error); ok {
 				if pqErr.Constraint == "users_username_key" {
 					return nil, errors.New("username already exists")
@@ -115,41 +116,41 @@ func (u *users) Update(id int32, username *string, displayName *string, avatarUR
 	}
 	if displayName != nil {
 		user.DisplayName = *displayName
-		if _, err := globalDB.Exec("UPDATE users SET display_name=$1 WHERE id=$2", user.DisplayName, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET display_name=$1 WHERE id=$2", user.DisplayName, id); err != nil {
 			return nil, err
 		}
 	}
 	if avatarURL != nil {
 		user.AvatarURL = avatarURL
-		if _, err := globalDB.Exec("UPDATE users SET avatar_url=$1 WHERE id=$2", *user.AvatarURL, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET avatar_url=$1 WHERE id=$2", *user.AvatarURL, id); err != nil {
 			return nil, err
 		}
 	}
 	user.UpdatedAt = time.Now()
-	if _, err := globalDB.Exec("UPDATE users SET updated_at=$1 WHERE id=$2", user.UpdatedAt, id); err != nil {
+	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET updated_at=$1 WHERE id=$2", user.UpdatedAt, id); err != nil {
 		return nil, err
 	}
 
 	return user, nil
 }
 
-func (u *users) GetByID(id int32) (*sourcegraph.User, error) {
-	return u.getOneBySQL("WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
+func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error) {
+	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByAuth0ID(id string) (*sourcegraph.User, error) {
+func (u *users) GetByAuth0ID(ctx context.Context, id string) (*sourcegraph.User, error) {
 	if Mocks.Users.GetByAuth0ID != nil {
-		return Mocks.Users.GetByAuth0ID(id)
+		return Mocks.Users.GetByAuth0ID(ctx, id)
 	}
-	return u.getOneBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	return u.getOneBySQL(ctx, "WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByEmail(email string) (*sourcegraph.User, error) {
-	return u.getOneBySQL("WHERE email=$1 AND deleted_at IS NULL LIMIT 1", email)
+func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User, error) {
+	return u.getOneBySQL(ctx, "WHERE email=$1 AND deleted_at IS NULL LIMIT 1", email)
 }
 
-func (u *users) GetByUsername(username string) (*sourcegraph.User, error) {
-	return u.getOneBySQL("WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
+func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegraph.User, error) {
+	return u.getOneBySQL(ctx, "WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
@@ -158,7 +159,7 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 		return nil, errors.New("no current user")
 	}
 
-	return u.getOneBySQL("WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
+	return u.getOneBySQL(ctx, "WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
 // ListByOrg returns users for a given org. It can also query a list of specific
@@ -185,11 +186,11 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames 
 	}
 	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"), sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
 	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth0_id) WHERE %s", sqlf.Join(conds, "AND"))
-	return u.getBySQL(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (u *users) getOneBySQL(query string, args ...interface{}) (*sourcegraph.User, error) {
-	users, err := u.getBySQL(query, args...)
+func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
+	users, err := u.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -200,8 +201,8 @@ func (u *users) getOneBySQL(query string, args ...interface{}) (*sourcegraph.Use
 }
 
 // getBySQL returns users matching the SQL query, if any exist.
-func (*users) getBySQL(query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.Query("SELECT u.id, u.auth0_id, u.email, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
+func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth0_id, u.email, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}

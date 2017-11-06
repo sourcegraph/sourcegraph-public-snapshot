@@ -301,7 +301,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 }
 
 func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []sourcegraph.PackageInfo, err error) {
-	rows, err := db.Query("SELECT * FROM pkgs ORDER BY language ASC")
+	rows, err := db.QueryContext(ctx, "SELECT * FROM pkgs ORDER BY language ASC")
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

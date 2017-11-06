@@ -160,7 +160,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourcegraph.Repo, error) {
 	q := sqlf.Sprintf("SELECT id, uri, description, homepage_url, default_branch, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
-	rows, err := globalDB.Query(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +515,7 @@ func (s *repos) Delete(ctx context.Context, repo int32) error {
 	}
 
 	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
-	_, err := globalDB.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
@@ -562,7 +562,7 @@ func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegrap
 
 	if len(updates) > 0 {
 		q := sqlf.Sprintf("UPDATE repo SET %s WHERE id=%d", sqlf.Join(updates, ","), repo.ID)
-		if _, err := globalDB.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			return err
 		}
 	}
@@ -571,19 +571,19 @@ func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegrap
 }
 
 func (s *repos) UpdateLanguage(ctx context.Context, repoID int32, language string) error {
-	_, err := globalDB.Exec("UPDATE repo SET language=$1 WHERE id=$2", language, repoID)
+	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repoID)
 	return err
 }
 
 func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev string) error {
-	_, err := globalDB.Exec("UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repoID)
+	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repoID)
 	return err
 }
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
-	_, err := globalDB.Exec("INSERT INTO repo (uri, description, fork, private, created_at, vcs, default_branch, homepage_url, language, blocked) VALUES ($1, $2, $3, $4, $5, '', '', '', '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, vcs, default_branch, homepage_url, language, blocked) VALUES ($1, $2, $3, $4, $5, '', '', '', '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {

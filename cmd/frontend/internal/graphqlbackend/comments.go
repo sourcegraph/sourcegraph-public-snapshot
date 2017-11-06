@@ -48,7 +48,7 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByAuth0ID(c.comment.AuthorUserID)
+	user, err := store.Users.GetByAuth0ID(ctx, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}

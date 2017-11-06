@@ -118,7 +118,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 }
 
 type dbQueryer interface {
-	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
 func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language string, pks []lspext.PackageInformation) (err error) {
@@ -244,7 +244,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		WHERE ` + whereSQL + `
 		ORDER BY repo.created_at ASC NULLS LAST, pkgs.repo_id ASC
 		LIMIT ` + arg(op.Limit)
-	rows, err := globalDB.Query(sql, args...)
+	rows, err := globalDB.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

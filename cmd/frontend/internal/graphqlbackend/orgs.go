@@ -236,13 +236,13 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := store.Users.GetByAuth0ID(orgMember.UserID)
+	user, err := store.Users.GetByAuth0ID(ctx, orgMember.UserID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Don't invite the user if they are already a member.
-	invitedUser, err := store.Users.GetByEmail(args.Email)
+	invitedUser, err := store.Users.GetByEmail(ctx, args.Email)
 	if err != nil {
 		if _, ok := err.(store.ErrUserNotFound); !ok {
 			return nil, err
