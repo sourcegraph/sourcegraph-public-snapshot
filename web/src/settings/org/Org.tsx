@@ -17,6 +17,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
 import { HeroPage } from '../../components/HeroPage'
+import { PageTitle } from '../../components/PageTitle'
 import { events } from '../../tracking/events'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
@@ -122,6 +123,7 @@ export const Org = reactive<Props>(props => {
             }
             return (
                 <div className="org">
+                    <PageTitle title={org.name} />
                     <div className="org__header">
                         <h1>{org.name}</h1>
 
