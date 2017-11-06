@@ -88,7 +88,10 @@ export class UserProfilePage extends React.Component<Props, State> {
                     const returnTo = searchParams.get('returnTo')
                     if (returnTo) {
                         const newURL = new URL(returnTo, window.location.href)
-                        this.props.history.replace(newURL.pathname + newURL.search + newURL.hash)
+
+                        // 🚨 SECURITY: important that we do not allow redirects to arbitrary
+                        // hosts here (we use only pathname so that it is always relative).
+                        this.props.history.replace(newURL.pathname + newURL.search + newURL.hash) // TODO(slimsag): real
                     } else {
                         // just take back to settings
                         this.props.history.replace('/settings')
