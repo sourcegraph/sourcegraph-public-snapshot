@@ -106,7 +106,7 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 			return nil, err
 		}
 	}
-	return &threadConnectionResolver{o.org, repo, args.File, args.Branch, args.Limit}, nil
+	return &threadConnectionResolver{o.org, repo, args.RepoCanonicalRemoteID, args.File, args.Branch, args.Limit}, nil
 }
 
 func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
@@ -138,8 +138,8 @@ func (o *orgResolver) Repo(ctx context.Context, args *struct {
 	return &orgRepoResolver{o.org, orgRepo}, nil
 }
 
-func getOrgRepo(ctx context.Context, orgID int32, CanonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
-	orgRepo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, CanonicalRemoteID)
+func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
+	orgRepo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
 	if err == store.ErrRepoNotFound {
 		// We don't want to create org repos just because an org member queried for threads
 		// and we don't want the client to think this is an error.

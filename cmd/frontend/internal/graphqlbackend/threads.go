@@ -23,11 +23,12 @@ import (
 )
 
 type threadConnectionResolver struct {
-	org    *sourcegraph.Org
-	repo   *sourcegraph.OrgRepo
-	file   *string
-	branch *string
-	limit  *int32
+	org                   *sourcegraph.Org
+	repo                  *sourcegraph.OrgRepo
+	repoCanonicalRemoteID *string
+	file                  *string
+	branch                *string
+	limit                 *int32
 }
 
 func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
@@ -38,6 +39,12 @@ func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
 		repoID = &t.repo.ID
 		// repoID implies an orgID, avoid unnecessary join.
 		orgID = nil
+	} else if t.repoCanonicalRemoteID != nil {
+		// The query is for a single repo but that repo doesn't exist.
+		// This is not an error condition because we lazily populate org_repos.
+		// Set an invalid repoID so no results are returned.
+		var noRepoID = int32(-1)
+		repoID = &noRepoID
 	}
 	return orgID, repoID
 }
