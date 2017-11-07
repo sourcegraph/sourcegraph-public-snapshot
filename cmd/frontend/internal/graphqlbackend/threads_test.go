@@ -46,9 +46,8 @@ func TestThreads_Create(t *testing.T) {
 		CanonicalRemoteID *string
 		CloneURL          *string
 		File              string
-		RepoRevision      *string
-		LinesRevision     *string
-		Revision          *string
+		RepoRevision      string
+		LinesRevision     string
 		Branch            *string
 		StartLine         int32
 		EndLine           int32
@@ -61,8 +60,8 @@ func TestThreads_Create(t *testing.T) {
 		CanonicalRemoteID: &wantRepo.CanonicalRemoteID,
 		CloneURL:          &wantRepo.CloneURL,
 		File:              "foo.go",
-		RepoRevision:      &repoRev,
-		LinesRevision:     &lineRev,
+		RepoRevision:      repoRev,
+		LinesRevision:     lineRev,
 		Contents:          "Hello",
 	})
 

@@ -248,9 +248,8 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	CanonicalRemoteID *string
 	CloneURL          *string
 	File              string
-	RepoRevision      *string
-	LinesRevision     *string
-	Revision          *string
+	RepoRevision      string
+	LinesRevision     string
 	Branch            *string
 	StartLine         int32
 	EndLine           int32
@@ -260,16 +259,6 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	Contents          string
 	Lines             *threadLines
 }) (*threadResolver, error) {
-	// Sort out the revision args. This is temporary until args.Revision is phased out.
-	if args.RepoRevision == nil && args.LinesRevision == nil {
-		if args.Revision == nil {
-			return nil, errors.New("no revision specified")
-		}
-		args.RepoRevision, args.LinesRevision = args.Revision, args.Revision
-	} else if args.RepoRevision == nil || args.LinesRevision == nil {
-		return nil, errors.New("both repoRevision and linesRevision required")
-	}
-
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
 	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
@@ -321,8 +310,8 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	thread := &sourcegraph.Thread{
 		OrgRepoID:      repo.ID,
 		File:           args.File,
-		RepoRevision:   *args.RepoRevision,
-		LinesRevision:  *args.LinesRevision,
+		RepoRevision:   args.RepoRevision,
+		LinesRevision:  args.LinesRevision,
 		Branch:         args.Branch,
 		StartLine:      args.StartLine,
 		EndLine:        args.EndLine,
