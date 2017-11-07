@@ -254,8 +254,7 @@ func Main() error {
 		})
 	})(h)
 	// 🚨 SECURITY: Verify user identity if required
-	secureCookie := conf.AppURL.Scheme == "https"
-	h, err = auth.NewSSOAuthHandler(context.Background(), h, secureCookie, appURL)
+	h, err = auth.NewSSOAuthHandler(context.Background(), h, appURL)
 	if err != nil {
 		return err
 	}

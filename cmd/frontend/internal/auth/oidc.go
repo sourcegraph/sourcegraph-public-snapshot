@@ -49,7 +49,7 @@ var (
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, secureCookie bool, appURL string) (http.Handler, error) {
+func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
 	// Return an error if the OIDC parameters are unset or missing
 	if oidcIDProvider == "" {
 		return nil, errors.New("No OpenID Connect Provider specified")
