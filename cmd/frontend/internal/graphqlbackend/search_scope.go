@@ -31,11 +31,13 @@ func defaultSearchScopesJSON() string {
 		defaultSearchScopes = append(defaultSearchScopes,
 			&searchScope{JName: "All active repos", JValue: "repogroup:active"},
 		)
-	} else if envvar.DeploymentOnPrem() {
-		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "All", JValue: ""})
 	} else {
-		prependScope = "repogroup:sample "
-		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Sample repos", JValue: "repogroup:sample"})
+		if !envvar.DeploymentOnPrem() {
+			prependScope = "repogroup:sample "
+			defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Sample repositories", JValue: "repogroup:sample"})
+		}
+
+		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "All repositories", JValue: ""})
 	}
 
 	scopes := []*searchScope{

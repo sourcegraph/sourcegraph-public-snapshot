@@ -3,6 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"path"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
 )
@@ -85,7 +90,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		}
 		if len(repos2) > 0 {
 			query := omitQueryFields(r, searchFieldRepo)
-			query.query += " " + search2.FormatToken(searchFieldRepo, unionRepoFilter)
+			query.query += " " + search2.NewToken(searchFieldRepo, unionRepoFilter).String()
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
@@ -129,7 +134,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		}
 		if len(repos2) > 0 {
 			query := omitQueryFields(r, searchFieldRepo)
-			query.query += " " + search2.FormatToken(searchFieldRepo, unionRepoFilter)
+			query.query += " " + search2.NewToken(searchFieldRepo, unionRepoFilter).String()
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
@@ -155,21 +160,113 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 }
 
 func (r *searchResolver2) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
-	// TODO(sqs): add repo filters based on the result set so far
-	return &searchAlert{
+	alert := &searchAlert{
 		title:       "Too many matching repositories",
-		description: "Narrow your search with repo: filters to see results.",
-	}, nil
+		description: "Narrow your search with a repo: filter to see results.",
+	}
+
+	// Try to suggest the most helpful repo: filters to narrow the query.
+	//
+	// For example, suppose the query contains "repo:kubern" and it matches > 30
+	// repositories, and each one of the (clipped result set of) 30 repos has
+	// "kubernetes" in their path. Then it's likely that the user would want to
+	// search for "repo:kubernetes". If that still matches > 30 repositories,
+	// then try to narrow it further using "/kubernetes/", etc.
+	//
+	// (Above we assume MAX_REPOS_TO_SEARCH is 30.)
+	//
+	// TODO(sqs): this logic can be significantly improved, but it's better than
+	// nothing for now.
+	repos, _, _, err := r.resolveRepositories(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	paths := make([]string, len(repos))
+	pathPatterns := make([]string, len(repos))
+	for i, repo := range repos {
+		paths[i] = repo.Repo
+		pathPatterns[i] = "^" + regexp.QuoteMeta(repo.Repo) + "$"
+	}
+
+	// See if we can narrow it down by using filters like
+	// repo:github.com/myorg/.
+	const maxParentsToPropose = 4
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+outer:
+	for i, repoParent := range pathParentsByFrequency(paths) {
+		if i >= maxParentsToPropose {
+			break
+		}
+		repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
+		repoFieldValues := r.combinedQuery.fieldValues[searchFieldRepo].Values()
+
+		for _, v := range repoFieldValues {
+			if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
+				continue outer // this repo: filter is already applied
+			}
+		}
+
+		repoFieldValues = append(repoFieldValues, repoParentPattern)
+		_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+		if err == context.DeadlineExceeded {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+
+		var more string
+		if overLimit {
+			more = " (further filtering required)"
+		}
+
+		// We found a more specific repo: filter that may be narrow enough. Now
+		// add it to the user's query, but be smart. For example, if the user's
+		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
+		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
+		query := addQueryRegexpField(r.query.tokens, searchFieldRepo, repoParentPattern)
+		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
+			description: "in repositories under " + repoParent + more,
+			query: searchQuery{
+				query:      query.String(),
+				scopeQuery: r.scopeQuery.tokens.String(),
+			},
+		})
+	}
+	if len(alert.proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
+		// Propose specific repos' paths if we aren't able to propose
+		// anything else.
+		const maxReposToPropose = 4
+		shortest := append([]string{}, paths...) // prefer shorter repo names
+		sort.Slice(shortest, func(i, j int) bool {
+			return len(shortest[i]) < len(shortest[j]) || (len(shortest[i]) == len(shortest[j]) && shortest[i] < shortest[j])
+		})
+		for i, pathToPropose := range shortest {
+			if i >= maxReposToPropose {
+				break
+			}
+			query := addQueryRegexpField(r.query.tokens, searchFieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
+				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
+				query: searchQuery{
+					query:      query.String(),
+					scopeQuery: r.scopeQuery.tokens.String(),
+				},
+			})
+		}
+	}
+
+	return alert, nil
 }
 
 func omitQueryFields(r *searchResolver2, field search2.Field) searchQuery {
 	return searchQuery{
-		query:      omitQueryTokensWithField(r.query.tokens, field),
-		scopeQuery: omitQueryTokensWithField(r.scopeQuery.tokens, field),
+		query:      omitQueryTokensWithField(r.query.tokens, field).String(),
+		scopeQuery: omitQueryTokensWithField(r.scopeQuery.tokens, field).String(),
 	}
 }
 
-func omitQueryTokensWithField(tokens search2.Tokens, field search2.Field) string {
+func omitQueryTokensWithField(tokens search2.Tokens, field search2.Field) search2.Tokens {
 	tokens2 := make(search2.Tokens, 0, len(tokens))
 	for _, t := range tokens {
 		if t.Field == field {
@@ -177,5 +274,51 @@ func omitQueryTokensWithField(tokens search2.Tokens, field search2.Field) string
 		}
 		tokens2 = append(tokens2, t)
 	}
-	return tokens2.String()
+	return tokens2
+}
+
+// pathParentsByFrequency returns the most common path parents of the given paths.
+// For example, given paths [a/b a/c x/y], it would return [a x] because "a"
+// is a parent to 2 paths and "x" is a parent to 1 path.
+func pathParentsByFrequency(paths []string) []string {
+	var parents []string
+	parentFreq := map[string]int{}
+	for _, p := range paths {
+		parent := path.Dir(p)
+		if _, seen := parentFreq[parent]; !seen {
+			parents = append(parents, parent)
+		}
+		parentFreq[parent]++
+	}
+
+	sort.Slice(parents, func(i, j int) bool {
+		pi, pj := parents[i], parents[j]
+		fi, fj := parentFreq[pi], parentFreq[pj]
+		return fi > fj || (fi == fj && pi < pj) // freq desc, alpha asc
+	})
+	return parents
+}
+
+// addQueryRegexpField adds a new token to the query with the given field
+// and pattern value. The token is assumed to be a regexp.
+//
+// It tries to simplify (avoid redundancy in) the result. For example, given
+// a query like "x:foo", if given a field "x" with pattern "foobar" to add,
+// it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
+// guaranteed to always return the simplest query.
+func addQueryRegexpField(queryTokens search2.Tokens, field search2.Field, pattern string) search2.Tokens {
+	queryTokens = queryTokens.Copy()
+	var added bool
+	for i, token := range queryTokens {
+		if token.Field == field && strings.Contains(pattern, token.Value.Value) {
+			queryTokens[i] = search2.NewToken(field, pattern)
+			added = true
+			break
+		}
+	}
+
+	if !added {
+		queryTokens = append(queryTokens, search2.NewToken(field, pattern))
+	}
+	return queryTokens
 }
