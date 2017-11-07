@@ -332,12 +332,6 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 		repos[i] = repoRevision.Repo
 	}
 
-	// TODO(sqs): make more efficient
-	files, err := searchFiles(ctx, "", repos, math.MaxInt32)
-	if err != nil {
-		return nil, err
-	}
-
 	includePatterns := r.combinedQuery.fieldValues[searchFieldFile].Values()
 	excludePattern := unionRegExps(r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values())
 	pathOptions := pathmatch.CompileOptions{
@@ -356,17 +350,18 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 		return nil, err
 	}
 
-	matchingPaths := files[:0]
-	for _, file := range files {
-		// TODO(sqs): make scorer support multiple queries, use scorer here
-		path := file.result.(*fileResolver).path
-		if matchPath.MatchPath(path) {
-			matchingPaths = append(matchingPaths, file)
-		}
+	var scorerQuery string
+	if len(includePatterns) > 0 {
+		// Try to extract the text-only (non-regexp) part of the query to
+		// pass to stringscore, which doesn't use regexps. This is best-effort.
+		scorerQuery = strings.TrimSuffix(strings.TrimPrefix(includePatterns[0], "^"), "$")
 	}
-	files = matchingPaths
+	matcher := matcher{
+		match:       matchPath.MatchPath,
+		scorerQuery: scorerQuery,
+	}
 
-	return files, nil
+	return searchFiles(ctx, matcher, repos, math.MaxInt32)
 }
 
 func unionRegExps(patterns []string) string {
