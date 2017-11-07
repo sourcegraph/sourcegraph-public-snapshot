@@ -100,7 +100,7 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 	srv := httptest.NewServer(s)
 
 	// Mock user
-	localstore.Mocks.Users.GetByAuth0ID = func(uid string) (*sourcegraph.User, error) {
+	localstore.Mocks.Users.GetByAuth0ID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
 		if uid == srv.URL+":"+testUser {
 			return &sourcegraph.User{ID: 123, Auth0ID: uid, Username: uid}, nil
 		}
@@ -140,7 +140,7 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 	}
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), appHandler, false, appURL)
+	authedHandler, err := newOIDCAuthHandler(context.Background(), appHandler, appURL)
 	if err != nil {
 		t.Fatal(err)
 	}
