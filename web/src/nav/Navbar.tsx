@@ -31,11 +31,11 @@ export class Navbar extends React.Component<Props, State> {
                 </div>
                 <div className="navbar__right">
                     {// If on-prem, never show a user avatar or sign-in button
-                    window.context.onPrem ? null : window.context.user ? (
+                    window.context.user ? (
                         <Link to="/settings">
                             <UserAvatar size={64} />
                         </Link>
-                    ) : (
+                    ) : window.context.onPrem ? null : (
                         <Link
                             to={`/sign-in?returnTo=${encodeURIComponent(this.props.location.pathname)}`}
                             className="btn btn-primary"
