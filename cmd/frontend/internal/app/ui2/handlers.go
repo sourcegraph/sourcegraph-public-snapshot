@@ -238,11 +238,10 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			//
 			// To new ones:
 			//
-			// 	/search?q=route&repo=github.com/gorilla/mux&repo=github.com/kubernetes/kubernetes&matchCase=false&matchWord=false
+			// 	/search?q=ErrMethodMismatch&sq=repo:^github.com/gorilla/mux$
 			//
-			// Important! Until https://github.com/sourcegraph/sourcegraph/issues/6647 and https://github.com/sourcegraph/sourcegraph/pull/7196
-			// are fixed this redirect is CRITICAL because it ensures editor and browser extension search
-			// functions properly.
+			// It does not apply the file: filter because that was not the behavior of the
+			// old blob URLs with a 'q' parameter either.
 			r.URL.Path = "/search"
 			q.Set("sq", "repo:^"+regexp.QuoteMeta(common.Repo.URI)+"$")
 			r.URL.RawQuery = q.Encode()
