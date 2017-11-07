@@ -41,7 +41,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         super(props)
 
         // Fill text input from URL info
-        this.state = this.getStateFromProps(props)
+        this.state = this.getStateFromProps(props) || { userQuery: '' }
 
         /** Emits whenever the route changes */
         const routeChanges = this.componentUpdates
@@ -112,31 +112,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         // the URL query.
         const search = new URLSearchParams(location.search)
 
-        let keepSearchOptionsParams = false
-        for (const route of routes) {
-            const match = matchPath<{ repoRev?: string; filePath?: string }>(location.pathname, route)
-            if (match) {
-                switch (match.path) {
-                    case '/:repoRev+': {
-                        keepSearchOptionsParams = true
-                        break
-                    }
-                    case '/:repoRev+/-/blob/:filePath+': {
-                        keepSearchOptionsParams = true
-                        break
-                    }
-                    case '/:repoRev+/-/tree/:filePath+': {
-                        keepSearchOptionsParams = true
-                        break
-                    }
-                    case '/search': {
-                        keepSearchOptionsParams = false
-                    }
-                }
-                break
-            }
-        }
-        if (!keepSearchOptionsParams) {
+        if (!this.keepSearchOptionsParams(location)) {
             return
         }
 
@@ -147,6 +123,29 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                 this.props.history.replace(urlWithSearchQueryParams, location.state)
             }
         }
+    }
+
+    private keepSearchOptionsParams(location: H.Location): boolean {
+        for (const route of routes) {
+            const match = matchPath<{ repoRev?: string; filePath?: string }>(location.pathname, route)
+            if (match) {
+                switch (match.path) {
+                    case '/:repoRev+':
+                        return true
+
+                    case '/:repoRev+/-/blob/:filePath+':
+                        return true
+
+                    case '/:repoRev+/-/tree/:filePath+':
+                        return true
+
+                    case '/search':
+                        return false
+                }
+            }
+        }
+
+        return true
     }
 
     private onUserQueryChange = (userQuery: string) => {
@@ -169,11 +168,14 @@ export class SearchNavbarItem extends React.Component<Props, State> {
      * Reads initial state from the props (i.e. URL parameters).
      */
     private getStateFromProps(props: Props): State {
-        const options = parseSearchURLQuery(props.location.search || '')
-        const noQuery = !options.query && !options.scopeQuery
-        return {
-            userQuery: options.query,
-            scopeQuery: noQuery ? undefined : options.scopeQuery,
+        if (this.keepSearchOptionsParams(props.location)) {
+            const options = parseSearchURLQuery(props.location.search || '')
+            const noQuery = !options.query && !options.scopeQuery
+            return {
+                userQuery: options.query,
+                scopeQuery: noQuery ? undefined : options.scopeQuery,
+            }
         }
+        return this.state
     }
 }
