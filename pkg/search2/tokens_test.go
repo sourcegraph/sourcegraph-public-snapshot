@@ -94,7 +94,7 @@ func TestTokens_Extract(t *testing.T) {
 	}
 }
 
-func Test_FormatToken(t *testing.T) {
+func TestNewToken(t *testing.T) {
 	tests := map[string]struct {
 		field Field
 		value string
@@ -110,9 +110,32 @@ func Test_FormatToken(t *testing.T) {
 	}
 	for want, token := range tests {
 		t.Run(want, func(t *testing.T) {
-			s := FormatToken(token.field, token.value)
+			s := NewToken(token.field, token.value).String()
 			if s != want {
 				t.Fatalf("got %q, want %q", s, want)
+			}
+		})
+	}
+}
+
+func TestNeedsQuoting(t *testing.T) {
+	tests := map[string]bool{
+		``:     false,
+		`a`:    false,
+		`a b`:  true,
+		`\`:    false,
+		`"`:    true,
+		`'`:    false,
+		"\t":   true,
+		"\n":   true,
+		"\x00": false,
+		`\x00`: false,
+	}
+	for value, want := range tests {
+		t.Run(value, func(t *testing.T) {
+			got := needsQuoting(value)
+			if got != want {
+				t.Errorf("got %v, want %v", got, want)
 			}
 		})
 	}
