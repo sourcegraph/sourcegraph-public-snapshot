@@ -151,8 +151,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 />
             )
         }
-        if (this.props.match.params.repoRev && (!this.state.commitID || !this.state.defaultBranch)) {
-            // commit not yet resolved but required if repoPath prop is provided;
+        if (!this.state.commitID || !this.state.defaultBranch) {
             // render empty until commit resolved
             return null
         }
@@ -161,8 +160,8 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 repoPath={repoPath}
                 rev={rev}
                 filePath={this.props.match.params.filePath}
-                commitID={this.state.commitID!}
-                defaultBranch={this.state.defaultBranch!}
+                commitID={this.state.commitID}
+                defaultBranch={this.state.defaultBranch}
                 location={this.props.location}
                 history={this.props.history}
                 onToggleFullWidth={this.props.onToggleFullWidth}
