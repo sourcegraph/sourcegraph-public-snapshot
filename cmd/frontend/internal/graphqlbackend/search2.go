@@ -13,9 +13,14 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
+)
+
+var (
+	maxReposToSearch, _ = strconv.Atoi(env.Get("MAX_REPOS_TO_SEARCH", "30", `the maximum number of repos to search across (the user is prompted to narrow their query if exceeded)`))
 )
 
 const (
@@ -116,10 +121,11 @@ type searchResolver2 struct {
 	scopeQuery    resolvedQuery // the scope query only
 
 	// Cached resolveRepositories results.
-	reposMu     sync.Mutex
-	repoRevs    []*repositoryRevision
-	repoResults []*searchResultResolver
-	repoErr     error
+	reposMu       sync.Mutex
+	repoRevs      []*repositoryRevision
+	repoResults   []*searchResultResolver
+	repoOverLimit bool
+	repoErr       error
 }
 
 var mockResolveRepoGroups func() (map[string][]*sourcegraph.Repo, error)
@@ -187,12 +193,12 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) ([]*repositoryRevision, []*searchResultResolver, error) {
+func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs []*repositoryRevision, repoResults []*searchResultResolver, overLimit bool, err error) {
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
 		if r.repoRevs != nil || r.repoResults != nil || r.repoErr != nil {
-			return r.repoRevs, r.repoResults, r.repoErr
+			return r.repoRevs, r.repoResults, r.repoOverLimit, r.repoErr
 		}
 	}
 
@@ -203,16 +209,17 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	minusRepoFilters := r.combinedQuery.fieldValues[minusField(searchFieldRepo)].Values()
 	repoGroupFilters := r.combinedQuery.fieldValues[searchFieldRepoGroup].Values()
 
-	repoRevs, repoResults, err := resolveRepositories(ctx, repoFilters, minusRepoFilters, repoGroupFilters)
+	repoRevs, repoResults, overLimit, err = resolveRepositories(ctx, repoFilters, minusRepoFilters, repoGroupFilters)
 	if effectiveRepoFieldValues == nil {
 		r.repoRevs = repoRevs
 		r.repoResults = repoResults
+		r.repoOverLimit = overLimit
 		r.repoErr = err
 	}
-	return repoRevs, repoResults, err
+	return repoRevs, repoResults, overLimit, err
 }
 
-func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) ([]*repositoryRevision, []*searchResultResolver, error) {
+func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions []*repositoryRevision, repoResolvers []*searchResultResolver, overLimit bool, err error) {
 	includePatterns := repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
@@ -220,7 +227,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	}
 	excludePatterns := minusRepoFilters
 
-	maxRepoListSize := 30
+	maxRepoListSize := maxReposToSearch
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
@@ -228,7 +235,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	if groupNames := repoGroupFilters; len(groupNames) > 0 {
 		groups, err := resolveRepoGroups(ctx)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, false, err
 		}
 		var patterns []string
 		for _, groupName := range groupNames {
@@ -239,7 +246,9 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
 		// Ensure we don't omit any repos explicitly included via a repo group.
-		maxRepoListSize += len(patterns)
+		if len(patterns) > maxRepoListSize {
+			maxRepoListSize = len(patterns)
+		}
 	}
 
 	// Treat an include pattern with a suffix of "@rev" as meaning that all
@@ -266,7 +275,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	for i, includePattern := range includePatterns {
 		p, err := regexp.Compile(includePattern)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, false, err
 		}
 		compiledIncludePatterns[i] = p
 	}
@@ -282,20 +291,16 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	repos, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
-		ListOptions:     sourcegraph.ListOptions{PerPage: int32(maxRepoListSize)},
+		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
+		ListOptions: sourcegraph.ListOptions{PerPage: int32(maxRepoListSize + 1)},
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, err
 	}
+	overLimit = len(repos.Repos) >= maxRepoListSize
 
-	// TODO(sqs): hack because Repos.List does not respect ListOptions.PerPage due to
-	// it wanting to sort the results using its scorer.
-	if len(repos.Repos) > maxRepoListSize {
-		repos.Repos = repos.Repos[:maxRepoListSize]
-	}
-
-	repoRevisions := make([]*repositoryRevision, 0, len(repos.Repos))
-	repoResolvers := make([]*searchResultResolver, 0, len(repos.Repos))
+	repoRevisions = make([]*repositoryRevision, 0, len(repos.Repos))
+	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {
 		repoResolvers = append(repoResolvers, newSearchResultResolver(
 			&repositoryResolver{repo: repo},
@@ -307,14 +312,21 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		})
 	}
 
-	return repoRevisions, repoResolvers, nil
+	return repoRevisions, repoResolvers, overLimit, nil
 }
 
 func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultResolver, error) {
-	repoRevisions, _, err := r.resolveRepositories(ctx, nil)
+	repoRevisions, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	if overLimit {
+		// If we've exceeded the repo limit, then we may miss files from repos we care
+		// about, so don't bother searching filenames at all.
+		return nil, nil
+	}
+
 	repos := make([]string, len(repoRevisions))
 	for i, repoRevision := range repoRevisions {
 		repos[i] = repoRevision.Repo

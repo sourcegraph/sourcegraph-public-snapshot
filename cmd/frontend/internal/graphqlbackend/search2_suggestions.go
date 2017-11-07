@@ -50,7 +50,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		}
 
 		if len(effectiveRepoFieldValues) > 0 {
-			_, repos, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+			_, repos, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 			return repos, err
 		}
 		return nil, nil

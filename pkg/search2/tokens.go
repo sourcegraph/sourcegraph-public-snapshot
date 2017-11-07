@@ -116,6 +116,13 @@ func (ts Tokens) Normalize(fieldAliases map[Field][]Field) {
 	}
 }
 
+// Copy returns a copy of the tokens.
+func (ts Tokens) Copy() Tokens {
+	ts2 := make(Tokens, len(ts))
+	copy(ts2, ts)
+	return ts2
+}
+
 // Extract returns field values grouped by the field name.
 func (ts Tokens) Extract() (fieldValues map[Field]Values) {
 	fieldValues = map[Field]Values{}
@@ -127,22 +134,13 @@ func (ts Tokens) Extract() (fieldValues map[Field]Values) {
 	return
 }
 
-// FormatToken returns the string form of the specified token. It quotes the
-// value if needed.
-//
-// Caller that need to distinguish between quoted and unquoted values not use
-// this function because it does not offer control over the quoting behavior.
-func FormatToken(field Field, value string) string {
-	quoted := strconv.Quote(value)
-	needsQuoting := strings.ContainsAny(value, " \t\n") || quoted[1:len(quoted)-1] != value
+// NewToken creates a new token, setting its Quoted field if needed.
+func NewToken(field Field, value string) Token {
+	return Token{Field: field, Value: Value{Value: value, Quoted: needsQuoting(value)}}
+}
 
-	prefix := string(field)
-	if field != "" && field != "-" {
-		prefix += ":"
-	}
-
-	if needsQuoting {
-		return prefix + quoted
-	}
-	return prefix + value
+// needsQuoting returns whether the value must be quoted when used as
+// a token's value.
+func needsQuoting(value string) bool {
+	return strings.ContainsAny(value, " \t\n"+`"`)
 }
