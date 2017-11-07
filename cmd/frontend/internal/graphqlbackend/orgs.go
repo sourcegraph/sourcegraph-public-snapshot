@@ -77,17 +77,6 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*orgSettingsResolver,
 	return &orgSettingsResolver{o.org, setting, nil}, nil
 }
 
-// DEPRECATED
-func (o *orgResolver) Threads2(ctx context.Context, args *struct {
-	RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
-	RepoCanonicalRemoteID *string
-	Branch                *string
-	File                  *string
-	Limit                 *int32
-}) (*threadConnectionResolver, error) {
-	return o.Threads(ctx, args)
-}
-
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
 	RepoCanonicalRemoteID *string

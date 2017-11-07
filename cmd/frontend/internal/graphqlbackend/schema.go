@@ -577,7 +577,6 @@ type Org {
 	repo(remoteURI: String, canonicalRemoteID: String): OrgRepo
 	# TODO make repoCanonicalRemoteID required after removing repoRemoteURI.
 	threads(repoRemoteURI: String, repoCanonicalRemoteID: String, branch: String, file: String, limit: Int): ThreadConnection!
-	threads2(repoRemoteURI: String, repoCanonicalRemoteID: String, branch: String, file: String, limit: Int): ThreadConnection! @deprecated(reason: "Use threads")
 	tags: [OrgTag!]!
 }
 
