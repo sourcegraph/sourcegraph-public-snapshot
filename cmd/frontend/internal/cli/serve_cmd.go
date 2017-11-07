@@ -20,6 +20,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	gokitlog "github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/util/conn"
+	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
@@ -262,6 +263,9 @@ func Main() error {
 	// 🚨 SECURITY: The main frontend handler should always be wrapped in a
 	// basic auth handler
 	h = handlerutil.NewBasicAuthHandler(h)
+
+	// Don't leak memory through gorilla/session items stored in context
+	h = gcontext.ClearHandler(h)
 
 	srv := &http.Server{
 		Handler:      h,
