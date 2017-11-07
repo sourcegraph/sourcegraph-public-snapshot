@@ -432,6 +432,12 @@ func (s *schemaResolver) ShareThread(ctx context.Context, args *struct {
 	if err != nil {
 		return "", nil
 	}
+
+	// TODO(slimsag): future: move this to the client in case we ever have
+	// other users of this method.
+	q := u.Query()
+	q.Set("utm_source", "share-snippet-editor")
+	u.RawQuery = q.Encode()
 	return u.String(), nil
 }
 
