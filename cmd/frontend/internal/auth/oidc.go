@@ -259,7 +259,8 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 			displayName = login
 		}
 	}
-	if i := strings.Index(login, "@"); i != -1 { // KLUDGE, TODO: relax constraint on username column in DB
+	// KLUDGE: some ID providers use email as the login, but we don't allow '@' in usernames
+	if i := strings.Index(login, "@"); i != -1 {
 		login = login[:i]
 	}
 
