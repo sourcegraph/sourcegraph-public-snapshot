@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -243,13 +244,8 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			// are fixed this redirect is CRITICAL because it ensures editor and browser extension search
 			// functions properly.
 			r.URL.Path = "/search"
-			q.Set("repo", common.Repo.URI)
-			q.Set("matchCase", "false")
-			q.Set("matchWord", "false")
+			q.Set("sq", "repo:^"+regexp.QuoteMeta(common.Repo.URI)+"$")
 			r.URL.RawQuery = q.Encode()
-			if routeName == routeTree {
-				q.Set("file", mux.Vars(r)["Path"])
-			}
 			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 			return nil
 		}
