@@ -221,3 +221,56 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		checkEq(t, http.StatusNotFound, resp.StatusCode, "wrong response code")
 	}
 }
+
+func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
+	cleanup := session.ResetMockSessionStore(t)
+	defer cleanup()
+
+	tempdir, err := ioutil.TempDir("", "sourcegraph-oidc-test-no-open-redirect")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempdir)
+
+	oidcIDServer := newOIDCIDServer(t, "THECODE")
+	defer oidcIDServer.Close()
+
+	oidcIDProvider = oidcIDServer.URL
+	oidcClientID = "aaaaaaaaaaaaaa"
+	oidcClientSecret = "aaaaaaaaaaaaaaaaaaaaaaaaa"
+
+	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com"}).Encode()
+	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+		if rawIDToken != "test_id_token_f4bdefbd77f" {
+			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
+		}
+		return &oidc.IDToken{
+			Issuer:  oidcIDServer.URL,
+			Subject: testUser,
+			Expiry:  time.Now().Add(time.Hour),
+			Nonce:   state, // we re-use the state param as the nonce
+		}
+	}
+
+	authedHandler, err := newOIDCAuthHandler(context.Background(), appHandler, appURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
+		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
+		for _, cookie := range cookies {
+			req.AddCookie(cookie)
+		}
+		respRecorder := httptest.NewRecorder()
+		authedHandler.ServeHTTP(respRecorder, req)
+		return respRecorder.Result()
+	}
+
+	{
+		t.Logf("OIDC callback with CSRF token -> set auth cookies")
+		resp := doRequest("GET", appURL+"/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: oidcStateCookieName, Value: state}})
+		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
+		checkEq(t, "/", resp.Header.Get("Location"), "wrong redirect URL") // Redirect to "/", NOT "http://evil.com"
+	}
+}

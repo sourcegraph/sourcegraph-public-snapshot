@@ -211,6 +211,8 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 
 		// Redirect to the page the user was trying to access before login. To prevent an open-redirect vulnerability,
 		// strip the host from the redirect URL, so only relative redirects are valid.
+		//
+		// 🚨 SECURITY
 		var redirect string
 		if redirectURL, err := url.Parse(state.Redirect); err == nil {
 			redirectURL.Scheme = ""
@@ -295,7 +297,7 @@ var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 // authnState is the state parameter passed to the Authn request and returned in the Authn response callback.
 type authnState struct {
 	CSRFToken string `json:"csrfToken"`
-	Redirect  string `json:"redirect"` // TODO: should be checked to make sure redirect is relative
+	Redirect  string `json:"redirect"`
 }
 
 // Encode returns the base64-encoded JSON representation of the authn state.
