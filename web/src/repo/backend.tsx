@@ -29,6 +29,7 @@ class RevNotFoundError extends Error {
 }
 
 /**
+ * When `rev` is undefined, the default branch is resolved.
  * @return Observable that emits the commit ID
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
@@ -49,7 +50,7 @@ export const resolveRev = memoizeObservable(
             }
         }
     `,
-            { ...ctx, rev: ctx.rev || 'master' }
+            { ...ctx, rev: ctx.rev || '' }
         ).map(result => {
             if (!result.data) {
                 throw new Error('invalid response received from graphql endpoint')
