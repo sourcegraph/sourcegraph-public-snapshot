@@ -15,7 +15,7 @@ In addition to authentication flow, there are a few differences between SSO and 
 
 <table>
 <tr>
-    <td>SSO Authentication</td><td>Native authentication</td>
+    <th>SSO Authentication</th><th>Native authentication</th>
 </tr>
 <tr>
     <td>Login on an external page (e.g., Okta).</td>
@@ -50,215 +50,217 @@ Currently, there are no authz checks associated with user identity other than th
 
 ### Authentication HTTP handler structure
 
+([Source doc](https://docs.google.com/spreadsheets/d/1AdQ2gRz0DDqE4xccLMQYkBQ9r4s8oN4g2b3wPogN9gM))
+
 This is a partial picture of the HTTP handler structure as it pertains to authentication. Each box corresponds to an http.Handler instance (with the exception of boxes that begin with "/", which indicate sub-handler route prefixes). The boxes directly below a handler's box indicate the sub-handlers that the handler delegates to.
 
-<table class="c35" style="text-align: center">
+<table class="c35">
    <tbody>
       <tr class="c4">
-         <td class="c14" colspan="8" rowspan="1">
+         <td align="center" class="c14" colspan="8" rowspan="1">
             <p class="c1"><span class="c0">handlerutil.NewBasicAuthHandler</span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c14" colspan="8" rowspan="1">
+         <td align="center" class="c14" colspan="8" rowspan="1">
             <p class="c1"><span class="c0">auth.NewSSOAuthHandler</span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c14" colspan="8" rowspan="1">
+         <td align="center" class="c14" colspan="8" rowspan="1">
             <p class="c1"><span class="c0">session.CookieOrSessionMiddleware (if OIDC)</span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c3" colspan="6" rowspan="1">
+         <td align="center" class="c3" colspan="6" rowspan="1">
             <p class="c1"><span class="c0">/</span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">/.auth/oidc</span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">/.auth/saml</span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c3" colspan="6" rowspan="1">
+         <td align="center" class="c3" colspan="6" rowspan="1">
             <p class="c1"><span class="c0">unnamed handler that requires actor session</span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">auth.newOIDCLoginHandler</span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">samlSP.ServeHTTP</span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c3" colspan="6" rowspan="1">
+         <td align="center" class="c3" colspan="6" rowspan="1">
             <p class="c1"><span class="c0">unnamed security handler (adds XSS, HSTS, CORS headers)</span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c3" colspan="6" rowspan="1">
+         <td align="center" class="c3" colspan="6" rowspan="1">
             <p class="c1"><span class="c0">traceutil.Middleware</span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c3" colspan="6" rowspan="1">
+         <td align="center" class="c3" colspan="6" rowspan="1">
             <p class="c1"><span class="c0">middleware.BlackHole</span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c3" colspan="6" rowspan="1">
+         <td align="center" class="c3" colspan="6" rowspan="1">
             <p class="c1"><span class="c0">middleware.SourcegraphComGoGetHandler</span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c8" colspan="3" rowspan="1">
+         <td align="center" class="c8" colspan="3" rowspan="1">
             <p class="c1"><span class="c0">/.api</span></p>
          </td>
-         <td class="c21" colspan="2" rowspan="1">
+         <td align="center" class="c21" colspan="2" rowspan="1">
             <p class="c1"><span class="c0">/</span></p>
          </td>
-         <td class="c5" colspan="1" rowspan="1">
+         <td align="center" class="c5" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">/.bi-logger</span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c8" colspan="3" rowspan="1">
+         <td align="center" class="c8" colspan="3" rowspan="1">
             <p class="c1"><span class="c0">GzipHandler</span></p>
          </td>
-         <td class="c21" colspan="2" rowspan="1">
+         <td align="center" class="c21" colspan="2" rowspan="1">
             <p class="c1"><span class="c0">handlerutil.NewHandlerWithCSRFProtection</span></p>
          </td>
-         <td class="c5" colspan="1" rowspan="1">
+         <td align="center" class="c5" colspan="1" rowspan="1">
             <p class="c1 c27"><span class="c0"></span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c8" colspan="3" rowspan="1">
+         <td align="center" class="c8" colspan="3" rowspan="1">
             <p class="c1"><span class="c0">httpapi.NewHandler</span></p>
          </td>
-         <td class="c21" colspan="2" rowspan="1">
+         <td align="center" class="c21" colspan="2" rowspan="1">
             <p class="c1"><span class="c0">app.NewHandler</span></p>
          </td>
-         <td class="c5" colspan="1" rowspan="1">
+         <td align="center" class="c5" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
-            <p class="c6"><span class="c0"></span></p>
-         </td>
-      </tr>
-      <tr class="c4">
-         <td class="c8" colspan="3" rowspan="1">
-            <p class="c1"><span class="c0">httpapiauth.AuthorizationMiddleware</span></p>
-         </td>
-         <td class="c21" colspan="2" rowspan="1">
-            <p class="c1"><span class="c0">httpapiauth.AuthorizationMiddleware</span></p>
-         </td>
-         <td class="c5" colspan="1" rowspan="1">
-            <p class="c6"><span class="c0"></span></p>
-         </td>
-         <td class="c16" colspan="1" rowspan="1">
-            <p class="c6"><span class="c0"></span></p>
-         </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c8" colspan="3" rowspan="1">
+         <td align="center" class="c8" colspan="3" rowspan="1">
+            <p class="c1"><span class="c0">httpapiauth.AuthorizationMiddleware</span></p>
+         </td>
+         <td align="center" class="c21" colspan="2" rowspan="1">
+            <p class="c1"><span class="c0">httpapiauth.AuthorizationMiddleware</span></p>
+         </td>
+         <td align="center" class="c5" colspan="1" rowspan="1">
+            <p class="c6"><span class="c0"></span></p>
+         </td>
+         <td align="center" class="c16" colspan="1" rowspan="1">
+            <p class="c6"><span class="c0"></span></p>
+         </td>
+         <td align="center" class="c13" colspan="1" rowspan="1">
+            <p class="c6"><span class="c0"></span></p>
+         </td>
+      </tr>
+      <tr class="c4">
+         <td align="center" class="c8" colspan="3" rowspan="1">
             <p class="c1"><span class="c0">session.CookieMiddlewareIfHeader</span></p>
          </td>
-         <td class="c21" colspan="2" rowspan="1">
+         <td align="center" class="c21" colspan="2" rowspan="1">
             <p class="c1"><span class="c0">session.CookieMiddleware</span></p>
          </td>
-         <td class="c5" colspan="1" rowspan="1">
+         <td align="center" class="c5" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c4">
-         <td class="c8" colspan="3" rowspan="1">
+         <td align="center" class="c8" colspan="3" rowspan="1">
             <p class="c1"><span class="c0">API router</span></p>
          </td>
-         <td class="c21" colspan="2" rowspan="1">
+         <td align="center" class="c21" colspan="2" rowspan="1">
             <p class="c1"><span class="c0">redirects.RedirectsMiddleware</span></p>
          </td>
-         <td class="c5" colspan="1" rowspan="1">
+         <td align="center" class="c5" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
       <tr class="c28">
-         <td class="c17" colspan="1" rowspan="1">
+         <td align="center" class="c17" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">Telemetry,</span></p>
             <p class="c1"><span class="c0">Form submission,</span></p>
             <p class="c1"><span class="c0">Shield endpoints</span></p>
          </td>
-         <td class="c25" colspan="1" rowspan="1">
+         <td align="center" class="c25" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">LSP</span></p>
          </td>
-         <td class="c25" colspan="1" rowspan="1">
+         <td align="center" class="c25" colspan="1" rowspan="1">
             <p class="c1"><span class="c0">GraphQL</span></p>
          </td>
-         <td class="c21" colspan="2" rowspan="1">
+         <td align="center" class="c21" colspan="2" rowspan="1">
             <p class="c1"><span class="c0">app router (including native sign-in routes)</span></p>
          </td>
-         <td class="c5" colspan="1" rowspan="1">
+         <td align="center" class="c5" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c16" colspan="1" rowspan="1">
+         <td align="center" class="c16" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
-         <td class="c13" colspan="1" rowspan="1">
+         <td align="center" class="c13" colspan="1" rowspan="1">
             <p class="c6"><span class="c0"></span></p>
          </td>
       </tr>
