@@ -14,7 +14,7 @@ import { RevSwitcher } from './RevSwitcher'
 
 interface RepoSubnavProps {
     repoPath: string
-    rev?: string
+    rev: string
     commitID?: string
     filePath?: string
     onClickRevision?: () => void
@@ -64,10 +64,9 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
             )
         return (
             <div className="repo-nav">
-                {/* TODO Don't assume master! */}
                 <RevSwitcher
                     history={this.props.history}
-                    rev={this.props.rev || 'master'}
+                    rev={this.props.rev}
                     repoPath={this.props.repoPath}
                     disabled={this.props.revSwitcherDisabled}
                 />
@@ -148,13 +147,13 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
         const line = this.props.line || parseHash(this.props.location.hash).line || undefined
         if (this.props.filePath) {
             if (this.props.isDirectory) {
-                return `https://${this.props.repoPath}/tree/${this.props.rev || 'master'}/${this.props.filePath}`
+                return `https://${this.props.repoPath}/tree/${this.props.rev}/${this.props.filePath}`
             }
-            return `https://${this.props.repoPath}/blob/${this.props.rev || 'master'}/${this.props.filePath}${line
+            return `https://${this.props.repoPath}/blob/${this.props.rev}/${this.props.filePath}${line
                 ? '#L' + line
                 : ''}`
         }
-        return `https://${this.props.repoPath}/tree/${this.props.rev || 'master'}/`
+        return `https://${this.props.repoPath}/tree/${this.props.rev}/`
     }
 
     private urlToPhabricator(): string {
