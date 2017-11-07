@@ -62,7 +62,7 @@ func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) 
 		return nil, err
 	}
 
-	_, err = globalDB.Exec("INSERT INTO shared_items(ulid, author_user_id, thread_id, public) VALUES($1, $2, $3, $4)", ulid.String(), item.AuthorUserID, *item.ThreadID, item.Public)
+	_, err = globalDB.ExecContext(ctx, "INSERT INTO shared_items(ulid, author_user_id, thread_id, public) VALUES($1, $2, $3, $4)", ulid.String(), item.AuthorUserID, *item.ThreadID, item.Public)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (s *sharedItems) Get(ctx context.Context, ulid string) (*sourcegraph.Shared
 	}
 
 	item := &sourcegraph.SharedItem{ULID: ulid}
-	err := globalDB.QueryRow("SELECT author_user_id, thread_id, comment_id, public FROM shared_items WHERE ulid=$1 AND deleted_at IS NULL", ulid).Scan(
+	err := globalDB.QueryRowContext(ctx, "SELECT author_user_id, thread_id, comment_id, public FROM shared_items WHERE ulid=$1 AND deleted_at IS NULL", ulid).Scan(
 		&item.AuthorUserID,
 		&item.ThreadID,
 		&item.CommentID,
@@ -93,7 +93,7 @@ func (s *sharedItems) Get(ctx context.Context, ulid string) (*sourcegraph.Shared
 // getByThreadID gets an existing shared item ULID for the given thread ID.
 func (s *sharedItems) getByThreadID(ctx context.Context, threadID int32, wantPublic bool) (string, error) {
 	var ulid string
-	err := globalDB.QueryRow("SELECT ulid FROM shared_items WHERE thread_id=$1 AND public=$2 AND deleted_at IS NULL", threadID, wantPublic).Scan(
+	err := globalDB.QueryRowContext(ctx, "SELECT ulid FROM shared_items WHERE thread_id=$1 AND public=$2 AND deleted_at IS NULL", threadID, wantPublic).Scan(
 		&ulid,
 	)
 	if err != nil {

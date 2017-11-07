@@ -22,7 +22,8 @@ func (*phabricator) Create(ctx context.Context, callsign string, uri string) (*s
 		Callsign: callsign,
 		URI:      uri,
 	}
-	err := globalDB.QueryRowContext(ctx,
+	err := globalDB.QueryRowContext(
+		ctx,
 		"INSERT INTO phabricator_repos(callsign, uri) VALUES($1, $2) RETURNING id",
 		r.Callsign, r.URI).Scan(&r.ID)
 	if err != nil {

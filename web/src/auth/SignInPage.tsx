@@ -176,7 +176,10 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         const searchParams = new URLSearchParams(this.props.location.search)
         const returnTo = searchParams.get('returnTo')
         if (returnTo) {
-            redirect.searchParams.set('returnTo', returnTo)
+            // 🚨 SECURITY: important that we do not allow redirects to
+            // arbitrary hosts here.
+            const newURL = new URL(returnTo, window.location.href)
+            redirect.searchParams.set('returnTo', window.context.appURL + newURL.pathname + newURL.search + newURL.hash)
         }
         if (this.state.mode === 'signup') {
             redirect.searchParams.set('username', this.state.username)

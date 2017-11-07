@@ -77,25 +77,18 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*orgSettingsResolver,
 	return &orgSettingsResolver{o.org, setting, nil}, nil
 }
 
-func (o *orgResolver) Threads(ctx context.Context, args *struct {
-	Limit *int32
-}) ([]*threadResolver, error) {
-	connection, err := o.Threads2(ctx, &struct {
-		RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
-		RepoCanonicalRemoteID *string
-		Branch                *string
-		File                  *string
-		Limit                 *int32
-	}{
-		Limit: args.Limit,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return connection.Nodes(ctx)
+// DEPRECATED
+func (o *orgResolver) Threads2(ctx context.Context, args *struct {
+	RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
+	RepoCanonicalRemoteID *string
+	Branch                *string
+	File                  *string
+	Limit                 *int32
+}) (*threadConnectionResolver, error) {
+	return o.Threads(ctx, args)
 }
 
-func (o *orgResolver) Threads2(ctx context.Context, args *struct {
+func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
 	RepoCanonicalRemoteID *string
 	Branch                *string
@@ -243,13 +236,13 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := store.Users.GetByAuth0ID(orgMember.UserID)
+	user, err := store.Users.GetByAuth0ID(ctx, orgMember.UserID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Don't invite the user if they are already a member.
-	invitedUser, err := store.Users.GetByEmail(args.Email)
+	invitedUser, err := store.Users.GetByEmail(ctx, args.Email)
 	if err != nil {
 		if _, ok := err.(store.ErrUserNotFound); !ok {
 			return nil, err

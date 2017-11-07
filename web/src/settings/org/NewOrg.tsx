@@ -9,6 +9,7 @@ import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { PageTitle } from '../../components/PageTitle'
 import { events } from '../../tracking/events'
 import { createOrg } from '../backend'
 import { VALID_ORG_NAME_REGEXP } from '../validation'
@@ -78,6 +79,7 @@ export class NewOrg extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="new-organization">
+                <PageTitle title="New organization" />
                 <form className="settings-form" onSubmit={this.onSubmit}>
                     <h1>Create a new organization</h1>
 

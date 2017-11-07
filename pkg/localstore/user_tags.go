@@ -22,7 +22,8 @@ func (*userTags) Create(ctx context.Context, userID int32, name string) (*source
 		UserID: userID,
 		Name:   name,
 	}
-	err := globalDB.QueryRow(
+	err := globalDB.QueryRowContext(
+		ctx,
 		"INSERT INTO user_tags(user_id, name) VALUES($1, $2) RETURNING id",
 		userID, name).Scan(&t.ID)
 	if err != nil {
@@ -45,7 +46,7 @@ func (t *userTags) CreateIfNotExists(ctx context.Context, userID int32, name str
 }
 
 func (*userTags) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.UserTag, error) {
-	rows, err := globalDB.Query("SELECT id, user_id, name FROM user_tags "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT id, user_id, name FROM user_tags "+query, args...)
 	if err != nil {
 		return nil, err
 	}

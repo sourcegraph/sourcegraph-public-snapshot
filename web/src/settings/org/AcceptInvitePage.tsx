@@ -19,6 +19,7 @@ import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { fetchCurrentUser } from '../../auth'
+import { PageTitle } from '../../components/PageTitle'
 import { events } from '../../tracking/events'
 import { acceptUserInvite } from '../backend'
 
@@ -136,6 +137,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                         hasSubmitted &&
                         orgName &&
                         emailVerified && <Redirect to={`/settings/orgs/${orgName}`} />}
+                    <PageTitle title="Accept invite" />
                     <h1>You were invited to join {orgName} on Sourcegraph!</h1>
 
                     {error && <p className="form-text text-error">{error.message}</p>}

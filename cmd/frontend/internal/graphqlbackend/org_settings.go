@@ -47,7 +47,7 @@ func (o *orgSettingsResolver) CreatedAt() string {
 func (o *orgSettingsResolver) Author(ctx context.Context) (*userResolver, error) {
 	if o.user == nil {
 		var err error
-		o.user, err = store.Users.GetByAuth0ID(o.settings.AuthorAuth0ID)
+		o.user, err = store.Users.GetByAuth0ID(ctx, o.settings.AuthorAuth0ID)
 		if err != nil {
 			return nil, err
 		}

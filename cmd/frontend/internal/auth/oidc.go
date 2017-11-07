@@ -198,7 +198,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			return
 		}
 
-		actr, err := getActor(idToken, userInfo)
+		actr, err := getActor(ctx, idToken, userInfo)
 		if err != nil {
 			log15.Error("Could not fetch user", "error", err)
 			http.Error(w, "Could not fetch user", http.StatusInternalServerError)
@@ -230,7 +230,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
 // Because Actors must correspond to users in our DB, it creates the user in the DB if the user does noet yet
 // exist.
-func getActor(idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, error) {
+func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, error) {
 	var claims struct {
 		Name              string `json:"name"`
 		GivenName         string `json:"given_name"`
@@ -261,9 +261,9 @@ func getActor(idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, err
 		login = login[:i]
 	}
 
-	usr, err := localstore.Users.GetByAuth0ID(uid)
+	usr, err := localstore.Users.GetByAuth0ID(ctx, uid)
 	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
-		usr, err = localstore.Users.Create(uid, email, login, displayName, provider, nil)
+		usr, err = localstore.Users.Create(ctx, uid, email, login, displayName, provider, nil)
 	}
 	if err != nil {
 		return nil, err

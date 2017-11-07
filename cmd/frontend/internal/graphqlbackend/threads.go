@@ -132,7 +132,7 @@ func (t *threadResolver) CreatedAt() string {
 }
 
 func (t *threadResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByAuth0ID(t.thread.AuthorUserID)
+	user, err := store.Users.GetByAuth0ID(ctx, t.thread.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +415,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 
 	if wasArchived == nil && thread.ArchivedAt != nil {
-		user, err := store.Users.GetByAuth0ID(actor.UID)
+		user, err := store.Users.GetByAuth0ID(ctx, actor.UID)
 		if err != nil {
 			return nil, err
 		}
@@ -511,7 +511,7 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
 			gochimp.Var{Name: "THREAD_ID", Content: strconv.Itoa(int(thread.ID))},
-			gochimp.Var{Name: "THREAD_URL", Content: url},
+			gochimp.Var{Name: "THREAD_URL", Content: url.String()},
 		})
 	}
 	return nil

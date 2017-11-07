@@ -110,7 +110,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	// If this step fails, we are still in a recoverable state (it is safe to execute
 	// this codepath again, or the next user login will be possible with username and
 	// afterwards we will add a row to the DB).
-	newUser, err := store.Users.Create(actor.UID, actor.Email, args.Username, args.DisplayName, "", args.AvatarURL)
+	newUser, err := store.Users.Create(ctx, actor.UID, actor.Email, args.Username, args.DisplayName, "", args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedUser, err := store.Users.Update(user.ID, args.Username, args.DisplayName, args.AvatarURL)
+	updatedUser, err := store.Users.Update(ctx, user.ID, args.Username, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
