@@ -2,11 +2,12 @@ import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
 import { EventActions, EventCategories } from './analyticsConstants'
-import { hasBrowserExtensionInstalled } from './analyticsUtils'
+import { handleQueryEvents, hasBrowserExtensionInstalled } from './analyticsUtils'
 import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
     private static PLATFORM = 'Web'
+    private hasStrippedQueryParameters = false
 
     constructor() {
         if (window.context.user) {
@@ -101,6 +102,11 @@ class EventLogger {
         }
         telligent.track('view', decoratedProps)
         this.logToConsole(pageTitle, decoratedProps)
+
+        if (!this.hasStrippedQueryParameters) {
+            handleQueryEvents(window.location.href)
+            this.hasStrippedQueryParameters = true
+        }
     }
 
     /**
