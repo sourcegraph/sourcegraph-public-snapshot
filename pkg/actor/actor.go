@@ -36,8 +36,6 @@ type Actor struct {
 	// AvatarURL is the URL to an avatar image for the user, if it is known.
 	AvatarURL string
 
-	// TODO: add an actor session expiry so if cookie stolen, can't be used for indefinite access. (Not here, somewhere else)
-
 	// GitHubConnected indicates if the actor has a GitHub account connected.
 	//
 	// DEPRECATED
