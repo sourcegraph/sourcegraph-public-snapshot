@@ -151,7 +151,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 />
             )
         }
-        if (this.props.match.params.repoRev && !this.state.commitID) {
+        if (this.props.match.params.repoRev && (!this.state.commitID || !this.state.defaultBranch)) {
             // commit not yet resolved but required if repoPath prop is provided;
             // render empty until commit resolved
             return null
