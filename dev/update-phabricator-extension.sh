@@ -14,4 +14,12 @@ npm run build
 cp dist/js/phabricator.bundle.js ../scripts
 cp dist/css/style.bundle.css ../scripts
 
+cd ..
 rm -rf .extension
+cd ../..
+
+mkdir -p ui/assets/extension
+mkdir -p ui/assets/extension/scripts
+mkdir -p ui/assets/extension/css
+cp ./client/phabricator/scripts/phabricator.bundle.js ui/assets/extension/scripts
+cp ./client/phabricator/scripts/style.bundle.css ui/assets/extension/css
