@@ -13,12 +13,12 @@ The goal of the `eventLogger` API is to be as simple as possible. If you ever wo
 To log an event on a "Find References" action (e.g. a button being clicked):
 
 1. Add the following import to your file (with the appropriate path):
-```
+```ts
 import { eventLogger } from '../tracking/eventLogger'
 ```
 
 2. Call:
-```
+```ts
 eventLogger.log('FindReferencesButtonClicked')
 ```
 
@@ -37,7 +37,7 @@ That's it! Once your commit is deployed, events will begin being logged to our p
 
 If you want to log custom data with an event, `eventLogger.log` accepts an optional second parameter: `eventProps`. This parameter should be an object with named properties. For a real-world example, when a user clicks a button to install our Chrome extension (versus our Firefox extension), the event call looks like:
 
-```
+```ts
 eventLogger.log('BrowserExtInstallClicked', {
     marketing: {
         browser: 'Chrome'
@@ -57,7 +57,7 @@ In general, try to re-use existing namespaces where relevant. If you're developi
 You may have seen another category of events in the Sourcegraph codebase — pageviews. Unlike most events, which occur on specific user actions, pageview events should be passively logged every time a user views a page.
 
 They are executed in a similar way, but using the `logViewEvent` method, e.g.:
-```
+```ts
 eventLogger.logViewEvent('SearchResults')
 ```
 
