@@ -74,7 +74,7 @@ export const Org = reactive<Props>(props => {
                 events.RemoveOrgMemberClicked.log({
                     organization: {
                         remove: {
-                            uid: member.userID,
+                            auth0_id: member.userID,
                         },
                         org_id: member.org.id,
                     },

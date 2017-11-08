@@ -113,7 +113,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
         .mergeMap(user => {
             // This API is for user data backfill. You must be an authenticated user
             // to write a row to the users db; we use the authenticated actor to
-            // fill uid and email columns.
+            // fill auth0_id and email columns.
             if (!user) {
                 throw new Error('User must be signed in.')
             }
@@ -148,7 +148,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                 auth: {
                     user: {
                         id: data.createUser.sourcegraphID,
-                        uid: data.createUser.id,
+                        auth0_id: data.createUser.id,
                         username: data.createUser.username,
                         display_name: options.displayName,
                     },
@@ -207,7 +207,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 auth: {
                     user: {
                         id: data.updateUser.sourcegraphID,
-                        uid: data.updateUser.id,
+                        auth0_id: data.updateUser.id,
                         username: data.updateUser.username,
                         display_name: options.displayName,
                         avatar_url: options.avatarUrl,
@@ -332,7 +332,7 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
         const eventData = {
             organization: {
                 remove: {
-                    uid: userID,
+                    auth0_id: userID,
                 },
                 org_id: orgID,
             },
