@@ -40,7 +40,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .distinctUntilChanged(isEqual)
-                .do(() => this.state.dirTree && this.setState({ dirTree: undefined }))
+                .do(() => {
+                    if (this.state.dirTree) {
+                        this.setState({ dirTree: undefined })
+                    }
+                })
                 .switchMap(props =>
                     fetchDirTree(props).catch(err => {
                         console.error(err)
@@ -52,7 +56,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .distinctUntilChanged(isEqual)
-                .do(() => this.state.dirCommitInfo && this.setState({ dirCommitInfo: undefined }))
+                .do(() => {
+                    if (this.state.dirCommitInfo) {
+                        this.setState({ dirCommitInfo: undefined })
+                    }
+                })
                 .switchMap(props =>
                     fetchFileCommitInfo(props).catch(err => {
                         console.error(err)

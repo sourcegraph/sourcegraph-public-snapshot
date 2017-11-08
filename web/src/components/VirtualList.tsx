@@ -3,7 +3,7 @@ import VisibilitySensor from 'react-visibility-sensor'
 
 interface Props {
     initItemsToShow?: number
-    items: any[]
+    items: JSX.Element[]
 }
 
 interface State {

@@ -81,7 +81,7 @@ export class Repository extends React.PureComponent<Props, State> {
         isDirectory: false,
     }
     private componentUpdates = new Subject<Props>()
-    private showAnywayButtonClicks = new Subject<Props>()
+    private showAnywayButtonClicks = new Subject<void>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -110,7 +110,7 @@ export class Repository extends React.PureComponent<Props, State> {
                 this.componentUpdates
                     .map(props => ({ ...props, showHighlightingAnyway: false }))
                     .distinctUntilChanged(isEqual),
-                this.showAnywayButtonClicks.map(props => ({ ...props, showHighlightingAnyway: true }))
+                this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
             )
                 .filter(props => !props.isDirectory && Boolean(props.filePath))
                 .switchMap(props =>
@@ -284,6 +284,6 @@ export class Repository extends React.PureComponent<Props, State> {
 
     private handleShowAnywayButtonClick = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault()
-        this.showAnywayButtonClicks.next(this.props)
+        this.showAnywayButtonClicks.next()
     }
 }
