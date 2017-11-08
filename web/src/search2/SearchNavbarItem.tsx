@@ -7,6 +7,7 @@ import 'rxjs/add/operator/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { routes } from '../routes'
+import { Help } from './Help'
 import { submitSearch } from './helpers'
 import { buildSearchURLQuery, parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
@@ -93,6 +94,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                         autoFocus={autoFocus ? 'cursor-at-end' : undefined}
                     />
                     <SearchButton />
+                    <Help />
                 </div>
                 <div className="search-navbar-item2__row">
                     <SearchScope
