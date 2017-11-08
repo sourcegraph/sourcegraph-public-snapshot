@@ -18,7 +18,7 @@ import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { events } from '../../tracking/events'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 import { EditorConfiguration } from './EditorConfiguration'
@@ -52,11 +52,13 @@ type Update = (s: State) => State
 export const Org = reactive<Props>(props => {
     const memberRemoves = new Subject<GQL.IOrgMember>()
 
+    const orgChanges = props
+        .map(props => props.match.params.orgName)
+        .distinctUntilChanged()
+        .do(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
+
     return Observable.merge<Update>(
-        Observable.combineLatest(
-            currentUser,
-            props.map(props => props.match.params.orgName).distinctUntilChanged()
-        ).mergeMap(([user, orgName]) => {
+        Observable.combineLatest(currentUser, orgChanges).mergeMap(([user, orgName]) => {
             if (!user) {
                 return [(state: State): State => ({ ...state, user: undefined })]
             }
@@ -71,7 +73,7 @@ export const Org = reactive<Props>(props => {
 
         memberRemoves
             .do(member =>
-                events.RemoveOrgMemberClicked.log({
+                eventLogger.log('RemoveOrgMemberClicked', {
                     organization: {
                         remove: {
                             auth0_id: member.userID,

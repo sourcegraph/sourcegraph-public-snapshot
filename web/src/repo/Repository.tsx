@@ -3,9 +3,11 @@ import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
+import isEqual from 'lodash/isEqual'
 import * as React from 'react'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/filter'
 import 'rxjs/add/operator/map'
 import 'rxjs/add/operator/switchMap'
@@ -19,7 +21,7 @@ import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/Browse
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ReferencesWidget } from '../references/ReferencesWidget'
-import { viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { TreeHeader } from '../tree/TreeHeader'
 import { parseHash } from '../util/url'
@@ -73,7 +75,7 @@ interface State {
     position?: Position
 }
 
-export class Repository extends React.Component<Props, State> {
+export class Repository extends React.PureComponent<Props, State> {
     public state: State = {
         showTree: true,
         showRefs: false,
@@ -93,6 +95,7 @@ export class Repository extends React.Component<Props, State> {
             : undefined
         this.subscriptions.add(
             this.componentUpdates
+                .distinctUntilChanged(isEqual)
                 .switchMap(props =>
                     listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }).catch(err => {
                         console.error(err)
@@ -105,7 +108,9 @@ export class Repository extends React.Component<Props, State> {
         // Transitions to routes with file should update file contents
         this.subscriptions.add(
             Observable.merge(
-                this.componentUpdates.map(props => ({ ...props, showHighlightingAnyway: false })),
+                this.componentUpdates
+                    .map(props => ({ ...props, showHighlightingAnyway: false }))
+                    .distinctUntilChanged(isEqual),
                 this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
             )
                 .filter(props => !props.isDirectory && Boolean(props.filePath))
@@ -134,7 +139,7 @@ export class Repository extends React.Component<Props, State> {
                 )
         )
         this.subscriptions.add(
-            this.componentUpdates.subscribe(
+            this.componentUpdates.distinctUntilChanged(isEqual).subscribe(
                 props =>
                     this.setState({
                         isDirectory: props.isDirectory || !props.filePath,
@@ -148,7 +153,10 @@ export class Repository extends React.Component<Props, State> {
         this.componentUpdates.next(this.props)
 
         const hash = parseHash(this.props.location.hash)
-        viewEvents.Blob.log({ fileShown: Boolean(this.props.filePath), referencesShown: hash.modal === 'references' })
+        eventLogger.logViewEvent('Blob', {
+            fileShown: Boolean(this.props.filePath),
+            referencesShown: hash.modal === 'references',
+        })
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -163,7 +171,7 @@ export class Repository extends React.Component<Props, State> {
             this.props.location.search !== nextProps.location.search ||
             thisHash.modal !== nextHash.modal
         ) {
-            viewEvents.Blob.log({ fileShown: Boolean(nextProps.filePath), referencesShown: showRefs })
+            eventLogger.logViewEvent('Blob', { fileShown: Boolean(nextProps.filePath), referencesShown: showRefs })
         }
         this.setState({ showRefs, position })
     }

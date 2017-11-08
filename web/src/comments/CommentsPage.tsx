@@ -17,7 +17,7 @@ import { Subject } from 'rxjs/Subject'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoNav } from '../repo/RepoNav'
-import { events, viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { toEditorURL } from '../util/url'
 import { EPERMISSIONDENIED, fetchSharedItem } from './backend'
 import { CodeView } from './CodeView'
@@ -49,9 +49,11 @@ type Update = (s: State) => State
 /**
  * Renders a shared code comment's thread.
  */
-const RealCommentsPage = reactive<Props>(props => {
+export const CommentsPage = reactive<Props>(props => {
     const threadUpdates = new Subject<GQL.ISharedItemThread>()
     const nextThreadUpdate = (updatedThread: GQL.ISharedItemThread) => threadUpdates.next(updatedThread)
+
+    eventLogger.logViewEvent('SharedItem')
 
     return Observable.merge(
         props.map(({ location, history }): Update => state => ({ ...state, location, history })),
@@ -117,7 +119,7 @@ const RealCommentsPage = reactive<Props>(props => {
                 sharedItem.thread.id
             )
             const openEditor = () => {
-                events.OpenInNativeAppClicked.log()
+                eventLogger.log('OpenInNativeAppClicked')
                 window.open(editorURL, 'sourcegraph-editor')
             }
 
@@ -212,17 +214,4 @@ function getPageTitle(sharedItem: GQL.ISharedItem): string | undefined {
         return sharedItem.thread.file
     }
     return title
-}
-
-/**
- * Page to enable users to authenticate/link to their editors
- */
-export class CommentsPage extends React.Component<Props> {
-    public componentDidMount(): void {
-        viewEvents.SharedItem.log()
-    }
-
-    public render(): JSX.Element | null {
-        return <RealCommentsPage {...this.props} />
-    }
 }

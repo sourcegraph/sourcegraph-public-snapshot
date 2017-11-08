@@ -1,7 +1,7 @@
 import copy from 'copy-to-clipboard'
 import * as React from 'react'
 import { PageTitle } from '../components/PageTitle'
-import { events, viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {}
 interface State {
@@ -16,7 +16,7 @@ export class EditorAuthPage extends React.Component<Props, State> {
     private sessionId = window.context.sessionID.slice(window.context.sessionID.indexOf(' ') + 1)
 
     public componentDidMount(): void {
-        viewEvents.EditorAuth.log()
+        eventLogger.logViewEvent('EditorAuth')
     }
 
     public render(): JSX.Element | null {
@@ -50,7 +50,7 @@ export class EditorAuthPage extends React.Component<Props, State> {
     }
 
     private copySessionId = (): void => {
-        events.EditorAuthIdCopied.log()
+        eventLogger.log('EditorAuthIdCopied')
         copy(this.sessionId)
         this.setState({ copiedLink: true })
 

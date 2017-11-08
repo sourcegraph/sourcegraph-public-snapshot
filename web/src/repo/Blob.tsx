@@ -21,7 +21,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { Position, Range } from 'vscode-languageserver-types'
 import { fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
 import { triggerBlame } from '../blame'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, AbsoluteRepoFileRange, getCodeCell, getCodeCells } from './index'
@@ -440,7 +440,7 @@ export class Blob extends React.Component<Props, State> {
             el.classList.remove('selection-highlight-sticky')
         }
         if (data) {
-            events.TooltipDocked.log()
+            eventLogger.log('TooltipDocked')
             data.target.classList.add('selection-highlight-sticky')
         } else {
             hideTooltip()
@@ -509,7 +509,7 @@ export class Blob extends React.Component<Props, State> {
     }
 
     private handleGoToDefinition = (defCtx: AbsoluteRepoFilePosition) => (e: MouseEvent) => {
-        events.GoToDefClicked.log()
+        eventLogger.log('GoToDefClicked')
         if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
             return
         }
@@ -545,7 +545,7 @@ export class Blob extends React.Component<Props, State> {
     }
 
     private handleFindReferences = (ctx: AbsoluteRepoFilePosition) => (e: MouseEvent) => {
-        events.FindRefsClicked.log()
+        eventLogger.log('FindRefsClicked')
         if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
             return
         }
@@ -577,7 +577,7 @@ export class Blob extends React.Component<Props, State> {
         // Only log an event if there is no fixed tooltip docked, we have a
         // target element, and we have tooltip contents
         if (!this.state.fixedTooltip && !!data.target && !!data.contents) {
-            events.SymbolHovered.log()
+            eventLogger.log('SymbolHovered')
         }
     }
 

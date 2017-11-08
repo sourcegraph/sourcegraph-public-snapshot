@@ -18,7 +18,7 @@ import 'rxjs/add/operator/toArray'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { scrollIntoView } from '../util'
 import { fetchSuggestions } from './backend'
 import { SearchOptions } from './index'
@@ -267,7 +267,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private selectSuggestion = (suggestion: Suggestion): void => {
-        events.SearchSuggestionSelected.log({
+        eventLogger.log('SearchSuggestionSelected', {
             code_search: {
                 suggestion: {
                     type: suggestion.type,

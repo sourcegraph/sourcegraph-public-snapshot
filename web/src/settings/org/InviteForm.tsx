@@ -15,7 +15,7 @@ import 'rxjs/add/operator/startWith'
 import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
-import { events } from '../../tracking/events'
+import { eventLogger } from '../../tracking/eventLogger'
 import { inviteUser } from '../backend'
 
 export interface Props {
@@ -50,7 +50,7 @@ export const InviteForm = reactive<Props>(props => {
             .do(e => e.preventDefault())
             .withLatestFrom(orgID, emailChanges)
             .do(([, orgId, email]) =>
-                events.InviteOrgMemberClicked.log({
+                eventLogger.log('InviteOrgMemberClicked', {
                     organization: {
                         invite: {
                             user_email: email,

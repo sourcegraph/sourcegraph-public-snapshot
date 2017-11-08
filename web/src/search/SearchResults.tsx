@@ -19,7 +19,7 @@ import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
-import { events, viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { searchText } from './backend'
 import { parseSearchURLQuery } from './index'
 
@@ -58,7 +58,7 @@ export class SearchResults extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        viewEvents.SearchResults.log()
+        eventLogger.logViewEvent('SearchResults')
         this.subscriptions.add(
             this.componentUpdates
                 .startWith(this.props)
@@ -151,7 +151,7 @@ export class SearchResults extends React.Component<Props, State> {
             totalResults += result.lineMatches.length
         }
 
-        const logEvent = () => events.SearchResultClicked.log()
+        const logEvent = () => eventLogger.log('SearchResultClicked')
 
         return (
             <div className="search-results">

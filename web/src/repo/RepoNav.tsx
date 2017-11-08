@@ -8,7 +8,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toEditorURL } from '../util/url'
 import { RevSwitcher } from './RevSwitcher'
 
@@ -38,7 +38,7 @@ interface RepoSubnavState {
     editorBeta: boolean
 }
 
-export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
+export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavState> {
     private subscriptions = new Subscription()
     public state: RepoSubnavState = {
         copiedLink: false,
@@ -123,7 +123,7 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
 
     private onShareButtonClick: React.MouseEventHandler<HTMLElement> = event => {
         event.preventDefault()
-        events.ShareButtonClicked.log()
+        eventLogger.log('ShareButtonClicked')
         const loc = this.props.location
         const shareLink = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
         shareLink.searchParams.set('utm_source', 'share')
@@ -136,11 +136,11 @@ export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
     }
 
     private onViewOnCodeHostButtonClicked: React.MouseEventHandler<HTMLAnchorElement> = () => {
-        events.OpenInCodeHostClicked.log()
+        eventLogger.log('OpenInCodeHostClicked')
     }
 
     private onOpenOnDesktopClicked: React.MouseEventHandler<HTMLAnchorElement> = () => {
-        events.OpenInNativeAppClicked.log()
+        eventLogger.log('OpenInNativeAppClicked')
     }
 
     private urlToGitHub(): string {

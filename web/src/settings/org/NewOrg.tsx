@@ -10,7 +10,7 @@ import 'rxjs/add/operator/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../../components/PageTitle'
-import { events } from '../../tracking/events'
+import { eventLogger } from '../../tracking/eventLogger'
 import { createOrg } from '../backend'
 import { VALID_ORG_NAME_REGEXP } from '../validation'
 
@@ -51,11 +51,12 @@ export class NewOrg extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('NewOrg')
         this.subscriptions.add(
             this.submits
                 .do(event => {
                     event.preventDefault()
-                    events.CreateNewOrgClicked.log()
+                    eventLogger.log('CreateNewOrgClicked')
                 })
                 .filter(event => event.currentTarget.checkValidity())
                 .mergeMap(event =>

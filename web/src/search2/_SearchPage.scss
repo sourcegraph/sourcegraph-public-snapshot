@@ -1,3 +1,4 @@
+@import './Help';
 @import './SearchFields';
 @import './QueryInput';
 @import './ScopeLabel';
@@ -54,12 +55,16 @@
         position: relative;
     }
 
-    &__input-container {
+    &__input-container,
+    &__input-sub-container {
         width: 100%;
         display: flex;
         & > *:not(:first-child) {
             margin-left: 0.35rem;
         }
+    }
+    &__input-sub-container {
+        justify-content: space-between;
     }
 
     .query-input2__input {
@@ -67,5 +72,9 @@
     }
     .search-button2 {
         font-weight: bold;
+    }
+    .search2-help {
+        margin-top: 0.25rem;
+        margin-right: 0.25rem;
     }
 }

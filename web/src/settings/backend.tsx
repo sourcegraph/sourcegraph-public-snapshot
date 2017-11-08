@@ -5,7 +5,7 @@ import 'rxjs/add/operator/take'
 import { Observable } from 'rxjs/Observable'
 import { currentUser, fetchCurrentUser } from '../auth'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Fetches an org by ID
@@ -84,10 +84,10 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
         })
         .mergeMap(({ data, errors }) => {
             if (!data || !data.createOrg) {
-                events.NewOrgFailed.log()
+                eventLogger.log('NewOrgFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            events.NewOrgCreated.log({
+            eventLogger.log('NewOrgCreated', {
                 organization: {
                     org_id: data.createOrg.id,
                     org_name: data.createOrg.name,
@@ -141,10 +141,10 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
         })
         .map(({ data, errors }) => {
             if (!data || !data.createUser) {
-                events.NewUserFailed.log()
+                eventLogger.log('NewUserFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            events.NewUserCreated.log({
+            eventLogger.log('NewUserCreated', {
                 auth: {
                     user: {
                         id: data.createUser.sourcegraphID,
@@ -200,10 +200,10 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
         })
         .map(({ data, errors }) => {
             if (!data || !data.updateUser) {
-                events.UpdateUserFailed.log()
+                eventLogger.log('UpdateUserFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            events.UserProfileUpdated.log({
+            eventLogger.log('UserProfileUpdated', {
                 auth: {
                     user: {
                         id: data.updateUser.sourcegraphID,
@@ -258,10 +258,10 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
                 },
             }
             if (!data || (errors && errors.length > 0)) {
-                events.InviteOrgMemberFailed.log(eventData)
+                eventLogger.log('InviteOrgMemberFailed', eventData)
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            events.OrgMemberInvited.log(eventData)
+            eventLogger.log('OrgMemberInvited', eventData)
             return
         })
     // For now, no need to re-fetch auth state after this fetch completes. The
@@ -301,7 +301,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
         })
         .map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {
-                events.AcceptInviteFailed.log()
+                eventLogger.log('AcceptInviteFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.acceptUserInvite
@@ -338,10 +338,10 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
             },
         }
         if (errors && errors.length > 0) {
-            events.RemoveOrgMemberFailed.log(eventData)
+            eventLogger.log('RemoveOrgMemberFailed', eventData)
             throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
         }
-        events.OrgMemberRemoved.log(eventData)
+        eventLogger.log('OrgMemberRemoved', eventData)
         // Reload user data
         return fetchCurrentUser()
     })
@@ -390,10 +390,10 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
                 },
             }
             if (!data || (errors && errors.length > 0)) {
-                events.UpdateOrgSettingsFailed.log(eventData)
+                eventLogger.log('UpdateOrgSettingsFailed', eventData)
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            events.OrgSettingsUpdated.log(eventData)
+            eventLogger.log('OrgSettingsUpdated', eventData)
             return
         })
 }

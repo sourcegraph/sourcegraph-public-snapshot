@@ -3,8 +3,9 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { UserAvatar } from '../settings/user/UserAvatar'
-import { viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { limitString } from '../util'
+import { Help } from './Help'
 import { submitSearch } from './helpers'
 import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
@@ -43,7 +44,7 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        viewEvents.Home.log()
+        eventLogger.logViewEvent('Home')
     }
 
     public render(): JSX.Element | null {
@@ -90,7 +91,10 @@ export class SearchPage extends React.Component<Props, State> {
                         />
                         <SearchButton />
                     </div>
-                    <ScopeLabel scopeQuery={this.state.scopeQuery} />
+                    <div className="search-page2__input-sub-container">
+                        <ScopeLabel scopeQuery={this.state.scopeQuery} />
+                        <Help />
+                    </div>
                     <SearchFields onFieldsQueryChange={this.onFieldsQueryChange} />
                 </form>
             </div>

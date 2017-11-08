@@ -13,7 +13,7 @@ import 'rxjs/add/operator/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
-import { events, viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { searchText } from './backend'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { SearchAlert } from './SearchAlert'
@@ -56,7 +56,7 @@ export class SearchResults extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        viewEvents.SearchResults.log()
+        eventLogger.logViewEvent('SearchResults')
 
         this.subscriptions.add(
             this.searchRequested
@@ -77,7 +77,7 @@ export class SearchResults extends React.Component<Props, State> {
                         })
                         .do(
                             res =>
-                                events.SearchResultsFetched.log({
+                                eventLogger.log('SearchResultsFetched', {
                                     code_search: {
                                         results: {
                                             files_count: res.results.length,
@@ -89,7 +89,9 @@ export class SearchResults extends React.Component<Props, State> {
                                     },
                                 }),
                             error => {
-                                events.SearchResultsFetchFailed.log({ code_search: { error_message: error.message } })
+                                eventLogger.log('SearchResultsFetchFailed', {
+                                    code_search: { error_message: error.message },
+                                })
                                 console.error(error)
                             }
                         )
@@ -177,7 +179,7 @@ export class SearchResults extends React.Component<Props, State> {
             totalResults += result.lineMatches.length
         }
 
-        const logEvent = () => events.SearchResultClicked.log()
+        const logEvent = () => eventLogger.log('SearchResultClicked')
 
         const searchOptions = parseSearchURLQuery(this.props.location.search)
 

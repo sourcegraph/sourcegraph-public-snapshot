@@ -20,7 +20,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { fetchCurrentUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
-import { events } from '../../tracking/events'
+import { eventLogger } from '../../tracking/eventLogger'
 import { acceptUserInvite } from '../backend'
 
 export interface Props {
@@ -47,6 +47,8 @@ interface TokenPayload {
 export const AcceptInvitePage = reactive<Props>(props => {
     const submitEvents = new Subject<React.FormEvent<HTMLFormElement>>()
     const nextSubmitEvent = (event: React.FormEvent<HTMLFormElement>) => submitEvents.next(event)
+
+    eventLogger.logViewEvent('AcceptInvite')
 
     /** The token in the query params */
     const inviteToken: Observable<string> = props
@@ -92,9 +94,9 @@ export const AcceptInvitePage = reactive<Props>(props => {
                                     org_name: tokenPayload.orgName,
                                 }
                                 if (status.emailVerified) {
-                                    events.InviteAccepted.log(eventProps)
+                                    eventLogger.log('InviteAccepted', eventProps)
                                 } else {
-                                    events.AcceptInviteFailed.log(eventProps)
+                                    eventLogger.log('AcceptInviteFailed', eventProps)
                                 }
                             })
                             .mergeMap(status =>
