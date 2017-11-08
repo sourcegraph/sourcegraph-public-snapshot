@@ -10,7 +10,7 @@ import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { OrgAvatar } from './org/OrgAvatar'
 import { UserAvatar } from './user/UserAvatar'
 
@@ -180,6 +180,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
     }
 
     private logTelemetryOnSignOut(): void {
-        events.SignOutClicked.log()
+        eventLogger.log('SignOutClicked')
     }
 }

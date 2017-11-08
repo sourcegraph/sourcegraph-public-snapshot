@@ -19,7 +19,7 @@ import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/Browse
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ReferencesWidget } from '../references/ReferencesWidget'
-import { viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { TreeHeader } from '../tree/TreeHeader'
 import { parseHash } from '../util/url'
@@ -148,7 +148,10 @@ export class Repository extends React.Component<Props, State> {
         this.componentUpdates.next(this.props)
 
         const hash = parseHash(this.props.location.hash)
-        viewEvents.Blob.log({ fileShown: Boolean(this.props.filePath), referencesShown: hash.modal === 'references' })
+        eventLogger.logViewEvent('Blob', {
+            fileShown: Boolean(this.props.filePath),
+            referencesShown: hash.modal === 'references',
+        })
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -163,7 +166,7 @@ export class Repository extends React.Component<Props, State> {
             this.props.location.search !== nextProps.location.search ||
             thisHash.modal !== nextHash.modal
         ) {
-            viewEvents.Blob.log({ fileShown: Boolean(nextProps.filePath), referencesShown: showRefs })
+            eventLogger.logViewEvent('Blob', { fileShown: Boolean(nextProps.filePath), referencesShown: showRefs })
         }
         this.setState({ showRefs, position })
     }

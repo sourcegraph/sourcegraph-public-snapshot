@@ -29,7 +29,7 @@ import { CodeExcerpt } from '../components/CodeExcerpt'
 import { VirtualList } from '../components/VIrtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
 import { SearchOptions } from '../search2'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
 
@@ -385,8 +385,8 @@ export class ReferencesWidget extends React.Component<Props, State> {
     private onDismiss = (): void => {
         this.props.history.push(toPrettyBlobURL(this.props))
     }
-    private onLocalRefsButtonClick = () => events.ShowLocalRefsButtonClicked.log()
-    private onShowExternalRefsButtonClick = () => events.ShowExternalRefsButtonClicked.log()
-    private logLocalSelection = () => events.GoToLocalRefClicked.log()
-    private logExternalSelection = () => events.GoToExternalRefClicked.log()
+    private onLocalRefsButtonClick = () => eventLogger.log('ShowLocalRefsButtonClicked')
+    private onShowExternalRefsButtonClick = () => eventLogger.log('ShowExternalRefsButtonClicked')
+    private logLocalSelection = () => eventLogger.log('GoToLocalRefClicked')
+    private logExternalSelection = () => eventLogger.log('GoToExternalRefClicked')
 }

@@ -5,7 +5,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { UserAvatar } from '../settings/user/UserAvatar'
-import { viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { limitString } from '../util'
 import { parseSearchURLQuery } from './index'
 import { SearchBox } from './SearchBox'
@@ -33,7 +33,7 @@ export class Search extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        viewEvents.Home.log()
+        eventLogger.logViewEvent('Home')
     }
 
     public render(): JSX.Element | null {

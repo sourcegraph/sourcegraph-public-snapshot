@@ -11,7 +11,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser, fetchCurrentUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
-import { events } from '../../tracking/events'
+import { eventLogger } from '../../tracking/eventLogger'
 import { createUser, updateUser } from '../backend'
 import { VALID_USERNAME_REGEXP } from '../validation'
 import { UserAvatar } from './UserAvatar'
@@ -64,7 +64,7 @@ export class UserProfilePage extends React.Component<Props, State> {
             this.submits
                 .do(event => {
                     event.preventDefault()
-                    events.UpdateUserClicked.log()
+                    eventLogger.log('UpdateUserClicked')
                 })
                 .filter(event => event.currentTarget.checkValidity())
                 .do(() => this.setState({ loading: true }))

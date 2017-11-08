@@ -5,7 +5,7 @@ import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { UserAvatar } from '../settings/user/UserAvatar'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
     comment: GQL.ISharedItemComment
@@ -80,7 +80,7 @@ export class Comment extends React.Component<Props, State> {
         if (event.metaKey || event.altKey || event.ctrlKey) {
             return
         }
-        events.ShareButtonClicked.log()
+        eventLogger.log('ShareButtonClicked')
         const loc = this.props.location
         const shareLink = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
         shareLink.searchParams.set('id', String(this.props.comment.id))

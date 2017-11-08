@@ -1,6 +1,4 @@
-import { EventActions, EventCategories } from './analyticsConstants'
 import { eventLogger } from './eventLogger'
-import { events } from './events'
 
 export interface EventQueryParameters {
     utm_campaign?: string
@@ -46,13 +44,13 @@ export function handleQueryEvents(url: string): void {
     const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
     if (eventName || isBadgeRedirect) {
         if (isBadgeRedirect) {
-            events.RepoBadgeRedirected.log(eventParameters)
+            eventLogger.log('RepoBadgeRedirected', eventParameters)
         } else if (eventName === 'CompletedAuth0SignIn') {
-            events.CompletedAuth0SignIn.log(eventParameters)
+            eventLogger.log('CompletedAuth0SignIn', eventParameters)
         } else if (eventName === 'SignupCompleted') {
-            events.SignupCompleted.log(eventParameters)
+            eventLogger.log('SignupCompleted', eventParameters)
         } else if (eventName) {
-            eventLogger.logEvent(EventCategories.External, EventActions.Redirect, eventName, eventParameters)
+            eventLogger.log(eventName, eventParameters)
         }
     }
 

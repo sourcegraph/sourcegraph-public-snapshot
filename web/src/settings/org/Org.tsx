@@ -18,7 +18,7 @@ import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { events } from '../../tracking/events'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 import { EditorConfiguration } from './EditorConfiguration'
@@ -71,7 +71,7 @@ export const Org = reactive<Props>(props => {
 
         memberRemoves
             .do(member =>
-                events.RemoveOrgMemberClicked.log({
+                eventLogger.log('RemoveOrgMemberClicked', {
                     organization: {
                         remove: {
                             auth0_id: member.userID,

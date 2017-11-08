@@ -9,7 +9,7 @@ import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { VALID_PASSWORD_REGEXP, VALID_USERNAME_REGEXP } from '../settings/validation'
-import { events, viewEvents } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 
 interface LoginSignupFormProps {
     location: H.Location
@@ -211,7 +211,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         }
         switch (this.state.mode) {
             case 'signin':
-                events.InitiateSignIn.log()
+                eventLogger.log('InitiateSignIn')
                 webAuth.redirect.loginWithCredentials(
                     {
                         connection: 'Sourcegraph',
@@ -223,7 +223,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 )
                 break
             case 'signup':
-                events.InitiateSignUp.log({
+                eventLogger.log('InitiateSignUp', {
                     signup: {
                         user_info: {
                             signup_email: this.state.email,
@@ -271,7 +271,7 @@ export class SignInPage extends React.Component<SignInPageProps, SignInPageState
     }
 
     public componentDidMount(): void {
-        viewEvents.SignIn.log()
+        eventLogger.logViewEvent('SignIn')
     }
 
     public componentWillReceiveProps(nextProps: SignInPageProps): void {

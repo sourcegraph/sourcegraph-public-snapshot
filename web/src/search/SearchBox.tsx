@@ -33,7 +33,7 @@ import { asap } from 'rxjs/scheduler/asap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { routes } from '../routes'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { scrollIntoView } from '../util'
 import { fetchSuggestions } from './backend'
 import { Chip } from './Chip'
@@ -432,7 +432,7 @@ export class SearchBox extends React.Component<Props, State> {
     }
 
     private selectSuggestion = (suggestion: Filter, newQuery: string): void => {
-        events.SearchSuggestionSelected.log({
+        eventLogger.log('SearchSuggestionSelected', {
             code_search: {
                 suggestion: {
                     type: suggestion.type,
@@ -516,7 +516,7 @@ export class SearchBox extends React.Component<Props, State> {
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         if (!this.hasLoggedFirstChange) {
-            events.SearchInitiated.log()
+            eventLogger.log('SearchInitiated')
             this.hasLoggedFirstChange = true
         }
         this.inputValues.next(event.currentTarget.value)
@@ -608,7 +608,7 @@ export class SearchBox extends React.Component<Props, State> {
         if (this.state.query) {
             // Go to search results
             const path = '/search?' + buildSearchURLQuery(this.state)
-            events.SearchSubmitted.log({
+            eventLogger.log('SearchSubmitted', {
                 code_search: {
                     pattern: this.state.query,
                     repos: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
@@ -621,7 +621,7 @@ export class SearchBox extends React.Component<Props, State> {
         ) {
             if (this.state.filters.length === 1) {
                 // Go to repo
-                events.SearchGoToRepoSubmitted.log()
+                eventLogger.log('SearchGoToRepoSubmitted')
                 this.props.history.push(`/${(this.state.filters[0] as RepoFilter).value}`)
             } else if (
                 this.state.filters[1].type === FilterType.File &&
@@ -629,7 +629,7 @@ export class SearchBox extends React.Component<Props, State> {
                 !hasMagic(this.state.filters[1].value)
             ) {
                 // Go to file
-                events.SearchGoToFileSubmitted.log()
+                eventLogger.log('SearchGoToFileSubmitted')
                 this.props.history.push(
                     `/${(this.state.filters[0] as RepoFilter).value}/-/blob/${(this.state.filters[1] as FileFilter)
                         .value}`

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { hasBrowserExtensionInstalled } from '../tracking/analyticsUtils'
-import { events } from '../tracking/events'
+import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
 
@@ -47,7 +47,7 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
                 daysActiveCount === 1
             this.setState({ visible })
             if (visible) {
-                events.BrowserExtReminderViewed.log()
+                eventLogger.log('BrowserExtReminderViewed')
             }
         }, 100)
     }
@@ -96,7 +96,7 @@ export class ChromeExtensionToast extends React.Component {
     }
 
     private onClickInstall = (): void => {
-        events.BrowserExtInstallClicked.log({ marketing: { browser: 'Chrome' } })
+        eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Chrome' } })
 
         if (window.chrome) {
             window.chrome.webstore.install(
@@ -114,7 +114,7 @@ export class ChromeExtensionToast extends React.Component {
      * After the dialog is shown and the user agrees to add the item to Chrome.
      */
     private onInstallExtensionSuccess(): void {
-        events.BrowserExtInstallSuccess.log()
+        eventLogger.log('BrowserExtInstallSuccess')
     }
 
     /**
@@ -123,7 +123,7 @@ export class ChromeExtensionToast extends React.Component {
      * the linked item not being found in the store, or the install being initiated from a non-verified site.
      */
     private onInstallExtensionFail(): void {
-        events.BrowserExtInstallFailed.log()
+        eventLogger.log('BrowserExtInstallFailed')
     }
 }
 
@@ -139,7 +139,7 @@ export class FirefoxExtensionToast extends React.Component {
     }
 
     private onClickInstall = (): void => {
-        events.BrowserExtInstallClicked.log({ marketing: { browser: 'Firefox' } })
+        eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Firefox' } })
         window.open(FIREFOX_EXTENSION_STORE_LINK, '_blank')
     }
 }

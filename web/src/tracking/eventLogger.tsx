@@ -1,8 +1,7 @@
 import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
-import { EventActions, EventCategories } from './analyticsConstants'
-import { handleQueryEvents, hasBrowserExtensionInstalled } from './analyticsUtils'
+import { handleQueryEvents, hasBrowserExtensionInstalled, pageViewQueryParameters } from './analyticsUtils'
 import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
@@ -19,7 +18,7 @@ class EventLogger {
             user => {
                 if (user) {
                     this.updateUser(user)
-                    this.logEvent(EventCategories.Auth, EventActions.Passive, 'UserProfileFetched')
+                    this.log('UserProfileFetched')
                     // Since this function checks if the Chrome ext has injected an element,
                     // wait a few ms in case there's an unpredictable delay before checking.
                     setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
@@ -87,16 +86,18 @@ class EventLogger {
     }
 
     /**
-     * Tracking call to analytics services on pageview events
-     * Note: should NEVER be called outside of events.tsx
+     * Log a pageview.
+     * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logViewEvent(pageTitle: string, eventProperties?: any): void {
         if (window.context.userAgentIsBot || !pageTitle) {
             return
         }
+        pageTitle = `View${pageTitle}`
 
         const decoratedProps = {
             ...this.decorateEventProperties(eventProperties),
+            ...pageViewQueryParameters(window.location.href),
             page_name: pageTitle,
             page_title: pageTitle,
         }
@@ -110,10 +111,10 @@ class EventLogger {
     }
 
     /**
-     * Tracking call to analytics services on user action events
-     * Note: should NEVER be called outside of events.tsx
+     * Log a user action or event.
+     * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      */
-    public logEvent(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
+    public log(eventLabel: string, eventProperties?: any): void {
         if (window.context.userAgentIsBot || !eventLabel) {
             return
         }
@@ -121,10 +122,8 @@ class EventLogger {
         const decoratedProps = {
             ...this.decorateEventProperties(eventProperties),
             eventLabel,
-            eventCategory,
-            eventAction,
         }
-        telligent.track(eventAction, decoratedProps)
+        telligent.track(eventLabel, decoratedProps)
         this.logToConsole(eventLabel, decoratedProps)
     }
 
