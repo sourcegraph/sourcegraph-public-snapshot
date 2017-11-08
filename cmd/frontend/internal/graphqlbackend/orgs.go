@@ -78,16 +78,12 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*orgSettingsResolver,
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
-	RepoRemoteURI         *string // DEPRECATED: use RepoCanonicalRemoteID instead.
 	RepoCanonicalRemoteID *string
 	Branch                *string
 	File                  *string
 	Limit                 *int32
 }) (*threadConnectionResolver, error) {
 	var repo *sourcegraph.OrgRepo
-	if args.RepoRemoteURI != nil {
-		args.RepoCanonicalRemoteID = args.RepoRemoteURI
-	}
 	if args.RepoCanonicalRemoteID != nil {
 		var err error
 		repo, err = getOrgRepo(ctx, o.org.ID, *args.RepoCanonicalRemoteID)
@@ -111,16 +107,9 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
 }
 
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
-	RemoteURI         *string // DEPRECATED: use CanonicalRemoteID instead.
-	CanonicalRemoteID *string
+	CanonicalRemoteID string
 }) (*orgRepoResolver, error) {
-	if args.RemoteURI == nil && args.CanonicalRemoteID == nil {
-		return nil, errors.New("canonicalRemoteID required")
-	}
-	if args.RemoteURI != nil {
-		args.CanonicalRemoteID = args.RemoteURI
-	}
-	orgRepo, err := getOrgRepo(ctx, o.org.ID, *args.CanonicalRemoteID)
+	orgRepo, err := getOrgRepo(ctx, o.org.ID, args.CanonicalRemoteID)
 	if err != nil {
 		return nil, err
 	}
