@@ -13,7 +13,7 @@ import (
 // Actor represents an agent that accesses resources. It can represent
 // an anonymous user or a logged-in user.
 type Actor struct {
-	// UID from the authentication provider. This uniquely identifies
+	// UID is the ID from the authentication provider. This uniquely identifies
 	// the actor's user within the context of the actor's provider.
 	UID string `json:",omitempty"`
 

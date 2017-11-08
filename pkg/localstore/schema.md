@@ -84,18 +84,18 @@ Check constraints:
 
 # Table "public.org_settings"
 ```
-   Column   |           Type           |                         Modifiers                         
-------------+--------------------------+-----------------------------------------------------------
- id         | integer                  | not null default nextval('org_settings_id_seq'::regclass)
- org_id     | integer                  | not null
- author_uid | text                     | not null
- contents   | text                     | 
- created_at | timestamp with time zone | not null default now()
+     Column     |           Type           |                         Modifiers                         
+----------------+--------------------------+-----------------------------------------------------------
+ id             | integer                  | not null default nextval('org_settings_id_seq'::regclass)
+ org_id         | integer                  | not null
+ author_auth_id | text                     | not null
+ contents       | text                     | 
+ created_at     | timestamp with time zone | not null default now()
 Indexes:
     "org_settings_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "org_settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
-    "org_settings_references_users" FOREIGN KEY (author_uid) REFERENCES users(uid) ON DELETE RESTRICT
+    "org_settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
 
 ```
 
@@ -297,7 +297,7 @@ Foreign-key constraints:
     Column    |           Type           |                     Modifiers                      
 --------------+--------------------------+----------------------------------------------------
  id           | integer                  | not null default nextval('users_id_seq'::regclass)
- uid          | text                     | not null
+ auth_id      | text                     | not null
  email        | citext                   | not null
  username     | citext                   | not null
  display_name | text                     | not null
@@ -308,14 +308,14 @@ Foreign-key constraints:
  provider     | text                     | not null default ''::text
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
+    "users_auth_id_key" UNIQUE CONSTRAINT, btree (auth_id)
     "users_email_key" UNIQUE CONSTRAINT, btree (email)
-    "users_uid_key" UNIQUE CONSTRAINT, btree (uid)
     "users_username_key" UNIQUE CONSTRAINT, btree (username)
 Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
 Referenced by:
-    TABLE "org_settings" CONSTRAINT "org_settings_references_users" FOREIGN KEY (author_uid) REFERENCES users(uid) ON DELETE RESTRICT
+    TABLE "org_settings" CONSTRAINT "org_settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```
