@@ -280,6 +280,14 @@ export class SignInPage extends React.Component<SignInPageProps, SignInPageState
 
     public render(): JSX.Element | null {
         if (window.context.user) {
+            const searchParams = new URLSearchParams(this.props.location.search)
+            const returnTo = searchParams.get('returnTo')
+            if (returnTo) {
+                // 🚨 SECURITY: important that we do not allow redirects to
+                // arbitrary hosts here.
+                const newURL = new URL(returnTo, window.location.href)
+                return <Redirect to={newURL.pathname + newURL.search + newURL.hash} />
+            }
             return <Redirect to="/search" />
         }
 
