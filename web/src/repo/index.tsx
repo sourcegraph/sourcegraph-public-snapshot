@@ -198,13 +198,11 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     } else {
         repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
     }
-    const repoRevSplit = repoRev.split('@')
-    const repoPath = repoRevSplit[0]
+    const [repoPath, rev]: (string | undefined)[] = repoRev.split('@')
     if (!repoPath) {
         throw new Error('unexpected repo url: ' + href)
     }
-    const rev: string | undefined = repoRevSplit[1]
-    const commitID = rev && rev.match(/^[a-f0-9]{40}$/i) ? rev : undefined
+    const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
 
     let filePath: string | undefined
     const treeSep = pathname.indexOf('/-/tree/')
