@@ -629,11 +629,9 @@ export class SearchBox extends React.Component<Props, State> {
                 !hasMagic(this.state.filters[1].value)
             ) {
                 // Go to file
+                const [repoFilter, fileFilter] = this.state.filters as [RepoFilter, FileFilter]
                 eventLogger.log('SearchGoToFileSubmitted')
-                this.props.history.push(
-                    `/${(this.state.filters[0] as RepoFilter).value}/-/blob/${(this.state.filters[1] as FileFilter)
-                        .value}`
-                )
+                this.props.history.push(`/${repoFilter.value}/-/blob/${fileFilter.value}`)
             }
         }
     }

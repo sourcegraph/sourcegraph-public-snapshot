@@ -218,9 +218,10 @@ export class RevSwitcher extends React.PureComponent<Props, State> {
         return (
             <div className="rev-switcher" ref={this.onRef}>
                 <div
-                    className={`rev-switcher__rev-display${this.props.disabled
-                        ? ' rev-switcher__rev-display--disabled'
-                        : ''}`}
+                    className={
+                        'rev-switcher__rev-display' +
+                        (this.props.disabled ? ' rev-switcher__rev-display--disabled' : '')
+                    }
                     onClick={this.onInputFocus}
                 >
                     <input

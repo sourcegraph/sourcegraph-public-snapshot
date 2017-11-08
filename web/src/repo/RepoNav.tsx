@@ -149,9 +149,11 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
             if (this.props.isDirectory) {
                 return `https://${this.props.repoPath}/tree/${this.props.rev}/${this.props.filePath}`
             }
-            return `https://${this.props.repoPath}/blob/${this.props.rev}/${this.props.filePath}${line
-                ? '#L' + line
-                : ''}`
+            const url = new URL(`https://${this.props.repoPath}/blob/${this.props.rev}/${this.props.filePath}`)
+            if (line) {
+                url.hash = '#L' + line
+            }
+            return url.href
         }
         return `https://${this.props.repoPath}/tree/${this.props.rev}/`
     }
