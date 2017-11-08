@@ -10,6 +10,7 @@ import 'rxjs/add/operator/scan'
 import 'rxjs/add/operator/withLatestFrom'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
+import { eventLogger } from '../tracking/eventLogger'
 import { addCommentToThread } from './backend'
 
 interface Props {
@@ -42,7 +43,10 @@ export const CommentsInput = reactive<Props>(props => {
         textAreaChanges.map((textAreaValue): Update => state => ({ ...state, textAreaValue })),
 
         // Prevent default and set submitting = true when submits occur.
-        submits.do(e => e.preventDefault()).map((): Update => state => ({ ...state, submitting: true })),
+        submits
+            .do(e => e.preventDefault())
+            .do(e => eventLogger.log('RepliedToThread'))
+            .map((): Update => state => ({ ...state, submitting: true })),
 
         // Add comment to thread when submits occur.
         submits.withLatestFrom(textAreaChanges, props).mergeMap(([, textAreaValue, props]) =>

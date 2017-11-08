@@ -80,7 +80,7 @@ export class Comment extends React.Component<Props, State> {
         if (event.metaKey || event.altKey || event.ctrlKey) {
             return
         }
-        eventLogger.log('ShareButtonClicked')
+        eventLogger.log('ShareCommentButtonClicked')
         const loc = this.props.location
         const shareLink = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
         shareLink.searchParams.set('id', String(this.props.comment.id))
