@@ -17,7 +17,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { scrollIntoView } from '../util'
 import { score } from '../util/scorer'
 import { EREVNOTFOUND, fetchRepoRevisions, RepoRevisions, resolveRev } from './backend'
-import { parseBrowserRepoURL } from './index'
+import { replaceRevisionInURL } from './index'
 
 /**
  * Component props.
@@ -327,11 +327,7 @@ export class RevSwitcher extends React.PureComponent<Props, State> {
         const rev = this.getVisible()[index].rev
 
         // Replace the revision in the current URL with the new one and push to history.
-        const parsed = parseBrowserRepoURL(window.location.href)
-        const repoRev = `/${parsed.repoPath}${parsed.rev ? '@' + parsed.rev : ''}`
-        const u = new URL(window.location.href)
-        u.pathname = `/${parsed.repoPath}@${rev}${u.pathname.slice(repoRev.length)}`
-        this.props.history.push(`${u.pathname}${u.search}${u.hash}`)
+        this.props.history.push(replaceRevisionInURL(window.location.href, rev))
     }
 
     /**

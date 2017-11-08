@@ -240,6 +240,20 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     return { repoPath, rev, commitID, filePath, position, range }
 }
 
+/**
+ * Replaces the revision in the given URL, or adds one if there is not already
+ * one.
+ * @param href The URL whose revision should be replaced.
+ */
+export function replaceRevisionInURL(href: string, newRev: string): string {
+    const parsed = parseBrowserRepoURL(window.location.href)
+    const repoRev = `/${parsed.repoPath}${parsed.rev ? '@' + parsed.rev : ''}`
+
+    const u = new URL(window.location.href)
+    u.pathname = `/${parsed.repoPath}@${newRev}${u.pathname.slice(repoRev.length)}`
+    return `${u.pathname}${u.search}${u.hash}`
+}
+
 const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + pos.character : '')
 
 /**
