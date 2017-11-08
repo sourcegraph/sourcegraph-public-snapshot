@@ -79,7 +79,7 @@ interface Item {
     score?: number
 }
 
-export class RevSwitcher extends React.Component<Props, State> {
+export class RevSwitcher extends React.PureComponent<Props, State> {
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
 

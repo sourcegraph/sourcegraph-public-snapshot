@@ -38,7 +38,7 @@ interface RepoSubnavState {
     editorBeta: boolean
 }
 
-export class RepoNav extends React.Component<RepoSubnavProps, RepoSubnavState> {
+export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavState> {
     private subscriptions = new Subscription()
     public state: RepoSubnavState = {
         copiedLink: false,

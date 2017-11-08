@@ -26,7 +26,7 @@ interface State {
     commitInfo?: GQL.ICommitInfo
 }
 
-export class DirectoryPageEntry extends React.Component<Props, State> {
+export class DirectoryPageEntry extends React.PureComponent<Props, State> {
     public state: State = {}
     private isVisible = false
     private componentUpdates = new Subject<Props>()

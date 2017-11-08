@@ -42,7 +42,7 @@ interface PersistedState extends PersistableState {
 
 interface State extends PersistableState {}
 
-export class SearchScope extends React.Component<Props, State> {
+export class SearchScope extends React.PureComponent<Props, State> {
     private static REMOTE_SCOPES_STORAGE_KEY = 'SearchScope/remoteScopes'
     private static LAST_SCOPE_STORAGE_KEY = 'SearchScope/lastScope'
 
@@ -55,10 +55,6 @@ export class SearchScope extends React.Component<Props, State> {
 
         const savedState = this.loadFromLocalStorage()
         this.state = { remoteScopes: savedState.remoteScopes }
-
-        if (typeof savedState.lastScopeValue === 'string' && !this.props.value) {
-            props.onChange(savedState.lastScopeValue)
-        }
 
         this.subscriptions.add(
             fetchSearchScopes()
@@ -83,10 +79,15 @@ export class SearchScope extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        const value = this.selectElement!.value
-        if (this.props.value !== undefined && this.props.value !== value) {
-            this.props.onChange(value)
-            this.saveToLocalStorage()
+        const savedState = this.loadFromLocalStorage()
+        if (typeof savedState.lastScopeValue === 'string' && !this.props.value) {
+            this.props.onChange(savedState.lastScopeValue)
+        } else {
+            const value = this.selectElement!.value
+            if (this.props.value !== undefined && this.props.value !== value) {
+                this.props.onChange(value)
+                this.saveToLocalStorage()
+            }
         }
     }
 
