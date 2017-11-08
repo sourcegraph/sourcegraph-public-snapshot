@@ -89,10 +89,9 @@ input ThreadLinesInput {
 
 type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
-	# TODO make linesRevision and repoRevision required after removing revision.
 	# TODO make canonicalRemoteID required after removing remoteURI.
 	# TODO make cloneURL required.
-	createThread(orgID: Int!, remoteURI: String, canonicalRemoteID: String, cloneURL: String, file: String!, repoRevision: String, linesRevision: String, revision: String, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
+	createThread(orgID: Int!, remoteURI: String, canonicalRemoteID: String, cloneURL: String, file: String!, repoRevision: String!, linesRevision: String!, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
@@ -571,7 +570,6 @@ type Org {
 	repo(remoteURI: String, canonicalRemoteID: String): OrgRepo
 	# TODO make repoCanonicalRemoteID required after removing repoRemoteURI.
 	threads(repoRemoteURI: String, repoCanonicalRemoteID: String, branch: String, file: String, limit: Int): ThreadConnection!
-	threads2(repoRemoteURI: String, repoCanonicalRemoteID: String, branch: String, file: String, limit: Int): ThreadConnection! @deprecated(reason: "Use threads")
 	tags: [OrgTag!]!
 }
 
@@ -595,7 +593,6 @@ type OrgInviteStatus {
 type OrgRepo {
 	id: Int!
 	org: Org!
-	remoteUri: String! @deprecated(reason: "use canonicalRemoteID instead")
 	canonicalRemoteID: String!
 	createdAt: String!
 	updatedAt: String!

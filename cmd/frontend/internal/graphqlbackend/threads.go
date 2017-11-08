@@ -23,11 +23,12 @@ import (
 )
 
 type threadConnectionResolver struct {
-	org    *sourcegraph.Org
-	repo   *sourcegraph.OrgRepo
-	file   *string
-	branch *string
-	limit  *int32
+	org                   *sourcegraph.Org
+	repo                  *sourcegraph.OrgRepo
+	repoCanonicalRemoteID *string
+	file                  *string
+	branch                *string
+	limit                 *int32
 }
 
 func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
@@ -38,6 +39,12 @@ func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
 		repoID = &t.repo.ID
 		// repoID implies an orgID, avoid unnecessary join.
 		orgID = nil
+	} else if t.repoCanonicalRemoteID != nil {
+		// The query is for a single repo but that repo doesn't exist.
+		// This is not an error condition because we lazily populate org_repos.
+		// Set an invalid repoID so no results are returned.
+		var noRepoID = int32(-1)
+		repoID = &noRepoID
 	}
 	return orgID, repoID
 }
@@ -241,9 +248,8 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	CanonicalRemoteID *string
 	CloneURL          *string
 	File              string
-	RepoRevision      *string
-	LinesRevision     *string
-	Revision          *string
+	RepoRevision      string
+	LinesRevision     string
 	Branch            *string
 	StartLine         int32
 	EndLine           int32
@@ -253,16 +259,6 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	Contents          string
 	Lines             *threadLines
 }) (*threadResolver, error) {
-	// Sort out the revision args. This is temporary until args.Revision is phased out.
-	if args.RepoRevision == nil && args.LinesRevision == nil {
-		if args.Revision == nil {
-			return nil, errors.New("no revision specified")
-		}
-		args.RepoRevision, args.LinesRevision = args.Revision, args.Revision
-	} else if args.RepoRevision == nil || args.LinesRevision == nil {
-		return nil, errors.New("both repoRevision and linesRevision required")
-	}
-
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
 	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
@@ -314,8 +310,8 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	thread := &sourcegraph.Thread{
 		OrgRepoID:      repo.ID,
 		File:           args.File,
-		RepoRevision:   *args.RepoRevision,
-		LinesRevision:  *args.LinesRevision,
+		RepoRevision:   args.RepoRevision,
+		LinesRevision:  args.LinesRevision,
 		Branch:         args.Branch,
 		StartLine:      args.StartLine,
 		EndLine:        args.EndLine,
@@ -436,6 +432,12 @@ func (s *schemaResolver) ShareThread(ctx context.Context, args *struct {
 	if err != nil {
 		return "", nil
 	}
+
+	// TODO(slimsag): future: move this to the client in case we ever have
+	// other users of this method.
+	q := u.Query()
+	q.Set("utm_source", "share-snippet-editor")
+	u.RawQuery = q.Encode()
 	return u.String(), nil
 }
 

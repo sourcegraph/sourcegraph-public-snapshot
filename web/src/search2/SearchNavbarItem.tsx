@@ -139,8 +139,15 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                     case '/:repoRev+/-/tree/:filePath+':
                         return true
 
-                    case '/search':
-                        return false
+                    case '/search': {
+                        // Interpret /search?hp as "go to homepage and clear query". Without this,
+                        // we have no way of determining whether /search should go to the homepage
+                        // with a blank query or to the search results page with the current query,
+                        // since we attempt to preserve the current query across navigation in
+                        // general.
+                        const forceGoToHomepage = new URLSearchParams(location.search).has('hp')
+                        return !forceGoToHomepage
+                    }
                 }
             }
         }

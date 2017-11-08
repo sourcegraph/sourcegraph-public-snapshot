@@ -23,6 +23,7 @@ export const viewEvents = {
     EditorAuth: new LoggableViewEvent('ViewEditorAuth'),
     AddNewOrg: new LoggableViewEvent('ViewAddNewOrg'),
     OrgProfile: new LoggableViewEvent('ViewOrgProfile'),
+    SharedItem: new LoggableViewEvent('ViewSharedItem'),
 }
 
 export class LoggableEvent {

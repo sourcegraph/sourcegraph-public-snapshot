@@ -18,7 +18,6 @@ import { enableSearch2, parseSearchURLQuery } from './search/index'
 import { Search } from './search/Search'
 import { parseSearchURLQuery as parseSearchURLQuery2 } from './search2/index'
 import { SearchPage as SearchPage2 } from './search2/SearchPage'
-import { handleQueryEvents } from './tracking/analyticsUtils'
 
 interface LayoutProps {
     location: H.Location
@@ -107,8 +106,9 @@ const SearchRouter = (props: RouteComponentProps<{}>): JSX.Element | null => {
     return <Search {...props} />
 }
 const SearchRouter2 = (props: RouteComponentProps<{}>): JSX.Element | null => {
+    const forceGoToHomepage = new URLSearchParams(props.location.search).has('hp')
     const options = parseSearchURLQuery2(props.location.search)
-    if (options.query) {
+    if (options.query && !forceGoToHomepage) {
         return <Layout {...props} />
     }
     return <SearchPage2 {...props} />
@@ -213,5 +213,4 @@ window.addEventListener('DOMContentLoaded', () => {
     render(<App />, document.querySelector('#root'))
 })
 
-handleQueryEvents(window.location.href)
 updateUserSessionStores()
