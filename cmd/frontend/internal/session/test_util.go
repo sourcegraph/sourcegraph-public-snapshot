@@ -22,7 +22,7 @@ func ResetMockSessionStore(t *testing.T) (cleanup func()) {
 		}
 	}()
 
-	InitSessionStore(false, sessions.NewFilesystemStore(tempdir, securecookie.GenerateRandomKey(2048)))
+	SetSessionStore(sessions.NewFilesystemStore(tempdir, securecookie.GenerateRandomKey(2048)))
 	return func() {
 		os.RemoveAll(tempdir)
 	}

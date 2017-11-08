@@ -28,23 +28,23 @@ type sessionInfo struct {
 	Expiry time.Time    `json:"expiry"`
 }
 
-// InitSessionStore initializes the session store.
-func InitSessionStore(secureCookie bool, underlyingStore sessions.Store) {
+// SetSessionStore sets the backing store used for storing sessions on the server. It should be called exactly once.
+func SetSessionStore(s sessions.Store) {
+	sessionStore = s
+}
+
+func MustNewRedisStore(secureCookie bool) sessions.Store {
 	if sessionStoreRedis == "" {
 		sessionStoreRedis = ":6379"
 	}
-	if underlyingStore == nil {
-		rstore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
-		if err != nil {
-			panic(err)
-		}
-		rstore.Options.Path = "/"
-		rstore.Options.HttpOnly = true
-		rstore.Options.Secure = secureCookie
-		sessionStore = rstore
-	} else {
-		sessionStore = underlyingStore
+	rstore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
+	if err != nil {
+		panic(err)
 	}
+	rstore.Options.Path = "/"
+	rstore.Options.HttpOnly = true
+	rstore.Options.Secure = secureCookie
+	return rstore
 }
 
 // StartNewSession starts a new session with authentication for the given uid.

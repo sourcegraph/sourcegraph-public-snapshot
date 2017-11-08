@@ -21,7 +21,7 @@ import (
 // NewHandler returns a new app handler that uses the provided app
 // router.
 func NewHandler(r *router.Router) http.Handler {
-	session.InitSessionStore(conf.AppURL.Scheme == "https", nil)
+	session.SetSessionStore(session.MustNewRedisStore(conf.AppURL.Scheme == "https"))
 
 	m := http.NewServeMux()
 
