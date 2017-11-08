@@ -187,7 +187,15 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     }
 
     const indexOfSep = pathname.indexOf('/-/')
-    let repoRev: string // e.g. 'foo/bar' or 'foo/bar@revision'
+
+    // examples:
+    // - 'github.com/gorilla/mux'
+    // - 'github.com/gorilla/mux@revision'
+    // - 'foo/bar' (from 'sourcegraph.mycompany.com/foo/bar')
+    // - 'foo/bar@revision' (from 'sourcegraph.mycompany.com/foo/bar@revision')
+    // - 'foobar' (from 'sourcegraph.mycompany.com/foobar')
+    // - 'foobar@revision' (from 'sourcegraph.mycompany.com/foobar@revision')
+    let repoRev: string
     if (indexOfSep === -1) {
         repoRev = pathname // the whole string
     } else {
