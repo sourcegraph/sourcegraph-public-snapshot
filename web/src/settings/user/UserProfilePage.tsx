@@ -49,6 +49,7 @@ export class UserProfilePage extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('UserProfile')
         this.subscriptions.add(
             currentUser.subscribe(
                 user =>

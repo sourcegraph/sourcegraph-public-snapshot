@@ -49,9 +49,11 @@ type Update = (s: State) => State
 /**
  * Renders a shared code comment's thread.
  */
-const RealCommentsPage = reactive<Props>(props => {
+export const CommentsPage = reactive<Props>(props => {
     const threadUpdates = new Subject<GQL.ISharedItemThread>()
     const nextThreadUpdate = (updatedThread: GQL.ISharedItemThread) => threadUpdates.next(updatedThread)
+
+    eventLogger.logViewEvent('SharedItem')
 
     return Observable.merge(
         props.map(({ location, history }): Update => state => ({ ...state, location, history })),
@@ -212,17 +214,4 @@ function getPageTitle(sharedItem: GQL.ISharedItem): string | undefined {
         return sharedItem.thread.file
     }
     return title
-}
-
-/**
- * Page to enable users to authenticate/link to their editors
- */
-export class CommentsPage extends React.Component<Props> {
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('SharedItem')
-    }
-
-    public render(): JSX.Element | null {
-        return <RealCommentsPage {...this.props} />
-    }
 }

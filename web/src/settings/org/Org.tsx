@@ -52,11 +52,13 @@ type Update = (s: State) => State
 export const Org = reactive<Props>(props => {
     const memberRemoves = new Subject<GQL.IOrgMember>()
 
+    const orgChanges = props
+        .map(props => props.match.params.orgName)
+        .distinctUntilChanged()
+        .do(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
+
     return Observable.merge<Update>(
-        Observable.combineLatest(
-            currentUser,
-            props.map(props => props.match.params.orgName).distinctUntilChanged()
-        ).mergeMap(([user, orgName]) => {
+        Observable.combineLatest(currentUser, orgChanges).mergeMap(([user, orgName]) => {
             if (!user) {
                 return [(state: State): State => ({ ...state, user: undefined })]
             }

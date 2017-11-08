@@ -48,6 +48,8 @@ export const AcceptInvitePage = reactive<Props>(props => {
     const submitEvents = new Subject<React.FormEvent<HTMLFormElement>>()
     const nextSubmitEvent = (event: React.FormEvent<HTMLFormElement>) => submitEvents.next(event)
 
+    eventLogger.logViewEvent('AcceptInvite')
+
     /** The token in the query params */
     const inviteToken: Observable<string> = props
         .map(({ location }) => location)

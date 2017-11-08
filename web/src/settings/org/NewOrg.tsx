@@ -51,6 +51,7 @@ export class NewOrg extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('NewOrg')
         this.subscriptions.add(
             this.submits
                 .do(event => {
