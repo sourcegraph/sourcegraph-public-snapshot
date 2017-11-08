@@ -150,10 +150,10 @@ class EventLogger {
             // router.
             const u = parseBrowserRepoURL(window.location.href)
             if (u.repoPath.startsWith('github.com/')) {
-                props.repo = u.repoPath!
+                props.repo = u.repoPath
                 props.rev = u.rev
                 if (u.filePath) {
-                    props.path = u.filePath!
+                    props.path = u.filePath
                     props.language = getPathExtension(u.filePath)
                 }
             }
