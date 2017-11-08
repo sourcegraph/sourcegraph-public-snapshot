@@ -79,7 +79,7 @@ export const SuggestionItem = (props: SuggestionProps) => {
     return (
         <li
             className={'suggestion2' + (props.isSelected ? ' suggestion2--selected' : '')}
-            onClick={props.onClick}
+            onMouseDown={props.onClick}
             ref={props.liRef}
         >
             <Icon className="icon-inline" />

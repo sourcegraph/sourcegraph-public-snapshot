@@ -14,7 +14,8 @@
 
     cursor: pointer;
 
-    &--selected {
+    &--selected,
+    &:hover {
         background-color: #2a3a51;
     }
 
