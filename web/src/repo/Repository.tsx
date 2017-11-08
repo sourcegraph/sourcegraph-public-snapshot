@@ -32,6 +32,7 @@ export interface Props {
     repoPath: string
     rev?: string
     commitID: string
+    defaultBranch: string
     filePath?: string
     location: H.Location
     history: H.History
@@ -175,7 +176,7 @@ export class Repository extends React.Component<Props, State> {
         return (
             <div className="repository">
                 <PageTitle title={this.getPageTitle()} />
-                <RepoNav {...this.props} />
+                <RepoNav {...this.props} rev={this.props.rev || this.props.defaultBranch} />
                 {IS_CHROME && <ChromeExtensionToast />}
                 {IS_FIREFOX && <FirefoxExtensionToast />}
                 <SurveyToast />

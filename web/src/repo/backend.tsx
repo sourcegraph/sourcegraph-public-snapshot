@@ -28,12 +28,18 @@ class RevNotFoundError extends Error {
     }
 }
 
+export interface ResolvedRev {
+    commitID: string
+    defaultBranch: string
+}
+
 /**
+ * When `rev` is undefined, the default branch is resolved.
  * @return Observable that emits the commit ID
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
-    (ctx: { repoPath: string; rev?: string }): Observable<string> =>
+    (ctx: { repoPath: string; rev?: string }): Observable<ResolvedRev> =>
         queryGraphQL(
             `
         query ResolveRev($repoPath: String, $rev: String) {
@@ -45,11 +51,12 @@ export const resolveRev = memoizeObservable(
                             sha1
                         }
                     }
+                    defaultBranch
                 }
             }
         }
     `,
-            { ...ctx, rev: ctx.rev || 'master' }
+            { ...ctx, rev: ctx.rev || '' }
         ).map(result => {
             if (!result.data) {
                 throw new Error('invalid response received from graphql endpoint')
@@ -63,7 +70,10 @@ export const resolveRev = memoizeObservable(
             if (!result.data.root.repository.commit.commit) {
                 throw new RevNotFoundError(ctx.rev)
             }
-            return result.data.root.repository.commit.commit.sha1
+            return {
+                commitID: result.data.root.repository.commit.commit.sha1,
+                defaultBranch: result.data.root.repository.defaultBranch,
+            }
         }),
     makeRepoURI
 )

@@ -27,6 +27,7 @@ interface Props {
 
 interface State {
     commitID?: string
+    defaultBranch?: string
     phabricatorCallsign?: string
     cloneInProgress: boolean
     notFound: boolean
@@ -78,7 +79,10 @@ export class RepositoryResolver extends React.Component<Props, State> {
                             })
                     )
                 })
-                .subscribe(commitID => this.setState({ commitID, cloneInProgress: false }), err => console.error(err))
+                .subscribe(
+                    resolvedRev => this.setState({ ...resolvedRev, cloneInProgress: false }),
+                    err => console.error(err)
+                )
         )
         this.subscriptions.add(
             this.componentUpdates
@@ -147,8 +151,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 />
             )
         }
-        if (this.props.match.params.repoRev && !this.state.commitID) {
-            // commit not yet resolved but required if repoPath prop is provided;
+        if (!this.state.commitID || !this.state.defaultBranch) {
             // render empty until commit resolved
             return null
         }
@@ -157,7 +160,8 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 repoPath={repoPath}
                 rev={rev}
                 filePath={this.props.match.params.filePath}
-                commitID={this.state.commitID!}
+                commitID={this.state.commitID}
+                defaultBranch={this.state.defaultBranch}
                 location={this.props.location}
                 history={this.props.history}
                 onToggleFullWidth={this.props.onToggleFullWidth}
