@@ -58,39 +58,10 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	endCol, _ := strconv.Atoi(q.Get("end_col"))     // zero-based
 
 	if search != "" {
-		// Search request.
-
-		// For now, require that searching be done inside a repository (we
-		// don't have any non-repo-specific search yet).
-		if remoteURL == "" {
-			// Don't return an error here, as we want the user to see the error
-			// and all errors returned from HTTP handlers are hidden to normal
-			// users.
-			msg := fmt.Sprintf("Searching in file outside of a Git repository is not yet supported")
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, html.EscapeString(msg))
-			return nil
-		}
-
-		// Determine the repo URI and branch.
-		repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(r.Context(), remoteURL)
-		if err != nil {
-			return err
-		}
-		if repoURI == "" {
-			// Any error here is a problem with the user's configured git remote
-			// URL. We want them to actually read this error message.
-			msg := fmt.Sprintf("Git remote URL %q not supported", remoteURL)
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, html.EscapeString(msg))
-			return nil
-		}
-		branch, err = editorBranch(r.Context(), repoURI, branch)
-		if err != nil {
-			return err
-		}
-
-		u := &url.URL{Path: path.Join("/", repoURI+branch)}
+		// Search request. The search is intentionally not scoped to a repository, because it's assumed the
+		// user prefers to perform the search in their last-used search scope. Searching in their current
+		// repo is not actually very useful, since they can usually do that better in their editor.
+		u := &url.URL{Path: "/search"}
 		q := u.Query()
 		q.Add("q", search)
 		q.Add("utm_source", editor+"-"+version)
