@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -100,10 +99,6 @@ func (t *threadResolver) File() string {
 
 func (t *threadResolver) Branch() *string {
 	return t.thread.Branch
-}
-
-func (t *threadResolver) Revision() string {
-	return t.thread.RepoRevision // Deprecated. Using new repoRevision field data.
 }
 
 func (t *threadResolver) RepoRevision() string {
@@ -244,9 +239,8 @@ type threadLines struct {
 
 func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	OrgID             int32
-	RemoteURI         *string // DEPRECATED: to be replaced by CanonicalRemoteID.
-	CanonicalRemoteID *string
-	CloneURL          *string
+	CanonicalRemoteID string
+	CloneURL          string
 	File              string
 	RepoRevision      string
 	LinesRevision     string
@@ -266,34 +260,11 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if args.RemoteURI == nil && args.CanonicalRemoteID == nil {
-		return nil, errors.New("canonicalRemoteID required")
-	}
-	var cloneURL string
-	if args.RemoteURI != nil {
-		args.CanonicalRemoteID = args.RemoteURI
-		// Convert remoteURI into the correct vendor-specific format.
-		//
-		// TODO client will be expected to supply CanonicalRemoteID in
-		// the correct format and this logic can be removed.
-		if strings.HasPrefix(*args.RemoteURI, "github.com") {
-			cloneURL = "github://" + *args.RemoteURI
-		} else if strings.HasPrefix(*args.RemoteURI, "bitbucket.org") {
-			cloneURL = "bitbucketcloud://" + *args.RemoteURI
-		} else {
-			cloneURL = "https://" + *args.RemoteURI
-		}
-	} else {
-		if args.CloneURL == nil {
-			return nil, errors.New("cloneURL required")
-		}
-		cloneURL = *args.CloneURL
-	}
-	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID, *args.CanonicalRemoteID)
+	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID, args.CanonicalRemoteID)
 	if err == store.ErrRepoNotFound {
 		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
-			CanonicalRemoteID: *args.CanonicalRemoteID,
-			CloneURL:          cloneURL,
+			CanonicalRemoteID: args.CanonicalRemoteID,
+			CloneURL:          args.CloneURL,
 			OrgID:             args.OrgID,
 		})
 	}

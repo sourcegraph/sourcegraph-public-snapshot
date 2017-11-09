@@ -42,9 +42,8 @@ func TestThreads_Create(t *testing.T) {
 	r := &schemaResolver{}
 	_, err := r.CreateThread(ctx, &struct {
 		OrgID             int32
-		RemoteURI         *string
-		CanonicalRemoteID *string
-		CloneURL          *string
+		CanonicalRemoteID string
+		CloneURL          string
 		File              string
 		RepoRevision      string
 		LinesRevision     string
@@ -57,8 +56,8 @@ func TestThreads_Create(t *testing.T) {
 		Contents          string
 		Lines             *threadLines
 	}{
-		CanonicalRemoteID: &wantRepo.CanonicalRemoteID,
-		CloneURL:          &wantRepo.CloneURL,
+		CanonicalRemoteID: wantRepo.CanonicalRemoteID,
+		CloneURL:          wantRepo.CloneURL,
 		File:              "foo.go",
 		RepoRevision:      repoRev,
 		LinesRevision:     lineRev,

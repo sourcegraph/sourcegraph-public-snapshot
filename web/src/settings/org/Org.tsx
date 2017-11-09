@@ -76,7 +76,7 @@ export const Org = reactive<Props>(props => {
                 eventLogger.log('RemoveOrgMemberClicked', {
                     organization: {
                         remove: {
-                            auth0_id: member.userID,
+                            auth0_id: member.user,
                         },
                         org_id: member.org.id,
                     },
@@ -96,19 +96,21 @@ export const Org = reactive<Props>(props => {
                         ].join('')
                     )
                 }
-                if (user.id === member.userID) {
+                if (user.id === member.user.auth0ID) {
                     return confirm(`Leave this organization?`)
                 }
                 return confirm(`Remove ${member.user.displayName} from this organization?`)
             })
             .mergeMap(([memberToRemove, user]) =>
-                removeUserFromOrg(memberToRemove.org.id, memberToRemove.userID).concat([
+                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.auth0ID).concat([
                     (state: State): State => ({
                         ...state,
-                        left: memberToRemove.userID === user!.id,
+                        left: memberToRemove.user.auth0ID === user!.id,
                         org: state.org && {
                             ...state.org,
-                            members: state.org.members.filter(member => member.userID !== memberToRemove.userID),
+                            members: state.org.members.filter(
+                                member => member.user.auth0ID !== memberToRemove.user.auth0ID
+                            ),
                         },
                     }),
                 ])
@@ -158,7 +160,7 @@ export const Org = reactive<Props>(props => {
                                     <td className="org__actions-cell">
                                         <button
                                             className="btn btn-icon"
-                                            title={user.id === member.userID ? 'Leave' : 'Remove'}
+                                            title={user.id === member.user.auth0ID ? 'Leave' : 'Remove'}
                                             // tslint:disable-next-line:jsx-no-lambda
                                             onClick={() => memberRemoves.next({ ...member, org })}
                                         >

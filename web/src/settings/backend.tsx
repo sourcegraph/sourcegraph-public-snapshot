@@ -27,9 +27,9 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                     }
                     members {
                         id
-                        userID
                         createdAt
                         user {
+                            auth0ID
                             username
                             email
                             displayName

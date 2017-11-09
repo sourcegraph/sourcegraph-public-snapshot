@@ -35,50 +35,10 @@ func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
 	return &orgResolver{m.org}, nil
 }
 
-func (m *orgMemberResolver) UserID() string {
-	return m.member.UserID
-}
-
-// DEPRECATED (use embedded User instead).
-func (m *orgMemberResolver) Username() string {
-	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
-	if err != nil {
-		return ""
-	}
-	return user.Username
-}
-
-// DEPRECATED (use embedded User instead).
-func (m *orgMemberResolver) Email() string {
-	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
-	if err != nil {
-		return ""
-	}
-	return user.Email
-}
-
-// DEPRECATED (use embedded User instead).
-func (m *orgMemberResolver) DisplayName() string {
-	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
-	if err != nil {
-		return ""
-	}
-	return user.DisplayName
-}
-
-// DEPRECATED (use embedded User instead).
-func (m *orgMemberResolver) AvatarURL() *string {
-	user, err := localstore.Users.GetByAuth0ID(context.Background(), m.UserID())
-	if err != nil {
-		return nil
-	}
-	return user.AvatarURL
-}
-
 func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
 	if m.user == nil {
 		var err error
-		m.user, err = localstore.Users.GetByAuth0ID(ctx, m.UserID())
+		m.user, err = localstore.Users.GetByAuth0ID(ctx, m.member.UserID)
 		if err != nil {
 			return nil, err
 		}

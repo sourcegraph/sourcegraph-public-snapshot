@@ -89,9 +89,7 @@ input ThreadLinesInput {
 
 type Mutation {
 	createUser(username: String!, displayName: String!, avatarURL: String): User!
-	# TODO make canonicalRemoteID required after removing remoteURI.
-	# TODO make cloneURL required.
-	createThread(orgID: Int!, remoteURI: String, canonicalRemoteID: String, cloneURL: String, file: String!, repoRevision: String!, linesRevision: String!, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
+	createThread(orgID: Int!, canonicalRemoteID: String!, cloneURL: String!, file: String!, repoRevision: String!, linesRevision: String!, branch: String, startLine: Int!, endLine: Int!, startCharacter: Int!, endCharacter: Int!, rangeLength: Int!, contents: String!, lines: ThreadLinesInput): Thread!
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	updateThread(threadID: Int!, archived: Boolean): Thread!
 	addCommentToThread(threadID: Int!, contents: String!): Thread!
@@ -575,11 +573,6 @@ type OrgMember {
 	id: Int!
 	org: Org!
 	user: User!
-	username: String! @deprecated(reason: "use user.username instead")
-	email: String! @deprecated(reason: "use user.email instead")
-	displayName: String! @deprecated(reason: "use user.displayName instead")
-	avatarURL: String @deprecated(reason: "use user.avatarURL instead")
-	userID: String! @deprecated(reason: "use user.auth0ID instead")
 	createdAt: String!
 	updatedAt: String!
 }
@@ -637,7 +630,6 @@ type Thread {
 	# Or in lay terms: "What is the oldest revision that I could checkout and
 	# still see the exact lines of code that I selected?".
 	linesRevision: String!
-	revision: String! @deprecated(reason: "To be replaced by repoRevision")
 	title: String!
 	startLine: Int!
 	endLine: Int!
