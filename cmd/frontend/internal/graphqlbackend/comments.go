@@ -310,21 +310,6 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 			usernames[i] = strings.ToLower(u)
 		}
 
-		// If first comment contains no valid mentions, notify entire org.
-		if i == 0 {
-			if len(usernames) == 0 {
-				usernames = []string{orgName}
-			} else {
-				users, err := store.Users.ListByOrg(ctx, org.ID, nil, usernames)
-				if err != nil {
-					return nil, err
-				}
-				if len(users) == 0 {
-					usernames = []string{orgName}
-				}
-			}
-		}
-
 		// Allow the user to mention themself in their latest comment.
 		if i == len(comments)-1 {
 			delete(uniqueMentions, authorUsername)
