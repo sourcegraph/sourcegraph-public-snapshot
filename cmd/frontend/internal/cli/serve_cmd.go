@@ -46,8 +46,9 @@ var (
 	trace          = env.Get("SRC_LOG_TRACE", "HTTP", "space separated list of trace logs to show. Options: all, HTTP, build, github")
 	traceThreshold = env.Get("SRC_LOG_TRACE_THRESHOLD", "", "show traces that take longer than this")
 
-	httpAddr  = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
-	httpsAddr = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API")
+	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
+	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API")
+	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
@@ -254,6 +255,10 @@ func Main() error {
 			next.ServeHTTP(w, r)
 		})
 	})(h)
+
+	// The internal HTTP handler does not include the SSO or Basic Auth middleware handlers
+	internalHandler := gcontext.ClearHandler(h)
+
 	// 🚨 SECURITY: Verify user identity if required
 	h, err = auth.NewSSOAuthHandler(context.Background(), h, appURL)
 	if err != nil {
@@ -303,6 +308,22 @@ func Main() error {
 
 		log15.Debug("HTTPS running", "on", httpsAddr)
 		go func() { log.Fatal(srv.Serve(l)) }()
+	}
+
+	if httpAddrInternal != "" {
+		l, err := net.Listen("tcp", httpAddrInternal)
+		if err != nil {
+			return err
+		}
+
+		log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
+		go func() {
+			log.Fatal((&http.Server{
+				Handler:      internalHandler,
+				ReadTimeout:  75 * time.Second,
+				WriteTimeout: 60 * time.Second,
+			}).Serve(l))
+		}()
 	}
 
 	// Connection test
