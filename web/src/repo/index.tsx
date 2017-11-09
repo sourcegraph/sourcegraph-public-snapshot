@@ -183,16 +183,19 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     const loc = new URL(href, w.location.href)
     let pathname = loc.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
-        pathname = pathname.substr(0, pathname.length - 1) // trim triling '/'
-    }
-
-    const urlsplit = pathname.split('/')
-    if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
-        throw new Error('unexpected repo url: ' + href)
+        pathname = pathname.substr(0, pathname.length - 1) // trim trailing '/'
     }
 
     const indexOfSep = pathname.indexOf('/-/')
-    let repoRev: string // e.g. 'github.com/gorilla/mux' or 'github.com/gorilla/mux@revision'
+
+    // examples:
+    // - 'github.com/gorilla/mux'
+    // - 'github.com/gorilla/mux@revision'
+    // - 'foo/bar' (from 'sourcegraph.mycompany.com/foo/bar')
+    // - 'foo/bar@revision' (from 'sourcegraph.mycompany.com/foo/bar@revision')
+    // - 'foobar' (from 'sourcegraph.mycompany.com/foobar')
+    // - 'foobar@revision' (from 'sourcegraph.mycompany.com/foobar@revision')
+    let repoRev: string
     if (indexOfSep === -1) {
         repoRev = pathname // the whole string
     } else {

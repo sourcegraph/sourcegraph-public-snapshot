@@ -142,12 +142,20 @@ class EventLogger {
         }
 
         try {
+            // TODO: This will not work on repo pages like sourcegraph.mycompany.com/foo/bar
+            // because it does not start with github. But removing the startsWith below means
+            // sourcegraph.mycompany.com/c/01BYDGS45FJ1XE91M2GGR2WTAC would find a repository
+            // "c/01BYDGS45FJ1XE91M2GGR2WTAC" which isn't what you want either. This code
+            // should be factored out to only be invoked on real repo pages according to the
+            // router.
             const u = parseBrowserRepoURL(window.location.href)
-            props.repo = u.repoPath!
-            props.rev = u.rev
-            if (u.filePath) {
-                props.path = u.filePath!
-                props.language = getPathExtension(u.filePath)
+            if (u.repoPath.startsWith('github.com/')) {
+                props.repo = u.repoPath
+                props.rev = u.rev
+                if (u.filePath) {
+                    props.path = u.filePath
+                    props.language = getPathExtension(u.filePath)
+                }
             }
         } catch (error) {
             // no-op
