@@ -396,6 +396,7 @@ type User struct {
 	Auth0ID     string    `json:"auth0ID,omitempty"`
 	Email       string    `json:"email,omitempty"`
 	Username    string    `json:"username,omitempty"`
+	Provider    string    `json:"provider,omitempty"`
 	DisplayName string    `json:"displayName,omitempty"`
 	AvatarURL   *string   `json:"avatarURL,omitempty"`
 	CreatedAt   time.Time `json:"createdAt,omitempty"`

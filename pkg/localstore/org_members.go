@@ -53,7 +53,7 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.
 	if err != nil {
 		return nil, err
 	}
-	return OrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.auth0_id WHERE org_id=$1 ORDER BY upper(users.display_name)", org.ID)
+	return OrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.auth_id WHERE org_id=$1 ORDER BY upper(users.display_name)", org.ID)
 }
 
 // ErrOrgMemberNotFound is the error that is returned when

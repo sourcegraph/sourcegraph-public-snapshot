@@ -23,7 +23,7 @@ var (
 //
 // Note: this should only be called at most once (there is implicit shared state on the backend via the session store
 // and the frontend via cookies). This function will return an error if called more than once.
-func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, secureCookie bool, appURL string) (http.Handler, error) {
+func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
 	initializedMu.Lock()
 	defer initializedMu.Unlock()
 	if initialized {
@@ -33,7 +33,7 @@ func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, secureCo
 
 	if oidcIDProvider != "" {
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
-		return newOIDCAuthHandler(createCtx, handler, secureCookie, appURL, nil)
+		return newOIDCAuthHandler(createCtx, handler, appURL)
 	}
 	if samlIDPMetadataURL != "" {
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")

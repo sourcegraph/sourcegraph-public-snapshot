@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"time"
 
 	"encoding/base64"
 
@@ -92,7 +93,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		// If there is an error, we can continue to create the user session and redirect the user, but
 		// we should include the error message to the client so they know e.g. that the username they've
 		// requested is taken.
-		dbUser, userCreateErr = store.Users.Create(r.Context(), info.UserID, info.Email, username, displayName, &info.Picture)
+		dbUser, userCreateErr = store.Users.Create(r.Context(), info.UserID, info.Email, username, displayName, "", &info.Picture)
 	}
 
 	actor := &actor.Actor{
@@ -103,8 +104,8 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		GitHubConnected: false, // TODO: Remove
 	}
 
-	// Write the session cookie.
-	if err := session.StartNewSession(w, r, actor); err != nil {
+	// Write the session cookie (native authentication session duration is 10 years)
+	if err := session.StartNewSession(w, r, actor, time.Now().Add(10*365*24*time.Hour)); err != nil {
 		return err
 	}
 

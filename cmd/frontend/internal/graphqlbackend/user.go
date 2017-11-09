@@ -110,7 +110,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	// If this step fails, we are still in a recoverable state (it is safe to execute
 	// this codepath again, or the next user login will be possible with username and
 	// afterwards we will add a row to the DB).
-	newUser, err := store.Users.Create(ctx, actor.UID, actor.Email, args.Username, args.DisplayName, args.AvatarURL)
+	newUser, err := store.Users.Create(ctx, actor.UID, actor.Email, args.Username, args.DisplayName, "", args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +172,9 @@ func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver
 }
 
 func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
+	if r.user == nil {
+		return nil, errors.New("Could not resolve tags on nil user")
+	}
 	tags, err := store.UserTags.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err

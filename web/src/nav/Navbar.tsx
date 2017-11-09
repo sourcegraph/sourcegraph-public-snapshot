@@ -31,19 +31,27 @@ export class Navbar extends React.Component<Props, State> {
                     <SearchBox12 history={this.props.history} location={this.props.location} />
                 </div>
                 <div className="navbar__right">
-                    {// If on-prem, never show a user avatar or sign-in button
-                    window.context.onPrem ? null : window.context.user ? (
-                        <Link to="/settings">
-                            <UserAvatar size={64} />
-                        </Link>
-                    ) : (
-                        <Link
-                            to={`/sign-in?returnTo=${encodeURIComponent(this.props.location.pathname)}`}
-                            className="btn btn-primary"
-                        >
-                            Sign in
-                        </Link>
-                    )}
+                    {(() => {
+                        if (window.context.user) {
+                            return (
+                                <Link to="/settings">
+                                    <UserAvatar size={64} />
+                                </Link>
+                            )
+                        } else if (window.context.onPrem) {
+                            return null
+                        } else {
+                            // If on-prem, don't show a sign-in button
+                            return (
+                                <Link
+                                    to={`/sign-in?returnTo=${encodeURIComponent(this.props.location.pathname)}`}
+                                    className="btn btn-primary"
+                                >
+                                    Sign in
+                                </Link>
+                            )
+                        }
+                    })()}
                 </div>
             </div>
         )

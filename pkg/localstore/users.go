@@ -54,7 +54,7 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
-func (*users) Create(ctx context.Context, auth0ID, email, username, displayName string, avatarURL *string) (*sourcegraph.User, error) {
+func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string) (*sourcegraph.User, error) {
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
@@ -64,8 +64,8 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName 
 	}
 	err := globalDB.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth0_id, email, username, display_name, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		auth0ID, email, username, displayName, avatarURLValue, createdAt, updatedAt).Scan(&id)
+		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt).Scan(&id)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -73,8 +73,8 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName 
 				return nil, ErrCannotCreateUser{"err_username_exists"}
 			case "users_email_key":
 				return nil, ErrCannotCreateUser{"err_email_exists"}
-			case "users_auth0_id_key":
-				return nil, ErrCannotCreateUser{"err_auth0_id_exists"}
+			case "users_auth_id_key":
+				return nil, ErrCannotCreateUser{"err_auth_id_exists"}
 			}
 		}
 
@@ -87,6 +87,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName 
 		Email:       email,
 		Username:    username,
 		DisplayName: displayName,
+		Provider:    provider,
 		AvatarURL:   avatarURL,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
@@ -142,7 +143,7 @@ func (u *users) GetByAuth0ID(ctx context.Context, id string) (*sourcegraph.User,
 	if Mocks.Users.GetByAuth0ID != nil {
 		return Mocks.Users.GetByAuth0ID(ctx, id)
 	}
-	return u.getOneBySQL(ctx, "WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
 func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User, error) {
@@ -159,7 +160,7 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 		return nil, errors.New("no current user")
 	}
 
-	return u.getOneBySQL(ctx, "WHERE auth0_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
+	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
 // ListByOrg returns users for a given org. It can also query a list of specific
@@ -175,7 +176,7 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames 
 		for _, id := range auth0IDs {
 			items = append(items, sqlf.Sprintf("%s", id))
 		}
-		filters = append(filters, sqlf.Sprintf("u.auth0_id IN (%s)", sqlf.Join(items, ",")))
+		filters = append(filters, sqlf.Sprintf("u.auth_id IN (%s)", sqlf.Join(items, ",")))
 	}
 	if len(usernames) > 0 {
 		items := []*sqlf.Query{}
@@ -185,7 +186,7 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames 
 		filters = append(filters, sqlf.Sprintf("u.username IN (%s)", sqlf.Join(items, ",")))
 	}
 	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"), sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
-	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth0_id) WHERE %s", sqlf.Join(conds, "AND"))
+	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth_id) WHERE %s", sqlf.Join(conds, "AND"))
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
@@ -202,7 +203,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth0_id, u.email, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +213,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

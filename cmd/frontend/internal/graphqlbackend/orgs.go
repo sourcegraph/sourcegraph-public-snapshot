@@ -276,14 +276,18 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		return nil, errors.New("no current user")
 	}
 
-	u, err := auth0.GetAuth0User(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !u.EmailVerified {
-		// Don't add user to the org until email is verified. This will be a common failure mode,
-		// so rather than return an error we return a response the client can handle.
-		return &orgInviteResolver{emailVerified: false}, nil
+	// If the user is natively authenticated, require a verified email (if via SSO, we assume the SSO provider
+	// has authenticated the user's email)
+	if actor.Provider == "" {
+		u, err := auth0.GetAuth0User(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !u.EmailVerified {
+			// Don't add user to the org until email is verified. This will be a common failure mode,
+			// so rather than return an error we return a response the client can handle.
+			return &orgInviteResolver{emailVerified: false}, nil
+		}
 	}
 
 	token, err := invite.ParseToken(args.InviteToken)

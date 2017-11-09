@@ -205,8 +205,22 @@ func (s *FilesystemStore) New(r *http.Request, name string) (*Session, error) {
 }
 
 // Save adds a single session to the response.
+//
+// If the Options.MaxAge of the session is <= 0 then the session file will be
+// deleted from the store path. With this process it enforces the properly
+// session cookie handling so no need to trust in the cookie management in the
+// web browser.
 func (s *FilesystemStore) Save(r *http.Request, w http.ResponseWriter,
 	session *Session) error {
+	// Delete if max-age is <= 0
+	if session.Options.MaxAge <= 0 {
+		if err := s.erase(session); err != nil {
+			return err
+		}
+		http.SetCookie(w, NewCookie(session.Name(), "", session.Options))
+		return nil
+	}
+
 	if session.ID == "" {
 		// Because the ID is used in the filename, encode it to
 		// use alphanumeric characters only.
@@ -267,4 +281,15 @@ func (s *FilesystemStore) load(session *Session) error {
 		return err
 	}
 	return nil
+}
+
+// delete session file
+func (s *FilesystemStore) erase(session *Session) error {
+	filename := filepath.Join(s.path, "session_"+session.ID)
+
+	fileMutex.RLock()
+	defer fileMutex.RUnlock()
+
+	err := os.Remove(filename)
+	return err
 }
