@@ -183,28 +183,29 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     const loc = new URL(href, w.location.href)
     let pathname = loc.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
-        pathname = pathname.substr(0, pathname.length - 1) // trim triling '/'
-    }
-
-    const urlsplit = pathname.split('/')
-    if (urlsplit.length < 3 && urlsplit[0] !== 'github.com') {
-        throw new Error('unexpected repo url: ' + href)
+        pathname = pathname.substr(0, pathname.length - 1) // trim trailing '/'
     }
 
     const indexOfSep = pathname.indexOf('/-/')
-    let repoRev: string // e.g. 'github.com/gorilla/mux' or 'github.com/gorilla/mux@revision'
+
+    // examples:
+    // - 'github.com/gorilla/mux'
+    // - 'github.com/gorilla/mux@revision'
+    // - 'foo/bar' (from 'sourcegraph.mycompany.com/foo/bar')
+    // - 'foo/bar@revision' (from 'sourcegraph.mycompany.com/foo/bar@revision')
+    // - 'foobar' (from 'sourcegraph.mycompany.com/foobar')
+    // - 'foobar@revision' (from 'sourcegraph.mycompany.com/foobar@revision')
+    let repoRev: string
     if (indexOfSep === -1) {
         repoRev = pathname // the whole string
     } else {
         repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
     }
-    const repoRevSplit = repoRev.split('@')
-    const repoPath = repoRevSplit[0]
+    const [repoPath, rev]: (string | undefined)[] = repoRev.split('@')
     if (!repoPath) {
         throw new Error('unexpected repo url: ' + href)
     }
-    const rev: string | undefined = repoRevSplit[1]
-    const commitID = rev && rev.match(/^[a-f0-9]{40}$/i) ? rev : undefined
+    const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
 
     let filePath: string | undefined
     const treeSep = pathname.indexOf('/-/tree/')
@@ -238,6 +239,20 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     }
 
     return { repoPath, rev, commitID, filePath, position, range }
+}
+
+/**
+ * Replaces the revision in the given URL, or adds one if there is not already
+ * one.
+ * @param href The URL whose revision should be replaced.
+ */
+export function replaceRevisionInURL(href: string, newRev: string): string {
+    const parsed = parseBrowserRepoURL(window.location.href)
+    const repoRev = `/${parsed.repoPath}${parsed.rev ? '@' + parsed.rev : ''}`
+
+    const u = new URL(window.location.href)
+    u.pathname = `/${parsed.repoPath}@${newRev}${u.pathname.slice(repoRev.length)}`
+    return `${u.pathname}${u.search}${u.hash}`
 }
 
 const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + pos.character : '')

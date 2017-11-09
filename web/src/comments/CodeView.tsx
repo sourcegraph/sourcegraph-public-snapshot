@@ -89,9 +89,10 @@ export function CodeView(sharedItem: GQL.ISharedItem): JSX.Element | null {
                 {itemToLines(sharedItem).map((line: Line) => (
                     <tr className={line.className} key={line.number}>
                         <td
-                            className={`code-view__line-number${!isSnippet && line.isStartLine
-                                ? ' code-view__line-number--start-line'
-                                : ''}`}
+                            className={
+                                'code-view__line-number' +
+                                (!isSnippet && line.isStartLine ? ' code-view__line-number--start-line' : '')
+                            }
                         >
                             {!isSnippet &&
                                 line.isStartLine && <ChatIcon className="code-view__chat-icon icon-inline" />}

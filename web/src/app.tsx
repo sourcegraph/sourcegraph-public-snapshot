@@ -59,9 +59,12 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={props => (
                                     <div
-                                        className={`layout__app-router-container layout__app-router-container--${isFullWidth
-                                            ? 'full-width'
-                                            : 'restricted'}`}
+                                        className={[
+                                            'layout__app-router-container',
+                                            `layout__app-router-container--${
+                                                isFullWidth ? 'full-width' : 'restricted'
+                                            }`,
+                                        ].join(' ')}
                                     >
                                         {Component && (
                                             <Component

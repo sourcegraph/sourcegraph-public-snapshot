@@ -5,6 +5,7 @@ import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
 import isEqual from 'lodash/isEqual'
 import * as React from 'react'
+import 'rxjs/add/observable/fromEvent'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/distinctUntilChanged'
@@ -28,6 +29,7 @@ import { parseHash } from '../util/url'
 import { fetchHighlightedFile, listAllFiles } from './backend'
 import { Blob } from './Blob'
 import { DirectoryPage } from './DirectoryPage'
+import { replaceRevisionInURL } from './index'
 import { RepoNav } from './RepoNav'
 
 export interface Props {
@@ -103,6 +105,22 @@ export class Repository extends React.PureComponent<Props, State> {
                     })
                 )
                 .subscribe((files: string[]) => this.setState({ files }), err => console.error(err))
+        )
+
+        // When the user presses 'y', change the page URL to be a permalink.
+        this.subscriptions.add(
+            Observable.fromEvent<KeyboardEvent>(window, 'keydown')
+                .filter(
+                    event =>
+                        // 'y' shortcut (if no input element is focused)
+                        event.key === 'y' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+                )
+                .subscribe(event => {
+                    event.preventDefault()
+
+                    // Replace the revision in the current URL with the new one and push to history.
+                    this.props.history.push(replaceRevisionInURL(window.location.href, this.props.commitID))
+                })
         )
 
         // Transitions to routes with file should update file contents

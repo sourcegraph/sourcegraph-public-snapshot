@@ -198,6 +198,7 @@ func main() {
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
+			Cmd("./dev/ci/deploy-dogfood.sh"),
 			Cmd("./dev/ci/deploy-prod.sh"))
 
 	case strings.HasPrefix(branch, "staging/"):
@@ -222,6 +223,7 @@ func main() {
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
+			Cmd("./dev/ci/deploy-dogfood.sh"),
 			Cmd("./dev/ci/deploy-prod.sh"))
 
 	}
