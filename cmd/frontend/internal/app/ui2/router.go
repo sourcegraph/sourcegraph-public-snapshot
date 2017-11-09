@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -56,20 +57,21 @@ const (
 	routeLegacyEditorAuth              = "legacy.editor-auth"
 )
 
-// aboutPaths is a list of paths that should redirect from sourcegraph.com/$PATH
-// to about.sourcegraph.com/$PATH.
-var aboutPaths = []string{
-	"about",
-	"plan",
-	"contact",
-	"docs",
-	"enterprise",
-	"pricing",
-	"privacy",
-	"security",
-	"terms",
-	"jobs",
-	"beta",
+// aboutRedirects contains map entries, each of which indicates that
+// sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
+var aboutRedirects = map[string]string{
+	"about":      "about",
+	"plan":       "plan",
+	"contact":    "contact",
+	"docs":       "docs",
+	"enterprise": "enterprise",
+	"pricing":    "pricing",
+	"privacy":    "privacy",
+	"security":   "security",
+	"terms":      "terms",
+	"jobs":       "jobs",
+	"beta":       "beta",
+	"server":     "products/server",
 }
 
 // Router returns the router that serves pages for our web app.
@@ -97,7 +99,7 @@ func newRouter() *mux.Router {
 	r.Path("/settings/orgs/new").Methods("GET").Name(routeSettingsOrgsNew)
 	r.Path("/settings/orgs/{org}").Methods("GET").Name(routeSettingsOrgsOrg)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
-	r.Path("/{Path:(?:" + strings.Join(aboutPaths, "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
+	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -174,7 +176,7 @@ func init() {
 			r.URL.Scheme = aboutRedirectScheme
 			r.URL.User = nil
 			r.URL.Host = aboutRedirectHost
-			r.URL.Path = mux.Vars(r)["Path"]
+			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
 	}
@@ -399,4 +401,13 @@ func serveErrorTest(w http.ResponseWriter, r *http.Request) error {
 	statusCode, _ := strconv.Atoi(q.Get("status"))
 	serveErrorNoDebug(w, r, errors.New(errorText), statusCode, nodebug)
 	return nil
+}
+
+func mapKeys(m map[string]string) (keys []string) {
+	keys = make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
