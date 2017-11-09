@@ -323,7 +323,7 @@ export class Blob extends React.Component<Props, State> {
                     .map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } }))
                     .switchMap(({ target, ctx }) => {
                         const tooltip = this.getTooltip(target, ctx)
-                        tooltip.subscribe(this.logTelemetryOnTooltip)
+                        this.subscriptions.add(tooltip.subscribe(this.logTelemetryOnTooltip))
                         const tooltipWithJ2D: Observable<TooltipData> = tooltip
                             .zip(this.getDefinition(ctx))
                             .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
@@ -576,7 +576,7 @@ export class Blob extends React.Component<Props, State> {
     private logTelemetryOnTooltip = (data: TooltipData) => {
         // Only log an event if there is no fixed tooltip docked, we have a
         // target element, and we have tooltip contents
-        if (!this.state.fixedTooltip && !!data.target && !!data.contents) {
+        if (!this.state.fixedTooltip && data.target && data.contents) {
             eventLogger.log('SymbolHovered')
         }
     }
