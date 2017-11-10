@@ -4,7 +4,6 @@ import './util/polyfill'
 
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
-import * as H from 'history'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -19,10 +18,7 @@ import { Search } from './search/Search'
 import { parseSearchURLQuery as parseSearchURLQuery2 } from './search2/index'
 import { SearchPage as SearchPage2 } from './search2/SearchPage'
 
-interface LayoutProps {
-    location: H.Location
-    history: H.History
-}
+interface LayoutProps extends RouteComponentProps<any> {}
 
 interface LayoutState {
     /**
@@ -121,7 +117,7 @@ const SearchRouter12 = enableSearch2 ? SearchRouter2 : SearchRouter
  * handles rendering Search or SearchResults components based on whether or not
  * the search query (e.g. '?q=foo') is in URL.
  */
-class BackfillRedirector extends React.Component<RouteComponentProps<{}>, { returnTo: string }> {
+class BackfillRedirector extends React.Component<RouteComponentProps<any>, { returnTo: string }> {
     constructor(props: RouteComponentProps<{}>) {
         super(props)
         const searchParams = new URLSearchParams(this.props.location.search)

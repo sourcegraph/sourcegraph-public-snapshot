@@ -399,7 +399,7 @@ export class SearchBox extends React.Component<Props, State> {
                     <ul className="search-box__suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
                             const isSelected = this.state.selectedSuggestion === i
-                            const onRef = (ref: HTMLLIElement) => {
+                            const onRef = (ref: HTMLLIElement | null) => {
                                 if (isSelected) {
                                     this.selectedSuggestionElement = ref || undefined
                                 }
@@ -611,7 +611,9 @@ export class SearchBox extends React.Component<Props, State> {
             eventLogger.log('SearchSubmitted', {
                 code_search: {
                     pattern: this.state.query,
-                    repos: this.state.filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
+                    repos: this.state.filters
+                        .filter((f: Filter): f is RepoFilter => f.type === FilterType.Repo)
+                        .map(f => f.value),
                 },
             })
             this.props.history.push(path)

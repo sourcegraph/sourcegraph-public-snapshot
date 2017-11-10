@@ -1,6 +1,6 @@
-import ExtractTextPlugin = require('extract-text-webpack-plugin')
+import * as ExtractTextPlugin from 'extract-text-webpack-plugin'
 import * as path from 'path'
-import Tapable = require('tapable')
+import * as Tapable from 'tapable'
 import * as webpack from 'webpack'
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 

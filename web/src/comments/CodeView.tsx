@@ -74,7 +74,7 @@ const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
             className: 'code-view__line--after',
         })),
     ]
-    return lines.map((line: Line) => ({
+    return lines.map(line => ({
         ...line,
         isStartLine: line.number === startLine,
         className: `code-view__line ${line.className}`,

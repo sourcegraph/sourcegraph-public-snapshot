@@ -269,7 +269,7 @@ export class Blob extends React.Component<Props, State> {
                     .map(pos =>
                         findElementWithOffset(getCodeCell(pos.line!).childNodes[1]! as HTMLElement, pos.character!)
                     )
-                    .filter(el => !!el)
+                    .filter((el: HTMLElement | undefined): el is HTMLElement => !!el)
                     .map((target: HTMLElement) => {
                         const data = { target, loc: getTargetLineAndOffset(target!, false) }
                         if (!data.loc) {

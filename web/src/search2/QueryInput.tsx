@@ -238,7 +238,7 @@ export class QueryInput extends React.Component<Props, State> {
                     <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
                             const isSelected = this.state.selectedSuggestion === i
-                            const onRef = (ref: HTMLLIElement) => {
+                            const onRef = (ref: HTMLLIElement | null) => {
                                 if (isSelected) {
                                     this.selectedSuggestionElement = ref || undefined
                                 }

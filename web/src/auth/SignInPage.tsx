@@ -1,6 +1,6 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import { Auth0Error, WebAuth } from 'auth0-js'
+import { WebAuth } from 'auth0-js'
 import * as H from 'history'
 import { Base64 } from 'js-base64'
 import * as React from 'react'
@@ -202,7 +202,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
             return
         }
         this.setState({ loading: true })
-        const authCallback = (err: Auth0Error) => {
+        const authCallback = (err: any) => {
             this.setState({ loading: false })
             if (err) {
                 console.error('auth error: ', err)

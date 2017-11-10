@@ -1,7 +1,7 @@
 import { Loader } from '@sourcegraph/icons/lib/Loader'
-import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
+import { RouteComponentProps } from 'react-router'
 import 'rxjs/add/operator/catch'
 import 'rxjs/add/operator/concat'
 import 'rxjs/add/operator/do'
@@ -16,10 +16,7 @@ import { createUser, updateUser } from '../backend'
 import { VALID_USERNAME_REGEXP } from '../validation'
 import { UserAvatar } from './UserAvatar'
 
-interface Props {
-    location: H.Location
-    history: H.History
-}
+interface Props extends RouteComponentProps<any> {}
 
 interface State {
     user: GQL.IUser | null

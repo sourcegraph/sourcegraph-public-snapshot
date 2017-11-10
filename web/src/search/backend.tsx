@@ -163,7 +163,7 @@ export function fetchSuggestions(query: string, filters: Filter[]): Observable<G
         }`,
         {
             query,
-            repositories: filters.filter(f => f.type === FilterType.Repo).map((f: RepoFilter) => f.value),
+            repositories: filters.filter((f: Filter): f is RepoFilter => f.type === FilterType.Repo).map(f => f.value),
         }
     ).mergeMap(({ data, errors }) => {
         if (!data || !data.root.search) {
