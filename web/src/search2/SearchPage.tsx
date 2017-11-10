@@ -123,8 +123,8 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private getPageTitle(): string | undefined {
-        const query = parseSearchURLQuery(this.props.location.search)
-        if (query) {
+        const options = parseSearchURLQuery(this.props.location.search)
+        if (options.query) {
             return `${limitString(this.state.userQuery, 25, true)}`
         }
         return undefined

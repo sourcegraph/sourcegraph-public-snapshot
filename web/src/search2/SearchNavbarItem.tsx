@@ -1,15 +1,13 @@
 import * as H from 'history'
 import * as React from 'react'
-import { matchPath } from 'react-router'
 import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/skip'
 import 'rxjs/add/operator/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { routes } from '../routes'
 import { Help } from './Help'
 import { submitSearch } from './helpers'
-import { buildSearchURLQuery, parseSearchURLQuery } from './index'
+import { parseSearchURLQuery, SearchOptions } from './index'
 import { QueryInput } from './QueryInput'
 import { ScopeLabel } from './ScopeLabel'
 import { SearchButton } from './SearchButton'
@@ -42,7 +40,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         super(props)
 
         // Fill text input from URL info
-        this.state = this.getStateFromProps(props) || { userQuery: '' }
+        this.state = this.getStateFromProps(props) || { userQuery: '', scopeQuery: undefined }
 
         /** Emits whenever the route changes */
         const routeChanges = this.componentUpdates
@@ -109,52 +107,19 @@ export class SearchNavbarItem extends React.Component<Props, State> {
     }
 
     private onLocationChange = (location: H.Location): void => {
-        // Preserve search options ('q' and 'sq' query parameters) as the
-        // user navigates, without requiring every <a href> value to contain
-        // the URL query.
-        const search = new URLSearchParams(location.search)
-
-        if (!this.keepSearchOptionsParams(location)) {
-            return
+        // Store the last-used search options ('q' and 'sq' query parameters) in the location
+        // state if we're navigating to a URL that lacks them, so that we can preserve them without
+        // storing them in the URL (which is ugly) and across page reloads in the same tab.
+        const oldSearch: SearchOptions = { query: this.state.userQuery, scopeQuery: this.state.scopeQuery || '' }
+        const locationStateNeedsUpdate =
+            !location.state ||
+            (location.state as SearchOptions).query !== this.state.userQuery ||
+            (location.state as SearchOptions).scopeQuery !== this.state.scopeQuery
+        const newSearch = new URLSearchParams(location.search)
+        const newURLHasNoSearchParams = !newSearch.has('q') && !newSearch.has('sq')
+        if (locationStateNeedsUpdate && newURLHasNoSearchParams) {
+            this.props.history.replace({ state: { ...location.state, ...oldSearch } })
         }
-
-        if (!search.has('q') && !search.has('sq')) {
-            const searchOptions = parseSearchURLQuery(this.props.location.search)
-            if (searchOptions.query || searchOptions.scopeQuery) {
-                const urlWithSearchQueryParams = '?' + buildSearchURLQuery(searchOptions) + location.hash
-                this.props.history.replace(urlWithSearchQueryParams, location.state)
-            }
-        }
-    }
-
-    private keepSearchOptionsParams(location: H.Location): boolean {
-        for (const route of routes) {
-            const match = matchPath<{ repoRev?: string; filePath?: string }>(location.pathname, route)
-            if (match) {
-                switch (match.path) {
-                    case '/:repoRev+':
-                        return true
-
-                    case '/:repoRev+/-/blob/:filePath+':
-                        return true
-
-                    case '/:repoRev+/-/tree/:filePath+':
-                        return true
-
-                    case '/search': {
-                        // Interpret /search?hp as "go to homepage and clear query". Without this,
-                        // we have no way of determining whether /search should go to the homepage
-                        // with a blank query or to the search results page with the current query,
-                        // since we attempt to preserve the current query across navigation in
-                        // general.
-                        const forceGoToHomepage = new URLSearchParams(location.search).has('hp')
-                        return !forceGoToHomepage
-                    }
-                }
-            }
-        }
-
-        return true
     }
 
     private onUserQueryChange = (userQuery: string) => {
@@ -177,14 +142,24 @@ export class SearchNavbarItem extends React.Component<Props, State> {
      * Reads initial state from the props (i.e. URL parameters).
      */
     private getStateFromProps(props: Props): State {
-        if (this.keepSearchOptionsParams(props.location)) {
-            const options = parseSearchURLQuery(props.location.search || '')
-            const noQuery = !options.query && !options.scopeQuery
-            return {
-                userQuery: options.query,
-                scopeQuery: noQuery ? undefined : options.scopeQuery,
-            }
+        const options = parseSearchURLQuery(props.location.search || '')
+
+        if (options.query || options.scopeQuery) {
+            return { userQuery: options.query, scopeQuery: options.scopeQuery }
         }
-        return this.state
+
+        // If the new URL has no search options, then preserve the ones we had before.
+        // That makes it so that if we navigate from search results to a blob, the
+        // query and scope will remain the same (instead of being cleared).
+        //
+        // The first place to look for the previous query options is in our state.
+        if (this.state) {
+            return this.state
+        }
+
+        // If we have no component state, then we may have gotten unmounted during a route change.
+        // We always store the last query in the location state, so check there.
+        const state: SearchOptions | undefined = props.location.state
+        return { userQuery: state && state.query ? state.query : '', scopeQuery: state ? state.scopeQuery : undefined }
     }
 }
