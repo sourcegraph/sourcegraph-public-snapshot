@@ -1,7 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
 import { matchPath } from 'react-router'
-import 'rxjs/add/operator/debounceTime'
 import 'rxjs/add/operator/distinctUntilChanged'
 import 'rxjs/add/operator/skip'
 import 'rxjs/add/operator/startWith'
@@ -39,23 +38,11 @@ export class SearchNavbarItem extends React.Component<Props, State> {
     /** Emits on componentWillReceiveProps */
     private componentUpdates = new Subject<Props>()
 
-    /**
-     * Emits when the scope query changes.
-     */
-    private scopeQueryChanges = new Subject<string>()
-
     constructor(props: Props) {
         super(props)
 
         // Fill text input from URL info
         this.state = this.getStateFromProps(props) || { userQuery: '' }
-
-        this.subscriptions.add(
-            this.scopeQueryChanges
-                .distinctUntilChanged()
-                .debounceTime(100)
-                .subscribe(() => this.submit())
-        )
 
         /** Emits whenever the route changes */
         const routeChanges = this.componentUpdates
@@ -174,16 +161,12 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         this.setState({ userQuery })
     }
 
-    private onScopeQueryChange = (scopeQuery: string, needsDebounce?: boolean) => {
-        this.setState({ scopeQuery }, () => this.scopeQueryChanges.next(scopeQuery))
+    private onScopeQueryChange = (scopeQuery: string) => {
+        this.setState({ scopeQuery })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        this.submit()
-    }
-
-    private submit(): void {
         submitSearch(this.props.history, {
             query: this.state.userQuery,
             scopeQuery: this.state.scopeQuery || '',
