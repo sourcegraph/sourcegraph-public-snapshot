@@ -7,14 +7,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 
-    &:hover {
-        min-width: 9em;
-        white-space: normal;
-        word-wrap: break-word;
-        text-overflow: unset;
-        z-index: 1;
-    }
-
     &__query {
         font-weight: bold;
         &-tip {

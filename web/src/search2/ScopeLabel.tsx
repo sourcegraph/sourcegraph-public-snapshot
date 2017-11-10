@@ -77,7 +77,9 @@ export class ScopeLabel extends React.Component<Props, State> {
             if (this.props.scopeQuery === undefined) {
                 parts.push('loading...')
             } else {
-                title = `The scope query is merged with the user-provided query to perform the search`
+                title = `The scope query is merged with the user-provided query to perform the search\n\nScope: ${
+                    this.props.scopeQuery
+                }`
 
                 const tokens = parseQuery(this.props.scopeQuery)
                 parts.push(
