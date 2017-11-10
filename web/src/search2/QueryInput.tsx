@@ -116,9 +116,7 @@ export class QueryInput extends React.Component<Props, State> {
                             query: [this.props.prependQueryForSuggestions, this.props.value].filter(s => !!s).join(' '),
                             scopeQuery: this.props.scopeQuery || '',
                         }
-                        return fetchSuggestions(options).map((suggestion: GQL.SearchSuggestion2) =>
-                            createSuggestion(suggestion, options)
-                        )
+                        return fetchSuggestions(options).map(createSuggestion)
                     })()
                         .toArray()
                         .map((suggestions: Suggestion[]) => ({

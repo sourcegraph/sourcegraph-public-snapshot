@@ -1,7 +1,6 @@
 import FileIcon from '@sourcegraph/icons/lib/File'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
-import { buildSearchURLQuery, SearchOptions } from './index'
 
 export const enum SuggestionType {
     Repo = 'repo',
@@ -27,14 +26,13 @@ export interface Suggestion {
     urlLabel: string
 }
 
-export function createSuggestion(item: GQL.SearchSuggestion2, options: SearchOptions): Suggestion {
-    const searchQuerystring = buildSearchURLQuery(options)
+export function createSuggestion(item: GQL.SearchSuggestion2): Suggestion {
     switch (item.__typename) {
         case 'Repository': {
             return {
                 type: SuggestionType.Repo,
                 title: item.uri,
-                url: `/${item.uri}?${searchQuerystring}`,
+                url: `/${item.uri}`,
                 urlLabel: 'go to repository',
             }
         }
@@ -49,7 +47,7 @@ export function createSuggestion(item: GQL.SearchSuggestion2, options: SearchOpt
                 type: SuggestionType.File,
                 title: basename(item.name),
                 description: descriptionParts.join(' — '),
-                url: `/${item.repository.uri}/-/blob/${item.name}?${searchQuerystring}`,
+                url: `/${item.repository.uri}/-/blob/${item.name}`,
                 urlLabel: 'go to file',
             }
         }
