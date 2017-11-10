@@ -59,7 +59,8 @@ export class SearchFields extends React.Component<Props, State> {
                         className="search-fields2__row-example"
                         title="Repositories whose name contains this substring will be included in search results."
                     >
-                        repo:my/repo
+                        {/* GitHub repo: pattern is more useful and always applicable on Sourcegraph.com */}
+                        {window.context.onPrem ? 'repo:my/repo' : 'repo:github.com/org/'}
                     </div>
                 </div>
                 <div className="search-fields2__row">
