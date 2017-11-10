@@ -115,7 +115,12 @@ export class SearchNavbarItem extends React.Component<Props, State> {
             !location.state || !searchOptionsEqual(location.state as SearchOptions, oldSearch)
         const newSearch = parseSearchURLQuery(location.search)
         if (locationStateNeedsUpdate && !newSearch) {
-            this.props.history.replace({ state: { ...location.state, ...oldSearch } })
+            this.props.history.replace({
+                pathname: location.pathname,
+                hash: location.hash,
+                search: location.search,
+                state: { ...location.state, ...oldSearch },
+            })
         }
     }
 
