@@ -37,7 +37,12 @@ export class SearchAlert extends React.Component<Props, State> {
                                     to={'?' + buildSearchURLQuery(proposedQuery.query)}
                                     title={`${proposedQuery.query.scopeQuery} ${proposedQuery.query.query}`}
                                 >
-                                    {proposedQuery.query.scopeQuery} {proposedQuery.query.query}
+                                    {proposedQuery.query.scopeQuery && (
+                                        <span className="search-alert__proposed-query-scope">
+                                            {proposedQuery.query.scopeQuery}
+                                        </span>
+                                    )}
+                                    {proposedQuery.query.query}
                                 </Link>
                                 <span className="search-alert__proposed-query-description">
                                     {proposedQuery.description && ` — ${proposedQuery.description}`}

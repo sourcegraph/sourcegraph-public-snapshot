@@ -34,6 +34,18 @@
             border-radius: 0.125rem;
             min-width: 3rem;
         }
+        &-scope {
+            display: inline-block;
+            border-right: solid 1px rgba(255, 255, 255, 0.05);
+            padding-right: 0.275rem;
+            margin-right: 0.325rem;
+
+            // Necessary to make the vertical line have no gaps with the -link border:
+            margin-top: -0.1rem;
+            margin-bottom: -0.1rem;
+            padding-top: 0.1rem;
+            padding-bottom: 0.1rem;
+        }
         &-description {
             font-size: 0.8rem;
         }
