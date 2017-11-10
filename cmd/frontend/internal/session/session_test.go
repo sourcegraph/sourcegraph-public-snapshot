@@ -241,3 +241,18 @@ func TestCookieOrSessionMiddleware(t *testing.T) {
 		})).ServeHTTP(httptest.NewRecorder(), testcase.req)
 	}
 }
+
+func TestSessionToCookieMiddleware(t *testing.T) {
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "session asdfasdf")
+	SessionHeaderToCookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("sg-session")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cookie.Value != "asdfasdf" {
+			t.Errorf("expected sg-session cookie with value %q but got %q", "asdfasdf", cookie.Value)
+		}
+	})).ServeHTTP(w, r)
+}
