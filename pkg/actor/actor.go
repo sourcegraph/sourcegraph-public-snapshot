@@ -54,6 +54,11 @@ type Actor struct {
 	GitHubToken string
 }
 
+// FromUser returns an actor corresponding to a user
+func FromUser(usr *sourcegraph.User) *Actor {
+	return &Actor{UID: usr.Auth0ID, Login: usr.Username, Provider: usr.Provider, Email: usr.Email}
+}
+
 func (a *Actor) String() string {
 	return fmt.Sprintf("Actor UID %s", a.UID)
 }

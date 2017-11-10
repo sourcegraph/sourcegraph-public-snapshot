@@ -272,7 +272,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		return nil, err
 	}
 
-	return &actor.Actor{UID: usr.Auth0ID, Login: usr.Username, Provider: usr.Provider, Email: usr.Email}, nil
+	return actor.FromUser(usr), nil
 }
 
 // oidcSession is the session information for a user session started via OIDC authentication.

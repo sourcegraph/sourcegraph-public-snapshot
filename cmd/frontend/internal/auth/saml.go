@@ -6,13 +6,18 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+
 	"github.com/crewjam/saml/samlsp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 var (
@@ -69,8 +74,10 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	if err != nil {
 		return nil, err
 	}
+	samlSP.CookieName = "sg-session"
 
-	authedHandler := samlSP.RequireAccount(handler)
+	idpID := samlSP.ServiceProvider.IDPMetadata.EntityID
+	authedHandler := session.SessionHeaderToCookieMiddleware(samlSP.RequireAccount(samlToActorMiddleware(handler, idpID)))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Handle SAML ACS and metadata endpoints
 		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/saml/") {
@@ -80,4 +87,51 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		// Handle all other endpoints
 		authedHandler.ServeHTTP(w, r)
 	}), nil
+}
+
+func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		actr, err := getActorFromSAML(r, idpID)
+		if err != nil {
+			http.Error(w, "could not map SAML assertion to user", http.StatusInternalServerError)
+			return
+		}
+		h.ServeHTTP(w, r.WithContext(actor.WithActor(r.Context(), actr)))
+	})
+}
+
+func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
+	ctx := r.Context()
+	subject := r.Header.Get("X-Saml-Subject") // this header is set by the SAML library after extracting the value from the JWT cookie
+	authID := fmt.Sprintf("%s:%s", idpID, subject)
+
+	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)
+	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
+		// TODO: need to document these attributes (need to configure IdP to provide these)
+		email := r.Header.Get("X-Saml-Email")
+		login := r.Header.Get("X-Saml-Login")
+		displayName := r.Header.Get("X-Saml-DisplayName")
+		if displayName == "" {
+			displayName = login
+		}
+		if displayName == "" {
+			displayName = email
+		}
+		if displayName == "" {
+			displayName = subject
+		}
+		if login == "" {
+			login = email
+		}
+		// KLUDGE: some ID providers use email as the login, but we don't allow '@' in usernames
+		if i := strings.Index(login, "@"); i != -1 {
+			login = login[:i]
+		}
+
+		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, idpID, nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return actor.FromUser(usr), nil
 }
