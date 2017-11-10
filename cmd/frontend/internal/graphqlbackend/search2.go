@@ -361,7 +361,7 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 		scorerQuery: scorerQuery,
 	}
 
-	return searchFiles(ctx, matcher, repos, math.MaxInt32)
+	return searchTree(ctx, matcher, repos, math.MaxInt32)
 }
 
 func unionRegExps(patterns []string) string {

@@ -65,6 +65,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                         ... on File {
                             __typename
                             name
+                            isDirectory
                             repository {
                                 uri
                             }
