@@ -63,7 +63,7 @@ export class SearchResults extends React.Component<Props, State> {
                 // Don't search using stale search options.
                 .filter(searchOptions => {
                     const currentSearchOptions = parseSearchURLQuery(this.props.location.search)
-                    return searchOptionsEqual(searchOptions, currentSearchOptions)
+                    return !currentSearchOptions || searchOptionsEqual(searchOptions, currentSearchOptions)
                 })
                 .switchMap(searchOptions => {
                     const start = Date.now()

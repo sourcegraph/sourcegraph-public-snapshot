@@ -110,7 +110,7 @@ const SearchRouter = (props: RouteComponentProps<{}>): JSX.Element | null => {
 }
 const SearchRouter2 = (props: RouteComponentProps<{}>): JSX.Element | null => {
     const options = parseSearchURLQuery2(props.location.search)
-    if (options.query) {
+    if (options && options.query) {
         return <Layout {...props} />
     }
     return <SearchPage2 {...props} />

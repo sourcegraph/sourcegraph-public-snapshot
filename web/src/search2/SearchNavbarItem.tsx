@@ -7,7 +7,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Help } from './Help'
 import { submitSearch } from './helpers'
-import { parseSearchURLQuery, SearchOptions } from './index'
+import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { QueryInput } from './QueryInput'
 import { ScopeLabel } from './ScopeLabel'
 import { SearchButton } from './SearchButton'
@@ -110,14 +110,11 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         // Store the last-used search options ('q' and 'sq' query parameters) in the location
         // state if we're navigating to a URL that lacks them, so that we can preserve them without
         // storing them in the URL (which is ugly) and across page reloads in the same tab.
-        const oldSearch: SearchOptions = { query: this.state.userQuery, scopeQuery: this.state.scopeQuery || '' }
+        const oldSearch: SearchOptions = { query: this.state.userQuery, scopeQuery: this.state.scopeQuery }
         const locationStateNeedsUpdate =
-            !location.state ||
-            (location.state as SearchOptions).query !== this.state.userQuery ||
-            (location.state as SearchOptions).scopeQuery !== this.state.scopeQuery
-        const newSearch = new URLSearchParams(location.search)
-        const newURLHasNoSearchParams = !newSearch.has('q') && !newSearch.has('sq')
-        if (locationStateNeedsUpdate && newURLHasNoSearchParams) {
+            !location.state || !searchOptionsEqual(location.state as SearchOptions, oldSearch)
+        const newSearch = parseSearchURLQuery(location.search)
+        if (locationStateNeedsUpdate && !newSearch) {
             this.props.history.replace({ state: { ...location.state, ...oldSearch } })
         }
     }
@@ -143,8 +140,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
      */
     private getStateFromProps(props: Props): State {
         const options = parseSearchURLQuery(props.location.search || '')
-
-        if (options.query || options.scopeQuery) {
+        if (options) {
             return { userQuery: options.query, scopeQuery: options.scopeQuery }
         }
 
@@ -160,6 +156,9 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         // If we have no component state, then we may have gotten unmounted during a route change.
         // We always store the last query in the location state, so check there.
         const state: SearchOptions | undefined = props.location.state
-        return { userQuery: state && state.query ? state.query : '', scopeQuery: state ? state.scopeQuery : undefined }
+        return {
+            userQuery: state && state.query ? state.query : '',
+            scopeQuery: state ? state.scopeQuery : undefined,
+        }
     }
 }

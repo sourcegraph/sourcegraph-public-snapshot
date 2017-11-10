@@ -80,7 +80,7 @@ export class SearchScope extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         const savedState = this.loadFromLocalStorage()
-        if (typeof savedState.lastScopeValue === 'string' && !this.props.value) {
+        if (typeof savedState.lastScopeValue === 'string' && this.props.value === undefined) {
             this.props.onChange(savedState.lastScopeValue)
         } else {
             const value = this.selectElement!.value

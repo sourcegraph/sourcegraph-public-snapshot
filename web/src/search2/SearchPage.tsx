@@ -118,13 +118,13 @@ export class SearchPage extends React.Component<Props, State> {
         const query = [this.state.fieldsQuery, this.state.userQuery].filter(s => !!s).join(' ')
         submitSearch(this.props.history, {
             query,
-            scopeQuery: this.state.scopeQuery || '',
+            scopeQuery: this.state.scopeQuery,
         })
     }
 
     private getPageTitle(): string | undefined {
         const options = parseSearchURLQuery(this.props.location.search)
-        if (options.query) {
+        if (options && options.query) {
             return `${limitString(this.state.userQuery, 25, true)}`
         }
         return undefined

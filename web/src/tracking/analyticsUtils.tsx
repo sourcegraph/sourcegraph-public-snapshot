@@ -75,7 +75,7 @@ function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
             parsedUrl.searchParams.delete(key)
         }
     }
-    window.history.replaceState({}, window.document.title, parsedUrl.href)
+    window.history.replaceState(window.history.state, window.document.title, parsedUrl.href)
 }
 
 function camelCaseToUnderscore(input: string): string {

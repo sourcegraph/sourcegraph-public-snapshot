@@ -40,7 +40,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                 }
             }
         }`,
-        { query: options.query, scopeQuery: options.scopeQuery }
+        { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).map(({ data, errors }) => {
         if (!data || !data.root || !data.root.search2 || !data.root.search2.results) {
             throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -73,7 +73,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                 }
             }
         }`,
-        { query: options.query, scopeQuery: options.scopeQuery }
+        { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).mergeMap(({ data, errors }) => {
         if (!data || !data.root || !data.root.search2 || !data.root.search2.suggestions) {
             throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })

@@ -3,8 +3,11 @@ export interface SearchOptions {
     /** The query entered by the user */
     query: string
 
-    /** The query provided by the active scope */
-    scopeQuery: string
+    /**
+     * The query provided by the active scope. If undefined,
+     * the last-active scope should be used.
+     */
+    scopeQuery: string | undefined
 }
 
 /**
@@ -13,7 +16,9 @@ export interface SearchOptions {
 export function buildSearchURLQuery(options: SearchOptions): string {
     const searchParams = new URLSearchParams()
     searchParams.set('q', options.query)
-    searchParams.set('sq', options.scopeQuery || '')
+    if (typeof options.scopeQuery === 'string') {
+        searchParams.set('sq', options.scopeQuery)
+    }
     return searchParams
         .toString()
         .replace(/%2F/g, '/')
@@ -21,13 +26,18 @@ export function buildSearchURLQuery(options: SearchOptions): string {
 }
 
 /**
- * Parses the SearchOptions out of URL search params
+ * Parses the SearchOptions out of URL search params. If neither the 'q' nor
+ * 'sq' params are present, it returns undefined.
  */
-export function parseSearchURLQuery(query: string): SearchOptions {
+export function parseSearchURLQuery(query: string): SearchOptions | undefined {
     const searchParams = new URLSearchParams(query)
+    if (!searchParams.has('q') && !searchParams.has('sq')) {
+        return undefined
+    }
+    const sq = searchParams.get('sq')
     return {
         query: searchParams.get('q') || '',
-        scopeQuery: searchParams.get('sq') || '',
+        scopeQuery: sq !== null ? sq : undefined,
     }
 }
 

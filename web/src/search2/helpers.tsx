@@ -12,5 +12,5 @@ export function submitSearch(history: H.History, options: SearchOptions): void {
             scopeQuery: options.scopeQuery,
         },
     })
-    history.push(path)
+    history.push(path, { ...history.location.state, ...options })
 }
