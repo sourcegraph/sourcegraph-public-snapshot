@@ -14,23 +14,13 @@ import (
 	"testing"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	oidc "github.com/coreos/go-oidc"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
-
-var appHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "":
-		w.Write([]byte("This is the home"))
-	case "/page":
-		w.Write([]byte("This is a page"))
-	default:
-		http.Error(w, "", http.StatusNotFound)
-	}
-})
 
 // providerJSON is the JSON structure the OIDC provider returns at its discovery endpoing
 type providerJSON struct {
@@ -41,7 +31,7 @@ type providerJSON struct {
 	UserInfoURL string `json:"userinfo_endpoint"`
 }
 
-var testUser = "bob-test-user"
+var testOIDCUser = "bob-test-user"
 
 // new OIDCIDServer returns a new running mock OIDC ID Provider service. It is the caller's
 // responsibility to call Close().
@@ -94,14 +84,14 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 			"profile": "This is a profile",
 			"email": "bob@foo.com",
 			"email_verified": true
-		}`, testUser)))
+		}`, testOIDCUser)))
 	})
 
 	srv := httptest.NewServer(s)
 
 	// Mock user
 	localstore.Mocks.Users.GetByAuth0ID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
-		if uid == srv.URL+":"+testUser {
+		if uid == srv.URL+":"+testOIDCUser {
 			return &sourcegraph.User{ID: 123, Auth0ID: uid, Username: uid}, nil
 		}
 		return nil, fmt.Errorf("user %q not found in mock", uid)
@@ -134,13 +124,14 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 		return &oidc.IDToken{
 			Issuer:  oidcIDServer.URL,
-			Subject: testUser,
+			Subject: testOIDCUser,
 			Expiry:  time.Now().Add(time.Hour),
 			Nonce:   validState, // we re-use the state param as the nonce
 		}
 	}
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), appHandler, appURL)
+	testOIDCUserUID := fmt.Sprintf("%s:%s", oidcIDProvider, testOIDCUser)
+	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, testOIDCUserUID), appURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,6 +211,11 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		resp := doRequest("GET", appURL+"/nonexistent", "", authCookies)
 		checkEq(t, http.StatusNotFound, resp.StatusCode, "wrong response code")
 	}
+	{
+		t.Logf("verify actor gets set in request context")
+		resp := doRequest("GET", appURL+"/require-authn", "", authCookies)
+		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
+	}
 }
 
 func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
@@ -246,13 +242,13 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 		}
 		return &oidc.IDToken{
 			Issuer:  oidcIDServer.URL,
-			Subject: testUser,
+			Subject: testOIDCUser,
 			Expiry:  time.Now().Add(time.Hour),
 			Nonce:   state, // we re-use the state param as the nonce
 		}
 	}
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), appHandler, appURL)
+	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, ""), appURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,4 +269,26 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
 		checkEq(t, "/", resp.Header.Get("Location"), "wrong redirect URL") // Redirect to "/", NOT "http://evil.com"
 	}
+}
+
+// newAppHandler returns a new mock app handler meant to be wrapped by the OIDC handler
+func newAppHandler(t *testing.T, mockedUserID string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "":
+			w.Write([]byte("This is the home"))
+		case "/page":
+			w.Write([]byte("This is a page"))
+		case "/require-authn":
+			actr := actor.FromContext(r.Context())
+			if actr.UID == "" {
+				t.Errorf("in authn expected-endpoint, no actor was set; expected actor with UID %q", mockedUserID)
+			} else if actr.UID != mockedUserID {
+				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %q != %q", actr.UID, mockedUserID)
+			}
+			w.Write([]byte("Authenticated"))
+		default:
+			http.Error(w, "", http.StatusNotFound)
+		}
+	})
 }

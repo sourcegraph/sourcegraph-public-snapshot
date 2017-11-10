@@ -110,6 +110,9 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		// TODO: need to document these attributes (need to configure IdP to provide these)
 		email := r.Header.Get("X-Saml-Email")
 		login := r.Header.Get("X-Saml-Login")
+		if login == "" {
+			login = r.Header.Get("X-Saml-Uid")
+		}
 		displayName := r.Header.Get("X-Saml-DisplayName")
 		if displayName == "" {
 			displayName = login

@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -17,8 +18,12 @@ import (
 	"testing"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"github.com/crewjam/saml/samlidp"
 )
@@ -144,6 +149,15 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
+	// Mock user
+	mockedUserID := idpHTTPServer.URL + "/metadata:testuser_id"
+	localstore.Mocks.Users.GetByAuth0ID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
+		if uid == mockedUserID {
+			return &sourcegraph.User{ID: 123, Auth0ID: uid, Username: uid}, nil
+		}
+		return nil, fmt.Errorf("user %q not found in mock", uid)
+	}
+
 	// Set SAML global parameters
 	var err error
 	samlSPCert = testSAMLSPCert
@@ -161,6 +175,14 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 			w.Write([]byte("This is the home"))
 		case "/page":
 			w.Write([]byte("This is a page"))
+		case "/require-authn":
+			actr := actor.FromContext(r.Context())
+			if actr.UID == "" {
+				t.Errorf("in authn expected-endpoint, no actor was set; expected actor with UID %q", mockedUserID)
+			} else if actr.UID != mockedUserID {
+				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %q != %q", actr.UID, mockedUserID)
+			}
+			w.Write([]byte("Authenticated"))
 		default:
 			http.Error(w, "", http.StatusNotFound)
 		}
@@ -191,7 +213,8 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		authnCookies    []*http.Cookie
 		authnRequestURL string
 	)
-	{ // unauthenticated homepage visit -> IDP SSO URL
+	{
+		t.Logf("unauthenticated homepage visit -> IDP SSO URL")
 		resp := doRequest("GET", appURL, "", nil, nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		locURL, err := url.Parse(resp.Header.Get("Location"))
@@ -214,7 +237,8 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	var (
 		loggedInCookies []*http.Cookie
 	)
-	{ // get SP metadata and register SP with IDP
+	{
+		t.Logf("get SP metadata and register SP with IDP")
 		resp := doRequest("GET", appURL+"/.auth/saml/metadata", "", nil, nil)
 		service := samlidp.Service{}
 		if err := xml.NewDecoder(resp.Body).Decode(&service.Metadata); err != nil {
@@ -232,7 +256,8 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 			t.Fatalf("could not register SP with IDP, error: %s, resp: %v", err, resp)
 		}
 	}
-	{ // get SAML assertion from IDP and post the assertion to the SP ACS URL
+	{
+		t.Logf("get SAML assertion from IDP and post the assertion to the SP ACS URL")
 		authnReq, err := http.NewRequest("GET", authnRequestURL, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -250,9 +275,9 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 			ExpireTime: time.Now().Add(24 * time.Hour),
 			Index:      "index",
 
-			NameID:    "name",
-			UserName:  "username",
-			UserEmail: "username@email.com",
+			NameID:    "testuser_id",
+			UserName:  "testuser_username",
+			UserEmail: "testuser@email.com",
 		}
 		if err := (saml.DefaultAssertionMaker{}).MakeAssertion(idpAuthnReq, &session); err != nil {
 			t.Fatal(err)
@@ -277,16 +302,23 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		// save the cookies from the login response
 		loggedInCookies = unexpiredCookies(resp)
 	}
-	{ // authenticated request to home page
+	{
+		t.Logf("authenticated request to home page")
 		resp := doRequest("GET", appURL, "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 		checkEq(t, "This is the home", string(respBody), "wrong response body")
 	}
-	{ // authenticated request to sub page
+	{
+		t.Logf("authenticated request to sub page")
 		resp := doRequest("GET", appURL+"/page", "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 		checkEq(t, "This is a page", string(respBody), "wrong response body")
+	}
+	{
+		t.Logf("verify actor gets set in request context")
+		resp := doRequest("GET", appURL+"/require-authn", "", loggedInCookies, nil)
+		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 	}
 }
