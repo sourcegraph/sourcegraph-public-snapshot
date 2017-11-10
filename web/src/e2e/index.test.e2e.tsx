@@ -1,14 +1,35 @@
 import * as assert from 'assert'
 import { Chromeless } from 'chromeless'
 
+const chromeLauncher = require('chrome-launcher')
+
 describe('Repository component', () => {
     const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'http://localhost:3080'
 
+    let headlessChrome: any
     let chrome: Chromeless<any>
+    before(() => {
+        if (!process.env.SKIP_LAUNCH_CHROME) {
+            // We manually launch chrome w/ chrome launcher because chromeless doesn't offer a way to
+            // launch in headless mode.
+            return chromeLauncher
+                .launch({
+                    startingUrl: baseURL,
+                    port: 9222,
+                    chromeFlags: ['--headless', '--disable-gpu'],
+                })
+                .then((c: any) => (headlessChrome = c))
+        }
+    })
     beforeEach(() => {
         chrome = new Chromeless({ waitTimeout: 20000, launchChrome: false })
     })
     afterEach(() => chrome.end())
+    after(() => {
+        if (headlessChrome) {
+            return headlessChrome.kill()
+        }
+    })
 
     const assertEventuallyEqual = async (expression: () => Promise<any>, value: any, numRetries = 3): Promise<any> => {
         while (true) {
