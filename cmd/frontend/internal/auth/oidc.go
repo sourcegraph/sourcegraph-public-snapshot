@@ -200,8 +200,8 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 
 		actr, err := getActor(ctx, idToken, userInfo)
 		if err != nil {
-			log15.Error("Could not fetch user", "error", err)
-			http.Error(w, "Could not fetch user", http.StatusInternalServerError)
+			log15.Error("Could not get user for OIDC authentication", "error", err)
+			http.Error(w, "Could not get user (a user with your email or username may already exist).", http.StatusInternalServerError)
 			return
 		}
 		if err := session.StartNewSession(w, r, actr, idToken.Expiry); err != nil {
