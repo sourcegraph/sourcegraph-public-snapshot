@@ -11,7 +11,7 @@ fi
 GOBIN="$PWD"/../../vendor/.bin
 env GOBIN=$GOBIN go install -v sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/chromebot
 
-env SRC_APP_URL=http://localhost:3080 ../start.sh &
+env SRC_APP_URL=http://localhost:3080 SHELL=/bin/bash ../dev/start.sh &
 SERVER_PID=$!
 function killServer {
 	kill $SERVER_PID
@@ -19,7 +19,7 @@ function killServer {
 }
 trap killServer EXIT
 
-until curl http://localhost:3080/__version; do
+until [ "$(curl -s -w "%{http_code}" http://localhost:3080/.assets/scripts/app.bundle.js -o /dev/null)" == "200" ]; do
 	sleep 1
 done
 

@@ -110,17 +110,6 @@ func main() {
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
 
-	testFiles, err := filepath.Glob("./dev/e2e/*.test.js")
-	if err != nil {
-		panic(err)
-	}
-	for _, f := range testFiles {
-		pipeline.AddStep(":robot_face:",
-			Cmd(`./dev/drop-entire-local-database.sh`),
-			Cmd("./dev/e2e/run-test.sh "+filepath.Base(f)),
-			ArtifactPaths("dev/e2e/log.html"))
-	}
-
 	pipeline.AddStep(":html:",
 		Cmd("cd web"),
 		Cmd("npm install"),

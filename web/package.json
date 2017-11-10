@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "npm run build-tests && mocha --opts mocha.opts",
+    "test-e2e": "npm run build-tests && mocha --opts mocha.opts.e2e",
     "build": "npm run graphql && npm run webpack",
     "watch": "concurrently --raw \"npm run watch-graphql\" \"npm run webpack -- --watch\"",
     "webpack": "webpack --config webpack.config.ts --profile --colors",
@@ -46,6 +47,7 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.0",
     "chokidar-cli": "^1.2.0",
+    "chromeless": "^1.3.0",
     "concurrently": "^3.5.0",
     "css-loader": "^0.28.4",
     "extract-text-webpack-plugin": "^3.0.0",
