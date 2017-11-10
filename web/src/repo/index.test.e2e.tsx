@@ -79,7 +79,7 @@ describe('Repository component', () => {
                 () => chrome.evaluate(() => (document.querySelector('.rev-switcher__input') as HTMLInputElement).value),
                 'master'
             )
-            // Verify file contents are loaded eventually.
+            // Verify file contents are loaded.
             await chrome.wait(blobTableSelector)
         })
 
@@ -161,8 +161,8 @@ describe('Repository component', () => {
                         host
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/route.go#L17:6`
                 )
-                // Verify file tree is updated.
-                chrome.wait('.tree__row--selected a[data-tree-path="route.go"]')
+                // Verify file tree is highlighting the new path.
+                await chrome.wait('.tree__row--selected a[data-tree-path="route.go"]')
             })
 
             it('does navigation (external repo)', async () => {
@@ -222,7 +222,6 @@ describe('Repository component', () => {
                 })
                 blame.dispatchEvent(ev)
             })
-            await chrome.wait(1000) // wait for URL navigation
             await assertEventuallyEqual(
                 () => chrome.evaluate(() => window.location.href),
                 'https://github.com/gorilla/mux/commit/eac83ba2c004bb759a2875b1f1dbb032adf8bb4a'
