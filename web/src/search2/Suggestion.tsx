@@ -39,7 +39,7 @@ export function createSuggestion(item: GQL.SearchSuggestion2): Suggestion {
         case 'File': {
             const descriptionParts = [basename(item.repository.uri)]
             const dir = dirname(item.name)
-            if (dir !== undefined) {
+            if (dir !== undefined && dir !== '.') {
                 descriptionParts.push(`${dir}/`)
             }
 
@@ -90,10 +90,21 @@ export const SuggestionItem = (props: SuggestionProps) => {
     )
 }
 
+/**
+ * Returns all but the last element of path, or "." if that would be the empty path.
+ */
 function dirname(path: string): string | undefined {
-    return path.split('/').slice(-2, -1)[0]
+    return (
+        path
+            .split('/')
+            .slice(0, -1)
+            .join('/') || '.'
+    )
 }
 
+/**
+ * Returns the last element of path, or "." if path is empty.
+ */
 function basename(path: string): string {
-    return path.split('/').slice(-1)[0]
+    return path.split('/').slice(-1)[0] || '.'
 }
