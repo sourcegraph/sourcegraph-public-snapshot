@@ -99,12 +99,12 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
         return (
             <div className="dir-page">
                 <h1 className="dir-page__head">
-                    <FolderIcon className="icon-inline" />
+                    <FolderIcon className="dir-page__icon icon-inline" />
                     <span>{this.getLastPathPart()}</span>
                 </h1>
-                <table className="dir-page__table table">
+                <table className="dir-page__table table table-hover">
                     <thead>
-                        <tr>
+                        <tr className="dir-page__head-row">
                             {/* empty tds set the structure for the rest of the table to follow */}
                             <td className="dir-page__head-commit-spacer-cell dir-page__empty-cell" />
                             <td className="dir-page__name-cell dir-page__empty-cell" />
@@ -113,11 +113,13 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             <td className="dir-page__date-cell dir-page__empty-cell" />
                             <td className="dir-page__commit-hash-cell dir-page__empty-cell" />
                         </tr>
-                    </thead>
-                    <tbody>
-                        <tr className="dir-page__head-commit">
+                        <tr>
                             <td className="dir-page__head-commit-spacer-cell" />
-                            <td colSpan={2} title={lastCommit && lastCommit.message}>
+                            <td
+                                className="dir-page__commit-message-cell"
+                                colSpan={2}
+                                title={lastCommit && lastCommit.message}
+                            >
                                 {lastCommit && lastCommit.message}
                             </td>
                             <td className="dir-page__committer-cell">
@@ -126,8 +128,8 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             </td>
                             <td>{date}</td>
                             <td
-                                className="dir-page__commit-hash-cell"
                                 title={lastCommit && lastCommit.rev.substring(0, 7)}
+                                className="dir-page__commit-hash-cell"
                             >
                                 {lastCommit && (
                                     <Link
@@ -136,15 +138,18 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                             filePath: this.props.filePath,
                                             rev: lastCommit && lastCommit.rev,
                                         })}
+                                        className="dir-page__commit-hash-link"
                                     >
                                         {lastCommit.rev.substring(0, 7)}
                                     </Link>
                                 )}
                             </td>
                         </tr>
+                    </thead>
+                    <tbody>
                         {this.props.filePath ? (
                             <tr>
-                                <td className="dir-page__return-arrow-cell" colSpan={6}>
+                                <td className="dir-page__return-arrow-cell" colSpan={window.innerWidth <= 1200 ? 4 : 6}>
                                     <span>
                                         <Link
                                             to={
@@ -160,7 +165,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                                       })
                                             }
                                         >
-                                            <ArrowUpParentIcon className="icon-inline" /> ..
+                                            <ArrowUpParentIcon className="icon-inline dir-page__return-arrow-link" /> ..
                                         </Link>
                                     </span>
                                 </td>

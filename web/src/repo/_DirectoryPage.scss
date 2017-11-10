@@ -29,26 +29,22 @@
         border-collapse: collapse;
         table-layout: fixed;
         white-space: nowrap;
+    }
 
-        > thead tr {
-            border: none;
-        }
+    &__head-row {
+        border: none !important;
     }
 
     &__commit-message-cell {
         color: $color-secondary;
-        width: 41%;
-
-        @media screen and (min-width: $media-xl) {
-            width: 46%;
-        }
+        opacity: 0.75;
     }
 
     &__committer-cell {
-        width: 19%;
+        width: 16%;
 
-        @media screen and (min-width: $media-xl) {
-            width: 16%;
+        @media screen and (max-width: $media-xl) {
+            display: none;
         }
 
         .avatar-icon {
@@ -63,54 +59,55 @@
     }
 
     &__date-cell {
-        width: 14%;
+        width: 20%;
+
         @media screen and (min-width: $media-xl) {
-            width: 10%;
+            min-width: 12%;
         }
     }
 
     &__commit-hash-cell {
-        width: 10%;
+        width: 4.75rem;
         font-family: monospace;
-        @media screen and (min-width: $media-xl) {
-            width: 8%;
+
+        @media screen and (max-width: $media-xl) {
+            display: none;
         }
     }
 
-    &__name-cell,
-    &__return-arrow-cell {
-        width: 16%;
+    &__commit-hash-link {
+        color: inherit;
+    }
+
+    &__name-cell {
+        width: 18%;
+
         @media screen and (min-width: $media-xl) {
             width: 15%;
         }
-
-        .truncated {
-            display: flex;
-            align-items: center;
-
-            .name-link {
-                white-space: nowrap;
-                text-overflow: ellipsis;
-                overflow: hidden;
-            }
-        }
     }
 
-    .icon-inline {
+    &__return-arrow-cell {
+        width: 100%;
+    }
+
+    &__return-arrow-link {
+        color: $color-text;
+    }
+
+    &__icons-centered {
+        display: flex;
+        align-items: center;
+    }
+
+    &__name-link {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        color: inherit;
+    }
+
+    &__icon {
         margin-right: 0.4rem;
-    }
-
-    &__row {
-        border-bottom: 1px solid #2a3a51;
-        &:hover {
-            background-color: rgba(57, 77, 105, 0.2);
-            color: white;
-
-            a,
-            .dir-page__commit-message-cell,
-            .dir-page-entry__commit-message-cell {
-                color: white;
-            }
-        }
     }
 }

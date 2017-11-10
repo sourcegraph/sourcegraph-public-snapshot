@@ -81,11 +81,11 @@ export class DirectoryPageEntry extends React.PureComponent<Props, State> {
                         colSpan={2}
                         title={this.getLastPathPart(this.props.filePath)}
                     >
-                        <span className="truncated">
+                        <span className="dir-page__icons-centered">
                             {this.props.isDirectory ? (
-                                <FolderIcon className="icon-inline" />
+                                <FolderIcon className="dir-page__icon icon-inline" />
                             ) : (
-                                <FileIcon className="icon-inline" />
+                                <FileIcon className="dir-page__icon icon-inline" />
                             )}
                             {this.props.isDirectory ? (
                                 <Link
@@ -94,7 +94,7 @@ export class DirectoryPageEntry extends React.PureComponent<Props, State> {
                                         filePath: this.props.filePath,
                                         rev: this.props.rev,
                                     })}
-                                    className={'name-link'}
+                                    className="dir-page__name-link"
                                 >
                                     {this.getLastPathPart(this.props.filePath)}
                                 </Link>
@@ -105,14 +105,17 @@ export class DirectoryPageEntry extends React.PureComponent<Props, State> {
                                         filePath: this.props.filePath,
                                         rev: this.props.rev,
                                     })}
-                                    className={'name-link'}
+                                    className="dir-page__name-link"
                                 >
                                     {this.getLastPathPart(this.props.filePath)}
                                 </Link>
                             )}
                         </span>
                     </td>
-                    <td className="dir-page-entry-entry__commit-message-cell" title={lastCommit && lastCommit.message}>
+                    <td
+                        className="dir-page-entry__commit-message-cell dir-page-entry__commit-message-cell"
+                        title={lastCommit && lastCommit.message}
+                    >
                         {lastCommit && lastCommit.message}
                     </td>
                     <td className="dir-page-entry__committer-cell" title={person ? person.name : undefined}>
@@ -123,8 +126,8 @@ export class DirectoryPageEntry extends React.PureComponent<Props, State> {
                         {date}
                     </td>
                     <td
-                        className="dir-page-entry__commit-hash-cell"
                         title={lastCommit && lastCommit.rev.substring(0, 7)}
+                        className="dir-page-entry__commit-hash-cell"
                     >
                         <Link
                             to={toBlobURL({
@@ -132,6 +135,7 @@ export class DirectoryPageEntry extends React.PureComponent<Props, State> {
                                 filePath: this.props.filePath,
                                 rev: lastCommit && lastCommit.rev,
                             })}
+                            className="dir-page-entry__commit-hash-link"
                         >
                             {lastCommit && lastCommit.rev.substring(0, 7)}
                         </Link>
