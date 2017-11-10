@@ -201,7 +201,7 @@ export const CommentsPage = reactive<Props>(props => {
                                     Sign in to comment
                                 </Link>
                             ))}
-                        {sharedItem && SecurityWidget(sharedItem)}
+                        {sharedItem && <SecurityWidget sharedItem={sharedItem} />}
                     </div>
                 </div>
             )

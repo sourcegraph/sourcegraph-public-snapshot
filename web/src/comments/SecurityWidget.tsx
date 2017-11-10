@@ -2,8 +2,12 @@ import LockIcon from '@sourcegraph/icons/lib/Lock'
 import UnlockIcon from '@sourcegraph/icons/lib/Unlock'
 import * as React from 'react'
 
-export function SecurityWidget(sharedItem: GQL.ISharedItem): JSX.Element | null {
-    if (sharedItem.public) {
+interface Props {
+    sharedItem: GQL.ISharedItem
+}
+
+export function SecurityWidget(props: Props): JSX.Element | null {
+    if (props.sharedItem.public) {
         return (
             <div className="security-widget">
                 <div className="security-widget__main-label">
