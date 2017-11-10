@@ -10,6 +10,21 @@ describe('Repository component', () => {
     })
     afterEach(() => chrome.end())
 
+    const assertEventuallyEqual = async (expression: () => Promise<any>, value: any, numRetries = 3): Promise<any> => {
+        while (true) {
+            try {
+                assert.deepEqual(await expression(), value)
+                break
+            } catch (e) {
+                numRetries -= 1
+                if (numRetries <= 0) {
+                    throw e
+                }
+                await new Promise<any>(resolve => setTimeout(resolve, 5000))
+            }
+        }
+    }
+
     const assertTreePathSelected = async (filePath: string): Promise<void> => {
         await chrome.wait('.tree__row--selected')
         assert.deepEqual(await chrome.exists(`.tree__row--selected a[data-tree-path="${filePath}"]`), true)
@@ -40,8 +55,8 @@ describe('Repository component', () => {
         it('does navigation on click', async () => {
             await chrome.goto(`http://${host}:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7`)
             await chrome.click(`a[data-tree-path="mux.go"]`)
-            assert.deepEqual(
-                await chrome.evaluate(() => window.location.href),
+            await assertEventuallyEqual(
+                () => chrome.evaluate(() => window.location.href),
                 `http://${host}:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go`
             )
         })
@@ -58,8 +73,8 @@ describe('Repository component', () => {
         it('shows clone in progress interstitial page', async () => {
             await chrome.goto(`http://${host}:3080/github.com/sourcegraphtest/AlwaysCloningTest`)
             await chrome.wait('.hero-page')
-            assert.deepEqual(
-                await chrome.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent),
+            await assertEventuallyEqual(
+                () => chrome.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent),
                 'Cloning in progress'
             )
         })
@@ -67,8 +82,8 @@ describe('Repository component', () => {
         it('resolves default branch when unspecified', async () => {
             await chrome.goto(`http://${host}:3080/github.com/gorilla/mux/-/blob/mux.go`)
             await chrome.wait('.rev-switcher__input')
-            assert.deepEqual(
-                await chrome.evaluate(() => (document.querySelector('.rev-switcher__input') as HTMLInputElement).value),
+            await assertEventuallyEqual(
+                () => chrome.evaluate(() => (document.querySelector('.rev-switcher__input') as HTMLInputElement).value),
                 'master'
             )
             // Verify file contents are loaded eventually.
@@ -77,12 +92,10 @@ describe('Repository component', () => {
 
         it('updates rev with switcher', async () => {
             await chrome.goto(`http://${host}:3080/github.com/gorilla/mux/-/blob/mux.go`)
-            await chrome.wait('.rev-switcher__input')
             await chrome.click('.rev-switcher__input')
-            await chrome.wait('.rev-switcher__rev[title="v1.1"]')
             await chrome.click('.rev-switcher__rev[title="v1.1"]')
-            assert.deepEqual(
-                await chrome.evaluate(() => window.location.href),
+            await assertEventuallyEqual(
+                () => chrome.evaluate(() => window.location.href),
                 `http://${host}:3080/github.com/gorilla/mux@v1.1/-/blob/mux.go`
             )
         })
@@ -95,8 +108,8 @@ describe('Repository component', () => {
             )
             await clickToken(21, 3)
             await getTooltipDoc() // verify there is a tooltip
-            assert.deepEqual(
-                await chrome.evaluate(() => window.location.href),
+            await assertEventuallyEqual(
+                () => chrome.evaluate(() => window.location.href),
                 `http://${
                     host
                 }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6`
@@ -109,7 +122,7 @@ describe('Repository component', () => {
                     host
                 }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6`
             )
-            assert.deepEqual(await getTooltipDoc(), `NewRouter returns a new router instance. \n`)
+            await assertEventuallyEqual(getTooltipDoc, `NewRouter returns a new router instance. \n`)
         })
 
         describe('jump to definition', () => {
@@ -120,8 +133,8 @@ describe('Repository component', () => {
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6`
                 )
                 await clickTooltipJ2D()
-                assert.deepEqual(
-                    await chrome.evaluate(() => window.location.href),
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => window.location.href),
                     `http://${
                         host
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6`
@@ -134,8 +147,8 @@ describe('Repository component', () => {
                 )
                 await clickToken(21, 8)
                 await clickTooltipJ2D()
-                assert.deepEqual(
-                    await chrome.evaluate(() => window.location.href),
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => window.location.href),
                     `http://${
                         host
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L43:6`
@@ -149,8 +162,8 @@ describe('Repository component', () => {
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L22:47`
                 )
                 await clickTooltipJ2D()
-                assert.deepEqual(
-                    await chrome.evaluate(() => window.location.href),
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => window.location.href),
                     `http://${
                         host
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/route.go#L17:6`
@@ -166,8 +179,8 @@ describe('Repository component', () => {
                     }:3080/github.com/gorilla/sessions@a3acf13e802c358d65f249324d14ed24aac11370/-/blob/sessions.go#L134:10`
                 )
                 await clickTooltipJ2D()
-                assert.deepEqual(
-                    await chrome.evaluate(() => window.location.href),
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => window.location.href),
                     `http://${host}:3080/github.com/gorilla/context@HEAD/-/blob/context.go#L20:6`
                 )
             })
@@ -181,15 +194,14 @@ describe('Repository component', () => {
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:19`
                 )
                 await clickTooltipFindRefs()
-                assert.deepEqual(
-                    await chrome.evaluate(() => window.location.href),
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => window.location.href),
                     `http://${
                         host
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:19$references`
                 )
-                await chrome.wait(15000) // wait to fetch references
-                assert.deepEqual(
-                    await chrome.evaluate(() => document.querySelector('.references-widget__badge')!.textContent),
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => document.querySelector('.references-widget__badge')!.textContent),
                     '45'
                 )
             })
