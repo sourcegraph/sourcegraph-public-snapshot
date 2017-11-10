@@ -36,9 +36,11 @@ interface State {
 export class SearchPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
+
+        const searchOptions = parseSearchURLQuery(props.location.search)
         this.state = {
             userQuery: '',
-            scopeQuery: undefined,
+            scopeQuery: searchOptions ? searchOptions.scopeQuery : undefined,
             fieldsQuery: '',
         }
     }
