@@ -1,10 +1,12 @@
 import FileIcon from '@sourcegraph/icons/lib/File'
+import FolderIcon from '@sourcegraph/icons/lib/Folder'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
 
 export const enum SuggestionType {
     Repo = 'repo',
     File = 'file',
+    Dir = 'dir',
 }
 
 export interface Suggestion {
@@ -44,11 +46,11 @@ export function createSuggestion(item: GQL.SearchSuggestion2): Suggestion {
             }
 
             return {
-                type: SuggestionType.File,
                 title: basename(item.name),
                 description: descriptionParts.join(' — '),
-                url: `/${item.repository.uri}/-/blob/${item.name}`,
-                urlLabel: 'go to file',
+                type: item.isDirectory ? SuggestionType.Dir : SuggestionType.File,
+                url: `/${item.repository.uri}/-/${item.isDirectory ? 'tree' : 'blob'}/${item.name}`,
+                urlLabel: item.isDirectory ? 'go to dir' : 'go to file',
             }
         }
     }
@@ -57,6 +59,7 @@ export function createSuggestion(item: GQL.SearchSuggestion2): Suggestion {
 const iconForType: { [key: string]: React.ComponentType<{ className: string }> } = {
     repo: RepoIcon,
     file: FileIcon,
+    dir: FolderIcon,
 }
 
 export interface SuggestionProps {

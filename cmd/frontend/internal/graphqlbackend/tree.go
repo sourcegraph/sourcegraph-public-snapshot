@@ -38,15 +38,6 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 		return nil, err
 	}
 
-	if recursive {
-		var files []os.FileInfo
-		for _, info := range entries {
-			if !info.Mode().IsDir() {
-				files = append(files, info)
-			}
-		}
-		entries = files
-	}
 	return &treeResolver{
 		commit:  commit,
 		path:    path,
@@ -54,32 +45,35 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 	}, nil
 }
 
-func (r *treeResolver) Directories() []*fileResolver {
+func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool) []*fileResolver {
 	var l []*fileResolver
 	for _, entry := range r.entries {
-		if entry.Mode().IsDir() {
+		if filter == nil || filter(entry) {
 			l = append(l, &fileResolver{
 				commit: r.commit,
 				name:   entry.Name(),
 				path:   path.Join(r.path, entry.Name()),
+				stat:   entry,
 			})
 		}
 	}
 	return l
 }
 
+func (r *treeResolver) Entries() []*fileResolver {
+	return r.toFileResolvers(nil)
+}
+
+func (r *treeResolver) Directories() []*fileResolver {
+	return r.toFileResolvers(func(fi os.FileInfo) bool {
+		return fi.Mode().IsDir()
+	})
+}
+
 func (r *treeResolver) Files() []*fileResolver {
-	var l []*fileResolver
-	for _, entry := range r.entries {
-		if !entry.Mode().IsDir() {
-			l = append(l, &fileResolver{
-				commit: r.commit,
-				name:   entry.Name(),
-				path:   path.Join(r.path, entry.Name()),
-			})
-		}
-	}
-	return l
+	return r.toFileResolvers(func(fi os.FileInfo) bool {
+		return !fi.Mode().IsDir()
+	})
 }
 
 func (r *fileResolver) Tree(ctx context.Context) (*treeResolver, error) {

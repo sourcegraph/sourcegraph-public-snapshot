@@ -435,10 +435,23 @@ type Person {
 type Tree {
   directories: [Directory]!
   files: [File]!
+  # Consists of directories plus files.
+  entries: [TreeEntry!]!
 }
 
-type Directory {
+# A file, directory, or other tree entry.
+interface TreeEntry {
   name: String!
+  isDirectory: Boolean!
+  repository: Repository!
+  commits: [CommitInfo!]!
+  lastCommit: CommitInfo!
+}
+
+type Directory implements TreeEntry {
+  name: String!
+  isDirectory: Boolean!
+  repository: Repository!
   commits: [CommitInfo!]!
   lastCommit: CommitInfo!
   tree: Tree!
@@ -449,7 +462,7 @@ type HighlightedFile {
   html: String!
 }
 
-type File {
+type File implements TreeEntry {
   name: String!
   content: String!
   repository: Repository!

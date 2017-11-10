@@ -77,7 +77,7 @@ func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchR
 				done <- nil
 			}
 		}()
-		fileResults, err := searchFiles(ctx, matcher{query: args.Query}, args.Repositories, limit)
+		fileResults, err := searchTree(ctx, matcher{query: args.Query}, args.Repositories, limit)
 		if err != nil {
 			done <- err
 			return
@@ -193,8 +193,8 @@ type matcher struct {
 	scorerQuery string                 // effective query to use in stringscore algorithm
 }
 
-// searchFiles searches the specified repositories for files whose name matches the matcher.
-func searchFiles(ctx context.Context, matcher matcher, repoURIs []string, limit int) ([]*searchResultResolver, error) {
+// searchTree searches the specified repositories for files and dirs whose name matches the matcher.
+func searchTree(ctx context.Context, matcher matcher, repoURIs []string, limit int) ([]*searchResultResolver, error) {
 	var (
 		resMu sync.Mutex
 		res   []*searchResultResolver
@@ -203,7 +203,7 @@ func searchFiles(ctx context.Context, matcher matcher, repoURIs []string, limit 
 	for _, repoURI := range repoURIs {
 		repoURI := repoURI
 		go func() {
-			fileResults, err := searchFilesForRepoURI(ctx, matcher, repoURI, limit)
+			fileResults, err := searchTreeForRepoURI(ctx, matcher, repoURI, limit)
 			if err != nil {
 				done <- err
 				return
@@ -225,9 +225,9 @@ func searchFiles(ctx context.Context, matcher matcher, repoURIs []string, limit 
 
 var mockSearchFilesForRepoURI func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error)
 
-// searchFilesForRepoURI searches the specified repository for files whose name matches
+// searchTreeForRepoURI searches the specified repository for files whose name matches
 // the matcher
-func searchFilesForRepoURI(ctx context.Context, matcher matcher, repoURI string, limit int) (res []*searchResultResolver, err error) {
+func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoURI string, limit int) (res []*searchResultResolver, err error) {
 	if mockSearchFilesForRepoURI != nil {
 		return mockSearchFilesForRepoURI(matcher, repoURI, limit)
 	}
@@ -267,7 +267,7 @@ func searchFilesForRepoURI(ctx context.Context, matcher matcher, repoURI string,
 	}
 
 	scorer := newScorer(scorerQuery)
-	for _, fileResolver := range treeResolver.Files() {
+	for _, fileResolver := range treeResolver.Entries() {
 		score := scorer.calcScore(fileResolver)
 		if score <= 0 && matcher.scorerQuery != "" {
 			score = 1 // minimum to ensure everything included by match.match is included

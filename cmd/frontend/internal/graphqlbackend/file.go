@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -21,11 +22,25 @@ type fileResolver struct {
 	commit commitSpec
 	name   string
 	path   string
+
+	// stat is populated by the creator of this fileResolver if it has this
+	// information available. Not all creators will have the stat info; in
+	// that case, some fileResolver methods have to look up the information
+	// on their own.
+	stat os.FileInfo
+
+	// repo is populated by the creator of this fileResolver if it has this
+	// information available.
+	repo *repositoryResolver
 }
 
 func (r *fileResolver) Name() string {
 	return r.name
 }
+
+func (r *fileResolver) ToDirectory() *fileResolver { return r }
+
+func (r *fileResolver) ToFile() *fileResolver { return r }
 
 func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -45,6 +60,11 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 }
 
 func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
+	// Return immediately if we know our stat.
+	if r.stat != nil {
+		return r.stat.Mode().IsDir(), nil
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -314,3 +334,24 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 		},
 	}, nil
 }
+
+func createFileInfo(path string, isDir bool) os.FileInfo {
+	return fileInfo{path: path, isDir: isDir}
+}
+
+type fileInfo struct {
+	path  string
+	isDir bool
+}
+
+func (f fileInfo) Name() string { return f.path }
+func (f fileInfo) Size() int64  { return 0 }
+func (f fileInfo) IsDir() bool  { return f.isDir }
+func (f fileInfo) Mode() os.FileMode {
+	if f.IsDir() {
+		return os.ModeDir
+	}
+	return 0
+}
+func (f fileInfo) ModTime() time.Time { return time.Now() }
+func (f fileInfo) Sys() interface{}   { return interface{}(nil) }

@@ -104,6 +104,8 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 					path:   path,
 					name:   path,
 					commit: commitSpec{DefaultBranch: repo.DefaultBranch, RepoID: repo.ID},
+					stat:   createFileInfo(path, false),
+					repo:   &repositoryResolver{repo: repo},
 				}
 				suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))
 			}
