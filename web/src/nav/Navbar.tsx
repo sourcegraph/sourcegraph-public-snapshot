@@ -31,6 +31,11 @@ export class Navbar extends React.Component<Props, State> {
                     <SearchBox12 history={this.props.history} location={this.props.location} />
                 </div>
                 <div className="navbar__right">
+                    {!window.context.onPrem && (
+                        <a href="https://about.sourcegraph.com" className="navbar__nav-link">
+                            About
+                        </a>
+                    )}
                     {(() => {
                         if (window.context.user) {
                             return (

@@ -52,7 +52,7 @@ export class SearchPage extends React.Component<Props, State> {
             <div className="search-page2">
                 <PageTitle title={this.getPageTitle()} />
                 <div className="search-page2__nav">
-                    {!window.context.user && (
+                    {!window.context.onPrem && (
                         <a href="https://about.sourcegraph.com" className="search-page2__nav-link">
                             About
                         </a>

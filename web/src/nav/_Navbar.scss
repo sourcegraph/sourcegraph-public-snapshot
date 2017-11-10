@@ -14,6 +14,7 @@
         display: flex;
         padding-right: 1rem;
         justify-content: flex-end;
+        align-items: center;
 
         .avatar,
         .avatar-icon {
@@ -23,7 +24,7 @@
     }
 
     &__logo-link,
-    &__right-contents a {
+    &__nav-link {
         outline: 0;
         margin: 0px 1rem;
         display: flex;
