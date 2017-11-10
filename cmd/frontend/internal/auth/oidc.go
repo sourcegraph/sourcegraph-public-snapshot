@@ -230,7 +230,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 }
 
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
-// Because Actors must correspond to users in our DB, it creates the user in the DB if the user does noet yet
+// Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
 // exist.
 func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, error) {
 	var claims struct {
