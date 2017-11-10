@@ -150,7 +150,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	defer idpHTTPServer.Close()
 
 	// Mock user
-	mockedUserID := idpHTTPServer.URL + "/metadata:testuser_id"
+	mockedUserID := samlToAuthID(idpHTTPServer.URL+"/metadata", "testuser_id")
 	localstore.Mocks.Users.GetByAuth0ID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
 		if uid == mockedUserID {
 			return &sourcegraph.User{ID: 123, Auth0ID: uid, Username: uid}, nil

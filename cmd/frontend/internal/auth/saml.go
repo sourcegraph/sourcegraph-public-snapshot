@@ -89,6 +89,8 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	}), nil
 }
 
+// samlToActorMiddleware translates the SAML session into an Actor and sets it in the request context
+// before delegating to its child handler.
 func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actr, err := getActorFromSAML(r, idpID)
@@ -100,14 +102,14 @@ func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
 	})
 }
 
+// getActorFromSAML translates the SAML session into an Actor.
 func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	ctx := r.Context()
 	subject := r.Header.Get("X-Saml-Subject") // this header is set by the SAML library after extracting the value from the JWT cookie
-	authID := fmt.Sprintf("%s:%s", idpID, subject)
+	authID := samlToAuthID(idpID, subject)
 
 	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)
 	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
-		// TODO: need to document these attributes (need to configure IdP to provide these)
 		email := r.Header.Get("X-Saml-Email")
 		login := r.Header.Get("X-Saml-Login")
 		if login == "" {
@@ -137,4 +139,8 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		return nil, err
 	}
 	return actor.FromUser(usr), nil
+}
+
+func samlToAuthID(idpID, subject string) string {
+	return fmt.Sprintf("%s:%s", idpID, subject)
 }

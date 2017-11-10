@@ -130,7 +130,7 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 	}
 
-	testOIDCUserUID := fmt.Sprintf("%s:%s", oidcIDProvider, testOIDCUser)
+	testOIDCUserUID := oidcToAuthID(oidcIDProvider, testOIDCUser)
 	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, testOIDCUserUID), appURL)
 	if err != nil {
 		t.Fatal(err)
@@ -271,7 +271,7 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 	}
 }
 
-// newAppHandler returns a new mock app handler meant to be wrapped by the OIDC handler
+// newAppHandler returns a new mock app handler meant to be wrapped by the OIDC handler in tests.
 func newAppHandler(t *testing.T, mockedUserID string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

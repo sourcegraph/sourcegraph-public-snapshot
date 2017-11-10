@@ -245,7 +245,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	}
 
 	provider := idToken.Issuer
-	uid := fmt.Sprintf("%s:%s", provider, idToken.Subject)
+	uid := oidcToAuthID(provider, idToken.Subject)
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
@@ -314,4 +314,8 @@ func (s *authnState) Decode(encoded string) error {
 		return err
 	}
 	return json.Unmarshal(b, s)
+}
+
+func oidcToAuthID(provider, subject string) string {
+	return fmt.Sprintf("%s:%s", provider, subject)
 }
