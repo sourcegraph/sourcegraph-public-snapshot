@@ -59,8 +59,11 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 
 	showFileSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
+		// If the user query has a file: filter AND a term, then abort; we will use showFilesWithTextMatches
+		// instead.
 		hasRepoOrFileFields := len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) > 0 || len(r.combinedQuery.fieldValues[searchFieldRepo]) > 0 || len(r.combinedQuery.fieldValues[searchFieldFile]) > 0
-		if hasRepoOrFileFields && len(r.combinedQuery.fieldValues[""]) <= 1 {
+		userQueryHasFileFilterAndTerm := len(r.query.fieldValues[searchFieldFile]) > 0 && len(r.query.fieldValues[""]) > 0
+		if hasRepoOrFileFields && len(r.combinedQuery.fieldValues[""]) <= 1 && !userQueryHasFileFilterAndTerm {
 			return r.resolveFiles(ctx)
 		}
 		return nil, nil
