@@ -25,11 +25,6 @@ describe('Repository component', () => {
         }
     }
 
-    const assertTreePathSelected = async (filePath: string): Promise<void> => {
-        await chrome.wait('.tree__row--selected')
-        assert.deepEqual(await chrome.exists(`.tree__row--selected a[data-tree-path="${filePath}"]`), true)
-    }
-
     const blobTableSelector = '.repository__viewer > div > table > tbody'
     const clickToken = async (line: number, spanOffset: number): Promise<void> => {
         await chrome.wait(blobTableSelector)
@@ -43,11 +38,9 @@ describe('Repository component', () => {
 
     const tooltipActionsSelector = '.sg-tooltip > .tooltip__actions'
     const clickTooltipJ2D = async (): Promise<void> => {
-        await chrome.wait(tooltipActionsSelector)
         await chrome.click(`${tooltipActionsSelector} > a:nth-child(1)`)
     }
     const clickTooltipFindRefs = async (): Promise<void> => {
-        await chrome.wait(tooltipActionsSelector)
         await chrome.click(`${tooltipActionsSelector} > a:nth-child(2)`)
     }
 
@@ -65,7 +58,7 @@ describe('Repository component', () => {
             await chrome.goto(
                 `http://${host}:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go`
             )
-            await assertTreePathSelected('mux.go')
+            await chrome.wait('.tree__row--selected a[data-tree-path="mux.go"]')
         })
     })
 
@@ -169,7 +162,7 @@ describe('Repository component', () => {
                     }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/route.go#L17:6`
                 )
                 // Verify file tree is updated.
-                await assertTreePathSelected('route.go')
+                chrome.wait('.tree__row--selected a[data-tree-path="route.go"]')
             })
 
             it('does navigation (external repo)', async () => {
@@ -230,8 +223,8 @@ describe('Repository component', () => {
                 blame.dispatchEvent(ev)
             })
             await chrome.wait(1000) // wait for URL navigation
-            assert.deepEqual(
-                await chrome.evaluate(() => window.location.href),
+            await assertEventuallyEqual(
+                () => chrome.evaluate(() => window.location.href),
                 'https://github.com/gorilla/mux/commit/eac83ba2c004bb759a2875b1f1dbb032adf8bb4a'
             )
         })
@@ -243,11 +236,13 @@ describe('Repository component', () => {
                 }:3080/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L43:6`
             )
             await chrome.wait('.repo-nav__action[title="View on GitHub"]')
-            assert.deepEqual(
-                await chrome.evaluate(
-                    () =>
-                        (document.querySelector('.repo-nav__action[title="View on GitHub"]') as HTMLAnchorElement).href
-                ),
+            await assertEventuallyEqual(
+                () =>
+                    chrome.evaluate(
+                        () =>
+                            (document.querySelector('.repo-nav__action[title="View on GitHub"]') as HTMLAnchorElement)
+                                .href
+                    ),
                 'https://github.com/gorilla/mux/blob/24fca303ac6da784b9e8269f724ddeb0b2eea5e7/mux.go#L43'
             )
         })
