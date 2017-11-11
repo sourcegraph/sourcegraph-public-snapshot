@@ -120,6 +120,9 @@ func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Co
 	return authenticateByCookie(fakeRequest.WithContext(ctx))
 }
 
+// SessionHeaderToCookieMiddleware checks the request for a HTTP Authorization header that contains a
+// session value. If it exists, then it sets the session cookie in the request before forwarding
+// to the next handler in the chain.
 func SessionHeaderToCookieMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
