@@ -281,37 +281,76 @@ describe('e2e test suite', () => {
             )
         })
 
-        it('renders results for gorilla/mux (w/ search group)', async () => {
-            await chrome.goto(baseURL + '/search')
+        if (baseURL !== 'http://localhost:3080') {
+            // TEMPORARY KLUDGE:
+            // Currently the behavior of search is different on localhost vs. the dogfood server;
+            // on localhost the repo groups are called `repogroup:sample *` while on dogfood they
+            // are `repogroup:active *`.
+            it('renders results for gorilla/mux (w/ search group)', async () => {
+                await chrome.goto(baseURL + '/search')
 
-            // Update the input value
-            await chrome.wait('input')
-            await chrome.type('router repo:gorilla/mux@eac83ba2c004bb759a2875b1f1dbb032adf8bb4a')
+                // Update the input value
+                await chrome.wait('input')
+                await chrome.type('router repo:gorilla/mux@eac83ba2c004bb759a2875b1f1dbb032adf8bb4a')
 
-            // Update the select value
-            await chrome.wait('select')
-            await chrome.evaluate(() => {
-                const select = document.querySelector('select')!
-                select.value = 'repogroup:sample -file:(test|spec)'
-                select.dispatchEvent(new Event('change', { bubbles: true }))
+                // Update the select value
+                await chrome.wait('select')
+                await chrome.evaluate(() => {
+                    const select = document.querySelector('select')!
+                    select.value = 'repogroup:active -file:(test|spec)'
+                    select.dispatchEvent(new Event('change', { bubbles: true }))
+                })
+
+                // Submit the search
+                await chrome.click('button')
+
+                await chrome.wait('.search-results2__badge')
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[0].textContent),
+                    '91' // # results
+                )
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[1].textContent),
+                    '4' // # files
+                )
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[2].textContent),
+                    '1' // # repos
+                )
             })
+        } else {
+            it('renders results for gorilla/mux (w/ search group)', async () => {
+                await chrome.goto(baseURL + '/search')
 
-            // Submit the search
-            await chrome.click('button')
+                // Update the input value
+                await chrome.wait('input')
+                await chrome.type('router repo:gorilla/mux@eac83ba2c004bb759a2875b1f1dbb032adf8bb4a')
 
-            await chrome.wait('.search-results2__badge')
-            await assertEventuallyEqual(
-                () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[0].textContent),
-                '91' // # results
-            )
-            await assertEventuallyEqual(
-                () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[1].textContent),
-                '4' // # files
-            )
-            await assertEventuallyEqual(
-                () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[2].textContent),
-                '1' // # repos
-            )
-        })
+                // Update the select value
+                await chrome.wait('select')
+                await chrome.evaluate(() => {
+                    const select = document.querySelector('select')!
+                    select.value = 'repogroup:sample -file:(test|spec)'
+                    select.dispatchEvent(new Event('change', { bubbles: true }))
+                })
+
+                // Submit the search
+                await chrome.click('button')
+
+                await chrome.wait('.search-results2__badge')
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[0].textContent),
+                    '91' // # results
+                )
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[1].textContent),
+                    '4' // # files
+                )
+                await assertEventuallyEqual(
+                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[2].textContent),
+                    '1' // # repos
+                )
+            })
+        }
     })
 })
