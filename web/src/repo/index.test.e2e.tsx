@@ -220,7 +220,7 @@ describe('Repository component', () => {
                             (document.querySelector('.repo-nav__action[title="View on GitHub"]') as HTMLAnchorElement)
                                 .href
                     ),
-                'https://github.com/gorilla/mux/blob/24fca303ac6da784b9e8269f724ddeb0b2eea5e7/mux.go#L435'
+                'https://github.com/gorilla/mux/blob/24fca303ac6da784b9e8269f724ddeb0b2eea5e7/mux.go#L43'
             )
         })
     })
