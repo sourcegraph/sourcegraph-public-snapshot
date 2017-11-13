@@ -85,7 +85,7 @@ interface SourcegraphContext {
     useSearch2: boolean
 
     /**
-     * Status of license. Possible values: {expired,missing,valid}
+     * Status of license. Possible values: {expired,missing,valid,invalid}
      */
     licenseStatus: string
 }

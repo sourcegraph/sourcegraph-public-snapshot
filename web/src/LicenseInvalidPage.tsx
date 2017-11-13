@@ -2,6 +2,21 @@ import * as React from 'react'
 import { Redirect } from 'react-router-dom'
 import { PageTitle } from './components/PageTitle'
 
+class MailToLink extends React.Component<{}, any> {
+    constructor(props: {}) {
+        super(props)
+    }
+
+    public render(): JSX.Element {
+        const address = 'sales@sourcegraph.com'
+        const encodedSubject = encodeURIComponent('License Request')
+        const encodedBody = encodeURIComponent(
+            'I would like to request a Sourcegraph Server license for my organization, __________'
+        )
+        return <a href={'mailto:' + address + '?subject=' + encodedSubject + '&body=' + encodedBody}>{address}</a>
+    }
+}
+
 export class LicenseInvalidPage extends React.Component<{}, {}> {
     constructor(props: {}) {
         super(props)
@@ -42,20 +57,5 @@ export class LicenseInvalidPage extends React.Component<{}, {}> {
                     </div>
                 )
         }
-    }
-}
-
-class MailToLink extends React.Component<{}, any> {
-    constructor(props: {}) {
-        super(props)
-    }
-
-    public render(): JSX.Element {
-        const address = 'sales@sourcegraph.com'
-        const encodedSubject = encodeURIComponent('License Request')
-        const encodedBody = encodeURIComponent(
-            'I would like to request a Sourcegraph Server license for my organization, __________'
-        )
-        return <a href={'mailto:' + address + '?subject=' + encodedSubject + '&body=' + encodedBody}>{address}</a>
     }
 }
