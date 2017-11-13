@@ -79,10 +79,8 @@ export const CommentsInput = reactive<Props>(props => {
                         </span>
                     )}
                     {!error && <span className="comments-input__markdown-supported">Markdown supported.</span>}
-                    <a href={editorURL}>
-                        <button className="btn btn-primary comments-input__button" type="button" onClick={onOpenEditor}>
-                            Open in Sourcegraph Editor
-                        </button>
+                    <a className="btn btn-primary comments-input__button" href={editorURL} onClick={onOpenEditor}>
+                        Open in Sourcegraph Editor
                     </a>
                     <button type="submit" className="btn btn-primary comments-input__button" disabled={submitting}>
                         Comment

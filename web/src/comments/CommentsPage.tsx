@@ -180,13 +180,12 @@ export const CommentsPage = reactive<Props>(props => {
                             ))}
                         {sharedItem &&
                             sharedItem.thread.comments.length === 0 && (
-                                <a href={editorURL}>
-                                    <button
-                                        className="btn btn-primary btn-block comments-page__reply-in-editor"
-                                        onClick={openEditor}
-                                    >
-                                        Open in Sourcegraph Editor
-                                    </button>
+                                <a
+                                    className="btn btn-primary btn-block comments-page__reply-in-editor"
+                                    href={editorURL}
+                                    onClick={openEditor}
+                                >
+                                    Open in Sourcegraph Editor
                                 </a>
                             )}
                         {sharedItem &&
