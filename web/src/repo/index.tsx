@@ -176,6 +176,13 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     return { repoPath, rev, commitID, filePath: filePath || undefined, position, range }
 }
 
+export function parseRepoRev(repoRev: string): { repoPath: string; rev?: string } {
+    const atIndex = repoRev.indexOf('@')
+    const repoPath = atIndex === -1 ? repoRev : repoRev.substr(0, atIndex)
+    const rev = atIndex === -1 ? undefined : repoRev.substr(atIndex + 1)
+    return { repoPath, rev }
+}
+
 /**
  * Parses the properties of a blob URL.
  */
@@ -201,7 +208,7 @@ export function parseBrowserRepoURL(href: string, w: Window = window): ParsedRep
     } else {
         repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
     }
-    const [repoPath, rev]: (string | undefined)[] = repoRev.split('@')
+    const { repoPath, rev } = parseRepoRev(repoRev)
     if (!repoPath) {
         throw new Error('unexpected repo url: ' + href)
     }

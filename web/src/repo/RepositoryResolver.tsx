@@ -14,6 +14,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { ECLONEINPROGESS, EREPONOTFOUND, fetchPhabricatorRepo, resolveRev } from './backend'
+import { parseRepoRev } from './index'
 import { Repository } from './Repository'
 
 interface Props {
@@ -47,10 +48,11 @@ export class RepositoryResolver extends React.Component<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .switchMap(props => {
-                    if (!props.match.params.repoRev) {
+                    const repoRev = props.match.params.repoRev
+                    if (!repoRev) {
                         return [undefined]
                     }
-                    const [repoPath, rev] = props.match.params.repoRev.split('@')
+                    const { repoPath, rev } = parseRepoRev(repoRev)
                     // Defer Observable so it retries the request on resubscription
                     return (
                         Observable.defer(() => resolveRev({ repoPath, rev }))
@@ -90,7 +92,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                     if (!props.match.params.repoRev) {
                         return [null]
                     }
-                    const [repoPath] = props.match.params.repoRev.split('@')
+                    const { repoPath } = parseRepoRev(props.match.params.repoRev)
                     return fetchPhabricatorRepo({ repoPath }).catch(err => {
                         console.error(err)
                         return []
@@ -129,7 +131,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const [repoPath, rev] = this.props.match.params.repoRev.split('@')
+        const { repoPath, rev } = parseRepoRev(this.props.match.params.repoRev)
         if (this.state.notFound) {
             return (
                 <HeroPage
