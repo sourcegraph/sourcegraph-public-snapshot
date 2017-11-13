@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Redirect } from 'react-router-dom'
+import { PageTitle } from './components/PageTitle'
 
 export class LicenseInvalidPage extends React.Component<{}, {}> {
     constructor(props: {}) {
@@ -12,6 +13,7 @@ export class LicenseInvalidPage extends React.Component<{}, {}> {
         }
         return (
             <div className="license-page">
+                <PageTitle title="License unverified" />
                 <div className="warning-sign">&#9888;</div>
                 {this.renderInternal()}
             </div>
