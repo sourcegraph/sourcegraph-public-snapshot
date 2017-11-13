@@ -1,11 +1,11 @@
 package license
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
 	"golang.org/x/crypto/ssh"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
 )
 
 const (
@@ -54,14 +54,14 @@ func TestLicense(t *testing.T) {
 	{
 		t.Log("unexpired key")
 		l := License{AppID: "test-id", Expiry: &tomorrow}
-		testutil.Check(t, !l.Expired(), "license should not be expired")
+		check(t, !l.Expired(), "license should not be expired")
 
 		sig, err := l.signature(privateKey)
 		if err != nil {
 			t.Fatal(err)
 		}
 		sl := &signedLicense{Signature: sig, License: l}
-		testutil.Check(t, verify(sl, publicKey), "valid signed license failed to verify")
+		check(t, verify(sl, publicKey), "valid signed license failed to verify")
 
 		l2 := License{AppID: "test-id-2", Expiry: &tomorrow}
 		sig2, err := l2.signature(privateKey)
@@ -69,7 +69,7 @@ func TestLicense(t *testing.T) {
 			t.Fatal(err)
 		}
 		sl2Invalid := &signedLicense{Signature: sig2, License: l}
-		testutil.Check(t, !verify(sl2Invalid, publicKey), "invalid license verified successfully")
+		check(t, !verify(sl2Invalid, publicKey), "invalid license verified successfully")
 
 		slEncoded, err := sl.encode()
 		if err != nil {
@@ -79,12 +79,12 @@ func TestLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		testutil.CheckEq(t, sl, slDecoded, "decoded signed license did not match original")
+		checkEq(t, sl, slDecoded, "decoded signed license did not match original")
 	}
 	{
 		t.Log("expired key")
 		l := License{AppID: "test-id", Expiry: &yesterday}
-		testutil.Check(t, l.Expired(), "license should be expired")
+		check(t, l.Expired(), "license should be expired")
 	}
 	{
 		t.Log("generated unexpired key")
@@ -96,9 +96,9 @@ func TestLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		testutil.Check(t, verify(sl, publicKey), "generated license key didn't verify")
-		testutil.CheckEq(t, "test-id", sl.AppID, "AppID didn't match")
-		testutil.Check(t, !sl.Expired(), "license key should not be expired")
+		check(t, verify(sl, publicKey), "generated license key didn't verify")
+		checkEq(t, "test-id", sl.AppID, "AppID didn't match")
+		check(t, !sl.Expired(), "license key should not be expired")
 	}
 	{
 		t.Log("generated expired key")
@@ -110,8 +110,31 @@ func TestLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		testutil.Check(t, verify(sl, publicKey), "generated license key didn't verify")
-		testutil.CheckEq(t, "test-id", sl.AppID, "AppID didn't match")
-		testutil.Check(t, sl.Expired(), "license key should not be expired")
+		check(t, verify(sl, publicKey), "generated license key didn't verify")
+		checkEq(t, "test-id", sl.AppID, "AppID didn't match")
+		check(t, sl.Expired(), "license key should not be expired")
+	}
+}
+
+// check checks if condition is true and errors with errMsg if false.
+func check(t *testing.T, condition bool, errMsg string) {
+	if !condition {
+		t.Error(errMsg)
+	}
+}
+
+// checkEq checks for equality *if* the expected value is non-zero.
+func checkEq(t *testing.T, expected, actual interface{}, errMsg string) {
+	if expected == nil {
+		return
+	}
+	if exp, ok := expected.(int); ok && exp == 0 {
+		return
+	}
+	if exp, ok := expected.(string); ok && exp == "" {
+		return
+	}
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("expected %v, but got %v (%s)", expected, actual, errMsg)
 	}
 }
