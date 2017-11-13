@@ -6,7 +6,7 @@ Developer documentation for the frontend service.
 
 There are two types of authentication:
 
-* **Native authentication** goes through the native login page.
+* **Native authentication** goes through the native login page. Native login still depends on Auth0, but the sign-in page is native to the Sourcegraph UI.
 * **SSO authentication** integrates with external SSO providers such as Okta and OneLogin.
 
 Once a user completes either authentication flow, a session is created that identifies that user to the app. On the server side, the session is validated and then an Actor is stored in the request context. The Actor in the context indicates to the request handlers the identity associated with the current request. SSO and native auth are mutually exclusive, because SSO auth requries sign-in before accessing any part of the app (including the native auth pages), and once a user is signed in, the native login button no longer appears in the UI.
