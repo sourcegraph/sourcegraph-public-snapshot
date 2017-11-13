@@ -1,6 +1,7 @@
 package license
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -79,7 +80,7 @@ func TestLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		checkEq(t, sl, slDecoded, "decoded signed license did not match original")
+		checkEqLicense(t, sl.License, slDecoded.License)
 	}
 	{
 		t.Log("expired key")
@@ -134,7 +135,13 @@ func checkEq(t *testing.T, expected, actual interface{}, errMsg string) {
 	if exp, ok := expected.(string); ok && exp == "" {
 		return
 	}
+
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("expected %v, but got %v (%s)", expected, actual, errMsg)
 	}
+}
+
+func checkEqLicense(t *testing.T, expected, actual License) {
+	checkEq(t, expected.AppID, actual.AppID, "decoded signed license App ID did not match original")
+	check(t, expected.Expiry.Equal(*actual.Expiry), fmt.Sprintf("decoded signed license expiry did not match original (%+v != %+v)", expected.Expiry, actual.Expiry))
 }
