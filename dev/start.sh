@@ -45,7 +45,7 @@ export SRC_SYNTECT_SERVER=http://localhost:3700
 export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
 export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
 
-export LICENSE_KEY=dev_3ca6ae11545ef034c7138d4d87
+export LICENSE_KEY=${LICENSE_KEY:-24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735}
 
 # WebApp
 export NODE_ENV=development

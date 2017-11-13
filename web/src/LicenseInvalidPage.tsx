@@ -36,7 +36,7 @@ export class LicenseInvalidPage extends React.Component<{}, {}> {
             default:
                 return (
                     <div>
-                        Your license was invalid. Please contact <MailToLink /> to obtain a valid license.
+                        Your license is invalid. Please contact <MailToLink /> to obtain a valid license.
                     </div>
                 )
         }
