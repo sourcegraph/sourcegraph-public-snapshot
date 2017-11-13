@@ -83,4 +83,9 @@ interface SourcegraphContext {
      * Enable search2 (new query UX) for all users
      */
     useSearch2: boolean
+
+    /**
+     * Status of license. Possible values: {expired,missing,valid}
+     */
+    licenseStatus: string
 }
