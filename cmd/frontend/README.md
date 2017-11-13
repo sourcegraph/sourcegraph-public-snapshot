@@ -23,7 +23,7 @@ In addition to authentication flow, there are a few differences between SSO and 
 </tr>
 <tr>
     <td>Disabled by default, enabled by environment variable.</td>
-    <td>Enabled by default. Effetively disabled when SSO auth is enabled.</td>
+    <td>Enabled on Sourcegraph.com, disabled everywhere else.</td>
 </tr>
 <tr>
     <td>Requires sign-in to access any part of the frontend.</td>
