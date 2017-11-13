@@ -15,7 +15,7 @@ type searchResults2 struct {
 func (r searchResults2) Alert() *searchAlert { return r.alert }
 
 func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
-	repos, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,14 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) 
 	var results *searchResults2
 	results1, err := r.root.SearchRepos(ctx, &args)
 	if results1 != nil {
-		results = &searchResults2{searchResults: *results1}
+		var alert *searchAlert
+		if len(missingRepoRevs) > 0 {
+			alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		}
+		results = &searchResults2{
+			searchResults: *results1,
+			alert:         alert,
+		}
 	}
 	return results, err
 }

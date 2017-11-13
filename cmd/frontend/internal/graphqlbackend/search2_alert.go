@@ -72,7 +72,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0])
 
-		repos1, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
+		repos1, _, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters.Values())
-		repos2, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
+		repos2, _, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied your repo: filter.", repoGroupFilters[0])
 
-		repos1, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
+		repos1, _, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.description = fmt.Sprintf("No repositories satisfied all of your repo: filters.")
 
 		unionRepoFilter := unionRegExps(repoFilters.Values())
-		repos2, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
+		repos2, _, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +177,7 @@ func (r *searchResolver2) alertForOverRepoLimit(ctx context.Context) (*searchAle
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
-	repos, _, _, err := r.resolveRepositories(ctx, nil)
+	repos, _, _, _, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ outer:
 		}
 
 		repoFieldValues = append(repoFieldValues, repoParentPattern)
-		_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+		_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
 		if err == context.DeadlineExceeded {
 			break
 		} else if err != nil {
@@ -257,6 +257,23 @@ outer:
 	}
 
 	return alert, nil
+}
+
+func (r *searchResolver2) alertForMissingRepoRevs(missingRepoRevs []*repositoryRevision) *searchAlert {
+	var description string
+	if len(missingRepoRevs) == 1 {
+		description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo, *missingRepoRevs[0].Rev)
+	} else {
+		revs := make([]string, 0, len(missingRepoRevs))
+		for _, r := range missingRepoRevs {
+			revs = append(revs, *r.Rev)
+		}
+		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because they do not contain the specified revisions: %s.", len(missingRepoRevs), strings.Join(revs, ", "))
+	}
+	return &searchAlert{
+		title:       "Some repositories could not be searched",
+		description: description,
+	}
 }
 
 func omitQueryFields(r *searchResolver2, field search2.Field) searchQuery {
