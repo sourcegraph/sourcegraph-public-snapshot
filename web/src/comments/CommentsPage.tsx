@@ -113,7 +113,7 @@ export const CommentsPage = reactive<Props>(props => {
 
             const editorURL = toEditorURL(
                 sharedItem.thread.repo.remoteUri,
-                sharedItem.thread.repoRevision,
+                sharedItem.thread.branch || sharedItem.thread.repoRevision,
                 sharedItem.thread.file,
                 { line: sharedItem.thread.startLine },
                 sharedItem.thread.id
