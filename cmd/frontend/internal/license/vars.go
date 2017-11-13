@@ -141,7 +141,7 @@ func WithLicenseGenerator(h http.Handler) http.Handler {
 			} else {
 				w.Write([]byte(fmt.Sprintf("Expiry: %v (%.1f days from now)<br>", expiry, expiry.Sub(time.Now()).Hours()/24)))
 			}
-			w.Write([]byte(fmt.Sprintf(`<a href="data:application/octet-stream,%s" download="sourcegraph-license.txt">Download license key</a><br>`, url.QueryEscape(licenseKey))))
+			w.Write([]byte(fmt.Sprintf(`<a href="data:application/octet-stream,%s" download="sourcegraph-server.sgl">Download license key</a><br>`, url.QueryEscape(licenseKey))))
 			w.Write([]byte("</html>"))
 		}
 
