@@ -14,6 +14,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { addCommentToThread } from './backend'
 
 interface Props {
+    editorURL: string
     onOpenEditor: () => void
     onThreadUpdated: (updatedThread: GQL.ISharedItemThread) => void
     threadID: number
@@ -21,6 +22,7 @@ interface Props {
 }
 
 interface State {
+    editorURL: string
     onOpenEditor: () => void
     textAreaValue: string
     submitting: boolean
@@ -38,7 +40,7 @@ export const CommentsInput = reactive<Props>(props => {
         textAreaChanges.next(e.currentTarget.value)
 
     return Observable.merge(
-        props.map(({ onOpenEditor }): Update => state => ({ ...state, onOpenEditor })),
+        props.map(({ editorURL, onOpenEditor }): Update => state => ({ ...state, editorURL, onOpenEditor })),
 
         textAreaChanges.map((textAreaValue): Update => state => ({ ...state, textAreaValue })),
 
@@ -60,7 +62,7 @@ export const CommentsInput = reactive<Props>(props => {
         )
     )
         .scan<Update, State>((state: State, update: Update) => update(state), {} as State)
-        .map(({ onOpenEditor, textAreaValue, submitting, error }: State): JSX.Element | null => (
+        .map(({ editorURL, onOpenEditor, textAreaValue, submitting, error }: State): JSX.Element | null => (
             <form className="comments-input" onSubmit={nextSubmit}>
                 <textarea
                     className="ui-text-box comments-input__text-box"
@@ -77,9 +79,11 @@ export const CommentsInput = reactive<Props>(props => {
                         </span>
                     )}
                     {!error && <span className="comments-input__markdown-supported">Markdown supported.</span>}
-                    <button className="btn btn-primary comments-input__button" type="button" onClick={onOpenEditor}>
-                        Open in Sourcegraph Editor
-                    </button>
+                    <a href={editorURL}>
+                        <button className="btn btn-primary comments-input__button" type="button" onClick={onOpenEditor}>
+                            Open in Sourcegraph Editor
+                        </button>
+                    </a>
                     <button type="submit" className="btn btn-primary comments-input__button" disabled={submitting}>
                         Comment
                     </button>

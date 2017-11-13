@@ -158,7 +158,7 @@ export const CommentsPage = reactive<Props>(props => {
                                         <a href="https://about.sourcegraph.com/docs/editor/share-code">
                                             share the code
                                         </a>.&nbsp;
-                                        <a href="" onClick={openEditor}>
+                                        <a href={editorURL} onClick={openEditor}>
                                             Open in Sourcegraph Editor
                                         </a>{' '}
                                         to see code.
@@ -180,17 +180,20 @@ export const CommentsPage = reactive<Props>(props => {
                             ))}
                         {sharedItem &&
                             sharedItem.thread.comments.length === 0 && (
-                                <button
-                                    className="btn btn-primary btn-block comments-page__reply-in-editor"
-                                    onClick={openEditor}
-                                >
-                                    Open in Sourcegraph Editor
-                                </button>
+                                <a href={editorURL}>
+                                    <button
+                                        className="btn btn-primary btn-block comments-page__reply-in-editor"
+                                        onClick={openEditor}
+                                    >
+                                        Open in Sourcegraph Editor
+                                    </button>
+                                </a>
                             )}
                         {sharedItem &&
                             sharedItem.thread.comments.length !== 0 &&
                             (signedIn ? (
                                 <CommentsInput
+                                    editorURL={editorURL}
                                     onOpenEditor={openEditor}
                                     threadID={sharedItem.thread.id}
                                     ulid={ulid}
