@@ -120,7 +120,6 @@ export const CommentsPage = reactive<Props>(props => {
             )
             const openEditor = () => {
                 eventLogger.log('OpenInNativeAppClicked')
-                window.open(editorURL, 'sourcegraph-editor')
             }
 
             return (
