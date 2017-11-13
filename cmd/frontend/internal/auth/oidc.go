@@ -245,7 +245,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	}
 
 	provider := idToken.Issuer
-	uid := oidcToAuthID(provider, idToken.Subject)
+	authID := oidcToAuthID(provider, idToken.Subject)
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
@@ -264,9 +264,9 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		login = login[:i]
 	}
 
-	usr, err := localstore.Users.GetByAuth0ID(ctx, uid)
+	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)
 	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
-		usr, err = localstore.Users.Create(ctx, uid, email, login, displayName, provider, nil)
+		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, provider, nil)
 	}
 	if err != nil {
 		return nil, err
