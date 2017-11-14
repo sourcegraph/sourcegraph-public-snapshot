@@ -9,6 +9,7 @@ import (
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"github.com/neelance/parallel"
@@ -71,6 +72,24 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
+		// Cache repos fetched in the loop below.
+		var (
+			reposMu sync.Mutex
+			repos   = map[string]*sourcegraph.Repo{}
+		)
+		getRepoByURI := func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+			reposMu.Lock()
+			defer reposMu.Unlock()
+			if repo, ok := repos[uri]; ok {
+				return repo, nil
+			}
+			repo, err := localstore.Repos.GetByURI(ctx, uri)
+			if err == nil {
+				repos[uri] = repo
+			}
+			return repo, err
+		}
+
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
@@ -88,13 +107,13 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 			}
 			var suggestions []*searchResultResolver
 			for i, res := range results.results {
-				// TODO(sqs): inefficient
+				// TODO(sqs): should parallelize, or reuse data fetched elsewhere
 				u, err := url.Parse(res.uri)
 				if err != nil {
 					return nil, err
 				}
 				uri := u.Host + u.Path
-				repo, err := localstore.Repos.GetByURI(ctx, uri)
+				repo, err := getRepoByURI(ctx, uri)
 				if err != nil {
 					if err == context.DeadlineExceeded {
 						err = nil // don't log as error below
@@ -108,7 +127,6 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 					name:   path,
 					commit: commitSpec{DefaultBranch: repo.DefaultBranch, RepoID: repo.ID},
 					stat:   createFileInfo(path, false),
-					repo:   &repositoryResolver{repo: repo},
 				}
 				suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))
 			}
