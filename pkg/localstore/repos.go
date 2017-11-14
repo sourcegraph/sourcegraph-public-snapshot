@@ -96,6 +96,8 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
 			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
 				return ghRepo, nil
+			} else if err == context.DeadlineExceeded || err == context.Canceled {
+				return nil, err
 			}
 			return nil, ErrRepoNotFound
 		}
