@@ -2,6 +2,7 @@
 <html lang="en" class="base">
 
 <head>
+	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,12 +19,15 @@
 		window.context = {{.Context}}
 		window.pageError = {{.Error}}
 	</script>
+	{{.Injected.HeadBottom}}
 </head>
 
 <body>
+	{{.Injected.BodyTop}}
 	<div id="root"></div>
 	<noscript>You need to enable JavaScript to run this app.</noscript>
 	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
+	{{.Injected.BodyBottom}}
 </body>
 
 </html>

@@ -2,6 +2,7 @@ package ui2
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -19,12 +20,28 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
+var (
+	injectedHTMLHeadTop    = env.Get("HTML_HEAD_TOP", "", "HTML to inject at the top of the <head> element on each page")
+	injectedHTMLHeadBottom = env.Get("HTML_HEAD_BOTTOM", "", "HTML to inject at the bottom of the <head> element on each page")
+	injectedHTMLBodyTop    = env.Get("HTML_BODY_TOP", "", "HTML to inject at the top of the <body> element on each page")
+	injectedHTMLBodyBottom = env.Get("HTML_BODY_BOTTOM", "", "HTML to inject at the bottom of the <body> element on each page")
+)
+
+type InjectedHTML struct {
+	HeadTop    template.HTML
+	HeadBottom template.HTML
+	BodyTop    template.HTML
+	BodyBottom template.HTML
+}
+
 type Common struct {
+	Injected InjectedHTML
 	Context  jscontext.JSContext
 	AssetURL string
 	Title    string
@@ -63,6 +80,13 @@ func repoShortName(uri string) string {
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	common := &Common{
+		Injected: InjectedHTML{
+			HeadTop:    template.HTML(injectedHTMLHeadTop),
+			HeadBottom: template.HTML(injectedHTMLHeadBottom),
+			BodyTop:    template.HTML(injectedHTMLBodyTop),
+			BodyBottom: template.HTML(injectedHTMLBodyBottom),
+		},
+		// InjectedHTMLHeadTop: template.HTML(injectedHTMLHeadTop),
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assets.URL("/").String(),
 		Title:    title,
