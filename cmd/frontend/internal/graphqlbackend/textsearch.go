@@ -316,10 +316,6 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			if len(matches) > 0 {
 				flattened = append(flattened, matches...)
 			}
-			if len(flattened) > int(args.Query.FileMatchLimit) {
-				// We can stop collecting more results.
-				cancel()
-			}
 		}(*repoRev)
 	}
 	wg.Wait()
