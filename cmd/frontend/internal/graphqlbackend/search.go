@@ -269,7 +269,7 @@ func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoURI string, 
 	scorer := newScorer(scorerQuery)
 	for _, fileResolver := range treeResolver.Entries() {
 		score := scorer.calcScore(fileResolver)
-		if score <= 0 && matcher.scorerQuery != "" {
+		if score <= 0 && matcher.scorerQuery != "" && matcher.match(fileResolver.path) {
 			score = 1 // minimum to ensure everything included by match.match is included
 		}
 		if score > 0 {
