@@ -72,14 +72,8 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
-		// Cache repos fetched in the loop below.
-		var (
-			reposMu sync.Mutex
-			repos   = map[string]*sourcegraph.Repo{}
-		)
+		repos := map[string]*sourcegraph.Repo{}
 		getRepoByURI := func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-			reposMu.Lock()
-			defer reposMu.Unlock()
 			if repo, ok := repos[uri]; ok {
 				return repo, nil
 			}
