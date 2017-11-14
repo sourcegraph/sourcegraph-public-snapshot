@@ -28,10 +28,6 @@ type fileResolver struct {
 	// that case, some fileResolver methods have to look up the information
 	// on their own.
 	stat os.FileInfo
-
-	// repo is populated by the creator of this fileResolver if it has this
-	// information available.
-	repo *repositoryResolver
 }
 
 func (r *fileResolver) Name() string {
