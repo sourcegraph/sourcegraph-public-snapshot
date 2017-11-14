@@ -180,7 +180,13 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	return r.Matches, r.LimitHit, nil
 }
 
+var mockSearchRepo func(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+
 func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	if mockSearchRepo != nil {
+		return mockSearchRepo(ctx, repoName, rev, info)
+	}
+
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return nil, false, err
