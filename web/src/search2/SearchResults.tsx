@@ -4,12 +4,12 @@ import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/startWith'
-import 'rxjs/add/operator/switchMap'
+import { catchError } from 'rxjs/operators/catchError'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
@@ -61,74 +61,84 @@ export class SearchResults extends React.Component<Props, State> {
         this.subscriptions.add(
             this.searchRequested
                 // Don't search using stale search options.
-                .filter(searchOptions => {
-                    const currentSearchOptions = parseSearchURLQuery(this.props.location.search)
-                    return !currentSearchOptions || searchOptionsEqual(searchOptions, currentSearchOptions)
-                })
-                .switchMap(searchOptions => {
-                    const start = Date.now()
-                    return searchText(searchOptions)
-                        .do(res => {
-                            if (res.cloning.length > 0) {
-                                // Perform search again if there are repos still waiting to be cloned,
-                                // so we can update the results list with those repos' results.
-                                setTimeout(() => this.searchRequested.next(searchOptions), 2000)
-                            }
-                        })
-                        .do(
-                            res =>
-                                eventLogger.log('SearchResultsFetched', {
-                                    code_search: {
-                                        results: {
-                                            files_count: res.results.length,
-                                            matches_count: res.results.reduce(
-                                                (count, fileMatch) => count + fileMatch.lineMatches.length,
-                                                0
-                                            ),
+                .pipe(
+                    filter(searchOptions => {
+                        const currentSearchOptions = parseSearchURLQuery(this.props.location.search)
+                        return !currentSearchOptions || searchOptionsEqual(searchOptions, currentSearchOptions)
+                    }),
+                    switchMap(searchOptions => {
+                        const start = Date.now()
+                        return searchText(searchOptions).pipe(
+                            tap(res => {
+                                if (res.cloning.length > 0) {
+                                    // Perform search again if there are repos still waiting to be cloned,
+                                    // so we can update the results list with those repos' results.
+                                    setTimeout(() => this.searchRequested.next(searchOptions), 2000)
+                                }
+                            }),
+                            tap(
+                                res =>
+                                    eventLogger.log('SearchResultsFetched', {
+                                        code_search: {
+                                            results: {
+                                                files_count: res.results.length,
+                                                matches_count: res.results.reduce(
+                                                    (count, fileMatch) => count + fileMatch.lineMatches.length,
+                                                    0
+                                                ),
+                                            },
                                         },
-                                    },
-                                }),
-                            error => {
-                                eventLogger.log('SearchResultsFetchFailed', {
-                                    code_search: { error_message: error.message },
-                                })
-                                console.error(error)
-                            }
-                        )
-                        .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
-                        .catch(error => [
-                            {
-                                results: [],
-                                alert: null,
-                                missing: [],
-                                cloning: [],
-                                limitHit: false,
-                                error,
+                                    }),
+                                error => {
+                                    eventLogger.log('SearchResultsFetchFailed', {
+                                        code_search: { error_message: error.message },
+                                    })
+                                    console.error(error)
+                                }
+                            ),
+                            map(res => ({
+                                ...res,
+                                error: undefined,
                                 loading: false,
-                                searchDuration: undefined,
-                            },
-                        ])
-                })
+                                searchDuration: Date.now() - start,
+                            })),
+                            catchError(error => [
+                                {
+                                    results: [],
+                                    alert: null,
+                                    missing: [],
+                                    cloning: [],
+                                    limitHit: false,
+                                    error,
+                                    loading: false,
+                                    searchDuration: undefined,
+                                },
+                            ])
+                        )
+                    })
+                )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
 
         this.subscriptions.add(
             this.componentUpdates
-                .startWith(this.props)
-                .do(props => {
-                    const searchOptions = parseSearchURLQuery(props.location.search)
-                    setTimeout(() => this.searchRequested.next(searchOptions))
-                })
-                .map(() => ({
-                    results: [],
-                    alert: null,
-                    missing: [],
-                    cloning: [],
-                    limitHit: false,
-                    error: undefined,
-                    loading: true,
-                    searchDuration: undefined,
-                }))
+                .pipe(
+                    startWith(this.props),
+                    tap(props => {
+                        const searchOptions = parseSearchURLQuery(props.location.search)
+                        setTimeout(() => this.searchRequested.next(searchOptions))
+                    }),
+                    map(() => ({
+                        results: [],
+                        alert: null,
+                        missing: [],
+                        cloning: [],
+                        limitHit: false,
+                        error: undefined,
+                        loading: true,
+                        searchDuration: undefined,
+                    }))
+                )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
     }

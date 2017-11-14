@@ -1,8 +1,8 @@
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/take'
 import { Observable } from 'rxjs/Observable'
+import { concat } from 'rxjs/operators/concat'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { take } from 'rxjs/operators/take'
 import { currentUser, fetchCurrentUser } from '../auth'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
@@ -41,12 +41,14 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
         }
     `,
         { id }
-    ).map(({ data, errors }) => {
-        if (!data || !data.root || !data.root.org) {
-            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-        }
-        return data.root.org
-    })
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.org) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.org
+        })
+    )
 }
 
 export interface CreateOrgOptions {
@@ -60,9 +62,9 @@ export interface CreateOrgOptions {
  * Sends a GraphQL mutation to create an org and returns an Observable that emits the new org, then completes
  */
 export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
-    return currentUser
-        .take(1)
-        .mergeMap(user => {
+    return currentUser.pipe(
+        take(1),
+        mergeMap(user => {
             if (!user) {
                 throw new Error('User must be signed in.')
             }
@@ -81,8 +83,8 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
             `,
                 options
             )
-        })
-        .mergeMap(({ data, errors }) => {
+        }),
+        mergeMap(({ data, errors }) => {
             if (!data || !data.createOrg) {
                 eventLogger.log('NewOrgFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -93,8 +95,9 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
                     org_name: data.createOrg.name,
                 },
             })
-            return fetchCurrentUser().concat([data.createOrg])
+            return fetchCurrentUser().pipe(concat([data.createOrg]))
         })
+    )
 }
 
 export interface CreateUserOptions {
@@ -108,9 +111,9 @@ export interface CreateUserOptions {
  * Sends a GraphQL mutation to create a user and returns an Observable that emits the new user, then completes
  */
 export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
-    return currentUser
-        .take(1)
-        .mergeMap(user => {
+    return currentUser.pipe(
+        take(1),
+        mergeMap(user => {
             // This API is for user data backfill. You must be an authenticated user
             // to write a row to the users db; we use the authenticated actor to
             // fill auth0_id and email columns.
@@ -138,8 +141,8 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
             `,
                 variables
             )
-        })
-        .map(({ data, errors }) => {
+        }),
+        map(({ data, errors }) => {
             if (!data || !data.createUser) {
                 eventLogger.log('NewUserFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -156,6 +159,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
             })
             return data.createUser
         })
+    )
 }
 
 export interface UpdateUserOptions {
@@ -170,9 +174,9 @@ export interface UpdateUserOptions {
  * Sends a GraphQL mutation to update a user's profile
  */
 export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
-    return currentUser
-        .take(1)
-        .mergeMap(user => {
+    return currentUser.pipe(
+        take(1),
+        mergeMap(user => {
             if (!user) {
                 throw new Error('User must be signed in.')
             }
@@ -197,8 +201,8 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
             `,
                 variables
             )
-        })
-        .map(({ data, errors }) => {
+        }),
+        map(({ data, errors }) => {
             if (!data || !data.updateUser) {
                 eventLogger.log('UpdateUserFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -216,6 +220,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
             })
             return data.updateUser
         })
+    )
 }
 
 /**
@@ -226,9 +231,9 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
  * @return Observable that emits `undefined`, then completes
  */
 export function inviteUser(email: string, orgID: number): Observable<void> {
-    return currentUser
-        .take(1)
-        .mergeMap(user => {
+    return currentUser.pipe(
+        take(1),
+        mergeMap(user => {
             if (!user) {
                 throw new Error('User must be signed in.')
             }
@@ -247,8 +252,8 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
             `,
                 variables
             )
-        })
-        .map(({ data, errors }) => {
+        }),
+        map(({ data, errors }) => {
             const eventData = {
                 organization: {
                     invite: {
@@ -264,6 +269,7 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
             eventLogger.log('OrgMemberInvited', eventData)
             return
         })
+    )
     // For now, no need to re-fetch auth state after this fetch completes. The
     // inviteUser mutation only sends an email, it does not update current user
     // or org state.
@@ -280,9 +286,9 @@ export interface AcceptUserInviteOptions {
  * @return An Observable that does not emit items and completes when done
  */
 export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<GQL.IOrgInviteStatus> {
-    return currentUser
-        .take(1)
-        .mergeMap(user => {
+    return currentUser.pipe(
+        take(1),
+        mergeMap(user => {
             if (!user) {
                 throw new Error('User must be signed in')
             }
@@ -298,14 +304,15 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
             `,
                 options
             )
-        })
-        .map(({ data, errors }) => {
+        }),
+        map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {
                 eventLogger.log('AcceptInviteFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.acceptUserInvite
         })
+    )
 }
 
 /**
@@ -328,23 +335,25 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
             userID,
             orgID,
         }
-    ).mergeMap(({ data, errors }) => {
-        const eventData = {
-            organization: {
-                remove: {
-                    auth0_id: userID,
+    ).pipe(
+        mergeMap(({ data, errors }) => {
+            const eventData = {
+                organization: {
+                    remove: {
+                        auth0_id: userID,
+                    },
+                    org_id: orgID,
                 },
-                org_id: orgID,
-            },
-        }
-        if (errors && errors.length > 0) {
-            eventLogger.log('RemoveOrgMemberFailed', eventData)
-            throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
-        }
-        eventLogger.log('OrgMemberRemoved', eventData)
-        // Reload user data
-        return fetchCurrentUser()
-    })
+            }
+            if (errors && errors.length > 0) {
+                eventLogger.log('RemoveOrgMemberFailed', eventData)
+                throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
+            }
+            eventLogger.log('OrgMemberRemoved', eventData)
+            // Reload user data
+            return fetchCurrentUser()
+        })
+    )
 }
 
 /**
@@ -356,9 +365,9 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
  * @return Observable that emits `undefined`, then completes
  */
 export function updateOrg(orgID: number, displayName: string, slackWebhookURL: string): Observable<void> {
-    return currentUser
-        .take(1)
-        .mergeMap(user => {
+    return currentUser.pipe(
+        take(1),
+        mergeMap(user => {
             if (!user) {
                 throw new Error('User must be signed in.')
             }
@@ -378,8 +387,8 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
             `,
                 variables
             )
-        })
-        .map(({ data, errors }) => {
+        }),
+        map(({ data, errors }) => {
             const eventData = {
                 organization: {
                     update: {
@@ -396,4 +405,5 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
             eventLogger.log('OrgSettingsUpdated', eventData)
             return
         })
+    )
 }

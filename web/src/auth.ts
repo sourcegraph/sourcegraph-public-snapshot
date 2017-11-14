@@ -1,6 +1,6 @@
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/mergeMap'
 import { Observable } from 'rxjs/Observable'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { queryGraphQL } from './backend/graphql'
 
@@ -44,12 +44,14 @@ export function fetchCurrentUser(): Observable<never> {
                     }
                 }
             }
-        }`)
-        .do(result => {
+        }
+    `).pipe(
+        tap(result => {
             if (!result.data) {
                 throw new Error('invalid response received from graphql endpoint')
             }
             currentUser.next(result.data.root.currentUser)
-        })
-        .mergeMap(() => [])
+        }),
+        mergeMap(() => [])
+    )
 }

@@ -3,13 +3,12 @@ import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
 import { match } from 'react-router'
-import 'rxjs/add/observable/defer'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/delay'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/retryWhen'
-import 'rxjs/add/operator/switchMap'
-import { Observable } from 'rxjs/Observable'
+import { defer } from 'rxjs/observable/defer'
+import { catchError } from 'rxjs/operators/catchError'
+import { delay } from 'rxjs/operators/delay'
+import { retryWhen } from 'rxjs/operators/retryWhen'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
@@ -47,40 +46,40 @@ export class RepositoryResolver extends React.Component<Props, State> {
         super(props)
         this.subscriptions.add(
             this.componentUpdates
-                .switchMap(props => {
-                    const repoRev = props.match.params.repoRev
-                    if (!repoRev) {
-                        return [undefined]
-                    }
-                    const { repoPath, rev } = parseRepoRev(repoRev)
-                    // Defer Observable so it retries the request on resubscription
-                    return (
-                        Observable.defer(() => resolveRev({ repoPath, rev }))
-                            // On a CloneInProgress error, retry after 5s
-                            .retryWhen(errors =>
-                                errors
-                                    .do(err => {
-                                        if (err.code === ECLONEINPROGESS) {
-                                            // Display cloning screen to the user and retry
-                                            this.setState({ cloneInProgress: true })
-                                            return
-                                        }
-                                        if (err.code === EREPONOTFOUND) {
-                                            // Display 404to the user and do not retry
-                                            this.setState({ notFound: true })
-                                        }
-                                        // Don't retry other errors
-                                        throw err
-                                    })
-                                    .delay(1000)
-                            )
-                            // Log other errors but don't break the stream
-                            .catch(err => {
-                                console.error(err)
-                                return []
-                            })
-                    )
-                })
+                .pipe(
+                    switchMap(props => {
+                        const repoRev = props.match.params.repoRev
+                        if (!repoRev) {
+                            return [undefined]
+                        }
+                        const { repoPath, rev } = parseRepoRev(repoRev)
+                        // Defer Observable so it retries the request on resubscription
+                        return (
+                            defer(() => resolveRev({ repoPath, rev }))
+                                // On a CloneInProgress error, retry after 1s
+                                .pipe(
+                                    retryWhen(errors =>
+                                        errors.pipe(
+                                            tap(err => {
+                                                if (err.code === ECLONEINPROGESS) {
+                                                    // Display cloning screen to the user and retry
+                                                    this.setState({ cloneInProgress: true })
+                                                    return
+                                                }
+                                                if (err.code === EREPONOTFOUND) {
+                                                    // Display 404to the user and do not retry
+                                                    this.setState({ notFound: true })
+                                                }
+                                                // Don't retry other errors
+                                                throw err
+                                            }),
+                                            delay(1000)
+                                        )
+                                    )
+                                )
+                        )
+                    })
+                )
                 .subscribe(
                     resolvedRev => this.setState({ ...resolvedRev, cloneInProgress: false }),
                     err => console.error(err)
@@ -88,16 +87,20 @@ export class RepositoryResolver extends React.Component<Props, State> {
         )
         this.subscriptions.add(
             this.componentUpdates
-                .switchMap(props => {
-                    if (!props.match.params.repoRev) {
-                        return [null]
-                    }
-                    const { repoPath } = parseRepoRev(props.match.params.repoRev)
-                    return fetchPhabricatorRepo({ repoPath }).catch(err => {
-                        console.error(err)
-                        return []
+                .pipe(
+                    switchMap(props => {
+                        if (!props.match.params.repoRev) {
+                            return [null]
+                        }
+                        const { repoPath } = parseRepoRev(props.match.params.repoRev)
+                        return fetchPhabricatorRepo({ repoPath }).pipe(
+                            catchError(err => {
+                                console.error(err)
+                                return []
+                            })
+                        )
                     })
-                })
+                )
                 .subscribe(
                     phabRepo => {
                         if (phabRepo) {

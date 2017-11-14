@@ -1,7 +1,7 @@
 import * as immutable from 'immutable'
-import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/startWith'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
+import { scan } from 'rxjs/operators/scan'
+import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { getParentDir } from './util'
@@ -61,10 +61,7 @@ export function createTreeStore(initSelectedPath?: string): TreeStore {
     }))
 
     const store: BehaviorSubject<TreeState> = new BehaviorSubject<TreeState>(initState)
-    actionSubject
-        .startWith(initState as any)
-        .scan(reducer)
-        .subscribe(store)
+    actionSubject.pipe(startWith(initState as any), scan(reducer)).subscribe(store)
 
     return { getValue: () => store.getValue(), setState, subscribe: cb => store.subscribe(cb) }
 }

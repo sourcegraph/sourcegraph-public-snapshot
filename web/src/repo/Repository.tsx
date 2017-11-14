@@ -5,14 +5,13 @@ import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
 import isEqual from 'lodash/isEqual'
 import * as React from 'react'
-import 'rxjs/add/observable/fromEvent'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/switchMap'
-import { Observable } from 'rxjs/Observable'
+import { fromEvent } from 'rxjs/observable/fromEvent'
+import { merge } from 'rxjs/observable/merge'
+import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Position } from 'vscode-languageserver-types'
@@ -97,23 +96,29 @@ export class Repository extends React.PureComponent<Props, State> {
             : undefined
         this.subscriptions.add(
             this.componentUpdates
-                .distinctUntilChanged(isEqual)
-                .switchMap(props =>
-                    listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }).catch(err => {
-                        console.error(err)
-                        return []
-                    })
+                .pipe(
+                    distinctUntilChanged(isEqual),
+                    switchMap(props =>
+                        listAllFiles({ repoPath: props.repoPath, commitID: props.commitID }).pipe(
+                            catchError(err => {
+                                console.error(err)
+                                return []
+                            })
+                        )
+                    )
                 )
                 .subscribe((files: string[]) => this.setState({ files }), err => console.error(err))
         )
 
         // When the user presses 'y', change the page URL to be a permalink.
         this.subscriptions.add(
-            Observable.fromEvent<KeyboardEvent>(window, 'keydown')
-                .filter(
-                    event =>
-                        // 'y' shortcut (if no input element is focused)
-                        event.key === 'y' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                .pipe(
+                    filter(
+                        event =>
+                            // 'y' shortcut (if no input element is focused)
+                            event.key === 'y' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+                    )
                 )
                 .subscribe(event => {
                     event.preventDefault()
@@ -125,24 +130,33 @@ export class Repository extends React.PureComponent<Props, State> {
 
         // Transitions to routes with file should update file contents
         this.subscriptions.add(
-            Observable.merge(
-                this.componentUpdates
-                    .map(props => ({ ...props, showHighlightingAnyway: false }))
-                    .distinctUntilChanged(isEqual),
-                this.showAnywayButtonClicks.map(() => ({ ...this.props, showHighlightingAnyway: true }))
+            merge(
+                this.componentUpdates.pipe(
+                    map(props => ({ ...props, showHighlightingAnyway: false })),
+                    distinctUntilChanged(isEqual)
+                ),
+                this.showAnywayButtonClicks.pipe(map(() => ({ ...this.props, showHighlightingAnyway: true })))
             )
-                .filter(props => !props.isDirectory && Boolean(props.filePath))
-                .switchMap(props =>
-                    fetchHighlightedFile({
-                        repoPath: props.repoPath,
-                        commitID: props.commitID,
-                        filePath: props.filePath!,
-                        disableTimeout: props.showHighlightingAnyway,
-                    }).catch(err => {
-                        this.setState({ highlightedFile: undefined, isDirectory: false, highlightingError: err })
-                        console.error(err)
-                        return []
-                    })
+                .pipe(
+                    filter(props => !props.isDirectory && Boolean(props.filePath)),
+                    switchMap(props =>
+                        fetchHighlightedFile({
+                            repoPath: props.repoPath,
+                            commitID: props.commitID,
+                            filePath: props.filePath!,
+                            disableTimeout: props.showHighlightingAnyway,
+                        }).pipe(
+                            catchError(err => {
+                                this.setState({
+                                    highlightedFile: undefined,
+                                    isDirectory: false,
+                                    highlightingError: err,
+                                })
+                                console.error(err)
+                                return []
+                            })
+                        )
+                    )
                 )
                 .subscribe(
                     result =>
@@ -157,7 +171,7 @@ export class Repository extends React.PureComponent<Props, State> {
                 )
         )
         this.subscriptions.add(
-            this.componentUpdates.distinctUntilChanged(isEqual).subscribe(
+            this.componentUpdates.pipe(distinctUntilChanged(isEqual)).subscribe(
                 props =>
                     this.setState({
                         isDirectory: props.isDirectory || !props.filePath,

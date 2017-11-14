@@ -1,5 +1,5 @@
-import 'rxjs/add/operator/map'
 import { Observable } from 'rxjs/Observable'
+import { map } from 'rxjs/operators/map'
 import { queryGraphQL } from '../backend/graphql'
 import { AbsoluteRepoFilePosition, makeRepoURI } from '../repo'
 import { memoizeObservable } from '../util/memoize'
@@ -42,20 +42,22 @@ export const fetchBlameFile = memoizeObservable(
                 startLine: ctx.position.line,
                 endLine: ctx.position.line,
             }
-        ).map(result => {
-            if (
-                !result.data ||
-                !result.data.root ||
-                !result.data.root.repository ||
-                !result.data.root.repository.commit ||
-                !result.data.root.repository.commit.commit ||
-                !result.data.root.repository.commit.commit.file ||
-                !result.data.root.repository.commit.commit.file.blame
-            ) {
-                console.error('unexpected BlameFile response:', result)
-                return null
-            }
-            return result.data.root.repository.commit.commit.file.blame
-        }),
+        ).pipe(
+            map(result => {
+                if (
+                    !result.data ||
+                    !result.data.root ||
+                    !result.data.root.repository ||
+                    !result.data.root.repository.commit ||
+                    !result.data.root.repository.commit.commit ||
+                    !result.data.root.repository.commit.commit.file ||
+                    !result.data.root.repository.commit.commit.file.blame
+                ) {
+                    console.error('unexpected BlameFile response:', result)
+                    return null
+                }
+                return result.data.root.repository.commit.commit.file.blame
+            })
+        ),
     makeRepoURI
 )

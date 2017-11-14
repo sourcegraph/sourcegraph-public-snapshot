@@ -4,17 +4,16 @@ import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import 'rxjs/add/observable/timer'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/multicast'
-import 'rxjs/add/operator/startWith'
-import 'rxjs/add/operator/switchMap'
-import 'rxjs/add/operator/take'
-import 'rxjs/add/operator/takeWhile'
-import { Observable } from 'rxjs/Observable'
+import { timer } from 'rxjs/observable/timer'
+import { catchError } from 'rxjs/operators/catchError'
+import { concat } from 'rxjs/operators/concat'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { multicast } from 'rxjs/operators/multicast'
+import { startWith } from 'rxjs/operators/startWith'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { take } from 'rxjs/operators/take'
+import { takeWhile } from 'rxjs/operators/takeWhile'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -61,28 +60,31 @@ export class SearchResults extends React.Component<Props, State> {
         eventLogger.logViewEvent('SearchResults')
         this.subscriptions.add(
             this.componentUpdates
-                .startWith(this.props)
-                .switchMap(props => {
-                    const start = Date.now()
-                    const searchOptions = parseSearchURLQuery(props.location.search)
-                    // Repeat the search every 1s until no more repos are clone in progress
-                    return (
-                        Observable.timer(0, 1000)
-                            .mergeMap(() => searchText(searchOptions))
+                .pipe(
+                    startWith(this.props),
+                    switchMap(props => {
+                        const start = Date.now()
+                        const searchOptions = parseSearchURLQuery(props.location.search)
+                        // Repeat the search every 1s until no more repos are clone in progress
+                        return timer(0, 1000).pipe(
+                            mergeMap(() => searchText(searchOptions)),
                             // Make sure that last item is still included
                             // Can't use takeWhile here because it would omit the last element (the first which the predicate returns false for)
-                            .multicast<GQL.ISearchResults>(
+                            multicast<GQL.ISearchResults>(
                                 () => new ReplaySubject<GQL.ISearchResults>(1),
                                 textSearch =>
-                                    textSearch.takeWhile(res => res.cloning.length > 0).concat(textSearch.take(1))
-                            )
-                            .map(res => ({
+                                    textSearch.pipe(
+                                        takeWhile(res => res.cloning.length > 0),
+                                        concat(textSearch.pipe(take(1)))
+                                    )
+                            ),
+                            map(res => ({
                                 ...res,
                                 error: undefined,
                                 loading: false,
                                 searchDuration: Date.now() - start,
-                            }))
-                            .catch(error => {
+                            })),
+                            catchError(error => {
                                 console.error(error)
                                 return [
                                     {
@@ -95,9 +97,9 @@ export class SearchResults extends React.Component<Props, State> {
                                         searchDuration: undefined,
                                     },
                                 ]
-                            })
+                            }),
                             // Reset to loading state
-                            .startWith({
+                            startWith({
                                 results: [],
                                 missing: [],
                                 cloning: [],
@@ -106,8 +108,9 @@ export class SearchResults extends React.Component<Props, State> {
                                 loading: true,
                                 searchDuration: undefined,
                             })
-                    )
-                })
+                        )
+                    })
+                )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
     }

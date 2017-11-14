@@ -1,11 +1,11 @@
-import 'rxjs/add/observable/interval'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/switchMap'
-import 'rxjs/add/operator/take'
-import 'rxjs/add/operator/takeUntil'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { Observable } from 'rxjs/Observable'
+import { interval } from 'rxjs/observable/interval'
+import { merge } from 'rxjs/observable/merge'
+import { map } from 'rxjs/operators/map'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { take } from 'rxjs/operators/take'
+import { takeUntil } from 'rxjs/operators/takeUntil'
 import { AbsoluteRepoFilePosition, AbsoluteRepoFileRange } from '../repo'
 import { fetchPhabricatorRepo } from '../repo/backend'
 import { openFromJS } from '../util/url'
@@ -39,21 +39,24 @@ function measureTextWidth(text: string, font: string): number {
  */
 const blameEvents = new BehaviorSubject<AbsoluteRepoFileRange | null>(null)
 blameEvents
-    .switchMap(ctx => {
-        if (!ctx) {
-            return []
-        }
-        const fetch: Observable<BlameData> = fetchBlameFile({
-            ...ctx,
-            position: { line: ctx.range.start.line, character: 0 },
-        } as AbsoluteRepoFilePosition).map(hunks => ({ ctx, loading: false, hunks: hunks || [] }))
-        // show loading data after 250ms if the fetch has not resolved
-        const loading: Observable<BlameData> = Observable.interval(250)
-            .take(1)
-            .takeUntil(fetch)
-            .map(() => ({ ctx, loading: true, hunks: [] }))
-        return Observable.merge(loading, fetch)
-    })
+    .pipe(
+        switchMap(ctx => {
+            if (!ctx) {
+                return []
+            }
+            const fetch: Observable<BlameData> = fetchBlameFile({
+                ...ctx,
+                position: { line: ctx.range.start.line, character: 0 },
+            } as AbsoluteRepoFilePosition).pipe(map(hunks => ({ ctx, loading: false, hunks: hunks || [] })))
+            // show loading data after 250ms if the fetch has not resolved
+            const loading: Observable<BlameData> = interval(250).pipe(
+                take(1),
+                takeUntil(fetch),
+                map(() => ({ ctx, loading: true, hunks: [] }))
+            )
+            return merge(loading, fetch)
+        })
+    )
     .subscribe(setLineBlame)
 
 /**

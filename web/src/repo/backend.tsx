@@ -1,5 +1,5 @@
-import 'rxjs/add/operator/map'
 import { Observable } from 'rxjs/Observable'
+import { map } from 'rxjs/operators/map'
 import { queryGraphQL } from '../backend/graphql'
 import { memoizeObservable } from '../util/memoize'
 import { makeRepoURI } from './index'
@@ -57,24 +57,26 @@ export const resolveRev = memoizeObservable(
         }
     `,
             { ...ctx, rev: ctx.rev || '' }
-        ).map(result => {
-            if (!result.data) {
-                throw new Error('invalid response received from graphql endpoint')
-            }
-            if (!result.data.root.repository || !result.data.root.repository.commit) {
-                throw new RepoNotFoundError(ctx.repoPath)
-            }
-            if (result.data.root.repository.commit.cloneInProgress) {
-                throw new CloneInProgressError(ctx.repoPath)
-            }
-            if (!result.data.root.repository.commit.commit) {
-                throw new RevNotFoundError(ctx.rev)
-            }
-            return {
-                commitID: result.data.root.repository.commit.commit.sha1,
-                defaultBranch: result.data.root.repository.defaultBranch,
-            }
-        }),
+        ).pipe(
+            map(result => {
+                if (!result.data) {
+                    throw new Error('invalid response received from graphql endpoint')
+                }
+                if (!result.data.root.repository || !result.data.root.repository.commit) {
+                    throw new RepoNotFoundError(ctx.repoPath)
+                }
+                if (result.data.root.repository.commit.cloneInProgress) {
+                    throw new CloneInProgressError(ctx.repoPath)
+                }
+                if (!result.data.root.repository.commit.commit) {
+                    throw new RevNotFoundError(ctx.rev)
+                }
+                return {
+                    commitID: result.data.root.repository.commit.commit.sha1,
+                    defaultBranch: result.data.root.repository.defaultBranch,
+                }
+            })
+        ),
     makeRepoURI
 )
 
@@ -111,24 +113,26 @@ export const fetchHighlightedFile = memoizeObservable(
         }
     }`,
             ctx
-        ).map(result => {
-            if (result.errors) {
-                const errors = result.errors.map(e => e.message).join(', ')
-                throw new Error(errors)
-            }
-            if (
-                !result.data ||
-                !result.data.root ||
-                !result.data.root.repository ||
-                !result.data.root.repository.commit ||
-                !result.data.root.repository.commit.commit ||
-                !result.data.root.repository.commit.commit.file
-            ) {
-                throw new Error(`cannot locate blob content: ${ctx.repoPath} ${ctx.commitID} ${ctx.filePath}`)
-            }
-            const file = result.data.root.repository.commit.commit.file
-            return { isDirectory: file.isDirectory, highlightedFile: file.highlight }
-        }),
+        ).pipe(
+            map(result => {
+                if (result.errors) {
+                    const errors = result.errors.map(e => e.message).join(', ')
+                    throw new Error(errors)
+                }
+                if (
+                    !result.data ||
+                    !result.data.root ||
+                    !result.data.root.repository ||
+                    !result.data.root.repository.commit ||
+                    !result.data.root.repository.commit.commit ||
+                    !result.data.root.repository.commit.commit.file
+                ) {
+                    throw new Error(`cannot locate blob content: ${ctx.repoPath} ${ctx.commitID} ${ctx.filePath}`)
+                }
+                const file = result.data.root.repository.commit.commit.file
+                return { isDirectory: file.isDirectory, highlightedFile: file.highlight }
+            })
+        ),
     ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}`
 )
 
@@ -137,21 +141,23 @@ export const fetchHighlightedFile = memoizeObservable(
  */
 export const fetchHighlightedFileLines = memoizeObservable(
     (ctx: FetchFileCtx, force?: boolean): Observable<string[]> =>
-        fetchHighlightedFile(ctx, force).map(result => {
-            if (result.isDirectory) {
-                return []
-            }
-            if (result.highlightedFile.aborted) {
-                throw new Error('aborted fetching highlighted contents')
-            }
-            let parsed = result.highlightedFile.html.substr('<table>'.length)
-            parsed = parsed.substr(0, parsed.length - '</table>'.length)
-            const rows = parsed.split('</tr>')
-            for (let i = 0; i < rows.length; ++i) {
-                rows[i] += '</tr>'
-            }
-            return rows
-        }),
+        fetchHighlightedFile(ctx, force).pipe(
+            map(result => {
+                if (result.isDirectory) {
+                    return []
+                }
+                if (result.highlightedFile.aborted) {
+                    throw new Error('aborted fetching highlighted contents')
+                }
+                let parsed = result.highlightedFile.html.substr('<table>'.length)
+                parsed = parsed.substr(0, parsed.length - '</table>'.length)
+                const rows = parsed.split('</tr>')
+                for (let i = 0; i < rows.length; ++i) {
+                    rows[i] += '</tr>'
+                }
+                return rows
+            })
+        ),
     makeRepoURI
 )
 
@@ -174,19 +180,21 @@ export const listAllFiles = memoizeObservable(
         }
     }`,
             ctx
-        ).map(result => {
-            if (
-                !result.data ||
-                !result.data.root.repository ||
-                !result.data.root.repository.commit ||
-                !result.data.root.repository.commit.commit ||
-                !result.data.root.repository.commit.commit.tree ||
-                !result.data.root.repository.commit.commit.tree.files
-            ) {
-                throw new Error('invalid response received from graphql endpoint')
-            }
-            return result.data.root.repository.commit.commit.tree.files.map(file => file.name)
-        }),
+        ).pipe(
+            map(result => {
+                if (
+                    !result.data ||
+                    !result.data.root.repository ||
+                    !result.data.root.repository.commit ||
+                    !result.data.root.repository.commit.commit ||
+                    !result.data.root.repository.commit.commit.tree ||
+                    !result.data.root.repository.commit.commit.tree.files
+                ) {
+                    throw new Error('invalid response received from graphql endpoint')
+                }
+                return result.data.root.repository.commit.commit.tree.files.map(file => file.name)
+            })
+        ),
     makeRepoURI
 )
 
@@ -213,20 +221,22 @@ export const fetchBlobContent = memoizeObservable(
         }
     }`,
             ctx
-        ).map(result => {
-            if (
-                !result.data ||
-                !result.data.root ||
-                !result.data.root.repository ||
-                !result.data.root.repository.commit ||
-                !result.data.root.repository.commit.commit ||
-                !result.data.root.repository.commit.commit.file
-            ) {
-                throw new Error(`cannot locate blob content: ${ctx}`)
-            }
-            const file = result.data.root.repository.commit.commit.file
-            return { isDirectory: file.isDirectory, content: file.content }
-        }),
+        ).pipe(
+            map(result => {
+                if (
+                    !result.data ||
+                    !result.data.root ||
+                    !result.data.root.repository ||
+                    !result.data.root.repository.commit ||
+                    !result.data.root.repository.commit.commit ||
+                    !result.data.root.repository.commit.commit.file
+                ) {
+                    throw new Error(`cannot locate blob content: ${ctx}`)
+                }
+                const file = result.data.root.repository.commit.commit.file
+                return { isDirectory: file.isDirectory, content: file.content }
+            })
+        ),
     makeRepoURI
 )
 
@@ -247,22 +257,24 @@ export const fetchRepoRevisions = memoizeObservable(
         }
     }`,
             ctx
-        ).map(result => {
-            if (result.errors) {
-                const errors = result.errors.map(e => e.message).join(', ')
-                throw new Error(errors)
-            }
-            if (
-                !result.data ||
-                !result.data.root ||
-                !result.data.root.repository ||
-                !result.data.root.repository.branches ||
-                !result.data.root.repository.tags
-            ) {
-                throw new Error(`cannot locate repo revisions: ${ctx}`)
-            }
-            return result.data.root.repository
-        }),
+        ).pipe(
+            map(result => {
+                if (result.errors) {
+                    const errors = result.errors.map(e => e.message).join(', ')
+                    throw new Error(errors)
+                }
+                if (
+                    !result.data ||
+                    !result.data.root ||
+                    !result.data.root.repository ||
+                    !result.data.root.repository.branches ||
+                    !result.data.root.repository.tags
+                ) {
+                    throw new Error(`cannot locate repo revisions: ${ctx}`)
+                }
+                return result.data.root.repository
+            })
+        ),
     makeRepoURI
 )
 
@@ -278,12 +290,14 @@ export const fetchPhabricatorRepo = memoizeObservable(
         }
     }`,
             ctx
-        ).map(result => {
-            if (result.errors || !result.data || !result.data.root || !result.data.root.phabricatorRepo) {
-                return null
-            }
-            return result.data.root.phabricatorRepo
-        }),
+        ).pipe(
+            map(result => {
+                if (result.errors || !result.data || !result.data.root || !result.data.root.phabricatorRepo) {
+                    return null
+                }
+                return result.data.root.phabricatorRepo
+            })
+        ),
     makeRepoURI
 )
 
@@ -309,22 +323,24 @@ export const fetchDirTree = memoizeObservable(
         }
     }`,
             ctx
-        ).map(result => {
-            if (result.errors) {
-                const errors = result.errors.map(e => e.message).join(', ')
-                throw new Error(errors)
-            }
-            if (
-                !result.data ||
-                !result.data.root ||
-                !result.data.root.repository ||
-                !result.data.root.repository.commit.commit ||
-                !result.data.root.repository.commit.commit.tree
-            ) {
-                throw new Error(`cannot locate directory tree.`)
-            }
-            return result.data.root.repository.commit.commit.tree
-        }),
+        ).pipe(
+            map(result => {
+                if (result.errors) {
+                    const errors = result.errors.map(e => e.message).join(', ')
+                    throw new Error(errors)
+                }
+                if (
+                    !result.data ||
+                    !result.data.root ||
+                    !result.data.root.repository ||
+                    !result.data.root.repository.commit.commit ||
+                    !result.data.root.repository.commit.commit.tree
+                ) {
+                    throw new Error(`cannot locate directory tree.`)
+                }
+                return result.data.root.repository.commit.commit.tree
+            })
+        ),
     makeRepoURI
 )
 
@@ -355,22 +371,24 @@ export const fetchFileCommitInfo = memoizeObservable(
             }
         }`,
             ctx
-        ).map(result => {
-            if (result.errors) {
-                const errors = result.errors.map(e => e.message).join(', ')
-                throw new Error(errors)
-            }
-            if (
-                !result.data ||
-                !result.data.root ||
-                !result.data.root.repository ||
-                !result.data.root.repository.commit.commit ||
-                !result.data.root.repository.commit.commit.file ||
-                !result.data.root.repository.commit.commit.file.lastCommit
-            ) {
-                throw new Error(`cannot locate file commit info.`)
-            }
-            return result.data.root.repository.commit.commit.file.lastCommit
-        }),
+        ).pipe(
+            map(result => {
+                if (result.errors) {
+                    const errors = result.errors.map(e => e.message).join(', ')
+                    throw new Error(errors)
+                }
+                if (
+                    !result.data ||
+                    !result.data.root ||
+                    !result.data.root.repository ||
+                    !result.data.root.repository.commit.commit ||
+                    !result.data.root.repository.commit.commit.file ||
+                    !result.data.root.repository.commit.commit.file.lastCommit
+                ) {
+                    throw new Error(`cannot locate file commit info.`)
+                }
+                return result.data.root.repository.commit.commit.file.lastCommit
+            })
+        ),
     makeRepoURI
 )

@@ -9,26 +9,26 @@ import SearchIcon from '@sourcegraph/icons/lib/Search'
 import * as H from 'history'
 import * as React from 'react'
 import { matchPath } from 'react-router'
-import 'rxjs/add/observable/fromEvent'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/observable/of'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/debounceTime'
-import 'rxjs/add/operator/delay'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/observeOn'
-import 'rxjs/add/operator/publishReplay'
-import 'rxjs/add/operator/repeat'
-import 'rxjs/add/operator/skip'
-import 'rxjs/add/operator/startWith'
-import 'rxjs/add/operator/switchMap'
-import 'rxjs/add/operator/switchMap'
-import 'rxjs/add/operator/takeUntil'
-import 'rxjs/add/operator/toArray'
 import { Observable } from 'rxjs/Observable'
+import { fromEvent } from 'rxjs/observable/fromEvent'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { debounceTime } from 'rxjs/operators/debounceTime'
+import { delay } from 'rxjs/operators/delay'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { observeOn } from 'rxjs/operators/observeOn'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { repeat } from 'rxjs/operators/repeat'
+import { skip } from 'rxjs/operators/skip'
+import { startWith } from 'rxjs/operators/startWith'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { takeUntil } from 'rxjs/operators/takeUntil'
+import { tap } from 'rxjs/operators/tap'
+import { toArray } from 'rxjs/operators/toArray'
 import { asap } from 'rxjs/scheduler/asap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -133,10 +133,11 @@ export class SearchBox extends React.Component<Props, State> {
         this.state = this.getStateFromProps(props)
 
         /** Emits whenever the route changes */
-        const routeChanges = this.componentUpdates
-            .startWith(props)
-            .distinctUntilChanged((a, b) => a.location === b.location)
-            .skip(1)
+        const routeChanges = this.componentUpdates.pipe(
+            startWith(props),
+            distinctUntilChanged((a, b) => a.location === b.location),
+            skip(1)
+        )
 
         // Reset SearchBox on route changes
         this.subscriptions.add(
@@ -151,86 +152,91 @@ export class SearchBox extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(
-            Observable.merge(
+            merge(
                 // Trigger new suggestions every time the input field is typed into
-                this.inputValues.do(query => this.setState({ query })),
+                this.inputValues.pipe(tap(query => this.setState({ query }))),
                 // Trigger new suggestions every time the input field is clicked
-                this.inputClicks.map(() => this.inputElement!.value),
+                this.inputClicks.pipe(map(() => this.inputElement!.value)),
                 this.inputKeyDowns
                     // Defer to next tick to get the selection _after_ any selection change was dipatched (e.g. arrow keys)
-                    .observeOn(asap)
-                    .filter(event => event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
-                    .map(() => this.state.query)
+                    .pipe(
+                        observeOn(asap),
+                        filter(event => event.key !== 'ArrowDown' && event.key !== 'ArrowUp'),
+                        map(() => this.state.query)
+                    )
             )
                 // Only use query up to the cursor
-                .map(query => query.substring(0, this.inputElement!.selectionEnd))
-                .distinctUntilChanged()
-                .debounceTime(200)
-                .switchMap(query => {
-                    if (query.length <= 1) {
-                        return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
-                    }
-                    const suggestionsFetch = (() => {
-                        // If query includes a wildcard, suggest a file glob filter
-                        // TODO suggest repo glob filter (needs server implementation)
-                        // TODO verify that the glob matches something server-side,
-                        //      only suggest if it does and show number of matches
-                        if (hasMagic(query)) {
-                            const fileFilter: FileFilter = {
-                                type: FilterType.File,
-                                value: query,
-                            }
-                            return Observable.of(fileFilter)
+                .pipe(
+                    map(query => query.substring(0, this.inputElement!.selectionEnd)),
+                    distinctUntilChanged(),
+                    debounceTime(200),
+                    switchMap(query => {
+                        if (query.length <= 1) {
+                            return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
                         }
-                        return fetchSuggestions(query, this.state.filters).map((item: GQL.SearchResult): Filter => {
-                            switch (item.__typename) {
-                                case 'Repository':
-                                    return { type: FilterType.Repo, value: item.uri }
-                                case 'SearchProfile':
-                                    return { type: FilterType.RepoGroup, value: item.name }
-                                case 'File':
-                                    return { type: FilterType.File, value: item.name }
-                            }
-                        })
-                    })()
-                        .toArray()
-                        .map(suggestions => {
-                            // If no results were found, but the query looks like a repo slug (e.g. sourcegraph/icons), suggest to add it as an "unknown repo"
-                            // This is meant as an escape hatch when we don't have a repo in our database so the user can still navigate to it
-                            if (suggestions.length === 0 && query.includes('/')) {
-                                const filter: Filter = { type: FilterType.UnknownRepo, value: query }
-                                // Don't require typing github.com/
-                                if (!window.context.onPrem && !query.startsWith('github.com/')) {
-                                    filter.value = 'github.com/' + filter.value
+                        const suggestionsFetch = (() => {
+                            // If query includes a wildcard, suggest a file glob filter
+                            // TODO suggest repo glob filter (needs server implementation)
+                            // TODO verify that the glob matches something server-side,
+                            //      only suggest if it does and show number of matches
+                            if (hasMagic(query)) {
+                                const fileFilter: FileFilter = {
+                                    type: FilterType.File,
+                                    value: query,
                                 }
-                                return [filter]
+                                return of(fileFilter)
                             }
-                            return suggestions
-                        })
-                        .map(suggestions => ({
-                            suggestions,
-                            selectedSuggestion: -1,
-                            suggestionsVisible: true,
-                            loading: false,
-                        }))
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
-                        .publishReplay()
-                        .refCount()
-                    return Observable.merge(
-                        suggestionsFetch,
-                        // Show a loader if the fetch takes longer than 100ms
-                        Observable.of({ loading: true })
-                            .delay(100)
-                            .takeUntil(suggestionsFetch)
-                    )
-                })
-                // Abort suggestion display on route change
-                .takeUntil(routeChanges)
-                // But resubscribe afterwards
-                .repeat()
+                            return fetchSuggestions(query, this.state.filters).pipe(
+                                map((item: GQL.SearchResult): Filter => {
+                                    switch (item.__typename) {
+                                        case 'Repository':
+                                            return { type: FilterType.Repo, value: item.uri }
+                                        case 'SearchProfile':
+                                            return { type: FilterType.RepoGroup, value: item.name }
+                                        case 'File':
+                                            return { type: FilterType.File, value: item.name }
+                                    }
+                                })
+                            )
+                        })().pipe(
+                            toArray(),
+                            map(suggestions => {
+                                // If no results were found, but the query looks like a repo slug (e.g. sourcegraph/icons), suggest to add it as an "unknown repo"
+                                // This is meant as an escape hatch when we don't have a repo in our database so the user can still navigate to it
+                                if (suggestions.length === 0 && query.includes('/')) {
+                                    const filter: Filter = { type: FilterType.UnknownRepo, value: query }
+                                    // Don't require typing github.com/
+                                    if (!window.context.onPrem && !query.startsWith('github.com/')) {
+                                        filter.value = 'github.com/' + filter.value
+                                    }
+                                    return [filter]
+                                }
+                                return suggestions
+                            }),
+                            map(suggestions => ({
+                                suggestions,
+                                selectedSuggestion: -1,
+                                suggestionsVisible: true,
+                                loading: false,
+                            })),
+                            catchError(err => {
+                                console.error(err)
+                                return []
+                            }),
+                            publishReplay(),
+                            refCount()
+                        )
+                        return merge(
+                            suggestionsFetch,
+                            // Show a loader if the fetch takes longer than 100ms
+                            of({ loading: true }).pipe(delay(100), takeUntil(suggestionsFetch))
+                        )
+                    }),
+                    // Abort suggestion display on route change
+                    takeUntil(routeChanges),
+                    // But resubscribe afterwards
+                    repeat()
+                )
                 .subscribe(
                     state => {
                         this.setState(state as State)
@@ -243,37 +249,39 @@ export class SearchBox extends React.Component<Props, State> {
 
         // Quick-Open hotkeys
         this.subscriptions.add(
-            Observable.fromEvent<KeyboardEvent>(window, 'keydown')
-                .filter(
-                    event =>
-                        // Slash shortcut (if no input element is focused)
-                        (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
-                        // Cmd/Ctrl+P shortcut
-                        ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
-                        // Cmd/Ctrl+Shift+F shortcut
-                        ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
-                )
-                .switchMap(event => {
-                    event.preventDefault()
-                    // Use selection as query
-                    const selection = window.getSelection().toString()
-                    if (selection) {
-                        return new Observable<void>(observer =>
-                            this.setState(
-                                {
-                                    query: selection,
-                                    suggestions: [],
-                                    selectedSuggestion: -1,
-                                },
-                                () => {
-                                    observer.next()
-                                    observer.complete()
-                                }
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                .pipe(
+                    filter(
+                        event =>
+                            // Slash shortcut (if no input element is focused)
+                            (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
+                            // Cmd/Ctrl+P shortcut
+                            ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
+                            // Cmd/Ctrl+Shift+F shortcut
+                            ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
+                    ),
+                    switchMap(event => {
+                        event.preventDefault()
+                        // Use selection as query
+                        const selection = window.getSelection().toString()
+                        if (selection) {
+                            return new Observable<void>(observer =>
+                                this.setState(
+                                    {
+                                        query: selection,
+                                        suggestions: [],
+                                        selectedSuggestion: -1,
+                                    },
+                                    () => {
+                                        observer.next()
+                                        observer.complete()
+                                    }
+                                )
                             )
-                        )
-                    }
-                    return [undefined]
-                })
+                        }
+                        return [undefined]
+                    })
+                )
                 .subscribe(() => {
                     if (this.inputElement) {
                         // Select all input
@@ -284,7 +292,7 @@ export class SearchBox extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(document, 'click').subscribe(e => {
+            fromEvent<MouseEvent>(document, 'click').subscribe(e => {
                 if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
                     this.setState({ suggestionsVisible: false })
                 }

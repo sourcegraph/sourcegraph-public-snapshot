@@ -3,17 +3,16 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { match, Redirect } from 'react-router'
 import reactive from 'rx-component'
-import 'rxjs/add/observable/combineLatest'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/withLatestFrom'
-import { Observable } from 'rxjs/Observable'
+import { combineLatest } from 'rxjs/observable/combineLatest'
+import { merge } from 'rxjs/observable/merge'
+import { concat } from 'rxjs/operators/concat'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { scan } from 'rxjs/operators/scan'
+import { tap } from 'rxjs/operators/tap'
+import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { currentUser } from '../../auth'
 import { HeroPage } from '../../components/HeroPage'
@@ -52,27 +51,32 @@ type Update = (s: State) => State
 export const Org = reactive<Props>(props => {
     const memberRemoves = new Subject<GQL.IOrgMember>()
 
-    const orgChanges = props
-        .map(props => props.match.params.orgName)
-        .distinctUntilChanged()
-        .do(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
+    const orgChanges = props.pipe(
+        map(props => props.match.params.orgName),
+        distinctUntilChanged(),
+        tap(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
+    )
 
-    return Observable.merge<Update>(
-        Observable.combineLatest(currentUser, orgChanges).mergeMap(([user, orgName]) => {
-            if (!user) {
-                return [(state: State): State => ({ ...state, user: undefined })]
-            }
-            // Find org ID from user auth state
-            const org = user.orgs.find(org => org.name === orgName)
-            if (!org) {
-                return [(state: State): State => ({ ...state, user, org })]
-            }
-            // Fetch the org by ID by ID
-            return fetchOrg(org.id).map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
-        }),
+    return merge<Update>(
+        combineLatest(currentUser, orgChanges).pipe(
+            mergeMap(([user, orgName]) => {
+                if (!user) {
+                    return [(state: State): State => ({ ...state, user: undefined })]
+                }
+                // Find org ID from user auth state
+                const org = user.orgs.find(org => org.name === orgName)
+                if (!org) {
+                    return [(state: State): State => ({ ...state, user, org })]
+                }
+                // Fetch the org by ID by ID
+                return fetchOrg(org.id).pipe(
+                    map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
+                )
+            })
+        ),
 
-        memberRemoves
-            .do(member =>
+        memberRemoves.pipe(
+            tap(member =>
                 eventLogger.log('RemoveOrgMemberClicked', {
                     organization: {
                         remove: {
@@ -81,9 +85,9 @@ export const Org = reactive<Props>(props => {
                         org_id: member.org.id,
                     },
                 })
-            )
-            .withLatestFrom(currentUser)
-            .filter(([member, user]) => {
+            ),
+            withLatestFrom(currentUser),
+            filter(([member, user]) => {
                 if (!user) {
                     return false
                 }
@@ -100,24 +104,27 @@ export const Org = reactive<Props>(props => {
                     return confirm(`Leave this organization?`)
                 }
                 return confirm(`Remove ${member.user.displayName} from this organization?`)
-            })
-            .mergeMap(([memberToRemove, user]) =>
-                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.auth0ID).concat([
-                    (state: State): State => ({
-                        ...state,
-                        left: memberToRemove.user.auth0ID === user!.id,
-                        org: state.org && {
-                            ...state.org,
-                            members: state.org.members.filter(
-                                member => member.user.auth0ID !== memberToRemove.user.auth0ID
-                            ),
-                        },
-                    }),
-                ])
+            }),
+            mergeMap(([memberToRemove, user]) =>
+                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.auth0ID).pipe(
+                    concat([
+                        (state: State): State => ({
+                            ...state,
+                            left: memberToRemove.user.auth0ID === user!.id,
+                            org: state.org && {
+                                ...state.org,
+                                members: state.org.members.filter(
+                                    member => member.user.auth0ID !== memberToRemove.user.auth0ID
+                                ),
+                            },
+                        }),
+                    ])
+                )
             )
-    )
-        .scan<Update, State>((state: State, update: Update) => update(state), { left: false })
-        .map(({ user, org, left }: State): JSX.Element | null => {
+        )
+    ).pipe(
+        scan<Update, State>((state: State, update: Update) => update(state), { left: false }),
+        map(({ user, org, left }: State): JSX.Element | null => {
             // If the current user just left the org, redirect to settings start page
             if (left) {
                 return <Redirect to="/settings" />
@@ -178,4 +185,5 @@ export const Org = reactive<Props>(props => {
                 </div>
             )
         })
+    )
 })

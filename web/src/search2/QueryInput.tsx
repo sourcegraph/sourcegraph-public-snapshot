@@ -1,21 +1,22 @@
 import * as H from 'history'
 import * as React from 'react'
-import 'rxjs/add/observable/fromEvent'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/observable/of'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/debounceTime'
-import 'rxjs/add/operator/delay'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/publishReplay'
-import 'rxjs/add/operator/repeat'
-import 'rxjs/add/operator/switchMap'
-import 'rxjs/add/operator/takeUntil'
-import 'rxjs/add/operator/toArray'
 import { Observable } from 'rxjs/Observable'
+import { fromEvent } from 'rxjs/observable/fromEvent'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { debounceTime } from 'rxjs/operators/debounceTime'
+import { delay } from 'rxjs/operators/delay'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { repeat } from 'rxjs/operators/repeat'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { takeUntil } from 'rxjs/operators/takeUntil'
+import { tap } from 'rxjs/operators/tap'
+import { toArray } from 'rxjs/operators/toArray'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { eventLogger } from '../tracking/eventLogger'
@@ -104,45 +105,45 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.add(
             // Trigger new suggestions every time the input field is typed into
             this.inputValues
-                .do(query => this.props.onChange(query))
-                .distinctUntilChanged()
-                .debounceTime(200)
-                .switchMap(query => {
-                    if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
-                        return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
-                    }
-                    const suggestionsFetch = (() => {
+                .pipe(
+                    tap(query => this.props.onChange(query)),
+                    distinctUntilChanged(),
+                    debounceTime(200),
+                    switchMap(query => {
+                        if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
+                            return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
+                        }
                         const options: SearchOptions = {
                             query: [this.props.prependQueryForSuggestions, this.props.value].filter(s => !!s).join(' '),
                             scopeQuery: this.props.scopeQuery || '',
                         }
-                        return fetchSuggestions(options).map(createSuggestion)
-                    })()
-                        .toArray()
-                        .map((suggestions: Suggestion[]) => ({
-                            suggestions,
-                            selectedSuggestion: -1,
-                            hideSuggestions: false,
-                            loading: false,
-                        }))
-                        .catch((err: Error) => {
-                            console.error(err)
-                            return []
-                        })
-                        .publishReplay()
-                        .refCount()
-                    return Observable.merge(
-                        suggestionsFetch,
-                        // Show a loader if the fetch takes longer than 100ms
-                        Observable.of({ loading: true })
-                            .delay(100)
-                            .takeUntil(suggestionsFetch)
-                    )
-                })
-                // Abort suggestion display on route change or suggestion hiding
-                .takeUntil(this.suggestionsHidden)
-                // But resubscribe afterwards
-                .repeat()
+                        const suggestionsFetch = fetchSuggestions(options).pipe(
+                            map(createSuggestion),
+                            toArray(),
+                            map((suggestions: Suggestion[]) => ({
+                                suggestions,
+                                selectedSuggestion: -1,
+                                hideSuggestions: false,
+                                loading: false,
+                            })),
+                            catchError((err: Error) => {
+                                console.error(err)
+                                return []
+                            }),
+                            publishReplay(),
+                            refCount()
+                        )
+                        return merge(
+                            suggestionsFetch,
+                            // Show a loader if the fetch takes longer than 100ms
+                            of({ loading: true }).pipe(delay(100), takeUntil(suggestionsFetch))
+                        )
+                    }),
+                    // Abort suggestion display on route change or suggestion hiding
+                    takeUntil(this.suggestionsHidden),
+                    // But resubscribe afterwards
+                    repeat()
+                )
                 .subscribe(
                     state => {
                         this.setState(state as State)
@@ -155,37 +156,39 @@ export class QueryInput extends React.Component<Props, State> {
 
         // Quick-Open hotkeys
         this.subscriptions.add(
-            Observable.fromEvent<KeyboardEvent>(window, 'keydown')
-                .filter(
-                    event =>
-                        // Slash shortcut (if no input element is focused)
-                        (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
-                        // Cmd/Ctrl+P shortcut
-                        ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
-                        // Cmd/Ctrl+Shift+F shortcut
-                        ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
-                )
-                .switchMap(event => {
-                    event.preventDefault()
-                    // Use selection as query
-                    const selection = window.getSelection().toString()
-                    if (selection) {
-                        return new Observable<void>(observer =>
-                            this.setState(
-                                {
-                                    // query: selection, TODO(sqs): add back this behavior
-                                    suggestions: [],
-                                    selectedSuggestion: -1,
-                                },
-                                () => {
-                                    observer.next()
-                                    observer.complete()
-                                }
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                .pipe(
+                    filter(
+                        event =>
+                            // Slash shortcut (if no input element is focused)
+                            (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
+                            // Cmd/Ctrl+P shortcut
+                            ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
+                            // Cmd/Ctrl+Shift+F shortcut
+                            ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
+                    ),
+                    switchMap(event => {
+                        event.preventDefault()
+                        // Use selection as query
+                        const selection = window.getSelection().toString()
+                        if (selection) {
+                            return new Observable<void>(observer =>
+                                this.setState(
+                                    {
+                                        // query: selection, TODO(sqs): add back this behavior
+                                        suggestions: [],
+                                        selectedSuggestion: -1,
+                                    },
+                                    () => {
+                                        observer.next()
+                                        observer.complete()
+                                    }
+                                )
                             )
-                        )
-                    }
-                    return [undefined]
-                })
+                        }
+                        return [undefined]
+                    })
+                )
                 .subscribe(() => {
                     if (this.inputElement) {
                         // Select all input

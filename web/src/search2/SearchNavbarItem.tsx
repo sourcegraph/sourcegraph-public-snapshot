@@ -1,8 +1,8 @@
 import * as H from 'history'
 import * as React from 'react'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/skip'
-import 'rxjs/add/operator/startWith'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { skip } from 'rxjs/operators/skip'
+import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Help } from './Help'
@@ -43,10 +43,11 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         this.state = this.getStateFromProps(props) || { userQuery: '', scopeQuery: undefined }
 
         /** Emits whenever the route changes */
-        const routeChanges = this.componentUpdates
-            .startWith(props)
-            .distinctUntilChanged((a, b) => a.location === b.location)
-            .skip(1)
+        const routeChanges = this.componentUpdates.pipe(
+            startWith(props),
+            distinctUntilChanged((a, b) => a.location === b.location),
+            skip(1)
+        )
 
         // Reset on route changes
         this.subscriptions.add(

@@ -1,6 +1,6 @@
-import 'rxjs/add/observable/dom/ajax'
-import 'rxjs/add/operator/map'
 import { Observable } from 'rxjs/Observable'
+import { ajax } from 'rxjs/observable/dom/ajax'
+import { map } from 'rxjs/operators/map'
 
 /**
  * Interface for the response result of a GraphQL query
@@ -27,7 +27,7 @@ export interface MutationResult {
  */
 function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IGraphQLResponseRoot> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    return Observable.ajax({
+    return ajax({
         method: 'POST',
         url: '/.api/graphql' + (nameMatch ? '?' + nameMatch[1] : ''),
         headers: {
@@ -35,7 +35,7 @@ function requestGraphQL(request: string, variables: any = {}): Observable<GQL.IG
             ...window.context.xhrHeaders,
         },
         body: JSON.stringify({ query: request, variables }),
-    }).map(({ response }) => response)
+    }).pipe(map(({ response }) => response))
 }
 
 /**

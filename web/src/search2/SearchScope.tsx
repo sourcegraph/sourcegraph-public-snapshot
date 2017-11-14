@@ -3,8 +3,8 @@ import * as H from 'history'
 import * as path from 'path'
 import * as React from 'react'
 import { matchPath } from 'react-router'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/map'
+import { catchError } from 'rxjs/operators/catchError'
+import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
 import { routes } from '../routes'
 import { fetchSearchScopes } from './backend'
@@ -58,11 +58,13 @@ export class SearchScope extends React.PureComponent<Props, State> {
 
         this.subscriptions.add(
             fetchSearchScopes()
-                .catch(err => {
-                    console.error(err)
-                    return []
-                })
-                .map((scopes: GQL.ISearchScope2[]) => ({ remoteScopes: scopes }))
+                .pipe(
+                    catchError(err => {
+                        console.error(err)
+                        return []
+                    }),
+                    map((scopes: GQL.ISearchScope2[]) => ({ remoteScopes: scopes }))
+                )
                 .subscribe(
                     newState =>
                         this.setState(newState, () => {

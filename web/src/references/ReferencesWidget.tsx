@@ -10,17 +10,16 @@ import omit from 'lodash/omit'
 import partition from 'lodash/partition'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import 'rxjs/add/observable/fromPromise'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/bufferTime'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/switchMap'
-import { Observable } from 'rxjs/Observable'
+import { fromPromise } from 'rxjs/observable/fromPromise'
+import { merge } from 'rxjs/observable/merge'
+import { bufferTime } from 'rxjs/operators/bufferTime'
+import { catchError } from 'rxjs/operators/catchError'
+import { concat } from 'rxjs/operators/concat'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { scan } from 'rxjs/operators/scan'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Location } from 'vscode-languageserver-types'
@@ -198,40 +197,47 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
         this.state.group = parsedHash.modalMode ? parsedHash.modalMode : 'local'
         this.subscriptions.add(
             this.componentUpdates
-                .distinctUntilChanged(isEqual)
-                .switchMap(props =>
-                    Observable.merge(
-                        Observable.fromPromise(fetchReferences(props))
-                            .map(refs => ({ references: refs } as State))
-                            .catch(e => {
-                                console.error(e)
-                                return []
-                            })
-                            .concat([{ loadingLocal: false } as State]),
-                        fetchExternalReferences(props)
-                            .map(refs => ({ references: refs } as State))
-                            .catch(e => {
-                                console.error(e)
-                                return []
-                            })
-                            .concat([{ loadingExternal: false } as State])
-                    )
-                )
-                .bufferTime(500)
-                .filter(updates => updates.length > 0)
-                .scan(
-                    (currState, updates) => {
-                        let newState = currState
-                        for (const update of updates) {
-                            if (update.references) {
-                                newState = { ...newState, references: newState.references.concat(update.references) }
-                            } else {
-                                newState = { ...newState, ...update }
+                .pipe(
+                    distinctUntilChanged(isEqual),
+                    switchMap(props =>
+                        merge(
+                            fromPromise(fetchReferences(props)).pipe(
+                                map(refs => ({ references: refs } as State)),
+                                catchError(e => {
+                                    console.error(e)
+                                    return []
+                                }),
+                                concat([{ loadingLocal: false } as State])
+                            ),
+                            fetchExternalReferences(props).pipe(
+                                map(refs => ({ references: refs } as State)),
+                                catchError(e => {
+                                    console.error(e)
+                                    return []
+                                }),
+                                concat([{ loadingExternal: false } as State])
+                            )
+                        )
+                    ),
+                    bufferTime(500),
+                    filter(updates => updates.length > 0),
+                    scan<State[], State>(
+                        (currState, updates) => {
+                            let newState = currState
+                            for (const update of updates) {
+                                if (update.references) {
+                                    newState = {
+                                        ...newState,
+                                        references: newState.references.concat(update.references),
+                                    }
+                                } else {
+                                    newState = { ...newState, ...update }
+                                }
                             }
-                        }
-                        return newState
-                    },
-                    { references: [], loadingLocal: true, loadingExternal: true } as State
+                            return newState
+                        },
+                        { references: [], loadingLocal: true, loadingExternal: true } as State
+                    )
                 )
                 .subscribe(state => this.setState(state))
         )

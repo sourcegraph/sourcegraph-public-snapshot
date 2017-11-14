@@ -1,6 +1,6 @@
 import * as React from 'react'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/map'
+import { catchError } from 'rxjs/operators/catchError'
+import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
 import { fetchRepoGroups } from './backend'
 
@@ -43,18 +43,20 @@ export class ScopeLabel extends React.Component<Props, State> {
 
             this.subscriptions.add(
                 fetchRepoGroups()
-                    .catch(err => {
-                        console.error(err)
-                        return []
-                    })
-                    .map((repoGroups: GQL.IRepoGroup[]) => {
-                        const map = new Map<string, string[]>()
-                        for (const { name, repositories } of repoGroups) {
-                            map.set(name, repositories)
-                        }
-                        ScopeLabel.REPO_GROUPS = map // cache
-                        return { repoGroups: map } as State
-                    })
+                    .pipe(
+                        catchError(err => {
+                            console.error(err)
+                            return []
+                        }),
+                        map((repoGroups: GQL.IRepoGroup[]) => {
+                            const map = new Map<string, string[]>()
+                            for (const { name, repositories } of repoGroups) {
+                                map.set(name, repositories)
+                            }
+                            ScopeLabel.REPO_GROUPS = map // cache
+                            return { repoGroups: map } as State
+                        })
+                    )
                     .subscribe(newState => this.setState(newState), err => console.error(err))
             )
         }
