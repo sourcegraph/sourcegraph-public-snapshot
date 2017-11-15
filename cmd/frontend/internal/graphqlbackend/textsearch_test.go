@@ -43,17 +43,17 @@ func TestSearchRepos(t *testing.T) {
 		},
 		Repositories: []*repositoryRevision{{Repo: "foo/one"}, {Repo: "foo/two"}, {Repo: "foo/empty"}, {Repo: "foo/cloning"}, {Repo: "foo/missing"}},
 	}
-	results, err := (&rootResolver{}).SearchRepos(context.Background(), args)
+	results, common, err := searchRepos(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results.Results()) != 2 {
-		t.Errorf("expected two results, got %d", len(results.Results()))
+	if len(results) != 2 {
+		t.Errorf("expected two results, got %d", len(results))
 	}
-	if !reflect.DeepEqual(results.Cloning(), []string{"foo/cloning"}) {
-		t.Errorf("unexpected missing: %v", results.Cloning())
+	if !reflect.DeepEqual(common.cloning, []string{"foo/cloning"}) {
+		t.Errorf("unexpected missing: %v", common.cloning)
 	}
-	if !reflect.DeepEqual(results.Missing(), []string{"foo/missing"}) {
-		t.Errorf("unexpected missing: %v", results.Missing())
+	if !reflect.DeepEqual(common.missing, []string{"foo/missing"}) {
+		t.Errorf("unexpected missing: %v", common.missing)
 	}
 }

@@ -12,10 +12,11 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { ReferencesGroup } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { searchText } from './backend'
+import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { RepoSearchResult } from './RepoSearchResult'
 import { SearchAlert } from './SearchAlert'
 
 interface Props {
@@ -37,8 +38,8 @@ function numberWithCommas(x: any): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-function pluralize(str: string, n: number): string {
-    return `${str}${n === 1 ? '' : 's'}`
+function pluralize(str: string, n: number, plural = str + 's'): string {
+    return n === 1 ? str : plural
 }
 
 export class SearchResults extends React.Component<Props, State> {
@@ -81,9 +82,9 @@ export class SearchResults extends React.Component<Props, State> {
                                     eventLogger.log('SearchResultsFetched', {
                                         code_search: {
                                             results: {
-                                                files_count: res.results.length,
-                                                matches_count: res.results.reduce(
-                                                    (count, fileMatch) => count + fileMatch.lineMatches.length,
+                                                results_count: res.results.length,
+                                                result_items_count: res.results.reduce(
+                                                    (count, result) => count + resultItemsCount(result),
                                                     0
                                                 ),
                                             },
@@ -176,41 +177,25 @@ export class SearchResults extends React.Component<Props, State> {
 
         let totalMatches = 0
         let totalResults = 0
-        let totalFiles = 0
-        let totalRepos = 0
-        const seenRepos = new Set<string>()
         for (const result of this.state.results) {
-            const parsed = new URL(result.resource)
-            if (!seenRepos.has(parsed.pathname)) {
-                seenRepos.add(parsed.pathname)
-                totalRepos += 1
-            }
-            totalFiles += 1
-            totalResults += result.lineMatches.length
+            totalResults += resultItemsCount(result)
         }
-
-        const logEvent = () => eventLogger.log('SearchResultClicked')
-
-        const searchOptions = parseSearchURLQuery(this.props.location.search)
 
         return (
             <div className="search-results2">
                 {this.state.results.length > 0 && (
                     <div className="search-results2__header">
-                        <div className="search-results2__badge">{numberWithCommas(totalResults)}</div>
-                        <div className="search-results2__label">{pluralize('result', totalResults)} in</div>
-                        <div className="search-results2__badge">{numberWithCommas(totalFiles)}</div>
-                        <div className="search-results2__label">{pluralize('file', totalFiles)} in</div>
-                        <div className="search-results2__badge">{numberWithCommas(totalRepos)}</div>
-                        <div className="search-results2__label">{pluralize('repo', totalRepos)} </div>
-                        <div className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</div>
+                        <span className="search-results2__stats">
+                            {numberWithCommas(totalResults)} {pluralize('result', totalResults)} in
+                        </span>{' '}
+                        <span className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</span>
                     </div>
                 )}
                 {this.state.cloning.map((repoPath, i) => (
-                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />
+                    <RepoSearchResult repoPath={repoPath} key={i} icon={Loader} />
                 ))}
                 {this.state.missing.map((repoPath, i) => (
-                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon} />
+                    <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
                 ))}
                 {this.state.loading && <Loader className="icon-inline" />}
                 {alert && (
@@ -223,42 +208,31 @@ export class SearchResults extends React.Component<Props, State> {
                 )}
                 {this.state.results.map((result, i) => {
                     const prevTotal = totalMatches
-                    totalMatches += result.lineMatches.length
-                    const parsed = new URL(result.resource)
-                    const repoPath = parsed.hostname + parsed.pathname
-                    const rev = parsed.search.substr('?'.length)
-                    const filePath = parsed.hash.substr('#'.length)
-                    const refs = result.lineMatches.map(match => ({
-                        range: {
-                            start: {
-                                character: match.offsetAndLengths[0][0],
-                                line: match.lineNumber,
-                            },
-                            end: {
-                                character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
-                                line: match.lineNumber,
-                            },
-                        },
-                        uri: result.resource,
-                        repoURI: repoPath,
-                    }))
-
-                    return (
-                        <ReferencesGroup
-                            hidden={prevTotal > 500}
-                            repoPath={repoPath}
-                            localRev={rev}
-                            filePath={filePath}
-                            key={i}
-                            refs={refs}
-                            isLocal={false}
-                            icon={RepoIcon}
-                            onSelect={logEvent}
-                            searchOptions={searchOptions}
-                        />
-                    )
+                    totalMatches += resultItemsCount(result)
+                    const expanded = prevTotal <= 500
+                    return this.renderResult(i, result, expanded)
                 })}
             </div>
         )
     }
+
+    private logEvent = () => eventLogger.log('SearchResultClicked')
+
+    private renderResult(key: number, result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
+        switch (result.__typename) {
+            case 'FileMatch':
+                return (
+                    <FileMatch key={key} icon={RepoIcon} result={result} onSelect={this.logEvent} expanded={expanded} />
+                )
+        }
+        return undefined
+    }
+}
+
+function resultItemsCount(result: GQL.SearchResult): number {
+    switch (result.__typename) {
+        case 'FileMatch':
+            return result.lineMatches.length
+    }
+    return 1
 }

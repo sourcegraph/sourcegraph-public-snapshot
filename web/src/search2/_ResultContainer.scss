@@ -1,0 +1,29 @@
+.result-container {
+    margin-bottom: 1px;
+
+    &__header {
+        padding-left: 1rem;
+        padding-right: 0.5rem;
+        height: 2.5rem;
+        user-select: none;
+
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        $background-color: #1c2736;
+        background-color: $background-color;
+
+        &--collapsible {
+            cursor: pointer;
+        }
+
+        &-title {
+            flex: 1 1 auto;
+            margin: 0 1rem;
+        }
+
+        &:hover {
+            background-color: darken($background-color, 0.05);
+        }
+    }
+}

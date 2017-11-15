@@ -173,8 +173,10 @@ type Search2 {
   suggestions(first: Int): [SearchSuggestion2!]!
 }
 
+union SearchResult = FileMatch
+
 type SearchResults2 {
-  results: [FileMatch!]!
+  results: [SearchResult!]!
   limitHit: Boolean!
   cloning: [String!]!
   missing: [String!]!

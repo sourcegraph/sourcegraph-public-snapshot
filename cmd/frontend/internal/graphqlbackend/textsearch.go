@@ -66,6 +66,14 @@ func (fm *fileMatch) LimitHit() bool {
 	return fm.JLimitHit
 }
 
+func fileMatchesToSearchResults(fms []*fileMatch) []*searchResult {
+	results := make([]*searchResult, len(fms))
+	for i, fm := range fms {
+		results[i] = &searchResult{fileMatch: fm}
+	}
+	return results
+}
+
 // LineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
 	JPreview          string    `json:"Preview"`
@@ -240,10 +248,10 @@ func (repoRev *repositoryRevision) hasRev() bool {
 	return repoRev.Rev != nil && *repoRev.Rev != ""
 }
 
-var mockSearchRepos func(args *repoSearchArgs) (*searchResults2, error)
+var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
-// SearchRepos searches a set of repos for a pattern.
-func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults2, error) {
+// searchRepos searches a set of repos for a pattern.
+func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)
 	}
@@ -255,10 +263,8 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		err         error
 		wg          sync.WaitGroup
 		mu          sync.Mutex
-		cloning     []string
-		missing     []string
 		unflattened [][]*fileMatch
-		limitHit    bool
+		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.Repositories {
 		wg.Add(1)
@@ -275,15 +281,15 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit = limitHit || repoLimitHit
+			common.limitHit = common.limitHit || repoLimitHit
 			if e, ok := searchErr.(vcs.RepoNotExistError); ok {
 				if e.CloneInProgress {
-					cloning = append(cloning, repoRev.Repo)
+					common.cloning = append(common.cloning, repoRev.Repo)
 				} else {
-					missing = append(missing, repoRev.Repo)
+					common.missing = append(common.missing, repoRev.Repo)
 				}
 			} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
-				missing = append(missing, repoRev.Repo)
+				common.missing = append(common.missing, repoRev.Repo)
 			} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
 				// If we didn't specify an input revision, then the repo is empty and can be ignored.
 			} else if searchErr != nil && err == nil {
@@ -301,18 +307,13 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	}
 	wg.Wait()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Return early so we don't have to worry about empty lists in later
 	// calculations.
 	if len(unflattened) == 0 {
-		return &searchResults2{
-			results:  []*fileMatch{},
-			limitHit: limitHit,
-			cloning:  cloning,
-			missing:  missing,
-		}, nil
+		return nil, common, nil
 	}
 
 	// We pass in a limit to each repository so we may end up with R*limit
@@ -351,12 +352,7 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		return a > b
 	})
 
-	return &searchResults2{
-		results:  flattened,
-		limitHit: limitHit,
-		cloning:  cloning,
-		missing:  missing,
-	}, nil
+	return fileMatchesToSearchResults(flattened), common, nil
 }
 
 var searcherURLs *endpoint.Map

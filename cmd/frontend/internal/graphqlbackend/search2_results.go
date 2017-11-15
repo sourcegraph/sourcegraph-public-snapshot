@@ -7,37 +7,43 @@ import (
 	"strings"
 )
 
-type searchResults2 struct {
-	results  []*fileMatch
-	limitHit bool
-	cloning  []string
-	missing  []string
-	alert    *searchAlert
+// searchResultsCommon contains fields that should be returned by all funcs
+// that contribute to the overall search result set.
+type searchResultsCommon struct {
+	limitHit bool     // whether the limit on results was hit
+	cloning  []string // repos that could not be searched because they were still being cloned
+	missing  []string // repos that could not be searched because they do not exist
 }
 
-func (sr *searchResults2) Results() []*fileMatch {
+func (c *searchResultsCommon) LimitHit() bool {
+	return c.limitHit
+}
+
+func (c *searchResultsCommon) Cloning() []string {
+	if c.cloning == nil {
+		return []string{}
+	}
+	return c.cloning
+}
+
+func (c *searchResultsCommon) Missing() []string {
+	if c.missing == nil {
+		return []string{}
+	}
+	return c.missing
+}
+
+type searchResults2 struct {
+	results []*searchResult
+	searchResultsCommon
+	alert *searchAlert
+}
+
+func (sr *searchResults2) Results() []*searchResult {
 	return sr.results
 }
 
-func (sr *searchResults2) LimitHit() bool {
-	return sr.limitHit
-}
-
-func (sr *searchResults2) Cloning() []string {
-	if sr.cloning == nil {
-		return []string{}
-	}
-	return sr.cloning
-}
-
-func (sr *searchResults2) Missing() []string {
-	if sr.missing == nil {
-		return []string{}
-	}
-	return sr.missing
-}
-
-func (r searchResults2) Alert() *searchAlert { return r.alert }
+func (sr *searchResults2) Alert() *searchAlert { return sr.alert }
 
 func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
 	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
@@ -96,11 +102,21 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) 
 		args.Query.ExcludePattern = &pat
 	}
 
-	results, err := r.root.SearchRepos(ctx, &args)
-	if results != nil {
-		if len(missingRepoRevs) > 0 {
-			results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
-		}
+	fileMatches, common, err := searchRepos(ctx, &args)
+	if err != nil {
+		return nil, err
 	}
-	return results, err
+	var results searchResults2
+	results.results = fileMatches
+	results.searchResultsCommon = *common
+	if len(missingRepoRevs) > 0 {
+		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
+	}
+	return &results, nil
 }
+
+type searchResult struct {
+	fileMatch *fileMatch
+}
+
+func (g *searchResult) ToFileMatch() (*fileMatch, bool) { return g.fileMatch, g.fileMatch != nil }
