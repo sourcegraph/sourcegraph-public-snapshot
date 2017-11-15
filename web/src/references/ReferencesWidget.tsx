@@ -259,17 +259,12 @@ function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[])
         __typename: 'FileMatch',
         resource: resource.toString(),
         limitHit: false,
-        lineMatches: refs.map(
-            ref =>
-                ({
-                    __typename: 'LineMatch',
-                    preview: '',
-                    limitHit: false,
-                    lineNumber: ref.range.start.line,
-                    offsetAndLengths: [
-                        [ref.range.start.character, ref.range.end.character - ref.range.start.character],
-                    ],
-                } as GQL.ILineMatch)
-        ),
+        lineMatches: refs.map((ref): GQL.ILineMatch => ({
+            __typename: 'LineMatch',
+            preview: '',
+            limitHit: false,
+            lineNumber: ref.range.start.line,
+            offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
+        })),
     }
 }
