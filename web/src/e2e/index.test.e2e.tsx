@@ -266,7 +266,7 @@ describe('e2e test suite', () => {
                 '126 results in'
             )
             // navigate to result on click
-            await chrome.click('.references-group__reference')
+            await chrome.click('.file-match__item')
             await assertEventuallyEqual(
                 () => chrome.evaluate(() => window.location.href),
                 baseURL + '/github.com/gorilla/mux@eac83ba2c004bb759a2875b1f1dbb032adf8bb4a/-/blob/route.go#L17:46'
@@ -296,18 +296,10 @@ describe('e2e test suite', () => {
                 // Submit the search
                 await chrome.click('button')
 
-                await chrome.wait('.search-results2__badge')
+                await chrome.wait('.search-results2__stats')
                 await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[0].textContent),
-                    '91' // # results
-                )
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[1].textContent),
-                    '4' // # files
-                )
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[2].textContent),
-                    '1' // # repos
+                    () => chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
+                    '91 results in'
                 )
             })
         } else {
@@ -329,18 +321,10 @@ describe('e2e test suite', () => {
                 // Submit the search
                 await chrome.click('button')
 
-                await chrome.wait('.search-results2__badge')
+                await chrome.wait('.search-results2__stats')
                 await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[0].textContent),
-                    '91' // # results
-                )
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[1].textContent),
-                    '4' // # files
-                )
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[2].textContent),
-                    '1' // # repos
+                    () => chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
+                    '91 results in'
                 )
             })
         }
