@@ -81,9 +81,9 @@ export class SearchResults extends React.Component<Props, State> {
                                     eventLogger.log('SearchResultsFetched', {
                                         code_search: {
                                             results: {
-                                                files_count: res.results.length,
-                                                matches_count: res.results.reduce(
-                                                    (count, fileMatch) => count + fileMatch.lineMatches.length,
+                                                results_count: res.results.length,
+                                                result_items_count: res.results.reduce(
+                                                    (count, result) => count + resultItemsCount(result),
                                                     0
                                                 ),
                                             },
@@ -186,7 +186,7 @@ export class SearchResults extends React.Component<Props, State> {
                 totalRepos += 1
             }
             totalFiles += 1
-            totalResults += result.lineMatches.length
+            totalResults += resultItemsCount(result)
         }
 
         const logEvent = () => eventLogger.log('SearchResultClicked')
@@ -223,7 +223,7 @@ export class SearchResults extends React.Component<Props, State> {
                 )}
                 {this.state.results.map((result, i) => {
                     const prevTotal = totalMatches
-                    totalMatches += result.lineMatches.length
+                    totalMatches += resultItemsCount(result)
                     const parsed = new URL(result.resource)
                     const repoPath = parsed.hostname + parsed.pathname
                     const rev = parsed.search.substr('?'.length)
@@ -261,4 +261,12 @@ export class SearchResults extends React.Component<Props, State> {
             </div>
         )
     }
+}
+
+function resultItemsCount(result: GQL.SearchResult): number {
+    switch (result.__typename) {
+        case 'FileMatch':
+            return result.lineMatches.length
+    }
+    return 1
 }
