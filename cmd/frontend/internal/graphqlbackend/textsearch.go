@@ -248,20 +248,9 @@ func (repoRev *repositoryRevision) hasRev() bool {
 	return repoRev.Rev != nil && *repoRev.Rev != ""
 }
 
-// SearchRepos searches a set of repos for a pattern.
-func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults2, error) {
-	results, common, err := searchRepos(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-	return &searchResults2{
-		results:             results,
-		searchResultsCommon: *common,
-	}, nil
-}
-
 var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
+// searchRepos searches a set of repos for a pattern.
 func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)

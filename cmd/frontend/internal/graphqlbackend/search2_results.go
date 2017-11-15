@@ -102,13 +102,17 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) 
 		args.Query.ExcludePattern = &pat
 	}
 
-	results, err := r.root.SearchRepos(ctx, &args)
-	if results != nil {
-		if len(missingRepoRevs) > 0 {
-			results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
-		}
+	fileMatches, common, err := searchRepos(ctx, &args)
+	if err != nil {
+		return nil, err
 	}
-	return results, err
+	var results searchResults2
+	results.results = fileMatches
+	results.searchResultsCommon = *common
+	if len(missingRepoRevs) > 0 {
+		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
+	}
+	return &results, nil
 }
 
 type searchResult struct {
