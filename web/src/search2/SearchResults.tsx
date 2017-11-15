@@ -37,8 +37,8 @@ function numberWithCommas(x: any): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-function pluralize(str: string, n: number): string {
-    return `${str}${n === 1 ? '' : 's'}`
+function pluralize(str: string, n: number, plural = str + 's'): string {
+    return n === 1 ? str : plural
 }
 
 export class SearchResults extends React.Component<Props, State> {
@@ -176,14 +176,7 @@ export class SearchResults extends React.Component<Props, State> {
 
         let totalMatches = 0
         let totalResults = 0
-        let totalRepos = 0
-        const seenRepos = new Set<string>()
         for (const result of this.state.results) {
-            const parsed = new URL(result.resource)
-            if (!seenRepos.has(parsed.pathname)) {
-                seenRepos.add(parsed.pathname)
-                totalRepos += 1
-            }
             totalResults += resultItemsCount(result)
         }
 
@@ -191,11 +184,10 @@ export class SearchResults extends React.Component<Props, State> {
             <div className="search-results2">
                 {this.state.results.length > 0 && (
                     <div className="search-results2__header">
-                        <div className="search-results2__badge">{numberWithCommas(totalResults)}</div>
-                        <div className="search-results2__label">{pluralize('result', totalResults)} in</div>
-                        <div className="search-results2__badge">{numberWithCommas(totalRepos)}</div>
-                        <div className="search-results2__label">{pluralize('repo', totalRepos)} </div>
-                        <div className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</div>
+                        <span className="search-results2__stats">
+                            {numberWithCommas(totalResults)} {pluralize('result', totalResults)} in
+                        </span>{' '}
+                        <span className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</span>
                     </div>
                 )}
                 {this.state.cloning.map((repoPath, i) => (

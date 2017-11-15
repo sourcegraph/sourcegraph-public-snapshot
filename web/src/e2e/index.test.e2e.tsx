@@ -260,18 +260,10 @@ describe('e2e test suite', () => {
             await chrome.goto(
                 baseURL + '/search?q=router+repo:gorilla/mux%40eac83ba2c004bb759a2875b1f1dbb032adf8bb4a&sq='
             )
-            await chrome.wait('.search-results2__badge')
+            await chrome.wait('.search-results2__stats')
             await assertEventuallyEqual(
-                () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[0].textContent),
-                '126' // # results
-            )
-            await assertEventuallyEqual(
-                () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[1].textContent),
-                '7' // # files
-            )
-            await assertEventuallyEqual(
-                () => chrome.evaluate(() => document.querySelectorAll('.search-results2__badge')[2].textContent),
-                '1' // # repos
+                () => chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
+                '126 results in'
             )
             // navigate to result on click
             await chrome.click('.references-group__reference')

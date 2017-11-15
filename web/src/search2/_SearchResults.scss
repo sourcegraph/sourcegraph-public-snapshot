@@ -2,36 +2,12 @@
 
 .search-results2 {
     width: 100%;
-    padding-top: 1rem;
+    padding-top: 0.5em;
 
     &__header {
-        display: flex;
-        align-items: baseline;
         color: #93a9c8;
-        margin-bottom: 1rem;
-    }
-
-    &__badge {
-        height: 1.5rem;
-        min-width: 1.5rem;
-        margin-right: 0.25rem;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.25rem 0.5rem;
-
-        font-size: 0.857em;
-        border-radius: 1rem;
-        background-color: #2a3a51;
-        color: white;
-    }
-
-    &__label {
-        margin-right: 0.25rem;
-    }
-
-    &__duration {
-        margin-left: auto;
+        margin-bottom: 0.125rem;
+        text-align: right;
+        font-size: 0.75rem;
     }
 }
