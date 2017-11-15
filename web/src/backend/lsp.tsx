@@ -42,9 +42,38 @@ function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
     ]
 }
 
+/**
+ * A static list of what is supported on Sourcegraph.com. However, on-prem instances may support
+ * less so we prevent future requests after the first mode not found response.
+ */
+const unsupportedExtensions = new Set<string>()
+
+/**
+ * Returns true if the request failed due to the lsp-proxy not supporting the
+ * language mode.
+ *
+ * Additionally it will update isSupported to return false for the extension.
+ *
+ * @param json The serialized response from the xlang API
+ * @param path The lsp document path
+ */
+function isUnsupportedModeResponse(json: any, path: string): boolean {
+    // lsp-proxy returns this error code for unsupported modes.
+    const codeModeNotFound = -32000
+    if (json && json[0] && json[0].error && json[0].error.code === codeModeNotFound) {
+        unsupportedExtensions.add(getPathExtension(path))
+        return true
+    }
+    return false
+}
+
+function isSupported(path: string): boolean {
+    const ext = getPathExtension(path)
+    return supportedExtensions.has(ext) && !unsupportedExtensions.has(ext)
+}
+
 export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<Hover> => {
-    const ext = getPathExtension(pos.filePath)
-    if (!supportedExtensions.has(ext)) {
+    if (!isSupported(pos.filePath)) {
         return Promise.resolve({ contents: [] })
     }
 
@@ -73,6 +102,9 @@ export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<
     })
         .then(resp => resp.json())
         .then(json => {
+            if (isUnsupportedModeResponse(json, pos.filePath)) {
+                return { contents: [] }
+            }
             if (!json || !json[1] || !json[1].result) {
                 return []
             }
@@ -81,8 +113,7 @@ export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<
 }, makeRepoURI)
 
 export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<Definition> => {
-    const ext = getPathExtension(pos.filePath)
-    if (!supportedExtensions.has(ext)) {
+    if (!isSupported(pos.filePath)) {
         return Promise.resolve([])
     }
 
@@ -111,6 +142,9 @@ export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pro
     })
         .then(resp => resp.json())
         .then(json => {
+            if (isUnsupportedModeResponse(json, pos.filePath)) {
+                return []
+            }
             if (!json || !json[1] || !json[1].result) {
                 return []
             }
@@ -139,6 +173,10 @@ export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | nu
 
 type XDefinitionResponse = { location: any; symbol: any } | null
 export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<XDefinitionResponse> => {
+    if (!isSupported(pos.filePath)) {
+        return Promise.resolve(null)
+    }
+
     const body = wrapLSP(
         {
             method: 'textDocument/xdefinition',
@@ -164,6 +202,9 @@ export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pr
     })
         .then(resp => resp.json())
         .then(json => {
+            if (isUnsupportedModeResponse(json, pos.filePath)) {
+                return null
+            }
             if (!json || !json[1] || !json[1].result || !json[1].result[0]) {
                 return null
             }
@@ -172,8 +213,7 @@ export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Pr
 }, makeRepoURI)
 
 export const fetchReferences = memoizeAsync((ctx: AbsoluteRepoFilePosition): Promise<Location[]> => {
-    const ext = getPathExtension(ctx.filePath)
-    if (!supportedExtensions.has(ext)) {
+    if (!isSupported(ctx.filePath)) {
         return Promise.resolve([])
     }
     const body = wrapLSP(
@@ -204,6 +244,9 @@ export const fetchReferences = memoizeAsync((ctx: AbsoluteRepoFilePosition): Pro
     })
         .then(resp => resp.json())
         .then(json => {
+            if (isUnsupportedModeResponse(json, ctx.filePath)) {
+                return []
+            }
             if (!json || !json[1] || !json[1].result) {
                 throw new Error('empty references response')
             }
@@ -283,8 +326,7 @@ export interface ReferenceInformation {
 }
 
 export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<Location[]> => {
-    const ext = getPathExtension(ctx.filePath)
-    if (!supportedExtensions.has(ext)) {
+    if (!isSupported(ctx.filePath)) {
         return Promise.resolve([])
     }
 
@@ -309,6 +351,9 @@ export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<L
     })
         .then(resp => resp.json())
         .then(json => {
+            if (isUnsupportedModeResponse(json, ctx.filePath)) {
+                return []
+            }
             if (!json || !json[1] || !json[1].result) {
                 throw new Error('empty xreferences responses')
             }
