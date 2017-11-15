@@ -176,7 +176,6 @@ export class SearchResults extends React.Component<Props, State> {
 
         let totalMatches = 0
         let totalResults = 0
-        let totalFiles = 0
         let totalRepos = 0
         const seenRepos = new Set<string>()
         for (const result of this.state.results) {
@@ -185,7 +184,6 @@ export class SearchResults extends React.Component<Props, State> {
                 seenRepos.add(parsed.pathname)
                 totalRepos += 1
             }
-            totalFiles += 1
             totalResults += resultItemsCount(result)
         }
 
@@ -195,8 +193,6 @@ export class SearchResults extends React.Component<Props, State> {
                     <div className="search-results2__header">
                         <div className="search-results2__badge">{numberWithCommas(totalResults)}</div>
                         <div className="search-results2__label">{pluralize('result', totalResults)} in</div>
-                        <div className="search-results2__badge">{numberWithCommas(totalFiles)}</div>
-                        <div className="search-results2__label">{pluralize('file', totalFiles)} in</div>
                         <div className="search-results2__badge">{numberWithCommas(totalRepos)}</div>
                         <div className="search-results2__label">{pluralize('repo', totalRepos)} </div>
                         <div className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</div>
