@@ -1,6 +1,10 @@
 package vfsutil
 
-import "testing"
+import (
+	"io/ioutil"
+	"os"
+	"testing"
+)
 
 func TestGitHubRepoVFS(t *testing.T) {
 	if testing.Short() {
@@ -29,4 +33,17 @@ func TestGitHubRepoVFS(t *testing.T) {
 	}
 
 	testVFS(t, fs, want)
+}
+
+func useEmptyArchiveCacheDir() func() {
+	d, err := ioutil.TempDir("", "vfsutil_test")
+	if err != nil {
+		panic(err)
+	}
+	orig := ArchiveCacheDir
+	ArchiveCacheDir = d
+	return func() {
+		os.RemoveAll(d)
+		ArchiveCacheDir = orig
+	}
 }

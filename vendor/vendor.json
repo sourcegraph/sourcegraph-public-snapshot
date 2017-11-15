@@ -1492,6 +1492,12 @@
 			"revisionTime": "2017-02-21T15:51:53Z"
 		},
 		{
+			"checksumSHA1": "ZYlSaPhSEf6f3XhDF2ZKzEnJsMI=",
+			"path": "github.com/sourcegraph/lazyzip",
+			"revision": "20c3bbaf8453565763a18c11cc84f317a69806c4",
+			"revisionTime": "2017-11-13T18:42:06Z"
+		},
+		{
 			"checksumSHA1": "GxPD7A0NjMDom1xte0mghkpzr0E=",
 			"origin": "k8s.io/client-go/vendor/github.com/spf13/pflag",
 			"path": "github.com/spf13/pflag",

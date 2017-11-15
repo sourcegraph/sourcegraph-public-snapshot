@@ -1,7 +1,6 @@
 package search
 
 import (
-	"archive/zip"
 	"bufio"
 	"context"
 	"errors"
@@ -16,6 +15,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/sourcegraph/lazyzip"
 )
 
 const (
@@ -242,7 +242,7 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(f *zip.File) (protocol.FileMatch, error) {
+func (rg *readerGrep) FindZip(f *lazyzip.File) (protocol.FileMatch, error) {
 	rc, err := f.Open()
 	if err != nil {
 		return protocol.FileMatch{}, err
@@ -257,7 +257,7 @@ func (rg *readerGrep) FindZip(f *zip.File) (protocol.FileMatch, error) {
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	defer func() {
@@ -277,18 +277,26 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader, fileMat
 	defer cancel()
 
 	var (
-		files     = make(chan *zip.File)
+		files     = make(chan *lazyzip.File)
 		matches   = make(chan protocol.FileMatch)
 		wg        sync.WaitGroup
 		wgErrOnce sync.Once
 		wgErr     error
+		filesErr  error
 	)
 
 	// goroutine responsible for writing to files. It also is the only
 	// goroutine which listens for cancellation.
 	go func() {
 		done := ctx.Done()
-		for _, f := range zr.File {
+		for {
+			f, err := zr.Next()
+			if err != nil {
+				if err != io.EOF {
+					filesErr = err
+				}
+				break
+			}
 			if rg.matchPath != nil && !rg.matchPath.MatchPath(f.Name) {
 				continue
 			}
@@ -345,7 +353,12 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader, fileMat
 			}
 		}
 	}
-	return m, limitHit, wgErr
+
+	err = wgErr
+	if err == nil {
+		err = filesErr
+	}
+	return m, limitHit, err
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include
