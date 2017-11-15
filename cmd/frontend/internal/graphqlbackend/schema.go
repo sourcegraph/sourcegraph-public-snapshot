@@ -136,6 +136,7 @@ type Root {
   repositories(query: String = ""): [Repository!]!
   symbols(id: String!, mode: String!): [Symbol!]!
   currentUser: User
+  isUsernameAvailable(username: String!): Boolean!
   activeRepos: ActiveRepoResults!
   search(
     query: String = ""

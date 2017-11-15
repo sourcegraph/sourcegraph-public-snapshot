@@ -6,10 +6,12 @@ import { Base64 } from 'js-base64'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
+import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { VALID_PASSWORD_REGEXP, VALID_USERNAME_REGEXP } from '../settings/validation'
 import { eventLogger } from '../tracking/eventLogger'
+import { isUsernameAvailable } from './backend'
 
 interface LoginSignupFormProps {
     location: H.Location
@@ -29,6 +31,8 @@ interface LoginSignupFormState {
 }
 
 class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupFormState> {
+    private subscriptions = new Subscription()
+
     constructor(props: LoginSignupFormProps) {
         super(props)
         this.state = {
@@ -175,6 +179,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
         const searchParams = new URLSearchParams(this.props.location.search)
         const returnTo = searchParams.get('returnTo')
+
         if (returnTo) {
             // 🚨 SECURITY: important that we do not allow redirects to
             // arbitrary hosts here.
@@ -223,6 +228,30 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 )
                 break
             case 'signup':
+                this.subscriptions.add(
+                    isUsernameAvailable(this.state.username).subscribe(availability => {
+                        if (!availability) {
+                            this.setState({
+                                errorDescription: 'The username you selected is already taken, please try again.',
+                                loading: false,
+                            })
+                            return
+                        }
+                        webAuth.redirect.signupAndLogin(
+                            {
+                                connection: 'Sourcegraph',
+                                responseType: 'code',
+                                email: this.state.email,
+                                password: this.state.password,
+                                // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
+                                // user's name in Auth0. That's not an issue per-se, see more at
+                                // https://github.com/auth0/auth0.js/issues/70.
+                                user_metadata: { name: this.state.displayName || this.state.username },
+                            },
+                            authCallback
+                        )
+                    })
+                )
                 eventLogger.log('InitiateSignUp', {
                     signup: {
                         user_info: {
@@ -232,20 +261,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         },
                     },
                 })
-                webAuth.redirect.signupAndLogin(
-                    {
-                        connection: 'Sourcegraph',
-                        responseType: 'code',
-                        email: this.state.email,
-                        password: this.state.password,
-                        // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
-                        // user's name in Auth0. That's not an issue per-se, see more at
-                        // https://github.com/auth0/auth0.js/issues/70.
-                        user_metadata: { name: this.state.displayName || this.state.username },
-                    },
-                    authCallback
-                )
-                break
         }
     }
 }
