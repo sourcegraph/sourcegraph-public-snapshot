@@ -78,9 +78,4 @@ interface SourcegraphContext {
      * phabricatorURL is the URL for outbound Phabricator links
      */
     phabricatorURL: string
-
-    /**
-     * Enable search2 (new query UX) for all users
-     */
-    useSearch2: boolean
 }

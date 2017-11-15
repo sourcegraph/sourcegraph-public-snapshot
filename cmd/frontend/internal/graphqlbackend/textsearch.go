@@ -47,35 +47,6 @@ type patternInfo struct {
 	PathPatternsAreCaseSensitive bool
 }
 
-type searchResults struct {
-	results  []*fileMatch
-	limitHit bool
-	cloning  []string
-	missing  []string
-}
-
-func (sr *searchResults) Results() []*fileMatch {
-	return sr.results
-}
-
-func (sr *searchResults) LimitHit() bool {
-	return sr.limitHit
-}
-
-func (sr *searchResults) Cloning() []string {
-	if sr.cloning == nil {
-		return []string{}
-	}
-	return sr.cloning
-}
-
-func (sr *searchResults) Missing() []string {
-	if sr.missing == nil {
-		return []string{}
-	}
-	return sr.missing
-}
-
 type fileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
@@ -263,10 +234,10 @@ func (repoRev *repositoryRevision) hasRev() bool {
 	return repoRev.Rev != nil && *repoRev.Rev != ""
 }
 
-var mockSearchRepos func(args *repoSearchArgs) (*searchResults, error)
+var mockSearchRepos func(args *repoSearchArgs) (*searchResults2, error)
 
 // SearchRepos searches a set of repos for a pattern.
-func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults, error) {
+func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults2, error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)
 	}
@@ -332,7 +303,7 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	if len(flattened) > int(args.Query.FileMatchLimit) {
 		flattened = flattened[:args.Query.FileMatchLimit]
 	}
-	return &searchResults{
+	return &searchResults2{
 		results:  flattened,
 		limitHit: limitHit,
 		cloning:  cloning,
