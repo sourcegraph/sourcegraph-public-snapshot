@@ -180,7 +180,13 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	return r.Matches, r.LimitHit, nil
 }
 
+var mockSearchRepo func(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+
 func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	if mockSearchRepo != nil {
+		return mockSearchRepo(ctx, repoName, rev, info)
+	}
+
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return nil, false, err
@@ -246,13 +252,13 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	defer cancel()
 
 	var (
-		err       error
-		wg        sync.WaitGroup
-		mu        sync.Mutex
-		cloning   []string
-		missing   []string
-		flattened []*fileMatch
-		limitHit  bool
+		err         error
+		wg          sync.WaitGroup
+		mu          sync.Mutex
+		cloning     []string
+		missing     []string
+		unflattened [][]*fileMatch
+		limitHit    bool
 	)
 	for _, repoRev := range args.Repositories {
 		wg.Add(1)
@@ -285,7 +291,11 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 				cancel()
 			}
 			if len(matches) > 0 {
-				flattened = append(flattened, matches...)
+				sort.Slice(matches, func(i, j int) bool {
+					a, b := matches[i].uri, matches[j].uri
+					return a > b
+				})
+				unflattened = append(unflattened, matches)
 			}
 		}(*repoRev)
 	}
@@ -293,16 +303,54 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	if err != nil {
 		return nil, err
 	}
+
+	// Return early so we don't have to worry about empty lists in later
+	// calculations.
+	if len(unflattened) == 0 {
+		return &searchResults2{
+			results:  []*fileMatch{},
+			limitHit: limitHit,
+			cloning:  cloning,
+			missing:  missing,
+		}, nil
+	}
+
+	// We pass in a limit to each repository so we may end up with R*limit
+	// results where R is the number of repositories we searched. To ensure we
+	// have results from all repositories unflattened contains the results per
+	// repo. We then want to create an idempontent order of results, but
+	// ensuring every repo has atleast one result.
+	sort.Slice(unflattened, func(i, j int) bool {
+		a, b := unflattened[i][0].uri, unflattened[j][0].uri
+		return a > b
+	})
+	var flattened []*fileMatch
+	initialPortion := int(args.Query.FileMatchLimit) / len(unflattened)
+	for _, matches := range unflattened {
+		if initialPortion < len(matches) {
+			flattened = append(flattened, matches[:initialPortion]...)
+		} else {
+			flattened = append(flattened, matches...)
+		}
+	}
+	// We now have at most initialPortion from each repo. We add the rest of the
+	// results until we hit our limit.
+	for _, matches := range unflattened {
+		low := initialPortion
+		high := low + (int(args.Query.FileMatchLimit) - len(flattened))
+		if high <= len(matches) {
+			flattened = append(flattened, matches[low:high]...)
+		} else if low < len(matches) {
+			flattened = append(flattened, matches[low:]...)
+		}
+	}
+	// Sort again since we constructed flattened by adding more results at the
+	// end.
 	sort.Slice(flattened, func(i, j int) bool {
 		a, b := flattened[i].uri, flattened[j].uri
 		return a > b
 	})
-	// We pass in a limit to each repository so we may end up with R*limit results
-	// where R is the number of repositories we searched.
-	// Clip the results after doing the "relevance" sorting above.
-	if len(flattened) > int(args.Query.FileMatchLimit) {
-		flattened = flattened[:args.Query.FileMatchLimit]
-	}
+
 	return &searchResults2{
 		results:  flattened,
 		limitHit: limitHit,
