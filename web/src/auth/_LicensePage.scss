@@ -1,12 +1,14 @@
-.license-page {
+.license-invalid-page {
     margin-left: auto;
     margin-right: auto;
-    margin-top: 5em;
-    padding: 2em;
+    margin-top: 2rem;
+    padding: 2rem;
     text-align: center;
-    font-size: 1.5em;
-
-    .warning-sign {
-        font-size: 5em;
+ 
+    &__warning-sign {
+        height: 3rem;
+        width: 3rem;
+        display: inline-block;
+        fill: currentColor;
     }
 }
