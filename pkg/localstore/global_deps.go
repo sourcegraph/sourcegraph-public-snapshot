@@ -658,7 +658,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	span.SetTag("table", table)
 
 	// First, create a temporary table.
-	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_` + table + ` (
+	_, err = tx.ExecContext(ctx, `CREATE TEMPORARY TABLE new_`+table+` (
 	    language text NOT NULL,
 	    dep_data jsonb NOT NULL,
 	    repo_id integer NOT NULL,
@@ -707,13 +707,13 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	}
 	span.LogEvent("executed copy")
 
-	if _, err := tx.Exec(`DELETE FROM `+table+` WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
 		return errors.Wrap(err, "executing table deletion")
 	}
 	span.LogEvent("executed table deletion")
 
 	// Insert from temporary table into the real table.
-	_, err = tx.Exec(`INSERT INTO ` + table + `(
+	_, err = tx.ExecContext(ctx, `INSERT INTO `+table+`(
 		language,
 		dep_data,
 		repo_id,
@@ -722,7 +722,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 		d.dep_data,
 		d.repo_id,
 		d.hints
-	FROM new_` + table + ` d;`)
+	FROM new_`+table+` d;`)
 	if err != nil {
 		return errors.Wrap(err, "executing final insertion from temp table")
 	}
