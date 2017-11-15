@@ -50,6 +50,11 @@ func newGoogle() *googleClient {
 	return &googleClient{throttle: throttle}
 }
 
+// Enabled returns true if googleClient has been setup.
+func (c *googleClient) Enabled() bool {
+	return c.Service != nil
+}
+
 // SetAPIKey sets the Google API key for this client. This must be
 // called exactly once before issuing any requests. Otherwise, the
 // requests will fail.

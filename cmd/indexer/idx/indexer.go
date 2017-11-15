@@ -265,6 +265,10 @@ func depReferenceToPkgQuery(lang string, dep *sourcegraph.DependencyReference) m
 func resolveDependencies(ctx context.Context, lang string, deps []*sourcegraph.DependencyReference) map[string]struct{} {
 	switch lang {
 	case "Java":
+		if !Google.Enabled() {
+			return nil
+		}
+
 		// Best-effort fetch from GitHub via Google Search. Equivalent to searching for "site:github.com $groupId:$artifactId".
 		depQueries := make(map[string]struct{})
 		for _, dep := range deps {
