@@ -8,8 +8,33 @@ import (
 )
 
 type searchResults2 struct {
-	searchResults
-	alert *searchAlert
+	results  []*fileMatch
+	limitHit bool
+	cloning  []string
+	missing  []string
+	alert    *searchAlert
+}
+
+func (sr *searchResults2) Results() []*fileMatch {
+	return sr.results
+}
+
+func (sr *searchResults2) LimitHit() bool {
+	return sr.limitHit
+}
+
+func (sr *searchResults2) Cloning() []string {
+	if sr.cloning == nil {
+		return []string{}
+	}
+	return sr.cloning
+}
+
+func (sr *searchResults2) Missing() []string {
+	if sr.missing == nil {
+		return []string{}
+	}
+	return sr.missing
 }
 
 func (r searchResults2) Alert() *searchAlert { return r.alert }
@@ -71,16 +96,10 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) 
 		args.Query.ExcludePattern = &pat
 	}
 
-	var results *searchResults2
-	results1, err := r.root.SearchRepos(ctx, &args)
-	if results1 != nil {
-		var alert *searchAlert
+	results, err := r.root.SearchRepos(ctx, &args)
+	if results != nil {
 		if len(missingRepoRevs) > 0 {
-			alert = r.alertForMissingRepoRevs(missingRepoRevs)
-		}
-		results = &searchResults2{
-			searchResults: *results1,
-			alert:         alert,
+			results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
 		}
 	}
 	return results, err

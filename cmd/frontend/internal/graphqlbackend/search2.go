@@ -414,28 +414,3 @@ func unionRegExps(patterns []string) string {
 	}
 	return strings.Join(patterns2, "|")
 }
-
-func withoutEmptyStrings(list []string) []string {
-	emptyElements := 0
-	for _, s := range list {
-		if s == "" {
-			emptyElements++
-		}
-	}
-
-	// Only allocate if needed.
-	if emptyElements == len(list) {
-		return nil
-	}
-	if emptyElements == 0 {
-		return list
-	}
-
-	list2 := make([]string, 0, len(list)-emptyElements)
-	for _, s := range list {
-		if s != "" {
-			list2 = append(list2, s)
-		}
-	}
-	return list2
-}

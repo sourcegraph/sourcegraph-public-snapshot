@@ -137,17 +137,6 @@ type Root {
   symbols(id: String!, mode: String!): [Symbol!]!
   currentUser: User
   isUsernameAvailable(username: String!): Boolean!
-  activeRepos: ActiveRepoResults!
-  search(
-    query: String = ""
-    repositories: [String!]!
-    first: Int
-  ): [SearchResult!]!
-  searchRepos(
-    query: SearchQuery!
-    repositories: [RepositoryRevision!]!
-  ): SearchResults!
-  searchProfiles: [SearchProfile!]!
   search2(query: String = "", scopeQuery: String = ""): Search2
   searchScopes2: [SearchScope2!]!
   repoGroups: [RepoGroup!]!
@@ -218,8 +207,7 @@ type SearchQuery2 {
   scopeQuery: String!
 }
 
-# A group of repositories. This is the new name of SearchProfile; otherwise
-# it is the same.
+# A group of repositories.
 type RepoGroup {
   name: String!
   repositories: [String!]!
@@ -319,7 +307,7 @@ type SharedItemThreadLines {
   textSelectionRangeLength: Int!
 }
 
-union SearchResult = Repository | File | SearchProfile
+union SearchResult = Repository | File
 
 type RefFields {
   refLocation: RefLocation
@@ -390,21 +378,6 @@ type CommitState {
 type RevState {
   commit: Commit
   cloneInProgress: Boolean!
-}
-
-input SearchQuery {
-  pattern: String!
-  isRegExp: Boolean!
-  isWordMatch: Boolean!
-  isCaseSensitive: Boolean!
-  fileMatchLimit: Int!
-  includePattern: String
-  excludePattern: String
-}
-
-input RepositoryRevision {
-  repo: String!
-  rev: String
 }
 
 type Commit implements Node {
@@ -481,24 +454,6 @@ type File implements TreeEntry {
     Character: Int!
   ): DependencyReferences!
   blameRaw(startLine: Int!, endLine: Int!): String!
-}
-
-type ActiveRepoResults {
-  active: [String!]!
-  inactive: [String!]!
-}
-
-type SearchProfile {
-  name: String!
-  description: String
-  repositories: [Repository!]!
-}
-
-type SearchResults {
-  results: [FileMatch!]!
-  limitHit: Boolean!
-  cloning: [String!]!
-  missing: [String!]!
 }
 
 type FileMatch {
