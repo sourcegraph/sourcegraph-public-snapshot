@@ -28,7 +28,6 @@ import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
 import { VirtualList } from '../components/VirtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
-import { SearchOptions } from '../search2'
 import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
@@ -62,11 +61,6 @@ interface ReferenceGroupProps {
      * Callback when a reference result is selected
      */
     onSelect?: () => void
-
-    /**
-     * The options for the current search, to maintain as the user navigates.
-     */
-    searchOptions?: SearchOptions
 }
 
 interface ReferenceGroupState {

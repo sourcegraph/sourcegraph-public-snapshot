@@ -2,7 +2,6 @@ import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
 import { ReferencesGroup } from '../references/ReferencesWidget'
-import { parseSearchURLQuery } from './index'
 
 interface Props {
     location: H.Location
@@ -24,7 +23,6 @@ interface Props {
 }
 
 export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
-    const searchOptions = parseSearchURLQuery(props.location.search)
     const parsed = new URL(props.result.resource)
     const repoPath = parsed.hostname + parsed.pathname
     const rev = parsed.search.substr('?'.length)
@@ -54,7 +52,6 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
             isLocal={false}
             icon={RepoIcon}
             onSelect={props.onSelect}
-            searchOptions={searchOptions}
         />
     )
 }
