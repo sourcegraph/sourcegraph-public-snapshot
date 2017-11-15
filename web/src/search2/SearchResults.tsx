@@ -1,4 +1,5 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
@@ -11,11 +12,11 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { ReferencesGroup } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { searchText } from './backend'
 import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { RepoSearchResult } from './RepoSearchResult'
 import { SearchAlert } from './SearchAlert'
 
 interface Props {
@@ -191,10 +192,10 @@ export class SearchResults extends React.Component<Props, State> {
                     </div>
                 )}
                 {this.state.cloning.map((repoPath, i) => (
-                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />
+                    <RepoSearchResult repoPath={repoPath} key={i} icon={Loader} />
                 ))}
                 {this.state.missing.map((repoPath, i) => (
-                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon} />
+                    <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
                 ))}
                 {this.state.loading && <Loader className="icon-inline" />}
                 {alert && (
@@ -221,13 +222,7 @@ export class SearchResults extends React.Component<Props, State> {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
-                    <FileMatch
-                        key={key}
-                        location={this.props.location}
-                        result={result}
-                        onSelect={this.logEvent}
-                        expanded={expanded}
-                    />
+                    <FileMatch key={key} icon={RepoIcon} result={result} onSelect={this.logEvent} expanded={expanded} />
                 )
         }
         return undefined
