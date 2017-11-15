@@ -189,8 +189,6 @@ export class SearchResults extends React.Component<Props, State> {
             totalResults += resultItemsCount(result)
         }
 
-        const logEvent = () => eventLogger.log('SearchResultClicked')
-
         return (
             <div className="search-results2">
                 {this.state.results.length > 0 && (
@@ -222,18 +220,29 @@ export class SearchResults extends React.Component<Props, State> {
                 {this.state.results.map((result, i) => {
                     const prevTotal = totalMatches
                     totalMatches += resultItemsCount(result)
-                    return (
-                        <FileMatch
-                            key={i}
-                            location={this.props.location}
-                            result={result}
-                            onSelect={logEvent}
-                            expanded={prevTotal <= 500}
-                        />
-                    )
+                    const expanded = prevTotal <= 500
+                    return this.renderResult(i, result, expanded)
                 })}
             </div>
         )
+    }
+
+    private logEvent = () => eventLogger.log('SearchResultClicked')
+
+    private renderResult(key: number, result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
+        switch (result.__typename) {
+            case 'FileMatch':
+                return (
+                    <FileMatch
+                        key={key}
+                        location={this.props.location}
+                        result={result}
+                        onSelect={this.logEvent}
+                        expanded={expanded}
+                    />
+                )
+        }
+        return undefined
     }
 }
 
