@@ -307,8 +307,6 @@ type SharedItemThreadLines {
   textSelectionRangeLength: Int!
 }
 
-union SearchResult = Repository | File
-
 type RefFields {
   refLocation: RefLocation
   uri: URI
