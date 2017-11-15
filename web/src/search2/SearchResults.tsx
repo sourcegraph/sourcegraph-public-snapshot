@@ -1,5 +1,4 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
@@ -15,6 +14,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { ReferencesGroup } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { searchText } from './backend'
+import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { SearchAlert } from './SearchAlert'
 
@@ -191,8 +191,6 @@ export class SearchResults extends React.Component<Props, State> {
 
         const logEvent = () => eventLogger.log('SearchResultClicked')
 
-        const searchOptions = parseSearchURLQuery(this.props.location.search)
-
         return (
             <div className="search-results2">
                 {this.state.results.length > 0 && (
@@ -224,37 +222,13 @@ export class SearchResults extends React.Component<Props, State> {
                 {this.state.results.map((result, i) => {
                     const prevTotal = totalMatches
                     totalMatches += resultItemsCount(result)
-                    const parsed = new URL(result.resource)
-                    const repoPath = parsed.hostname + parsed.pathname
-                    const rev = parsed.search.substr('?'.length)
-                    const filePath = parsed.hash.substr('#'.length)
-                    const refs = result.lineMatches.map(match => ({
-                        range: {
-                            start: {
-                                character: match.offsetAndLengths[0][0],
-                                line: match.lineNumber,
-                            },
-                            end: {
-                                character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
-                                line: match.lineNumber,
-                            },
-                        },
-                        uri: result.resource,
-                        repoURI: repoPath,
-                    }))
-
                     return (
-                        <ReferencesGroup
-                            hidden={prevTotal > 500}
-                            repoPath={repoPath}
-                            localRev={rev}
-                            filePath={filePath}
+                        <FileMatch
                             key={i}
-                            refs={refs}
-                            isLocal={false}
-                            icon={RepoIcon}
+                            location={this.props.location}
+                            result={result}
                             onSelect={logEvent}
-                            searchOptions={searchOptions}
+                            expanded={prevTotal <= 500}
                         />
                     )
                 })}
