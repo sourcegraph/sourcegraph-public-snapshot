@@ -17,12 +17,15 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                         missing
                         cloning
                         results {
-                            resource
-                            limitHit
-                            lineMatches {
-                                preview
-                                lineNumber
-                                offsetAndLengths
+                            __typename
+                            ... on FileMatch {
+                                resource
+                                limitHit
+                                lineMatches {
+                                    preview
+                                    lineNumber
+                                    offsetAndLengths
+                                }
                             }
                         }
                         alert {

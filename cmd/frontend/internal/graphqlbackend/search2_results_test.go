@@ -31,7 +31,7 @@ func TestSearch2Results(t *testing.T) {
 		for i, result := range results.results {
 			// NOTE: Only supports one match per line. If we need to test other cases,
 			// just remove that assumption in the following line of code.
-			resultDescriptions[i] = fmt.Sprintf("%s:%d", result.JPath, result.JLineMatches[0].JLineNumber)
+			resultDescriptions[i] = fmt.Sprintf("%s:%d", result.fileMatch.JPath, result.fileMatch.JLineMatches[0].JLineNumber)
 		}
 		return resultDescriptions
 	}
@@ -53,16 +53,14 @@ func TestSearch2Results(t *testing.T) {
 		}
 		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		calledSearchRepos := false
-		mockSearchRepos = func(args *repoSearchArgs) (*searchResults2, error) {
+		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true
 			if want := `foo\d.*?bar\*`; args.Query.Pattern != want {
 				t.Errorf("got %q, want %q", args.Query.Pattern, want)
 			}
-			return &searchResults2{
-				results: []*fileMatch{
-					{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
-				},
-			}, nil
+			return fileMatchesToSearchResults([]*fileMatch{
+				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
+			}), &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchRepos = nil }()
 		testCallResults(t, `foo\d "bar*"`, []string{"dir/file:123"})

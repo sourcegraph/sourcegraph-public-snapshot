@@ -102,7 +102,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 			var suggestions []*searchResultResolver
 			for i, res := range results.results {
 				// TODO(sqs): should parallelize, or reuse data fetched elsewhere
-				u, err := url.Parse(res.uri)
+				u, err := url.Parse(res.fileMatch.uri)
 				if err != nil {
 					return nil, err
 				}
@@ -115,7 +115,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 					return nil, err
 				}
 
-				path := res.JPath
+				path := res.fileMatch.JPath
 				fileResolver := &fileResolver{
 					path:   path,
 					name:   path,
