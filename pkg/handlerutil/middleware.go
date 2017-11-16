@@ -9,11 +9,15 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-var expectedPassword = env.Get("PASSWORD", "", "password for basic authentication")
+var passwordEnv = env.Get("PASSWORD", "", "password for basic authentication")
 
 // NewBasicAuthHandler creates a new handler that wraps an existing handler
 // with HTTP basic authentication.
 func NewBasicAuthHandler(handler http.Handler) http.Handler {
+	return NewBasicAuthHandlerWithPassword(handler, passwordEnv)
+}
+
+func NewBasicAuthHandlerWithPassword(handler http.Handler, expectedPassword string) http.Handler {
 	if expectedPassword == "" {
 		return handler
 	}

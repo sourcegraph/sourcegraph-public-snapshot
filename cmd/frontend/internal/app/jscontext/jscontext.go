@@ -14,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -75,6 +76,7 @@ type JSContext struct {
 	Auth0Domain         string                     `json:"auth0Domain"`
 	Auth0ClientID       string                     `json:"auth0ClientID"`
 	PhabricatorURL      string                     `json:"phabricatorURL"`
+	LicenseStatus       license.LicenseStatus      `json:"licenseStatus"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -127,6 +129,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		}
 	}
 
+	_, licenseStatus := license.Get(TrackingAppID)
+
 	return JSContext{
 		AppURL:              conf.AppURL.String(),
 		XHRHeaders:          headers,
@@ -148,6 +152,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Auth0Domain:         auth0.Domain,
 		Auth0ClientID:       auth0.Config.ClientID,
 		PhabricatorURL:      phabricatorURL,
+		LicenseStatus:       licenseStatus,
 	}
 }
 

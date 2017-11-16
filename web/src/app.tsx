@@ -189,6 +189,17 @@ class App extends React.Component<{}, AppState> {
             return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
         }
 
+        if (window.context.licenseStatus !== 'valid' && window.location.pathname !== '/.admin/license-unverified') {
+            return (
+                <BrowserRouter>
+                    <Switch>
+                        <Route path="/.admin/license-unverified" component={BackfillRedirector} />
+                        <Redirect to="/.admin/license-unverified" />
+                    </Switch>
+                </BrowserRouter>
+            )
+        }
+
         return (
             <BrowserRouter>
                 <Route path="/" component={BackfillRedirector} />

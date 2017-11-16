@@ -78,4 +78,9 @@ interface SourcegraphContext {
      * phabricatorURL is the URL for outbound Phabricator links
      */
     phabricatorURL: string
+
+    /**
+     * Status of license
+     */
+    licenseStatus: 'expired' | 'missing' | 'valid' | 'invalid'
 }

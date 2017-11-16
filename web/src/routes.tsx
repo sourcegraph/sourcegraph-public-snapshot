@@ -3,6 +3,7 @@ import { RouteProps } from 'react-router'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { CommentsPage } from './comments/CommentsPage'
+import { LicenseInvalidPage } from './LicenseInvalidPage'
 import { RepositoryResolver } from './repo/RepositoryResolver'
 import { SearchResults } from './search2/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
@@ -26,6 +27,12 @@ export interface LayoutRouteProps extends RouteProps {
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
 export const routes: LayoutRouteProps[] = [
+    {
+        path: '/.admin/license-unverified',
+        component: LicenseInvalidPage,
+        exact: true,
+        forceNarrowWidth: true,
+    },
     {
         path: '/search',
         component: SearchResults,
