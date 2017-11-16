@@ -29,9 +29,8 @@ type sessionInfo struct {
 	LastActive   time.Time     `json:"lastActive"`
 	ExpiryPeriod time.Duration `json:"expiryPeriod"`
 
-	// // DEPRECATED
-	// // TODO
-	// Expiry time.Time `json:"expiry"`
+	// DEPRECATED. Can be removed after December 31, 2017
+	Expiry time.Time `json:"expiry"`
 }
 
 // SetSessionStore sets the backing store used for storing sessions on the server. It should be called exactly once.
@@ -159,6 +158,24 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 			return r.Context()
 		}
 
+		// Session backcompat
+		if (info.LastActive.IsZero() || info.ExpiryPeriod == 0) && info.Expiry.After(time.Now()) {
+			info.LastActive = time.Now()
+			info.ExpiryPeriod = 14 * 24 * time.Hour
+			info.Expiry = time.Time{}
+			newActorJSON, err := json.Marshal(info)
+			if err != nil {
+				log15.Error("failed to update session to new format", "id", session.ID, "session", info)
+				return r.Context()
+			}
+			session.Values["actor"] = newActorJSON
+			if err := session.Save(r, w); err != nil {
+				log15.Error("error saving session", "error", err)
+				return r.Context()
+			}
+			return actor.WithActor(r.Context(), info.Actor)
+		}
+
 		// Check expiry
 		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
 			DeleteSession(w, r)
@@ -176,6 +193,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 			session.Values["actor"] = newActorJSON
 			if err := session.Save(r, w); err != nil {
 				log15.Error("error saving session", "error", err)
+				return r.Context()
 			}
 		}
 
