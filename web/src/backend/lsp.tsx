@@ -285,6 +285,6 @@ export const fetchXreferences = memoizeAsync(
             },
             { repoPath: ctx.repoPath, commitID: ctx.commitID },
             ctx.filePath
-        ),
+        ).then((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference)),
     ctx => makeRepoURI(ctx) + '___' + ctx.query + '___' + ctx.limit
 )
