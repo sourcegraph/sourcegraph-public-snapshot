@@ -160,7 +160,7 @@ export const CommentsPage = reactive<Props>(props => {
                                         <a href="https://about.sourcegraph.com/docs/editor/share-code">
                                             share the code
                                         </a>.&nbsp;
-                                        <a href={editorURL} onClick={openEditor}>
+                                        <a href={editorURL} target="sourcegraphapp" onClick={openEditor}>
                                             Open in Sourcegraph Editor
                                         </a>{' '}
                                         to see code.
@@ -185,6 +185,7 @@ export const CommentsPage = reactive<Props>(props => {
                                 <a
                                     className="btn btn-primary btn-block comments-page__reply-in-editor"
                                     href={editorURL}
+                                    target="sourcegraphapp"
                                     onClick={openEditor}
                                 >
                                     Open in Sourcegraph Editor

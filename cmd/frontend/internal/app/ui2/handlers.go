@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"strings"
 
@@ -40,8 +41,19 @@ type InjectedHTML struct {
 	BodyBottom template.HTML
 }
 
+type Metadata struct {
+	// Title is the title of the page for Twitter cards, OpenGraph, etc.
+	// e.g. "Open in Sourcegraph"
+	Title string
+
+	// Description is the description of the page for Twitter cards, OpenGraph,
+	// etc. e.g. "View this link in Sourcegraph Editor."
+	Description string
+}
+
 type Common struct {
 	Injected InjectedHTML
+	Metadata *Metadata
 	Context  jscontext.JSContext
 	AssetURL string
 	Title    string
@@ -367,10 +379,111 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	if title != "" {
-		common.Title = fmt.Sprintf("%s - Sourcegraph", title)
-	} else {
-		common.Title = fmt.Sprintf("%s - Sourcegraph", thread.File)
+	// At this point, it's a public ('secret URL') shared item.
+	//
+	// Generate metadata for the page.
+	snippet := false
+	if title == "" {
+		snippet = true
+		title = fmt.Sprintf("%s (Snippet)", thread.File)
 	}
+
+	var rev string
+	if thread.Branch != nil {
+		rev = "@" + *thread.Branch
+	}
+	var description string
+	if snippet {
+		description = fmt.Sprintf("Snippet from %s:%d (%s%s) ", thread.File, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
+	} else {
+		description = fmt.Sprintf("Discussion at %s:%d (%s%s) ", thread.File, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
+	}
+
+	metadata := &Metadata{}
+	ua := r.Header.Get("User-Agent")
+	switch {
+	case strings.Contains(ua, "Slackbot"):
+		// Note the HTML escape here is not for security -- but rather for
+		// Slack's quite strange behavior which requires double escaping to get
+		// proper rendering of e.g. &lt; and &gt; brackets.
+		metadata.Title = template.HTMLEscapeString(title)
+		metadata.Description = description
+
+	case strings.Contains(ua, "Twitterbot"):
+		// Try it here: https://cards-dev.twitter.com/validator
+		fallthrough
+
+	case strings.Contains(ua, "facebook"):
+		// Try it here: https://developers.facebook.com/tools/debug/sharing/
+		//
+		// Note: ngrok often blocks Facebook's crawlers for some reason (https://developers.facebook.com/bugs/824028317765435/).
+		// Try localtunnel instead: https://localtunnel.github.io/www/#quickstart
+		fallthrough
+
+	default:
+		metadata.Title = title
+		metadata.Description = description
+	}
+	common.Metadata = metadata
+
+	common.Title = fmt.Sprintf("%s - Sourcegraph", title)
 	return renderTemplate(w, "app.html", common)
+}
+
+func serveOpen(w http.ResponseWriter, r *http.Request) error {
+	common, err := newCommon(w, r, "Open in Sourcegraph", serveError)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
+
+	q := r.URL.Query()
+	repo := q.Get("repo")              // e.g. "ssh://git@github.com/sourcegraph/sourcegraph.git"
+	pathStr := q.Get("path")           // e.g. "web/src/comments/CommentsPage.tsx"
+	lineNumber := q.Get("selection")   // e.g. "177"
+	_, fileName := path.Split(pathStr) // "CommentsPage.tsx"
+
+	// Guess that the repo name is the last repo clone URL path component.
+	repoSplit := strings.Split(repo, "/")
+	repoName := strings.TrimSuffix(repoSplit[len(repoSplit)-1], ".git")
+	repoName = strings.Title(repoName)
+
+	// Generate metadata for the page.
+	metadata := &Metadata{}
+	ua := r.Header.Get("User-Agent")
+	switch {
+	case strings.Contains(ua, "Twitterbot"):
+		// Try it here: https://cards-dev.twitter.com/validator
+		metadata.Title = fmt.Sprintf("%s:%s", ellipsisPath(pathStr, 2), lineNumber)
+		metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
+
+	case strings.Contains(ua, "Slackbot"):
+		fallthrough
+
+	case strings.Contains(ua, "facebook"):
+		// Try it here: https://developers.facebook.com/tools/debug/sharing/
+		//
+		// Note: ngrok often blocks Facebook's crawlers for some reason (https://developers.facebook.com/bugs/824028317765435/).
+		// Try localtunnel instead: https://localtunnel.github.io/www/#quickstart
+		fallthrough
+
+	default:
+		metadata.Title = fmt.Sprintf("%s:%s - %s", pathStr, lineNumber, repoName)
+		metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
+	}
+	common.Metadata = metadata
+
+	return renderTemplate(w, "app.html", common)
+}
+
+// ellipsisPath returns the given path with at max 2 path components from the
+// end, and an ellipsis (…) at the front when neccessary.
+func ellipsisPath(pathStr string, n int) string {
+	split := strings.Split(pathStr, "/")
+	if len(split) < n {
+		return pathStr
+	}
+	return path.Join(append([]string{"…"}, split[len(split)-n:]...)...)
 }

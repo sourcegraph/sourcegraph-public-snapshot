@@ -4,6 +4,7 @@ import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { LicenseInvalidPage } from './LicenseInvalidPage'
+import { OpenPage } from './open/OpenPage'
 import { RepositoryResolver } from './repo/RepositoryResolver'
 import { SearchResults } from './search2/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
@@ -41,6 +42,12 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/c/:ulid',
         component: CommentsPage,
+        exact: true,
+        forceNarrowWidth: true,
+    },
+    {
+        path: '/open',
+        component: OpenPage,
         exact: true,
         forceNarrowWidth: true,
     },

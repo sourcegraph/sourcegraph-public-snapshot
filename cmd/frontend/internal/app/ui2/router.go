@@ -29,6 +29,7 @@ const (
 	routeHome                 = "home"
 	routeSearch               = "search"
 	routeComment              = "comment"
+	routeOpen                 = "open"
 	routeRepo                 = "repo"
 	routeTree                 = "tree"
 	routeBlob                 = "blob"
@@ -92,6 +93,7 @@ func newRouter() *mux.Router {
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/c/{ULID}").Methods("GET").Name(routeComment)
+	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
 	r.Path("/settings").Methods("GET").Name(routeSettings)
 	r.Path("/settings/accept-invite").Methods("GET").Name(routeSettingsAcceptInvite)
@@ -183,6 +185,9 @@ func init() {
 
 	// comment
 	router.Get(routeComment).Handler(handler(serveComment))
+
+	// open
+	router.Get(routeOpen).Handler(handler(serveOpen))
 
 	// repo
 	serveRepoHandler := handler(serveRepoOrBlob(routeRepo, func(c *Common, r *http.Request) string {

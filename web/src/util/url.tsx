@@ -170,7 +170,7 @@ export function toEditorURL(
     if (thread) {
         query += '&thread=' + encodeURIComponent(String(thread))
     }
-    return 'https://about.sourcegraph.com/open/#open?' + query
+    return '/open?' + query
 }
 
 /**
