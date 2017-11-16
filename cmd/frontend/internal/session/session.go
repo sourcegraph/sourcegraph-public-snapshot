@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"net/textproto"
 	"strings"
 	"time"
@@ -24,8 +25,13 @@ var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used fo
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.
 type sessionInfo struct {
-	Actor  *actor.Actor `json:"actor"`
-	Expiry time.Time    `json:"expiry"`
+	Actor        *actor.Actor  `json:"actor"`
+	LastActive   time.Time     `json:"lastActive"`
+	ExpiryPeriod time.Duration `json:"expiryPeriod"`
+
+	// // DEPRECATED
+	// // TODO
+	// Expiry time.Time `json:"expiry"`
 }
 
 // SetSessionStore sets the backing store used for storing sessions on the server. It should be called exactly once.
@@ -48,14 +54,14 @@ func MustNewRedisStore(secureCookie bool) sessions.Store {
 }
 
 // StartNewSession starts a new session with authentication for the given uid.
-func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry time.Time) error {
+func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration) error {
 	DeleteSession(w, r)
 
 	session, err := sessionStore.New(&http.Request{}, "sg-session") // workaround: not passing the request forces a new session
 	if err != nil {
 		log15.Error("error creating session", "error", err)
 	}
-	actorJSON, err := json.Marshal(sessionInfo{Actor: actor, Expiry: expiry})
+	actorJSON, err := json.Marshal(sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now()})
 	if err != nil {
 		return err
 	}
@@ -87,7 +93,7 @@ func CookieOrSessionMiddleware(next http.Handler) http.Handler {
 		if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
 			next.ServeHTTP(w, r.WithContext(AuthenticateBySession(r.Context(), parts[1])))
 		} else {
-			next.ServeHTTP(w, r.WithContext(authenticateByCookie(r)))
+			next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
 		}
 	})
 }
@@ -96,7 +102,7 @@ func CookieOrSessionMiddleware(next http.Handler) http.Handler {
 // future HTTP request via cookie.
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r)))
+		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
 	})
 }
 
@@ -108,7 +114,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := r.Header[textproto.CanonicalMIMEHeaderKey(headerName)]; ok {
-			r = r.WithContext(authenticateByCookie(r))
+			r = r.WithContext(authenticateByCookie(r, w))
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -117,7 +123,13 @@ func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler
 // AuthenticateBySession authenticates the context with the given session cookie.
 func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Context {
 	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{"sg-session=" + sessionCookie}}}
-	return authenticateByCookie(fakeRequest.WithContext(ctx))
+
+	// Note: we pass a httptest.NewRecorder() in this case, because we want to count editor activity
+	// toward renewing the session. The behavior of the Redis session store
+	// (https://sourcegraph.com/github.com/boj/redistore@4562487a4bee9a7c272b72bfaeda4917d0a47ab9/-/blob/redistore.go#L253-275)
+	// is such that only the session ID is stored in the cookie, so the same cookie value will work
+	// for the updated session.
+	return authenticateByCookie(fakeRequest.WithContext(ctx), httptest.NewRecorder())
 }
 
 // SessionHeaderToCookieMiddleware checks the request for a HTTP Authorization header that contains a
@@ -133,7 +145,7 @@ func SessionHeaderToCookieMiddleware(h http.Handler) http.Handler {
 	})
 }
 
-func authenticateByCookie(r *http.Request) context.Context {
+func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
 	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
 		log15.Error("error getting session", "error", err)
@@ -147,9 +159,26 @@ func authenticateByCookie(r *http.Request) context.Context {
 			return r.Context()
 		}
 
-		if info.Actor == nil || info.Expiry.Before(time.Now()) {
+		// Check expiry
+		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
+			DeleteSession(w, r)
 			return actor.WithActor(r.Context(), &actor.Actor{})
 		}
+
+		// Renew session
+		if time.Now().Sub(info.LastActive) > 5*time.Minute {
+			info.LastActive = time.Now()
+			newActorJSON, err := json.Marshal(info)
+			if err != nil {
+				log15.Error("error renewing session", "error", err)
+				return r.Context()
+			}
+			session.Values["actor"] = newActorJSON
+			if err := session.Save(r, w); err != nil {
+				log15.Error("error saving session", "error", err)
+			}
+		}
+
 		return actor.WithActor(r.Context(), info.Actor)
 	}
 

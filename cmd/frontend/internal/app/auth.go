@@ -105,7 +105,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 
 	// Write the session cookie (native authentication session duration is 10 years)
-	if err := session.StartNewSession(w, r, actor, time.Now().Add(10*365*24*time.Hour)); err != nil {
+	if err := session.StartNewSession(w, r, actor, 14*24*time.Hour); err != nil {
 		return err
 	}
 
