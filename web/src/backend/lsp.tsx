@@ -9,38 +9,46 @@ interface LSPRequest {
     params: any
 }
 
-export function isEmptyHover(hover: Hover): boolean {
-    return !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
+export const isEmptyHover = (hover: any): boolean =>
+    !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
+
+const getHeaders = (): Headers => {
+    const headers = new Headers()
+    for (const [key, value] of Object.entries(window.context.xhrHeaders)) {
+        headers.set(key, value)
+    }
+    return headers
 }
 
-function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
-    return [
-        {
-            id: 0,
-            method: 'initialize',
-            params: {
-                // TODO(sqs): rootPath is deprecated but xlang client proxy currently
-                // requires it. Pass rootUri as well (below) for forward compat.
-                rootPath: `git://${ctx.repoPath}?${ctx.commitID}`,
+const wrapLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] => [
+    {
+        id: 0,
+        method: 'initialize',
+        params: {
+            // TODO(sqs): rootPath is deprecated but xlang client proxy currently
+            // requires it. Pass rootUri as well (below) for forward compat.
+            rootPath: `git://${ctx.repoPath}?${ctx.commitID}`,
 
-                rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
-                mode: `${getModeFromExtension(getPathExtension(path))}`,
-            },
+            rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
+            mode: `${getModeFromExtension(getPathExtension(path))}`,
         },
-        {
-            id: 1,
-            ...req,
-        },
-        {
-            id: 2,
-            method: 'shutdown',
-        },
-        {
-            // id not included on 'exit' requests
-            method: 'exit',
-        },
-    ]
-}
+    },
+    {
+        id: 1,
+        ...req,
+    },
+    {
+        id: 2,
+        method: 'shutdown',
+    },
+    {
+        // id not included on notifications
+        method: 'exit',
+    },
+]
+
+/** LSP proxy error code for unsupported modes */
+export const EMODENOTFOUND = -32000
 
 /**
  * A static list of what is supported on Sourcegraph.com. However, on-prem instances may support
@@ -48,109 +56,85 @@ function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {
  */
 const unsupportedExtensions = new Set<string>()
 
-/**
- * Returns true if the request failed due to the lsp-proxy not supporting the
- * language mode.
- *
- * Additionally it will update isSupported to return false for the extension.
- *
- * @param json The serialized response from the xlang API
- * @param path The lsp document path
- */
-function isUnsupportedModeResponse(json: any, path: string): boolean {
-    // lsp-proxy returns this error code for unsupported modes.
-    const codeModeNotFound = -32000
-    if (json && json[0] && json[0].error && json[0].error.code === codeModeNotFound) {
-        unsupportedExtensions.add(getPathExtension(path))
-        return true
-    }
-    return false
-}
-
-function isSupported(path: string): boolean {
+const isSupported = (path: string): boolean => {
     const ext = getPathExtension(path)
     return supportedExtensions.has(ext) && !unsupportedExtensions.has(ext)
 }
 
-export const fetchHover = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<Hover> => {
-    if (!isSupported(pos.filePath)) {
-        return Promise.resolve({ contents: [] })
+/**
+ * Sends an LSP request to the xlang API.
+ * If an error is returned, the Promise is rejected with the error from the response.
+ *
+ * @param req The LSP request to send
+ * @param ctx Repo and revision
+ * @param path File path for determining the mode
+ * @return The result of the method call
+ */
+const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Promise<any> => {
+    if (!isSupported(path)) {
+        return Promise.reject(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }
-
-    const body = wrapLSP(
-        {
-            method: 'textDocument/hover',
-            params: {
-                textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-                },
-                position: {
-                    character: pos.position.character! - 1,
-                    line: pos.position.line - 1,
-                },
-            },
-        },
-        pos,
-        pos.filePath
-    )
-
-    return fetch(`/.api/xlang/textDocument/hover`, {
+    return fetch(`/.api/xlang/${req.method}`, {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: JSON.stringify(wrapLSPRequest(req, ctx, path)),
         headers: getHeaders(),
         credentials: 'same-origin',
     })
-        .then(resp => resp.json())
-        .then(json => {
-            if (isUnsupportedModeResponse(json, pos.filePath)) {
-                return { contents: [] }
+        .then(response => response.json())
+        .then(results => {
+            for (const result of results) {
+                if (result && result.error) {
+                    if (result.error.code === EMODENOTFOUND) {
+                        unsupportedExtensions.add(getPathExtension(path))
+                    }
+                    throw Object.assign(new Error(result.error.message), result.error)
+                }
             }
-            if (!json || !json[1] || !json[1].result) {
-                return []
-            }
-            return json[1].result
+            return results[1].result
         })
-}, makeRepoURI)
+}
 
-export const fetchDefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<Definition> => {
-    if (!isSupported(pos.filePath)) {
-        return Promise.resolve([])
-    }
-
-    const body = wrapLSP(
-        {
-            method: 'textDocument/definition',
-            params: {
-                textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-                },
-                position: {
-                    character: pos.position.character! - 1,
-                    line: pos.position.line - 1,
+export const fetchHover = memoizeAsync(
+    (pos: AbsoluteRepoFilePosition): Promise<Hover> =>
+        sendLSPRequest(
+            {
+                method: 'textDocument/hover',
+                params: {
+                    textDocument: {
+                        uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    },
+                    position: {
+                        character: pos.position.character! - 1,
+                        line: pos.position.line - 1,
+                    },
                 },
             },
-        },
-        pos,
-        pos.filePath
-    )
+            pos,
+            pos.filePath
+        ),
+    makeRepoURI
+)
 
-    return fetch(`/.api/xlang/textDocument/definition`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: getHeaders(),
-        credentials: 'same-origin',
-    })
-        .then(resp => resp.json())
-        .then(json => {
-            if (isUnsupportedModeResponse(json, pos.filePath)) {
-                return []
-            }
-            if (!json || !json[1] || !json[1].result) {
-                return []
-            }
-            return json[1].result
-        })
-}, makeRepoURI)
+export const fetchDefinition = memoizeAsync(
+    (pos: AbsoluteRepoFilePosition): Promise<Definition> =>
+        sendLSPRequest(
+            {
+                method: 'textDocument/definition',
+                params: {
+                    textDocument: {
+                        uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    },
+                    position: {
+                        character: pos.position.character! - 1,
+                        line: pos.position.line - 1,
+                    },
+                },
+            },
+            pos,
+            pos.filePath
+        ),
+    makeRepoURI
+)
 
 export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | null> {
     return fetchDefinition(pos).then(def => {
@@ -172,87 +156,50 @@ export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | nu
 }
 
 type XDefinitionResponse = { location: any; symbol: any } | null
-export const fetchXdefinition = memoizeAsync((pos: AbsoluteRepoFilePosition): Promise<XDefinitionResponse> => {
-    if (!isSupported(pos.filePath)) {
-        return Promise.resolve(null)
-    }
-
-    const body = wrapLSP(
-        {
-            method: 'textDocument/xdefinition',
-            params: {
-                textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-                },
-                position: {
-                    character: pos.position.character! - 1,
-                    line: pos.position.line - 1,
+export const fetchXdefinition = memoizeAsync(
+    (pos: AbsoluteRepoFilePosition): Promise<XDefinitionResponse> =>
+        sendLSPRequest(
+            {
+                method: 'textDocument/xdefinition',
+                params: {
+                    textDocument: {
+                        uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    },
+                    position: {
+                        character: pos.position.character! - 1,
+                        line: pos.position.line - 1,
+                    },
                 },
             },
-        },
-        pos,
-        pos.filePath
-    )
+            pos,
+            pos.filePath
+        ),
+    makeRepoURI
+)
 
-    return fetch(`/.api/xlang/textDocument/xdefinition`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: getHeaders(),
-        credentials: 'same-origin',
-    })
-        .then(resp => resp.json())
-        .then(json => {
-            if (isUnsupportedModeResponse(json, pos.filePath)) {
-                return null
-            }
-            if (!json || !json[1] || !json[1].result || !json[1].result[0]) {
-                return null
-            }
-            return json[1].result[0]
-        })
-}, makeRepoURI)
-
-export const fetchReferences = memoizeAsync((ctx: AbsoluteRepoFilePosition): Promise<Location[]> => {
-    if (!isSupported(ctx.filePath)) {
-        return Promise.resolve([])
-    }
-    const body = wrapLSP(
-        {
-            method: 'textDocument/references',
-            params: {
-                textDocument: {
-                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+export const fetchReferences = memoizeAsync(
+    (ctx: AbsoluteRepoFilePosition): Promise<Location[]> =>
+        sendLSPRequest(
+            {
+                method: 'textDocument/references',
+                params: {
+                    textDocument: {
+                        uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                    },
+                    position: {
+                        character: ctx.position.character! - 1,
+                        line: ctx.position.line - 1,
+                    },
+                    context: {
+                        includeDeclaration: true,
+                    },
                 },
-                position: {
-                    character: ctx.position.character! - 1,
-                    line: ctx.position.line - 1,
-                },
-                context: {
-                    includeDeclaration: true,
-                },
-            },
-        } as any,
-        ctx,
-        ctx.filePath
-    )
-
-    return fetch(`/.api/xlang/textDocument/references`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: getHeaders(),
-        credentials: 'same-origin',
-    })
-        .then(resp => resp.json())
-        .then(json => {
-            if (isUnsupportedModeResponse(json, ctx.filePath)) {
-                return []
-            }
-            if (!json || !json[1] || !json[1].result) {
-                throw new Error('empty references response')
-            }
-            return json[1].result
-        })
-}, makeRepoURI)
+            } as any,
+            ctx,
+            ctx.filePath
+        ),
+    makeRepoURI
+)
 
 interface XReferencesParams extends AbsoluteRepoFile {
     query: string
@@ -325,46 +272,19 @@ export interface ReferenceInformation {
     symbol: SymbolDescriptor
 }
 
-export const fetchXreferences = memoizeAsync((ctx: XReferencesParams): Promise<Location[]> => {
-    if (!isSupported(ctx.filePath)) {
-        return Promise.resolve([])
-    }
-
-    const body = wrapLSP(
-        {
-            method: 'workspace/xreferences',
-            params: {
-                hints: ctx.hints,
-                query: ctx.query,
-                limit: ctx.limit,
+export const fetchXreferences = memoizeAsync(
+    (ctx: XReferencesParams): Promise<Location[]> =>
+        sendLSPRequest(
+            {
+                method: 'workspace/xreferences',
+                params: {
+                    hints: ctx.hints,
+                    query: ctx.query,
+                    limit: ctx.limit,
+                },
             },
-        },
-        { repoPath: ctx.repoPath, commitID: ctx.commitID },
-        ctx.filePath
-    )
-
-    return fetch(`/.api/xlang/workspace/xreferences`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: getHeaders(),
-        credentials: 'same-origin',
-    })
-        .then(resp => resp.json())
-        .then(json => {
-            if (isUnsupportedModeResponse(json, ctx.filePath)) {
-                return []
-            }
-            if (!json || !json[1] || !json[1].result) {
-                throw new Error('empty xreferences responses')
-            }
-            return json[1].result.map((data: ReferenceInformation) => data.reference)
-        })
-}, ctx => makeRepoURI(ctx) + '___' + JSON.stringify(ctx.query) + '___' + ctx.limit)
-
-function getHeaders(): Headers {
-    const headers = new Headers()
-    for (const [key, value] of Object.entries(window.context.xhrHeaders)) {
-        headers.set(key, value)
-    }
-    return headers
-}
+            { repoPath: ctx.repoPath, commitID: ctx.commitID },
+            ctx.filePath
+        ),
+    ctx => makeRepoURI(ctx) + '___' + ctx.query + '___' + ctx.limit
+)
