@@ -12,7 +12,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
-import { ECLONEINPROGESS, EREPONOTFOUND, fetchPhabricatorRepo, resolveRev } from './backend'
+import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, fetchPhabricatorRepo, resolveRev } from './backend'
 import { parseRepoRev } from './index'
 import { Repository } from './Repository'
 
@@ -61,16 +61,17 @@ export class RepositoryResolver extends React.Component<Props, State> {
                                     retryWhen(errors =>
                                         errors.pipe(
                                             tap(err => {
-                                                if (err.code === ECLONEINPROGESS) {
-                                                    // Display cloning screen to the user and retry
-                                                    this.setState({ cloneInProgress: true })
-                                                    return
+                                                switch (err.code) {
+                                                    case ECLONEINPROGESS:
+                                                        // Display cloning screen to the user and retry
+                                                        this.setState({ cloneInProgress: true })
+                                                        return
+                                                    case EREPONOTFOUND:
+                                                    case EREVNOTFOUND:
+                                                        // Display 404 to the user and do not retry
+                                                        this.setState({ notFound: true })
                                                 }
-                                                if (err.code === EREPONOTFOUND) {
-                                                    // Display 404to the user and do not retry
-                                                    this.setState({ notFound: true })
-                                                }
-                                                // Don't retry other errors
+                                                // Don't retry
                                                 throw err
                                             }),
                                             delay(1000)

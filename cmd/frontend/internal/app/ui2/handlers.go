@@ -108,6 +108,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
+			if errors.Cause(err) == vcs.ErrRevisionNotFound {
+				// Revision does not exist.
+				serveError(w, r, err, http.StatusNotFound)
+				return nil, nil
+			}
 			if e, ok := err.(vcs.RepoNotExistError); ok {
 				if e.CloneInProgress {
 					// Repo is cloning.
