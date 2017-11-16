@@ -1,4 +1,5 @@
 import * as H from 'history'
+import isEmpty from 'lodash/isEmpty'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import * as React from 'react'
@@ -592,7 +593,7 @@ export class Blob extends React.Component<Props, State> {
     private logTelemetryOnTooltip = (data: TooltipData) => {
         // Only log an event if there is no fixed tooltip docked, we have a
         // target element, and we have tooltip contents
-        if (!this.state.fixedTooltip && data.target && data.contents) {
+        if (!this.state.fixedTooltip && data.target && !isEmpty(data.contents)) {
             eventLogger.log('SymbolHovered')
         }
     }
