@@ -28,8 +28,14 @@
             color: #ffffff;
             width: 100%;
             display: table;
-            background-color: #1c7cd6;
+            background-color: #1c7cd6 !important;
         }
+    }
+
+    &__row-icon {
+        color: #ffffff !important; // override link color
+        display: flex;
+        align-items: center;
     }
 
     &__row-contents {
@@ -38,9 +44,11 @@
         align-items: center;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
+        cursor: pointer;
     }
 
     &__row-label {
         margin-left: 0.25rem;
+        color: #ffffff !important; // override link color
     }
 }

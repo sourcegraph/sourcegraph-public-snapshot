@@ -31,10 +31,10 @@ describe('e2e test suite', () => {
         }
     })
 
-    const assertEventuallyEqual = async (expression: () => Promise<any>, value: any, numRetries = 3): Promise<any> => {
+    const retry = async (expression: () => Promise<any>, numRetries = 3): Promise<any> => {
         while (true) {
             try {
-                assert.deepEqual(await expression(), value)
+                await expression()
                 break
             } catch (e) {
                 numRetries -= 1
@@ -44,6 +44,13 @@ describe('e2e test suite', () => {
                 await new Promise<any>(resolve => setTimeout(resolve, 5000))
             }
         }
+    }
+
+    const assertWindowLocation = async (location: string, isAbsolute = false): Promise<any> => {
+        const url = isAbsolute ? location : baseURL + location
+        await retry(async () => {
+            assert.equal(await chrome.evaluate(() => window.location.href), url)
+        })
     }
 
     describe('Repository component', () => {
@@ -66,20 +73,150 @@ describe('e2e test suite', () => {
         }
 
         describe('file tree', () => {
-            it('does navigation on click', async () => {
+            it('does navigation on file click', async () => {
                 await chrome.goto(baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
-                await chrome.click(`a[data-tree-path="mux.go"]`)
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => window.location.href),
-                    baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go'
+                await chrome.click(`[data-tree-path="mux.go"]`)
+                await assertWindowLocation(
+                    '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go'
                 )
+            })
+
+            it('does navigation on directory expander click', async () => {
+                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await chrome.click('.tree__row-icon')
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
+                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
+                await assertWindowLocation(
+                    '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983/-/tree/fuzz'
+                )
+            })
+
+            it('expands directory on row click (no navigation)', async () => {
+                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await chrome.click('.tree__row-label')
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
+                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
+                await assertWindowLocation('/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
             })
 
             it('selects the current file', async () => {
                 await chrome.goto(
                     baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go'
                 )
-                await chrome.wait('.tree__row--selected a[data-tree-path="mux.go"]')
+                await chrome.wait('.tree__row--selected [data-tree-path="mux.go"]')
+            })
+
+            it('selects and expands the current directory', async () => {
+                await chrome.goto(
+                    baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983/-/tree/fuzz'
+                )
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
+                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
+            })
+
+            it('responds to keyboard shortcuts', async () => {
+                const assertNumRowsExpanded = async (expectedCount: number) => {
+                    assert.equal(
+                        await chrome.evaluate(() => document.querySelectorAll('.tree__row--expanded').length),
+                        expectedCount
+                    )
+                }
+
+                await chrome.goto(
+                    baseURL +
+                        '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983/-/blob/.travis.yml'
+                )
+                await chrome.wait('.tree__row') // wait for tree to render
+
+                await chrome.press(38) // arrow up to 'fuzz' directory
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
+                await chrome.press(39) // arrow right (expand 'fuzz' directory)
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
+                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
+                await chrome.press(39) // arrow right (move to nested 'fuzz/corpus' directory)
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]')
+                await assertNumRowsExpanded(1) // only `fuzz` directory is expanded, though `fuzz/corpus` is expanded
+
+                await chrome.press(39) // arrow right (expand 'fuzz/corpus' directory)
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]')
+                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz/corpus"]')
+                await assertNumRowsExpanded(2) // `fuzz` and `fuzz/corpus` directories expanded
+
+                // select some file nested under `fuzz/corpus`
+                await chrome.press(40) // arrow down
+                await chrome.press(40) // arrow down
+                await chrome.press(40) // arrow down
+                await chrome.press(40) // arrow down
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus/1.sc"]')
+
+                await chrome.press(37) // arrow left (navigate immediately up to parent directory `fuzz/corpus`)
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]')
+                await assertNumRowsExpanded(2) // `fuzz` and `fuzz/corpus` directories expanded
+
+                await chrome.press(37) // arrow left
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]') // `fuzz/corpus` still selected
+                await assertNumRowsExpanded(1) // only `fuzz` directory expanded
+            })
+        })
+
+        describe('directory page', () => {
+            it('shows a row for each entry in the directory', async () => {
+                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await chrome.wait('.dir-page-entry__row')
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(() => document.querySelectorAll('.dir-page-entry__row').length),
+                        8
+                    )
+                )
+            })
+
+            it('shows commit information on a row', async () => {
+                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await chrome.wait('.dir-page-entry__commit-message-cell')
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(
+                            () => document.querySelector('.dir-page-entry__commit-message-cell')!.textContent
+                        ),
+                        'Add fuzz testing corpus.'
+                    )
+                )
+                await chrome.wait('.dir-page-entry__committer-cell')
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(
+                            () => document.querySelector('.dir-page-entry__committer-cell')!.textContent
+                        ),
+                        'Kamil Kisiel'
+                    )
+                )
+                await chrome.wait('.dir-page-entry__commit-hash-cell')
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(
+                            () => document.querySelector('.dir-page-entry__commit-hash-cell')!.textContent
+                        ),
+                        'c13558c'
+                    )
+                )
+            })
+
+            it('navigates when clicking on a row', async () => {
+                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                // click on directory
+                await chrome.click('.dir-page__name-link')
+                await assertWindowLocation(
+                    '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983/-/tree/fuzz'
+                )
+                // click on commit ID
+                await chrome.click('.dir-page__commit-hash-link')
+                await assertWindowLocation(
+                    '/github.com/gorilla/securecookie@c13558c2b1c44da35e0eb043053609a5ba3a1f19/-/tree/fuzz'
+                )
+                // click on "up directory"
+                await chrome.click('.dir-page__return-arrow-cell a')
+                await assertWindowLocation('/github.com/gorilla/securecookie@c13558c2b1c44da35e0eb043053609a5ba3a1f19')
             })
         })
 
@@ -87,21 +224,24 @@ describe('e2e test suite', () => {
             it('shows clone in progress interstitial page', async () => {
                 await chrome.goto(baseURL + '/github.com/sourcegraphtest/AlwaysCloningTest')
                 await chrome.wait('.hero-page__subtitle')
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent),
-                    'Cloning in progress'
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent),
+                        'Cloning in progress'
+                    )
                 )
             })
 
             it('resolves default branch when unspecified', async () => {
                 await chrome.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
                 await chrome.wait('.rev-switcher__input')
-                await assertEventuallyEqual(
-                    () =>
-                        chrome.evaluate(
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(
                             () => (document.querySelector('.rev-switcher__input') as HTMLInputElement).value
                         ),
-                    'master'
+                        'master'
+                    )
                 )
                 // Verify file contents are loaded.
                 await chrome.wait(blobTableSelector)
@@ -111,10 +251,7 @@ describe('e2e test suite', () => {
                 await chrome.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
                 await chrome.click('.rev-switcher__input')
                 await chrome.click('.rev-switcher__rev[title="v1.1"]')
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => window.location.href),
-                    baseURL + '/github.com/gorilla/mux@v1.1/-/blob/mux.go'
-                )
+                await assertWindowLocation('/github.com/gorilla/mux@v1.1/-/blob/mux.go')
             })
         })
 
@@ -125,9 +262,8 @@ describe('e2e test suite', () => {
                 )
                 await clickToken(21, 3)
                 await getTooltipDoc() // verify there is a tooltip
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => window.location.href),
-                    baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6'
+                await assertWindowLocation(
+                    '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6'
                 )
             })
 
@@ -135,7 +271,9 @@ describe('e2e test suite', () => {
                 await chrome.goto(
                     baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6'
                 )
-                await assertEventuallyEqual(getTooltipDoc, `NewRouter returns a new router instance. \n`)
+                await retry(async () =>
+                    assert.equal(await getTooltipDoc(), `NewRouter returns a new router instance. \n`)
+                )
             })
 
             describe('jump to definition', () => {
@@ -144,9 +282,8 @@ describe('e2e test suite', () => {
                         baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6'
                     )
                     await clickTooltipJ2D()
-                    await assertEventuallyEqual(
-                        () => chrome.evaluate(() => window.location.href),
-                        baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6'
+                    await assertWindowLocation(
+                        '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:6'
                     )
                 })
 
@@ -156,9 +293,8 @@ describe('e2e test suite', () => {
                     )
                     await clickToken(21, 8)
                     await clickTooltipJ2D()
-                    await assertEventuallyEqual(
-                        () => chrome.evaluate(() => window.location.href),
-                        baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L43:6'
+                    await assertWindowLocation(
+                        '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L43:6'
                     )
                 })
 
@@ -168,13 +304,11 @@ describe('e2e test suite', () => {
                             '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L22:47'
                     )
                     await clickTooltipJ2D()
-                    await assertEventuallyEqual(
-                        () => chrome.evaluate(() => window.location.href),
-                        baseURL +
-                            '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/route.go#L17:6'
+                    await assertWindowLocation(
+                        '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/route.go#L17:6'
                     )
                     // Verify file tree is highlighting the new path.
-                    await chrome.wait('.tree__row--selected a[data-tree-path="route.go"]')
+                    await chrome.wait('.tree__row--selected [data-tree-path="route.go"]')
                 })
 
                 it('does navigation (external repo)', async () => {
@@ -183,10 +317,7 @@ describe('e2e test suite', () => {
                             '/github.com/gorilla/sessions@a3acf13e802c358d65f249324d14ed24aac11370/-/blob/sessions.go#L134:10'
                     )
                     await clickTooltipJ2D()
-                    await assertEventuallyEqual(
-                        () => chrome.evaluate(() => window.location.href),
-                        baseURL + '/github.com/gorilla/context@HEAD/-/blob/context.go#L20:6'
-                    )
+                    await assertWindowLocation('/github.com/gorilla/context@HEAD/-/blob/context.go#L20:6')
                 })
             })
 
@@ -197,15 +328,17 @@ describe('e2e test suite', () => {
                             '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:19'
                     )
                     await clickTooltipFindRefs()
-                    await assertEventuallyEqual(
-                        () => chrome.evaluate(() => window.location.href),
-                        baseURL +
-                            '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:19$references'
+                    await assertWindowLocation(
+                        '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:19$references'
                     )
                     await chrome.wait('.references-widget__badge')
-                    await assertEventuallyEqual(
-                        () => chrome.evaluate(() => document.querySelector('.references-widget__badge')!.textContent),
-                        '45'
+                    await retry(async () =>
+                        assert.equal(
+                            await chrome.evaluate(
+                                () => document.querySelector('.references-widget__badge')!.textContent
+                            ),
+                            '45'
+                        )
                     )
                 })
             })
@@ -230,9 +363,9 @@ describe('e2e test suite', () => {
                     })
                     blame.dispatchEvent(ev)
                 })
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => window.location.href),
-                    'https://github.com/gorilla/mux/commit/eac83ba2c004bb759a2875b1f1dbb032adf8bb4a'
+                await assertWindowLocation(
+                    'https://github.com/gorilla/mux/commit/eac83ba2c004bb759a2875b1f1dbb032adf8bb4a',
+                    true
                 )
             })
 
@@ -241,15 +374,16 @@ describe('e2e test suite', () => {
                     baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L43:6'
                 )
                 await chrome.wait('.repo-nav__action[title="View on GitHub"]')
-                await assertEventuallyEqual(
-                    () =>
-                        chrome.evaluate(
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(
                             () =>
                                 (document.querySelector(
                                     '.repo-nav__action[title="View on GitHub"]'
                                 ) as HTMLAnchorElement).href
                         ),
-                    'https://github.com/gorilla/mux/blob/24fca303ac6da784b9e8269f724ddeb0b2eea5e7/mux.go#L43'
+                        'https://github.com/gorilla/mux/blob/24fca303ac6da784b9e8269f724ddeb0b2eea5e7/mux.go#L43'
+                    )
                 )
             })
         })
@@ -261,15 +395,19 @@ describe('e2e test suite', () => {
                 baseURL + '/search?q=router+repo:gorilla/mux%40eac83ba2c004bb759a2875b1f1dbb032adf8bb4a&sq='
             )
             await chrome.wait('.search-results2__stats')
-            await assertEventuallyEqual(
-                () => chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
-                '126 results in'
+            await retry(async () =>
+                assert.equal(
+                    await chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
+                    '126 results in'
+                )
             )
             // navigate to result on click
             await chrome.click('.file-match__item')
-            await assertEventuallyEqual(
-                () => chrome.evaluate(() => window.location.href),
-                baseURL + '/github.com/gorilla/mux@eac83ba2c004bb759a2875b1f1dbb032adf8bb4a/-/blob/route.go#L17:46'
+            await retry(async () =>
+                assert.equal(
+                    await chrome.evaluate(() => window.location.href),
+                    baseURL + '/github.com/gorilla/mux@eac83ba2c004bb759a2875b1f1dbb032adf8bb4a/-/blob/route.go#L17:46'
+                )
             )
         })
 
@@ -297,9 +435,11 @@ describe('e2e test suite', () => {
                 await chrome.click('button')
 
                 await chrome.wait('.search-results2__stats')
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
-                    '91 results in'
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
+                        '91 results in'
+                    )
                 )
             })
         } else {
@@ -322,9 +462,11 @@ describe('e2e test suite', () => {
                 await chrome.click('button')
 
                 await chrome.wait('.search-results2__stats')
-                await assertEventuallyEqual(
-                    () => chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
-                    '91 results in'
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
+                        '91 results in'
+                    )
                 )
             })
         }

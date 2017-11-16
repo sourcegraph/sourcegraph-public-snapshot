@@ -41,6 +41,7 @@ function closeDirectory(store: TreeStore, dir: string): void {
 export class Tree extends React.PureComponent<Props, {}> {
     public store: TreeStore
     public pathSplits: string[][]
+    private ref: HTMLDivElement | null
 
     constructor(props: Props) {
         super(props)
@@ -164,7 +165,7 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public locateDomNode(path: string): HTMLElement | undefined {
-        return document.querySelector(`a[data-tree-path="${path}"]`) as any
+        return document.querySelector(`[data-tree-path="${path}"]`) as any
     }
 
     public locateDomNodeInCollection(path: string): { items: HTMLElement[]; i: number } | undefined {
@@ -242,7 +243,7 @@ export class Tree extends React.PureComponent<Props, {}> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
+            <div ref={this.focusOnMount} className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
                 <TreeLayer
                     history={this.props.history}
                     repoPath={this.props.repoPath}
@@ -253,6 +254,13 @@ export class Tree extends React.PureComponent<Props, {}> {
                 />
             </div>
         )
+    }
+
+    private focusOnMount = (ref: HTMLDivElement | null) => {
+        if (this.ref === undefined && ref) {
+            this.ref = ref
+            ref.focus()
+        }
     }
 }
 
@@ -478,11 +486,14 @@ class LayerTile extends React.Component<TileProps, {}> {
                         Object.keys(this.props.subfilesByDir).map((dir, i) => [
                             <tr
                                 key={i}
-                                className={
-                                    this.currentDirectory(dir) === this.props.selectedPath
-                                        ? 'tree__row--selected'
-                                        : 'tree__row'
-                                }
+                                className={[
+                                    'tree__row',
+                                    this.props.shownSubpaths.contains(this.currentDirectory(dir)) &&
+                                        'tree__row--expanded',
+                                    this.currentDirectory(dir) === this.props.selectedPath && 'tree__row--selected',
+                                ]
+                                    .filter(c => !!c)
+                                    .join(' ')}
                             >
                                 <td
                                     // tslint:disable-next-line:jsx-no-lambda
@@ -502,24 +513,38 @@ class LayerTile extends React.Component<TileProps, {}> {
                                         }
                                     }}
                                 >
-                                    <Link
+                                    <div
                                         className="tree__row-contents"
                                         data-tree-directory="true"
                                         data-tree-path={this.currentDirectory(dir)}
-                                        to={toTreeURL({
-                                            repoPath: this.props.repoPath,
-                                            rev: this.props.rev,
-                                            filePath: this.currentDirectory(dir),
-                                        })}
                                         style={treePadding(this.props.depth, true)}
                                     >
-                                        {this.props.shownSubpaths.contains(this.currentDirectory(dir)) ? (
-                                            <ChevronDownIcon className="icon-inline" />
-                                        ) : (
-                                            <ChevronRightIcon className="icon-inline" />
-                                        )}
-                                        <span className="tree__row-label">{dir}</span>
-                                    </Link>
+                                        <Link
+                                            className="tree__row-icon"
+                                            to={toTreeURL({
+                                                repoPath: this.props.repoPath,
+                                                rev: this.props.rev,
+                                                filePath: this.currentDirectory(dir),
+                                            })}
+                                        >
+                                            {this.props.shownSubpaths.contains(this.currentDirectory(dir)) ? (
+                                                <ChevronDownIcon className="icon-inline" />
+                                            ) : (
+                                                <ChevronRightIcon className="icon-inline" />
+                                            )}
+                                        </Link>
+                                        <a
+                                            href={toTreeURL({
+                                                repoPath: this.props.repoPath,
+                                                rev: this.props.rev,
+                                                filePath: this.currentDirectory(dir),
+                                            })}
+                                            onClick={this.noopRowClick}
+                                            className="tree__row-label"
+                                        >
+                                            {dir}
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>,
                             this.showSubpath(dir) && (
@@ -567,5 +592,16 @@ class LayerTile extends React.Component<TileProps, {}> {
                 </tbody>
             </table>
         )
+    }
+
+    /**
+     * noopRowClick is the click handler for <a> rows of the tree element
+     * that shouldn't update URL on click w/o modifier key (but should retain
+     * anchor element properties, like right click "Copy link address").
+     */
+    private noopRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (!e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey) {
+            e.preventDefault()
+        }
     }
 }
