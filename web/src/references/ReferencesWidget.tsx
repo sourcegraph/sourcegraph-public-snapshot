@@ -24,7 +24,7 @@ import { Location } from 'vscode-languageserver-types'
 import { fetchReferences } from '../backend/lsp'
 import { VirtualList } from '../components/VirtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
-import { FileMatch } from '../search2/FileMatch'
+import { FileMatch, IFileMatch, ILineMatch } from '../search2/FileMatch'
 import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
@@ -250,17 +250,15 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
     private logExternalSelection = () => eventLogger.log('GoToExternalRefClicked')
 }
 
-function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[]): GQL.IFileMatch {
+function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[]): IFileMatch {
     const resource = new URL(uri)
     if (rev) {
         resource.search = rev
     }
     return {
-        __typename: 'FileMatch',
         resource: resource.toString(),
         limitHit: false,
-        lineMatches: refs.map((ref): GQL.ILineMatch => ({
-            __typename: 'LineMatch',
+        lineMatches: refs.map((ref): ILineMatch => ({
             preview: '',
             limitHit: false,
             lineNumber: ref.range.start.line,

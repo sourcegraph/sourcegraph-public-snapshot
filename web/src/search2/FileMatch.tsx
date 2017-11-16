@@ -5,11 +5,24 @@ import { CodeExcerpt } from '../components/CodeExcerpt'
 import { toPrettyBlobURL } from '../util/url'
 import { ResultContainer } from './ResultContainer'
 
+export interface IFileMatch {
+    resource: string
+    lineMatches: ILineMatch[]
+    limitHit?: boolean
+}
+
+export interface ILineMatch {
+    preview: string
+    lineNumber: number
+    offsetAndLengths: number[][]
+    limitHit?: boolean
+}
+
 interface Props {
     /**
      * The file match search result.
      */
-    result: GQL.IFileMatch
+    result: IFileMatch
 
     /**
      * The icon to show left to the title.
