@@ -222,16 +222,6 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 }
 
 func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevision, repoResolvers []*searchResultResolver, overLimit bool, err error) {
-	// Treat "repo:golang/go" (and minus variant) patterns implicitly as
-	// "repo:(^|/)golang/go" so that it matches github.com/golang/go but not
-	// github.com/foobar-golang/go.
-	for i, repoFilter := range repoFilters {
-		repoFilters[i] = "(^|/)" + repoFilter
-	}
-	for i, repoFilter := range minusRepoFilters {
-		minusRepoFilters[i] = "(^|/)" + repoFilter
-	}
-
 	includePatterns := repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
