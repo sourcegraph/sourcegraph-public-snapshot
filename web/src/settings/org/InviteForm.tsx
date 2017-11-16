@@ -1,19 +1,17 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import reactive from 'rx-component'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/observable/of'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/delay'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/startWith'
-import 'rxjs/add/operator/withLatestFrom'
-import { Observable } from 'rxjs/Observable'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { concat } from 'rxjs/operators/concat'
+import { delay } from 'rxjs/operators/delay'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { scan } from 'rxjs/operators/scan'
+import { startWith } from 'rxjs/operators/startWith'
+import { tap } from 'rxjs/operators/tap'
+import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { eventLogger } from '../../tracking/eventLogger'
 import { inviteUser } from '../backend'
@@ -39,17 +37,17 @@ export const InviteForm = reactive<Props>(props => {
     const emailChanges = new Subject<string>()
     const nextEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => emailChanges.next(event.currentTarget.value)
 
-    const orgID = props.map(({ orgID }) => orgID)
+    const orgID = props.pipe(map(({ orgID }) => orgID))
 
-    return Observable.merge<Update>(
-        orgID.map(orgID => (state: State): State => ({ ...state, orgID })),
+    return merge<Update>(
+        orgID.pipe(map(orgID => (state: State): State => ({ ...state, orgID }))),
 
-        emailChanges.map(email => (state: State): State => ({ ...state, email })),
+        emailChanges.pipe(map(email => (state: State): State => ({ ...state, email }))),
 
-        submits
-            .do(e => e.preventDefault())
-            .withLatestFrom(orgID, emailChanges)
-            .do(([, orgId, email]) =>
+        submits.pipe(
+            tap(e => e.preventDefault()),
+            withLatestFrom(orgID, emailChanges),
+            tap(([, orgId, email]) =>
                 eventLogger.log('InviteOrgMemberClicked', {
                     organization: {
                         invite: {
@@ -58,12 +56,12 @@ export const InviteForm = reactive<Props>(props => {
                         org_id: orgId,
                     },
                 })
-            )
-            .mergeMap(([, orgID, email]) =>
-                inviteUser(email, orgID)
-                    .mergeMap(() =>
+            ),
+            mergeMap(([, orgID, email]) =>
+                inviteUser(email, orgID).pipe(
+                    mergeMap(() =>
                         // Reset email, reenable submit button, flash "invited" text
-                        Observable.of((state: State): State => ({
+                        of((state: State): State => ({
                             ...state,
                             loading: false,
                             error: undefined,
@@ -71,19 +69,21 @@ export const InviteForm = reactive<Props>(props => {
                             invited: true,
                         }))
                             // Hide "invited" text again after 1s
-                            .concat(Observable.of<Update>(state => ({ ...state, invited: false })).delay(1000))
-                    )
+                            .pipe(concat(of<Update>(state => ({ ...state, invited: false })), delay(1000)))
+                    ),
                     // Disable button while loading
-                    .startWith<Update>((state: State): State => ({ ...state, loading: true }))
-                    .catch(error => [(state: State): State => ({ ...state, loading: false, error })])
+                    startWith<Update>((state: State): State => ({ ...state, loading: true })),
+                    catchError(error => [(state: State): State => ({ ...state, loading: false, error })])
+                )
             )
-    )
-        .scan<Update, State>((state: State, update: Update) => update(state), {
+        )
+    ).pipe(
+        scan<Update, State>((state: State, update: Update) => update(state), {
             invited: false,
             loading: false,
             email: '',
-        } as State)
-        .map(({ loading, email, invited, error }) => (
+        } as State),
+        map(({ loading, email, invited, error }) => (
             <form className="invite-form" onSubmit={nextSubmit}>
                 <div className="invite-form__container">
                     <input
@@ -111,4 +111,5 @@ export const InviteForm = reactive<Props>(props => {
                 </div>
             </form>
         ))
+    )
 })

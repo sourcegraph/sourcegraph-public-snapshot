@@ -70,19 +70,19 @@ func (r *userResolver) AvatarURL() *string {
 	return r.user.AvatarURL
 }
 
-func (u *userResolver) CreatedAt() *string {
-	if u.user == nil {
+func (r *userResolver) CreatedAt() *string {
+	if r.user == nil {
 		return nil
 	}
-	t := u.user.CreatedAt.Format(time.RFC3339) // ISO
+	t := r.user.CreatedAt.Format(time.RFC3339) // ISO
 	return &t
 }
 
-func (u *userResolver) UpdatedAt() *string {
-	if u.user == nil {
+func (r *userResolver) UpdatedAt() *string {
+	if r.user == nil {
 		return nil
 	}
-	t := u.user.CreatedAt.Format(time.RFC3339) // ISO
+	t := r.user.CreatedAt.Format(time.RFC3339) // ISO
 	return &t
 }
 

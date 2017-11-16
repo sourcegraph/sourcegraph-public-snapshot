@@ -133,7 +133,7 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language
 	span.SetTag("pkgs", len(pks))
 
 	// First, create a temporary table.
-	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_pkgs (
+	_, err = tx.ExecContext(ctx, `CREATE TEMPORARY TABLE new_pkgs (
 		pkg jsonb NOT NULL,
 		language text NOT NULL,
 		repo_id integer NOT NULL
@@ -175,13 +175,13 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language
 	}
 	span.LogEvent("executed copy")
 
-	if _, err := tx.Exec(`DELETE FROM pkgs WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM pkgs WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
 		return errors.Wrap(err, "executing pkgs deletion")
 	}
 	span.LogEvent("executed pkgs deletion")
 
 	// Insert from temporary table into the real table.
-	_, err = tx.Exec(`INSERT INTO pkgs(
+	_, err = tx.ExecContext(ctx, `INSERT INTO pkgs(
 		repo_id,
 		language,
 		pkg

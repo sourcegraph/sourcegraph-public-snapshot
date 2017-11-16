@@ -8,23 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"log"
 
 	"github.com/felixfbecker/stringscore"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
-
-type searchArgs struct {
-	// Query specifies
-	Query string
-	// Repositories specifies a list of repos to search for files
-	Repositories []string
-	// First limits the result
-	First *int32
-}
 
 type searchResultResolver struct {
 	// result is either a repositoryResolver or a fileResolver
@@ -45,143 +33,6 @@ func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
 func (r *searchResultResolver) ToFile() (*fileResolver, bool) {
 	res, ok := r.result.(*fileResolver)
 	return res, ok
-}
-
-func (r *searchResultResolver) ToSearchProfile() (*searchProfile, bool) {
-	res, ok := r.result.(*searchProfile)
-	return res, ok
-}
-
-// Search searches over repos and their files
-func (r *rootResolver) Search(ctx context.Context, args *searchArgs) ([]*searchResultResolver, error) {
-	limit := 50
-	if args.First != nil {
-		limit = int(*args.First)
-		if limit > 1000 {
-			limit = 1000
-		}
-	}
-
-	var (
-		resMu sync.Mutex
-		res   []*searchResultResolver
-	)
-
-	done := make(chan error, 3)
-
-	// Search files
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log15.Error("unexpected panic while searching files", "error", r)
-				done <- nil
-			}
-		}()
-		fileResults, err := searchTree(ctx, matcher{query: args.Query}, args.Repositories, limit)
-		if err != nil {
-			done <- err
-			return
-		}
-		resMu.Lock()
-		res = append(res, fileResults...)
-		resMu.Unlock()
-		done <- nil
-	}()
-
-	// Search repos
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log15.Error("unexpected panic while searching repos", "error", r)
-				done <- nil
-			}
-		}()
-		repoResults, err := searchRepos(ctx, args.Query, args.Repositories, limit)
-		if err != nil {
-			done <- err
-			return
-		}
-		resMu.Lock()
-		res = append(res, repoResults...)
-		resMu.Unlock()
-		done <- nil
-	}()
-
-	// Search search profiles
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log15.Error("unexpected panic while searching search profiles", "error", r)
-				done <- nil
-			}
-		}()
-		searchProfileResults, err := searchSearchProfiles(ctx, r, args.Query, limit)
-		if err != nil {
-			done <- err
-			return
-		}
-		resMu.Lock()
-		res = append(res, searchProfileResults...)
-		resMu.Unlock()
-		done <- nil
-	}()
-
-	for i := 0; i < 3; i++ {
-		if err := <-done; err != nil {
-			// TODO collect error
-			log15.Error("search error", "error", err)
-		}
-	}
-
-	// Sort search results.
-	sort.Sort(searchResultSorter(res))
-
-	// Limit
-	if len(res) > limit {
-		res = res[0:limit]
-	}
-
-	return res, nil
-}
-
-func searchSearchProfiles(ctx context.Context, rootResolver *rootResolver, query string, limit int) (res []*searchResultResolver, err error) {
-	searchProfiles, err := rootResolver.SearchProfiles(ctx)
-	if err != nil {
-		return nil, err
-	}
-	scorer := newScorer(query)
-	for _, searchProfile := range searchProfiles {
-		score := scorer.calcScore(searchProfile)
-		if score > 0 {
-			res = append(res, newSearchResultResolver(searchProfile, score))
-		}
-	}
-	return res, nil
-}
-
-func searchRepos(ctx context.Context, query string, repoURIs []string, limit int) (res []*searchResultResolver, err error) {
-	opt := &sourcegraph.RepoListOptions{Query: query}
-	reposList, err := backend.Repos.List(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-	scorer := newScorer(query)
-outer:
-	for _, repo := range reposList.Repos {
-		// Don't suggest repos that were already added as a filter
-		for _, repoURI := range repoURIs {
-			if repoURI == repo.URI {
-				continue outer
-			}
-		}
-		repoResolver := &repositoryResolver{repo: repo}
-
-		score := scorer.calcScore(repoResolver)
-		if score > 0 {
-			res = append(res, newSearchResultResolver(repoResolver, score))
-		}
-	}
-	return res, nil
 }
 
 // A matcher describes how to filter and score results (for repos and files).
@@ -269,7 +120,7 @@ func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoURI string, 
 	scorer := newScorer(scorerQuery)
 	for _, fileResolver := range treeResolver.Entries() {
 		score := scorer.calcScore(fileResolver)
-		if score <= 0 && matcher.scorerQuery != "" {
+		if score <= 0 && matcher.scorerQuery != "" && matcher.match(fileResolver.path) {
 			score = 1 // minimum to ensure everything included by match.match is included
 		}
 		if score > 0 {
@@ -288,17 +139,14 @@ func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoURI string, 
 // newSearchResultResolver returns a new searchResultResolver wrapping the
 // given result.
 //
-// A panic occurs if the type of result is not a *repositoryResolver,
-// *fileResolver, or *searchProfile.
+// A panic occurs if the type of result is not a *repositoryResolver or
+// *fileResolver.
 func newSearchResultResolver(result interface{}, score int) *searchResultResolver {
 	switch r := result.(type) {
 	case *repositoryResolver:
 		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI), label: r.repo.URI}
 
 	case *fileResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
-
-	case *searchProfile:
 		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
 
 	default:
@@ -327,17 +175,16 @@ func newScorer(query string) *scorer {
 // score values to add to different types of results to e.g. get forks lower in
 // search results, etc.
 const (
-	// Search Profiles > Files > Repos > Forks
-	scoreBumpSearchProfile = 2 * (math.MaxInt32 / 16)
-	scoreBumpFile          = 1 * (math.MaxInt32 / 16)
-	scoreBumpRepo          = 0 * (math.MaxInt32 / 16)
-	scoreBumpFork          = -10
+	// Files > Repos > Forks
+	scoreBumpFile = 1 * (math.MaxInt32 / 16)
+	scoreBumpRepo = 0 * (math.MaxInt32 / 16)
+	scoreBumpFork = -10
 )
 
 // calcScore calculates and assigns the sorting score to the given result.
 //
-// A panic occurs if the type of result is not a *repositoryResolver,
-// *fileResolver, or *searchProfile.
+// A panic occurs if the type of result is not a *repositoryResolver or
+// *fileResolver.
 func (s *scorer) calcScore(result interface{}) int {
 	var score int
 	if s.queryEmpty {
@@ -367,15 +214,6 @@ func (s *scorer) calcScore(result interface{}) int {
 		}
 		if score > 0 {
 			score += scoreBumpFile
-		}
-		return score
-
-	case *searchProfile:
-		if !s.queryEmpty {
-			score = stringscore.Score(r.name, s.query)
-		}
-		if score > 0 {
-			score += scoreBumpSearchProfile
 		}
 		return score
 

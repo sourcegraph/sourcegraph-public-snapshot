@@ -80,11 +80,6 @@ interface SourcegraphContext {
     phabricatorURL: string
 
     /**
-     * Enable search2 (new query UX) for all users
-     */
-    useSearch2: boolean
-
-    /**
      * Status of license
      */
     licenseStatus: 'expired' | 'missing' | 'valid' | 'invalid'

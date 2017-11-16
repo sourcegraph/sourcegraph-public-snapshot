@@ -4,9 +4,9 @@ import formatDistance from 'date-fns/formatDistance'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/switchMap'
+import { catchError } from 'rxjs/operators/catchError'
+import { filter } from 'rxjs/operators/filter'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { UserAvatar } from '../settings/user/UserAvatar'
@@ -36,12 +36,16 @@ export class DirectoryPageEntry extends React.PureComponent<Props, State> {
         super(props)
         this.subscriptions.add(
             this.componentUpdates
-                .filter(() => this.isVisible)
-                .switchMap(props =>
-                    fetchFileCommitInfo(props).catch(err => {
-                        console.error(err)
-                        return []
-                    })
+                .pipe(
+                    filter(() => this.isVisible),
+                    switchMap(props =>
+                        fetchFileCommitInfo(props).pipe(
+                            catchError(err => {
+                                console.error(err)
+                                return []
+                            })
+                        )
+                    )
                 )
                 .subscribe(
                     commitInfo => {

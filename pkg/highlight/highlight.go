@@ -45,7 +45,9 @@ func Code(ctx context.Context, code, extension string, disableTimeout bool) (tem
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
-		if strings.HasSuffix(err.Error(), "invalid extension") { // TODO(slimsag): gosyntect should provide concrete error type
+		// TODO(slimsag): gosyntect should provide concrete error types here
+		postTooLarge := strings.HasSuffix(err.Error(), "EOF")
+		if strings.HasSuffix(err.Error(), "invalid extension") || postTooLarge {
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)

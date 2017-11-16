@@ -4,10 +4,10 @@ import formatDistance from 'date-fns/formatDistance'
 import isEqual from 'lodash/isEqual'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/switchMap'
+import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { UserAvatar } from '../settings/user/UserAvatar'
@@ -39,33 +39,41 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
         super(props)
         this.subscriptions.add(
             this.componentUpdates
-                .distinctUntilChanged(isEqual)
-                .do(() => {
-                    if (this.state.dirTree) {
-                        this.setState({ dirTree: undefined })
-                    }
-                })
-                .switchMap(props =>
-                    fetchDirTree(props).catch(err => {
-                        console.error(err)
-                        return []
-                    })
+                .pipe(
+                    distinctUntilChanged(isEqual),
+                    tap(() => {
+                        if (this.state.dirTree) {
+                            this.setState({ dirTree: undefined })
+                        }
+                    }),
+                    switchMap(props =>
+                        fetchDirTree(props).pipe(
+                            catchError(err => {
+                                console.error(err)
+                                return []
+                            })
+                        )
+                    )
                 )
                 .subscribe(dirTree => this.setState({ dirTree }), err => console.error(err))
         )
         this.subscriptions.add(
             this.componentUpdates
-                .distinctUntilChanged(isEqual)
-                .do(() => {
-                    if (this.state.dirCommitInfo) {
-                        this.setState({ dirCommitInfo: undefined })
-                    }
-                })
-                .switchMap(props =>
-                    fetchFileCommitInfo(props).catch(err => {
-                        console.error(err)
-                        return []
-                    })
+                .pipe(
+                    distinctUntilChanged(isEqual),
+                    tap(() => {
+                        if (this.state.dirCommitInfo) {
+                            this.setState({ dirCommitInfo: undefined })
+                        }
+                    }),
+                    switchMap(props =>
+                        fetchFileCommitInfo(props).pipe(
+                            catchError(err => {
+                                console.error(err)
+                                return []
+                            })
+                        )
+                    )
                 )
                 .subscribe(dirCommitInfo => this.setState({ dirCommitInfo }), err => console.error(err))
         )

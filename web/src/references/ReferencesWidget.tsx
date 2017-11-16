@@ -1,5 +1,3 @@
-import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
-import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -10,165 +8,26 @@ import omit from 'lodash/omit'
 import partition from 'lodash/partition'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import 'rxjs/add/observable/fromPromise'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/bufferTime'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/switchMap'
-import { Observable } from 'rxjs/Observable'
+import { fromPromise } from 'rxjs/observable/fromPromise'
+import { merge } from 'rxjs/observable/merge'
+import { bufferTime } from 'rxjs/operators/bufferTime'
+import { catchError } from 'rxjs/operators/catchError'
+import { concat } from 'rxjs/operators/concat'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { scan } from 'rxjs/operators/scan'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Location } from 'vscode-languageserver-types'
 import { fetchReferences } from '../backend/lsp'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
-import { CodeExcerpt } from '../components/CodeExcerpt'
 import { VirtualList } from '../components/VirtualList'
 import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
-import { SearchOptions } from '../search2'
+import { FileMatch, IFileMatch, ILineMatch } from '../search2/FileMatch'
 import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toPrettyBlobURL } from '../util/url'
 import { fetchExternalReferences } from './backend'
-
-interface ReferenceGroupProps {
-    repoPath: string
-
-    /**
-     * The file path to show in the title.
-     * If not given, only the repoPath is shown.
-     */
-    filePath?: string
-
-    /**
-     * The references to show when expanded.
-     * Defaults to empty array.
-     * When empty, will not render a caret icon and not make the list clickable.
-     */
-    refs?: Location[]
-
-    isLocal: boolean
-    localRev?: string
-    hidden?: boolean
-
-    /**
-     * The icon to show left to the title.
-     */
-    icon: React.ComponentType<{ className: string }>
-
-    /**
-     * Callback when a reference result is selected
-     */
-    onSelect?: () => void
-
-    /**
-     * The options for the current search, to maintain as the user navigates.
-     */
-    searchOptions?: SearchOptions
-}
-
-interface ReferenceGroupState {
-    hidden?: boolean
-}
-
-export class ReferencesGroup extends React.PureComponent<ReferenceGroupProps, ReferenceGroupState> {
-    constructor(props: ReferenceGroupProps) {
-        super(props)
-        this.state = { hidden: props.hidden }
-    }
-
-    public render(): JSX.Element | null {
-        let refs: JSX.Element | null = null
-        if (!this.state.hidden) {
-            refs = (
-                <div className="references-group__list">
-                    {(this.props.refs || [])
-                        .sort((a, b) => {
-                            if (a.range.start.line < b.range.start.line) {
-                                return -1
-                            }
-                            if (a.range.start.line === b.range.start.line) {
-                                if (a.range.start.character < b.range.start.character) {
-                                    return -1
-                                }
-                                if (a.range.start.character === b.range.start.character) {
-                                    return 0
-                                }
-                                return 1
-                            }
-                            return 1
-                        })
-                        .map((ref, i) => {
-                            const uri = new URL(ref.uri)
-                            const rev = this.props.isLocal ? this.props.localRev : uri.search.substr('?'.length)
-                            const position = {
-                                line: ref.range.start.line + 1,
-                                character: ref.range.start.character + 1,
-                            }
-                            return (
-                                <Link
-                                    to={toPrettyBlobURL({
-                                        repoPath: uri.hostname + uri.pathname,
-                                        rev,
-                                        filePath: uri.hash.substr('#'.length),
-                                        position,
-                                    })}
-                                    key={i}
-                                    className="references-group__reference"
-                                    onClick={this.onSelect}
-                                >
-                                    <CodeExcerpt
-                                        repoPath={uri.hostname + uri.pathname}
-                                        commitID={uri.search.substr('?'.length)}
-                                        filePath={uri.hash.substr('#'.length)}
-                                        position={{ line: ref.range.start.line, character: ref.range.start.character }}
-                                        highlightLength={ref.range.end.character - ref.range.start.character}
-                                        previewWindowExtraLines={1}
-                                    />
-                                </Link>
-                            )
-                        })}
-                </div>
-            )
-        }
-
-        const Icon = this.props.icon
-        return (
-            <div className="references-group">
-                <div
-                    className={
-                        'references-group__title' +
-                        ((this.props.refs || []).length > 0 ? ' references-group__title--expandable' : '')
-                    }
-                    onClick={this.toggle}
-                >
-                    <Icon className="icon-inline" />
-                    <RepoBreadcrumb
-                        repoPath={this.props.repoPath}
-                        rev={this.props.localRev}
-                        filePath={this.props.filePath}
-                    />
-                    {(this.props.refs || []).length > 0 &&
-                        (this.state.hidden ? (
-                            <ChevronRightIcon className="icon-inline" />
-                        ) : (
-                            <ChevronDownIcon className="icon-inline" />
-                        ))}
-                </div>
-                {refs}
-            </div>
-        )
-    }
-
-    private onSelect = () => this.props.onSelect && this.props.onSelect()
-
-    private toggle = () => {
-        this.setState({ hidden: !this.state.hidden })
-    }
-}
 
 interface Props extends AbsoluteRepoFilePosition {
     location: H.Location
@@ -198,40 +57,47 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
         this.state.group = parsedHash.modalMode ? parsedHash.modalMode : 'local'
         this.subscriptions.add(
             this.componentUpdates
-                .distinctUntilChanged(isEqual)
-                .switchMap(props =>
-                    Observable.merge(
-                        Observable.fromPromise(fetchReferences(props))
-                            .map(refs => ({ references: refs } as State))
-                            .catch(e => {
-                                console.error(e)
-                                return []
-                            })
-                            .concat([{ loadingLocal: false } as State]),
-                        fetchExternalReferences(props)
-                            .map(refs => ({ references: refs } as State))
-                            .catch(e => {
-                                console.error(e)
-                                return []
-                            })
-                            .concat([{ loadingExternal: false } as State])
-                    )
-                )
-                .bufferTime(500)
-                .filter(updates => updates.length > 0)
-                .scan(
-                    (currState, updates) => {
-                        let newState = currState
-                        for (const update of updates) {
-                            if (update.references) {
-                                newState = { ...newState, references: newState.references.concat(update.references) }
-                            } else {
-                                newState = { ...newState, ...update }
+                .pipe(
+                    distinctUntilChanged(isEqual),
+                    switchMap(props =>
+                        merge(
+                            fromPromise(fetchReferences(props)).pipe(
+                                map(refs => ({ references: refs } as State)),
+                                catchError(e => {
+                                    console.error(e)
+                                    return []
+                                }),
+                                concat([{ loadingLocal: false } as State])
+                            ),
+                            fetchExternalReferences(props).pipe(
+                                map(refs => ({ references: refs } as State)),
+                                catchError(e => {
+                                    console.error(e)
+                                    return []
+                                }),
+                                concat([{ loadingExternal: false } as State])
+                            )
+                        )
+                    ),
+                    bufferTime(500),
+                    filter(updates => updates.length > 0),
+                    scan<State[], State>(
+                        (currState, updates) => {
+                            let newState = currState
+                            for (const update of updates) {
+                                if (update.references) {
+                                    newState = {
+                                        ...newState,
+                                        references: newState.references.concat(update.references),
+                                    }
+                                } else {
+                                    newState = { ...newState, ...update }
+                                }
                             }
-                        }
-                        return newState
-                    },
-                    { references: [], loadingLocal: true, loadingExternal: true } as State
+                            return newState
+                        },
+                        { references: [], loadingLocal: true, loadingExternal: true } as State
+                    )
                 )
                 .subscribe(state => this.setState(state))
         )
@@ -342,41 +208,32 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     {this.state.group === 'local' && (
                         <VirtualList
                             initItemsToShow={3}
-                            items={localRefs.sort().map((uri, i) => {
-                                const parsed = new URL(uri)
-                                return (
-                                    <ReferencesGroup
+                            items={localRefs
+                                .sort()
+                                .map((uri, i) => (
+                                    <FileMatch
                                         key={i}
-                                        repoPath={parsed.hostname + parsed.pathname}
-                                        filePath={parsed.hash.substr('#'.length)}
-                                        isLocal={true}
-                                        localRev={this.props.rev}
-                                        refs={refsByUri[uri]}
+                                        expanded={true}
+                                        result={refsToFileMatch(uri, this.props.rev, refsByUri[uri])}
                                         icon={RepoIcon}
                                         onSelect={this.logLocalSelection}
                                     />
-                                )
-                            })}
+                                ))}
                         />
                     )}
                     {this.state.group === 'external' && (
                         <VirtualList
                             initItemsToShow={3}
-                            items={externalRefs.map((uri, i) => {
+                            items={externalRefs.map((uri, i) => (
                                 /* don't sort, to avoid jerky UI as new repo results come in */
-                                const parsed = new URL(uri)
-                                return (
-                                    <ReferencesGroup
-                                        key={i}
-                                        repoPath={parsed.hostname + parsed.pathname}
-                                        filePath={parsed.hash.substr('#'.length)}
-                                        isLocal={false}
-                                        refs={refsByUri[uri]}
-                                        icon={GlobeIcon}
-                                        onSelect={this.logExternalSelection}
-                                    />
-                                )
-                            })}
+                                <FileMatch
+                                    key={i}
+                                    expanded={true}
+                                    result={refsToFileMatch(uri, undefined, refsByUri[uri])}
+                                    icon={GlobeIcon}
+                                    onSelect={this.logExternalSelection}
+                                />
+                            ))}
                         />
                     )}
                 </div>
@@ -391,4 +248,21 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
     private onShowExternalRefsButtonClick = () => eventLogger.log('ShowExternalRefsButtonClicked')
     private logLocalSelection = () => eventLogger.log('GoToLocalRefClicked')
     private logExternalSelection = () => eventLogger.log('GoToExternalRefClicked')
+}
+
+function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[]): IFileMatch {
+    const resource = new URL(uri)
+    if (rev) {
+        resource.search = rev
+    }
+    return {
+        resource: resource.toString(),
+        limitHit: false,
+        lineMatches: refs.map((ref): ILineMatch => ({
+            preview: '',
+            limitHit: false,
+            lineNumber: ref.range.start.line,
+            offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
+        })),
+    }
 }

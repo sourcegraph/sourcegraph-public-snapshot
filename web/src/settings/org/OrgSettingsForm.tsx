@@ -1,18 +1,16 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import reactive from 'rx-component'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/observable/of'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/delay'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/startWith'
-import 'rxjs/add/operator/withLatestFrom'
-import { Observable } from 'rxjs/Observable'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { concat } from 'rxjs/operators/concat'
+import { delay } from 'rxjs/operators/delay'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { scan } from 'rxjs/operators/scan'
+import { startWith } from 'rxjs/operators/startWith'
+import { tap } from 'rxjs/operators/tap'
+import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { updateOrg } from '../backend'
 
@@ -42,42 +40,41 @@ export const OrgSettingsForm = reactive<Props>(props => {
     const nextSlackWebhookURLChange = (event: React.ChangeEvent<HTMLInputElement>) =>
         slackWebhookURLChanges.next(event.currentTarget.value)
 
-    const orgID = props.map(({ org }) => org.id)
-    const displayNames = Observable.merge(props.map(props => props.org.displayName || ''), displayNameChanges)
-    const slackWebhookURLs = Observable.merge(
-        props.map(props => props.org.slackWebhookURL || ''),
-        slackWebhookURLChanges
-    )
+    const orgID = props.pipe(map(({ org }) => org.id))
+    const displayNames = merge(props.pipe(map(props => props.org.displayName || '')), displayNameChanges)
+    const slackWebhookURLs = merge(props.pipe(map(props => props.org.slackWebhookURL || '')), slackWebhookURLChanges)
 
-    return Observable.merge<Update>(
-        orgID.map(orgID => (state: State): State => ({ ...state, orgID })),
+    return merge<Update>(
+        orgID.pipe(map(orgID => (state: State): State => ({ ...state, orgID }))),
 
-        displayNames.map(displayName => (state: State): State => ({ ...state, displayName })),
+        displayNames.pipe(map(displayName => (state: State): State => ({ ...state, displayName }))),
 
-        slackWebhookURLs.map(slackWebhookURL => (state: State): State => ({ ...state, slackWebhookURL })),
+        slackWebhookURLs.pipe(map(slackWebhookURL => (state: State): State => ({ ...state, slackWebhookURL }))),
 
-        submits
-            .do(e => e.preventDefault())
-            .withLatestFrom(orgID, displayNames, slackWebhookURLs)
-            .mergeMap(([, orgID, displayName, slackWebhookURL]) =>
-                updateOrg(orgID, displayName, slackWebhookURL)
-                    .mergeMap(() =>
+        submits.pipe(
+            tap(e => e.preventDefault()),
+            withLatestFrom(orgID, displayNames, slackWebhookURLs),
+            mergeMap(([, orgID, displayName, slackWebhookURL]) =>
+                updateOrg(orgID, displayName, slackWebhookURL).pipe(
+                    mergeMap(() =>
                         // Reset email, reenable submit button, flash "updated" text
-                        Observable.of((state: State): State => ({ ...state, loading: false, updated: true }))
+                        of((state: State): State => ({ ...state, loading: false, updated: true }))
                             // Hide "updated" text again after 1s
-                            .concat(Observable.of<Update>(state => ({ ...state, updated: false })).delay(1000))
-                    )
+                            .pipe(concat(of<Update>(state => ({ ...state, updated: false })).pipe(delay(1000))))
+                    ),
                     // Disable button while loading
-                    .startWith<Update>((state: State): State => ({ ...state, loading: true }))
+                    startWith<Update>((state: State): State => ({ ...state, loading: true }))
+                )
             )
-    )
-        .scan<Update, State>((state: State, update: Update) => update(state), {
+        )
+    ).pipe(
+        scan<Update, State>((state: State, update: Update) => update(state), {
             updated: false,
             loading: false,
             slackWebhookURL: '',
             displayName: '',
-        } as State)
-        .map(({ loading, slackWebhookURL, displayName, updated }) => (
+        } as State),
+        map(({ loading, slackWebhookURL, displayName, updated }) => (
             <form className="org-settings-form" onSubmit={nextSubmit}>
                 <h3>Organization settings</h3>
                 <div className="form-group">
@@ -122,4 +119,5 @@ export const OrgSettingsForm = reactive<Props>(props => {
                 </div>
             </form>
         ))
+    )
 })

@@ -17,6 +17,8 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/sourcegraph/lazyzip"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
 
@@ -321,7 +323,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zr, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	zr, err := lazyzip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
 	if err != nil {
 		t.Fatal(err)
 	}

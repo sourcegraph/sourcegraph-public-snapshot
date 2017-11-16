@@ -1,4 +1,4 @@
-package vfsutil
+package diskcache
 
 import (
 	"bytes"
@@ -9,14 +9,22 @@ import (
 	"testing"
 )
 
-func TestCachedFetch(t *testing.T) {
-	cleanup := useEmptyArchiveCacheDir()
-	defer cleanup()
+func TestOpen(t *testing.T) {
+	dir, err := ioutil.TempDir("", "diskcache_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
 
-	do := func() (Evicter, bool) {
+	store := &Store{
+		Dir:       dir,
+		Component: "test",
+	}
+
+	do := func() (*File, bool) {
 		want := "foobar"
 		calledFetcher := false
-		f, err := cachedFetch(context.Background(), "component", "key", func(ctx context.Context) (io.ReadCloser, error) {
+		f, err := store.Open(context.Background(), "key", func(ctx context.Context) (io.ReadCloser, error) {
 			calledFetcher = true
 			return ioutil.NopCloser(bytes.NewReader([]byte(want))), nil
 		})
@@ -27,7 +35,7 @@ func TestCachedFetch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		f.File.Close()
+		f.Close()
 		if string(got) != want {
 			t.Fatalf("did not return fetcher output. got %q, want %q", string(got), want)
 		}
@@ -47,22 +55,9 @@ func TestCachedFetch(t *testing.T) {
 	}
 
 	// Evict, then we should not use the cache
-	f.Evict()
+	os.Remove(f.Path)
 	_, usedCache = do()
 	if usedCache {
 		t.Fatal("Item was not properly evicted")
-	}
-}
-
-func useEmptyArchiveCacheDir() func() {
-	d, err := ioutil.TempDir("", "vfsutil_test")
-	if err != nil {
-		panic(err)
-	}
-	orig := ArchiveCacheDir
-	ArchiveCacheDir = d
-	return func() {
-		os.RemoveAll(d)
-		ArchiveCacheDir = orig
 	}
 }

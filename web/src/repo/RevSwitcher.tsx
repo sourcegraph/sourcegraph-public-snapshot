@@ -4,14 +4,13 @@ import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
 import * as React from 'react'
-import 'rxjs/add/observable/fromEvent'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mapTo'
-import 'rxjs/add/operator/switchMap'
-import { Observable } from 'rxjs/Observable'
+import { fromEvent } from 'rxjs/observable/fromEvent'
+import { merge } from 'rxjs/observable/merge'
+import { catchError } from 'rxjs/operators/catchError'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { mapTo } from 'rxjs/operators/mapTo'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { scrollIntoView } from '../util'
@@ -113,78 +112,86 @@ export class RevSwitcher extends React.PureComponent<Props, State> {
         }
         // Fetch all revisions for repo whenever component props change.
         this.subscriptions.add(
-            Observable.merge(
+            merge(
                 // Fetch the list of all branches/tags for the repo initially.
-                this.componentUpdates.filter(props => !props.disabled).switchMap(props =>
-                    fetchRepoRevisions({ repoPath: props.repoPath })
-                        .catch(err => {
-                            console.error(err)
-                            return []
-                        })
-                        .map((repoRevisions: RepoRevisions) => {
-                            const combined = [
-                                ...repoRevisions.branches.map((branch): Item => ({ rev: branch, type: 'branch' })),
-                                ...repoRevisions.tags.map((tag): Item => ({ rev: tag, type: 'tag' })),
-                            ]
+                this.componentUpdates.pipe(
+                    filter(props => !props.disabled),
+                    switchMap(props =>
+                        fetchRepoRevisions({ repoPath: props.repoPath }).pipe(
+                            catchError(err => {
+                                console.error(err)
+                                return []
+                            }),
+                            map((repoRevisions: RepoRevisions) => {
+                                const combined = [
+                                    ...repoRevisions.branches.map((branch): Item => ({ rev: branch, type: 'branch' })),
+                                    ...repoRevisions.tags.map((tag): Item => ({ rev: tag, type: 'tag' })),
+                                ]
 
-                            return {
-                                repoRevisions: combined,
-                                visible: combined,
-                                query: props.rev,
-                                queryIsCommit: false,
-                            } as State
-                        })
+                                return {
+                                    repoRevisions: combined,
+                                    visible: combined,
+                                    query: props.rev,
+                                    queryIsCommit: false,
+                                } as State
+                            })
+                        )
+                    )
                 ),
 
                 // Always reset the queryIsCommit state when the user updated the query.
-                this.inputChanges.mapTo({ queryIsCommit: false } as State),
+                this.inputChanges.pipe(mapTo({ queryIsCommit: false } as State)),
 
                 // Find out if the query is a commit ID.
-                this.inputChanges
-                    .filter(query => !this.props.disabled)
+                this.inputChanges.pipe(
+                    filter(query => !this.props.disabled),
                     // We're only interested in query if it is a commit ID, not a branch or tag.
-                    .filter(
+                    filter(
                         query =>
                             query !== '' &&
                             (!this.state.repoRevisions ||
                                 !this.state.repoRevisions.some(item => item.rev.includes(query)))
-                    )
-                    .switchMap(query =>
-                        resolveRev({ repoPath: this.props.repoPath, rev: query })
-                            .map(query => ({ queryIsCommit: true } as State))
-                            .catch(err => {
+                    ),
+                    switchMap(query =>
+                        resolveRev({ repoPath: this.props.repoPath, rev: query }).pipe(
+                            map(query => ({ queryIsCommit: true } as State)),
+                            catchError(err => {
                                 if (err.code !== EREVNOTFOUND) {
                                     console.error(err)
                                 }
                                 return [] // no-op
                             })
-                    ),
+                        )
+                    )
+                ),
 
                 // Filter branches/tags based on updated user query.
-                this.inputChanges.map(query => {
-                    if (!this.state.repoRevisions) {
-                        return {} as State
-                    }
-                    const visible = this.state.repoRevisions
-                        .filter(item => item.rev.includes(query))
-                        // Assign score to each item.
-                        .map(item => ({ ...item, score: score(item.rev, query) }))
-                        // Remove items with zero zero (no match).
-                        .filter(item => item.score > 0)
-                        // Sort by sort value.
-                        .sort((a, b) => {
-                            if (a.score !== b.score) {
-                                return b.score - a.score
-                            }
+                this.inputChanges.pipe(
+                    map(query => {
+                        if (!this.state.repoRevisions) {
+                            return {} as State
+                        }
+                        const visible = this.state.repoRevisions
+                            .filter(item => item.rev.includes(query))
+                            // Assign score to each item.
+                            .map(item => ({ ...item, score: score(item.rev, query) }))
+                            // Remove items with zero zero (no match).
+                            .filter(item => item.score > 0)
+                            // Sort by sort value.
+                            .sort((a, b) => {
+                                if (a.score !== b.score) {
+                                    return b.score - a.score
+                                }
 
-                            // Scores are identical so prefer shorter length strings.
-                            return a.rev.length - b.rev.length
-                        })
+                                // Scores are identical so prefer shorter length strings.
+                                return a.rev.length - b.rev.length
+                            })
 
-                    return { visible, query } as State
-                })
+                        return { visible, query } as State
+                    })
+                )
             )
-                .map(state => ({ ...state, selection: 0 }))
+                .pipe(map(state => ({ ...state, selection: 0 })))
                 .subscribe(state => this.setState(state), err => console.error(err))
         )
     }
@@ -192,7 +199,7 @@ export class RevSwitcher extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
         this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(document, 'click').subscribe(e => {
+            fromEvent<MouseEvent>(document, 'click').subscribe(e => {
                 if (!this.containerElement || !this.containerElement.contains(e.target as Node)) {
                     // Click outside of our component.
                     this.hide()

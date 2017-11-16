@@ -47,35 +47,6 @@ type patternInfo struct {
 	PathPatternsAreCaseSensitive bool
 }
 
-type searchResults struct {
-	results  []*fileMatch
-	limitHit bool
-	cloning  []string
-	missing  []string
-}
-
-func (sr *searchResults) Results() []*fileMatch {
-	return sr.results
-}
-
-func (sr *searchResults) LimitHit() bool {
-	return sr.limitHit
-}
-
-func (sr *searchResults) Cloning() []string {
-	if sr.cloning == nil {
-		return []string{}
-	}
-	return sr.cloning
-}
-
-func (sr *searchResults) Missing() []string {
-	if sr.missing == nil {
-		return []string{}
-	}
-	return sr.missing
-}
-
 type fileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
@@ -93,6 +64,14 @@ func (fm *fileMatch) LineMatches() []*lineMatch {
 
 func (fm *fileMatch) LimitHit() bool {
 	return fm.JLimitHit
+}
+
+func fileMatchesToSearchResults(fms []*fileMatch) []*searchResult {
+	results := make([]*searchResult, len(fms))
+	for i, fm := range fms {
+		results[i] = &searchResult{fileMatch: fm}
+	}
+	return results
 }
 
 // LineMatch is the struct used by vscode to receive search results for a line
@@ -209,7 +188,13 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	return r.Matches, r.LimitHit, nil
 }
 
+var mockSearchRepo func(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+
 func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	if mockSearchRepo != nil {
+		return mockSearchRepo(ctx, repoName, rev, info)
+	}
+
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return nil, false, err
@@ -263,10 +248,10 @@ func (repoRev *repositoryRevision) hasRev() bool {
 	return repoRev.Rev != nil && *repoRev.Rev != ""
 }
 
-var mockSearchRepos func(args *repoSearchArgs) (*searchResults, error)
+var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
-// SearchRepos searches a set of repos for a pattern.
-func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults, error) {
+// searchRepos searches a set of repos for a pattern.
+func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)
 	}
@@ -275,13 +260,11 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	defer cancel()
 
 	var (
-		err       error
-		wg        sync.WaitGroup
-		mu        sync.Mutex
-		cloning   []string
-		missing   []string
-		flattened []*fileMatch
-		limitHit  bool
+		err         error
+		wg          sync.WaitGroup
+		mu          sync.Mutex
+		unflattened [][]*fileMatch
+		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.Repositories {
 		wg.Add(1)
@@ -298,15 +281,15 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit = limitHit || repoLimitHit
+			common.limitHit = common.limitHit || repoLimitHit
 			if e, ok := searchErr.(vcs.RepoNotExistError); ok {
 				if e.CloneInProgress {
-					cloning = append(cloning, repoRev.Repo)
+					common.cloning = append(common.cloning, repoRev.Repo)
 				} else {
-					missing = append(missing, repoRev.Repo)
+					common.missing = append(common.missing, repoRev.Repo)
 				}
 			} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
-				missing = append(missing, repoRev.Repo)
+				common.missing = append(common.missing, repoRev.Repo)
 			} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
 				// If we didn't specify an input revision, then the repo is empty and can be ignored.
 			} else if searchErr != nil && err == nil {
@@ -314,34 +297,62 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 				cancel()
 			}
 			if len(matches) > 0 {
-				flattened = append(flattened, matches...)
-			}
-			if len(flattened) > int(args.Query.FileMatchLimit) {
-				// We can stop collecting more results.
-				cancel()
+				sort.Slice(matches, func(i, j int) bool {
+					a, b := matches[i].uri, matches[j].uri
+					return a > b
+				})
+				unflattened = append(unflattened, matches)
 			}
 		}(*repoRev)
 	}
 	wg.Wait()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	// Return early so we don't have to worry about empty lists in later
+	// calculations.
+	if len(unflattened) == 0 {
+		return nil, common, nil
+	}
+
+	// We pass in a limit to each repository so we may end up with R*limit
+	// results where R is the number of repositories we searched. To ensure we
+	// have results from all repositories unflattened contains the results per
+	// repo. We then want to create an idempontent order of results, but
+	// ensuring every repo has atleast one result.
+	sort.Slice(unflattened, func(i, j int) bool {
+		a, b := unflattened[i][0].uri, unflattened[j][0].uri
+		return a > b
+	})
+	var flattened []*fileMatch
+	initialPortion := int(args.Query.FileMatchLimit) / len(unflattened)
+	for _, matches := range unflattened {
+		if initialPortion < len(matches) {
+			flattened = append(flattened, matches[:initialPortion]...)
+		} else {
+			flattened = append(flattened, matches...)
+		}
+	}
+	// We now have at most initialPortion from each repo. We add the rest of the
+	// results until we hit our limit.
+	for _, matches := range unflattened {
+		low := initialPortion
+		high := low + (int(args.Query.FileMatchLimit) - len(flattened))
+		if high <= len(matches) {
+			flattened = append(flattened, matches[low:high]...)
+		} else if low < len(matches) {
+			flattened = append(flattened, matches[low:]...)
+		}
+	}
+	// Sort again since we constructed flattened by adding more results at the
+	// end.
 	sort.Slice(flattened, func(i, j int) bool {
 		a, b := flattened[i].uri, flattened[j].uri
 		return a > b
 	})
-	// We pass in a limit to each repository so we may end up with R*limit results
-	// where R is the number of repositories we searched.
-	// Clip the results after doing the "relevance" sorting above.
-	if len(flattened) > int(args.Query.FileMatchLimit) {
-		flattened = flattened[:args.Query.FileMatchLimit]
-	}
-	return &searchResults{
-		results:  flattened,
-		limitHit: limitHit,
-		cloning:  cloning,
-		missing:  missing,
-	}, nil
+
+	return fileMatchesToSearchResults(flattened), common, nil
 }
 
 var searcherURLs *endpoint.Map

@@ -1,6 +1,7 @@
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/publishReplay'
 import { Observable } from 'rxjs/Observable'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { tap } from 'rxjs/operators/tap'
 
 /**
  * Creates a function that memoizes the async result of func.
@@ -47,12 +48,13 @@ export function memoizeObservable<P, T>(
         if (!force && hit) {
             return hit
         }
-        const obs = func(params)
-            .publishReplay()
-            .refCount()
-            .do(undefined as any, e => {
+        const obs = func(params).pipe(
+            publishReplay(),
+            refCount(),
+            tap(undefined as any, e => {
                 cache.delete(key)
             })
+        )
         cache.set(key, obs)
         return obs
     }

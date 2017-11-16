@@ -6,13 +6,12 @@ import * as React from 'react'
 import { match } from 'react-router'
 import { Link, Redirect } from 'react-router-dom'
 import reactive from 'rx-component'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/distinctUntilChanged'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/scan'
-import { Observable } from 'rxjs/Observable'
+import { merge } from 'rxjs/observable/merge'
+import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { scan } from 'rxjs/operators/scan'
 import { Subject } from 'rxjs/Subject'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
@@ -55,32 +54,36 @@ export const CommentsPage = reactive<Props>(props => {
 
     eventLogger.logViewEvent('SharedItem')
 
-    return Observable.merge(
-        props.map(({ location, history }): Update => state => ({ ...state, location, history })),
+    return merge(
+        props.pipe(map(({ location, history }): Update => state => ({ ...state, location, history }))),
 
-        props
-            .map(props => props.match.params.ulid)
-            .distinctUntilChanged()
-            .mergeMap(ulid =>
-                fetchSharedItem(ulid)
-                    .map((sharedItem): Update => state => ({ ...state, sharedItem, ulid, highlightLastComment: false }))
-                    .catch((error): Update[] => {
+        props.pipe(
+            map(props => props.match.params.ulid),
+            distinctUntilChanged(),
+            mergeMap(ulid =>
+                fetchSharedItem(ulid).pipe(
+                    map((sharedItem): Update => state => ({ ...state, sharedItem, ulid, highlightLastComment: false })),
+                    catchError((error): Update[] => {
                         console.error(error)
                         return [state => ({ ...state, error, ulid, highlightLastComment: false })]
                     })
-            ),
+                )
+            )
+        ),
 
-        threadUpdates.map((thread): Update => state => ({
-            ...state,
-            sharedItem: state.sharedItem && {
-                ...state.sharedItem,
-                thread,
-            },
-            highlightLastComment: true,
-        }))
-    )
-        .scan<Update, State>((state: State, update: Update) => update(state), {} as State)
-        .map(({ sharedItem, highlightLastComment, ulid, location, history, error }: State): JSX.Element | null => {
+        threadUpdates.pipe(
+            map((thread): Update => state => ({
+                ...state,
+                sharedItem: state.sharedItem && {
+                    ...state.sharedItem,
+                    thread,
+                },
+                highlightLastComment: true,
+            }))
+        )
+    ).pipe(
+        scan<Update, State>((state: State, update: Update) => update(state), {} as State),
+        map(({ sharedItem, highlightLastComment, ulid, location, history, error }: State): JSX.Element | null => {
             if (error) {
                 if (error.code === EPERMISSIONDENIED) {
                     return (
@@ -113,14 +116,13 @@ export const CommentsPage = reactive<Props>(props => {
 
             const editorURL = toEditorURL(
                 sharedItem.thread.repo.remoteUri,
-                sharedItem.thread.repoRevision,
+                sharedItem.thread.branch || sharedItem.thread.repoRevision,
                 sharedItem.thread.file,
                 { line: sharedItem.thread.startLine },
                 sharedItem.thread.id
             )
             const openEditor = () => {
                 eventLogger.log('OpenInNativeAppClicked')
-                window.open(editorURL, 'sourcegraph-editor')
             }
 
             return (
@@ -180,13 +182,12 @@ export const CommentsPage = reactive<Props>(props => {
                             ))}
                         {sharedItem &&
                             sharedItem.thread.comments.length === 0 && (
-                                <a href={editorURL}>
-                                    <button
-                                        className="btn btn-primary btn-block comments-page__reply-in-editor"
-                                        onClick={openEditor}
-                                    >
-                                        Open in Sourcegraph Editor
-                                    </button>
+                                <a
+                                    className="btn btn-primary btn-block comments-page__reply-in-editor"
+                                    href={editorURL}
+                                    onClick={openEditor}
+                                >
+                                    Open in Sourcegraph Editor
                                 </a>
                             )}
                         {sharedItem &&
@@ -209,6 +210,7 @@ export const CommentsPage = reactive<Props>(props => {
                 </div>
             )
         })
+    )
 })
 
 function getPageTitle(sharedItem: GQL.ISharedItem): string | undefined {

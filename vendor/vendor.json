@@ -716,6 +716,12 @@
 			"revisionTime": "2017-08-28T17:09:48Z"
 		},
 		{
+			"checksumSHA1": "n8o9Me8t9LvdBWMEAoCgjej8PAk=",
+			"path": "github.com/keegancsmith/sqlhooks",
+			"revision": "b4e9f9054f05abeebe9df6a3642d9458d84c8135",
+			"revisionTime": "2017-11-15T17:10:21Z"
+		},
+		{
 			"path": "github.com/keegancsmith/tmpfriend",
 			"revision": "8cd4ff81b86b4b424d900910cefa16ff016acfea",
 			"revisionTime": "2016-01-12T00:40:12+02:00"
@@ -745,15 +751,16 @@
 			"revisionTime": "2016-05-04T02:26:26Z"
 		},
 		{
-			"checksumSHA1": "dNYxHiBLalTqluak2/Z8c3RsSEM=",
+			"checksumSHA1": "IfZcD4U1dtllJKlPNeD2aU4Jn98=",
 			"path": "github.com/lib/pq",
-			"revision": "50761b0867bd1d9d069276790bcd4a3bccf2324a",
-			"revisionTime": "2016-08-31T22:25:20Z"
+			"revision": "8c6ee72f3e6bcb1542298dd5f76cb74af9742cec",
+			"revisionTime": "2017-11-13T04:44:40Z"
 		},
 		{
+			"checksumSHA1": "AU3fA8Sm33Vj9PBoRPSeYfxLRuE=",
 			"path": "github.com/lib/pq/oid",
-			"revision": "3e3efe51a0c4b23e817075438703cb15bd58c1a8",
-			"revisionTime": "2014-12-27T13:56:34+01:00"
+			"revision": "8c6ee72f3e6bcb1542298dd5f76cb74af9742cec",
+			"revisionTime": "2017-11-13T04:44:40Z"
 		},
 		{
 			"checksumSHA1": "9ZxLNBivvNkQ9Is+cSSuJRhcOP0=",
@@ -1239,22 +1246,22 @@
 			"revisionTime": "2016-09-29T22:04:58Z"
 		},
 		{
-			"checksumSHA1": "lzPj2yJz4Dy6ev0O0L4PNVzplAw=",
+			"checksumSHA1": "hpXnjCM/a0edhWUb2+and0mnPyY=",
 			"path": "github.com/opentracing/opentracing-go",
-			"revision": "6edb48674bd9467b8e91fda004f2bd7202d60ce4",
-			"revisionTime": "2017-02-06T22:16:52Z"
+			"revision": "1361b9cd60be79c4c3a7fa9841b3c132e40066a7",
+			"revisionTime": "2017-10-03T13:35:19Z"
 		},
 		{
-			"checksumSHA1": "+q64ZAwI2qF5goM1mLjav88NOYQ=",
+			"checksumSHA1": "uhDxBvLEqRAMZKgpTZ8MFuLIIM8=",
 			"path": "github.com/opentracing/opentracing-go/ext",
-			"revision": "6edb48674bd9467b8e91fda004f2bd7202d60ce4",
-			"revisionTime": "2017-02-06T22:16:52Z"
+			"revision": "1361b9cd60be79c4c3a7fa9841b3c132e40066a7",
+			"revisionTime": "2017-10-03T13:35:19Z"
 		},
 		{
-			"checksumSHA1": "+rbKrafLHDnrQFgeWawo9tfZhV4=",
+			"checksumSHA1": "tnkdNJbJxNKuPZMWapP1xhKIIGw=",
 			"path": "github.com/opentracing/opentracing-go/log",
-			"revision": "6edb48674bd9467b8e91fda004f2bd7202d60ce4",
-			"revisionTime": "2017-02-06T22:16:52Z"
+			"revision": "1361b9cd60be79c4c3a7fa9841b3c132e40066a7",
+			"revisionTime": "2017-10-03T13:35:19Z"
 		},
 		{
 			"checksumSHA1": "3YJklSuzSE1Rt8A+2dhiWSmf/fw=",
@@ -1490,6 +1497,12 @@
 			"path": "github.com/sourcegraph/jsonrpc2/websocket",
 			"revision": "b02337b177765febba753be4b7d9c26e3a9fd220",
 			"revisionTime": "2017-02-21T15:51:53Z"
+		},
+		{
+			"checksumSHA1": "ZYlSaPhSEf6f3XhDF2ZKzEnJsMI=",
+			"path": "github.com/sourcegraph/lazyzip",
+			"revision": "20c3bbaf8453565763a18c11cc84f317a69806c4",
+			"revisionTime": "2017-11-13T18:42:06Z"
 		},
 		{
 			"checksumSHA1": "GxPD7A0NjMDom1xte0mghkpzr0E=",

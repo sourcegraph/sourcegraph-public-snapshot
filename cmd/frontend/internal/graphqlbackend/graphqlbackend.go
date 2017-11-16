@@ -30,6 +30,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
+// GraphQLSchema is the parsed Schema with the root resolver attached. It is
+// exported since it is accessed in our httpapi.
 var GraphQLSchema *graphql.Schema
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -69,8 +71,8 @@ func init() {
 // that don't require a return value.
 type EmptyResponse struct{}
 
-// Various graphql tools expect at least one field to be present in the schema
-// so we provide a dummy one here that is always nil.
+// AlwaysNil exists since various graphql tools expect at least one field to be
+// present in the schema so we provide a dummy one here that is always nil.
 func (er *EmptyResponse) AlwaysNil() *string {
 	return nil
 }

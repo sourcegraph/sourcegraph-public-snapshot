@@ -1,6 +1,6 @@
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
 import { Observable } from 'rxjs/Observable'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
 import { queryGraphQL } from '../backend/graphql'
 import { SearchOptions } from './index'
 
@@ -17,12 +17,15 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                         missing
                         cloning
                         results {
-                            resource
-                            limitHit
-                            lineMatches {
-                                preview
-                                lineNumber
-                                offsetAndLengths
+                            __typename
+                            ... on FileMatch {
+                                resource
+                                limitHit
+                                lineMatches {
+                                    preview
+                                    lineNumber
+                                    offsetAndLengths
+                                }
                             }
                         }
                         alert {
@@ -41,12 +44,14 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
             }
         }`,
         { query: options.query, scopeQuery: options.scopeQuery || '' }
-    ).map(({ data, errors }) => {
-        if (!data || !data.root || !data.root.search2 || !data.root.search2.results) {
-            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-        }
-        return data.root.search2.results
-    })
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.search2 || !data.root.search2.results) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.search2.results
+        })
+    )
 }
 
 export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchSuggestion2> {
@@ -75,12 +80,14 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
             }
         }`,
         { query: options.query, scopeQuery: options.scopeQuery || '' }
-    ).mergeMap(({ data, errors }) => {
-        if (!data || !data.root || !data.root.search2 || !data.root.search2.suggestions) {
-            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-        }
-        return data.root.search2.suggestions
-    })
+    ).pipe(
+        mergeMap(({ data, errors }) => {
+            if (!data || !data.root || !data.root.search2 || !data.root.search2.suggestions) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.search2.suggestions
+        })
+    )
 }
 
 export function fetchSearchScopes(): Observable<GQL.ISearchScope2[]> {
@@ -93,12 +100,14 @@ export function fetchSearchScopes(): Observable<GQL.ISearchScope2[]> {
                 }
             }
         }
-    `).map(({ data, errors }) => {
-        if (!data || !data.root || !data.root.searchScopes2) {
-            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-        }
-        return data.root.searchScopes2
-    })
+    `).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.searchScopes2) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.searchScopes2
+        })
+    )
 }
 
 export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
@@ -111,10 +120,12 @@ export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
                 }
             }
         }
-    `).map(({ data, errors }) => {
-        if (!data || !data.root || !data.root.repoGroups) {
-            throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-        }
-        return data.root.repoGroups
-    })
+    `).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.repoGroups) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.repoGroups
+        })
+    )
 }

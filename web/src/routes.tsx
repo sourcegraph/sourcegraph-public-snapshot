@@ -5,9 +5,7 @@ import { SignInPage } from './auth/SignInPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { LicenseInvalidPage } from './LicenseInvalidPage'
 import { RepositoryResolver } from './repo/RepositoryResolver'
-import { enableSearch2 } from './search'
-import { SearchResults } from './search/SearchResults'
-import { SearchResults as SearchResults2 } from './search2/SearchResults'
+import { SearchResults } from './search2/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
 
 export interface LayoutRouteProps extends RouteProps {
@@ -37,7 +35,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/search',
-        component: enableSearch2 ? SearchResults2 : SearchResults,
+        component: SearchResults,
         exact: true,
     },
     {

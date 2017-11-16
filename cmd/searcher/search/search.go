@@ -136,13 +136,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		return nil, false, badRequestError{err.Error()}
 	}
 
-	ar, err := s.Store.openReader(ctx, p.Repo, p.Commit)
+	zr, err := s.Store.openReader(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, false, err
 	}
-	defer ar.Close()
+	defer zr.Close()
 
-	return concurrentFind(ctx, rg, ar.Reader(), p.FileMatchLimit)
+	return concurrentFind(ctx, rg, zr.Reader(), p.FileMatchLimit)
 }
 
 func validateParams(p *protocol.Request) error {

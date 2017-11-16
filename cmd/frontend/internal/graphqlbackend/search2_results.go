@@ -7,12 +7,43 @@ import (
 	"strings"
 )
 
+// searchResultsCommon contains fields that should be returned by all funcs
+// that contribute to the overall search result set.
+type searchResultsCommon struct {
+	limitHit bool     // whether the limit on results was hit
+	cloning  []string // repos that could not be searched because they were still being cloned
+	missing  []string // repos that could not be searched because they do not exist
+}
+
+func (c *searchResultsCommon) LimitHit() bool {
+	return c.limitHit
+}
+
+func (c *searchResultsCommon) Cloning() []string {
+	if c.cloning == nil {
+		return []string{}
+	}
+	return c.cloning
+}
+
+func (c *searchResultsCommon) Missing() []string {
+	if c.missing == nil {
+		return []string{}
+	}
+	return c.missing
+}
+
 type searchResults2 struct {
-	searchResults
+	results []*searchResult
+	searchResultsCommon
 	alert *searchAlert
 }
 
-func (r searchResults2) Alert() *searchAlert { return r.alert }
+func (sr *searchResults2) Results() []*searchResult {
+	return sr.results
+}
+
+func (sr *searchResults2) Alert() *searchAlert { return sr.alert }
 
 func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
 	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
@@ -71,17 +102,21 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) 
 		args.Query.ExcludePattern = &pat
 	}
 
-	var results *searchResults2
-	results1, err := r.root.SearchRepos(ctx, &args)
-	if results1 != nil {
-		var alert *searchAlert
-		if len(missingRepoRevs) > 0 {
-			alert = r.alertForMissingRepoRevs(missingRepoRevs)
-		}
-		results = &searchResults2{
-			searchResults: *results1,
-			alert:         alert,
-		}
+	fileMatches, common, err := searchRepos(ctx, &args)
+	if err != nil {
+		return nil, err
 	}
-	return results, err
+	var results searchResults2
+	results.results = fileMatches
+	results.searchResultsCommon = *common
+	if len(missingRepoRevs) > 0 {
+		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
+	}
+	return &results, nil
 }
+
+type searchResult struct {
+	fileMatch *fileMatch
+}
+
+func (g *searchResult) ToFileMatch() (*fileMatch, bool) { return g.fileMatch, g.fileMatch != nil }

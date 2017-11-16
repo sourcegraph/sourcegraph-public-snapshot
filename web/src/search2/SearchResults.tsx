@@ -4,18 +4,19 @@ import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/startWith'
-import 'rxjs/add/operator/switchMap'
+import { catchError } from 'rxjs/operators/catchError'
+import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { ReferencesGroup } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { searchText } from './backend'
+import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { RepoSearchResult } from './RepoSearchResult'
 import { SearchAlert } from './SearchAlert'
 
 interface Props {
@@ -37,8 +38,8 @@ function numberWithCommas(x: any): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-function pluralize(str: string, n: number): string {
-    return `${str}${n === 1 ? '' : 's'}`
+function pluralize(str: string, n: number, plural = str + 's'): string {
+    return n === 1 ? str : plural
 }
 
 export class SearchResults extends React.Component<Props, State> {
@@ -61,74 +62,84 @@ export class SearchResults extends React.Component<Props, State> {
         this.subscriptions.add(
             this.searchRequested
                 // Don't search using stale search options.
-                .filter(searchOptions => {
-                    const currentSearchOptions = parseSearchURLQuery(this.props.location.search)
-                    return !currentSearchOptions || searchOptionsEqual(searchOptions, currentSearchOptions)
-                })
-                .switchMap(searchOptions => {
-                    const start = Date.now()
-                    return searchText(searchOptions)
-                        .do(res => {
-                            if (res.cloning.length > 0) {
-                                // Perform search again if there are repos still waiting to be cloned,
-                                // so we can update the results list with those repos' results.
-                                setTimeout(() => this.searchRequested.next(searchOptions), 2000)
-                            }
-                        })
-                        .do(
-                            res =>
-                                eventLogger.log('SearchResultsFetched', {
-                                    code_search: {
-                                        results: {
-                                            files_count: res.results.length,
-                                            matches_count: res.results.reduce(
-                                                (count, fileMatch) => count + fileMatch.lineMatches.length,
-                                                0
-                                            ),
+                .pipe(
+                    filter(searchOptions => {
+                        const currentSearchOptions = parseSearchURLQuery(this.props.location.search)
+                        return !currentSearchOptions || searchOptionsEqual(searchOptions, currentSearchOptions)
+                    }),
+                    switchMap(searchOptions => {
+                        const start = Date.now()
+                        return searchText(searchOptions).pipe(
+                            tap(res => {
+                                if (res.cloning.length > 0) {
+                                    // Perform search again if there are repos still waiting to be cloned,
+                                    // so we can update the results list with those repos' results.
+                                    setTimeout(() => this.searchRequested.next(searchOptions), 2000)
+                                }
+                            }),
+                            tap(
+                                res =>
+                                    eventLogger.log('SearchResultsFetched', {
+                                        code_search: {
+                                            results: {
+                                                results_count: res.results.length,
+                                                result_items_count: res.results.reduce(
+                                                    (count, result) => count + resultItemsCount(result),
+                                                    0
+                                                ),
+                                            },
                                         },
-                                    },
-                                }),
-                            error => {
-                                eventLogger.log('SearchResultsFetchFailed', {
-                                    code_search: { error_message: error.message },
-                                })
-                                console.error(error)
-                            }
-                        )
-                        .map(res => ({ ...res, error: undefined, loading: false, searchDuration: Date.now() - start }))
-                        .catch(error => [
-                            {
-                                results: [],
-                                alert: null,
-                                missing: [],
-                                cloning: [],
-                                limitHit: false,
-                                error,
+                                    }),
+                                error => {
+                                    eventLogger.log('SearchResultsFetchFailed', {
+                                        code_search: { error_message: error.message },
+                                    })
+                                    console.error(error)
+                                }
+                            ),
+                            map(res => ({
+                                ...res,
+                                error: undefined,
                                 loading: false,
-                                searchDuration: undefined,
-                            },
-                        ])
-                })
+                                searchDuration: Date.now() - start,
+                            })),
+                            catchError(error => [
+                                {
+                                    results: [],
+                                    alert: null,
+                                    missing: [],
+                                    cloning: [],
+                                    limitHit: false,
+                                    error,
+                                    loading: false,
+                                    searchDuration: undefined,
+                                },
+                            ])
+                        )
+                    })
+                )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
 
         this.subscriptions.add(
             this.componentUpdates
-                .startWith(this.props)
-                .do(props => {
-                    const searchOptions = parseSearchURLQuery(props.location.search)
-                    setTimeout(() => this.searchRequested.next(searchOptions))
-                })
-                .map(() => ({
-                    results: [],
-                    alert: null,
-                    missing: [],
-                    cloning: [],
-                    limitHit: false,
-                    error: undefined,
-                    loading: true,
-                    searchDuration: undefined,
-                }))
+                .pipe(
+                    startWith(this.props),
+                    tap(props => {
+                        const searchOptions = parseSearchURLQuery(props.location.search)
+                        setTimeout(() => this.searchRequested.next(searchOptions))
+                    }),
+                    map(() => ({
+                        results: [],
+                        alert: null,
+                        missing: [],
+                        cloning: [],
+                        limitHit: false,
+                        error: undefined,
+                        loading: true,
+                        searchDuration: undefined,
+                    }))
+                )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
     }
@@ -166,41 +177,25 @@ export class SearchResults extends React.Component<Props, State> {
 
         let totalMatches = 0
         let totalResults = 0
-        let totalFiles = 0
-        let totalRepos = 0
-        const seenRepos = new Set<string>()
         for (const result of this.state.results) {
-            const parsed = new URL(result.resource)
-            if (!seenRepos.has(parsed.pathname)) {
-                seenRepos.add(parsed.pathname)
-                totalRepos += 1
-            }
-            totalFiles += 1
-            totalResults += result.lineMatches.length
+            totalResults += resultItemsCount(result)
         }
-
-        const logEvent = () => eventLogger.log('SearchResultClicked')
-
-        const searchOptions = parseSearchURLQuery(this.props.location.search)
 
         return (
             <div className="search-results2">
                 {this.state.results.length > 0 && (
                     <div className="search-results2__header">
-                        <div className="search-results2__badge">{numberWithCommas(totalResults)}</div>
-                        <div className="search-results2__label">{pluralize('result', totalResults)} in</div>
-                        <div className="search-results2__badge">{numberWithCommas(totalFiles)}</div>
-                        <div className="search-results2__label">{pluralize('file', totalFiles)} in</div>
-                        <div className="search-results2__badge">{numberWithCommas(totalRepos)}</div>
-                        <div className="search-results2__label">{pluralize('repo', totalRepos)} </div>
-                        <div className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</div>
+                        <span className="search-results2__stats">
+                            {numberWithCommas(totalResults)} {pluralize('result', totalResults)} in
+                        </span>{' '}
+                        <span className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</span>
                     </div>
                 )}
                 {this.state.cloning.map((repoPath, i) => (
-                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={Loader} />
+                    <RepoSearchResult repoPath={repoPath} key={i} icon={Loader} />
                 ))}
                 {this.state.missing.map((repoPath, i) => (
-                    <ReferencesGroup hidden={true} repoPath={repoPath} key={i} isLocal={false} icon={ReportIcon} />
+                    <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
                 ))}
                 {this.state.loading && <Loader className="icon-inline" />}
                 {alert && (
@@ -213,42 +208,31 @@ export class SearchResults extends React.Component<Props, State> {
                 )}
                 {this.state.results.map((result, i) => {
                     const prevTotal = totalMatches
-                    totalMatches += result.lineMatches.length
-                    const parsed = new URL(result.resource)
-                    const repoPath = parsed.hostname + parsed.pathname
-                    const rev = parsed.search.substr('?'.length)
-                    const filePath = parsed.hash.substr('#'.length)
-                    const refs = result.lineMatches.map(match => ({
-                        range: {
-                            start: {
-                                character: match.offsetAndLengths[0][0],
-                                line: match.lineNumber,
-                            },
-                            end: {
-                                character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
-                                line: match.lineNumber,
-                            },
-                        },
-                        uri: result.resource,
-                        repoURI: repoPath,
-                    }))
-
-                    return (
-                        <ReferencesGroup
-                            hidden={prevTotal > 500}
-                            repoPath={repoPath}
-                            localRev={rev}
-                            filePath={filePath}
-                            key={i}
-                            refs={refs}
-                            isLocal={false}
-                            icon={RepoIcon}
-                            onSelect={logEvent}
-                            searchOptions={searchOptions}
-                        />
-                    )
+                    totalMatches += resultItemsCount(result)
+                    const expanded = prevTotal <= 500
+                    return this.renderResult(i, result, expanded)
                 })}
             </div>
         )
     }
+
+    private logEvent = () => eventLogger.log('SearchResultClicked')
+
+    private renderResult(key: number, result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
+        switch (result.__typename) {
+            case 'FileMatch':
+                return (
+                    <FileMatch key={key} icon={RepoIcon} result={result} onSelect={this.logEvent} expanded={expanded} />
+                )
+        }
+        return undefined
+    }
+}
+
+function resultItemsCount(result: GQL.SearchResult): number {
+    switch (result.__typename) {
+        case 'FileMatch':
+            return result.lineMatches.length
+    }
+    return 1
 }

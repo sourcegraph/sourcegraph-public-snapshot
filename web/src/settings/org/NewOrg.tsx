@@ -2,11 +2,10 @@ import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/mergeMap'
+import { catchError } from 'rxjs/operators/catchError'
+import { filter } from 'rxjs/operators/filter'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../../components/PageTitle'
@@ -54,17 +53,21 @@ export class NewOrg extends React.Component<Props, State> {
         eventLogger.logViewEvent('NewOrg')
         this.subscriptions.add(
             this.submits
-                .do(event => {
-                    event.preventDefault()
-                    eventLogger.log('CreateNewOrgClicked')
-                })
-                .filter(event => event.currentTarget.checkValidity())
-                .mergeMap(event =>
-                    createOrg(this.state).catch(error => {
-                        console.error(error)
-                        this.setState({ error })
-                        return []
-                    })
+                .pipe(
+                    tap(event => {
+                        event.preventDefault()
+                        eventLogger.log('CreateNewOrgClicked')
+                    }),
+                    filter(event => event.currentTarget.checkValidity()),
+                    mergeMap(event =>
+                        createOrg(this.state).pipe(
+                            catchError(error => {
+                                console.error(error)
+                                this.setState({ error })
+                                return []
+                            })
+                        )
+                    )
                 )
                 .subscribe(
                     org => {

@@ -2,11 +2,11 @@ import { Loader } from '@sourcegraph/icons/lib/Loader'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/concat'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/mergeMap'
+import { catchError } from 'rxjs/operators/catchError'
+import { concat } from 'rxjs/operators/concat'
+import { filter } from 'rxjs/operators/filter'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser, fetchCurrentUser } from '../../auth'
@@ -60,27 +60,33 @@ export class UserProfilePage extends React.Component<Props, State> {
         )
         this.subscriptions.add(
             this.submits
-                .do(event => {
-                    event.preventDefault()
-                    eventLogger.log('UpdateUserClicked')
-                })
-                .filter(event => event.currentTarget.checkValidity())
-                .do(() => this.setState({ loading: true }))
-                .mergeMap(
-                    event =>
-                        this.requireBackfill()
-                            ? createUser({
-                                  username: this.state.username,
-                                  displayName: this.state.displayName || this.state.username,
-                              })
-                                  .do(() => (window.context.requireUserBackfill = false))
-                                  .catch(this.handleError)
-                            : updateUser({ username: this.state.username, displayName: this.state.displayName }).catch(
-                                  this.handleError
-                              )
+                .pipe(
+                    tap(event => {
+                        event.preventDefault()
+                        eventLogger.log('UpdateUserClicked')
+                    }),
+                    filter(event => event.currentTarget.checkValidity()),
+                    tap(() => this.setState({ loading: true })),
+                    mergeMap(
+                        event =>
+                            this.requireBackfill()
+                                ? createUser({
+                                      username: this.state.username,
+                                      displayName: this.state.displayName || this.state.username,
+                                  }).pipe(
+                                      tap(() => {
+                                          window.context.requireUserBackfill = false
+                                      }),
+                                      catchError(this.handleError)
+                                  )
+                                : updateUser({
+                                      username: this.state.username,
+                                      displayName: this.state.displayName,
+                                  }).pipe(catchError(this.handleError))
+                    ),
+                    tap(() => this.setState({ loading: false, error: undefined, saved: true })),
+                    mergeMap(() => fetchCurrentUser().pipe(concat([null])))
                 )
-                .do(() => this.setState({ loading: false, error: undefined, saved: true }))
-                .mergeMap(() => fetchCurrentUser().concat([null]))
                 .subscribe(() => {
                     const searchParams = new URLSearchParams(this.props.location.search)
                     const returnTo = searchParams.get('returnTo')

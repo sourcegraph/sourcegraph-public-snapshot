@@ -1,4 +1,5 @@
 [![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/opentracing/public) [![Build Status](https://travis-ci.org/opentracing/opentracing-go.svg?branch=master)](https://travis-ci.org/opentracing/opentracing-go) [![GoDoc](https://godoc.org/github.com/opentracing/opentracing-go?status.svg)](http://godoc.org/github.com/opentracing/opentracing-go)
+[![Sourcegraph Badge](https://sourcegraph.com/github.com/opentracing/opentracing-go/-/badge.svg)](https://sourcegraph.com/github.com/opentracing/opentracing-go?badge)
 
 # OpenTracing API for Go
 
@@ -95,7 +96,7 @@ reference.
 
             // Transmit the span's TraceContext as HTTP headers on our
             // outbound request.
-            tracer.Inject(
+            opentracing.GlobalTracer().Inject(
                 span.Context(),
                 opentracing.HTTPHeaders,
                 opentracing.HTTPHeadersCarrier(httpReq.Header))
@@ -130,6 +131,21 @@ reference.
 
         ctx := opentracing.ContextWithSpan(context.Background(), serverSpan)
         ...
+    }
+```
+
+#### Conditionally capture a field using `log.Noop`
+
+In some situations, you may want to dynamically decide whether or not
+to log a field.  For example, you may want to capture additional data,
+such as a customer ID, in non-production environments:
+
+```go
+    func Customer(order *Order) log.Field {
+        if os.Getenv("ENVIRONMENT") == "dev" {
+            return log.String("customer", order.Customer.ID)
+        }
+        return log.Noop()
     }
 ```
 

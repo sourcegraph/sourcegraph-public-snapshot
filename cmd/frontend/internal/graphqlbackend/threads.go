@@ -331,7 +331,7 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 		if uResolver, err := currentUser(ctx); err != nil {
 			// errors swallowed because user is only needed for Slack notifications
 			log15.Error("graphqlbackend.CreateThread: currentUser failed", "error", err)
-		} else {
+		} else if results != nil {
 			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
 			commentURL, err := s.getURL(ctx, newThread.ID, &comment.ID, "slack")

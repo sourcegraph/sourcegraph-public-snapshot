@@ -1,14 +1,13 @@
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as React from 'react'
 import reactive from 'rx-component'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/scan'
-import 'rxjs/add/operator/withLatestFrom'
-import { Observable } from 'rxjs/Observable'
+import { merge } from 'rxjs/observable/merge'
+import { catchError } from 'rxjs/operators/catchError'
+import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { scan } from 'rxjs/operators/scan'
+import { tap } from 'rxjs/operators/tap'
+import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { eventLogger } from '../tracking/eventLogger'
 import { addCommentToThread } from './backend'
@@ -39,30 +38,35 @@ export const CommentsInput = reactive<Props>(props => {
     const nextTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
         textAreaChanges.next(e.currentTarget.value)
 
-    return Observable.merge(
-        props.map(({ editorURL, onOpenEditor }): Update => state => ({ ...state, editorURL, onOpenEditor })),
+    return merge(
+        props.pipe(map(({ editorURL, onOpenEditor }): Update => state => ({ ...state, editorURL, onOpenEditor }))),
 
-        textAreaChanges.map((textAreaValue): Update => state => ({ ...state, textAreaValue })),
+        textAreaChanges.pipe(map((textAreaValue): Update => state => ({ ...state, textAreaValue }))),
 
         // Prevent default and set submitting = true when submits occur.
-        submits
-            .do(e => e.preventDefault())
-            .do(e => eventLogger.log('RepliedToThread'))
-            .map((): Update => state => ({ ...state, submitting: true })),
+        submits.pipe(
+            tap(e => e.preventDefault()),
+            tap(e => eventLogger.log('RepliedToThread')),
+            map((): Update => state => ({ ...state, submitting: true }))
+        ),
 
         // Add comment to thread when submits occur.
-        submits.withLatestFrom(textAreaChanges, props).mergeMap(([, textAreaValue, props]) =>
-            addCommentToThread(props.threadID, textAreaValue, props.ulid)
-                .do(updatedThread => props.onThreadUpdated(updatedThread))
-                .map((updatedThread): Update => state => ({ ...state, submitting: false, textAreaValue: '' }))
-                .catch((error): Update[] => {
-                    console.error(error)
-                    return [state => ({ ...state, error, submitting: false })]
-                })
+        submits.pipe(
+            withLatestFrom(textAreaChanges, props),
+            mergeMap(([, textAreaValue, props]) =>
+                addCommentToThread(props.threadID, textAreaValue, props.ulid).pipe(
+                    tap(updatedThread => props.onThreadUpdated(updatedThread)),
+                    map((updatedThread): Update => state => ({ ...state, submitting: false, textAreaValue: '' })),
+                    catchError((error): Update[] => {
+                        console.error(error)
+                        return [state => ({ ...state, error, submitting: false })]
+                    })
+                )
+            )
         )
-    )
-        .scan<Update, State>((state: State, update: Update) => update(state), {} as State)
-        .map(({ editorURL, onOpenEditor, textAreaValue, submitting, error }: State): JSX.Element | null => (
+    ).pipe(
+        scan<Update, State>((state: State, update: Update) => update(state), {} as State),
+        map(({ editorURL, onOpenEditor, textAreaValue, submitting, error }: State): JSX.Element | null => (
             <form className="comments-input" onSubmit={nextSubmit}>
                 <textarea
                     className="ui-text-box comments-input__text-box"
@@ -79,10 +83,8 @@ export const CommentsInput = reactive<Props>(props => {
                         </span>
                     )}
                     {!error && <span className="comments-input__markdown-supported">Markdown supported.</span>}
-                    <a href={editorURL}>
-                        <button className="btn btn-primary comments-input__button" type="button" onClick={onOpenEditor}>
-                            Open in Sourcegraph Editor
-                        </button>
+                    <a className="btn btn-primary comments-input__button" href={editorURL} onClick={onOpenEditor}>
+                        Open in Sourcegraph Editor
                     </a>
                     <button type="submit" className="btn btn-primary comments-input__button" disabled={submitting}>
                         Comment
@@ -90,4 +92,5 @@ export const CommentsInput = reactive<Props>(props => {
                 </div>
             </form>
         ))
+    )
 })

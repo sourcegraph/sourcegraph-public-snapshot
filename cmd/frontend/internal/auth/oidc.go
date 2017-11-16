@@ -200,8 +200,8 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 
 		actr, err := getActor(ctx, idToken, userInfo)
 		if err != nil {
-			log15.Error("Could not fetch user", "error", err)
-			http.Error(w, "Could not fetch user", http.StatusInternalServerError)
+			log15.Error("Could not get user for OIDC authentication", "error", err)
+			http.Error(w, "Could not get user (a user with your email or username may already exist).", http.StatusInternalServerError)
 			return
 		}
 		if err := session.StartNewSession(w, r, actr, idToken.Expiry); err != nil {
@@ -230,7 +230,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 }
 
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
-// Because Actors must correspond to users in our DB, it creates the user in the DB if the user does noet yet
+// Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
 // exist.
 func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, error) {
 	var claims struct {
@@ -245,7 +245,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	}
 
 	provider := idToken.Issuer
-	uid := fmt.Sprintf("%s:%s", provider, idToken.Subject)
+	authID := oidcToAuthID(provider, idToken.Subject)
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
@@ -264,15 +264,15 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		login = login[:i]
 	}
 
-	usr, err := localstore.Users.GetByAuth0ID(ctx, uid)
+	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)
 	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
-		usr, err = localstore.Users.Create(ctx, uid, email, login, displayName, provider, nil)
+		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, provider, nil)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	return &actor.Actor{UID: usr.Auth0ID, Login: usr.Username, Provider: usr.Provider, Email: usr.Email}, nil
+	return actor.FromUser(usr), nil
 }
 
 // oidcSession is the session information for a user session started via OIDC authentication.
@@ -314,4 +314,8 @@ func (s *authnState) Decode(encoded string) error {
 		return err
 	}
 	return json.Unmarshal(b, s)
+}
+
+func oidcToAuthID(provider, subject string) string {
+	return fmt.Sprintf("%s:%s", provider, subject)
 }
