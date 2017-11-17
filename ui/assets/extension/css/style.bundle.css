@@ -2289,7 +2289,7 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   color: #242945;
   font-size: 12px;
-  z-index: 20;
+  z-index: 30;
   position: absolute;
   overflow: auto;
   border-radius: 3px;
