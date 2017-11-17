@@ -40,7 +40,7 @@ export const browserExtensionMessageReceived = (document.getElementById('sourceg
 export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
     timeout(500),
     catchError(err => {
-        if (err.constructor.name === 'TimeoutError') {
+        if (err.name === 'TimeoutError') {
             return [false]
         }
         throw err
