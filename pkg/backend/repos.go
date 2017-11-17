@@ -69,6 +69,10 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	return repo, nil
 }
 
+func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
+	return localstore.Repos.TryInsertNew(ctx, uri, description, fork, private)
+}
+
 // ghRepoQueryMatcher matches search queries that look like they refer
 // to GitHub repositories. Examples include "github.com/gorilla/mux", "gorilla/mux", "gorilla mux",
 // "gorilla / mux"

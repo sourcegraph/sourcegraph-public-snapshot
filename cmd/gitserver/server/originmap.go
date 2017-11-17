@@ -8,6 +8,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -21,8 +22,15 @@ type prefixAndOrgin struct {
 	Origin string
 }
 
+type githubConfig struct {
+	URL string `json:"url"`
+}
+
 var originMapEnv = env.Get("ORIGIN_MAP", "", `space separated list of mappings from repo name prefix to origin url, for example "github.com/!https://github.com/%.git"`)
 var gitoliteHostsEnv = env.Get("GITOLITE_HOSTS", "", `space separated list of mappings from repo name prefix to gitolite hosts"`)
+var githubConf = env.Get("GITHUB_CONFIG", "", "A JSON array of GitHub host configuration values.")
+
+// DEPRECATED in favor of GITHUB_CONFIG:
 var githubEnterpriseURLEnv = env.Get("GITHUB_ENTERPRISE_URL", "", "URL to a GitHub Enterprise instance. If non-empty, repositories are synced from this instance periodically")
 
 var originMap []prefixAndOrgin
@@ -44,12 +52,30 @@ func init() {
 	}
 
 	// Add origin map for GitHub Enterprise instance of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
+	//
+	// TODO: remove after removing deprecated GITHUB_ENERPRISE config.
 	if githubEnterpriseURLEnv != "" {
 		gheURL, err := url.Parse(githubEnterpriseURLEnv)
 		if err != nil {
 			log.Fatal(err)
 		}
 		originMap = append(originMap, prefixAndOrgin{Prefix: gheURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", gheURL.Hostname())})
+	}
+
+	// Add origin map for GitHub Enterprise instances of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
+	if githubConf != "" {
+		var configs []githubConfig
+		err := json.Unmarshal([]byte(githubConf), &configs)
+		if err != nil {
+			log.Fatalf("error pasing GitHub config: %s", err)
+		}
+		for _, c := range configs {
+			gheURL, err := url.Parse(c.URL)
+			if err != nil {
+				log.Fatal(err)
+			}
+			originMap = append(originMap, prefixAndOrgin{Prefix: gheURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", gheURL.Hostname())})
+		}
 	}
 
 	addGitHubDefaults()

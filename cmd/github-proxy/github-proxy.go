@@ -22,7 +22,6 @@ import (
 
 var githubClientID = env.Get("GITHUB_CLIENT_ID", "", "client ID for GitHub")
 var githubClientSecret = env.Get("GITHUB_CLIENT_SECRET", "", "client secret for GitHub")
-var githubPersonalAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "personal access token for GitHub. All requests will use this token to access the Github API. Used give access to private Github code on a private server.")
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 
@@ -66,14 +65,9 @@ func main() {
 		h2.Set("User-Agent", r.Header.Get("User-Agent"))
 		h2.Set("Accept", r.Header.Get("Accept"))
 
-		if githubPersonalAccessToken != "" {
-			// For dogfooding servers this allows us to access private code.
-			h2.Set("Authorization", "token "+githubPersonalAccessToken)
-		} else {
-			// Otherwise set client_id for higher rate limits.
-			q2.Set("client_id", githubClientID)
-			q2.Set("client_secret", githubClientSecret)
-		}
+		// Otherwise set client_id for higher rate limits.
+		q2.Set("client_id", githubClientID)
+		q2.Set("client_secret", githubClientSecret)
 
 		req2 := &http.Request{
 			Method: r.Method,

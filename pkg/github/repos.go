@@ -178,8 +178,6 @@ var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
 // getFromAPI attempts to fetch a public or private repo from the GitHub API
 // without use of the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	// Attempt directly accessing the repo first. If it is a public repo this will
-	// succeed, otherwise attempt fetching it from the private endpoints below.
 	ghrepo, resp, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
 	if err == nil {
 		return ToRepo(ghrepo), nil

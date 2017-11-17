@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -20,13 +22,26 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
+type githubConfig struct {
+	URL         string   `json:"url"`
+	Token       string   `json:"token"`
+	Certificate string   `json:"certificate"`
+	Repos       []string `json:"repos"`
+}
+
 var (
 	updateIntervalEnv = env.Get("REPOSITORY_SYNC_PERIOD", "60", "The number of seconds to wait in-between syncing repositories with the code host")
 
+	githubConf = env.Get("GITHUB_CONFIG", "", "A JSON array of GitHub host configuration values.")
+
 	// GitHub.com config
+	//
+	// DEPRECATED (use GITHUB_CONFIG instead).
 	ghcAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "personal access token for GitHub.com. All requests will use this token to access the Github API. If set, this will be used to sync private GitHub repositories to Sourcegraph Server.")
 
 	// GitHub Enterprise config
+	//
+	// DEPRECATED (use GITHUB_CONFIG instead).
 	gheURL         = env.Get("GITHUB_ENTERPRISE_URL", "", "URL to a GitHub Enterprise instance. If non-empty, repositories are synced from this instance periodically. Note: this environment variable must be set to the same value in the gitserver process.")
 	gheCert        = env.Get("GITHUB_ENTERPRISE_CERT", "", "TLS certificate of GitHub Enterprise instance, if not part of the standard certificate chain")
 	gheAccessToken = env.Get("GITHUB_ENTERPRISE_TOKEN", "", "Access token used to authenticate GitHub Enterprise API requests")
@@ -52,29 +67,77 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 	}
 	updateInterval := time.Duration(updateIntervalParsed) * time.Second
 
-	var clients []*github.Client
-	if gheURL != "" {
-		c, err := githubEnterpriseClient(ctx, gheURL, gheCert, gheAccessToken)
+	configs := []githubConfig{}
+	if githubConf != "" {
+		err := json.Unmarshal([]byte(githubConf), &configs)
 		if err != nil {
-			return err
+			return fmt.Errorf("error processing GitHub config: %s", err)
 		}
-		clients = append(clients, c)
 	}
-	if ghcAccessToken != "" {
-		config := &githubutil.Config{Context: ctx}
-		clients = append(clients, config.AuthedClient(ghcAccessToken))
+
+	// For backwards compatibility, add configs for the deprecated GitHub config env variables.
+	//
+	// TODO: remove.
+	if githubConf == "" {
+		if gheURL != "" {
+			configs = append(configs, githubConfig{URL: gheURL, Certificate: gheCert, Token: gheAccessToken})
+		}
+		if ghcAccessToken != "" {
+			configs = append(configs, githubConfig{URL: "https://github.com", Token: ghcAccessToken})
+		}
 	}
+
+	var clients []*github.Client
+	var publicRepoNames []string
+	for _, c := range configs {
+		u, err := url.Parse(c.URL)
+		if err != nil {
+			return fmt.Errorf("error processing GitHub config URL %s: %s", c.URL, err)
+		}
+		if u.Hostname() == "github.com" {
+			config := &githubutil.Config{Context: ctx}
+			clients = append(clients, config.AuthedClient(c.Token))
+		} else {
+			cl, err := githubEnterpriseClient(ctx, c.URL, c.Certificate, c.Token)
+			if err != nil {
+				return err
+			}
+			clients = append(clients, cl)
+		}
+		if c.Repos != nil {
+			publicRepoNames = append(publicRepoNames, c.Repos...)
+		}
+	}
+
 	if len(clients) == 0 {
 		return nil
 	}
-
 	for {
 		for _, c := range clients {
-			err := update(ctx, c)
+			err = updateForClient(ctx, c)
 			if err != nil {
 				log15.Error("Could not update repositories", "error", err)
 			}
 		}
+
+		var publicRepos []*github.Repository
+		c := &githubutil.Config{Context: ctx}
+		cl := c.UnauthedClient()
+		for _, name := range publicRepoNames {
+			ownerAndRepo := strings.Split(name, "/")
+			if len(ownerAndRepo) != 2 {
+				log15.Error("Could not update public GitHub repository, name must be owner/repo format", "name", name)
+				continue
+			}
+			repo, _, err := cl.Repositories.Get(ctx, ownerAndRepo[0], ownerAndRepo[1])
+			if err != nil {
+				log15.Error("Could not update public GitHubrepository", "error", err)
+				continue
+			}
+			publicRepos = append(publicRepos, repo)
+		}
+		update(ctx, cl, publicRepos)
+
 		time.Sleep(updateInterval)
 	}
 }
@@ -103,13 +166,12 @@ func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken strin
 		Transport: transport,
 	}
 
-	return config.AuthedClient(gheAccessToken), nil
+	return config.AuthedClient(accessToken), nil
 }
 
-// update ensures that all public and private repositories owned by the authenticated user
-// exist in the repository table. It adds each repository with a URI of the form
-// "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
-func update(ctx context.Context, client *github.Client) error {
+// updateForClient ensures that all public and private repositories owned by the authenticated user
+// are updated.
+func updateForClient(ctx context.Context, client *github.Client) error {
 	var repos []*github.Repository
 	var err error
 	if client.BaseURL.Host == "api.github.com" {
@@ -120,17 +182,23 @@ func update(ctx context.Context, client *github.Client) error {
 	if err != nil {
 		return fmt.Errorf("could not list repositories: %s", err)
 	}
+	return update(ctx, client, repos)
+}
 
+// update ensures that all provided repositories exist in the repository table.
+// It adds each repository with a URI of the form
+// "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
+func update(ctx context.Context, client *github.Client, repos []*github.Repository) error {
 	for i, ghRepo := range repos {
-		if ghRepo.FullName == nil {
-			continue
-		}
-
 		hostPart := client.BaseURL.Host
 		if hostPart == "api.github.com" {
 			hostPart = "github.com"
 		}
-		uri := fmt.Sprintf("%s/%s", hostPart, *ghRepo.FullName)
+		uri := fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName())
+		if err := backend.Repos.TryInsertNew(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), ghRepo.GetPrivate()); err != nil {
+			log15.Warn("Could not ensure repository existence", "uri", uri, "error", err)
+			continue
+		}
 		repo, err := backend.Repos.GetByURI(ctx, uri)
 		if err != nil {
 			log15.Warn("Could not ensure repository existence", "uri", uri, "error", err)

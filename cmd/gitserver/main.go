@@ -21,7 +21,6 @@ import (
 const repoCleanupInterval = 24 * time.Hour
 
 var reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
-var githubPersonalAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "personal access token for GitHub. All requests will use this token to access the Github API. Used give access to private Github code on a private server.")
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 var runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
 
@@ -40,8 +39,7 @@ func main() {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
 	gitserver := server.Server{
-		ReposDir:          reposDir,
-		GithubAccessToken: githubPersonalAccessToken,
+		ReposDir: reposDir,
 	}
 	gitserver.RegisterMetrics()
 
