@@ -20,7 +20,7 @@ import { zip } from 'rxjs/operators/zip'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Position, Range } from 'vscode-languageserver-types'
-import { fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
+import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
 import { triggerBlame } from '../blame'
 import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
@@ -290,7 +290,10 @@ export class Blob extends React.Component<Props, State> {
                                 map(
                                     ([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData)
                                 ),
-                                catchError(e => {
+                                catchError(err => {
+                                    if (err.code !== EMODENOTFOUND) {
+                                        console.error(err)
+                                    }
                                     const data: TooltipData = { target, ctx }
                                     return [data]
                                 })
@@ -330,14 +333,17 @@ export class Blob extends React.Component<Props, State> {
                         map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
                         switchMap(({ target, ctx }) => {
                             const tooltip = this.getTooltip(target, ctx)
-                            this.subscriptions.add(tooltip.subscribe(this.logTelemetryOnTooltip))
+                            this.subscriptions.add(tooltip.subscribe(this.logTelemetryOnTooltip, () => undefined))
                             const tooltipWithJ2D: Observable<TooltipData> = tooltip.pipe(
                                 zip(this.getDefinition(ctx)),
                                 map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
                             )
                             const loading = this.getLoadingTooltip(target, ctx, tooltip)
                             return merge(loading, tooltip, tooltipWithJ2D).pipe(
-                                catchError(e => {
+                                catchError(err => {
+                                    if (err.code !== EMODENOTFOUND) {
+                                        console.error(err)
+                                    }
                                     const data: TooltipData = { target, ctx }
                                     return [data]
                                 })
