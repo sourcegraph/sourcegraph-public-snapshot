@@ -3,7 +3,7 @@ import { Chromeless } from 'chromeless'
 
 const chromeLauncher = require('chrome-launcher')
 
-describe.only('e2e test suite', () => {
+describe('e2e test suite', () => {
     const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'http://localhost:3080'
 
     let headlessChrome: any
