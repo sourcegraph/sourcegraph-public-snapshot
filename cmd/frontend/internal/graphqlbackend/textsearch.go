@@ -98,6 +98,8 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
+// textSearch searches repo@commit with p.
+// Note: the returned matches do not set fileMatch.uri
 func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
@@ -181,10 +183,6 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	if err != nil {
 		return nil, false, err
 	}
-	workspace := "git://" + repo + "?" + commit + "#"
-	for _, fm := range r.Matches {
-		fm.uri = workspace + fm.JPath
-	}
 	return r.Matches, r.LimitHit, nil
 }
 
@@ -208,7 +206,19 @@ func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (m
 	if err != nil {
 		return nil, false, err
 	}
-	return textSearch(ctx, repoName, commit.CommitID, info)
+	matches, limitHit, err = textSearch(ctx, repoName, commit.CommitID, info)
+
+	var workspace string
+	if rev != "" {
+		workspace = "git://" + repoName + "?" + rev + "#"
+	} else {
+		workspace = "git://" + repoName + "#"
+	}
+	for _, fm := range matches {
+		fm.uri = workspace + fm.JPath
+	}
+
+	return matches, limitHit, err
 }
 
 type repoSearchArgs struct {
