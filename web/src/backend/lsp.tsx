@@ -1,3 +1,8 @@
+import {
+    ReferenceInformation,
+    SymbolLocationInformation,
+    WorkspaceReferenceParams,
+} from 'javascript-typescript-langserver/lib/request-type'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
@@ -116,28 +121,28 @@ export const fetchHover = memoizeAsync(
 )
 
 export const fetchDefinition = memoizeAsync(
-    (pos: AbsoluteRepoFilePosition): Promise<Definition> =>
+    (options: AbsoluteRepoFilePosition): Promise<Definition> =>
         sendLSPRequest(
             {
                 method: 'textDocument/definition',
                 params: {
                     textDocument: {
-                        uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
                     },
                     position: {
-                        character: pos.position.character! - 1,
-                        line: pos.position.line - 1,
+                        character: options.position.character! - 1,
+                        line: options.position.line - 1,
                     },
                 },
             },
-            pos,
-            pos.filePath
+            options,
+            options.filePath
         ),
     makeRepoURI
 )
 
-export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | null> {
-    return fetchDefinition(pos).then(def => {
+export function fetchJumpURL(options: AbsoluteRepoFilePosition): Promise<string | null> {
+    return fetchDefinition(options).then(def => {
         const defArray = Array.isArray(def) ? def : [def]
         def = defArray[0]
         if (!def) {
@@ -146,145 +151,81 @@ export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Promise<string | nu
 
         const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
         uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
-        if (uri.repoPath === pos.repoPath && uri.commitID === pos.commitID) {
+        if (uri.repoPath === options.repoPath && uri.commitID === options.commitID) {
             // Use pretty rev from the current context for same-repo J2D.
-            uri.rev = pos.rev
+            uri.rev = options.rev
             return toPrettyBlobURL(uri)
         }
         return toAbsoluteBlobURL(uri)
     })
 }
 
-type XDefinitionResponse = { location: any; symbol: any } | null
 export const fetchXdefinition = memoizeAsync(
-    (pos: AbsoluteRepoFilePosition): Promise<XDefinitionResponse> =>
+    (options: AbsoluteRepoFilePosition): Promise<SymbolLocationInformation | undefined> =>
         sendLSPRequest(
             {
                 method: 'textDocument/xdefinition',
                 params: {
                     textDocument: {
-                        uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
                     },
                     position: {
-                        character: pos.position.character! - 1,
-                        line: pos.position.line - 1,
+                        character: options.position.character! - 1,
+                        line: options.position.line - 1,
                     },
                 },
             },
-            pos,
-            pos.filePath
-        ),
+            options,
+            options.filePath
+        ).then((result: SymbolLocationInformation[]) => result[0]),
     makeRepoURI
 )
 
 export const fetchReferences = memoizeAsync(
-    (ctx: AbsoluteRepoFilePosition): Promise<Location[]> =>
+    (options: AbsoluteRepoFilePosition): Promise<Location[]> =>
         sendLSPRequest(
             {
                 method: 'textDocument/references',
                 params: {
                     textDocument: {
-                        uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
                     },
                     position: {
-                        character: ctx.position.character! - 1,
-                        line: ctx.position.line - 1,
+                        character: options.position.character! - 1,
+                        line: options.position.line - 1,
                     },
                     context: {
                         includeDeclaration: true,
                     },
                 },
-            } as any,
-            ctx,
-            ctx.filePath
+            },
+            options,
+            options.filePath
         ),
     makeRepoURI
 )
 
-interface XReferencesParams extends AbsoluteRepoFile {
-    query: string
-    hints: any
+interface XReferenceOptions extends WorkspaceReferenceParams, AbsoluteRepoFile {
+    /**
+     * This is not in the spec, but Go and possibly others support it
+     * https://github.com/sourcegraph/go-langserver/blob/885ad3639de0e1e6c230db5395ea0f682534b458/pkg/lspext/lspext.go#L32
+     */
     limit: number
 }
 
-export interface PackageDescriptor {
-    name: string
-    version?: string
-    repoURL?: string
-}
-
-/**
- * Represents information about a programming construct that can be used to identify and locate the
- * construct's symbol. The identification does not have to be unique, but it should be as unique as
- * possible. It is up to the language server to define the schema of this object.
- *
- * In contrast to `SymbolInformation`, `SymbolDescriptor` includes more concrete, language-specific,
- * metadata about the symbol.
- */
-export interface SymbolDescriptor {
-    /**
-     * The kind of the symbol as a ts.ScriptElementKind
-     */
-    kind: string
-
-    /**
-     * The name of the symbol as returned from TS
-     */
-    name: string
-
-    /**
-     * The kind of the symbol the symbol is contained in, as a ts.ScriptElementKind.
-     * Is an empty string if the symbol has no container.
-     */
-    containerKind: string
-
-    /**
-     * The name of the symbol the symbol is contained in, as returned from TS.
-     * Is an empty string if the symbol has no container.
-     */
-    containerName: string
-
-    /**
-     * The file path of the file where the symbol is defined in, relative to the workspace rootPath.
-     */
-    filePath: string
-
-    /**
-     * A PackageDescriptor describing the package this symbol belongs to.
-     * Is `undefined` if the symbol does not belong to a package.
-     */
-    package?: PackageDescriptor
-}
-
-/**
- * Represents information about a reference to programming constructs like variables, classes,
- * interfaces, etc.
- */
-export interface ReferenceInformation {
-    /**
-     * The location in the workspace where the `symbol` is referenced.
-     */
-    reference: Location
-
-    /**
-     * Metadata about the symbol that can be used to identify or locate its definition.
-     */
-    symbol: SymbolDescriptor
-}
-
 export const fetchXreferences = memoizeAsync(
-    (ctx: XReferencesParams): Promise<Location[]> =>
+    (options: XReferenceOptions): Promise<Location[]> =>
         sendLSPRequest(
             {
                 method: 'workspace/xreferences',
                 params: {
-                    hints: ctx.hints,
-                    query: ctx.query,
-                    limit: ctx.limit,
+                    hints: options.hints,
+                    query: options.query,
+                    limit: options.limit,
                 },
             },
-            { repoPath: ctx.repoPath, commitID: ctx.commitID },
-            ctx.filePath
+            { repoPath: options.repoPath, commitID: options.commitID },
+            options.filePath
         ).then((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference)),
-    ctx => makeRepoURI(ctx) + '___' + ctx.query + '___' + ctx.limit
+    options => makeRepoURI(options) + '___' + options.query + '___' + options.limit
 )

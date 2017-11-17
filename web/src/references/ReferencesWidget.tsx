@@ -62,7 +62,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     switchMap(props =>
                         merge(
                             fromPromise(fetchReferences(props)).pipe(
-                                map(refs => ({ references: refs } as State)),
+                                map(references => ({ references } as State)),
                                 catchError(e => {
                                     console.error(e)
                                     return []
@@ -70,7 +70,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                                 concat([{ loadingLocal: false } as State])
                             ),
                             fetchExternalReferences(props).pipe(
-                                map(refs => ({ references: refs } as State)),
+                                map(references => ({ references } as State)),
                                 catchError(e => {
                                     console.error(e)
                                     return []
