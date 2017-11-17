@@ -48,7 +48,7 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                         return (
                             <Route
                                 {...route}
-                                key={i}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 component={undefined}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={props => (
