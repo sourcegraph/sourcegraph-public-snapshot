@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { hasBrowserExtensionInstalled } from '../tracking/analyticsUtils'
+import { Subscription } from 'rxjs/Subscription'
+import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
@@ -29,6 +30,8 @@ interface State {
 }
 
 export abstract class BrowserExtensionToast extends React.Component<Props, State> {
+    private subscriptions = new Subscription()
+
     constructor(props: Props) {
         super()
         this.state = {
@@ -37,19 +40,25 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
     }
 
     public componentDidMount(): void {
-        // Since this function checks if the Chrome ext has injected an element,
-        // wait a few ms in case there's an unpredictable delay before checking.
-        setTimeout(() => {
-            const visible =
-                !hasBrowserExtensionInstalled() &&
-                !window.context.onPrem &&
-                localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
-                daysActiveCount === 1
-            this.setState({ visible })
-            if (visible) {
-                eventLogger.log('BrowserExtReminderViewed')
-            }
-        }, 100)
+        // Display if we don't receive confirmation that the user already has
+        // the extension installed within a short time.
+        this.subscriptions.add(
+            browserExtensionInstalled.subscribe(isInstalled => {
+                const visible =
+                    !isInstalled &&
+                    !window.context.onPrem &&
+                    localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
+                    daysActiveCount === 1
+                this.setState({ visible })
+                if (visible) {
+                    eventLogger.log('BrowserExtReminderViewed')
+                }
+            })
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

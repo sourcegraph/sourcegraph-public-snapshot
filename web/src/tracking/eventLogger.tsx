@@ -1,14 +1,31 @@
 import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
-import { handleQueryEvents, hasBrowserExtensionInstalled, pageViewQueryParameters } from './analyticsUtils'
+import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
-    private static PLATFORM = 'Web'
     private hasStrippedQueryParameters = false
 
     constructor() {
+        browserExtensionMessageReceived.subscribe(isInstalled => {
+            telligent.setUserProperty('installed_chrome_extension', 'true')
+
+            if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+                console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
+            }
+
+            // Subscribe to the currentUser Subject to send a success response back to the extension
+            // right now, and on any future user changes.
+            currentUser.subscribe(user => {
+                const detail = {
+                    deviceId: telligent.getTelligentDuid(),
+                    userId: user ? user.email : undefined,
+                }
+                document.dispatchEvent(new CustomEvent('sourcegraph:identify', { detail }))
+            })
+        })
+
         if (window.context.user) {
             // TODO(dan): update with sourcegraphID from JS Context once available
             this.updateUser({ id: window.context.user.UID, sourcegraphID: null, username: null, email: null })
@@ -19,9 +36,6 @@ class EventLogger {
                 if (user) {
                     this.updateUser(user)
                     this.log('UserProfileFetched')
-                    // Since this function checks if the Chrome ext has injected an element,
-                    // wait a few ms in case there's an unpredictable delay before checking.
-                    setTimeout(() => this.updateTrackerWithIdentificationProps(user), 100)
                 }
             },
             error => {
@@ -43,20 +57,6 @@ class EventLogger {
     }
 
     /**
-     * Function to sync our key user identification props across Telligent and user Chrome extension installations
-     */
-    public updateTrackerWithIdentificationProps(user: GQL.IUser): any {
-        if (!telligent.isTelligentLoaded() || !hasBrowserExtensionInstalled()) {
-            return null
-        }
-
-        this.setUserInstalledChromeExtension('true')
-
-        const idProps = { detail: { deviceId: telligent.getTelligentDuid(), userId: user.email } }
-        setTimeout(() => document.dispatchEvent(new CustomEvent('sourcegraph:identify', idProps)), 20)
-    }
-
-    /**
      * Set user ID in Telligent tracker script.
      * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.ID from backend)
      * @param uniqueAuth0Id Unique Auth0 user ID (corresponds to Actor.UID or User.Auth0ID from backend)
@@ -70,10 +70,6 @@ class EventLogger {
             telligent.setUserProperty('user_id', uniqueSourcegraphId)
         }
         telligent.setUserProperty('internal_user_id', uniqueAuth0Id)
-    }
-
-    public setUserInstalledChromeExtension(installedChromeExtension: string): void {
-        telligent.setUserProperty('installed_chrome_extension', installedChromeExtension)
     }
 
     public setUserEmail(primaryEmail: string): void {
@@ -136,7 +132,7 @@ class EventLogger {
     private decorateEventProperties(platformProperties: any): any {
         const props = {
             ...platformProperties,
-            platform: EventLogger.PLATFORM,
+            platform: 'Web',
             is_authed: window.context.user ? 'true' : 'false',
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }

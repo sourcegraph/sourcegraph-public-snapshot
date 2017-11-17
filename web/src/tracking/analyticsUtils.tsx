@@ -1,3 +1,11 @@
+import { fromEvent } from 'rxjs/observable/fromEvent'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { mapTo } from 'rxjs/operators/mapTo'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { take } from 'rxjs/operators/take'
+import { timeout } from 'rxjs/operators/timeout'
 import { eventLogger } from './eventLogger'
 
 export interface EventQueryParameters {
@@ -8,13 +16,39 @@ export interface EventQueryParameters {
 }
 
 /**
- * the browser extension is detected when it creates a div with id `sourcegraph-app-background` on page.
- * for on-premise or testing instances of Sourcegraph, the browser extension never runs, so this will return false.
- * proceed with caution.
+ * Indicates if the webapp ever receives a message from the user's Sourcegraph browser extension,
+ * either in the form of a DOM marker element, or from a CustomEvent.
+ *
+ * You should likely use browserExtensionInstalled, rather than _browserExtensionMessageReceived,
+ * which may never emit or complete.
  */
-export function hasBrowserExtensionInstalled(): boolean {
-    return document.getElementById('sourcegraph-app-background') !== null
-}
+export const browserExtensionMessageReceived = (document.getElementById('sourcegraph-app-background')
+    ? // If the marker exists, the extension is installed
+      of(true)
+    : // If not, listen for a registration event
+      fromEvent<CustomEvent>(document, 'sourcegraph:browser-extension-registration').pipe(take(1), mapTo(true))
+).pipe(
+    // Replay the same latest value for every subscriber
+    publishReplay(1),
+    refCount()
+)
+
+/**
+ * Indicates if the current user has the browser extension installed. It waits 500ms for the browser
+ * extension to fire a registration event, and if it doesn't, emits false
+ */
+export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
+    timeout(500),
+    catchError(err => {
+        if (err.constructor.name === 'TimeoutError') {
+            return [false]
+        }
+        throw err
+    }),
+    // Replay the same latest value for every subscriber
+    publishReplay(1),
+    refCount()
+)
 
 /**
  * Get pageview-specific event properties from URL query string parameters
