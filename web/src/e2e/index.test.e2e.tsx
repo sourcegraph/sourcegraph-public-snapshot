@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 import { Chromeless } from 'chromeless'
+// tslint:disable-next-line
+import * as _ from 'lodash'
 
 const chromeLauncher = require('chrome-launcher')
 
@@ -22,7 +24,7 @@ describe('e2e test suite', () => {
         }
     })
     beforeEach(() => {
-        chrome = new Chromeless({ waitTimeout: 20000, launchChrome: false })
+        chrome = new Chromeless({ waitTimeout: 30000, launchChrome: false })
     })
     afterEach(() => chrome.end())
     after(() => {
@@ -56,8 +58,79 @@ describe('e2e test suite', () => {
     const assertWindowLocationPrefix = async (locationPrefix: string, isAbsolute = false): Promise<any> => {
         const prefix = isAbsolute ? locationPrefix : baseURL + locationPrefix
         await retry(async () => {
-            assert.ok((await chrome.evaluate<string>(() => window.location.href)).startsWith(prefix))
+            const loc = await chrome.evaluate<string>(() => window.location.href)
+            assert.ok(loc.startsWith(prefix), `expected window.location to start with ${prefix}, but got ${loc}`)
         })
+    }
+
+    const assertStickyHighlightedToken = async (label: string): Promise<void> => {
+        await chrome.wait('.selection-highlight-sticky') // make sure matched token is highlighted
+        await retry(async () =>
+            assert.equal(
+                await chrome.evaluate<string>(() => document.querySelector('.selection-highlight-sticky')!.textContent),
+                label
+            )
+        )
+    }
+
+    const assertAllHighlightedTokens = async (label: string): Promise<void> => {
+        const highlightedTokens = JSON.parse(
+            await chrome.evaluate<string>(() =>
+                JSON.stringify(Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent))
+            )
+        )
+        assert.ok(
+            _.every(highlightedTokens, txt => txt === label),
+            `unexpected tokens highlighted (expected '${label}'): ${highlightedTokens}`
+        )
+    }
+
+    const assertNonemptyLocalRefs = async (): Promise<void> => {
+        // verify active group is 'local'
+        await chrome.wait('.references-widget__title-bar-group--active')
+        assert.equal(
+            await chrome.evaluate(
+                () => document.querySelector('.references-widget__title-bar-group--active')!.textContent
+            ),
+            'This repository'
+        )
+
+        await chrome.wait('.references-widget__badge')
+        await retry(async () =>
+            assert.ok(
+                parseInt(
+                    await chrome.evaluate<string>(
+                        () => document.querySelector('.references-widget__badge')!.textContent
+                    ),
+                    10
+                ) > 0, // assert some (local) refs fetched
+                'expected some local references, got none'
+            )
+        )
+    }
+
+    const assertNonemptyExternalRefs = async (): Promise<void> => {
+        // verify active group is 'external'
+        await chrome.wait('.references-widget__title-bar-group--active')
+        assert.equal(
+            await chrome.evaluate(
+                () => document.querySelector('.references-widget__title-bar-group--active')!.textContent
+            ),
+            'Other repositories'
+        )
+
+        await chrome.wait('.references-widget__badge')
+        await retry(async () =>
+            assert.ok(
+                parseInt(
+                    await chrome.evaluate<string>(
+                        () => document.querySelectorAll('.references-widget__badge')[1].textContent // get the external refs count
+                    ),
+                    10
+                ) > 0, // assert some external refs fetched
+                'expected some external references, got none'
+            )
+        )
     }
 
     describe('Repository component', () => {
@@ -149,19 +222,19 @@ describe('e2e test suite', () => {
                 await chrome.wait('.tree__row--expanded [data-tree-path="fuzz/corpus"]')
                 await assertNumRowsExpanded(2) // `fuzz` and `fuzz/corpus` directories expanded
 
-                // select some file nested under `fuzz/corpus`
+                // select some file nested under `fuzz / corpus`
                 await chrome.press(40) // arrow down
                 await chrome.press(40) // arrow down
                 await chrome.press(40) // arrow down
                 await chrome.press(40) // arrow down
                 await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus/1.sc"]')
 
-                await chrome.press(37) // arrow left (navigate immediately up to parent directory `fuzz/corpus`)
+                await chrome.press(37) // arrow left (navigate immediately up to parent directory `fuzz / corpus`)
                 await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]')
-                await assertNumRowsExpanded(2) // `fuzz` and `fuzz/corpus` directories expanded
+                await assertNumRowsExpanded(2) // `fuzz` and `fuzz / corpus` directories expanded
 
                 await chrome.press(37) // arrow left
-                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]') // `fuzz/corpus` still selected
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]') // `fuzz / corpus` still selected
                 await assertNumRowsExpanded(1) // only `fuzz` directory expanded
             })
         })
@@ -338,6 +411,10 @@ describe('e2e test suite', () => {
                     await assertWindowLocation(
                         '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L21:19$references'
                     )
+
+                    await assertNonemptyLocalRefs()
+
+                    // verify the appropriate # of references are fetched
                     await chrome.wait('.references-widget__badge')
                     await retry(async () =>
                         assert.equal(
@@ -347,43 +424,40 @@ describe('e2e test suite', () => {
                             '45'
                         )
                     )
+
+                    // verify all the matches highlight a `Router` token
+                    await assertAllHighlightedTokens('Router')
+                })
+
+                // Testing external references on localhost is unreliable, since different dev environments will
+                // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
+                // 1 repo, in which case there would never be external references. So we *only* run this test against
+                // non-localhost servers.
+                const test = baseURL === 'http://localhost:3080' ? it.skip : it
+                test('opens widget and fetches external references', async () => {
+                    await chrome.goto(
+                        baseURL +
+                            '/github.com/gorilla/mux@2d5fef06b891c971b14aa6f71ca5ab6c03a36e0e/-/blob/mux.go#L43:6$references:external'
+                    )
+
+                    // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
+                    // look like they're for the appropriate token)
+                    await assertNonemptyExternalRefs()
+
+                    // verify all the matches highlight a `Router` token
+                    await assertAllHighlightedTokens('Router')
                 })
             })
         })
 
         describe('godoc.org "Uses" links', () => {
-            const assertNonemptyLocalRefs = async (): Promise<void> => {
-                await chrome.wait('.references-widget__badge') // make sure references widget is toggled
-                await retry(async () =>
-                    assert.ok(
-                        parseInt(
-                            await chrome.evaluate<string>(
-                                () => document.querySelector('.references-widget__badge')!.textContent
-                            ),
-                            10
-                        ) > 0 // assert some (local) refs fetched
-                    )
-                )
-            }
-
-            const assertHighlightedToken = async (label: string): Promise<void> => {
-                await chrome.wait('.selection-highlight-sticky') // make sure matched token is highlighted
-                await retry(async () =>
-                    assert.equal(
-                        await chrome.evaluate<string>(
-                            () => document.querySelector('.selection-highlight-sticky')!.textContent
-                        ),
-                        label
-                    )
-                )
-            }
-
             it('resolves standard library function', async () => {
                 // https://godoc.org/bytes#Compare
                 await chrome.goto(baseURL + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
                 await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
-                await assertHighlightedToken('Compare')
+                await assertStickyHighlightedToken('Compare')
                 await assertNonemptyLocalRefs()
+                await assertAllHighlightedTokens('Compare')
             })
 
             it('resolves standard library function (from stdlib repo)', async () => {
@@ -393,9 +467,9 @@ describe('e2e test suite', () => {
                         '/-/godoc/refs?def=Compare&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fbytes&repo=github.com%2Fgolang%2Fgo'
                 )
                 await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
-                await chrome.wait('.selection-highlight-sticky') // make sure matched token is highlighted
-                await assertHighlightedToken('Compare')
+                await assertStickyHighlightedToken('Compare')
                 await assertNonemptyLocalRefs()
+                await assertAllHighlightedTokens('Compare')
             })
 
             it('resolves external package function (from gorilla/mux)', async () => {
@@ -404,8 +478,9 @@ describe('e2e test suite', () => {
                     baseURL + '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
                 )
                 await assertWindowLocationPrefix('/github.com/gorilla/mux/-/blob/mux.go')
-                await assertHighlightedToken('Router')
+                await assertStickyHighlightedToken('Router')
                 await assertNonemptyLocalRefs()
+                await assertAllHighlightedTokens('Router')
             })
         })
 
@@ -479,8 +554,8 @@ describe('e2e test suite', () => {
         if (baseURL !== 'http://localhost:3080') {
             // TEMPORARY KLUDGE:
             // Currently the behavior of search is different on localhost vs. the dogfood server;
-            // on localhost the repo groups are called `repogroup:sample *` while on dogfood they
-            // are `repogroup:active *`.
+            // on localhost the repo groups are called `repogroup:sample * ` while on dogfood they
+            // are `repogroup:active * `.
             it('renders results for gorilla/mux (w/ search group)', async () => {
                 await chrome.goto(baseURL + '/search')
 
