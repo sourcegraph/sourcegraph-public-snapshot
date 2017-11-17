@@ -3,7 +3,7 @@ import { Chromeless } from 'chromeless'
 
 const chromeLauncher = require('chrome-launcher')
 
-describe('e2e test suite', () => {
+describe.only('e2e test suite', () => {
     const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'http://localhost:3080'
 
     let headlessChrome: any
@@ -50,6 +50,13 @@ describe('e2e test suite', () => {
         const url = isAbsolute ? location : baseURL + location
         await retry(async () => {
             assert.equal(await chrome.evaluate(() => window.location.href), url)
+        })
+    }
+
+    const assertWindowLocationPrefix = async (locationPrefix: string, isAbsolute = false): Promise<any> => {
+        const prefix = isAbsolute ? locationPrefix : baseURL + locationPrefix
+        await retry(async () => {
+            assert.ok((await chrome.evaluate<string>(() => window.location.href)).startsWith(prefix))
         })
     }
 
@@ -341,6 +348,64 @@ describe('e2e test suite', () => {
                         )
                     )
                 })
+            })
+        })
+
+        describe('godoc.org "Uses" links', () => {
+            const assertNonemptyLocalRefs = async (): Promise<void> => {
+                await chrome.wait('.references-widget__badge') // make sure references widget is toggled
+                await retry(async () =>
+                    assert.ok(
+                        parseInt(
+                            await chrome.evaluate<string>(
+                                () => document.querySelector('.references-widget__badge')!.textContent
+                            ),
+                            10
+                        ) > 0 // assert some (local) refs fetched
+                    )
+                )
+            }
+
+            const assertHighlightedToken = async (label: string): Promise<void> => {
+                await chrome.wait('.selection-highlight-sticky') // make sure matched token is highlighted
+                await retry(async () =>
+                    assert.equal(
+                        await chrome.evaluate<string>(
+                            () => document.querySelector('.selection-highlight-sticky')!.textContent
+                        ),
+                        label
+                    )
+                )
+            }
+
+            it('resolves standard library function', async () => {
+                // https://godoc.org/bytes#Compare
+                await chrome.goto(baseURL + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
+                await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
+                await assertHighlightedToken('Compare')
+                await assertNonemptyLocalRefs()
+            })
+
+            it('resolves standard library function (from stdlib repo)', async () => {
+                // https://godoc.org/github.com/golang/go/src/bytes#Compare
+                await chrome.goto(
+                    baseURL +
+                        '/-/godoc/refs?def=Compare&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fbytes&repo=github.com%2Fgolang%2Fgo'
+                )
+                await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
+                await chrome.wait('.selection-highlight-sticky') // make sure matched token is highlighted
+                await assertHighlightedToken('Compare')
+                await assertNonemptyLocalRefs()
+            })
+
+            it('resolves external package function (from gorilla/mux)', async () => {
+                // https://godoc.org/github.com/gorilla/mux#Router
+                await chrome.goto(
+                    baseURL + '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
+                )
+                await assertWindowLocationPrefix('/github.com/gorilla/mux/-/blob/mux.go')
+                await assertHighlightedToken('Router')
+                await assertNonemptyLocalRefs()
             })
         })
 
