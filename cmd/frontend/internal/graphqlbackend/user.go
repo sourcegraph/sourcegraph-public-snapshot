@@ -91,6 +91,17 @@ func (r *userResolver) UpdatedAt() *string {
 	return &t
 }
 
+func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+	settings, err := store.Settings.GetLatest(ctx, sourcegraph.SettingsSubject{User: &r.user.ID})
+	if err != nil {
+		return nil, err
+	}
+	if settings == nil {
+		return nil, nil
+	}
+	return &settingsResolver{&settingsSubject{user: r}, settings, nil}, nil
+}
+
 // HasSourcegraphUser indicates whether the current user has a Sourcegraph user
 // associated with their account, as opposed to only having a registered Auth0 user.
 func (r *userResolver) HasSourcegraphUser() bool {

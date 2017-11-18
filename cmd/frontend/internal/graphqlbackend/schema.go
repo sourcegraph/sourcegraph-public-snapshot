@@ -99,6 +99,8 @@ type Mutation {
     lines: ThreadLinesInput
   ): Thread!
   updateUser(username: String, displayName: String, avatarURL: String): User!
+  # Update the settings for the currently authenticated user.
+  updateUserSettings(lastKnownSettingsID: Int, contents: String!): Settings!
   updateThread(threadID: Int!, archived: Boolean): Thread!
   addCommentToThread(threadID: Int!, contents: String!): Thread!
   # This method is the same as addCommentToThread, the only difference is
@@ -515,7 +517,7 @@ type Installation {
   avatarURL: String!
 }
 
-type User {
+type User implements SettingsSubject {
   id: String! @deprecated(reason: "use auth0ID instead")
   auth0ID: String!
   sourcegraphID: Int
@@ -525,6 +527,8 @@ type User {
   avatarURL: String
   createdAt: String
   updatedAt: String
+  # The latest settings for the user.
+  latestSettings: Settings
   orgs: [Org!]!
   orgMemberships: [OrgMember!]!
   hasSourcegraphUser: Boolean!

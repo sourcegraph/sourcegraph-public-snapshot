@@ -67,7 +67,7 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := store.Settings.GetLatestByOrgID(ctx, o.org.ID)
+	settings, err := store.Settings.GetLatest(ctx, sourcegraph.SettingsSubject{Org: &o.org.ID})
 	if err != nil {
 		return nil, err
 	}

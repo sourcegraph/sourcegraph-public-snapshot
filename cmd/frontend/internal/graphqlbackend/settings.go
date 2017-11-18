@@ -12,15 +12,20 @@ import (
 )
 
 type settingsSubject struct {
-	org *orgResolver
+	org  *orgResolver
+	user *userResolver
 }
 
 func (s *settingsSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
+
+func (s *settingsSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
 
 func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
 	case s.org != nil:
 		return s.org.LatestSettings(ctx)
+	case s.user != nil:
+		return s.user.LatestSettings(ctx)
 	}
 	panic("no settings subject")
 }
@@ -73,6 +78,26 @@ func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 	return &userResolver{o.user, nil}, nil
 }
 
+func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
+	LastKnownSettingsID *int32
+	Contents            string
+}) (*settingsResolver, error) {
+	// 🚨 SECURITY: verify that the current user is authenticated.
+	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, errors.New("must be authenticated as a user to update user settings")
+	}
+
+	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.SettingsSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsResolver{
+		subject:  &settingsSubject{user: &userResolver{user: user}},
+		settings: settings,
+	}, nil
+}
+
 func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 	OrgID               int32
 	LastKnownSettingsID *int32
@@ -90,7 +115,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := store.Settings.CreateIfUpToDate(ctx, args.OrgID, args.LastKnownSettingsID, actor.UID, args.Contents)
+	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.SettingsSubject{Org: &args.OrgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
