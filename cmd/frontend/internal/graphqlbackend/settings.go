@@ -11,40 +11,40 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-type orgSettingsResolver struct {
+type settingsResolver struct {
 	org      *sourcegraph.Org
-	settings *sourcegraph.OrgSettings
+	settings *sourcegraph.Settings
 	user     *sourcegraph.User
 }
 
-func (o *orgSettingsResolver) ID() int32 {
+func (o *settingsResolver) ID() int32 {
 	return o.settings.ID
 }
 
-func (o *orgSettingsResolver) Contents() string {
+func (o *settingsResolver) Contents() string {
 	return o.settings.Contents
 }
 
-func (o *orgSettingsResolver) Highlighted(ctx context.Context) (string, error) {
+func (o *settingsResolver) Highlighted(ctx context.Context) (string, error) {
 	html, aborted, err := highlight.Code(ctx, o.Contents(), "json", false)
 	if err != nil {
 		return "", err
 	}
 	if aborted {
-		// Org Settings should be small enough so the syntax highlighting
+		// Settings should be small enough so the syntax highlighting
 		// completes before the automatic timeout. If it doesn't, something
 		// seriously wrong has happened.
-		return "", errors.New("org settings syntax highlighting aborted")
+		return "", errors.New("settings syntax highlighting aborted")
 	}
 
 	return string(html), nil
 }
 
-func (o *orgSettingsResolver) CreatedAt() string {
+func (o *settingsResolver) CreatedAt() string {
 	return o.settings.CreatedAt.Format(time.RFC3339) // ISO
 }
 
-func (o *orgSettingsResolver) Author(ctx context.Context) (*userResolver, error) {
+func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 	if o.user == nil {
 		var err error
 		o.user, err = store.Users.GetByAuth0ID(ctx, o.settings.AuthorAuth0ID)
@@ -59,7 +59,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 	OrgID               int32
 	LastKnownSettingsID *int32
 	Contents            string
-}) (*orgSettingsResolver, error) {
+}) (*settingsResolver, error) {
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
 	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
@@ -72,9 +72,9 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	setting, err := store.OrgSettings.CreateIfUpToDate(ctx, args.OrgID, args.LastKnownSettingsID, actor.UID, args.Contents)
+	setting, err := store.Settings.CreateIfUpToDate(ctx, args.OrgID, args.LastKnownSettingsID, actor.UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
-	return &orgSettingsResolver{org, setting, nil}, nil
+	return &settingsResolver{org, setting, nil}, nil
 }

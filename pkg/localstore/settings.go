@@ -9,10 +9,10 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-type orgSettings struct{}
+type settings struct{}
 
-func (o *orgSettings) CreateIfUpToDate(ctx context.Context, orgID int32, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.OrgSettings, err error) {
-	s := sourcegraph.OrgSettings{
+func (o *settings) CreateIfUpToDate(ctx context.Context, orgID int32, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	s := sourcegraph.Settings{
 		OrgID:         orgID,
 		AuthorAuth0ID: authorAuth0ID,
 		Contents:      contents,
@@ -53,11 +53,11 @@ func (o *orgSettings) CreateIfUpToDate(ctx context.Context, orgID int32, lastKno
 	return latestSetting, nil
 }
 
-func (o *orgSettings) GetLatestByOrgID(ctx context.Context, orgID int32) (*sourcegraph.OrgSettings, error) {
+func (o *settings) GetLatestByOrgID(ctx context.Context, orgID int32) (*sourcegraph.Settings, error) {
 	return o.getLatestByOrgID(ctx, globalDB, orgID)
 }
 
-func (o *orgSettings) getLatestByOrgID(ctx context.Context, queryTarget queryable, orgID int32) (*sourcegraph.OrgSettings, error) {
+func (o *settings) getLatestByOrgID(ctx context.Context, queryTarget queryable, orgID int32) (*sourcegraph.Settings, error) {
 	rows, err := queryTarget.QueryContext(ctx, getLatestByOrgIDSql, orgID)
 	if err != nil {
 		return nil, err
@@ -81,11 +81,11 @@ type queryable interface {
 
 const getLatestByOrgIDSql = "SELECT id, org_id, author_auth_id, contents, created_at FROM settings WHERE org_id = $1 ORDER BY id DESC LIMIT 1"
 
-func (o *orgSettings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*sourcegraph.OrgSettings, error) {
-	settings := []*sourcegraph.OrgSettings{}
+func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*sourcegraph.Settings, error) {
+	settings := []*sourcegraph.Settings{}
 	defer rows.Close()
 	for rows.Next() {
-		s := sourcegraph.OrgSettings{}
+		s := sourcegraph.Settings{}
 		err := rows.Scan(&s.ID, &s.OrgID, &s.AuthorAuth0ID, &s.Contents, &s.CreatedAt)
 		if err != nil {
 			return nil, err

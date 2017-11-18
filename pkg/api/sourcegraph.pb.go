@@ -500,7 +500,8 @@ type OrgTag struct {
 	Name  string `json:"Name,omitempty"`
 }
 
-type OrgSettings struct {
+// Settings contains configuration settings for an org.
+type Settings struct {
 	ID            int32     `json:"ID"`
 	OrgID         int32     `json:"OrgID"`
 	AuthorAuth0ID string    `json:"AuthorAuth0ID"`
