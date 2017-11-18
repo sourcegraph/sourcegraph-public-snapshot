@@ -74,7 +74,7 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if setting == nil {
 		return nil, nil
 	}
-	return &settingsResolver{o.org, setting, nil}, nil
+	return &settingsResolver{&settingsSubject{org: o}, setting, nil}, nil
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {

@@ -569,7 +569,7 @@ type CompanyCategory {
   subIndustry: String!
 }
 
-type Org {
+type Org implements SettingsSubject {
   id: Int!
   name: String!
   displayName: String
@@ -613,8 +613,15 @@ type ThreadConnection {
   totalCount: Int!
 }
 
+# SettingsSubject is something that can be configured by Settings.
+interface SettingsSubject {
+  latestSettings: OrgSettings
+}
+
 type OrgSettings {
   id: Int!
+  # The subject that these settings are for.
+  subject: SettingsSubject!
   contents: String!
   # contents as highlighted HTML
   highlighted: String!

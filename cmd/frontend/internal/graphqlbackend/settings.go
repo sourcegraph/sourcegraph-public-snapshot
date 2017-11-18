@@ -11,14 +11,32 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
+type settingsSubject struct {
+	org *orgResolver
+}
+
+func (s *settingsSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
+
+func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+	switch {
+	case s.org != nil:
+		return s.org.LatestSettings(ctx)
+	}
+	panic("no settings subject type")
+}
+
 type settingsResolver struct {
-	org      *sourcegraph.Org
+	subject  *settingsSubject
 	settings *sourcegraph.Settings
 	user     *sourcegraph.User
 }
 
 func (o *settingsResolver) ID() int32 {
 	return o.settings.ID
+}
+
+func (o *settingsResolver) Subject() *settingsSubject {
+	return o.subject
 }
 
 func (o *settingsResolver) Contents() string {
@@ -72,9 +90,12 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	setting, err := store.Settings.CreateIfUpToDate(ctx, args.OrgID, args.LastKnownSettingsID, actor.UID, args.Contents)
+	settings, err := store.Settings.CreateIfUpToDate(ctx, args.OrgID, args.LastKnownSettingsID, actor.UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
-	return &settingsResolver{org, setting, nil}, nil
+	return &settingsResolver{
+		subject:  &settingsSubject{org: &orgResolver{org}},
+		settings: settings,
+	}, nil
 }
