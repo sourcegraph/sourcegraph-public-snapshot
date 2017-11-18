@@ -113,7 +113,7 @@ type Mutation {
     orgID: Int!
     lastKnownSettingsID: Int
     contents: String!
-  ): OrgSettings!
+  ): Settings!
   inviteUser(email: String!, orgID: Int!): EmptyResponse
   acceptUserInvite(inviteToken: String!): OrgInviteStatus!
   removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
@@ -568,7 +568,7 @@ type Org implements SettingsSubject {
   displayName: String
   slackWebhookURL: String
   members: [OrgMember!]!
-  latestSettings: OrgSettings
+  latestSettings: Settings
   repos: [OrgRepo!]!
   repo(canonicalRemoteID: String!): OrgRepo
   threads(
@@ -608,10 +608,10 @@ type ThreadConnection {
 
 # SettingsSubject is something that can be configured by Settings.
 interface SettingsSubject {
-  latestSettings: OrgSettings
+  latestSettings: Settings
 }
 
-type OrgSettings {
+type Settings {
   id: Int!
   # The subject that these settings are for.
   subject: SettingsSubject!

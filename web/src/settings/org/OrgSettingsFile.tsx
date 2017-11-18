@@ -2,7 +2,7 @@ import * as React from 'react'
 import { SettingsFile } from '../SettingsFile'
 
 export interface Props {
-    settings: GQL.IOrgSettings | null
+    settings: GQL.ISettings | null
 }
 
 export const OrgSettingsFile = ({ settings }: Props) => (

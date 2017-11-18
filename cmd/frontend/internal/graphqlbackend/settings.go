@@ -22,7 +22,7 @@ func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver
 	case s.org != nil:
 		return s.org.LatestSettings(ctx)
 	}
-	panic("no settings subject type")
+	panic("no settings subject")
 }
 
 type settingsResolver struct {
