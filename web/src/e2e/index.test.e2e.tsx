@@ -222,19 +222,19 @@ describe('e2e test suite', () => {
                 await chrome.wait('.tree__row--expanded [data-tree-path="fuzz/corpus"]')
                 await assertNumRowsExpanded(2) // `fuzz` and `fuzz/corpus` directories expanded
 
-                // select some file nested under `fuzz / corpus`
+                // select some file nested under `fuzz/corpus`
                 await chrome.press(40) // arrow down
                 await chrome.press(40) // arrow down
                 await chrome.press(40) // arrow down
                 await chrome.press(40) // arrow down
                 await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus/1.sc"]')
 
-                await chrome.press(37) // arrow left (navigate immediately up to parent directory `fuzz / corpus`)
+                await chrome.press(37) // arrow left (navigate immediately up to parent directory `fuzz/corpus`)
                 await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]')
-                await assertNumRowsExpanded(2) // `fuzz` and `fuzz / corpus` directories expanded
+                await assertNumRowsExpanded(2) // `fuzz` and `fuzz/corpus` directories expanded
 
                 await chrome.press(37) // arrow left
-                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]') // `fuzz / corpus` still selected
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz/corpus"]') // `fuzz/corpus` still selected
                 await assertNumRowsExpanded(1) // only `fuzz` directory expanded
             })
         })
@@ -554,8 +554,8 @@ describe('e2e test suite', () => {
         if (baseURL !== 'http://localhost:3080') {
             // TEMPORARY KLUDGE:
             // Currently the behavior of search is different on localhost vs. the dogfood server;
-            // on localhost the repo groups are called `repogroup:sample * ` while on dogfood they
-            // are `repogroup:active * `.
+            // on localhost the repo groups are called `repogroup:sample *` while on dogfood they
+            // are `repogroup:active *`.
             it('renders results for gorilla/mux (w/ search group)', async () => {
                 await chrome.goto(baseURL + '/search')
 
