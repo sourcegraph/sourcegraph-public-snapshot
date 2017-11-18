@@ -3,9 +3,11 @@ package localstore
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"regexp"
 	regexpsyntax "regexp/syntax"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -22,6 +24,17 @@ import (
 )
 
 var autoRepoWhitelist []*regexp.Regexp
+var autoRepoAdd, _ = strconv.ParseBool(env.Get("AUTO_REPO_ADD", "false", "when true, automatically add/clone reposotiries if they are requested but do not currently exist in the DB"))
+var publicRepoRedirectEnabled, _ = strconv.ParseBool(env.Get("PUBLIC_REPO_REDIRECTS", "true", "when true, automatically redirect public repos that do not exists on this server to sourcegraph.com"))
+
+// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external sourcegraph server.
+type ErrRepoSeeOther struct {
+	RedirectURL string
+}
+
+func (e ErrRepoSeeOther) Error() string {
+	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
+}
 
 func init() {
 	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
@@ -80,7 +93,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	}
 
 	repo, err := s.getByURI(ctx, uri)
-	if err != nil {
+	if err != nil && autoRepoAdd {
 		whitelisted := false
 		for _, expr := range autoRepoWhitelist {
 			if expr.MatchString(strings.ToLower(uri)) {
@@ -112,6 +125,11 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			return nil, err
 		}
 		return s.getByURI(ctx, uri)
+	} else if err != nil {
+		if publicRepoRedirectEnabled && strings.HasPrefix(strings.ToLower(uri), "github.com/") {
+			return nil, ErrRepoSeeOther{RedirectURL: fmt.Sprintf("https://sourcegraph.com/%s", uri)}
+		}
+		return nil, err
 	}
 
 	return repo, nil

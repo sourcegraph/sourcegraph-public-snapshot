@@ -12,7 +12,15 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
-import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, fetchPhabricatorRepo, resolveRev } from './backend'
+import {
+    ECLONEINPROGESS,
+    EREPONOTFOUND,
+    EREVNOTFOUND,
+    ERREPOSEEOTHER,
+    fetchPhabricatorRepo,
+    RepoSeeOtherError,
+    resolveRev,
+} from './backend'
 import { parseRepoRev } from './index'
 import { Repository } from './Repository'
 
@@ -62,6 +70,8 @@ export class RepositoryResolver extends React.Component<Props, State> {
                                         errors.pipe(
                                             tap(err => {
                                                 switch (err.code) {
+                                                    case ERREPOSEEOTHER:
+                                                        window.location.href = (err as RepoSeeOtherError).redirectURL
                                                     case ECLONEINPROGESS:
                                                         // Display cloning screen to the user and retry
                                                         this.setState({ cloneInProgress: true })

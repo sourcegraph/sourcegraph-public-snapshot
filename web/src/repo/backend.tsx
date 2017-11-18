@@ -28,6 +28,14 @@ class RevNotFoundError extends Error {
     }
 }
 
+export const ERREPOSEEOTHER = 'ERREPOSEEOTHER'
+export class RepoSeeOtherError extends Error {
+    public readonly code = ERREPOSEEOTHER
+    constructor(public redirectURL: string) {
+        super(`repo not found at this location, but might exist at ${redirectURL}`)
+    }
+}
+
 export interface ResolvedRev {
     commitID: string
     defaultBranch: string
@@ -52,6 +60,7 @@ export const resolveRev = memoizeObservable(
                         }
                     }
                     defaultBranch
+                    redirectURL
                 }
             }
         }
@@ -61,6 +70,9 @@ export const resolveRev = memoizeObservable(
             map(result => {
                 if (!result.data) {
                     throw new Error('invalid response received from graphql endpoint')
+                }
+                if (result.data.root.repository && result.data.root.repository.redirectURL) {
+                    throw new RepoSeeOtherError(result.data.root.repository.redirectURL)
                 }
                 if (!result.data.root.repository || !result.data.root.repository.commit) {
                     throw new RepoNotFoundError(ctx.repoPath)

@@ -23,7 +23,8 @@ import (
 )
 
 type repositoryResolver struct {
-	repo *sourcegraph.Repo
+	repo        *sourcegraph.Repo
+	redirectURL *string
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
@@ -62,6 +63,10 @@ func (r *repositoryResolver) URI() string {
 
 func (r *repositoryResolver) Description() string {
 	return r.repo.Description
+}
+
+func (r *repositoryResolver) RedirectURL() *string {
+	return r.redirectURL
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {

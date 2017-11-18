@@ -342,6 +342,8 @@ type Repository implements Node {
   tags: [String!]!
   listTotalRefs: TotalRefList!
   gitCmdRaw(params: [String!]!): String!
+  # Link to another sourcegraph instance location where this repository is located.
+  redirectURL: String
 }
 
 type PhabricatorRepo {

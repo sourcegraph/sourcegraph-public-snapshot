@@ -115,6 +115,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, "/"+e.NewURL, http.StatusMovedPermanently)
 				return nil, nil
 			}
+			if e, ok := err.(localstore.ErrRepoSeeOther); ok {
+				// Repo does not exist here, redirect to the reccomended location.
+				http.Redirect(w, r, e.RedirectURL, http.StatusSeeOther)
+				return nil, nil
+			}
 			if legacyerr.ErrCode(err) == legacyerr.NotFound {
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)

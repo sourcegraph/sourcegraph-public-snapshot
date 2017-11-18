@@ -129,6 +129,9 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 
 	repo, err := localstore.Repos.GetByURI(ctx, args.URI)
 	if err != nil {
+		if err, ok := err.(localstore.ErrRepoSeeOther); ok {
+			return &repositoryResolver{repo: &sourcegraph.Repo{}, redirectURL: &err.RedirectURL}, nil
+		}
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil
 		}
