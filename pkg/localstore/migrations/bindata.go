@@ -68,6 +68,8 @@
 // ../../../migrations/1509599098_add-users-provider-column.up.sql
 // ../../../migrations/1509645961_rename-users-auth0_id-to-uid.down.sql
 // ../../../migrations/1509645961_rename-users-auth0_id-to-uid.up.sql
+// ../../../migrations/1511004249_generalize_org_settings.down.sql
+// ../../../migrations/1511004249_generalize_org_settings.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1495,6 +1497,46 @@ func _1509645961_renameUsersAuth0_idToUidUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1511004249_generalize_org_settingsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x90\xc1\x4e\xc3\x30\x0c\x86\xef\x7d\x0a\xbf\x47\x4f\x59\x66\xa1\x48\x89\x03\xa9\x2b\x71\x8b\x60\x33\xa5\x20\x6d\x10\x77\x07\xde\x1e\x31\x08\x1b\x95\xda\x0b\x57\x7f\xfe\xfc\xcb\xff\x06\x6f\x1c\xb5\x8d\xf1\x8c\x09\xd8\x6c\x3c\x82\xca\x34\x8d\x87\x41\x21\x21\x99\x80\xc0\x11\x8e\x65\xc8\x75\xfc\x77\xf9\x9a\x54\xc1\x46\xea\x38\x19\x47\xfc\x7b\x2b\x17\x79\x92\x22\x87\x9d\x68\x3e\x96\x41\xe7\x47\xe7\xfc\xdf\x21\x27\x95\xb2\x9a\x72\x5e\xa8\x31\x1d\xde\xf5\x48\xf6\xf2\x7b\x1e\xf7\x59\xe5\x7d\xa1\x82\x1f\x5a\x6d\x47\x5b\xbc\xbf\xa8\x6f\xaf\xf2\xb1\x24\x7e\xb1\x95\xdf\xbe\x81\x8d\xbe\x0f\x74\x26\xe3\x1e\x3a\x64\xa0\xc8\x40\xbd\xf7\x2b\xea\x36\xc5\xdb\xeb\x52\x9e\x1f\x34\xeb\xe9\xf1\x45\x76\x53\xdb\xd8\x18\x82\xe3\xb6\xf9\x0c\x00\x00\xff\xff\xf5\x56\x3a\x1e\xee\x01\x00\x00")
+
+func _1511004249_generalize_org_settingsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1511004249_generalize_org_settingsDownSql,
+		"1511004249_generalize_org_settings.down.sql",
+	)
+}
+
+func _1511004249_generalize_org_settingsDownSql() (*asset, error) {
+	bytes, err := _1511004249_generalize_org_settingsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1511004249_generalize_org_settings.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1511004249_generalize_org_settingsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x91\xc1\x6e\xc2\x30\x10\x44\xef\xf9\x8a\x3d\x82\x54\xf8\x81\x9c\x42\x62\xb5\x51\x13\xa7\x0d\x46\xea\x2d\x0a\x64\x49\x5c\xa8\x9d\x7a\x6d\x21\xfe\xbe\x32\x25\x94\x20\x38\xf5\xba\xb3\x33\xcf\xb3\x5e\xb0\xe7\x94\x87\x41\x94\x09\x56\x82\x88\x16\x19\x03\x6d\xda\x8a\xd0\x5a\xa9\x5a\x82\x92\xf1\x28\x67\x20\x0a\x18\x46\xe3\xe5\xdb\xc5\xb8\xe0\x4b\x51\x46\x29\x17\xa3\x9c\xca\xe0\x16\x0d\xaa\x0d\x52\xa5\x4d\x4b\xd7\x81\xb7\xda\xbf\x01\x8e\xd0\x3c\x24\x9c\xc4\x01\xb1\x64\xef\x2b\xc6\xe3\x71\xe7\x4a\x36\x15\xe1\xf7\x9d\xea\x67\x65\x70\xa7\x3c\x61\x1f\x63\x6b\xbf\xc3\xe3\x3d\xa3\x9f\x87\x41\x30\x9b\x41\x5e\xef\x10\xc8\x19\x04\xdb\xd5\x16\x6c\x87\x06\x41\x12\xd4\x40\x6e\xfd\x89\x1b\x0b\x93\xc3\x59\xf8\xeb\x5e\xf7\xfd\xfe\x08\x56\x4f\xe7\x20\x3a\x04\xad\xf6\x47\x9f\x45\xae\xef\xb5\xb1\xd8\x5c\xbc\x3e\x48\xf9\x27\x81\xd2\x87\x27\x58\x3b\x1f\x24\x69\xd8\x24\xa8\x9b\x46\xaa\x16\xbe\xb4\xa7\xaa\x13\x65\xeb\xac\x33\x38\xbf\x7f\xf5\x28\x49\xae\x4f\xde\xd5\x54\x0d\xac\xf8\x85\xc5\xaf\x30\xf1\xfd\x65\x03\xe9\x12\x78\x21\x80\xaf\xb2\x6c\xfa\xe0\x07\x7f\x87\x71\x91\xad\x72\x0e\x67\x5b\x52\x16\x6f\x17\x63\x18\xc4\x45\x9e\xa7\x22\x0c\x7e\x02\x00\x00\xff\xff\xaf\xac\xce\xbd\x97\x02\x00\x00")
+
+func _1511004249_generalize_org_settingsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1511004249_generalize_org_settingsUpSql,
+		"1511004249_generalize_org_settings.up.sql",
+	)
+}
+
+func _1511004249_generalize_org_settingsUpSql() (*asset, error) {
+	bytes, err := _1511004249_generalize_org_settingsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1511004249_generalize_org_settings.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1615,6 +1657,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1509599098_add-users-provider-column.up.sql":      _1509599098_addUsersProviderColumnUpSql,
 	"1509645961_rename-users-auth0_id-to-uid.down.sql": _1509645961_renameUsersAuth0_idToUidDownSql,
 	"1509645961_rename-users-auth0_id-to-uid.up.sql":   _1509645961_renameUsersAuth0_idToUidUpSql,
+	"1511004249_generalize_org_settings.down.sql":      _1511004249_generalize_org_settingsDownSql,
+	"1511004249_generalize_org_settings.up.sql":        _1511004249_generalize_org_settingsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1726,6 +1770,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1509599098_add-users-provider-column.up.sql":      &bintree{_1509599098_addUsersProviderColumnUpSql, map[string]*bintree{}},
 	"1509645961_rename-users-auth0_id-to-uid.down.sql": &bintree{_1509645961_renameUsersAuth0_idToUidDownSql, map[string]*bintree{}},
 	"1509645961_rename-users-auth0_id-to-uid.up.sql":   &bintree{_1509645961_renameUsersAuth0_idToUidUpSql, map[string]*bintree{}},
+	"1511004249_generalize_org_settings.down.sql":      &bintree{_1511004249_generalize_org_settingsDownSql, map[string]*bintree{}},
+	"1511004249_generalize_org_settings.up.sql":        &bintree{_1511004249_generalize_org_settingsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
