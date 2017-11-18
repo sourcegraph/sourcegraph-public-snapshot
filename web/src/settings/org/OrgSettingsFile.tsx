@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { SettingsFile } from '../SettingsFile'
 
 export interface Props {
     settings: GQL.IOrgSettings | null
@@ -9,11 +10,7 @@ export const OrgSettingsFile = ({ settings }: Props) => (
         <h3> Current Organization Editor Configuration</h3>
         {settings &&
             settings.highlighted && [
-                <div
-                    key={0}
-                    className="settings-file__settings-box"
-                    dangerouslySetInnerHTML={{ __html: settings.highlighted }}
-                />,
+                <SettingsFile key={0}>{settings.highlighted}</SettingsFile>,
                 <small key={1} className="form-text">
                     Run the 'Preferences: Open Organization Settings' command inside of Sourcegraph Editor to change
                     this configuration.

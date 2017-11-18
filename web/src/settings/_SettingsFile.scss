@@ -1,0 +1,18 @@
+.settings-file {
+    width: 100%;
+    margin-top: 2.5rem;
+
+    &__contents {
+        overflow-x: scroll;
+        border: 1px solid #2b3750;
+        border-radius: 2px;
+        padding: 0.5rem 1rem;
+
+        table {
+            white-space: pre;
+            background-color: #0e121b;
+            font-family: 'Menlo';
+            font-size: 12px;
+        }
+    }
+}
