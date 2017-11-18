@@ -7,7 +7,7 @@ export interface Props {
 
 export const OrgSettingsFile = ({ settings }: Props) => (
     <div className="settings-file">
-        <h3> Current Organization Editor Configuration</h3>
+        <h3>Editor settings</h3>
         {settings &&
             settings.highlighted && [
                 <SettingsFile key={0}>{settings.highlighted}</SettingsFile>,
