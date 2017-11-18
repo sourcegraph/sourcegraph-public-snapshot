@@ -217,7 +217,7 @@ h1 {
     }
     &:disabled {
         opacity: 0.65;
-}
+    }
 }
 
 .btn-block {
@@ -409,6 +409,7 @@ h1 {
 }
 
 @import './highlight';
+@import './search2/QueryButton';
 @import './search2/SearchNavbarItem';
 @import './search2/SearchPage';
 @import './search2/SearchResults';
