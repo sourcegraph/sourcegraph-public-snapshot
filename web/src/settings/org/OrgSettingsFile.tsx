@@ -4,14 +4,14 @@ export interface Props {
     settings: GQL.IOrgSettings | null
 }
 
-export const EditorConfiguration = ({ settings }: Props) => (
-    <div className="editor-configuration">
+export const OrgSettingsFile = ({ settings }: Props) => (
+    <div className="settings-file">
         <h3> Current Organization Editor Configuration</h3>
         {settings &&
             settings.highlighted && [
                 <div
                     key={0}
-                    className="editor-configuration__settings-box"
+                    className="settings-file__settings-box"
                     dangerouslySetInnerHTML={{ __html: settings.highlighted }}
                 />,
                 <small key={1} className="form-text">

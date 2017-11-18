@@ -1,7 +1,7 @@
 @import './InviteForm';
 @import './OrgSettingsForm';
 @import './OrgAvatar';
-@import './EditorConfiguration';
+@import '../SettingsFile';
 
 .org {
     &__avatar-cell {

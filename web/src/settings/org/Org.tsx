@@ -20,8 +20,8 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchOrg, removeUserFromOrg } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
-import { EditorConfiguration } from './EditorConfiguration'
 import { InviteForm } from './InviteForm'
+import { OrgSettingsFile } from './OrgSettingsFile'
 import { OrgSettingsForm } from './OrgSettingsForm'
 
 const OrgNotFound = () => (
@@ -181,7 +181,7 @@ export const Org = reactive<Props>(props => {
 
                     <OrgSettingsForm org={org} />
 
-                    <EditorConfiguration settings={org.latestSettings} />
+                    <OrgSettingsFile settings={org.latestSettings} />
                 </div>
             )
         })
