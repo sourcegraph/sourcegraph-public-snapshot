@@ -10,7 +10,6 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -58,8 +57,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	u := conf.AppURL.ResolveReference(&url.URL{Path: "/.api/graphql"}).String()
-	req, err := http.Post(u, "application/json; charset=utf-8", bytes.NewReader(data))
+	req, err := http.Post("http://localhost:3080/.api/graphql", "application/json; charset=utf-8", bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
