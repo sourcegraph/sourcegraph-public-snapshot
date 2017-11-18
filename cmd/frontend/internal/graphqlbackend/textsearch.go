@@ -258,6 +258,35 @@ func (repoRev *repositoryRevision) hasRev() bool {
 	return repoRev.Rev != nil && *repoRev.Rev != ""
 }
 
+// handleRepoSearchResult handles the limitHit and searchErr returned by a call to searcher or
+// gitserver, updating common as to reflect that new information. If searchErr is a fatal error,
+// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
+// nil error.
+//
+// Callers should use it as follows:
+//
+//  if fatalErr := handleRepoSearchResult(common, repoRev, limitHit, searchErr); fatalErr != nil {
+//     err = errors.Wrapf(searchErr, "failed to search %s because foo", ...) // return this error
+//     cancel() // cancel any other in-flight operations
+//	}
+func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevision, limitHit bool, searchErr error) (fatalErr error) {
+	common.limitHit = common.limitHit || limitHit
+	if e, ok := searchErr.(vcs.RepoNotExistError); ok {
+		if e.CloneInProgress {
+			common.cloning = append(common.cloning, repoRev.Repo)
+		} else {
+			common.missing = append(common.missing, repoRev.Repo)
+		}
+	} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
+		common.missing = append(common.missing, repoRev.Repo)
+	} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
+		// If we didn't specify an input revision, then the repo is empty and can be ignored.
+	} else if searchErr != nil {
+		return searchErr
+	}
+	return nil
+}
+
 var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
 // searchRepos searches a set of repos for a pattern.
@@ -291,18 +320,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			common.limitHit = common.limitHit || repoLimitHit
-			if e, ok := searchErr.(vcs.RepoNotExistError); ok {
-				if e.CloneInProgress {
-					common.cloning = append(common.cloning, repoRev.Repo)
-				} else {
-					common.missing = append(common.missing, repoRev.Repo)
-				}
-			} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
-				common.missing = append(common.missing, repoRev.Repo)
-			} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
-				// If we didn't specify an input revision, then the repo is empty and can be ignored.
-			} else if searchErr != nil && err == nil {
+			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
 				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
 				cancel()
 			}

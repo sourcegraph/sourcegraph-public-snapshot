@@ -347,7 +347,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
 func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
-	args := []string{"log", `--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`}
+	args := []string{"log", logFormatFlag}
 	if opt.N != 0 {
 		args = append(args, "-n", strconv.FormatUint(uint64(opt.N), 10))
 	}
@@ -372,51 +372,26 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.Repo
-	out, err := cmd.CombinedOutput(ctx)
+	data, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		out = bytes.TrimSpace(out)
-		if isBadObjectErr(string(out), string(opt.Head)) {
+		data = bytes.TrimSpace(data)
+		if isBadObjectErr(string(data), string(opt.Head)) {
 			return nil, 0, vcs.ErrRevisionNotFound
 		}
-		return nil, 0, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, out)
+		return nil, 0, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
 	}
 
-	const partsPerCommit = 9 // number of \x00-separated fields per commit
-	allParts := bytes.Split(out, []byte{'\x00'})
+	allParts := bytes.Split(data, []byte{'\x00'})
 	numCommits := len(allParts) / partsPerCommit
-	commits := make([]*vcs.Commit, numCommits)
-	for i := 0; i < numCommits; i++ {
-		parts := allParts[partsPerCommit*i : partsPerCommit*(i+1)]
-
-		// log outputs are newline separated, so all but the 1st commit ID part
-		// has an erroneous leading newline.
-		parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
-
-		authorTime, err := strconv.ParseInt(string(parts[3]), 10, 64)
+	commits := make([]*vcs.Commit, 0, numCommits)
+	for len(data) > 0 {
+		var commit *vcs.Commit
+		var err error
+		commit, data, err = parseCommitFromLog(logFormatFlag, data)
 		if err != nil {
-			return nil, 0, fmt.Errorf("parsing git commit author time: %s", err)
+			return nil, 0, err
 		}
-		committerTime, err := strconv.ParseInt(string(parts[6]), 10, 64)
-		if err != nil {
-			return nil, 0, fmt.Errorf("parsing git commit committer time: %s", err)
-		}
-
-		var parents []vcs.CommitID
-		if parentPart := parts[8]; len(parentPart) > 0 {
-			parentIDs := bytes.Split(parentPart, []byte{' '})
-			parents = make([]vcs.CommitID, len(parentIDs))
-			for i, id := range parentIDs {
-				parents[i] = vcs.CommitID(id)
-			}
-		}
-
-		commits[i] = &vcs.Commit{
-			ID:        vcs.CommitID(parts[0]),
-			Author:    vcs.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
-			Committer: &vcs.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
-			Message:   string(bytes.TrimSuffix(parts[7], []byte{'\n'})),
-			Parents:   parents,
-		}
+		commits = append(commits, commit)
 	}
 
 	// Count commits.
@@ -428,7 +403,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 			cmd.Args = append(cmd.Args, "--", opt.Path)
 		}
 		cmd.Repo = r.Repo
-		out, err = cmd.CombinedOutput(ctx)
+		out, err := cmd.CombinedOutput(ctx)
 		if err != nil {
 			return nil, 0, fmt.Errorf("exec `git rev-list --count` failed: %s. Output was:\n\n%s", err, out)
 		}

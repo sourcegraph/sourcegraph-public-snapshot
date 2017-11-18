@@ -211,9 +211,12 @@ h1 {
     cursor: pointer;
     transition: all 100ms ease-out;
     outline: none;
-    &:focus {
+    &:focus:not(:disabled) {
         outline: none;
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
+    }
+    &:disabled {
+        opacity: 0.65;
     }
 }
 
@@ -233,17 +236,17 @@ h1 {
     .icon {
         @extend .icon-inline;
     }
-    &:hover {
+    &:hover:not(:disabled) {
         color: white;
     }
 }
 
 .btn-primary {
     background: $color-primary;
-    &:hover {
+    &:hover:not(:disabled) {
         background: darken($color-primary, 5%);
     }
-    &:focus {
+    &:focus:not(:disabled) {
         outline: darken($color-primary, 5%);
     }
 }
@@ -406,6 +409,7 @@ h1 {
 }
 
 @import './highlight';
+@import './search2/QueryButton';
 @import './search2/SearchNavbarItem';
 @import './search2/SearchPage';
 @import './search2/SearchResults';

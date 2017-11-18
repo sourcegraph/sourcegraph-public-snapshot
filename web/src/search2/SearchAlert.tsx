@@ -1,7 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
-import { buildSearchURLQuery } from './index'
+import { QueryButton } from './QueryButton'
 
 interface Props {
     title: string
@@ -32,18 +31,7 @@ export class SearchAlert extends React.Component<Props, State> {
                         {this.props.proposedQueries.map((proposedQuery, i) => (
                             <li key={i} className="search-alert__proposed-query">
                                 <span className="search-alert__proposed-query-did-you-mean">Did you mean: </span>
-                                <Link
-                                    className="search-alert__proposed-query-link"
-                                    to={'?' + buildSearchURLQuery(proposedQuery.query)}
-                                    title={`${proposedQuery.query.scopeQuery} ${proposedQuery.query.query}`}
-                                >
-                                    {proposedQuery.query.scopeQuery && (
-                                        <span className="search-alert__proposed-query-scope">
-                                            {proposedQuery.query.scopeQuery}
-                                        </span>
-                                    )}
-                                    {proposedQuery.query.query}
-                                </Link>
+                                <QueryButton query={proposedQuery.query} />
                                 <span className="search-alert__proposed-query-description">
                                     {proposedQuery.description && ` — ${proposedQuery.description}`}
                                 </span>
