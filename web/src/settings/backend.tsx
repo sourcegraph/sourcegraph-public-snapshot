@@ -24,8 +24,10 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                     displayName
                     latestSettings {
                         id
-                        contents
-                        highlighted
+                        configuration {
+                            contents
+                            highlighted
+                        }
                     }
                     members {
                         id

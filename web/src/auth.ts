@@ -37,8 +37,10 @@ export function fetchCurrentUser(): Observable<never> {
                     displayName
                     latestSettings {
                         id
-                        contents
-                        highlighted
+                        configuration {
+                            contents
+                            highlighted
+                        }
                     }
                     orgs {
                         id

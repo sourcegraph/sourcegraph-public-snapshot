@@ -46,7 +46,9 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         // higher than the one we saved on top of.
         const refreshedAfterSave = this.componentUpdates.pipe(
             distinctUntilChanged(
-                (a, b) => a.settings.contents === b.settings.contents && a.settings.id === b.settings.id
+                (a, b) =>
+                    a.settings.configuration.contents === b.settings.configuration.contents &&
+                    a.settings.id === b.settings.id
             ),
             filter(
                 ({ settings, commitError }) =>
@@ -130,7 +132,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 {!this.state.editing && (
                     <div
                         className="settings-file__contents"
-                        dangerouslySetInnerHTML={{ __html: this.props.settings.highlighted }}
+                        dangerouslySetInnerHTML={{ __html: this.props.settings.configuration.highlighted }}
                     />
                 )}
             </div>
@@ -140,12 +142,15 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     private edit = () =>
         this.setState({
             editing: true,
-            modifiedContents: this.props.settings.contents,
+            modifiedContents: this.props.settings.configuration.contents,
             editingLastKnownSettingsID: this.props.settings.id,
         })
 
     private discard = () => {
-        if (this.props.settings.contents === this.state.modifiedContents || window.confirm('Really discard edits?')) {
+        if (
+            this.props.settings.configuration.contents === this.state.modifiedContents ||
+            window.confirm('Really discard edits?')
+        ) {
             this.setState({
                 editing: false,
                 modifiedContents: undefined,

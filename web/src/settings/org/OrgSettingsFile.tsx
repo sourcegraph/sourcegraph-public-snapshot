@@ -25,7 +25,7 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
             <div className="settings-file-container">
                 <h3>Editor settings</h3>
                 {this.props.settings &&
-                    this.props.settings.highlighted && [
+                    this.props.settings.configuration.highlighted && [
                         <SettingsFile
                             key={0}
                             settings={this.props.settings}

@@ -19,7 +19,7 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
         return (
             <div className="settings-file-container">
                 <h3>Current user configuration</h3>
-                {this.props.settings && this.props.settings.highlighted ? (
+                {this.props.settings && this.props.settings.configuration.highlighted ? (
                     <SettingsFile settings={this.props.settings} onDidCommit={this.onDidCommit} />
                 ) : (
                     <p className="form-text">No user configuration settings exist yet.</p>
