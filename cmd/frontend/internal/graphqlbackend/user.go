@@ -92,14 +92,14 @@ func (r *userResolver) UpdatedAt() *string {
 }
 
 func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := store.Settings.GetLatest(ctx, sourcegraph.SettingsSubject{User: &r.user.ID})
+	settings, err := store.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{User: &r.user.ID})
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&settingsSubject{user: r}, settings, nil}, nil
+	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
 }
 
 // HasSourcegraphUser indicates whether the current user has a Sourcegraph user

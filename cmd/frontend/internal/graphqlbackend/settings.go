@@ -11,16 +11,16 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-type settingsSubject struct {
+type configurationSubject struct {
 	org  *orgResolver
 	user *userResolver
 }
 
-func (s *settingsSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
+func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
 
-func (s *settingsSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
+func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
 
-func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
 	case s.org != nil:
 		return s.org.LatestSettings(ctx)
@@ -31,7 +31,7 @@ func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver
 }
 
 type settingsResolver struct {
-	subject  *settingsSubject
+	subject  *configurationSubject
 	settings *sourcegraph.Settings
 	user     *sourcegraph.User
 }
@@ -40,7 +40,7 @@ func (o *settingsResolver) ID() int32 {
 	return o.settings.ID
 }
 
-func (o *settingsResolver) Subject() *settingsSubject {
+func (o *settingsResolver) Subject() *configurationSubject {
 	return o.subject
 }
 
@@ -88,12 +88,12 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 		return nil, errors.New("must be authenticated as a user to update user settings")
 	}
 
-	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.SettingsSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
 	return &settingsResolver{
-		subject:  &settingsSubject{user: &userResolver{user: user}},
+		subject:  &configurationSubject{user: &userResolver{user: user}},
 		settings: settings,
 	}, nil
 }
@@ -115,12 +115,12 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.SettingsSubject{Org: &args.OrgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
+	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &args.OrgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
 	return &settingsResolver{
-		subject:  &settingsSubject{org: &orgResolver{org}},
+		subject:  &configurationSubject{org: &orgResolver{org}},
 		settings: settings,
 	}, nil
 }

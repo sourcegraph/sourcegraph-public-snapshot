@@ -67,14 +67,14 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := store.Settings.GetLatest(ctx, sourcegraph.SettingsSubject{Org: &o.org.ID})
+	settings, err := store.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{Org: &o.org.ID})
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {

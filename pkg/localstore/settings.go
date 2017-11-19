@@ -12,7 +12,7 @@ import (
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.SettingsSubject, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
 	s := sourcegraph.Settings{
 		Subject:       subject,
 		AuthorAuth0ID: authorAuth0ID,
@@ -54,11 +54,11 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.Set
 	return latestSetting, nil
 }
 
-func (o *settings) GetLatest(ctx context.Context, subject sourcegraph.SettingsSubject) (*sourcegraph.Settings, error) {
+func (o *settings) GetLatest(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
 	return o.getLatest(ctx, globalDB, subject)
 }
 
-func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject sourcegraph.SettingsSubject) (*sourcegraph.Settings, error) {
+func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:

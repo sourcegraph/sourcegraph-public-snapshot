@@ -517,7 +517,7 @@ type Installation {
   avatarURL: String!
 }
 
-type User implements SettingsSubject {
+type User implements ConfigurationSubject {
   id: String! @deprecated(reason: "use auth0ID instead")
   auth0ID: String!
   sourcegraphID: Int
@@ -573,7 +573,7 @@ type CompanyCategory {
   subIndustry: String!
 }
 
-type Org implements SettingsSubject {
+type Org implements ConfigurationSubject {
   id: Int!
   name: String!
   displayName: String
@@ -617,15 +617,15 @@ type ThreadConnection {
   totalCount: Int!
 }
 
-# SettingsSubject is something that can be configured by Settings.
-interface SettingsSubject {
+# ConfigurationSubject is something that can have configuration.
+interface ConfigurationSubject {
   latestSettings: Settings
 }
 
 type Settings {
   id: Int!
   # The subject that these settings are for.
-  subject: SettingsSubject!
+  subject: ConfigurationSubject!
   contents: String!
   # contents as highlighted HTML
   highlighted: String!
