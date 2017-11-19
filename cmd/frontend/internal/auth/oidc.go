@@ -259,9 +259,9 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 			displayName = login
 		}
 	}
-	// KLUDGE: some ID providers use email as the login, but we don't allow '@' in usernames
-	if i := strings.Index(login, "@"); i != -1 {
-		login = login[:i]
+	login, err := NormalizeUsername(login)
+	if err != nil {
+		return nil, err
 	}
 
 	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)

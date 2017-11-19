@@ -128,9 +128,11 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		if login == "" {
 			login = email
 		}
-		// KLUDGE: some ID providers use email as the login, but we don't allow '@' in usernames
-		if i := strings.Index(login, "@"); i != -1 {
-			login = login[:i]
+
+		var err2 error
+		login, err2 = NormalizeUsername(login)
+		if err2 != nil {
+			return nil, err2
 		}
 
 		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, idpID, nil)
