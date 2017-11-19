@@ -4,7 +4,7 @@ import { updateOrgSettings } from '../backend'
 import { SettingsFile } from '../SettingsFile'
 
 export interface Props {
-    orgID: number
+    orgID: string
     settings: GQL.ISettings | null
 
     /**

@@ -19,7 +19,7 @@ export interface Props {
 }
 
 interface State {
-    orgID: number
+    orgID: string
     slackWebhookURL: string
     displayName: string
     loading: boolean

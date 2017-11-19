@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -70,23 +71,28 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
-	OrgID               int32
+	ID                  *graphql.ID
+	OrgID               *graphql.ID // deprecated
 	LastKnownSettingsID *int32
 	Contents            string
 }) (*settingsResolver, error) {
+	orgID, err := unmarshalOrgGraphQLID(args.ID, args.OrgID)
+	if err != nil {
+		return nil, err
+	}
+
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
-	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
+	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
+		return nil, err
+	}
+
+	org, err := store.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	org, err := store.Orgs.GetByID(ctx, args.OrgID)
-	if err != nil {
-		return nil, err
-	}
-
-	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &args.OrgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
+	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}

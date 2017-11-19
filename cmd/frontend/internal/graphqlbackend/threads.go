@@ -11,6 +11,8 @@ import (
 
 	"github.com/mattbaird/gochimp"
 	"github.com/microcosm-cc/bluemonday"
+	graphql "github.com/neelance/graphql-go"
+	"github.com/neelance/graphql-go/relay"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
@@ -237,8 +239,36 @@ type threadLines struct {
 	TextSelectionRangeLength    int32
 }
 
+// orgInt32OrID allows a GraphQL resolver arg to be specified either as
+// an ID! or an Int!.
+type orgInt32OrID struct {
+	int32Value int32
+}
+
+func (orgInt32OrID) ImplementsGraphQLType(name string) bool {
+	return name == "ID" || name == "Int"
+}
+
+func (v *orgInt32OrID) UnmarshalGraphQL(input interface{}) error {
+	switch input := input.(type) {
+	case string: // graphql.ID
+		var int32Value int32
+		id := graphql.ID(input)
+		if err := relay.UnmarshalSpec(id, &int32Value); err != nil {
+			return err
+		}
+		*v = orgInt32OrID{int32Value: int32Value}
+		return nil
+	case int32:
+		*v = orgInt32OrID{int32Value: input}
+		return nil
+	default:
+		return fmt.Errorf("wrong type")
+	}
+}
+
 func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
-	OrgID             int32
+	OrgID             orgInt32OrID // accept int32 and org graphql.ID
 	CanonicalRemoteID string
 	CloneURL          string
 	File              string
@@ -255,17 +285,17 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 }) (*threadResolver, error) {
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
-	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
+	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID.int32Value, actor.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID, args.CanonicalRemoteID)
+	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
 	if err == store.ErrRepoNotFound {
 		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
 			CanonicalRemoteID: args.CanonicalRemoteID,
 			CloneURL:          args.CloneURL,
-			OrgID:             args.OrgID,
+			OrgID:             args.OrgID.int32Value,
 		})
 	}
 	if err != nil {

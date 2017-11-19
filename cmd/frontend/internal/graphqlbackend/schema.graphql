@@ -76,7 +76,9 @@ input ThreadLinesInput {
 type Mutation {
   createUser(username: String!, displayName: String!, avatarURL: String): User!
   createThread(
-    orgID: Int!
+    # Temporarily until all clients are migrated, the orgInt32OrID type allows
+    # orgID to be specified either as an ID! or Int!.
+    orgID: ID!
     canonicalRemoteID: String!
     cloneURL: String!
     file: String!
@@ -110,15 +112,18 @@ type Mutation {
   shareThread(threadID: Int!): String!
   shareComment(commentID: Int!): String!
   createOrg(name: String!, displayName: String!): Org!
-  updateOrg(orgID: Int!, displayName: String, slackWebhookURL: String): Org!
+  updateOrg(id: ID!, displayName: String, slackWebhookURL: String): Org!
   updateOrgSettings(
-    orgID: Int!
+    # The ID of the org whose settings should be updated.
+    id: ID
+    # TODO(sqs): orgID is deprecated. Use id instead.
+    orgID: ID
     lastKnownSettingsID: Int
     contents: String!
   ): Settings!
-  inviteUser(email: String!, orgID: Int!): EmptyResponse
+  inviteUser(email: String!, orgID: ID!): EmptyResponse
   acceptUserInvite(inviteToken: String!): OrgInviteStatus!
-  removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
+  removeUserFromOrg(userID: String!, orgID: ID!): EmptyResponse
   # adds a phabricator repository to the Sourcegraph server.
   # example callsign: "MUX"
   # example uri: "github.com/gorilla/mux"
@@ -136,7 +141,7 @@ type Root {
   searchScopes2: [SearchScope2!]!
   repoGroups: [RepoGroup!]!
   revealCustomerCompany(ip: String!): CompanyProfile
-  org(id: Int!): Org!
+  org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
   sharedItem(ulid: String!): SharedItem
   packages(
     lang: String!
@@ -566,8 +571,9 @@ type CompanyCategory {
   subIndustry: String!
 }
 
-type Org implements ConfigurationSubject {
-  id: Int!
+type Org implements Node, ConfigurationSubject {
+  id: ID!
+  orgID: Int!
   name: String!
   displayName: String
   slackWebhookURL: String
