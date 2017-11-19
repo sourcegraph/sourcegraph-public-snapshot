@@ -103,7 +103,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		GitHubConnected: false, // TODO: Remove
 	}
 
-	// Write the session cookie (native authentication session duration is 10 years)
+	// Write the session cookie
 	if err := session.StartNewSession(w, r, actor, 0); err != nil {
 		return err
 	}
