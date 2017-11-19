@@ -67,7 +67,7 @@ func init() {
 		var configs []githubConfig
 		err := json.Unmarshal([]byte(githubConf), &configs)
 		if err != nil {
-			log.Fatalf("error pasing GitHub config: %s", err)
+			log.Fatalf("error parsing GitHub config: %s", err)
 		}
 		for _, c := range configs {
 			gheURL, err := url.Parse(c.URL)

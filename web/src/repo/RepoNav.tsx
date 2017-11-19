@@ -66,6 +66,7 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
                 this.props.filePath,
                 parseHash(this.props.location.hash)
             )
+        const githubHosts = window.context.githubEnterpriseURLs || {}
         return (
             <div className="repo-nav">
                 <RevSwitcher
@@ -83,7 +84,8 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
                         <span className="repo-nav__action-text">{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
                     </a>
                 )}
-                {this.props.repoPath.split('/')[0] === 'github.com' && (
+                {(this.props.repoPath.split('/')[0] === 'github.com' ||
+                    githubHosts[this.props.repoPath.split('/')[0]]) && (
                     <a
                         href={this.urlToGitHub()}
                         target="_blank"
@@ -148,18 +150,24 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
     }
 
     private urlToGitHub(): string {
+        const githubURLs = window.context.githubEnterpriseURLs || {}
+        githubURLs['github.com'] = 'https://github.com'
+
+        const host = this.props.repoPath.split('/')[0]
+        const repoURL = `${githubURLs[host]}${this.props.repoPath.slice(host.length)}`
+
         const line = this.props.line || parseHash(this.props.location.hash).line || undefined
         if (this.props.filePath) {
             if (this.props.isDirectory) {
-                return `https://${this.props.repoPath}/tree/${this.props.rev}/${this.props.filePath}`
+                return `${repoURL}/tree/${this.props.rev}/${this.props.filePath}`
             }
-            const url = new URL(`https://${this.props.repoPath}/blob/${this.props.rev}/${this.props.filePath}`)
+            const url = new URL(`${repoURL}/blob/${this.props.rev}/${this.props.filePath}`)
             if (line) {
                 url.hash = '#L' + line
             }
             return url.href
         }
-        return `https://${this.props.repoPath}/tree/${this.props.rev}/`
+        return `${repoURL}/tree/${this.props.rev}/`
     }
 
     private urlToPhabricator(): string {

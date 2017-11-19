@@ -4,11 +4,14 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
 	"github.com/gorilla/csrf"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
@@ -24,6 +27,10 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
+type githubConfig struct {
+	URL string `json:"url"`
+}
+
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
 
@@ -31,6 +38,11 @@ var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex 
 var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
 
 var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
+var githubConf = env.Get("GITHUB_CONFIG", "", "A JSON array of GitHub host configuration values.")
+
+// githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs.
+// This can be used for the purposes of generating external GitHub enterprise links.
+var githubEnterpriseURLs = make(map[string]string)
 
 var phabricatorURL = env.Get("PHABRICATOR_URL", "", "URL for internal Phabricator instance (on-prem)")
 
@@ -40,6 +52,20 @@ func init() {
 			phabricatorURL = "https://" + phabricatorURL
 		}
 		phabricatorURL = strings.TrimSuffix(phabricatorURL, "/")
+	}
+	if githubConf != "" {
+		var configs []githubConfig
+		err := json.Unmarshal([]byte(githubConf), &configs)
+		if err != nil {
+			log15.Error("error parsing GitHub config", "error", err)
+		}
+		for _, c := range configs {
+			gheURL, err := url.Parse(c.URL)
+			if err != nil {
+				log15.Error("error parsing GitHub config", "error", err)
+			}
+			githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.URL, "/")
+		}
 	}
 }
 
@@ -64,19 +90,20 @@ type JSContext struct {
 	// backfill data (username, and optionally display name) to be added to the users table.
 	// While this flag is true, the client should force the currently logged in user to
 	// provide the backfill data before taking other actions in the application.
-	RequireUserBackfill bool                       `json:"requireUserBackfill"`
-	GitHubToken         *sourcegraph.ExternalToken `json:"gitHubToken"`
-	GitHubAppURL        string                     `json:"gitHubAppURL"`
-	SentryDSN           string                     `json:"sentryDSN"`
-	IntercomHash        string                     `json:"intercomHash"`
-	TrackingAppID       string                     `json:"trackingAppID"`
-	OnPrem              bool                       `json:"onPrem"`
-	RepoHomeRegexFilter string                     `json:"repoHomeRegexFilter"`
-	SessionID           string                     `json:"sessionID"`
-	Auth0Domain         string                     `json:"auth0Domain"`
-	Auth0ClientID       string                     `json:"auth0ClientID"`
-	PhabricatorURL      string                     `json:"phabricatorURL"`
-	LicenseStatus       license.LicenseStatus      `json:"licenseStatus"`
+	RequireUserBackfill  bool                       `json:"requireUserBackfill"`
+	GitHubToken          *sourcegraph.ExternalToken `json:"gitHubToken"`
+	GitHubAppURL         string                     `json:"gitHubAppURL"`
+	GithubEnterpriseURLs map[string]string          `json:"githubEnterpriseURLs"`
+	SentryDSN            string                     `json:"sentryDSN"`
+	IntercomHash         string                     `json:"intercomHash"`
+	TrackingAppID        string                     `json:"trackingAppID"`
+	OnPrem               bool                       `json:"onPrem"`
+	RepoHomeRegexFilter  string                     `json:"repoHomeRegexFilter"`
+	SessionID            string                     `json:"sessionID"`
+	Auth0Domain          string                     `json:"auth0Domain"`
+	Auth0ClientID        string                     `json:"auth0ClientID"`
+	PhabricatorURL       string                     `json:"phabricatorURL"`
+	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -132,27 +159,28 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	_, licenseStatus := license.Get(TrackingAppID)
 
 	return JSContext{
-		AppURL:              conf.AppURL.String(),
-		XHRHeaders:          headers,
-		CSRFToken:           csrfToken,
-		UserAgentIsBot:      isBot(req.UserAgent()),
-		AssetsRoot:          assets.URL("/").String(),
-		Version:             env.Version,
-		Features:            feature.Features,
-		User:                user,
-		RequireUserBackfill: backfill,
-		GitHubToken:         gitHubToken,
-		GitHubAppURL:        gitHubAppURL,
-		SentryDSN:           sentryDSNFrontend,
-		IntercomHash:        intercomHMAC(actor.UID),
-		OnPrem:              envvar.DeploymentOnPrem(),
-		TrackingAppID:       TrackingAppID,
-		RepoHomeRegexFilter: repoHomeRegexFilter,
-		SessionID:           sessionID,
-		Auth0Domain:         auth0.Domain,
-		Auth0ClientID:       auth0.Config.ClientID,
-		PhabricatorURL:      phabricatorURL,
-		LicenseStatus:       licenseStatus,
+		AppURL:               conf.AppURL.String(),
+		XHRHeaders:           headers,
+		CSRFToken:            csrfToken,
+		UserAgentIsBot:       isBot(req.UserAgent()),
+		AssetsRoot:           assets.URL("/").String(),
+		Version:              env.Version,
+		Features:             feature.Features,
+		User:                 user,
+		RequireUserBackfill:  backfill,
+		GitHubToken:          gitHubToken,
+		GitHubAppURL:         gitHubAppURL,
+		GithubEnterpriseURLs: githubEnterpriseURLs,
+		SentryDSN:            sentryDSNFrontend,
+		IntercomHash:         intercomHMAC(actor.UID),
+		OnPrem:               envvar.DeploymentOnPrem(),
+		TrackingAppID:        TrackingAppID,
+		RepoHomeRegexFilter:  repoHomeRegexFilter,
+		SessionID:            sessionID,
+		Auth0Domain:          auth0.Domain,
+		Auth0ClientID:        auth0.Config.ClientID,
+		PhabricatorURL:       phabricatorURL,
+		LicenseStatus:        licenseStatus,
 	}
 }
 

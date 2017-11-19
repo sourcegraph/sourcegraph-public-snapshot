@@ -75,6 +75,11 @@ interface SourcegraphContext {
     repoHomeRegexFilter: string
 
     /**
+     * githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs for outbound GitHub links.
+     */
+    githubEnterpriseURLs: { [key: string]: string }
+
+    /**
      * phabricatorURL is the URL for outbound Phabricator links
      */
     phabricatorURL: string
