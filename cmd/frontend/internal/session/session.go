@@ -22,6 +22,9 @@ var sessionStore sessions.Store
 var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "redis-store:6379", "redis used for storing sessions")
 var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 
+// defaultExpiryPeriod is the default session expiry period (if none is specified explicitly): 90 days.
+const defaultExpiryPeriod = 90 * 24 * time.Hour
+
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.
 type sessionInfo struct {
@@ -52,8 +55,13 @@ func MustNewRedisStore(secureCookie bool) sessions.Store {
 	return rstore
 }
 
-// StartNewSession starts a new session with authentication for the given uid.
+// StartNewSession starts a new session with authentication for the given uid. If expiryPeriod is zero
+// the defaultExpiryPeriod value is used.
 func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration) error {
+	if expiryPeriod == 0 {
+		expiryPeriod = defaultExpiryPeriod
+	}
+
 	DeleteSession(w, r)
 
 	session, err := sessionStore.New(&http.Request{}, "sg-session") // workaround: not passing the request forces a new session
@@ -161,7 +169,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		// Session backcompat
 		if (info.LastActive.IsZero() || info.ExpiryPeriod == 0) && info.Expiry.After(time.Now()) {
 			info.LastActive = time.Now()
-			info.ExpiryPeriod = 14 * 24 * time.Hour
+			info.ExpiryPeriod = defaultExpiryPeriod
 			info.Expiry = time.Time{}
 			newActorJSON, err := json.Marshal(info)
 			if err != nil {

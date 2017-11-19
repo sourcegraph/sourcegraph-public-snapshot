@@ -221,7 +221,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	// Write the session cookie.
-	if err := session.StartNewSession(w, r, actor, 14*24*time.Hour); err != nil {
+	if err := session.StartNewSession(w, r, actor, 0); err != nil {
 		return err
 	}
 

@@ -204,7 +204,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			http.Error(w, "Could not get user (a user with your email or username may already exist).", http.StatusInternalServerError)
 			return
 		}
-		if err := session.StartNewSession(w, r, actr, 14*24*time.Hour); err != nil {
+		if err := session.StartNewSession(w, r, actr, 0); err != nil {
 			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
 			return
 		}
