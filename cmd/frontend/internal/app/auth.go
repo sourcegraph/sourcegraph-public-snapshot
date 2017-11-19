@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"time"
 
 	"encoding/base64"
 
@@ -104,8 +103,8 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		GitHubConnected: false, // TODO: Remove
 	}
 
-	// Write the session cookie (native authentication session duration is 10 years)
-	if err := session.StartNewSession(w, r, actor, time.Now().Add(10*365*24*time.Hour)); err != nil {
+	// Write the session cookie
+	if err := session.StartNewSession(w, r, actor, 0); err != nil {
 		return err
 	}
 

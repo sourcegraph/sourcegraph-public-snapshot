@@ -17,7 +17,7 @@ func TestStartDeleteSession(t *testing.T) {
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: "test-actor-123"}
-	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Now().Add(24*time.Hour)); err != nil {
+	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -56,7 +56,7 @@ func TestStartDeleteSession(t *testing.T) {
 	if session == nil {
 		t.Fatal("session was nil")
 	}
-	authedActor := actor.FromContext(authenticateByCookie(authedReq))
+	authedActor := actor.FromContext(authenticateByCookie(authedReq, httptest.NewRecorder()))
 	if !reflect.DeepEqual(actr, authedActor) {
 		t.Fatalf("session was not created: %+v != %+v", authedActor, actr)
 	}
@@ -93,7 +93,7 @@ func TestStartDeleteSession(t *testing.T) {
 	for _, cookie := range authCookies {
 		authedReq3.AddCookie(cookie)
 	}
-	actor3 := actor.FromContext(authenticateByCookie(authedReq3))
+	actor3 := actor.FromContext(authenticateByCookie(authedReq3, httptest.NewRecorder()))
 	if !reflect.DeepEqual(actor3, &actor.Actor{}) {
 		t.Fatalf("underlying session was not deleted: %+v != %+v", actor3, &actor.Actor{})
 	}
@@ -106,7 +106,7 @@ func TestSessionExpiry(t *testing.T) {
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: "test-actor-123"}
-	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Now().Add(time.Second)); err != nil {
+	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Second); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -125,11 +125,11 @@ func TestSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	if gotActor := actor.FromContext(authenticateByCookie(authedReq)); !reflect.DeepEqual(gotActor, actr) {
+	if gotActor := actor.FromContext(authenticateByCookie(authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("didn't find actor %v != %v", gotActor, actr)
 	}
 	time.Sleep(1100 * time.Millisecond)
-	if gotActor := actor.FromContext(authenticateByCookie(authedReq)); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
+	if gotActor := actor.FromContext(authenticateByCookie(authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
 		t.Errorf("session didn't expire, found actor %+v", gotActor)
 	}
 }
@@ -144,7 +144,7 @@ func TestCookieMiddleware(t *testing.T) {
 	authedReqs := make([]*http.Request, len(actors))
 	for i, actr := range actors {
 		w := httptest.NewRecorder()
-		if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Now().Add(time.Hour)); err != nil {
+		if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
 			t.Fatal(err)
 		}
 
@@ -190,7 +190,7 @@ func TestCookieOrSessionMiddleware(t *testing.T) {
 	cookieAuthedReqs := make([]*http.Request, len(actors))
 	for i, actr := range actors {
 		w := httptest.NewRecorder()
-		if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Now().Add(time.Hour)); err != nil {
+		if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
 			t.Fatal(err)
 		}
 
