@@ -3,6 +3,7 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { match, Redirect } from 'react-router'
 import reactive from 'rx-component'
+import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { combineLatest } from 'rxjs/observable/combineLatest'
 import { merge } from 'rxjs/observable/merge'
 import { concat } from 'rxjs/operators/concat'
@@ -57,8 +58,11 @@ export const Org = reactive<Props>(props => {
         tap(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
     )
 
+    const settingsCommits = new BehaviorSubject<void>(void 0)
+    const nextSettingsCommit = () => settingsCommits.next(void 0)
+
     return merge<Update>(
-        combineLatest(currentUser, orgChanges).pipe(
+        combineLatest(currentUser, orgChanges, settingsCommits).pipe(
             mergeMap(([user, orgName]) => {
                 if (!user) {
                     return [(state: State): State => ({ ...state, user: undefined })]
@@ -143,7 +147,6 @@ export const Org = reactive<Props>(props => {
 
                         <InviteForm orgID={org.id} />
                     </div>
-
                     <h3>Members</h3>
                     <table className="table table-hover org__table">
                         <thead>
@@ -178,10 +181,8 @@ export const Org = reactive<Props>(props => {
                             ))}
                         </tbody>
                     </table>
-
                     <OrgSettingsForm org={org} />
-
-                    <OrgSettingsFile settings={org.latestSettings} />
+                    <OrgSettingsFile orgID={org.id} settings={org.latestSettings} onDidCommit={nextSettingsCommit} />
                 </div>
             )
         })

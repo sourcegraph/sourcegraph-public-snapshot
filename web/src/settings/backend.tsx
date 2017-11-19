@@ -23,6 +23,8 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                     slackWebhookURL
                     displayName
                     latestSettings {
+                        id
+                        contents
                         highlighted
                     }
                     members {
@@ -403,6 +405,28 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             eventLogger.log('OrgSettingsUpdated', eventData)
+            return
+        })
+    )
+}
+
+export function updateOrgSettings(
+    orgID: number,
+    lastKnownSettingsID: number | null,
+    contents: string
+): Observable<void> {
+    return mutateGraphQL(
+        `
+        mutation UpdateOrgSettings($orgID: Int!, $lastKnownSettingsID: Int, $contents: String!) {
+            updateOrgSettings(orgID: $orgID, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
+        }
+    `,
+        { orgID, lastKnownSettingsID, contents }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
             return
         })
     )
