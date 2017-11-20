@@ -40,6 +40,7 @@
     "@types/react-dom": "^16.0.2",
     "@types/react-router": "^4.0.16",
     "@types/react-router-dom": "^4.0.8",
+    "@types/strip-json-comments": "0.0.30",
     "@types/webpack": "^3.0.12",
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
@@ -93,6 +94,7 @@
     "react-visibility-sensor": "^3.10.1",
     "rx-component": "^0.0.8",
     "rxjs": "^5.5.2",
+    "strip-json-comments": "^2.0.1",
     "vscode-languageserver-types": "^3.4.0",
     "whatwg-url": "^6.2.1"
   }

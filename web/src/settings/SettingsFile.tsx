@@ -8,6 +8,7 @@ import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import stripJSONComments from 'strip-json-comments'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
@@ -165,7 +166,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         // Clear input errors if the user's input fixed them, but (to avoid being
         // annoying) do not show new errors as the user types.
         try {
-            JSON.parse(event.target.value)
+            tryParseJSONWithComments(event.target.value)
             this.setState({ inputError: undefined })
         } catch (err) {
             /* noop */
@@ -177,14 +178,17 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             return
         }
 
-        // Try to format the JSON value.
+        // Format the JSON value if it has no comments. Only report an error if the parse
+        // error is not due to it just having comments.
         try {
             this.setState({
                 inputError: undefined,
                 modifiedContents: JSON.stringify(JSON.parse(this.state.modifiedContents), null, 2),
             })
         } catch (err) {
-            this.setState({ inputError: err })
+            this.setState({
+                inputError: tryParseJSONWithComments(this.state.modifiedContents),
+            })
         }
     }
 
@@ -193,5 +197,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.props.settings.id, this.state.modifiedContents!)
         })
+    }
+}
+
+function tryParseJSONWithComments(input: string): Error | undefined {
+    try {
+        JSON.parse(stripJSONComments(input))
+        return undefined
+    } catch (err) {
+        return err
     }
 }
