@@ -34,6 +34,7 @@ const (
 	routeTree                 = "tree"
 	routeBlob                 = "blob"
 	routeSignIn               = "sign-in"
+	routeSignUp               = "sign-up"
 	routeSettings             = "settings"
 	routeSettingsAcceptInvite = "settings.accept-invite"
 	routeSettingsEditorAuth   = "settings.editor-auth"
@@ -95,6 +96,7 @@ func newRouter() *mux.Router {
 	r.Path("/c/{ULID}").Methods("GET").Name(routeComment)
 	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
+	r.Path("/sign-up").Methods("GET").Name(routeSignUp)
 	r.Path("/settings").Methods("GET").Name(routeSettings)
 	r.Path("/settings/accept-invite").Methods("GET").Name(routeSettingsAcceptInvite)
 	r.Path("/settings/editor-auth").Methods("GET").Name(routeSettingsEditorAuth)
@@ -135,7 +137,8 @@ func init() {
 	// basic pages with static titles
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeSignIn).Handler(handler(serveBasicPageString("Sign in or sign up - Sourcegraph")))
+	router.Get(routeSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
+	router.Get(routeSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("Profile - Sourcegraph")))
 	router.Get(routeSettingsAcceptInvite).Handler(handler(serveBasicPageWithEmailVerification(func(c *Common, r *http.Request) string {
 		return "Accept invite - Sourcegraph"
