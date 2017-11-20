@@ -1,6 +1,7 @@
 import * as React from 'react'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
-import { updateOrgSettings } from '../backend'
+import { refreshConfiguration, updateOrgSettings } from '../backend'
 import { SettingsFile } from '../SettingsFile'
 
 export interface Props {
@@ -30,7 +31,7 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
                     commitError={this.state.commitError}
                     onDidCommit={(lastKnownSettingsID: number | null, contents: string) =>
                         updateOrgSettings(this.props.orgID, lastKnownSettingsID, contents) // tslint:disable-next-line:jsx-no-lambda
-                            .pipe(tap(this.props.onDidCommit))
+                            .pipe(tap(this.props.onDidCommit), switchMap(refreshConfiguration))
                             .subscribe(
                                 () => this.setState({ commitError: undefined }),
                                 err => {
