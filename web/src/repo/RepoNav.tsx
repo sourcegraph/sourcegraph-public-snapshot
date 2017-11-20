@@ -53,6 +53,10 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
         )
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element | null {
         const editorUrl =
             this.props.customEditorURL ||
