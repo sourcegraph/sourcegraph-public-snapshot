@@ -84,39 +84,43 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             <div className="settings-file">
                 <div className="settings-file__actions">
                     {this.state.saving && (
-                        <span className="btn btn-icon">
+                        <span className="btn btn-icon settings-file__actions-btn">
                             <Loader className="icon-inline" /> Saving...
                         </span>
                     )}
                     {!this.state.saving &&
                         !this.state.editing && (
-                            <button className="btn btn-icon" onClick={this.edit}>
+                            <button className="btn btn-icon settings-file__actions-btn" onClick={this.edit}>
                                 <PencilIcon className="icon-inline" /> Edit
                             </button>
                         )}
                     {!this.state.saving &&
                         this.state.editing && (
-                            <button className="btn btn-icon" onClick={this.save} disabled={!!this.state.inputError}>
+                            <button
+                                className="btn btn-icon settings-file__actions-btn"
+                                onClick={this.save}
+                                disabled={!!this.state.inputError}
+                            >
                                 <CheckmarkIcon className="icon-inline" /> Save
                             </button>
                         )}
                     {!this.state.saving &&
                         this.state.editing && (
-                            <button className="btn btn-icon" onClick={this.discard}>
+                            <button className="btn btn-icon settings-file__actions-btn" onClick={this.discard}>
                                 <CloseIcon className="icon-inline" /> Discard
                             </button>
                         )}
                 </div>
                 {this.props.commitError && (
                     <div className="settings-file__error">
-                        <ErrorIcon className="icon-inline" />
+                        <ErrorIcon className="icon-inline settings-file__error-icon" />
                         {this.props.commitError.message}
                     </div>
                 )}
                 {this.state.editing &&
                     this.state.inputError && (
                         <div className="settings-file__error">
-                            <ErrorIcon className="icon-inline" />
+                            <ErrorIcon className="icon-inline settings-file__error-icon" />
                             {this.state.inputError.message}
                         </div>
                     )}

@@ -8,7 +8,7 @@
         display: flex;
         margin: 0.25rem 0;
         font-size: 0.875rem;
-        .btn {
+        &-btn {
             padding: 0.25rem 0.5rem;
             &:first-child {
                 margin-left: -0.5rem;
@@ -22,7 +22,7 @@
     &__error {
         color: $color-error;
         margin: 0.5rem 0;
-        .icon-inline {
+        &-icon {
             vertical-align: middle;
             margin-right: 0.25rem;
         }
