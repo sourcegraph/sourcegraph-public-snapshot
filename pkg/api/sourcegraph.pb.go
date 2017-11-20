@@ -500,9 +500,17 @@ type OrgTag struct {
 	Name  string `json:"Name,omitempty"`
 }
 
-type OrgSettings struct {
-	ID            int32     `json:"ID"`
-	OrgID         int32     `json:"OrgID"`
+// A ConfigurationSubject is something that can have settings. Exactly one
+// field must be non-nil.
+type ConfigurationSubject struct {
+	Org  *int32 // the org's ID
+	User *int32 // the user's ID
+}
+
+// Settings contains configuration settings for a subject.
+type Settings struct {
+	ID            int32 `json:"ID"`
+	Subject       ConfigurationSubject
 	AuthorAuth0ID string    `json:"AuthorAuth0ID"`
 	Contents      string    `json:"Contents"`
 	CreatedAt     time.Time `json:"CreatedAt"`

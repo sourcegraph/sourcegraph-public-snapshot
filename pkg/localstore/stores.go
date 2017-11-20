@@ -13,7 +13,7 @@ var (
 	Orgs        = &orgs{}
 	OrgTags     = &orgTags{}
 	OrgMembers  = &orgMembers{}
-	OrgSettings = &orgSettings{}
+	Settings    = &settings{}
 	Users       = &users{}
 	UserTags    = &userTags{}
 )

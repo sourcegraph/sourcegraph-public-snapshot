@@ -92,6 +92,8 @@ type Mutation {
     lines: ThreadLinesInput
   ): Thread!
   updateUser(username: String, displayName: String, avatarURL: String): User!
+  # Update the settings for the currently authenticated user.
+  updateUserSettings(lastKnownSettingsID: Int, contents: String!): Settings!
   updateThread(threadID: Int!, archived: Boolean): Thread!
   addCommentToThread(threadID: Int!, contents: String!): Thread!
   # This method is the same as addCommentToThread, the only difference is
@@ -113,7 +115,7 @@ type Mutation {
     orgID: Int!
     lastKnownSettingsID: Int
     contents: String!
-  ): OrgSettings!
+  ): Settings!
   inviteUser(email: String!, orgID: Int!): EmptyResponse
   acceptUserInvite(inviteToken: String!): OrgInviteStatus!
   removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
@@ -508,7 +510,7 @@ type Installation {
   avatarURL: String!
 }
 
-type User {
+type User implements ConfigurationSubject {
   id: String! @deprecated(reason: "use auth0ID instead")
   auth0ID: String!
   sourcegraphID: Int
@@ -518,6 +520,8 @@ type User {
   avatarURL: String
   createdAt: String
   updatedAt: String
+  # The latest settings for the user.
+  latestSettings: Settings
   orgs: [Org!]!
   orgMemberships: [OrgMember!]!
   hasSourcegraphUser: Boolean!
@@ -562,13 +566,13 @@ type CompanyCategory {
   subIndustry: String!
 }
 
-type Org {
+type Org implements ConfigurationSubject {
   id: Int!
   name: String!
   displayName: String
   slackWebhookURL: String
   members: [OrgMember!]!
-  latestSettings: OrgSettings
+  latestSettings: Settings
   repos: [OrgRepo!]!
   repo(canonicalRemoteID: String!): OrgRepo
   threads(
@@ -606,8 +610,15 @@ type ThreadConnection {
   totalCount: Int!
 }
 
-type OrgSettings {
+# ConfigurationSubject is something that can have configuration.
+interface ConfigurationSubject {
+  latestSettings: Settings
+}
+
+type Settings {
   id: Int!
+  # The subject that these settings are for.
+  subject: ConfigurationSubject!
   contents: String!
   # contents as highlighted HTML
   highlighted: String!

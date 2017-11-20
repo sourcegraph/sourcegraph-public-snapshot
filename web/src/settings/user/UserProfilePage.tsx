@@ -15,6 +15,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createUser, updateUser } from '../backend'
 import { VALID_USERNAME_REGEXP } from '../validation'
 import { UserAvatar } from './UserAvatar'
+import { UserSettingsFile } from './UserSettingsFile'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -179,6 +180,9 @@ export class UserProfilePage extends React.Component<Props, State> {
                         </div>
                     )}
                 </form>
+
+                {this.state.user &&
+                    this.state.user.latestSettings && <UserSettingsFile settings={this.state.user.latestSettings} />}
             </div>
         )
     }

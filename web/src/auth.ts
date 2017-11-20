@@ -34,6 +34,9 @@ export function fetchCurrentUser(): Observable<never> {
                     email
                     username
                     displayName
+                    latestSettings {
+                        highlighted
+                    }
                     orgs {
                         id
                         name
