@@ -411,7 +411,13 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		// Note the HTML escape here is not for security -- but rather for
 		// Slack's quite strange behavior which requires double escaping to get
 		// proper rendering of e.g. &lt; and &gt; brackets.
-		metadata.Title = template.HTMLEscapeString(title)
+		//
+		// To test this unfurl a link to a comment with the text:
+		//
+		// 	"<button> below the `<form` that's right!"
+		//
+		metadata.Title = strings.Replace(title, "<", "&lt;", -1)
+		metadata.Title = strings.Replace(metadata.Title, ">", "&gt;", -1)
 		metadata.Description = description
 
 	case strings.Contains(ua, "Twitterbot"):
