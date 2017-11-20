@@ -41,7 +41,7 @@ func TestThreads_Create(t *testing.T) {
 
 	r := &schemaResolver{}
 	_, err := r.CreateThread(ctx, &struct {
-		OrgID             int32
+		OrgID             orgInt32OrID
 		CanonicalRemoteID string
 		CloneURL          string
 		File              string

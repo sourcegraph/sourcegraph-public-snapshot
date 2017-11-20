@@ -76,7 +76,9 @@ input ThreadLinesInput {
 type Mutation {
   createUser(username: String!, displayName: String!, avatarURL: String): User!
   createThread(
-    orgID: Int!
+    # Temporarily until all clients are migrated, the orgInt32OrID type allows
+    # orgID to be specified either as an ID! or Int!.
+    orgID: ID!
     canonicalRemoteID: String!
     cloneURL: String!
     file: String!
@@ -110,15 +112,18 @@ type Mutation {
   shareThread(threadID: Int!): String!
   shareComment(commentID: Int!): String!
   createOrg(name: String!, displayName: String!): Org!
-  updateOrg(orgID: Int!, displayName: String, slackWebhookURL: String): Org!
+  updateOrg(id: ID!, displayName: String, slackWebhookURL: String): Org!
   updateOrgSettings(
-    orgID: Int!
+    # The ID of the org whose settings should be updated.
+    id: ID
+    # TODO(sqs): orgID is deprecated. Use id instead.
+    orgID: ID
     lastKnownSettingsID: Int
     contents: String!
   ): Settings!
-  inviteUser(email: String!, orgID: Int!): EmptyResponse
+  inviteUser(email: String!, orgID: ID!): EmptyResponse
   acceptUserInvite(inviteToken: String!): OrgInviteStatus!
-  removeUserFromOrg(userID: String!, orgID: Int!): EmptyResponse
+  removeUserFromOrg(userID: String!, orgID: ID!): EmptyResponse
   # adds a phabricator repository to the Sourcegraph server.
   # example callsign: "MUX"
   # example uri: "github.com/gorilla/mux"
@@ -132,11 +137,12 @@ type Root {
   symbols(id: String!, mode: String!): [Symbol!]!
   currentUser: User
   isUsernameAvailable(username: String!): Boolean!
+  configuration: ConfigurationCascade!
   search2(query: String = "", scopeQuery: String = ""): Search2
   searchScopes2: [SearchScope2!]!
   repoGroups: [RepoGroup!]!
   revealCustomerCompany(ip: String!): CompanyProfile
-  org(id: Int!): Org!
+  org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
   sharedItem(ulid: String!): SharedItem
   packages(
     lang: String!
@@ -566,8 +572,9 @@ type CompanyCategory {
   subIndustry: String!
 }
 
-type Org implements ConfigurationSubject {
-  id: Int!
+type Org implements Node, ConfigurationSubject {
+  id: ID!
+  orgID: Int!
   name: String!
   displayName: String
   slackWebhookURL: String
@@ -612,7 +619,29 @@ type ThreadConnection {
 
 # ConfigurationSubject is something that can have configuration.
 interface ConfigurationSubject {
+  # TODO(sqs): To add this field, which is useful for some callers who want to know
+  # where a given configuration is coming from, we'll need to execute the migration
+  # mentioned in commit 2ac372aa2773080dc3d077beb056e9513e64bf67 to make User have
+  # an 'id: ID!' field. This is not a blocker, however, because callers can still
+  # determine where the configuration is coming from by using fragments on the
+  # queries for types that satisfy this interface (User and Org).
+  #
+  # id: ID!
   latestSettings: Settings
+}
+
+# The configurations for all of the relevant configuration subjects, plus the merged
+# configuration.
+type ConfigurationCascade {
+  # The default settings, which are applied first and the lowest priority behind
+  # all configuration subjects' settings.
+  defaults: Configuration
+  # The configurations for all of the subjects that are applied for the currently
+  # authenticated user. For example, a user in 2 orgs would have the following
+  # configuration subjects: org 1, org 2, and the user.
+  subjects: [ConfigurationSubject!]!
+  # The effective configuration, merged from all of the subjects.
+  merged: Configuration!
 }
 
 # Settings is a version of a configuration settings file.
@@ -634,6 +663,8 @@ type Configuration {
   contents: String!
   # The contents as highlighted HTML.
   highlighted: String!
+  # Error and warning messages about the configuration.
+  messages: [String!]!
 }
 
 type Thread {

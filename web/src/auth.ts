@@ -4,6 +4,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { mutateGraphQL, queryGraphQL } from './backend/graphql'
+import { currentConfiguration } from './settings/configuration'
 
 /**
  * Always represents the latest
@@ -20,8 +21,8 @@ import { mutateGraphQL, queryGraphQL } from './backend/graphql'
 export const currentUser = new ReplaySubject<GQL.IUser | null>(1)
 
 /**
- * fetchCurrentUser can be called to fetch the current user and orgs state from the remote.
- * Emits no items, completes when done.
+ * fetchCurrentUser can be called to fetch the current user, orgs, and config
+ * state from the remote. Emits no items, completes when done.
  */
 export function fetchCurrentUser(): Observable<never> {
     return queryGraphQL(`
@@ -51,6 +52,12 @@ export function fetchCurrentUser(): Observable<never> {
                         name
                     }
                 }
+                configuration {
+                    merged {
+                        contents
+                        messages
+                    }
+                }
             }
         }
     `).pipe(
@@ -59,6 +66,7 @@ export function fetchCurrentUser(): Observable<never> {
                 throw new Error('invalid response received from graphql endpoint')
             }
             currentUser.next(result.data.root.currentUser)
+            currentConfiguration.next(JSON.parse(result.data.root.configuration.merged.contents))
         }),
         mergeMap(() => [])
     )

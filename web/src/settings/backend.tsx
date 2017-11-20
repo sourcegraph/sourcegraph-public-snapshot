@@ -3,19 +3,63 @@ import { concat } from 'rxjs/operators/concat'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
+import { tap } from 'rxjs/operators/tap'
 import { currentUser, fetchCurrentUser } from '../auth'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
+import { currentConfiguration } from './configuration'
+
+/**
+ * Refreshes the merged configuration from the server, which propagates throughout the
+ * app to all consumers of configuration settings.
+ */
+export function refreshConfiguration(): Observable<never> {
+    return fetchConfiguration().pipe(
+        tap(result => currentConfiguration.next(JSON.parse(result.contents))),
+        mergeMap(() => [])
+    )
+}
+
+/**
+ * Fetches the effective configuration, merged from the default, org, and user settings.
+ * Callers should use updateConfiguration instead of calling this function, to ensure that
+ * the result is propagated consistently throughout the app instead of only being returned
+ * to the caller.
+ *
+ * @return Observable that emits the configuration
+ */
+function fetchConfiguration(): Observable<GQL.IConfiguration> {
+    return queryGraphQL(
+        `
+        query Configuration() {
+            root {
+                configuration {
+                    merged {
+                        contents
+                    }
+                }
+            }
+        }
+    `
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.configuration || !data.root.configuration.merged) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.configuration.merged
+        })
+    )
+}
 
 /**
  * Fetches an org by ID
  *
  * @return Observable that emits the org or `null` if it doesn't exist
  */
-export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
+export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
     return queryGraphQL(
         `
-        query Org($id: Int!) {
+        query Org($id: ID!) {
             root {
                 org(id: $id) {
                     id
@@ -39,6 +83,9 @@ export function fetchOrg(id: number): Observable<GQL.IOrg | null> {
                             displayName
                             avatarURL
                         }
+                    }
+                    tags {
+                        name
                     }
                 }
             }
@@ -234,7 +281,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
  * @param orgID The ID of the org
  * @return Observable that emits `undefined`, then completes
  */
-export function inviteUser(email: string, orgID: number): Observable<void> {
+export function inviteUser(email: string, orgID: string): Observable<void> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
@@ -248,7 +295,7 @@ export function inviteUser(email: string, orgID: number): Observable<void> {
             }
             return mutateGraphQL(
                 `
-                mutation inviteUser($email: String!, $orgID: Int!) {
+                mutation inviteUser($email: String!, $orgID: ID!) {
                     inviteUser(email: $email, orgID: $orgID) {
                         alwaysNil
                     }
@@ -326,10 +373,10 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
  * @param userID The user's ID to remove
  * @return An Observable that does emits `undefined` when done, then completes
  */
-export function removeUserFromOrg(orgID: number, userID: string): Observable<never> {
+export function removeUserFromOrg(orgID: string, userID: string): Observable<never> {
     return mutateGraphQL(
         `
-        mutation removeUserFromOrg {
+        mutation removeUserFromOrg($userID: Int!, $orgID: ID!) {
             removeUserFromOrg(userID: $userID, orgID: $orgID) {
                 alwaysNil
             }
@@ -363,12 +410,12 @@ export function removeUserFromOrg(orgID: number, userID: string): Observable<nev
 /**
  * Sends a GraphQL mutation to update an org
  *
- * @param orgID The ID of the org
+ * @param id The ID of the org
  * @param displayName The display name of the org
  * @param slackWebhookURL The Slack webhook URL to send Slack-formatted org actions/updates to
  * @return Observable that emits `undefined`, then completes
  */
-export function updateOrg(orgID: number, displayName: string, slackWebhookURL: string): Observable<void> {
+export function updateOrg(id: string, displayName: string, slackWebhookURL: string): Observable<void> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
@@ -377,14 +424,14 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
             }
 
             const variables = {
-                orgID,
+                id,
                 displayName,
                 slackWebhookURL,
             }
             return mutateGraphQL(
                 `
-                mutation updateOrg($orgID: Int!, $displayName: String, $slackWebhookURL: String) {
-                    updateOrg(orgID: $orgID, displayName: $displayName, slackWebhookURL: $slackWebhookURL) {
+                mutation updateOrg($id: ID!, $displayName: String, $slackWebhookURL: String) {
+                    updateOrg(id: $id, displayName: $displayName, slackWebhookURL: $slackWebhookURL) {
                         id
                     }
                 }
@@ -399,7 +446,7 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
                         display_name: displayName,
                         slack_webhook_url: slackWebhookURL,
                     },
-                    org_id: orgID,
+                    org_id: id,
                 },
             }
             if (!data || (errors && errors.length > 0)) {
@@ -412,18 +459,14 @@ export function updateOrg(orgID: number, displayName: string, slackWebhookURL: s
     )
 }
 
-export function updateOrgSettings(
-    orgID: number,
-    lastKnownSettingsID: number | null,
-    contents: string
-): Observable<void> {
+export function updateOrgSettings(id: string, lastKnownSettingsID: number | null, contents: string): Observable<void> {
     return mutateGraphQL(
         `
-        mutation UpdateOrgSettings($orgID: Int!, $lastKnownSettingsID: Int, $contents: String!) {
-            updateOrgSettings(orgID: $orgID, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
+        mutation UpdateOrgSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
+            updateOrgSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
         }
     `,
-        { orgID, lastKnownSettingsID, contents }
+        { id, lastKnownSettingsID, contents }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {

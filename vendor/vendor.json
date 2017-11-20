@@ -47,6 +47,12 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
+			"checksumSHA1": "uy+vL6NkehLu+lS02R/5QRAB06s=",
+			"path": "github.com/RaveNoX/go-jsoncommentstrip",
+			"revision": "3b600e52343cab9e2e1439509d69683f57787d27",
+			"revisionTime": "2017-03-28T17:35:27Z"
+		},
+		{
 			"checksumSHA1": "l5tDrOVZ0rzOozRT5wq8TGQPGDk=",
 			"path": "github.com/apache/thrift/lib/go/thrift",
 			"revision": "c55fdb95340417a4ba2dda41e9e872a4bcc63459",

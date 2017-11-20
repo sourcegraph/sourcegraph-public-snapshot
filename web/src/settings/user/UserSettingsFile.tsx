@@ -5,6 +5,7 @@ import { fetchCurrentUser, updateUserSettings } from '../../auth'
 import { SettingsFile } from '../SettingsFile'
 
 interface Props {
+    userInEditorBeta: boolean
     settings: GQL.ISettings | null
 }
 
@@ -18,11 +19,19 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-file-container">
-                <h3>Current user configuration</h3>
-                {this.props.settings && this.props.settings.configuration.highlighted ? (
-                    <SettingsFile settings={this.props.settings} onDidCommit={this.onDidCommit} />
-                ) : (
-                    <p className="form-text">No user configuration settings exist yet.</p>
+                <h3>Configuration</h3>
+                <SettingsFile settings={this.props.settings} onDidCommit={this.onDidCommit} />
+                <small className="form-text">
+                    Documentation:{' '}
+                    <a target="_blank" href="https://about.sourcegraph.com/docs/search#scope">
+                        Customizing search scopes
+                    </a>
+                </small>
+                {this.props.userInEditorBeta && (
+                    <small className="form-text">
+                        Editor beta users: This configuration does not yet take effect in Sourcegraph Editor, unlike org
+                        config (which does). It can only be used to configure the Sourcegraph web app.
+                    </small>
                 )}
             </div>
         )

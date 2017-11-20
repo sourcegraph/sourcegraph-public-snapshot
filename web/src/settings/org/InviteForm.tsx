@@ -17,11 +17,11 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { inviteUser } from '../backend'
 
 export interface Props {
-    orgID: number
+    orgID: string
 }
 
 interface State {
-    orgID: number
+    orgID: string
     email: string
     loading: boolean
     invited: boolean

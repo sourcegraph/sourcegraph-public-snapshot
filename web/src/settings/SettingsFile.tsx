@@ -12,7 +12,7 @@ import stripJSONComments from 'strip-json-comments'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
-    settings: GQL.ISettings
+    settings: GQL.ISettings | null
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -30,9 +30,18 @@ interface State {
     editing: boolean
     modifiedContents?: string
     saving: boolean
-    editingLastKnownSettingsID?: number
+
+    /**
+     * The lastKnownSettingsID that we started editing from. If null, then no
+     * previous versions of the settings exist, and we're creating them from
+     * scratch.
+     */
+    editingLastKnownSettingsID?: number | null
+
     inputError?: Error
 }
+
+const emptySettings = '{\n  // empty configuration\n}'
 
 export class SettingsFile extends React.PureComponent<Props, State> {
     public state: State = { editing: false, saving: false }
@@ -46,16 +55,23 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         // We are finished saving when we receive the new settings ID and it's
         // higher than the one we saved on top of.
         const refreshedAfterSave = this.componentUpdates.pipe(
+            filter(({ settings }) => !!settings),
             distinctUntilChanged(
                 (a, b) =>
-                    a.settings.configuration.contents === b.settings.configuration.contents &&
-                    a.settings.id === b.settings.id
+                    (!a.settings && !!b.settings) ||
+                    (!!a.settings && !b.settings) ||
+                    (!!a.settings &&
+                        !!b.settings &&
+                        a.settings.configuration.contents === b.settings.configuration.contents &&
+                        a.settings.id === b.settings.id)
             ),
             filter(
                 ({ settings, commitError }) =>
+                    !!settings &&
                     !commitError &&
-                    typeof this.state.editingLastKnownSettingsID === 'number' &&
-                    settings.id > this.state.editingLastKnownSettingsID
+                    ((typeof this.state.editingLastKnownSettingsID === 'number' &&
+                        settings.id > this.state.editingLastKnownSettingsID) ||
+                        (typeof settings.id === 'number' && this.state.editingLastKnownSettingsID === null))
             )
         )
         this.subscriptions.add(
@@ -134,26 +150,37 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         spellCheck={false}
                     />
                 )}
-                {!this.state.editing && (
-                    <div
-                        className="settings-file__contents"
-                        dangerouslySetInnerHTML={{ __html: this.props.settings.configuration.highlighted }}
-                    />
-                )}
+                {!this.state.editing &&
+                    (this.props.settings ? (
+                        <div
+                            className="settings-file__contents"
+                            dangerouslySetInnerHTML={{ __html: this.props.settings.configuration.highlighted }}
+                        />
+                    ) : (
+                        <div className="settings-file__contents">{emptySettings}</div>
+                    ))}
             </div>
         )
+    }
+
+    private getPropsSettingsContentsOrEmpty(): string {
+        return this.props.settings ? this.props.settings.configuration.contents : emptySettings
+    }
+
+    private getPropsSettingsID(): number | null {
+        return this.props.settings ? this.props.settings.id : null
     }
 
     private edit = () =>
         this.setState({
             editing: true,
-            modifiedContents: this.props.settings.configuration.contents,
-            editingLastKnownSettingsID: this.props.settings.id,
+            modifiedContents: this.getPropsSettingsContentsOrEmpty(),
+            editingLastKnownSettingsID: this.getPropsSettingsID(),
         })
 
     private discard = () => {
         if (
-            this.props.settings.configuration.contents === this.state.modifiedContents ||
+            this.getPropsSettingsContentsOrEmpty() === this.state.modifiedContents ||
             window.confirm('Really discard edits?')
         ) {
             this.setState({
@@ -199,7 +226,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     private save = () => {
         eventLogger.log('SettingsFileSaved')
         this.setState({ saving: true }, () => {
-            this.props.onDidCommit(this.props.settings.id, this.state.modifiedContents!)
+            this.props.onDidCommit(this.getPropsSettingsID(), this.state.modifiedContents!)
         })
     }
 }

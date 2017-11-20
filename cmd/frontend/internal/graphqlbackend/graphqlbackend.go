@@ -90,6 +90,11 @@ func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
+	n, ok := r.node.(*orgResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToCommit() (*commitResolver, bool) {
 	n, ok := r.node.(*commitResolver)
 	return n, ok
@@ -105,6 +110,12 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 	switch relay.UnmarshalKind(args.ID) {
 	case "Repository":
 		n, err := repositoryByID(ctx, args.ID)
+		if err != nil {
+			return nil, err
+		}
+		return &nodeResolver{n}, nil
+	case "Org":
+		n, err := orgByID(ctx, args.ID)
 		if err != nil {
 			return nil, err
 		}

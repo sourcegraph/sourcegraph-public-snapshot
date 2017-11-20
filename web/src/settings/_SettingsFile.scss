@@ -1,6 +1,7 @@
 .settings-file-container {
     width: 100%;
     margin-top: 2.5rem;
+    line-height: 120%;
 }
 
 .settings-file {
@@ -34,17 +35,16 @@
         border-radius: 2px;
         padding: 0.5rem 1rem;
         font-size: 12px;
+        font-family: monospace;
+        white-space: pre;
         &-editor {
             background-color: #0e121b;
             height: 15rem;
             overflow-y: auto;
             color: $color-text;
-            font-family: monospace;
         }
         table {
-            white-space: pre;
             background-color: #0e121b;
-            font-family: 'Menlo';
         }
     }
 }

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	graphql "github.com/neelance/graphql-go"
+	"github.com/neelance/graphql-go/relay"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
@@ -18,14 +20,26 @@ import (
 )
 
 func (r *rootResolver) Org(ctx context.Context, args *struct {
-	ID int32
+	ID graphql.ID
 }) (*orgResolver, error) {
-	// 🚨 SECURITY: Check that the current user is a member of the org.
-	actor := actor.FromContext(ctx)
-	if _, err := localstore.OrgMembers.GetByOrgIDAndUserID(ctx, args.ID, actor.UID); err != nil {
+	return orgByID(ctx, args.ID)
+}
+
+func orgByID(ctx context.Context, id graphql.ID) (*orgResolver, error) {
+	var orgID int32
+	if err := relay.UnmarshalSpec(id, &orgID); err != nil {
 		return nil, err
 	}
-	org, err := localstore.Orgs.GetByID(ctx, args.ID)
+	return orgByIDInt32(ctx, orgID)
+}
+
+func orgByIDInt32(ctx context.Context, orgID int32) (*orgResolver, error) {
+	// 🚨 SECURITY: Check that the current user is a member of the org.
+	actor := actor.FromContext(ctx)
+	if _, err := localstore.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
+		return nil, err
+	}
+	org, err := localstore.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +50,11 @@ type orgResolver struct {
 	org *sourcegraph.Org
 }
 
-func (o *orgResolver) ID() int32 {
+func (o *orgResolver) ID() graphql.ID {
+	return relay.MarshalID("Org", o.org.ID)
+}
+
+func (o *orgResolver) OrgID() int32 {
 	return o.org.ID
 }
 
@@ -168,19 +186,24 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
-	OrgID           int32
+	ID              graphql.ID
 	DisplayName     *string
 	SlackWebhookURL *string
 }) (*orgResolver, error) {
+	var orgID int32
+	if err := relay.UnmarshalSpec(args.ID, &orgID); err != nil {
+		return nil, err
+	}
+
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID); err != nil {
+	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
 		return nil, err
 	}
-	log15.Info("updating org", "org", args.OrgID, "display name", args.DisplayName, "webhook URL", args.SlackWebhookURL, "actor", actor.UID)
+	log15.Info("updating org", "org", args.ID, "display name", args.DisplayName, "webhook URL", args.SlackWebhookURL, "actor", actor.UID)
 
-	updatedOrg, err := store.Orgs.Update(ctx, args.OrgID, args.DisplayName, args.SlackWebhookURL)
+	updatedOrg, err := store.Orgs.Update(ctx, orgID, args.DisplayName, args.SlackWebhookURL)
 	if err != nil {
 		return nil, err
 	}
@@ -190,26 +213,36 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 
 func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	UserID string
-	OrgID  int32
+	OrgID  graphql.ID
 }) (*EmptyResponse, error) {
+	var orgID int32
+	if err := relay.UnmarshalSpec(args.OrgID, &orgID); err != nil {
+		return nil, err
+	}
+
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID); err != nil {
+	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
 		return nil, err
 	}
-	log15.Info("removing user from org", "user", args.UserID, "org", args.OrgID)
-	return nil, store.OrgMembers.Remove(ctx, args.OrgID, args.UserID)
+	log15.Info("removing user from org", "user", args.UserID, "org", orgID)
+	return nil, store.OrgMembers.Remove(ctx, orgID, args.UserID)
 }
 
 func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
-	OrgID int32
+	OrgID graphql.ID
 	Email string
 }) (*EmptyResponse, error) {
+	var orgID int32
+	if err := relay.UnmarshalSpec(args.OrgID, &orgID); err != nil {
+		return nil, err
+	}
+
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
 	actor := actor.FromContext(ctx)
-	orgMember, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, actor.UID)
+	orgMember, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -228,9 +261,9 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	if invitedUser != nil {
-		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID, invitedUser.Auth0ID)
+		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.Auth0ID)
 		if err == nil {
-			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, args.OrgID)
+			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, orgID)
 		}
 		if _, ok := err.(store.ErrOrgMemberNotFound); !ok {
 			return nil, err
@@ -242,7 +275,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		}
 	}
 
-	org, err := localstore.Orgs.GetByID(ctx, args.OrgID)
+	org, err := localstore.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -313,4 +346,17 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	}
 
 	return &orgInviteResolver{emailVerified: true}, nil
+}
+
+// unmarshalOrgGraphQLID unmarshals and returns the int32 org ID of the first
+// non-nil element of ids.
+func unmarshalOrgGraphQLID(ids ...*graphql.ID) (int32, error) {
+	for _, id := range ids {
+		if id != nil {
+			var orgID int32
+			err := relay.UnmarshalSpec(*id, &orgID)
+			return orgID, err
+		}
+	}
+	return 0, errors.New("at least 1 of id and orgID must be specified")
 }

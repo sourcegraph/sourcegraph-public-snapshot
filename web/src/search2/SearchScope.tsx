@@ -7,6 +7,7 @@ import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
 import { routes } from '../routes'
+import { currentConfiguration } from '../settings/configuration'
 import { fetchSearchScopes } from './backend'
 
 interface Props {
@@ -40,7 +41,14 @@ interface PersistedState extends PersistableState {
     lastScopeValue?: string
 }
 
-interface State extends PersistableState {}
+interface State extends PersistableState {
+    /** All search scopes from configuration */
+    configuredScopes?: ISearchScope[]
+}
+
+interface SearchScopeConfiguration {
+    ['search.scopes']?: ISearchScope[]
+}
 
 export class SearchScope extends React.PureComponent<Props, State> {
     private static REMOTE_SCOPES_STORAGE_KEY = 'SearchScope/remoteScopes'
@@ -81,6 +89,12 @@ export class SearchScope extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        this.subscriptions.add(
+            currentConfiguration
+                .pipe(map((config: SearchScopeConfiguration) => config['search.scopes'] || []))
+                .subscribe(searchScopes => this.setState({ configuredScopes: searchScopes }))
+        )
+
         const savedState = this.loadFromLocalStorage()
         if (typeof savedState.lastScopeValue === 'string' && this.props.value === undefined) {
             this.props.onChange(savedState.lastScopeValue)
@@ -133,14 +147,15 @@ export class SearchScope extends React.PureComponent<Props, State> {
             allScopes.push(...this.state.remoteScopes)
         }
 
+        if (this.state.configuredScopes) {
+            allScopes.push(...this.state.configuredScopes)
+        }
+
         allScopes.push(...this.getScopesForCurrentRoute())
 
         // If the active scope isn't in the list, then add a new custom entry for it.
         if (this.props.value !== undefined && !allScopes.some(({ value }) => value === this.props.value)) {
-            allScopes.push({
-                name: 'Custom',
-                value: this.props.value,
-            })
+            allScopes.push({ name: 'Custom', value: this.props.value })
         }
 
         return allScopes
