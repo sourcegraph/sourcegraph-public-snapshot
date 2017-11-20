@@ -100,7 +100,7 @@ export const Org = reactive<Props>(props => {
                         ].join('')
                     )
                 }
-                if (user.id === member.user.auth0ID) {
+                if (user.auth0ID === member.user.auth0ID) {
                     return confirm(`Leave this organization?`)
                 }
                 return confirm(`Remove ${member.user.displayName} from this organization?`)
@@ -110,7 +110,7 @@ export const Org = reactive<Props>(props => {
                     concat([
                         (state: State): State => ({
                             ...state,
-                            left: memberToRemove.user.auth0ID === user!.id,
+                            left: memberToRemove.user.auth0ID === user!.auth0ID,
                             org: state.org && {
                                 ...state.org,
                                 members: state.org.members.filter(
@@ -167,7 +167,7 @@ export const Org = reactive<Props>(props => {
                                     <td className="org__actions-cell">
                                         <button
                                             className="btn btn-icon"
-                                            title={user.id === member.user.auth0ID ? 'Leave' : 'Remove'}
+                                            title={user.auth0ID === member.user.auth0ID ? 'Leave' : 'Remove'}
                                             // tslint:disable-next-line:jsx-no-lambda
                                             onClick={() => memberRemoves.next({ ...member, org })}
                                         >

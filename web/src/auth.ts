@@ -27,7 +27,7 @@ export function fetchCurrentUser(): Observable<never> {
         query CurrentAuthState {
             root {
                 currentUser {
-                    id
+                    auth0ID
                     sourcegraphID
                     username
                     avatarURL

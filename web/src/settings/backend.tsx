@@ -133,7 +133,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                     $avatarURL: String
                 ) {
                     createUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
-                        id
+                        auth0ID
                         sourcegraphID
                         username
                     }
@@ -151,7 +151,7 @@ export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
                 auth: {
                     user: {
                         id: data.createUser.sourcegraphID,
-                        auth0_id: data.createUser.id,
+                        auth0_id: data.createUser.auth0ID,
                         username: data.createUser.username,
                         display_name: options.displayName,
                     },
@@ -193,7 +193,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                     $avatarURL: String
                 ) {
                     updateUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
-                        id
+                        auth0ID
                         sourcegraphID
                         username
                     }
@@ -211,7 +211,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 auth: {
                     user: {
                         id: data.updateUser.sourcegraphID,
-                        auth0_id: data.updateUser.id,
+                        auth0_id: data.updateUser.auth0ID,
                         username: data.updateUser.username,
                         display_name: options.displayName,
                         avatar_url: options.avatarUrl,
