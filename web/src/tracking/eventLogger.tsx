@@ -28,7 +28,7 @@ class EventLogger {
 
         if (window.context.user) {
             // TODO(dan): update with sourcegraphID from JS Context once available
-            this.updateUser({ id: window.context.user.UID, sourcegraphID: null, username: null, email: null })
+            this.updateUser({ auth0ID: window.context.user.UID, sourcegraphID: null, username: null, email: null })
         }
 
         currentUser.subscribe(
@@ -48,9 +48,11 @@ class EventLogger {
      * Set user-level properties in all external tracking services
      */
     public updateUser(
-        user: GQL.IUser | { id: string; sourcegraphID: number | null; username: string | null; email: string | null }
+        user:
+            | GQL.IUser
+            | { auth0ID: string; sourcegraphID: number | null; username: string | null; email: string | null }
     ): void {
-        this.setUserIds(user.sourcegraphID, user.id, user.username)
+        this.setUserIds(user.sourcegraphID, user.auth0ID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
         }

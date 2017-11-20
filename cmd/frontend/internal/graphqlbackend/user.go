@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -25,6 +26,7 @@ type userResolver struct {
 
 // deprecated use Auth0ID
 func (r *userResolver) ID() string {
+	log.Println("use of deprecated User.id field")
 	return r.Auth0ID()
 }
 
