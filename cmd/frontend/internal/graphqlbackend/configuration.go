@@ -122,7 +122,9 @@ func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurati
 // For example, suppose org config is {"a":[1]} and user config is {"a":[2]}. If "a" is NOT a deeply
 // merged field, the merged config would be {"a":[2]}. If "a" IS a deeply merged field, then the
 // merged config would be {"a":[1,2].}
-var deeplyMergedConfigFields = map[string]struct{}{}
+var deeplyMergedConfigFields = map[string]struct{}{
+	"search.scopes": struct{}{},
+}
 
 // mergeConfigs merges the specified JSON configs together to produce a single JSON config. The merge
 // algorithm is currently rudimentary but eventually it will be similar to VS Code's. The only "smart"
