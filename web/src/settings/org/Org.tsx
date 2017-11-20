@@ -3,7 +3,6 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { match, Redirect } from 'react-router'
 import reactive from 'rx-component'
-import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { combineLatest } from 'rxjs/observable/combineLatest'
 import { merge } from 'rxjs/observable/merge'
 import { concat } from 'rxjs/operators/concat'
@@ -12,6 +11,7 @@ import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { scan } from 'rxjs/operators/scan'
+import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
@@ -58,11 +58,11 @@ export const Org = reactive<Props>(props => {
         tap(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
     )
 
-    const settingsCommits = new BehaviorSubject<void>(void 0)
+    const settingsCommits = new Subject<void>()
     const nextSettingsCommit = () => settingsCommits.next(void 0)
 
     return merge<Update>(
-        combineLatest(currentUser, orgChanges, settingsCommits).pipe(
+        combineLatest(currentUser, orgChanges, settingsCommits.pipe(startWith(void 0))).pipe(
             mergeMap(([user, orgName]) => {
                 if (!user) {
                     return [(state: State): State => ({ ...state, user: undefined })]
