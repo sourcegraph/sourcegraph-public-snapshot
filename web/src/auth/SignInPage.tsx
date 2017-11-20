@@ -21,7 +21,6 @@ interface LoginSignupFormProps {
 }
 
 interface LoginSignupFormState {
-    mode: 'signin' | 'signup'
     email: string
     username: string
     displayName: string
@@ -36,7 +35,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
     constructor(props: LoginSignupFormProps) {
         super(props)
         this.state = {
-            mode: props.mode,
             email: props.prefilledEmail || '',
             username: '',
             displayName: '',
@@ -54,14 +52,14 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 )}
                 <div className="login-signup-form__modes">
                     <span
-                        className={`login-signup-form__mode${this.state.mode === 'signin' ? '--active' : ''}`}
+                        className={`login-signup-form__mode${this.props.mode === 'signin' ? '--active' : ''}`}
                         onClick={this.setModeSignIn}
                     >
                         Sign in
                     </span>
                     <span className="login-signup-form__mode-divider">|</span>
                     <span
-                        className={`login-signup-form__mode${this.state.mode === 'signup' ? '--active' : ''}`}
+                        className={`login-signup-form__mode${this.props.mode === 'signup' ? '--active' : ''}`}
                         onClick={this.setModeSignUp}
                     >
                         Sign up
@@ -79,7 +77,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         spellCheck={false}
                     />
                 </div>
-                {this.state.mode === 'signup' && (
+                {this.props.mode === 'signup' && (
                     <div className="form-group">
                         <input
                             className="ui-text-box login-signup-form__input"
@@ -104,13 +102,13 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         pattern={VALID_PASSWORD_REGEXP.toString().slice(1, -1)}
                         disabled={this.state.loading}
                     />
-                    {this.state.mode === 'signin' && (
+                    {this.props.mode === 'signin' && (
                         <small className="form-text">
                             <Link to="/password-reset">Forgot password?</Link>
                         </small>
                     )}
                 </div>
-                {this.state.mode === 'signup' && (
+                {this.props.mode === 'signup' && (
                     <div className="form-group">
                         <input
                             className="ui-text-box login-signup-form__input"
@@ -124,13 +122,13 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 )}
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        {this.state.mode === 'signin' ? 'Sign In' : 'Sign Up'}
+                        {this.props.mode === 'signin' ? 'Sign In' : 'Sign Up'}
                     </button>
                 </div>
                 <small className="form-text">
                     Existing users who signed in via GitHub: please sign up for a Sourcegraph account.
                 </small>
-                {this.state.mode === 'signup' && (
+                {this.props.mode === 'signup' && (
                     <small className="form-text sign-in-page__terms">
                         By signing up, you agree to our{' '}
                         <a href="https://about.sourcegraph.com/terms" target="_blank">
@@ -186,7 +184,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
             const newURL = new URL(returnTo, window.location.href)
             redirect.searchParams.set('returnTo', window.context.appURL + newURL.pathname + newURL.search + newURL.hash)
         }
-        if (this.state.mode === 'signup') {
+        if (this.props.mode === 'signup') {
             redirect.searchParams.set('username', this.state.username)
             redirect.searchParams.set('displayName', this.state.displayName || this.state.username)
         }
@@ -214,7 +212,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 this.setState({ errorDescription: err.description || 'Unknown Error' })
             }
         }
-        switch (this.state.mode) {
+        switch (this.props.mode) {
             case 'signin':
                 eventLogger.log('InitiateSignIn')
                 webAuth.redirect.loginWithCredentials(
