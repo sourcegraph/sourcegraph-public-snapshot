@@ -158,9 +158,17 @@ The decision here can be made on a table by table basis.
 
 If you have a column that references another column in the database, add a foreign key constraint.
 
-Foreign key constraints should not cascade deletes. We don't want to accidentally delete a lot of data.
-
 There are reasons to not use foreign keys at scale, but we are not at scale and we can drop these in the future if they become a problem.
+
+### Don't cascade deletes
+
+Foreign key constraints should not cascade deletes for a few reasons:
+
+1. We don't want to accidentally delete a lot of data (either from our application, or from a manual query in prod).
+2. If we ever add new tables that depend on other tables via foreign key, it is not necessarily the case that cascading the delete is correct for the new table. Explicit application code is better here.
+3. If we ever get to the point of sharding the db, we will probably need to drop all foreign key constraints so it would be great if we did not make our code depend on cascading delete behavior.
+
+Instead of cascading deletes, applications should explicitly delete the rows that would otherwise get deleted if cascading deletes were enabled.
 
 ## Table names
 
