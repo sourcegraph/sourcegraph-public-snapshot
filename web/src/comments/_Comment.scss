@@ -48,6 +48,11 @@
         code {
             padding: 0.25rem;
         }
+        blockquote {
+            padding: 0 1rem;
+            color: #93a9c8;
+            border-left: 0.25rem solid #93a9c8;
+        }
     }
     &__share {
         color: rgba(130, 150, 196, 0.5);
