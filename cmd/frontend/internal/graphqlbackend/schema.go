@@ -670,6 +670,8 @@ type Configuration {
   contents: String!
   # The contents as highlighted HTML.
   highlighted: String!
+  # Error and warning messages about the configuration.
+  messages: [String!]!
 }
 
 type Thread {

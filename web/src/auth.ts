@@ -55,6 +55,7 @@ export function fetchCurrentUser(): Observable<never> {
                 configuration {
                     merged {
                         contents
+                        messages
                     }
                 }
             }

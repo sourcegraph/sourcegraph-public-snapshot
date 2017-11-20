@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"sort"
 	"strings"
@@ -35,6 +36,7 @@ func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsRes
 
 type configurationResolver struct {
 	contents string
+	messages []string // error and warning messages
 }
 
 func (r *configurationResolver) Contents() string { return r.contents }
@@ -52,6 +54,13 @@ func (r *configurationResolver) Highlighted(ctx context.Context) (string, error)
 	}
 
 	return string(html), nil
+}
+
+func (r *configurationResolver) Messages() []string {
+	if r.messages == nil {
+		return []string{}
+	}
+	return r.messages
 }
 
 type configurationCascadeResolver struct{}
@@ -109,11 +118,12 @@ func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurati
 		}
 	}
 
+	var messages []string
 	merged, err := mergeConfigs(configs)
 	if err != nil {
-		return nil, err
+		messages = append(messages, err.Error())
 	}
-	return &configurationResolver{contents: string(merged)}, nil
+	return &configurationResolver{contents: string(merged), messages: messages}, nil
 }
 
 // deeplyMergedConfigFields contains the names of top-level configuration fields whose values should
@@ -132,16 +142,19 @@ var deeplyMergedConfigFields = map[string]struct{}{
 //
 // TODO(sqs): tolerate comments in JSON
 func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
+	var errs []error
 	merged := map[string]interface{}{}
 	for _, s := range jsonConfigStrings {
 		stripped, err := ioutil.ReadAll(jsoncommentstrip.NewReader(strings.NewReader(s)))
 		if err != nil {
-			return nil, err
+			errs = append(errs, err)
+			continue
 		}
 
 		var config map[string]interface{}
 		if err := json.Unmarshal(stripped, &config); err != nil {
-			return nil, err
+			errs = append(errs, err)
+			continue
 		}
 		for name, value := range config {
 			// See if we should deeply merge this field.
@@ -158,7 +171,14 @@ func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 			merged[name] = value
 		}
 	}
-	return json.Marshal(merged)
+	out, err := json.Marshal(merged)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) == 0 {
+		return out, nil
+	}
+	return out, fmt.Errorf("errors merging configurations: %q", errs)
 }
 
 func (rootResolver) Configuration() *configurationCascadeResolver {

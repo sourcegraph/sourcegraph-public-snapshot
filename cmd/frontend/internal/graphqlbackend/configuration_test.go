@@ -14,10 +14,16 @@ func TestMergeConfigs(t *testing.T) {
 	tests := map[string]struct {
 		configs []string
 		want    string
+		wantErr bool
 	}{
 		"empty": {
 			configs: []string{},
 			want:    `{}`,
+		},
+		"syntax error": {
+			configs: []string{`error!`, `{"a":1}`},
+			want:    `{"a":1}`,
+			wantErr: true,
 		},
 		"single": {
 			configs: []string{`{"a":1}`},
@@ -80,8 +86,12 @@ func TestMergeConfigs(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			merged, err := mergeConfigs(test.configs)
-			if err != nil {
-				t.Fatal(err)
+			if (err != nil) != test.wantErr {
+				if err != nil {
+					t.Fatal(err)
+				} else {
+					t.Fatal("want error, got no error")
+				}
 			}
 			if !jsonDeepEqual(string(merged), test.want) {
 				t.Errorf("got %s, want %s", merged, test.want)
