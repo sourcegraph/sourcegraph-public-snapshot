@@ -1,8 +1,9 @@
 import { Observable } from 'rxjs/Observable'
+import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
-import { queryGraphQL } from './backend/graphql'
+import { mutateGraphQL, queryGraphQL } from './backend/graphql'
 
 /**
  * Always represents the latest
@@ -35,7 +36,11 @@ export function fetchCurrentUser(): Observable<never> {
                     username
                     displayName
                     latestSettings {
-                        highlighted
+                        id
+                        configuration {
+                            contents
+                            highlighted
+                        }
                     }
                     orgs {
                         id
@@ -56,5 +61,23 @@ export function fetchCurrentUser(): Observable<never> {
             currentUser.next(result.data.root.currentUser)
         }),
         mergeMap(() => [])
+    )
+}
+
+export function updateUserSettings(lastKnownSettingsID: number | null, contents: string): Observable<void> {
+    return mutateGraphQL(
+        `
+        mutation UpdateUserSettings($lastKnownSettingsID: Int, $contents: String!) {
+            updateUserSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
+        }
+    `,
+        { lastKnownSettingsID, contents }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return
+        })
     )
 }

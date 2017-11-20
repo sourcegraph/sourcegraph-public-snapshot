@@ -7,7 +7,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -25,23 +24,14 @@ func (o *settingsResolver) Subject() *configurationSubject {
 	return o.subject
 }
 
-func (o *settingsResolver) Contents() string {
-	return o.settings.Contents
+func (o *settingsResolver) Configuration() *configurationResolver {
+	return &configurationResolver{contents: o.settings.Contents}
 }
 
-func (o *settingsResolver) Highlighted(ctx context.Context) (string, error) {
-	html, aborted, err := highlight.Code(ctx, o.Contents(), "json", false)
-	if err != nil {
-		return "", err
-	}
-	if aborted {
-		// Settings should be small enough so the syntax highlighting
-		// completes before the automatic timeout. If it doesn't, something
-		// seriously wrong has happened.
-		return "", errors.New("settings syntax highlighting aborted")
-	}
+func (o *settingsResolver) Contents() string { return o.settings.Contents }
 
-	return string(html), nil
+func (o *settingsResolver) Highlighted(ctx context.Context) (string, error) {
+	return o.Configuration().Highlighted(ctx)
 }
 
 func (o *settingsResolver) CreatedAt() string {

@@ -1,18 +1,50 @@
-.settings-file {
+.settings-file-container {
     width: 100%;
     margin-top: 2.5rem;
+}
 
+.settings-file {
+    &__actions {
+        display: flex;
+        margin: 0.25rem 0;
+        font-size: 0.875rem;
+        &-btn {
+            padding: 0.25rem 0.5rem;
+            &:first-child {
+                margin-left: -0.5rem;
+            }
+            .icon {
+                width: 1.25rem;
+                height: 1.25rem;
+            }
+        }
+    }
+    &__error {
+        color: $color-error;
+        margin: 0.5rem 0;
+        &-icon {
+            vertical-align: middle;
+            margin-right: 0.25rem;
+        }
+    }
     &__contents {
+        width: 100%;
         overflow-x: scroll;
         border: 1px solid #2b3750;
         border-radius: 2px;
         padding: 0.5rem 1rem;
-
+        font-size: 12px;
+        &-editor {
+            background-color: #0e121b;
+            height: 15rem;
+            overflow-y: auto;
+            color: $color-text;
+            font-family: monospace;
+        }
         table {
             white-space: pre;
             background-color: #0e121b;
             font-family: 'Menlo';
-            font-size: 12px;
         }
     }
 }

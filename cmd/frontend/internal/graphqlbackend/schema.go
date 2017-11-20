@@ -622,15 +622,25 @@ interface ConfigurationSubject {
   latestSettings: Settings
 }
 
+# Settings is a version of a configuration settings file.
 type Settings {
   id: Int!
+  configuration: Configuration!
   # The subject that these settings are for.
   subject: ConfigurationSubject!
-  contents: String!
-  # contents as highlighted HTML
-  highlighted: String!
   author: User!
   createdAt: String!
+  contents: String! @deprecated(reason: "use configuration.contents instead")
+  highlighted: String!
+    @deprecated(reason: "use configuration.highlighted instead")
+}
+
+# Configuration contains settings from (possibly) multiple settings files.
+type Configuration {
+  # The raw JSON contents, encoded as a string.
+  contents: String!
+  # The contents as highlighted HTML.
+  highlighted: String!
 }
 
 type Thread {

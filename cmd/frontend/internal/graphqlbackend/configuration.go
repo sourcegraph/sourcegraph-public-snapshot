@@ -1,6 +1,11 @@
 package graphqlbackend
 
-import "context"
+import (
+	"context"
+	"errors"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
+)
 
 type configurationSubject struct {
 	org  *orgResolver
@@ -19,4 +24,25 @@ func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsRes
 		return s.user.LatestSettings(ctx)
 	}
 	panic("no settings subject")
+}
+
+type configurationResolver struct {
+	contents string
+}
+
+func (r *configurationResolver) Contents() string { return r.contents }
+
+func (r *configurationResolver) Highlighted(ctx context.Context) (string, error) {
+	html, aborted, err := highlight.Code(ctx, r.contents, "json", false)
+	if err != nil {
+		return "", err
+	}
+	if aborted {
+		// Configuration should be small enough so the syntax highlighting
+		// completes before the automatic timeout. If it doesn't, something
+		// seriously wrong has happened.
+		return "", errors.New("settings syntax highlighting aborted")
+	}
+
+	return string(html), nil
 }
