@@ -84,6 +84,9 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                             avatarURL
                         }
                     }
+                    tags {
+                        name
+                    }
                 }
             }
         }

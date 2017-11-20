@@ -5,6 +5,7 @@ import { fetchCurrentUser, updateUserSettings } from '../../auth'
 import { SettingsFile } from '../SettingsFile'
 
 interface Props {
+    userInEditorBeta: boolean
     settings: GQL.ISettings | null
 }
 
@@ -26,6 +27,12 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
                         Customizing search scopes
                     </a>
                 </small>
+                {this.props.userInEditorBeta && (
+                    <small className="form-text">
+                        Editor beta users: This configuration does not yet take effect in Sourcegraph Editor, unlike org
+                        config (which does). It can only be used to configure the Sourcegraph web app.
+                    </small>
+                )}
             </div>
         )
     }

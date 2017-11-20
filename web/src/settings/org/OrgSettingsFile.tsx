@@ -6,6 +6,7 @@ import { SettingsFile } from '../SettingsFile'
 export interface Props {
     orgID: string
     settings: GQL.ISettings | null
+    orgInEditorBeta: boolean
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -45,11 +46,13 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
                         Customizing search scopes for org members
                     </a>
                 </small>
-                <small className="form-text">
-                    This configuration applies to all org members and takes effect in Sourcegraph Editor and on the web.
-                    You can also run the 'Preferences: Open Organization Settings' command inside of Sourcegraph Editor
-                    to change this configuration.
-                </small>
+                {this.props.orgInEditorBeta && (
+                    <small className="form-text">
+                        This configuration applies to all org members and takes effect in Sourcegraph Editor and on the
+                        web. You can also run the 'Preferences: Open Organization Settings' command inside of
+                        Sourcegraph Editor to change this configuration.
+                    </small>
+                )}
             </div>
         )
     }
