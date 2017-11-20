@@ -6,47 +6,58 @@
         width: 100%;
         overflow-x: auto;
         table-layout: fixed;
+
         &--blurry {
             filter: blur(3px);
         }
     }
+
     &__line {
         font-family: 'Menlo';
         font-size: 12px;
         line-height: 20px;
+
         &--main {
             background: #0d111c;
         }
+
         &--before,
         &--after {
             background: #141a2a;
         }
     }
+
     &__line-content {
         width: 100%;
     }
+
     &__pre {
         font-family: 'Menlo';
         display: inline;
         padding-right: 1rem;
+
         div {
             display: inline-block;
         }
     }
+
     &__line-number {
         text-align: right;
         color: #293757;
         padding: 0 1rem 0 1.75rem;
         display: flex;
         align-items: center;
+
         &--start-line {
             padding-left: 0.375rem;
         }
     }
+
     &__chat-icon {
         height: 1rem;
         color: #8296c4;
-        margin-right: 0.42em;
+        margin-right: 0.5rem;
+
         .icon {
             width: 1.125rem;
             height: 1.125rem;

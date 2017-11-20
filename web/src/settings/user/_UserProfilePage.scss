@@ -2,19 +2,23 @@
     &__split-row {
         display: flex;
     }
+
     &__avatar-row {
         display: flex;
         margin-bottom: 1rem;
     }
+
     &__avatar-column {
         flex: 0 0 auto;
         padding-right: 2rem;
         display: flex;
         height: 6rem;
+
         .avatar {
             width: 6rem;
         }
     }
+
     &__button-row {
         margin: 2.5rem 0;
     }

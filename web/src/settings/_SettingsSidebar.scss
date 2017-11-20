@@ -14,6 +14,7 @@
         padding: 0.5rem;
         vertical-align: middle;
         background: #151c28;
+
         &-account-settings {
             background: #1c2736;
         }
@@ -66,6 +67,7 @@
         &--active {
             background: #1c7cd6;
             color: #f2f4f8;
+
             &:hover {
                 background: #1c7cd6;
                 color: #f2f4f8;
@@ -76,17 +78,20 @@
     &__profile {
         display: flex;
         overflow: hidden;
+
         &-avatar-column {
             flex: 0 0 auto;
             display: flex;
             padding-left: 0.5rem;
             margin-right: 0.5rem;
         }
+
         &-content {
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
+
         &-row {
             overflow: hidden;
             text-overflow: ellipsis;
@@ -97,10 +102,12 @@
         border-top: 1px solid #2b3750;
         padding: 0.5rem;
         text-align: center;
+
         &-button {
             background-color: #2b3750;
             color: #93a9c8;
         }
+
         &-button:hover {
             background-color: rgba(42, 58, 81, 0.7);
             color: #f2f4f8;

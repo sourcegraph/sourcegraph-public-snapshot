@@ -13,9 +13,11 @@
         outline: none;
         color: white;
         font-size: inherit;
+
         &::placeholder {
             color: #93a9c8;
         }
+
         &:focus {
             border-color: #1c7cd6;
         }

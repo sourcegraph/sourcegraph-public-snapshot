@@ -8,26 +8,32 @@
     &__actions {
         display: flex;
         margin: 0.25rem 0;
-        font-size: 0.875rem;
+        font-size: 14px;
+
         &-btn {
             padding: 0.25rem 0.5rem;
+
             &:first-child {
                 margin-left: -0.5rem;
             }
+
             .icon {
                 width: 1.25rem;
                 height: 1.25rem;
             }
         }
     }
+
     &__error {
         color: $color-error;
         margin: 0.5rem 0;
+
         &-icon {
             vertical-align: middle;
             margin-right: 0.25rem;
         }
     }
+
     &__contents {
         width: 100%;
         overflow-x: scroll;
@@ -37,12 +43,14 @@
         font-size: 12px;
         font-family: monospace;
         white-space: pre;
+
         &-editor {
             background-color: #0e121b;
             height: 15rem;
             overflow-y: auto;
             color: $color-text;
         }
+
         table {
             background-color: #0e121b;
         }

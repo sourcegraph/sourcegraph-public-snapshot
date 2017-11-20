@@ -7,9 +7,11 @@
         overflow-x: auto;
         overflow-y: hidden;
         background-color: #070a0d;
+
         &:hover {
             background-color: #151d28;
         }
+
         &:not(:first-child) {
             border-top: 1px solid #2a3a51;
         }

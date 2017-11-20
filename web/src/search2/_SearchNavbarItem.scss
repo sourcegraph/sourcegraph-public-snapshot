@@ -11,7 +11,8 @@
     &__row {
         display: flex;
         padding: 0.125rem 0;
-        & > *:not(:first-child) {
+
+        > :not(:first-child) {
             margin-left: 0.35rem;
         }
     }
@@ -19,12 +20,15 @@
     .query-input2__input {
         padding: 0.02rem 0.4rem;
     }
+
     .search-button2__label {
         display: none;
     }
+
     .search-scope2__select {
         padding: 0.2rem 0.25rem;
     }
+
     .scope-label2:hover {
         background-color: #1c2736;
     }

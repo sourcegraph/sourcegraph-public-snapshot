@@ -41,6 +41,7 @@
         width: 100%;
         padding-left: 1rem;
         white-space: pre;
+
         > .blame {
             &::before {
                 content: attr(data-blame);
@@ -52,8 +53,9 @@
                 ); // extends background color for highlighted code to overflown blame content
                 display: inline-block;
             }
+
             color: #464d57;
-            padding-left: 4em;
+            padding-left: 4rem;
             display: inline-block;
             width: 0;
         }

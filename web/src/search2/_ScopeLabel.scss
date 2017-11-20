@@ -2,13 +2,14 @@
     min-width: 5rem;
     margin-top: 0.15rem;
     padding-left: 0.2rem;
-    font-size: 90%;
+    font-size: 0.9em;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 
     &__query {
         font-weight: bold;
+
         &-tip {
             border-bottom: dotted 1px rgba(255, 255, 255, 0.25);
         }

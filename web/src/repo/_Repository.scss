@@ -18,11 +18,11 @@
 
     &__blob-alert {
         font-family: system;
-        font-size: 0.875rem;
+        font-size: 0.8em;
         color: #93a9c8;
         background-color: #1c2736;
         display: flex;
-        padding: 0.5em;
+        padding: 0.5rem;
         line-height: 2em;
     }
 
@@ -46,6 +46,7 @@
         &:not(&--open) {
             width: 0;
         }
+
         &--open .tree {
             width: 16rem;
         }

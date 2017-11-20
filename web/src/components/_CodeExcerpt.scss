@@ -13,6 +13,7 @@
 
     .line,
     .code {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         height: 20px;
         line-height: 20px;
         font-size: 12px;

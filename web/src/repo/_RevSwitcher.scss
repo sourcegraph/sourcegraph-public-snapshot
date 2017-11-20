@@ -18,6 +18,7 @@
         &:not(.rev-switcher__rev-display--disabled):hover {
             border-color: white;
             color: white;
+
             > .rev-switcher__input::placeholder {
                 color: white;
             }

@@ -12,20 +12,21 @@
     }
 
     table {
-        border-spacing: 0px;
+        border-spacing: 0;
     }
 
     &__row {
-        color: #ffffff;
+        color: white;
         width: 100%;
         display: table;
+
         &:hover {
             background-color: rgba(42, 58, 81, 0.7);
             cursor: pointer;
         }
 
         &--selected {
-            color: #ffffff;
+            color: white;
             width: 100%;
             display: table;
             background-color: #1c7cd6 !important;
@@ -33,14 +34,14 @@
     }
 
     &__row-icon {
-        color: #ffffff !important; // override link color
+        color: white !important; // override link color
         display: flex;
         align-items: center;
     }
 
     &__row-contents {
         display: flex;
-        color: #ffffff !important; // override link color
+        color: white !important; // override link color
         align-items: center;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
@@ -49,6 +50,6 @@
 
     &__row-label {
         margin-left: 0.25rem;
-        color: #ffffff !important; // override link color
+        color: white !important; // override link color
     }
 }

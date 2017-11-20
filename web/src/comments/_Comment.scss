@@ -2,6 +2,7 @@
     0% {
         background: #2a3a51;
     }
+
     100% {
         background: none;
     }
@@ -11,49 +12,62 @@
     width: 100%;
     padding: 0.5rem;
     border-bottom: 1px solid #212c45;
+
     &:first-of-type {
         border-top: 1px solid #212c45;
     }
+
     &--targeted {
         animation: highlight 3s;
     }
+
     &__top-area {
         display: flex;
-        font-size: 0.75rem;
+        font-size: 0.75em;
         line-height: 1rem;
     }
+
     &__author {
         display: flex;
         align-items: center;
     }
+
     &__author-avatar {
         height: 1rem;
     }
+
     &__author-name {
         padding-left: 0.25rem;
     }
+
     &__content {
         margin-left: 1.25rem;
+
         p,
         pre {
             margin-bottom: 0;
         }
+
         code,
         pre {
             background: #141a2a;
         }
+
         pre {
             padding: 0.5rem;
         }
+
         code {
             padding: 0.25rem;
         }
+
         blockquote {
             padding: 0 1rem;
             color: #93a9c8;
-            border-left: 0.25rem solid #93a9c8;
+            border-left: 4px solid #93a9c8;
         }
     }
+
     &__share {
         color: rgba(130, 150, 196, 0.5);
         margin-left: auto;

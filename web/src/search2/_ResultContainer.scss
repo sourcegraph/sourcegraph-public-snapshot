@@ -1,4 +1,6 @@
 .result-container {
+    // Make sure the 1px border is visible
+    // stylelint-disable-next-line declaration-property-unit-whitelist
     margin-bottom: 1px;
 
     &__header {
@@ -11,6 +13,7 @@
         align-items: center;
         white-space: nowrap;
         $background-color: #1c2736;
+
         background-color: $background-color;
 
         &--collapsible {

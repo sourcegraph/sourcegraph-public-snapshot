@@ -11,7 +11,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    height: 100vh;
     width: 100%;
 
     &__nav {
@@ -22,16 +21,19 @@
         justify-content: flex-end;
         align-items: center;
         padding: 0 1rem;
+
         &-link {
             display: inline-block;
             text-decoration: none;
             margin-left: 1rem;
         }
+
         &-auth {
             display: flex;
             align-items: center;
             margin: 0 1rem;
         }
+
         .avatar {
             height: 2rem;
             width: 2rem;
@@ -59,10 +61,12 @@
     &__input-sub-container {
         width: 100%;
         display: flex;
-        & > *:not(:first-child) {
+
+        > *:not(:first-child) {
             margin-left: 0.35rem;
         }
     }
+
     &__input-sub-container {
         justify-content: space-between;
     }
@@ -70,9 +74,11 @@
     .query-input2__input {
         padding: 0.25rem 0.5rem;
     }
+
     .search-button2 {
         font-weight: bold;
     }
+
     .search2-help {
         margin-top: 0.25rem;
         margin-right: 0.25rem;

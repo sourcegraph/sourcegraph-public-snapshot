@@ -47,10 +47,12 @@ $media-xl: 1200px;
     width: 0.5rem;
     height: 0.5rem;
 }
+
 ::-webkit-scrollbar-corner,
 ::-webkit-scrollbar-track {
     background-color: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
     background-color: #2a3a51;
 }
@@ -64,7 +66,6 @@ html {
 body {
     height: 100vh;
     display: flex;
-
     background-color: $color-page-background;
     color: $color-text;
     // Actual base font size
@@ -74,6 +75,7 @@ body {
 }
 
 // React root element
+// stylelint-disable-next-line selector-max-id
 #root {
     display: flex;
     width: 100%;
@@ -102,35 +104,48 @@ body {
     width: 100%;
     flex-direction: column;
     align-items: center;
+
     &__app-router-container {
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
+
         &--restricted {
             padding: 0 2.5rem;
+
             @media (max-width: $media-md) {
                 width: 100%;
                 padding: 0;
             }
+
             @media (min-width: $media-md) {
+                // stylelint-disable-next-line declaration-property-unit-whitelist
                 width: 720px;
             }
+
             @media (max-width: $media-lg) {
                 width: 100%;
                 padding: 0;
             }
+
             @media (min-width: $media-lg) {
+                // stylelint-disable-next-line declaration-property-unit-whitelist
                 width: 960px;
             }
+
             @media (min-width: $media-xl) {
+                // stylelint-disable-next-line declaration-property-unit-whitelist
                 width: 1140px;
             }
         }
+
         &--full-width {
             padding: 0 5rem;
+
             @media (max-width: $media-md) {
                 padding: 0;
             }
+
             width: 100%;
         }
     }
@@ -142,9 +157,13 @@ body {
     // Center SVG inside the container
     display: inline-flex;
     align-items: center;
+
     svg {
+        // TODO find a better way to scale icons that is not proportional to the font size
         // 14px font size -> 24px icon size
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         width: 1.7142857143em;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         height: 1.7142857143em;
         // Match color of the text
         fill: currentColor;
@@ -183,6 +202,7 @@ a {
     color: #93a9c8;
     transition: color 100ms ease-out;
     text-decoration: none;
+
     &:hover {
         text-decoration: none;
         color: white;
@@ -190,7 +210,7 @@ a {
 }
 
 h1 {
-    font-size: 1.5rem;
+    font-size: 48px;
     line-height: 2rem;
     margin: 0 0 1rem;
 }
@@ -211,10 +231,12 @@ h1 {
     cursor: pointer;
     transition: all 100ms ease-out;
     outline: none;
+
     &:focus:not(:disabled) {
         outline: none;
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
+
     &:disabled {
         opacity: 0.65;
     }
@@ -234,9 +256,11 @@ h1 {
     align-items: center;
     border: none;
     cursor: pointer;
+
     .icon {
         @extend .icon-inline;
     }
+
     &:hover:not(:disabled) {
         color: white;
     }
@@ -244,9 +268,11 @@ h1 {
 
 .btn-primary {
     background: $color-primary;
+
     &:hover:not(:disabled) {
         background: darken($color-primary, 5%);
     }
+
     &:focus:not(:disabled) {
         outline: darken($color-primary, 5%);
     }
@@ -268,32 +294,38 @@ h1 {
 .ui-text-box {
     background-color: #0e121b;
     border: 1px solid #2b3750;
-    color: #ffffff;
+    color: white;
     font-size: inherit;
     border-radius: 2px;
     padding: 0.5rem 1rem;
     outline: none;
     transition: all 100ms ease-out;
     width: 100%;
+
     &::placeholder {
         color: $color-secondary;
     }
+
     &:focus {
         border-color: $color-primary;
     }
+
     &:disabled {
         cursor: not-allowed;
         background-color: #1d2535;
         color: #a2b0cd;
     }
+
     &:valid,
     &:placeholder-shown {
         + .invalid-feedback {
             display: none;
         }
     }
+
     &:invalid:not(:placeholder-shown) {
         border-color: $color-error;
+
         + .invalid-feedback {
             display: block;
         }
@@ -376,7 +408,7 @@ h1 {
         &-id {
             font-family: 'Menlo';
             background-color: rgb(36, 49, 66);
-            padding: 0.3em;
+            padding: 0.3rem;
             border-radius: 2px;
         }
 
@@ -387,9 +419,9 @@ h1 {
         }
 
         &-text {
-            margin-top: 1em;
+            margin-top: 1rem;
             background-color: #233043;
-            padding: 1em;
+            padding: 1rem;
         }
     }
 }
@@ -397,11 +429,13 @@ h1 {
 .alert {
     border-radius: 0.25rem;
     padding: 0.5rem;
+
     &-success {
         border: 1px solid #37b24d;
         background: rgba(43, 138, 62, 0.5);
         color: #f2f4f8;
     }
+
     &-danger {
         border: 1px solid #f03e3e;
         background: rgba(201, 42, 42, 0.5);

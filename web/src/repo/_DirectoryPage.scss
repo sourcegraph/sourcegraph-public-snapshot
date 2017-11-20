@@ -8,17 +8,12 @@
         display: flex;
         align-items: center;
         font-weight: normal;
-        margin-bottom: 0px;
-
-        .icon-inline {
-            width: 1.35em;
-            height: 1.35em;
-        }
+        margin-bottom: 0;
     }
 
     &__empty-cell {
-        padding: 0px !important;
-        margin: 0px;
+        padding: 0 !important;
+        margin: 0;
     }
 
     &__head-commit-spacer-cell {
@@ -48,7 +43,7 @@
         }
 
         .avatar-icon {
-            height: 24px;
+            height: 1.5rem;
             clip-path: circle(11px at 12px 12px);
             margin-right: 0.75rem;
         }

@@ -23,21 +23,17 @@
       "type": "npm",
       "script": "stylelint",
       "problemMatcher": {
-        "fileLocation": ["relative", "${workspaceRoot}"],
         "owner": "stylelint",
-        "severity": "error",
+        "applyTo": "closedDocuments",
+        "fileLocation": "absolute",
         "pattern": [
           {
-            "regexp": "^(.+\\.scss)$",
-            "file": 1
-          },
-          {
-            "regexp": "^\\s*(\\d+):(\\d+)\\s+✖\\s+(.+)\\s+(.+)$",
-            "line": 1,
-            "column": 2,
-            "message": 3,
-            "code": 4,
-            "loop": true
+            "regexp": "^(.+): line (\\d+), col (\\d+), (\\w+) - (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "severity": 4,
+            "message": 5
           }
         ]
       }

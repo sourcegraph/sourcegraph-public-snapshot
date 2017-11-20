@@ -9,25 +9,30 @@
     &__message {
         margin-bottom: 1.25rem;
     }
+
     &__title {
-        font-size: 1.2rem;
+        font-size: 1.2em;
         margin-bottom: 0;
     }
+
     &__description {
-        font-size: 0.8rem;
+        font-size: 0.8em;
         color: #93a9c8;
     }
 
     &__proposed-queries {
         list-style: none;
     }
+
     &__proposed-query {
         margin-top: 1.1rem;
+
         &-did-you-mean {
             font-weight: bold;
         }
+
         &-description {
-            font-size: 0.8rem;
+            font-size: 0.8em;
         }
     }
 }

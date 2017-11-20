@@ -12,11 +12,13 @@
         flex: 0 0 auto;
         width: 2rem;
         height: 2rem;
+
         .icon,
         .logo-icon {
             width: 2rem;
             height: 2rem;
         }
+
         .icon {
             fill: currentColor;
         }
@@ -24,7 +26,7 @@
 
     &__contents {
         flex: 1 1 auto;
-        margin: 0rem 1rem;
+        margin: 0 1rem;
         display: flex;
         flex-direction: column;
         max-width: 400px;

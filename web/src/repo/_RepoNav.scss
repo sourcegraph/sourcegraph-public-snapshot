@@ -28,6 +28,7 @@
 
         &-text {
             margin-left: 0.5rem;
+
             @media (max-width: $media-md) {
                 display: none;
             }

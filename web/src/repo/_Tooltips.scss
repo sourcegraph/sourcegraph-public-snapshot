@@ -16,8 +16,8 @@
         flex: 1;
         font-family: 'Menlo';
         word-wrap: break-word;
-        margin-left: 0px;
-        padding: 0px;
+        margin-left: 0;
+        padding: 0;
     }
 
     &__divider {
@@ -30,8 +30,8 @@
         padding: 0.5rem;
         max-height: 150px;
         overflow: auto;
-        margin-bottom: 0px;
 
+        margin-bottom: 0;
         font-family: system;
         border-bottom: 1px solid #2a3a51;
 
@@ -51,7 +51,7 @@
         cursor: pointer;
         text-decoration: none;
         padding: 0.5rem;
-        color: #ffffff;
+        color: white;
 
         &:not(:last-child) {
             border-right: 1px solid #2a3a51;
@@ -64,18 +64,19 @@
 
     &__more-actions {
         font-style: italic;
-        color: #ffffff;
+        color: white;
         padding: 0.5rem;
         font-family: system;
     }
 
     &__close-icon {
         cursor: pointer;
-        margin-left: 10px;
+        margin-left: 0.75rem;
 
         &:hover {
-            color: #ffffff;
+            color: white;
         }
+
         svg {
             fill: currentColor;
         }
@@ -87,10 +88,10 @@
     }
 
     &__definition-icon {
-        margin-right: 12px;
+        margin-right: 0.75rem;
     }
 
     &__references-icon {
-        margin-right: 12px;
+        margin-right: 0.75rem;
     }
 }

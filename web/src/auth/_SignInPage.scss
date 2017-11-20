@@ -11,6 +11,7 @@
         a:not(:hover) {
             color: $color-primary;
         }
+
         margin-top: 1rem;
     }
 }
@@ -26,12 +27,13 @@
     &__mode {
         font-size: inherit;
         cursor: pointer;
+
         &:hover {
-            color: #ffffff;
+            color: white;
         }
 
         &--active {
-            color: #ffffff;
+            color: white;
         }
     }
 
