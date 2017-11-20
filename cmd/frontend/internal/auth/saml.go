@@ -129,10 +129,9 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 			login = email
 		}
 
-		var err2 error
-		login, err2 = NormalizeUsername(login)
-		if err2 != nil {
-			return nil, err2
+		login, err = NormalizeUsername(login)
+		if err != nil {
+			return nil, err
 		}
 
 		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, idpID, nil)
