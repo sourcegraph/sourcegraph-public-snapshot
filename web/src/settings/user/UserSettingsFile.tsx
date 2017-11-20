@@ -18,12 +18,14 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-file-container">
-                <h3>Current user configuration</h3>
-                {this.props.settings && this.props.settings.configuration.highlighted ? (
-                    <SettingsFile settings={this.props.settings} onDidCommit={this.onDidCommit} />
-                ) : (
-                    <p className="form-text">No user configuration settings exist yet.</p>
-                )}
+                <h3>Configuration</h3>
+                <SettingsFile settings={this.props.settings} onDidCommit={this.onDidCommit} />
+                <small className="form-text">
+                    Documentation:{' '}
+                    <a target="_blank" href="https://about.sourcegraph.com/docs/search#scope">
+                        Customizing search scopes
+                    </a>
+                </small>
             </div>
         )
     }

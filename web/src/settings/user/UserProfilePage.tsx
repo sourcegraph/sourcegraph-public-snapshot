@@ -181,8 +181,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                     )}
                 </form>
 
-                {this.state.user &&
-                    this.state.user.latestSettings && <UserSettingsFile settings={this.state.user.latestSettings} />}
+                {this.state.user && <UserSettingsFile settings={this.state.user.latestSettings} />}
             </div>
         )
     }

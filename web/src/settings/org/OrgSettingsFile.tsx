@@ -23,37 +23,33 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-file-container">
-                <h3>Editor settings</h3>
-                {this.props.settings &&
-                    this.props.settings.configuration.highlighted && [
-                        <SettingsFile
-                            key={0}
-                            settings={this.props.settings}
-                            commitError={this.state.commitError}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            onDidCommit={(lastKnownSettingsID: number | null, contents: string) =>
-                                updateOrgSettings(this.props.orgID, lastKnownSettingsID, contents)
-                                    .pipe(tap(this.props.onDidCommit))
-                                    .subscribe(
-                                        () => this.setState({ commitError: undefined }),
-                                        err => {
-                                            this.setState({ commitError: err })
-                                            console.error(err)
-                                        }
-                                    )
-                            }
-                        />,
-                        <small key={1} className="form-text">
-                            Run the 'Preferences: Open Organization Settings' command inside of Sourcegraph Editor to
-                            change this configuration.
-                        </small>,
-                    ]}
-                {!this.props.settings && (
-                    <p className="form-text">
-                        This organization hasn't created a configuration file yet. Run the 'Preferences: Open
-                        Organization Settings' command inside of Sourcegraph Editor to create one.
-                    </p>
-                )}
+                <h3>Configuration</h3>
+                <SettingsFile
+                    settings={this.props.settings}
+                    commitError={this.state.commitError}
+                    onDidCommit={(lastKnownSettingsID: number | null, contents: string) =>
+                        updateOrgSettings(this.props.orgID, lastKnownSettingsID, contents) // tslint:disable-next-line:jsx-no-lambda
+                            .pipe(tap(this.props.onDidCommit))
+                            .subscribe(
+                                () => this.setState({ commitError: undefined }),
+                                err => {
+                                    this.setState({ commitError: err })
+                                    console.error(err)
+                                }
+                            )
+                    }
+                />
+                <small className="form-text">
+                    Documentation:{' '}
+                    <a target="_blank" href="https://about.sourcegraph.com/docs/search#scope">
+                        Customizing search scopes for org members
+                    </a>
+                </small>
+                <small className="form-text">
+                    This configuration applies to all org members and takes effect in Sourcegraph Editor and on the web.
+                    You can also run the 'Preferences: Open Organization Settings' command inside of Sourcegraph Editor
+                    to change this configuration.
+                </small>
             </div>
         )
     }
