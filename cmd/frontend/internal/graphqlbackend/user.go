@@ -111,6 +111,7 @@ func (r *userResolver) HasSourcegraphUser() bool {
 	return true
 }
 
+// CreateUser creates a new native auth (non-SSO) user.
 func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	Username    string
 	DisplayName string
