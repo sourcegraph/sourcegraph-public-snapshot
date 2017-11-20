@@ -137,6 +137,7 @@ type Root {
   symbols(id: String!, mode: String!): [Symbol!]!
   currentUser: User
   isUsernameAvailable(username: String!): Boolean!
+  configuration: ConfigurationCascade!
   search2(query: String = "", scopeQuery: String = ""): Search2
   searchScopes2: [SearchScope2!]!
   repoGroups: [RepoGroup!]!
@@ -618,7 +619,29 @@ type ThreadConnection {
 
 # ConfigurationSubject is something that can have configuration.
 interface ConfigurationSubject {
+  # TODO(sqs): To add this field, which is useful for some callers who want to know
+  # where a given configuration is coming from, we'll need to execute the migration
+  # mentioned in commit 2ac372aa2773080dc3d077beb056e9513e64bf67 to make User have
+  # an 'id: ID!' field. This is not a blocker, however, because callers can still
+  # determine where the configuration is coming from by using fragments on the
+  # queries for types that satisfy this interface (User and Org).
+  #
+  # id: ID!
   latestSettings: Settings
+}
+
+# The configurations for all of the relevant configuration subjects, plus the merged
+# configuration.
+type ConfigurationCascade {
+  # The default settings, which are applied first and the lowest priority behind
+  # all configuration subjects' settings.
+  defaults: Configuration
+  # The configurations for all of the subjects that are applied for the currently
+  # authenticated user. For example, a user in 2 orgs would have the following
+  # configuration subjects: org 1, org 2, and the user.
+  subjects: [ConfigurationSubject!]!
+  # The effective configuration, merged from all of the subjects.
+  merged: Configuration!
 }
 
 # Settings is a version of a configuration settings file.
