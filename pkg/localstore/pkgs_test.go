@@ -16,7 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-func TestPkgs_update(t *testing.T) {
+func TestPkgs_update_delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -29,6 +29,7 @@ func TestPkgs_update(t *testing.T) {
 		}},
 	}}
 
+	t.Log("update")
 	if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		if err := Pkgs.update(ctx, tx, 1, "go", pks); err != nil {
 			return err
@@ -37,7 +38,6 @@ func TestPkgs_update(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-
 	expPkgs := []sourcegraph.PackageInfo{{
 		RepoID: 1,
 		Lang:   "go",
@@ -49,6 +49,30 @@ func TestPkgs_update(t *testing.T) {
 	}
 	if !reflect.DeepEqual(gotPkgs, expPkgs) {
 		t.Errorf("got %+v, expected %+v", gotPkgs, expPkgs)
+	}
+
+	t.Log("delete nothing")
+	if err := Pkgs.Delete(ctx, 0); err != nil {
+		t.Fatal(err)
+	}
+	gotPkgs, err = Pkgs.getAll(ctx, globalDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotPkgs, expPkgs) {
+		t.Errorf("got %+v, expected %+v", gotPkgs, expPkgs)
+	}
+
+	t.Log("delete")
+	if err := Pkgs.Delete(ctx, 1); err != nil {
+		t.Fatal(err)
+	}
+	gotPkgs, err = Pkgs.getAll(ctx, globalDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gotPkgs) > 0 {
+		t.Errorf("expected all pkgs corresponding to repo %d deleted, but got %+v", 1, gotPkgs)
 	}
 }
 

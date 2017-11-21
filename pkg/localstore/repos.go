@@ -495,9 +495,19 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 	return nil, nil, nil, nil, nil
 }
 
+// Delete deletes the repository row from the repo table. It will also delete any rows in the GlobalDeps and Pkgs stores
+// that reference the deleted repository row.
 func (s *repos) Delete(ctx context.Context, repo int32) error {
 	if Mocks.Repos.Delete != nil {
 		return Mocks.Repos.Delete(ctx, repo)
+	}
+
+	// Delete entries in pkgs and global_dep tables that correspond to the repo first
+	if err := GlobalDeps.Delete(ctx, repo); err != nil {
+		return err
+	}
+	if err := Pkgs.Delete(ctx, repo); err != nil {
+		return err
 	}
 
 	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)

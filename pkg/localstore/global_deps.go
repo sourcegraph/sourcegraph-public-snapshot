@@ -729,3 +729,11 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	span.LogEvent("executed final insertion from temp table")
 	return nil
 }
+
+func (g *globalDeps) Delete(ctx context.Context, repo int32) error {
+	if _, err := globalDB.ExecContext(ctx, `DELETE FROM global_dep WHERE repo_id=$1`, repo); err != nil {
+		return err
+	}
+	_, err := globalDB.ExecContext(ctx, `DELETE FROM global_dep_private WHERE repo_id=$1`, repo)
+	return err
+}

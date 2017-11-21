@@ -285,3 +285,8 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 
 	return pks, nil
 }
+
+func (p *pkgs) Delete(ctx context.Context, repo int32) error {
+	_, err := globalDB.ExecContext(ctx, `DELETE FROM pkgs WHERE repo_id=$1`, repo)
+	return err
+}

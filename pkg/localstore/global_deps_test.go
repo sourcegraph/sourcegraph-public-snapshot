@@ -77,7 +77,7 @@ func TestGlobalDeps_TotalRefsExpansion(t *testing.T) {
 
 }
 
-func TestGlobalDeps_update(t *testing.T) {
+func TestGlobalDeps_update_delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -105,6 +105,7 @@ func TestGlobalDeps_update(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Log("update")
 	wantRefs := []*sourcegraph.DependencyReference{{
 		DepData: map[string]interface{}{"name": "dep1", "vendor": true},
 		RepoID:  repoID,
@@ -121,6 +122,40 @@ func TestGlobalDeps_update(t *testing.T) {
 	sort.Sort(sortDepRefs(gotRefs))
 	if !reflect.DeepEqual(gotRefs, wantRefs) {
 		t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
+	}
+
+	t.Log("delete other")
+	if err := GlobalDeps.Delete(ctx, 345345345); err != nil {
+		t.Fatal(err)
+	}
+	gotRefs, err = GlobalDeps.Dependencies(ctx, DependenciesOptions{
+		Language: "go",
+		DepData:  map[string]interface{}{"name": "dep1"},
+		Limit:    20,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sort.Sort(sortDepRefs(wantRefs))
+	sort.Sort(sortDepRefs(gotRefs))
+	if !reflect.DeepEqual(gotRefs, wantRefs) {
+		t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
+	}
+
+	t.Log("delete")
+	if err := GlobalDeps.Delete(ctx, repoID); err != nil {
+		t.Fatal(err)
+	}
+	gotRefs, err = GlobalDeps.Dependencies(ctx, DependenciesOptions{
+		Language: "go",
+		DepData:  map[string]interface{}{"name": "dep1"},
+		Limit:    20,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gotRefs) > 0 {
+		t.Errorf("expected no matching refs, got %+v", gotRefs)
 	}
 }
 
