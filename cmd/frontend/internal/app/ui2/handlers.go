@@ -465,15 +465,23 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	q := r.URL.Query()
-	repo := q.Get("repo")              // e.g. "ssh://git@github.com/sourcegraph/sourcegraph.git"
-	pathStr := q.Get("path")           // e.g. "web/src/comments/CommentsPage.tsx"
-	lineNumber := q.Get("selection")   // e.g. "177"
-	_, fileName := path.Split(pathStr) // "CommentsPage.tsx"
+	repo := q.Get("repo") // always present; e.g. "ssh://git@github.com/sourcegraph/sourcegraph.git"
 
 	// Guess that the repo name is the last repo clone URL path component.
 	repoSplit := strings.Split(repo, "/")
 	repoName := strings.TrimSuffix(repoSplit[len(repoSplit)-1], ".git")
 	repoName = strings.Title(repoName)
+
+	// Generally only present for diff links:
+	// e.g. https://sourcegraph.com/open?repo=git%40github.com%3Asourcegraph%2Fsourcegraph.git&revision=vo%2Flight_theme&baseRevision=master&vcs=git
+	revision := q.Get("revision")         // e.g. "sg/featurebranch"
+	baseRevision := q.Get("baseRevision") // e.g. "master"
+
+	// Generally only present for links to exact file/line number:
+	// e.g. https://about.sourcegraph.com/open/#open?repo=ssh%3A%2F%2Fgit%40github.com%2Fsourcegraph%2Fsourcegraph.git&vcs=git&path=web%2Fsrc%2Fcomments%2FCommentsPage.tsx&selection=177&thread=1300
+	pathStr := q.Get("path")           // e.g. "web/src/comments/CommentsPage.tsx"
+	lineNumber := q.Get("selection")   // e.g. "177"
+	_, fileName := path.Split(pathStr) // "CommentsPage.tsx"
 
 	// Generate metadata for the page.
 	metadata := &Metadata{}
@@ -483,8 +491,13 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 	case strings.Contains(ua, "Twitterbot"):
 		service = "Twitter"
 		// Try it here: https://cards-dev.twitter.com/validator
-		metadata.Title = fmt.Sprintf("%s:%s", ellipsisPath(pathStr, 2), lineNumber)
-		metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
+		if baseRevision == "" {
+			metadata.Title = fmt.Sprintf("%s:%s", ellipsisPath(pathStr, 2), lineNumber)
+			metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
+		} else {
+			metadata.Title = fmt.Sprintf("%s...%s", baseRevision, revision)
+			metadata.Description = fmt.Sprintf("Open Git diff %s...%s (%s) in Sourcegraph Editor", baseRevision, revision, repoName)
+		}
 
 	case strings.Contains(ua, "Slackbot"):
 		service = "Slack"
@@ -499,8 +512,13 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 		fallthrough
 
 	default:
-		metadata.Title = fmt.Sprintf("%s:%s - %s", pathStr, lineNumber, repoName)
-		metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
+		if baseRevision == "" {
+			metadata.Title = fmt.Sprintf("%s:%s - %s", pathStr, lineNumber, repoName)
+			metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
+		} else {
+			metadata.Title = fmt.Sprintf("%s...%s - %s", baseRevision, revision, repoName)
+			metadata.Description = fmt.Sprintf("Open Git diff %s...%s (%s) in Sourcegraph Editor", baseRevision, revision, repoName)
+		}
 	}
 	common.Metadata = metadata
 
