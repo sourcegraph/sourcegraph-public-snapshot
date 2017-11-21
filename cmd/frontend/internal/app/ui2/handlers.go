@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/eventlogger"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -406,8 +407,10 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 
 	metadata := &Metadata{}
 	ua := r.Header.Get("User-Agent")
+	service := ""
 	switch {
 	case strings.Contains(ua, "Slackbot"):
+		service = "Slack"
 		// Note the HTML escape here is not for security -- but rather for
 		// Slack's quite strange behavior which requires double escaping to get
 		// proper rendering of e.g. &lt; and &gt; brackets.
@@ -421,10 +424,12 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		metadata.Description = description
 
 	case strings.Contains(ua, "Twitterbot"):
+		service = "Twitter"
 		// Try it here: https://cards-dev.twitter.com/validator
 		fallthrough
 
 	case strings.Contains(ua, "facebook"):
+		service = "Facebook"
 		// Try it here: https://developers.facebook.com/tools/debug/sharing/
 		//
 		// Note: ngrok often blocks Facebook's crawlers for some reason (https://developers.facebook.com/bugs/824028317765435/).
@@ -436,6 +441,15 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		metadata.Description = description
 	}
 	common.Metadata = metadata
+
+	if service != "" {
+		// Link unfurled by some service in specific (i.e. not just some user
+		// visiting this link in their browser)
+		err := eventlogger.EventLogger.LogEvent(nil, "CommentUnfurled", map[string]string{"unfurl_service": service})
+		if err != nil {
+			log15.Warn("failed to log link unfurl event", "error", err)
+		}
+	}
 
 	common.Title = fmt.Sprintf("%s - Sourcegraph", title)
 	return renderTemplate(w, "app.html", common)
@@ -464,16 +478,20 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 	// Generate metadata for the page.
 	metadata := &Metadata{}
 	ua := r.Header.Get("User-Agent")
+	service := ""
 	switch {
 	case strings.Contains(ua, "Twitterbot"):
+		service = "Twitter"
 		// Try it here: https://cards-dev.twitter.com/validator
 		metadata.Title = fmt.Sprintf("%s:%s", ellipsisPath(pathStr, 2), lineNumber)
 		metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
 
 	case strings.Contains(ua, "Slackbot"):
+		service = "Slack"
 		fallthrough
 
 	case strings.Contains(ua, "facebook"):
+		service = "Facebook"
 		// Try it here: https://developers.facebook.com/tools/debug/sharing/
 		//
 		// Note: ngrok often blocks Facebook's crawlers for some reason (https://developers.facebook.com/bugs/824028317765435/).
@@ -485,6 +503,15 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 		metadata.Description = fmt.Sprintf("Open %s:%s (%s) in Sourcegraph Editor", fileName, lineNumber, repoName)
 	}
 	common.Metadata = metadata
+
+	if service != "" {
+		// Link unfurled by some service in specific (i.e. not just some user
+		// visiting this link in their browser)
+		err := eventlogger.EventLogger.LogEvent(nil, "DeepLinkUnfurled", map[string]string{"unfurl_service": service})
+		if err != nil {
+			log15.Warn("failed to log link unfurl event", "error", err)
+		}
+	}
 
 	return renderTemplate(w, "app.html", common)
 }
