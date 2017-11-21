@@ -569,7 +569,7 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	var whereConds []string
 
 	if op.Language != "" {
-		whereConds = append(whereConds, `language=`+arg(op.Language))
+		whereConds = append(whereConds, `gd.language=`+arg(op.Language))
 	}
 
 	if op.DepData != nil {
@@ -602,7 +602,7 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	}
 
 	selectSQL := `SELECT dep_data, repo_id, hints`
-	fromSQL := `FROM ` + table
+	fromSQL := `FROM ` + table + ` AS gd INNER JOIN repo AS r ON gd.repo_id=r.id`
 	whereSQL := ""
 	if len(whereConds) > 0 {
 		whereSQL = `WHERE ` + strings.Join(whereConds, " AND ")
