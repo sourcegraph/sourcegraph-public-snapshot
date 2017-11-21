@@ -181,12 +181,15 @@ export class UserProfilePage extends React.Component<Props, State> {
                     )}
                 </form>
 
-                {this.state.user && (
-                    <UserSettingsFile
-                        settings={this.state.user.latestSettings}
-                        userInEditorBeta={this.state.user.tags.some(tag => tag.name === 'editor-beta')}
-                    />
-                )}
+                {!this.requireBackfill() &&
+                    this.state.user && (
+                        <UserSettingsFile
+                            settings={this.state.user.latestSettings}
+                            userInEditorBeta={
+                                this.state.user.tags && this.state.user.tags.some(tag => tag.name === 'editor-beta')
+                            }
+                        />
+                    )}
             </div>
         )
     }
