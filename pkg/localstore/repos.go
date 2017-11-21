@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
-	"regexp"
 	regexpsyntax "regexp/syntax"
 	"strconv"
 	"strings"
@@ -23,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
-var autoRepoWhitelist []*regexp.Regexp
 var autoRepoAdd, _ = strconv.ParseBool(env.Get("AUTO_REPO_ADD", "false", "when true, automatically add/clone reposotiries if they are requested but do not currently exist in the DB"))
 var publicRepoRedirectEnabled, _ = strconv.ParseBool(env.Get("PUBLIC_REPO_REDIRECTS", "true", "when true, automatically redirect public repos that do not exists on this server to sourcegraph.com"))
 
@@ -34,16 +31,6 @@ type ErrRepoSeeOther struct {
 
 func (e ErrRepoSeeOther) Error() string {
 	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
-}
-
-func init() {
-	for _, pattern := range strings.Fields(env.Get("AUTO_REPO_WHITELIST", ".+", "whitelist of repositories that will be automatically added to the DB when opened (space-separated list of lower-case regular expressions)")) {
-		expr, err := regexp.Compile("^" + pattern + "$")
-		if err != nil {
-			log.Fatalf("invalid regular expression %q in AUTO_REPO_WHITELIST: %s", pattern, err)
-		}
-		autoRepoWhitelist = append(autoRepoWhitelist, expr)
-	}
 }
 
 // repos is a DB-backed implementation of the Repos
@@ -94,18 +81,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil && autoRepoAdd {
-		whitelisted := false
-		for _, expr := range autoRepoWhitelist {
-			if expr.MatchString(strings.ToLower(uri)) {
-				whitelisted = true
-				break
-			}
-		}
-		if !whitelisted {
-			return nil, err
-		}
-
-		// Auto-add repository if possible
 		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
 			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
 				return ghRepo, nil
