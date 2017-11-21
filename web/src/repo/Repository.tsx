@@ -194,7 +194,7 @@ export class Repository extends React.PureComponent<Props, State> {
     public componentWillReceiveProps(nextProps: Props): void {
         this.componentUpdates.next(nextProps)
 
-        const thisHash = parseHash(nextProps.location.hash)
+        const thisHash = parseHash(this.props.location.hash)
         const nextHash = parseHash(nextProps.location.hash)
         const showRefs = nextHash.modal === 'references'
         const position = nextHash.line ? { line: nextHash.line, character: nextHash.character || 0 } : undefined
