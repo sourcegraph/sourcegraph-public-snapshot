@@ -92,6 +92,9 @@ func (r *userResolver) UpdatedAt() *string {
 }
 
 func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+	if r.user == nil {
+		return nil, nil
+	}
 	settings, err := store.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{User: &r.user.ID})
 	if err != nil {
 		return nil, err
