@@ -49,22 +49,20 @@ export interface ResolvedRev {
 export const resolveRev = memoizeObservable(
     (ctx: { repoPath: string; rev?: string }): Observable<ResolvedRev> =>
         queryGraphQL(
-            `
-        query ResolveRev($repoPath: String, $rev: String) {
-            root {
-                repository(uri: $repoPath) {
-                    commit(rev: $rev) {
-                        cloneInProgress,
-                        commit {
-                            sha1
+            `query ResolveRev($repoPath: String, $rev: String) {
+                root {
+                    repository(uri: $repoPath) {
+                        commit(rev: $rev) {
+                            cloneInProgress,
+                            commit {
+                                sha1
+                            }
                         }
+                        defaultBranch
+                        redirectURL
                     }
-                    defaultBranch
-                    redirectURL
                 }
-            }
-        }
-    `,
+            }`,
             { ...ctx, rev: ctx.rev || '' }
         ).pipe(
             map(result => {
@@ -108,22 +106,22 @@ export const fetchHighlightedFile = memoizeObservable(
     (ctx: FetchFileCtx): Observable<HighlightedFileResult> =>
         queryGraphQL(
             `query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean) {
-        root {
-            repository(uri: $repoPath) {
-                commit(rev: $commitID) {
-                    commit {
-                        file(path: $filePath) {
-                            isDirectory
-                            highlight(disableTimeout: $disableTimeout) {
-                                aborted
-                                html
+                root {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                file(path: $filePath) {
+                                    isDirectory
+                                    highlight(disableTimeout: $disableTimeout) {
+                                        aborted
+                                        html
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-        }
-    }`,
+            }`,
             ctx
         ).pipe(
             map(result => {
@@ -177,20 +175,20 @@ export const listAllFiles = memoizeObservable(
     (ctx: { repoPath: string; commitID: string }): Observable<string[]> =>
         queryGraphQL(
             `query FileTree($repoPath: String!, $commitID: String!) {
-        root {
-            repository(uri: $repoPath) {
-                commit(rev: $commitID) {
-                    commit {
-                        tree(recursive: true) {
-                            files {
-                                name
+                root {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                tree(recursive: true) {
+                                    files {
+                                        name
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-        }
-    }`,
+            }`,
             ctx
         ).pipe(
             map(result => {
@@ -219,19 +217,19 @@ export const fetchBlobContent = memoizeObservable(
     (ctx: FetchFileCtx): Observable<BlobContent> =>
         queryGraphQL(
             `query BlobContent($repoPath: String, $commitID: String, $filePath: String) {
-        root {
-            repository(uri: $repoPath) {
-                commit(rev: $commitID) {
-                    commit {
-                        file(path: $filePath) {
-                            isDirectory
-                            content
+                root {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                file(path: $filePath) {
+                                    isDirectory
+                                    content
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-    }`,
+            }`,
             ctx
         ).pipe(
             map(result => {
@@ -261,13 +259,13 @@ export const fetchRepoRevisions = memoizeObservable(
     (ctx: { repoPath: string }): Observable<RepoRevisions> =>
         queryGraphQL(
             `query RepoRevisions($repoPath: String) {
-        root {
-            repository(uri: $repoPath) {
-                branches
-                tags
-            }
-        }
-    }`,
+                root {
+                    repository(uri: $repoPath) {
+                        branches
+                        tags
+                    }
+                }
+            }`,
             ctx
         ).pipe(
             map(result => {
@@ -294,13 +292,13 @@ export const fetchPhabricatorRepo = memoizeObservable(
     (ctx: { repoPath: string }): Observable<GQL.IPhabricatorRepo | null> =>
         queryGraphQL(
             `query PhabricatorRepo($repoPath: String) {
-        root {
-            phabricatorRepo(uri: $repoPath) {
-                callsign
-                uri
-            }
-        }
-    }`,
+                root {
+                    phabricatorRepo(uri: $repoPath) {
+                        callsign
+                        uri
+                    }
+                }
+            }`,
             ctx
         ).pipe(
             map(result => {
@@ -317,23 +315,23 @@ export const fetchDirTree = memoizeObservable(
     (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ITree> =>
         queryGraphQL(
             `query fetchDirectoryTree($repoPath: String, $commitID: String, $filePath: String) {
-        root {
-            repository(uri: $repoPath) {
-                commit(rev: $commitID) {
-                    commit {
-                        tree(path: $filePath) {
-                            directories {
-                                name
-                            }
-                            files {
-                                name
+                root {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                tree(path: $filePath) {
+                                    directories {
+                                        name
+                                    }
+                                    files {
+                                        name
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-        }
-    }`,
+            }`,
             ctx
         ).pipe(
             map(result => {
@@ -360,28 +358,28 @@ export const fetchFileCommitInfo = memoizeObservable(
     (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ICommitInfo> =>
         queryGraphQL(
             `query fetchFileCommitInfo($repoPath: String, $commitID: String, $filePath: String) {
-            root {
-                repository(uri: $repoPath) {
-                    commit(rev: $commitID) {
-                        commit {
-                            file(path: $filePath) {
-                                lastCommit {
-                                    rev
-                                    message
-                                    committer {
-                                        person {
-                                            name
-                                            avatarURL
+                root {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                file(path: $filePath) {
+                                    lastCommit {
+                                        rev
+                                        message
+                                        committer {
+                                            person {
+                                                name
+                                                avatarURL
+                                            }
+                                            date
                                         }
-                                        date
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-        }`,
+            }`,
             ctx
         ).pipe(
             map(result => {
@@ -403,4 +401,32 @@ export const fetchFileCommitInfo = memoizeObservable(
             })
         ),
     makeRepoURI
+)
+
+export const fetchRepositories = memoizeObservable(
+    (ctx: { query: string }): Observable<GQL.IRepository[]> =>
+        queryGraphQL(
+            `query fetchRepositories($query: String) {
+                root {
+                    repositories(query: $query) {
+                        uri
+                        description
+                        private
+                    }
+                }
+            }`,
+            ctx
+        ).pipe(
+            map(result => {
+                if (result.errors) {
+                    const errors = result.errors.map(e => e.message).join(', ')
+                    throw new Error(errors)
+                }
+                if (!result.data || !result.data.root || !result.data.root.repositories) {
+                    throw new Error(`cannot locate file commit info.`)
+                }
+                return result.data.root.repositories
+            })
+        ),
+    ctx => ctx.query
 )

@@ -5,6 +5,7 @@ import { SignInPage } from './auth/SignInPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { LicenseInvalidPage } from './LicenseInvalidPage'
 import { OpenPage } from './open/OpenPage'
+import { RepoBrowser } from './repo/RepoBrowser'
 import { RepositoryResolver } from './repo/RepositoryResolver'
 import { SavedQueries } from './search2/SavedQueries'
 import { SearchResults } from './search2/SearchResults'
@@ -77,6 +78,12 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/password-reset',
         component: PasswordResetPage,
+        exact: true,
+        forceNarrowWidth: true,
+    },
+    {
+        path: '/browse',
+        component: RepoBrowser,
         exact: true,
         forceNarrowWidth: true,
     },

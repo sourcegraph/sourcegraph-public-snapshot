@@ -54,6 +54,11 @@ export class NavLinks extends React.Component<Props, State> {
                         About
                     </a>
                 )}
+                {true && (
+                    <Link to="/browse" className="nav-links__link">
+                        Browse
+                    </Link>
+                )}
                 {// if on-prem, never show a user avatar or sign-in button
                 window.context.onPrem ? null : this.state.user ? (
                     <Link className="nav-links__link" to="/settings">

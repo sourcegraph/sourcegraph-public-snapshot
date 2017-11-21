@@ -43,6 +43,7 @@ const (
 	routeSettingsOrgsNew      = "settings.orgs.new"
 	routeSettingsOrgsOrg      = "settings.orgs.org"
 	routePasswordReset        = "password-reset"
+	routeBrowseRepos          = "browse"
 
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
@@ -107,6 +108,7 @@ func newRouter() *mux.Router {
 	r.Path("/settings/orgs/new").Methods("GET").Name(routeSettingsOrgsNew)
 	r.Path("/settings/orgs/{org}").Methods("GET").Name(routeSettingsOrgsOrg)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
+	r.Path("/browse").Methods("GET").Name(routeBrowseRepos)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 
 	// Legacy redirects
@@ -155,6 +157,7 @@ func init() {
 		return fmt.Sprintf("%s - Sourcegraph", mux.Vars(r)["org"])
 	})))
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
+	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
 
 	// Legacy redirects
 	if !envvar.DeploymentOnPrem() {
