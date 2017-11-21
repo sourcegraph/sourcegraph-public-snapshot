@@ -239,6 +239,7 @@ export class RevSwitcher extends React.PureComponent<Props, State> {
                         onFocus={this.onInputFocus}
                         onKeyDown={this.onInputKeyDown}
                         value={this.state.query}
+                        title={this.state.query}
                         disabled={this.props.disabled}
                         ref={ref => (this.inputElement = ref || undefined)}
                     />
