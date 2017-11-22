@@ -1,3 +1,4 @@
+import ActivityIcon from '@sourcegraph/icons/lib/Activity'
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import ChartIcon from '@sourcegraph/icons/lib/Chart'
 import CityIcon from '@sourcegraph/icons/lib/City'
@@ -154,6 +155,21 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </li>
                         </ul>
                     )}
+
+                    {window.context.user &&
+                        window.context.user.IsAdmin && (
+                            <ul>
+                                <li className="settings-sidebar__item">
+                                    <NavLink
+                                        to={`/settings/admin/`}
+                                        className="settings-sidebar__item-link"
+                                        activeClassName="settings-sidebar__item--active"
+                                    >
+                                        <ActivityIcon className="icon-inline settings-sidebar__item-icon" />Admin
+                                    </NavLink>
+                                </li>
+                            </ul>
+                        )}
                     <li className="settings-sidebar__item">
                         <a
                             href="/-/sign-out"

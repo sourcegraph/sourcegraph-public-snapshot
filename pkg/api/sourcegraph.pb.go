@@ -521,3 +521,16 @@ type PhabricatorRepo struct {
 	URI      string `json:"URI"`
 	Callsign string `json:"Callsign"`
 }
+
+type UserActivity struct {
+	ID            int32
+	UserID        int32
+	PageViews     int32
+	SearchQueries int32
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+type UserList struct {
+	Users []*User
+}

@@ -37,6 +37,7 @@ const (
 	routeSignUp               = "sign-up"
 	routeSettings             = "settings"
 	routeSettingsAcceptInvite = "settings.accept-invite"
+	routeSettingsAdmin        = "settings.admin"
 	routeSettingsEditorAuth   = "settings.editor-auth"
 	routeSettingsOrgsNew      = "settings.orgs.new"
 	routeSettingsOrgsOrg      = "settings.orgs.org"
@@ -99,6 +100,7 @@ func newRouter() *mux.Router {
 	r.Path("/sign-up").Methods("GET").Name(routeSignUp)
 	r.Path("/settings").Methods("GET").Name(routeSettings)
 	r.Path("/settings/accept-invite").Methods("GET").Name(routeSettingsAcceptInvite)
+	r.Path("/settings/admin").Methods("GET").Name(routeSettingsAdmin)
 	r.Path("/settings/editor-auth").Methods("GET").Name(routeSettingsEditorAuth)
 	r.Path("/settings/orgs/new").Methods("GET").Name(routeSettingsOrgsNew)
 	r.Path("/settings/orgs/{org}").Methods("GET").Name(routeSettingsOrgsOrg)
@@ -143,6 +145,7 @@ func init() {
 	router.Get(routeSettingsAcceptInvite).Handler(handler(serveBasicPageWithEmailVerification(func(c *Common, r *http.Request) string {
 		return "Accept invite - Sourcegraph"
 	})))
+	router.Get(routeSettingsAdmin).Handler(handler(serveBasicPageString("Admin page - Sourcegraph")))
 	router.Get(routeSettingsEditorAuth).Handler(handler(serveEditorAuthWithEditorBetaRegistration))
 	router.Get(routeSettingsOrgsNew).Handler(handler(serveBasicPageString("New organization - Sourcegraph")))
 	router.Get(routeSettingsOrgsOrg).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {

@@ -77,7 +77,6 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 				return nil, ErrCannotCreateUser{"err_auth_id_exists"}
 			}
 		}
-
 		return nil, err
 	}
 
@@ -188,6 +187,10 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames 
 	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"), sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
 	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth_id) WHERE %s", sqlf.Join(conds, "AND"))
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (u *users) List(ctx context.Context) ([]*sourcegraph.User, error) {
+	return u.getBySQL(ctx, "")
 }
 
 func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {

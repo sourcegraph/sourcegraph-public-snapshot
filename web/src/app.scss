@@ -441,6 +441,12 @@ h1 {
         background: rgba(201, 42, 42, 0.5);
         color: #f2f4f8;
     }
+
+    &-primary {
+        border: 1px solid #2b3750;
+        background: #1d2535;
+        color: #f2f4f8;
+    }
 }
 
 @import './highlight';

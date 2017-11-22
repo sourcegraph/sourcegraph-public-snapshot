@@ -407,6 +407,38 @@ export function removeUserFromOrg(orgID: string, userID: string): Observable<nev
     )
 }
 
+/*
+* Fetches all users. This is only used for Sourcegraph Server purposes.
+*
+* @return Observable that emits the org or `null` if it doesn't exist
+*/
+export function fetchAllUsers(): Observable<GQL.IUser[] | null> {
+    return queryGraphQL(
+        `
+       query Users {
+           root {
+               users {
+                   id
+                   username
+                   displayName
+                   activity {
+                       searchQueries
+                       pageViews
+                   }
+               }
+           }
+       }
+   `
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.root || !data.root.users) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.root.users
+        })
+    )
+}
+
 /**
  * Sends a GraphQL mutation to update an org
  *
@@ -467,6 +499,27 @@ export function updateOrgSettings(id: string, lastKnownSettingsID: number | null
         }
     `,
         { id, lastKnownSettingsID, contents }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return
+        })
+    )
+}
+
+export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
+    if (!currentUser) {
+        throw new Error('User must be signed in')
+    }
+    return mutateGraphQL(
+        `mutation logUserEvent {
+                logUserEvent(event: $event) {
+                    alwaysNil
+                }
+            }`,
+        { event }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {

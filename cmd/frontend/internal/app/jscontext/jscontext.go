@@ -71,7 +71,8 @@ func init() {
 
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
-	UID string
+	UID     string
+	IsAdmin bool
 }
 
 // JSContext is made available to JavaScript code via the
@@ -103,6 +104,7 @@ type JSContext struct {
 	Auth0Domain          string                     `json:"auth0Domain"`
 	Auth0ClientID        string                     `json:"auth0ClientID"`
 	PhabricatorURL       string                     `json:"phabricatorURL"`
+	License              *license.License           `json:"license"`
 	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
 }
 
@@ -145,7 +147,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	var user *immutableUser
 	if actor.UID != "" && actor != nil {
-		user = &immutableUser{UID: actor.UID}
+		user = &immutableUser{UID: actor.UID, IsAdmin: actor.IsAdmin()}
 	}
 
 	backfill := false
@@ -156,7 +158,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		}
 	}
 
-	_, licenseStatus := license.Get(TrackingAppID)
+	license, licenseStatus := license.Get(TrackingAppID)
 
 	return JSContext{
 		AppURL:               conf.AppURL.String(),
@@ -180,6 +182,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Auth0Domain:          auth0.Domain,
 		Auth0ClientID:        auth0.Config.ClientID,
 		PhabricatorURL:       phabricatorURL,
+		License:              license,
 		LicenseStatus:        licenseStatus,
 	}
 }

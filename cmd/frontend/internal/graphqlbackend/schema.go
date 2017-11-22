@@ -135,6 +135,7 @@ type Mutation {
   # example callsign: "MUX"
   # example uri: "github.com/gorilla/mux"
   addPhabricatorRepo(callsign: String!, uri: String!): EmptyResponse
+  logUserEvent(event: UserEvent!): EmptyResponse
 }
 
 type Root {
@@ -174,6 +175,7 @@ type Root {
     package: String
     limit: Int
   ): [Dependency!]!
+  users: [User!]!
 }
 
 type Search2 {
@@ -539,6 +541,7 @@ type User implements ConfigurationSubject {
   orgMemberships: [OrgMember!]!
   hasSourcegraphUser: Boolean!
   tags: [UserTag!]!
+  activity: UserActivity!
 }
 
 type CompanyProfile {
@@ -757,5 +760,18 @@ type UserTag {
 type OrgTag {
   id: Int!
   name: String!
+}
+
+type UserActivity {
+	id: Int!
+	searchQueries: Int!
+	pageViews: Int!
+	createdAt: String!
+	updatedAt: String!
+}
+
+enum UserEvent {
+	PAGEVIEW
+	SEARCHQUERY
 }
 `

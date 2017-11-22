@@ -68,6 +68,8 @@
 // ../../../migrations/1509599098_add-users-provider-column.up.sql
 // ../../../migrations/1509645961_rename-users-auth0_id-to-uid.down.sql
 // ../../../migrations/1509645961_rename-users-auth0_id-to-uid.up.sql
+// ../../../migrations/1510709195_add_server_user_events_table.down.sql
+// ../../../migrations/1510709195_add_server_user_events_table.up.sql
 // ../../../migrations/1511004249_generalize_org_settings.down.sql
 // ../../../migrations/1511004249_generalize_org_settings.up.sql
 // ../../../migrations/1511011666_add_user_settings.down.sql
@@ -1499,6 +1501,46 @@ func _1509645961_renameUsersAuth0_idToUidUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1510709195_add_server_user_events_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x4f\x4c\x2e\xc9\x2c\xcb\x2c\xa9\xb4\xe6\x02\x04\x00\x00\xff\xff\x5a\x88\xee\x73\x1a\x00\x00\x00")
+
+func _1510709195_add_server_user_events_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1510709195_add_server_user_events_tableDownSql,
+		"1510709195_add_server_user_events_table.down.sql",
+	)
+}
+
+func _1510709195_add_server_user_events_tableDownSql() (*asset, error) {
+	bytes, err := _1510709195_add_server_user_events_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1510709195_add_server_user_events_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1510709195_add_server_user_events_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x90\x41\x4b\xc4\x30\x10\x46\xcf\xcd\xaf\x98\x63\x0b\x3d\x78\xf7\x14\xbb\x53\x0d\xa6\xc9\x9a\x4e\x91\xf5\x52\x42\x3b\xac\x01\x59\xd7\x24\xbb\x8b\xff\x5e\x5a\x04\xc1\x3d\x08\x1e\x67\x78\x0f\x3e\x5e\xe3\x50\x12\x02\xc9\x3b\x8d\x70\x4a\x1c\x47\x3f\xe5\x70\x0e\xf9\x13\x4a\x51\x84\x19\x12\xc7\xe0\xdf\xc0\x58\x02\x33\x68\x0d\x5b\xa7\x3a\xe9\x76\xf0\x88\xbb\x5a\x14\xab\x11\x66\x08\x87\xcc\x7b\x8e\x3f\xd8\x60\xd4\xd3\x80\xb5\x28\x8e\x7e\xcf\xe3\x39\xf0\x25\x5d\x43\x1b\x6c\xe5\xa0\x09\x6e\x6a\x51\x24\xf6\x71\x7a\x1d\x3f\x4e\x1c\x03\xff\xc1\x4e\x91\x7d\xe6\x79\xf4\x19\x48\x75\xd8\x93\xec\xb6\xf0\xac\xe8\x61\x3d\xe1\xc5\x1a\xbc\x16\x0f\xef\x97\xb2\x5a\x26\x1f\xe7\xff\xcb\x8d\x35\x3d\x39\xa9\x0c\xfd\x8a\xd5\x5a\x87\xea\xde\x2c\x59\xa0\xfc\xae\x52\x81\xc3\x16\x1d\x9a\x06\xfb\x15\x4f\x50\x2e\x5f\x6b\x60\x83\x1a\x09\xc1\x61\x4f\x4e\x35\x24\xaa\x5b\xf1\x15\x00\x00\xff\xff\x97\xec\x79\x4f\x8a\x01\x00\x00")
+
+func _1510709195_add_server_user_events_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1510709195_add_server_user_events_tableUpSql,
+		"1510709195_add_server_user_events_table.up.sql",
+	)
+}
+
+func _1510709195_add_server_user_events_tableUpSql() (*asset, error) {
+	bytes, err := _1510709195_add_server_user_events_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1510709195_add_server_user_events_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var __1511004249_generalize_org_settingsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x90\xc1\x4e\xc3\x30\x0c\x86\xef\x7d\x0a\xbf\x47\x4f\x59\x66\xa1\x48\x89\x03\xa9\x2b\x71\x8b\x60\x33\xa5\x20\x6d\x10\x77\x07\xde\x1e\x31\x08\x1b\x95\xda\x0b\x57\x7f\xfe\xfc\xcb\xff\x06\x6f\x1c\xb5\x8d\xf1\x8c\x09\xd8\x6c\x3c\x82\xca\x34\x8d\x87\x41\x21\x21\x99\x80\xc0\x11\x8e\x65\xc8\x75\xfc\x77\xf9\x9a\x54\xc1\x46\xea\x38\x19\x47\xfc\x7b\x2b\x17\x79\x92\x22\x87\x9d\x68\x3e\x96\x41\xe7\x47\xe7\xfc\xdf\x21\x27\x95\xb2\x9a\x72\x5e\xa8\x31\x1d\xde\xf5\x48\xf6\xf2\x7b\x1e\xf7\x59\xe5\x7d\xa1\x82\x1f\x5a\x6d\x47\x5b\xbc\xbf\xa8\x6f\xaf\xf2\xb1\x24\x7e\xb1\x95\xdf\xbe\x81\x8d\xbe\x0f\x74\x26\xe3\x1e\x3a\x64\xa0\xc8\x40\xbd\xf7\x2b\xea\x36\xc5\xdb\xeb\x52\x9e\x1f\x34\xeb\xe9\xf1\x45\x76\x53\xdb\xd8\x18\x82\xe3\xb6\xf9\x0c\x00\x00\xff\xff\xf5\x56\x3a\x1e\xee\x01\x00\x00")
 
 func _1511004249_generalize_org_settingsDownSqlBytes() ([]byte, error) {
@@ -1699,6 +1741,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1509599098_add-users-provider-column.up.sql":      _1509599098_addUsersProviderColumnUpSql,
 	"1509645961_rename-users-auth0_id-to-uid.down.sql": _1509645961_renameUsersAuth0_idToUidDownSql,
 	"1509645961_rename-users-auth0_id-to-uid.up.sql":   _1509645961_renameUsersAuth0_idToUidUpSql,
+	"1510709195_add_server_user_events_table.down.sql": _1510709195_add_server_user_events_tableDownSql,
+	"1510709195_add_server_user_events_table.up.sql":   _1510709195_add_server_user_events_tableUpSql,
 	"1511004249_generalize_org_settings.down.sql":      _1511004249_generalize_org_settingsDownSql,
 	"1511004249_generalize_org_settings.up.sql":        _1511004249_generalize_org_settingsUpSql,
 	"1511011666_add_user_settings.down.sql":            _1511011666_add_user_settingsDownSql,
@@ -1814,6 +1858,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1509599098_add-users-provider-column.up.sql":      &bintree{_1509599098_addUsersProviderColumnUpSql, map[string]*bintree{}},
 	"1509645961_rename-users-auth0_id-to-uid.down.sql": &bintree{_1509645961_renameUsersAuth0_idToUidDownSql, map[string]*bintree{}},
 	"1509645961_rename-users-auth0_id-to-uid.up.sql":   &bintree{_1509645961_renameUsersAuth0_idToUidUpSql, map[string]*bintree{}},
+	"1510709195_add_server_user_events_table.down.sql": &bintree{_1510709195_add_server_user_events_tableDownSql, map[string]*bintree{}},
+	"1510709195_add_server_user_events_table.up.sql":   &bintree{_1510709195_add_server_user_events_tableUpSql, map[string]*bintree{}},
 	"1511004249_generalize_org_settings.down.sql":      &bintree{_1511004249_generalize_org_settingsDownSql, map[string]*bintree{}},
 	"1511004249_generalize_org_settings.up.sql":        &bintree{_1511004249_generalize_org_settingsUpSql, map[string]*bintree{}},
 	"1511011666_add_user_settings.down.sql":            &bintree{_1511011666_add_user_settingsDownSql, map[string]*bintree{}},

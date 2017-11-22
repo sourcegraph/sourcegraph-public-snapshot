@@ -2,6 +2,7 @@ import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { getPathExtension } from '../util'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
+import { serverAdmin } from './services/serverAdminWrapper'
 import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
@@ -100,6 +101,7 @@ class EventLogger {
             page_title: pageTitle,
         }
         telligent.track('view', decoratedProps)
+        serverAdmin.trackPageView()
         this.logToConsole(pageTitle, decoratedProps)
 
         if (!this.hasStrippedQueryParameters) {
@@ -122,6 +124,7 @@ class EventLogger {
             eventLabel,
         }
         telligent.track(eventLabel, decoratedProps)
+        serverAdmin.trackAction(eventLabel, decoratedProps)
         this.logToConsole(eventLabel, decoratedProps)
     }
 

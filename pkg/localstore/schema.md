@@ -279,6 +279,24 @@ Indexes:
 
 ```
 
+# Table "public.user_activity"
+```
+     Column     |           Type           |                         Modifiers                          
+----------------+--------------------------+------------------------------------------------------------
+ id             | integer                  | not null default nextval('user_activity_id_seq'::regclass)
+ user_id        | integer                  | not null
+ page_views     | integer                  | not null default 0
+ search_queries | integer                  | not null default 0
+ created_at     | timestamp with time zone | not null default now()
+ updated_at     | timestamp with time zone | not null default now()
+Indexes:
+    "user_activity_pkey" PRIMARY KEY, btree (id)
+    "user_activity_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+Foreign-key constraints:
+    "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
 # Table "public.user_tags"
 ```
    Column   |           Type           |                       Modifiers                        
@@ -321,6 +339,7 @@ Check constraints:
 Referenced by:
     TABLE "settings" CONSTRAINT "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "user_activity" CONSTRAINT "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```

@@ -16,6 +16,15 @@ interface Window {
  */
 interface ImmutableUser {
     readonly UID: string
+    /**
+     * IsAdmin defines whether the current user has admin privileges for their org.
+     */
+    readonly IsAdmin: boolean
+}
+
+interface License {
+    AppID: string
+    Expiry: DateTime
 }
 
 /**
@@ -87,5 +96,10 @@ interface SourcegraphContext {
     /**
      * Status of license
      */
-    licenseStatus: 'expired' | 'missing' | 'valid' | 'invalid'
+    licenseStatus: string
+
+    /**
+     * Server License
+     */
+    license: License | null
 }

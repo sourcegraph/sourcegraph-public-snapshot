@@ -205,3 +205,26 @@ func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 	}
 	return userTagResolvers, nil
 }
+
+func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, error) {
+	actor := actor.FromContext(ctx)
+	// 🚨 SECURITY:  only admins are allowed to use this endpoint
+	if !actor.IsAdmin() {
+		return nil, errors.New("Must be an admin")
+	}
+	if r.user == nil {
+		return nil, errors.New("Could not resolve activity on nil user")
+	}
+	activity, err := store.UserActivity.GetByUserID(ctx, r.user.ID)
+	if err != nil {
+		if _, ok := err.(store.ErrUserActivityNotFound); !ok {
+			return nil, err
+		}
+		// If the user does not yet have a row in the UserActivity table, create a row for the user.
+		activity, err = store.UserActivity.CreateIfNotExists(ctx, r.user.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &userActivityResolver{activity}, nil
+}
