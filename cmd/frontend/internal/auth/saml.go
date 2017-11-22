@@ -137,9 +137,11 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		}
 
 		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, idpID, nil)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("error creating new user: %s", err)
+		if err != nil {
+			return nil, fmt.Errorf("could not create user with authID %q, login %q: %s", authID, login, err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("could not get user with authID %q: %s", authID, err)
 	}
 	return actor.FromUser(usr), nil
 }
