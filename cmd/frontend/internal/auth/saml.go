@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strings"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 
 	"github.com/crewjam/saml/samlsp"
@@ -95,6 +96,7 @@ func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actr, err := getActorFromSAML(r, idpID)
 		if err != nil {
+			log15.Error("could not map SAML assertion to user", "error", err)
 			http.Error(w, "could not map SAML assertion to user", http.StatusInternalServerError)
 			return
 		}
@@ -137,7 +139,7 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, idpID, nil)
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating new user: %s", err)
 	}
 	return actor.FromUser(usr), nil
 }

@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -56,12 +57,13 @@ func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, appURL s
 //
 // Usernames that could not be converted return an error.
 func NormalizeUsername(name string) (string, error) {
+	origName := name
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
 		name = name[:i]
 	}
 	name = disallowedCharacter.ReplaceAllString(name, "-")
 	if strings.HasPrefix(name, "-") || strings.HasSuffix(name, "-") || strings.Index(name, "--") != -1 {
-		return "", errors.New("username could not be normalized to acceptable format")
+		return "", fmt.Errorf("username %q could not be normalized to acceptable format", origName)
 	}
 	return name, nil
 }
