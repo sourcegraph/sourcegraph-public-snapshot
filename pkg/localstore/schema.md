@@ -28,6 +28,8 @@ Indexes:
     "global_dep_idxgin" gin (dep_data jsonb_path_ops)
     "global_dep_language" btree (language)
     "global_dep_repo_id" btree (repo_id)
+Foreign-key constraints:
+    "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 
 ```
 
@@ -150,6 +152,8 @@ Indexes:
     "pkg_lang_idx" btree (language)
     "pkg_pkg_idx" gin (pkg jsonb_path_ops)
     "pkg_repo_idx" btree (repo_id)
+Foreign-key constraints:
+    "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 
 ```
 
@@ -189,6 +193,9 @@ Indexes:
     "repo_name_ci" btree (name)
     "repo_owner_ci" btree (owner)
     "repo_uri_trgm" gin (lower(uri::text) gin_trgm_ops)
+Referenced by:
+    TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
+    TABLE "pkgs" CONSTRAINT "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 
 ```
 
