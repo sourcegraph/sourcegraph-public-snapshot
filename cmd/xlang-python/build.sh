@@ -3,6 +3,7 @@ set -e
 cd $(dirname "${BASH_SOURCE[0]}")
 
 export IMAGE=${IMAGE-us.gcr.io/sourcegraph-dev/xlang-python}
+export TAG=${TAG-latest}
 
 set -x
 
@@ -12,4 +13,4 @@ else
     cd python-langserver && git checkout master && git pull origin master && cd ..
 fi
 
-docker build -t $IMAGE .
+docker build -t $IMAGE:$TAG .
