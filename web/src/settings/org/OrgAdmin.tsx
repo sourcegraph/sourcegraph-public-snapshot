@@ -1,15 +1,10 @@
 import * as React from 'react'
 import { match } from 'react-router'
 import reactive from 'rx-component'
-import 'rxjs/add/observable/combineLatest'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/mergeMap'
-import 'rxjs/add/operator/scan'
-import { Observable } from 'rxjs/Observable'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { merge } from 'rxjs/observable/merge'
 import { map } from 'rxjs/operators/map'
-import { tap } from 'rxjs/operators/tap'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { scan } from 'rxjs/operators/scan'
 import { currentUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchAllUsers } from '../backend'
@@ -27,11 +22,7 @@ export interface State {
 type Update = (s: State) => State
 
 export const OrgAdmin = reactive<Props>(props => {
-    const orgAdminChanges = props.pipe(
-        map(props => props.match.params.orgName),
-        distinctUntilChanged(),
-        tap(orgName => eventLogger.logViewEvent('OrgAdmin', { organization: { org_name: orgName } }))
-    )
+    eventLogger.logViewEvent('ServerAdmin')
 
     const today = new Date()
     let expiry = new Date()
@@ -40,21 +31,25 @@ export const OrgAdmin = reactive<Props>(props => {
     }
     const timeDiff = Math.abs(expiry.getTime() - today.getTime())
     const dateDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
-    return Observable.merge<Update>(
-        Observable.combineLatest(currentUser, orgAdminChanges).mergeMap(([user, orgName]) => {
-            if (!user) {
-                return [(state: State): State => ({ ...state, user: undefined })]
-            }
+    return merge<Update>(
+        currentUser.pipe(
+            mergeMap(user => {
+                if (!user) {
+                    return [(state: State): State => ({ ...state, user: undefined })]
+                }
 
-            return fetchAllUsers().map(users => (state: State): State => ({
-                ...state,
-                user,
-                users: users || undefined,
-            }))
-        })
-    )
-        .scan<Update, State>((state: State, update: Update) => update(state), {} as State)
-        .map(({ user, users }: State): JSX.Element | null => (
+                return fetchAllUsers().pipe(
+                    map(users => (state: State): State => ({
+                        ...state,
+                        user,
+                        users: users || undefined,
+                    }))
+                )
+            })
+        )
+    ).pipe(
+        scan<Update, State>((state: State, update: Update) => update(state), {} as State),
+        map(({ user, users }: State): JSX.Element | null => (
             <div className="org-admin">
                 <h1>Server Admin Page</h1>
                 {window.context.license &&
@@ -101,4 +96,5 @@ export const OrgAdmin = reactive<Props>(props => {
                 </div>
             </div>
         ))
+    )
 })
