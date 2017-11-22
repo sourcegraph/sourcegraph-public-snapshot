@@ -130,6 +130,9 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		if login == "" {
 			login = email
 		}
+		if login == "" {
+			return nil, fmt.Errorf("could not create user, because SAML assertion did not contain email attribute statement")
+		}
 
 		login, err = NormalizeUsername(login)
 		if err != nil {
