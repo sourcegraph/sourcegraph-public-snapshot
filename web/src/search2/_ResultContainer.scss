@@ -29,4 +29,8 @@
             background-color: darken($background-color, 0.05);
         }
     }
+
+    &__toggle-matches-container {
+        display: flex;
+    }
 }

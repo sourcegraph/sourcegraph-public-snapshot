@@ -38,7 +38,14 @@ interface Props {
      * Whether this file should be rendered as expanded.
      */
     expanded: boolean
+
+    /**
+     * Whether or not to show all matches for this file, or only a subset.
+     */
+    showAllMatches: boolean
 }
+
+const subsetMatches = 2
 
 export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
     const parsed = new URL(props.result.resource)
@@ -62,52 +69,76 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
 
     const title: React.ReactChild = <RepoBreadcrumb repoPath={repoPath} rev={rev} filePath={filePath} />
 
-    return (
-        <ResultContainer collapsible={true} defaultExpanded={props.expanded} icon={props.icon} title={title}>
-            <div className="file-match__list">
-                {items
-                    .sort((a, b) => {
-                        if (a.range.start.line < b.range.start.line) {
+    const getChildren = (allMatches: boolean) => (
+        <div className="file-match__list">
+            {items
+                .sort((a, b) => {
+                    if (a.range.start.line < b.range.start.line) {
+                        return -1
+                    }
+                    if (a.range.start.line === b.range.start.line) {
+                        if (a.range.start.character < b.range.start.character) {
                             return -1
                         }
-                        if (a.range.start.line === b.range.start.line) {
-                            if (a.range.start.character < b.range.start.character) {
-                                return -1
-                            }
-                            if (a.range.start.character === b.range.start.character) {
-                                return 0
-                            }
-                            return 1
+                        if (a.range.start.character === b.range.start.character) {
+                            return 0
                         }
                         return 1
-                    })
-                    .map((item, i) => {
-                        const uri = new URL(item.uri)
-                        const position = { line: item.range.start.line + 1, character: item.range.start.character + 1 }
-                        return (
-                            <Link
-                                to={toPrettyBlobURL({
-                                    repoPath: uri.hostname + uri.pathname,
-                                    rev,
-                                    filePath: uri.hash.substr('#'.length),
-                                    position,
-                                })}
-                                key={i}
-                                className="file-match__item"
-                                onClick={props.onSelect}
-                            >
-                                <CodeExcerpt
-                                    repoPath={repoPath}
-                                    commitID={rev}
-                                    filePath={filePath}
-                                    position={{ line: item.range.start.line, character: item.range.start.character }}
-                                    highlightLength={item.range.end.character - item.range.start.character}
-                                    previewWindowExtraLines={1}
-                                />
-                            </Link>
-                        )
-                    })}
-            </div>
-        </ResultContainer>
+                    }
+                    return 1
+                })
+                .filter((item, i) => allMatches || i < subsetMatches)
+                .map((item, i) => {
+                    const uri = new URL(item.uri)
+                    const position = { line: item.range.start.line + 1, character: item.range.start.character + 1 }
+                    return (
+                        <Link
+                            to={toPrettyBlobURL({
+                                repoPath: uri.hostname + uri.pathname,
+                                rev,
+                                filePath: uri.hash.substr('#'.length),
+                                position,
+                            })}
+                            key={i}
+                            className="file-match__item"
+                            onClick={props.onSelect}
+                        >
+                            <CodeExcerpt
+                                repoPath={repoPath}
+                                commitID={rev}
+                                filePath={filePath}
+                                position={{ line: item.range.start.line, character: item.range.start.character }}
+                                highlightLength={item.range.end.character - item.range.start.character}
+                                previewWindowExtraLines={1}
+                            />
+                        </Link>
+                    )
+                })}
+        </div>
     )
+
+    if (props.showAllMatches) {
+        return (
+            <ResultContainer
+                collapsible={true}
+                defaultExpanded={props.expanded}
+                icon={props.icon}
+                title={title}
+                expandedChildren={getChildren(true)}
+            />
+        )
+    } else {
+        return (
+            <ResultContainer
+                collapsible={items.length > subsetMatches}
+                defaultExpanded={props.expanded}
+                icon={props.icon}
+                title={title}
+                collapsedChildren={getChildren(false)}
+                expandedChildren={getChildren(true)}
+                collapseLabel={`Hide ${items.length - subsetMatches} matches`}
+                expandLabel={`Show ${items.length - subsetMatches} matches`}
+            />
+        )
+    }
 }

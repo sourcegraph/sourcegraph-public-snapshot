@@ -217,6 +217,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                                         result={refsToFileMatch(uri, this.props.rev, refsByUri[uri])}
                                         icon={RepoIcon}
                                         onSelect={this.logLocalSelection}
+                                        showAllMatches={true}
                                     />
                                 ))}
                         />
@@ -232,6 +233,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                                     result={refsToFileMatch(uri, undefined, refsByUri[uri])}
                                     icon={GlobeIcon}
                                     onSelect={this.logExternalSelection}
+                                    showAllMatches={true}
                                 />
                             ))}
                         />

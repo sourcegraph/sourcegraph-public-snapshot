@@ -1,5 +1,6 @@
 import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
+import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
 import * as React from 'react'
 
 interface Props {
@@ -26,10 +27,26 @@ interface Props {
     title: React.ReactChild
 
     /**
-     * The main content of the result, displayed underneath the result
-     * container's header.
+     * The content of the result displayed underneath the result container's
+     * header when collapsed.
      */
-    children?: React.ReactChild
+    collapsedChildren?: React.ReactChild
+
+    /**
+     * The content of the result displayed underneath the result container's
+     * header when expanded.
+     */
+    expandedChildren?: React.ReactChild
+
+    /**
+     * The label to display next to the collapse button
+     */
+    collapseLabel?: string
+
+    /**
+     * The label to display next to the expand button
+     */
+    expandLabel?: string
 }
 
 interface State {
@@ -63,12 +80,21 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     <div className="result-container__header-title">{this.props.title}</div>
                     {this.props.collapsible &&
                         (this.state.expanded ? (
-                            <ChevronDownIcon className="icon-inline" />
+                            <span className="result-container__toggle-matches-container">
+                                {this.props.collapseLabel}
+                                {this.props.collapseLabel && <ChevronUpIcon className="icon-inline" />}
+                                {!this.props.collapseLabel && <ChevronDownIcon className="icon-inline" />}
+                            </span>
                         ) : (
-                            <ChevronRightIcon className="icon-inline" />
+                            <span className="result-container__toggle-matches-container">
+                                {this.props.expandLabel}
+                                {this.props.expandLabel && <ChevronDownIcon className="icon-inline" />}
+                                {!this.props.expandLabel && <ChevronRightIcon className="icon-inline" />}
+                            </span>
                         ))}
                 </div>
-                {this.state.expanded && this.props.children}
+                {!this.state.expanded && this.props.collapsedChildren}
+                {this.state.expanded && this.props.expandedChildren}
             </div>
         )
     }

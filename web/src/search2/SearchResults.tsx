@@ -222,7 +222,14 @@ export class SearchResults extends React.Component<Props, State> {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
-                    <FileMatch key={key} icon={RepoIcon} result={result} onSelect={this.logEvent} expanded={expanded} />
+                    <FileMatch
+                        key={key}
+                        icon={RepoIcon}
+                        result={result}
+                        onSelect={this.logEvent}
+                        expanded={false}
+                        showAllMatches={false}
+                    />
                 )
         }
         return undefined
