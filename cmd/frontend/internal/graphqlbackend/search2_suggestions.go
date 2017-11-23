@@ -10,6 +10,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"github.com/neelance/parallel"
@@ -72,16 +73,30 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
-		repos := map[string]*sourcegraph.Repo{}
-		getRepoByURI := func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-			if repo, ok := repos[uri]; ok {
-				return repo, nil
+		cache := map[string]commitSpec{}
+		getCommitSpec := func(ctx context.Context, fm *fileMatch) (commitSpec, error) {
+			u, err := url.Parse(fm.uri)
+			if err != nil {
+				return commitSpec{}, err
 			}
-			repo, err := localstore.Repos.GetByURI(ctx, uri)
-			if err == nil {
-				repos[uri] = repo
+			key := u.Host + u.Path + "?" + u.RawQuery
+			if spec, ok := cache[key]; ok {
+				return spec, nil
 			}
-			return repo, err
+			repo, err := localstore.Repos.GetByURI(ctx, u.Host+u.Path)
+			if err != nil {
+				return commitSpec{}, err
+			}
+			rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+				Repo: repo.ID,
+				Rev:  u.RawQuery,
+			})
+			if err != nil {
+				return commitSpec{}, err
+			}
+			spec := commitSpec{RepoID: repo.ID, CommitID: rev.CommitID}
+			cache[key] = spec
+			return spec, nil
 		}
 
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
@@ -102,12 +117,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 			var suggestions []*searchResultResolver
 			for i, res := range results.results {
 				// TODO(sqs): should parallelize, or reuse data fetched elsewhere
-				u, err := url.Parse(res.fileMatch.uri)
-				if err != nil {
-					return nil, err
-				}
-				uri := u.Host + u.Path
-				repo, err := getRepoByURI(ctx, uri)
+				commit, err := getCommitSpec(ctx, res.fileMatch)
 				if err != nil {
 					if err == context.DeadlineExceeded {
 						err = nil // don't log as error below
@@ -119,7 +129,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 				fileResolver := &fileResolver{
 					path:   path,
 					name:   path,
-					commit: commitSpec{DefaultBranch: repo.DefaultBranch, RepoID: repo.ID},
+					commit: commit,
 					stat:   createFileInfo(path, false),
 				}
 				suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))

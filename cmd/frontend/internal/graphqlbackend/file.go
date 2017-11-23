@@ -172,7 +172,7 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*commitInfoRe
 	}
 
 	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head:    vcs.CommitID(r.commit.DefaultBranch),
+		Head:    vcs.CommitID(r.commit.CommitID),
 		N:       limit,
 		Path:    r.path,
 		NoTotal: true,

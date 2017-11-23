@@ -100,7 +100,7 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 
 	return &commitStateResolver{
 		commit: &commitResolver{
-			commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch},
+			commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID},
 			repo:   *r.repo,
 		},
 	}, nil

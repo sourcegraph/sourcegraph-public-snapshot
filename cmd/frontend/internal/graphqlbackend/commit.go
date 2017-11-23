@@ -12,9 +12,8 @@ import (
 )
 
 type commitSpec struct {
-	DefaultBranch string
-	RepoID        int32
-	CommitID      string
+	RepoID   int32
+	CommitID string
 }
 
 type commitStateResolver struct {
@@ -88,9 +87,8 @@ func createCommitState(repo sourcegraph.Repo, rev *sourcegraph.ResolvedRev) *com
 	return &commitStateResolver{commit: &commitResolver{
 		repo: repo,
 		commit: commitSpec{
-			RepoID:        repo.ID,
-			CommitID:      rev.CommitID,
-			DefaultBranch: repo.DefaultBranch,
+			RepoID:   repo.ID,
+			CommitID: rev.CommitID,
 		},
 	}}
 }

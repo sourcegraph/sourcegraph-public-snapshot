@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestSearch2Suggestions(t *testing.T) {
@@ -65,6 +67,7 @@ func TestSearch2Suggestions(t *testing.T) {
 			return nil, nil
 		}
 		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		backend.Mocks.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true
@@ -107,6 +110,7 @@ func TestSearch2Suggestions(t *testing.T) {
 			return nil, nil
 		}
 		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		backend.Mocks.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			mu.Lock()
