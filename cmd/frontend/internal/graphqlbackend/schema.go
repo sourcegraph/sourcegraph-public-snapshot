@@ -763,15 +763,15 @@ type OrgTag {
 }
 
 type UserActivity {
-	id: Int!
-	searchQueries: Int!
-	pageViews: Int!
-	createdAt: String!
-	updatedAt: String!
+  id: Int!
+  searchQueries: Int!
+  pageViews: Int!
+  createdAt: String!
+  updatedAt: String!
 }
 
 enum UserEvent {
-	PAGEVIEW
-	SEARCHQUERY
+  PAGEVIEW
+  SEARCHQUERY
 }
 `
