@@ -22,6 +22,14 @@ func TestPkgs_update_delete(t *testing.T) {
 	}
 	ctx := testContext()
 
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+		t.Fatal(err)
+	}
+	rp, err := Repos.GetByURI(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	pks := []lspext.PackageInformation{{
 		Package: map[string]interface{}{"name": "pkg"},
 		Dependencies: []lspext.DependencyReference{{
@@ -31,7 +39,7 @@ func TestPkgs_update_delete(t *testing.T) {
 
 	t.Log("update")
 	if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-		if err := Pkgs.update(ctx, tx, 1, "go", pks); err != nil {
+		if err := Pkgs.update(ctx, tx, rp.ID, "go", pks); err != nil {
 			return err
 		}
 		return nil
@@ -39,7 +47,7 @@ func TestPkgs_update_delete(t *testing.T) {
 		t.Fatal(err)
 	}
 	expPkgs := []sourcegraph.PackageInfo{{
-		RepoID: 1,
+		RepoID: rp.ID,
 		Lang:   "go",
 		Pkg:    map[string]interface{}{"name": "pkg"},
 	}}
@@ -72,7 +80,7 @@ func TestPkgs_update_delete(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(gotPkgs) > 0 {
-		t.Errorf("expected all pkgs corresponding to repo %d deleted, but got %+v", 1, gotPkgs)
+		t.Errorf("expected all pkgs corresponding to repo %d deleted, but got %+v", rp.ID, gotPkgs)
 	}
 }
 
@@ -82,6 +90,15 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		t.Skip()
 	}
 	ctx := testContext()
+
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+		t.Fatal(err)
+	}
+	rp, err := Repos.GetByURI(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/xpackages":
@@ -123,7 +140,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		calledReposGetByURI = true
 		switch repo {
 		case "github.com/my/repo":
-			return &sourcegraph.Repo{ID: 1, URI: repo}, nil
+			return &sourcegraph.Repo{ID: rp.ID, URI: repo}, nil
 		default:
 			return nil, errors.New("not found")
 		}
@@ -142,7 +159,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	}
 
 	expPkgs := []sourcegraph.PackageInfo{{
-		RepoID: 1,
+		RepoID: rp.ID,
 		Lang:   "typescript",
 		Pkg: map[string]interface{}{
 			"name":    "tspkg",
