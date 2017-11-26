@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	jsoncommentstrip "github.com/RaveNoX/go-jsoncommentstrip"
+	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
@@ -24,6 +25,16 @@ func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.or
 
 func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
 
+func (s *configurationSubject) GQLID() graphql.ID {
+	switch {
+	case s.org != nil:
+		return s.org.GQLID()
+	case s.user != nil:
+		return s.user.GQLID()
+	}
+	panic("no configuration subject")
+}
+
 func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
 	case s.org != nil:
@@ -31,7 +42,7 @@ func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsRes
 	case s.user != nil:
 		return s.user.LatestSettings(ctx)
 	}
-	panic("no settings subject")
+	panic("no configuration subject")
 }
 
 type configurationResolver struct {

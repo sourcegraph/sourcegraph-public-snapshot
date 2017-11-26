@@ -527,6 +527,9 @@ type Installation {
 
 type User implements ConfigurationSubject {
   id: String! @deprecated(reason: "use auth0ID instead")
+  # The unique ID for the user. TODO(sqs): This will be renamed to id when
+  # the migration described in commit 2ac372aa2773080dc3d077beb056e9513e64bf67 is done.
+  gqlid: ID!
   auth0ID: String!
   sourcegraphID: Int
   email: String!
@@ -584,6 +587,7 @@ type CompanyCategory {
 
 type Org implements Node, ConfigurationSubject {
   id: ID!
+  gqlid: ID! @deprecated(reason: "use id instead")
   orgID: Int!
   name: String!
   displayName: String
@@ -629,14 +633,8 @@ type ThreadConnection {
 
 # ConfigurationSubject is something that can have configuration.
 interface ConfigurationSubject {
-  # TODO(sqs): To add this field, which is useful for some callers who want to know
-  # where a given configuration is coming from, we'll need to execute the migration
-  # mentioned in commit 2ac372aa2773080dc3d077beb056e9513e64bf67 to make User have
-  # an 'id: ID!' field. This is not a blocker, however, because callers can still
-  # determine where the configuration is coming from by using fragments on the
-  # queries for types that satisfy this interface (User and Org).
-  #
-  # id: ID!
+  # TODO(sqs): this will be renamed to id; see User.gqlid for more information.
+  gqlid: ID!
   latestSettings: Settings
 }
 
