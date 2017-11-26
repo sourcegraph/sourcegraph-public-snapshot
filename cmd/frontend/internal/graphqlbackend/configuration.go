@@ -198,7 +198,8 @@ func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurati
 // merged field, the merged config would be {"a":[2]}. If "a" IS a deeply merged field, then the
 // merged config would be {"a":[1,2].}
 var deeplyMergedConfigFields = map[string]struct{}{
-	"search.scopes": struct{}{},
+	"search.scopes":       struct{}{},
+	"search.savedQueries": struct{}{},
 }
 
 // normalizeJSON converts JSON with comments, trailing commas, and some types of syntax errors into

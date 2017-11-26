@@ -168,6 +168,21 @@ type ConfigurationMutation {
   updateConfiguration(
     input: UpdateConfigurationInput!
   ): UpdateConfigurationPayload
+  # Create a saved query.
+  createSavedQuery(
+    description: String!
+    query: String!
+    scopeQuery: String!
+  ): SavedQuery!
+  # Update the saved query at the given index in the configuration.
+  updateSavedQuery(
+    index: Int!
+    description: String
+    query: String
+    scopeQuery: String
+  ): SavedQuery!
+  # Delete the saved query at the given index in the configuration.
+  deleteSavedQuery(index: Int!): EmptyResponse
 }
 
 # Input to ConfigurationMutation.updateConfiguration. If multiple fields are specified,
@@ -198,6 +213,8 @@ type Root {
   configuration: ConfigurationCascade!
   search2(query: String = "", scopeQuery: String = ""): Search2
   searchScopes2: [SearchScope2!]!
+  # All saved queries configured for the current user, merged from all configurations.
+  savedQueries: [SavedQuery!]!
   repoGroups: [RepoGroup!]!
   revealCustomerCompany(ip: String!): CompanyProfile
   org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
@@ -237,6 +254,8 @@ union SearchResult = FileMatch
 
 type SearchResults2 {
   results: [SearchResult!]!
+  resultCount: Int!
+  approximateResultCount: String!
   limitHit: Boolean!
   cloning: [String!]!
   missing: [String!]!
@@ -257,6 +276,16 @@ type SearchAlert {
   description: String
   # "Did you mean: ____" query proposals
   proposedQueries: [SearchQuery2Description!]
+}
+
+# A saved search query, defined in configuration.
+type SavedQuery {
+  # The subject whose configuration this saved query was defined in.
+  subject: ConfigurationSubject!
+  # The 0-indexed index of this saved query in the subject's configuration.
+  index: Int!
+  description: String!
+  query: SearchQuery2!
 }
 
 type SearchQuery2Description {

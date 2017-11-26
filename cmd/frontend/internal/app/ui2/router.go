@@ -28,6 +28,7 @@ import (
 const (
 	routeHome                 = "home"
 	routeSearch               = "search"
+	routeSearchQueries        = "search-queries"
 	routeComment              = "comment"
 	routeOpen                 = "open"
 	routeRepo                 = "repo"
@@ -94,6 +95,7 @@ func newRouter() *mux.Router {
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
+	r.Path("/search/queries").Methods("GET").Name(routeSearchQueries)
 	r.Path("/c/{ULID}").Methods("GET").Name(routeComment)
 	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
@@ -176,6 +178,11 @@ func init() {
 		}
 		// e.g. "myquery - Sourcegraph"
 		return fmt.Sprintf("%s - Sourcegraph", shortQuery)
+	})))
+
+	// dashboard
+	router.Get(routeSearchQueries).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+		return "Saved queries - Sourcegraph"
 	})))
 
 	if !envvar.DeploymentOnPrem() {

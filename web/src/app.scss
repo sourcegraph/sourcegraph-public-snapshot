@@ -278,6 +278,19 @@ h1 {
     }
 }
 
+.btn-secondary {
+    background: $color-secondary;
+    color: $color-page-background;
+
+    &:hover:not(:disabled) {
+        background: lighten($color-secondary, 5%);
+    }
+
+    &:focus:not(:disabled) {
+        outline: lighten($color-secondary, 5%);
+    }
+}
+
 .light a,
 .light .btn-icon {
     &:hover {
@@ -451,6 +464,7 @@ h1 {
 
 @import './highlight';
 @import './search2/QueryButton';
+@import './search2/SavedQueries';
 @import './search2/SearchNavbarItem';
 @import './search2/SearchPage';
 @import './search2/SearchResults';

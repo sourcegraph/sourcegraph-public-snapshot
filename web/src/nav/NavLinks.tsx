@@ -7,6 +7,7 @@ import { UserAvatar } from '../settings/user/UserAvatar'
 interface Props {}
 
 interface State {
+    savedQueries: boolean
     user: GQL.IUser | ImmutableUser | null
 }
 
@@ -16,6 +17,7 @@ export class NavLinks extends React.Component<Props, State> {
     constructor() {
         super()
         this.state = {
+            savedQueries: false,
             user: window.context.user,
         }
     }
@@ -25,6 +27,11 @@ export class NavLinks extends React.Component<Props, State> {
             currentUser.subscribe(user => {
                 this.setState({
                     user: user || window.context.user,
+                    savedQueries:
+                        (!!user && user.tags && user.tags.some(tag => tag.name === 'saved-queries')) ||
+                        (!!user &&
+                            user.orgs &&
+                            user.orgs.some(org => org.tags && org.tags.some(tag => tag.name === 'saved-queries'))),
                 })
             })
         )
@@ -37,6 +44,11 @@ export class NavLinks extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="nav-links">
+                {this.state.savedQueries && (
+                    <Link to="/search/queries" className="nav-links__link">
+                        Queries
+                    </Link>
+                )}
                 {!window.context.onPrem && (
                     <a href="https://about.sourcegraph.com" className="nav-links__link">
                         About

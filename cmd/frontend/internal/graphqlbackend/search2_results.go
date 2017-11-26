@@ -3,7 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -41,6 +43,20 @@ type searchResults2 struct {
 
 func (sr *searchResults2) Results() []*searchResult {
 	return sr.results
+}
+
+func (sr *searchResults2) ResultCount() int32 {
+	return int32(len(sr.results))
+}
+
+func (sr *searchResults2) ApproximateResultCount() string {
+	if sr.alert != nil {
+		return "?"
+	}
+	if sr.limitHit || len(sr.missing) > 0 || len(sr.cloning) > 0 {
+		return fmt.Sprintf("%d+", len(sr.results))
+	}
+	return strconv.Itoa(len(sr.results))
 }
 
 func (sr *searchResults2) Alert() *searchAlert { return sr.alert }

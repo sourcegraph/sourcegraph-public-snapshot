@@ -6,6 +6,7 @@ import { CommentsPage } from './comments/CommentsPage'
 import { LicenseInvalidPage } from './LicenseInvalidPage'
 import { OpenPage } from './open/OpenPage'
 import { RepositoryResolver } from './repo/RepositoryResolver'
+import { SavedQueries } from './search2/SavedQueries'
 import { SearchResults } from './search2/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
 
@@ -37,6 +38,11 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/search',
         component: SearchResults,
+        exact: true,
+    },
+    {
+        path: '/search/queries',
+        component: SavedQueries,
         exact: true,
     },
     {

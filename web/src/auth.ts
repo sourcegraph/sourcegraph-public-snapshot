@@ -69,6 +69,9 @@ export function fetchCurrentUser(): Observable<never> {
                     orgs {
                         id
                         name
+                        tags {
+                            name
+                        }
                     }
                     tags {
                         id
