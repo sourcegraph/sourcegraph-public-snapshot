@@ -80,6 +80,9 @@ input ThreadLinesInput {
   textSelectionRangeLength: Int!
 }
 
+# A string containing valid JSON.
+scalar JSONString
+
 type Mutation {
   createUser(username: String!, displayName: String!, avatarURL: String): User!
   createThread(
