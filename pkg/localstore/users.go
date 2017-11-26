@@ -135,6 +135,9 @@ func (u *users) Update(ctx context.Context, id int32, username *string, displayN
 }
 
 func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error) {
+	if Mocks.Users.GetByID != nil {
+		return Mocks.Users.GetByID(ctx, id)
+	}
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 

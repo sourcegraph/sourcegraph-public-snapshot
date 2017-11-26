@@ -518,7 +518,7 @@ type Installation {
   avatarURL: String!
 }
 
-type User implements ConfigurationSubject {
+type User implements Node, ConfigurationSubject {
   # The unique ID for the user.
   id: ID!
   auth0ID: String!

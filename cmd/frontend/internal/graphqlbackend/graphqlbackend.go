@@ -91,6 +91,11 @@ func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToUser() (*userResolver, bool) {
+	n, ok := r.node.(*userResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
 	n, ok := r.node.(*orgResolver)
 	return n, ok
@@ -119,6 +124,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "Repository":
 		return repositoryByID(ctx, id)
+	case "User":
+		return userByID(ctx, id)
 	case "Org":
 		return orgByID(ctx, id)
 	case "Commit":
