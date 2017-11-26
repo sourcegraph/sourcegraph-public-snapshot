@@ -24,8 +24,15 @@ export const configurationGQL = `
     configuration {
         defaults { contents }
         subjects {
-            ... on Org { id }
-            ... on User { id }
+            __typename
+            ... on Org {
+                id
+                name
+            }
+            ... on User {
+                id
+                username
+            }
             latestSettings {
                 id
             }

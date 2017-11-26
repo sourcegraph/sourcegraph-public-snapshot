@@ -139,6 +139,53 @@ type Mutation {
   # example uri: "github.com/gorilla/mux"
   addPhabricatorRepo(callsign: String!, uri: String!): EmptyResponse
   logUserEvent(event: UserEvent!): EmptyResponse
+  # All mutations that update configuration setings are under this field.
+  configuration(input: ConfigurationMutationGroupInput!): ConfigurationMutation
+}
+
+# Input for Mutation.configuration, which contains fields that all configuration
+# mutations need.
+input ConfigurationMutationGroupInput {
+  # The subject whose configuration to mutate (org, user, etc.).
+  subject: ID!
+  # The ID of the last-known configuration known to the client, or null if
+  # there is none. This field is used to prevent race conditions when there
+  # are concurrent editors.
+  lastID: Int
+}
+
+# Mutations that update configuration settings. These mutations are grouped
+# together because they:
+#
+# - are all versioned to avoid race conditions with concurrent editors
+# - all apply to a specific configuration subject
+#
+# Grouping them lets us extract those common parameters to the
+# Mutation.configuration field.
+type ConfigurationMutation {
+  # Perform a raw configuration update. Use one of the other fields on this
+  # type instead if possible.
+  updateConfiguration(
+    input: UpdateConfigurationInput!
+  ): UpdateConfigurationPayload
+}
+
+# Input to ConfigurationMutation.updateConfiguration. If multiple fields are specified,
+# then their respective operations are performed sequentially in the order in which the
+# fields appear in this type.
+input UpdateConfigurationInput {
+  # The name of the property to update.
+  #
+  # Inserting into an existing array is not yet supported.
+  property: String!
+  # The new JSON-encoded value to insert. If the field's value is null, the property is
+  # removed. (This is different from the field's value being the string "null".)
+  value: JSONString
+}
+
+# The payload for ConfigurationMutation.updateConfiguration.
+type UpdateConfigurationPayload {
+  empty: EmptyResponse
 }
 
 type Root {

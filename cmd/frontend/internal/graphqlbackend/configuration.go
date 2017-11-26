@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"sort"
-	"strings"
+	"strconv"
 
-	jsoncommentstrip "github.com/RaveNoX/go-jsoncommentstrip"
 	graphql "github.com/neelance/graphql-go"
+	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 )
@@ -21,9 +22,50 @@ type configurationSubject struct {
 	user *userResolver
 }
 
+// configurationSubjectByID fetches the configuration subject with the given ID. If the ID
+// refers to a node that is not a valid configuration subject, an error is returned.
+func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configurationSubject, error) {
+	resolver, err := gqlidNodeByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	actor := actor.FromContext(ctx)
+	switch s := resolver.(type) {
+	case *userResolver:
+		// 🚨 SECURITY: A user may only view or modify their own configuration.
+		if actor.UID == "" || s.Auth0ID() == "" || actor.UID != s.Auth0ID() {
+			return nil, errors.New("a user may only view or modify their own configuration")
+		}
+		return &configurationSubject{user: s}, nil
+
+	case *orgResolver:
+		// 🚨 SECURITY: Check that the current user is a member of the org.
+		if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, s.org.ID, actor.UID); err != nil {
+			return nil, err
+		}
+		return &configurationSubject{org: s}, nil
+
+	default:
+		return nil, errors.New("bad configuration subject type")
+	}
+
+}
+
 func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
 
 func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
+
+func (s *configurationSubject) toSubject() sourcegraph.ConfigurationSubject {
+	switch {
+	case s.org != nil:
+		return sourcegraph.ConfigurationSubject{Org: &s.org.org.ID}
+	case s.user != nil:
+		return sourcegraph.ConfigurationSubject{User: &s.user.user.ID}
+	default:
+		panic("no configuration subject")
+	}
+}
 
 func (s *configurationSubject) GQLID() graphql.ID {
 	switch {
@@ -43,6 +85,18 @@ func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsRes
 		return s.user.LatestSettings(ctx)
 	}
 	panic("no configuration subject")
+}
+
+// readConfiguration unmarshals s's latest settings into v.
+func (s *configurationSubject) readConfiguration(ctx context.Context, v interface{}) error {
+	settings, err := s.LatestSettings(ctx)
+	if err != nil {
+		return err
+	}
+	if settings == nil {
+		return nil
+	}
+	return json.Unmarshal(normalizeJSON(settings.Contents()), &v)
 }
 
 type configurationResolver struct {
@@ -147,23 +201,25 @@ var deeplyMergedConfigFields = map[string]struct{}{
 	"search.scopes": struct{}{},
 }
 
+// normalizeJSON converts JSON with comments, trailing commas, and some types of syntax errors into
+// standard JSON.
+func normalizeJSON(input string) []byte {
+	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(output) == 0 {
+		return []byte("{}")
+	}
+	return output
+}
+
 // mergeConfigs merges the specified JSON configs together to produce a single JSON config. The merge
 // algorithm is currently rudimentary but eventually it will be similar to VS Code's. The only "smart"
 // merging behavior is that described in the documentation for deeplyMergedConfigFields.
-//
-// TODO(sqs): tolerate comments in JSON
 func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 	var errs []error
 	merged := map[string]interface{}{}
 	for _, s := range jsonConfigStrings {
-		stripped, err := ioutil.ReadAll(jsoncommentstrip.NewReader(strings.NewReader(s)))
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
 		var config map[string]interface{}
-		if err := json.Unmarshal(stripped, &config); err != nil {
+		if err := json.Unmarshal(normalizeJSON(s), &config); err != nil {
 			errs = append(errs, err)
 			continue
 		}
@@ -195,3 +251,125 @@ func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 func (rootResolver) Configuration() *configurationCascadeResolver {
 	return &configurationCascadeResolver{}
 }
+
+type configurationMutationGroupInput struct {
+	Subject graphql.ID
+	LastID  *int32
+}
+
+type configurationMutationResolver struct {
+	input   *configurationMutationGroupInput
+	subject *configurationSubject
+}
+
+// Configuration defines the Mutation.configuration field.
+func (r *schemaResolver) Configuration(ctx context.Context, args *struct {
+	Input *configurationMutationGroupInput
+}) (*configurationMutationResolver, error) {
+	subject, err := configurationSubjectByID(ctx, args.Input.Subject)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(sqs): support multiple mutations running in a single query that all
+	// increment the settings.
+
+	return &configurationMutationResolver{
+		input:   args.Input,
+		subject: subject,
+	}, nil
+}
+
+type updateConfigurationInput struct {
+	Property string
+	Value    *jsonString
+}
+
+type updateConfigurationPayload struct{}
+
+func (updateConfigurationPayload) Empty() *EmptyResponse { return nil }
+
+func (r *configurationMutationResolver) UpdateConfiguration(ctx context.Context, args *struct {
+	Input *updateConfigurationInput
+}) (*updateConfigurationPayload, error) {
+	config, err := r.getCurrentConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var value interface{}
+	if args.Input.Value != nil {
+		if err := json.Unmarshal([]byte(*args.Input.Value), &value); err != nil {
+			return nil, err
+		}
+	}
+
+	keyPath := jsonx.PropertyPath(args.Input.Property)
+	_, err = r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
+		if args.Input.Value == nil {
+			edits, _, err = jsonx.ComputePropertyRemoval(config, keyPath, formatOptions)
+		} else {
+			edits, _, err = jsonx.ComputePropertyEdit(config, keyPath, value, nil, formatOptions)
+		}
+		return edits, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &updateConfigurationPayload{}, nil
+}
+
+// doUpdateConfiguration is a helper for updating configuration.
+func (r *configurationMutationResolver) doUpdateConfiguration(ctx context.Context, computeEdits func(oldConfig string) ([]jsonx.Edit, error)) (idAfterUpdate int32, err error) {
+	currentConfig, err := r.getCurrentConfig(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	edits, err := computeEdits(currentConfig)
+	if err != nil {
+		return 0, err
+	}
+	newConfig, err := jsonx.ApplyEdits(currentConfig, edits...)
+	if err != nil {
+		return 0, err
+	}
+
+	// Write mutated settings.
+	actor := actor.FromContext(ctx)
+	updatedSettings, err := store.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, actor.UID, newConfig)
+	if err != nil {
+		return 0, err
+	}
+	return updatedSettings.ID, nil
+}
+
+func (r *configurationMutationResolver) getCurrentConfig(ctx context.Context) (string, error) {
+	// Get the settings file whose contents to mutate.
+	settings, err := store.Settings.GetLatest(ctx, r.subject.toSubject())
+	if err != nil {
+		return "", err
+	}
+	var config string
+	if settings != nil && r.input.LastID != nil && settings.ID == *r.input.LastID {
+		config = settings.Contents
+	} else if settings == nil && r.input.LastID == nil {
+		// noop
+	} else {
+		intOrNull := func(v *int32) string {
+			if v == nil {
+				return "null"
+			}
+			return strconv.FormatInt(int64(*v), 10)
+		}
+		var lastID *int32
+		if settings != nil {
+			lastID = &settings.ID
+		}
+		return "", fmt.Errorf("update configuration version mismatch: last ID is %s (mutation wanted %s)", intOrNull(lastID), intOrNull(r.input.LastID))
+	}
+
+	return config, nil
+}
+
+var formatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
