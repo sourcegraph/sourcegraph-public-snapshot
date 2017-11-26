@@ -4,49 +4,41 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
 import { tap } from 'rxjs/operators/tap'
-import { currentUser, fetchCurrentUser } from '../auth'
+import { configurationGQL, currentUser, fetchCurrentUser } from '../auth'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
-import { currentConfiguration } from './configuration'
+import { configurationCascade } from './configuration'
 
 /**
- * Refreshes the merged configuration from the server, which propagates throughout the
+ * Refreshes the configuration from the server, which propagates throughout the
  * app to all consumers of configuration settings.
  */
 export function refreshConfiguration(): Observable<never> {
-    return fetchConfiguration().pipe(
-        tap(result => currentConfiguration.next(JSON.parse(result.contents))),
-        mergeMap(() => [])
-    )
+    return fetchConfiguration().pipe(tap(result => configurationCascade.next(result)), mergeMap(() => []))
 }
 
 /**
- * Fetches the effective configuration, merged from the default, org, and user settings.
- * Callers should use updateConfiguration instead of calling this function, to ensure that
- * the result is propagated consistently throughout the app instead of only being returned
- * to the caller.
+ * Fetches the configuration from the server. Callers should use refreshConfiguration
+ * instead of calling this function, to ensure that the result is propagated consistently
+ * throughout the app instead of only being returned to the caller.
  *
  * @return Observable that emits the configuration
  */
-function fetchConfiguration(): Observable<GQL.IConfiguration> {
+function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
     return queryGraphQL(
         `
         query Configuration() {
             root {
-                configuration {
-                    merged {
-                        contents
-                    }
-                }
+                ${configurationGQL}
             }
         }
     `
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.configuration || !data.root.configuration.merged) {
+            if (!data || !data.root || !data.root.configuration) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.configuration.merged
+            return data.root.configuration
         })
     )
 }
