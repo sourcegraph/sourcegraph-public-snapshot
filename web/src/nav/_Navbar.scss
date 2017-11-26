@@ -10,21 +10,7 @@
 
     background-color: #1c2736;
 
-    &__right {
-        display: flex;
-        padding-right: 1rem;
-        justify-content: flex-end;
-        align-items: center;
-
-        .avatar,
-        .avatar-icon {
-            width: 2rem;
-            height: 2rem;
-        }
-    }
-
-    &__logo-link,
-    &__nav-link {
+    &__logo-link {
         outline: 0;
         margin: 0 1rem;
         display: flex;

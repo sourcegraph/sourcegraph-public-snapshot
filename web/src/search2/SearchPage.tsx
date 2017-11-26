@@ -1,8 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
-import { UserAvatar } from '../settings/user/UserAvatar'
+import { NavLinks } from '../nav/NavLinks'
 import { eventLogger } from '../tracking/eventLogger'
 import { limitString } from '../util'
 import { Help } from './Help'
@@ -53,25 +52,7 @@ export class SearchPage extends React.Component<Props, State> {
         return (
             <div className="search-page2">
                 <PageTitle title={this.getPageTitle()} />
-                <div className="search-page2__nav">
-                    {!window.context.onPrem && (
-                        <a href="https://about.sourcegraph.com" className="search-page2__nav-link">
-                            About
-                        </a>
-                    )}
-                    <div className="search-page2__nav-auth">
-                        {// if on-prem, never show a user avatar or sign-in button
-                        window.context.onPrem ? null : window.context.user ? (
-                            <Link to="/settings">
-                                <UserAvatar size={64} />
-                            </Link>
-                        ) : (
-                            <Link to="/sign-in" className="btn btn-primary">
-                                Sign in
-                            </Link>
-                        )}
-                    </div>
-                </div>
+                <NavLinks />
                 <img
                     className="search-page2__logo"
                     src={`${window.context.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`}

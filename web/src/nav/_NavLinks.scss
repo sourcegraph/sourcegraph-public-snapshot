@@ -1,0 +1,18 @@
+.nav-links {
+    display: flex;
+    padding: 0 1rem;
+    justify-content: flex-end;
+    align-items: center;
+
+    &__link {
+        display: inline-block;
+        text-decoration: none;
+        margin-left: 1rem;
+    }
+
+    .avatar,
+    .avatar-icon {
+        width: 2rem;
+        height: 2rem;
+    }
+}
