@@ -143,6 +143,35 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	}
 }
 
+// TODO(sqs): a temporary type until we execute the migration described in
+// 2ac372aa2773080dc3d077beb056e9513e64bf67.
+type gqlidNode interface {
+	GQLID() graphql.ID
+}
+
+// TODO(sqs): a temporary helper until we execute the migration described in
+// 2ac372aa2773080dc3d077beb056e9513e64bf67.
+func gqlidNodeByID(ctx context.Context, id graphql.ID) (gqlidNode, error) {
+	if strings.HasPrefix(string(id), "auth0|") {
+		user, err := currentUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if user.Auth0ID() != string(id) {
+			return nil, errors.New("can only get current user")
+		}
+		return user, nil
+	}
+	switch relay.UnmarshalKind(id) {
+	case "User":
+		return userByID(ctx, id)
+	case "Org":
+		return orgByID(ctx, id)
+	default:
+		return nil, errors.New("invalid id")
+	}
+}
+
 type rootResolver struct{}
 
 func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string }) (*repositoryResolver, error) {

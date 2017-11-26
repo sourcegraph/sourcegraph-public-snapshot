@@ -1,0 +1,30 @@
+@import './SavedQueryForm';
+@import './SavedQuery';
+
+.saved-queries {
+    width: 100%;
+    margin: 2rem 0;
+
+    &__header {
+        margin-bottom: 3rem;
+        display: flex;
+        align-items: center;
+
+        h1 {
+            margin-bottom: 0;
+        }
+
+        &-button {
+            padding-right: 0.4rem;
+            margin-left: 0.75rem;
+        }
+    }
+
+    .saved-query {
+        margin-top: 2rem;
+    }
+
+    .saved-query-form {
+        margin: 1rem 0;
+    }
+}

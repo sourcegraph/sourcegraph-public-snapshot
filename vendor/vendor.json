@@ -47,12 +47,6 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
-			"checksumSHA1": "uy+vL6NkehLu+lS02R/5QRAB06s=",
-			"path": "github.com/RaveNoX/go-jsoncommentstrip",
-			"revision": "3b600e52343cab9e2e1439509d69683f57787d27",
-			"revisionTime": "2017-03-28T17:35:27Z"
-		},
-		{
 			"checksumSHA1": "l5tDrOVZ0rzOozRT5wq8TGQPGDk=",
 			"path": "github.com/apache/thrift/lib/go/thrift",
 			"revision": "c55fdb95340417a4ba2dda41e9e872a4bcc63459",
@@ -327,6 +321,12 @@
 			"path": "github.com/emicklei/go-restful/swagger",
 			"revision": "e121606b0d09b2e1c467183ee46217fa85a6b672",
 			"revisionTime": "2017-02-13T17:46:50Z"
+		},
+		{
+			"checksumSHA1": "uATU+xv/OOhehM+v5/AXFdyUANA=",
+			"path": "github.com/evanphx/json-patch",
+			"revision": "944e07253867aacae43c04b2e6a239005443f33a",
+			"revisionTime": "2017-07-19T20:31:23Z"
 		},
 		{
 			"checksumSHA1": "imR2wF388/0fBU6RRWx8RvTi8Q8=",
@@ -1503,6 +1503,12 @@
 			"path": "github.com/sourcegraph/jsonrpc2/websocket",
 			"revision": "b02337b177765febba753be4b7d9c26e3a9fd220",
 			"revisionTime": "2017-02-21T15:51:53Z"
+		},
+		{
+			"checksumSHA1": "NXS55WzGDy9L2T/hcHy4zwMT0N4=",
+			"path": "github.com/sourcegraph/jsonx",
+			"revision": "df0433aaa1a57f4cabed487254393f5adc939681",
+			"revisionTime": "2017-11-25T14:15:44Z"
 		},
 		{
 			"checksumSHA1": "ZYlSaPhSEf6f3XhDF2ZKzEnJsMI=",

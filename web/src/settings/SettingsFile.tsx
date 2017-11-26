@@ -8,7 +8,6 @@ import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import stripJSONComments from 'strip-json-comments'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
@@ -37,8 +36,6 @@ interface State {
      * scratch.
      */
     editingLastKnownSettingsID?: number | null
-
-    inputError?: Error
 }
 
 const emptySettings = '{\n  // empty configuration\n}'
@@ -80,7 +77,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     editing: false,
                     saving: false,
                     editingLastKnownSettingsID: undefined,
-                    inputError: undefined,
                     modifiedContents: undefined,
                 })
             )
@@ -112,11 +108,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         )}
                     {!this.state.saving &&
                         this.state.editing && (
-                            <button
-                                className="btn btn-icon settings-file__actions-btn"
-                                onClick={this.save}
-                                disabled={!!this.state.inputError}
-                            >
+                            <button className="btn btn-icon settings-file__actions-btn" onClick={this.save}>
                                 <CheckmarkIcon className="icon-inline" /> Save
                             </button>
                         )}
@@ -133,19 +125,11 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         {this.props.commitError.message}
                     </div>
                 )}
-                {this.state.editing &&
-                    this.state.inputError && (
-                        <div className="settings-file__error">
-                            <ErrorIcon className="icon-inline settings-file__error-icon" />
-                            {this.state.inputError.message}
-                        </div>
-                    )}
                 {this.state.editing && (
                     <textarea
                         className="settings-file__contents settings-file__contents-editor"
                         value={this.state.modifiedContents}
                         onChange={this.onTextareaChange}
-                        onBlur={this.onTextareaBlur}
                         disabled={this.state.saving}
                         spellCheck={false}
                     />
@@ -186,41 +170,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.setState({
                 editing: false,
                 modifiedContents: undefined,
-                inputError: undefined,
             })
         }
     }
 
     private onTextareaChange: React.ChangeEventHandler<HTMLTextAreaElement> = event => {
         this.setState({ modifiedContents: event.target.value })
-
-        // Clear input errors if the user's input fixed them, but (to avoid being
-        // annoying) do not show new errors as the user types.
-        try {
-            tryParseJSONWithComments(event.target.value)
-            this.setState({ inputError: undefined })
-        } catch (err) {
-            /* noop */
-        }
-    }
-
-    private onTextareaBlur: React.FocusEventHandler<HTMLTextAreaElement> = event => {
-        if (!this.state.modifiedContents) {
-            return
-        }
-
-        // Format the JSON value if it has no comments. Only report an error if the parse
-        // error is not due to it just having comments.
-        try {
-            this.setState({
-                inputError: undefined,
-                modifiedContents: JSON.stringify(JSON.parse(this.state.modifiedContents), null, 2),
-            })
-        } catch (err) {
-            this.setState({
-                inputError: tryParseJSONWithComments(this.state.modifiedContents),
-            })
-        }
     }
 
     private save = () => {
@@ -228,14 +183,5 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.getPropsSettingsID(), this.state.modifiedContents!)
         })
-    }
-}
-
-function tryParseJSONWithComments(input: string): Error | undefined {
-    try {
-        JSON.parse(stripJSONComments(input))
-        return undefined
-    } catch (err) {
-        return err
     }
 }

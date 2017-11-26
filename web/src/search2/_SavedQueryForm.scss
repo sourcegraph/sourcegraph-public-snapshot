@@ -1,0 +1,27 @@
+.saved-query-form {
+    background-color: darken($color-page-background, 15%);
+    padding: 1.5rem;
+
+    &__error {
+        margin-top: 1rem;
+        color: $color-error;
+
+        &-icon {
+            vertical-align: middle;
+        }
+    }
+
+    .ui-text-box {
+        &:not(:first-child) {
+            margin-top: 0.5rem;
+        }
+    }
+
+    button {
+        margin-top: 0.5rem;
+
+        &:not(:first-child) {
+            margin-left: 0.5rem;
+        }
+    }
+}
