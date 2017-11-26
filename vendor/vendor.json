@@ -329,6 +329,12 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
+			"checksumSHA1": "uATU+xv/OOhehM+v5/AXFdyUANA=",
+			"path": "github.com/evanphx/json-patch",
+			"revision": "944e07253867aacae43c04b2e6a239005443f33a",
+			"revisionTime": "2017-07-19T20:31:23Z"
+		},
+		{
 			"checksumSHA1": "imR2wF388/0fBU6RRWx8RvTi8Q8=",
 			"path": "github.com/facebookgo/clock",
 			"revision": "600d898af40aa09a7a93ecb9265d87b0504b6f03",
@@ -1503,6 +1509,12 @@
 			"path": "github.com/sourcegraph/jsonrpc2/websocket",
 			"revision": "b02337b177765febba753be4b7d9c26e3a9fd220",
 			"revisionTime": "2017-02-21T15:51:53Z"
+		},
+		{
+			"checksumSHA1": "NXS55WzGDy9L2T/hcHy4zwMT0N4=",
+			"path": "github.com/sourcegraph/jsonx",
+			"revision": "df0433aaa1a57f4cabed487254393f5adc939681",
+			"revisionTime": "2017-11-25T14:15:44Z"
 		},
 		{
 			"checksumSHA1": "ZYlSaPhSEf6f3XhDF2ZKzEnJsMI=",
