@@ -527,6 +527,8 @@ type Installation {
 
 type User implements ConfigurationSubject {
   id: String! @deprecated(reason: "use auth0ID instead")
+  # The unique ID for the user.
+  gqlid: ID!
   auth0ID: String!
   sourcegraphID: Int
   email: String!

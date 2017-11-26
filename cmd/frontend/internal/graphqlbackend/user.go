@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	graphql "github.com/neelance/graphql-go"
+	"github.com/neelance/graphql-go/relay"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -23,6 +25,22 @@ type userResolver struct {
 	actor *actor.Actor
 }
 
+func userByID(ctx context.Context, id graphql.ID) (*userResolver, error) {
+	var userID int32
+	if err := relay.UnmarshalSpec(id, &userID); err != nil {
+		return nil, err
+	}
+	return userByIDInt32(ctx, userID)
+}
+
+func userByIDInt32(ctx context.Context, id int32) (*userResolver, error) {
+	user, err := store.Users.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &userResolver{user: user}, nil
+}
+
 // deprecated use Auth0ID
 func (r *userResolver) ID() string {
 	// TODO(sqs): can't be changed to return a different value until all editor
@@ -31,6 +49,10 @@ func (r *userResolver) ID() string {
 	//
 	// log.Println("use of deprecated User.id field")
 	return r.Auth0ID()
+}
+
+func (r *userResolver) GQLID() graphql.ID {
+	return relay.MarshalID("User", r.user.ID)
 }
 
 func (r *userResolver) Auth0ID() string {
