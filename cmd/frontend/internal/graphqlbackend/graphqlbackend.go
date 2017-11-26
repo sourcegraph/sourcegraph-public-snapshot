@@ -91,10 +91,13 @@ func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToUser() (*userResolver, bool) {
-	n, ok := r.node.(*userResolver)
-	return n, ok
-}
+// TODO(sqs): add this back when the migration described in
+// 2ac372aa2773080dc3d077beb056e9513e64bf67 is done.
+//
+// func (r *nodeResolver) ToUser() (*userResolver, bool) {
+// 	n, ok := r.node.(*userResolver)
+// 	return n, ok
+// }
 
 func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
 	n, ok := r.node.(*orgResolver)
@@ -124,8 +127,13 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "Repository":
 		return repositoryByID(ctx, id)
-	case "User":
-		return userByID(ctx, id)
+
+	// TODO(sqs): add user back when the migration described in
+	// commit 2ac372aa2773080dc3d077beb056e9513e64bf67 is done.
+	//
+	// case "User":
+	// 		return userByID(ctx, id)
+
 	case "Org":
 		return orgByID(ctx, id)
 	case "Commit":

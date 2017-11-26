@@ -11,6 +11,8 @@ import (
 )
 
 func TestNode_User(t *testing.T) {
+	t.Skip("TODO(sqs): unskip when the migration described in commit 2ac372aa2773080dc3d077beb056e9513e64bf67 is executed")
+
 	resetMocks()
 	store.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: 1, Username: "alice"}, nil)
 

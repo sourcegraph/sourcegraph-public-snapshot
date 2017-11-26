@@ -25,12 +25,12 @@ func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.or
 
 func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
 
-func (s *configurationSubject) ID() graphql.ID {
+func (s *configurationSubject) GQLID() graphql.ID {
 	switch {
 	case s.org != nil:
-		return s.org.ID()
+		return s.org.GQLID()
 	case s.user != nil:
-		return s.user.ID()
+		return s.user.GQLID()
 	}
 	panic("no configuration subject")
 }
