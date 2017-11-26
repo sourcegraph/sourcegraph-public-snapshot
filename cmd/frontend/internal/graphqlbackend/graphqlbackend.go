@@ -108,25 +108,21 @@ func (r *schemaResolver) Root() *rootResolver {
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*nodeResolver, error) {
-	switch relay.UnmarshalKind(args.ID) {
+	n, err := nodeByID(ctx, args.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &nodeResolver{n}, nil
+}
+
+func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
+	switch relay.UnmarshalKind(id) {
 	case "Repository":
-		n, err := repositoryByID(ctx, args.ID)
-		if err != nil {
-			return nil, err
-		}
-		return &nodeResolver{n}, nil
+		return repositoryByID(ctx, id)
 	case "Org":
-		n, err := orgByID(ctx, args.ID)
-		if err != nil {
-			return nil, err
-		}
-		return &nodeResolver{n}, nil
+		return orgByID(ctx, id)
 	case "Commit":
-		n, err := commitByID(ctx, args.ID)
-		if err != nil {
-			return nil, err
-		}
-		return &nodeResolver{n}, nil
+		return commitByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
