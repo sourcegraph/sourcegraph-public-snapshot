@@ -182,11 +182,7 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 		}
 	}()
 
-	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
-		return err
-	}
-
-	return nil
+	return backend.Repos.RefreshIndex(ctx, repo.URI)
 }
 
 func (r *rootResolver) Repositories(ctx context.Context, args *struct {
