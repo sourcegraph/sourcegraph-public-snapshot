@@ -41,7 +41,7 @@ func userByIDInt32(ctx context.Context, id int32) (*userResolver, error) {
 	return &userResolver{user: user}, nil
 }
 
-func (r *userResolver) GQLID() graphql.ID {
+func (r *userResolver) ID() graphql.ID {
 	return relay.MarshalID("User", r.user.ID)
 }
 

@@ -527,7 +527,7 @@ type Installation {
 
 type User implements ConfigurationSubject {
   # The unique ID for the user.
-  gqlid: ID!
+  id: ID!
   auth0ID: String!
   sourcegraphID: Int
   email: String!
