@@ -187,7 +187,10 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames 
 		}
 		filters = append(filters, sqlf.Sprintf("u.username IN (%s)", sqlf.Join(items, ",")))
 	}
-	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"), sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
+	if len(filters) > 0 {
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
+	}
+	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"))
 	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth_id) WHERE %s", sqlf.Join(conds, "AND"))
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
