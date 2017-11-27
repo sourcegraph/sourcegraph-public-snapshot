@@ -20,11 +20,17 @@ import (
 
 // Store is an on disk cache, with items cached via calls to Open.
 type Store struct {
-	// Dir is the directory to cache items
+	// Dir is the directory to cache items.
 	Dir string
 
 	// Component when set is reported to OpenTracing as the component.
 	Component string
+
+	// BackgroundTimeout when non-zero will do fetches in the background with
+	// a timeout. This means the context passed to fetch will be
+	// context.WithTimeout(context.Background(), BackgroundTimeout). When not
+	// set fetches are done with the passed in context.
+	BackgroundTimeout time.Duration
 }
 
 // File is an os.File, but includes the Path
@@ -76,25 +82,58 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 		return &File{File: f, Path: path}, nil
 	}
 
+	// We (probably) have to fetch
+	span.SetTag("source", "fetch")
+
+	// Do the fetch in another goroutine so we can respect ctx cancellation.
+	type result struct {
+		f   *File
+		err error
+	}
+	ch := make(chan result, 1)
+	go func(ctx context.Context) {
+		if s.BackgroundTimeout != 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), s.BackgroundTimeout)
+			defer cancel()
+		}
+		f, err := doFetch(ctx, path, fetcher)
+		ch <- result{f, err}
+	}(ctx)
+
+	select {
+	case <-ctx.Done():
+		// *os.File sets a finalizer to close the file when no longer used, so
+		// we don't need to worry about closing the file in the case of context
+		// cancellation.
+		return nil, ctx.Err()
+	case r := <-ch:
+		return r.f, r.err
+	}
+}
+
+func doFetch(ctx context.Context, path string, fetcher Fetcher) (file *File, err error) {
 	// We have to grab the lock for this key, so we can fetch or wait for
 	// someone else to finish fetching.
 	urlMu := urlMu(path)
 	urlMu.Lock()
 	defer urlMu.Unlock()
-	span.LogEvent("urlMu acquired")
+
+	// Since we acquired the lock we may have timed out.
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 
 	// Since we acquired urlMu, someone else may have put the archive onto
 	// the disk.
-	f, err = os.Open(path)
+	f, err := os.Open(path)
 	if err == nil {
-		span.SetTag("source", "other")
 		return &File{File: f, Path: path}, nil
 	}
 	// Just in case we failed due to something bad on the FS, remove
 	_ = os.Remove(path)
 
 	// Fetch since we still can't open up the file
-	span.SetTag("source", "fetch")
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return nil, errors.Wrap(err, "could not create archive cache dir")
 	}

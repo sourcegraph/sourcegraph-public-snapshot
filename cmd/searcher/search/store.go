@@ -66,8 +66,9 @@ type Store struct {
 func (s *Store) Start() {
 	s.once.Do(func() {
 		s.cache = &diskcache.Store{
-			Dir:       s.Path,
-			Component: "store",
+			Dir:               s.Path,
+			Component:         "store",
+			BackgroundTimeout: 2 * time.Minute,
 		}
 		go s.watchAndEvict()
 	})
