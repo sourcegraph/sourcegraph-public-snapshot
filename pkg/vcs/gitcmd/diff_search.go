@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 
+	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -28,6 +29,10 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 
 // RawLogDiffSearch implements vcs.Repository.
 func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: RawLogDiffSearch")
+	span.SetTag("Opt", opt)
+	defer span.Finish()
+
 	if opt.FormatArgs == nil {
 		opt.FormatArgs = validRawLogDiffSearchFormatArgs[0]
 	}
