@@ -15,6 +15,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/lazyzip"
 )
 
@@ -115,13 +116,9 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		RegExp:        p.PathPatternsAreRegExps,
 		CaseSensitive: p.PathPatternsAreCaseSensitive,
 	}
-	var matchPath pathmatch.PathMatcher
-	if includePatterns := p.AllIncludePatterns(); len(includePatterns) > 0 || p.ExcludePattern != "" {
-		var err error
-		matchPath, err = pathmatch.CompilePathPatterns(p.AllIncludePatterns(), p.ExcludePattern, pathOptions)
-		if err != nil {
-			return nil, err
-		}
+	matchPath, err := pathmatch.CompilePathPatterns(p.AllIncludePatterns(), p.ExcludePattern, pathOptions)
+	if err != nil {
+		return nil, err
 	}
 
 	re, err := regexp.Compile(expr)
@@ -138,14 +135,10 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 // Copy returns a copied version of rg that is safe to use from another
 // goroutine.
 func (rg *readerGrep) Copy() *readerGrep {
-	var matchPathCopy pathmatch.PathMatcher
-	if rg.matchPath != nil {
-		matchPathCopy = rg.matchPath.Copy()
-	}
 	return &readerGrep{
 		re:         rg.re.Copy(),
 		ignoreCase: rg.ignoreCase,
-		matchPath:  matchPathCopy,
+		matchPath:  rg.matchPath.Copy(),
 	}
 }
 
@@ -260,6 +253,8 @@ func (rg *readerGrep) FindZip(f *lazyzip.File) (protocol.FileMatch, error) {
 func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
+	span.SetTag("re", rg.re.String())
+	span.SetTag("path", rg.matchPath.String())
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -288,6 +283,17 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fil
 	// goroutine responsible for writing to files. It also is the only
 	// goroutine which listens for cancellation.
 	go func() {
+		var filesSkipped, filesSearched int
+		defer func() {
+			// We can write to span since nothing else will until files is
+			// closed
+			span.LogFields(
+				otlog.Int("filesSkipped", filesSkipped),
+				otlog.Int("filesSearched", filesSearched),
+			)
+			close(files)
+		}()
+
 		done := ctx.Done()
 		for {
 			f, err := zr.Next()
@@ -295,19 +301,19 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fil
 				if err != io.EOF {
 					filesErr = err
 				}
-				break
+				return
 			}
-			if rg.matchPath != nil && !rg.matchPath.MatchPath(f.Name) {
+			if !rg.matchPath.MatchPath(f.Name) {
+				filesSkipped++
 				continue
 			}
 			select {
 			case files <- f:
+				filesSearched++
 			case <-done:
-				close(files)
 				return
 			}
 		}
-		close(files)
 	}()
 
 	// Start workers. They read from files and write to matches.

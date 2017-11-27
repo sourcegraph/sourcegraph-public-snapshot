@@ -3,6 +3,8 @@
 package pathmatch
 
 import (
+	"bytes"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -19,16 +21,26 @@ type PathMatcher interface {
 	// being called, to avoid lock contention if multiple goroutines are
 	// using the regexp.)
 	Copy() PathMatcher
+
+	// String returns the source text used to compile the PatchMatcher.
+	String() string
 }
 
-type pathMatcherFunc func(path string) bool
+type pathMatcherFunc struct {
+	matcher func(path string) bool
+	pattern string
+}
 
-func (f pathMatcherFunc) MatchPath(path string) bool { return f(path) }
+func (f *pathMatcherFunc) MatchPath(path string) bool { return f.matcher(path) }
 
-func (f pathMatcherFunc) Copy() PathMatcher {
+func (f *pathMatcherFunc) Copy() PathMatcher {
 	// Noop; use regexpMatcher or another type that implements Copy if
 	// the underlying pattern can be copied.
 	return f
+}
+
+func (f *pathMatcherFunc) String() string {
+	return f.pattern
 }
 
 // regexpMatcher is a PathMatcher backed by a regexp.
@@ -40,6 +52,10 @@ func (m *regexpMatcher) MatchPath(path string) bool {
 
 func (m *regexpMatcher) Copy() PathMatcher {
 	return (*regexpMatcher)((*regexp.Regexp)(m).Copy())
+}
+
+func (m *regexpMatcher) String() string {
+	return fmt.Sprintf("re:%s", (*regexp.Regexp)(m).String())
 }
 
 // CompileOptions specifies options about the patterns to compile.
@@ -74,11 +90,17 @@ func CompilePattern(pattern string, options CompileOptions) (PathMatcher, error)
 	if !options.CaseSensitive {
 		// Use a match func that lowercases the input because globbing has no
 		// first-class concept of case-insensitivity (as regexps do, with the 'i' flag).
-		return pathMatcherFunc(func(path string) bool {
-			return p.Match(strings.ToLower(path))
-		}), nil
+		return &pathMatcherFunc{
+			matcher: func(path string) bool {
+				return p.Match(strings.ToLower(path))
+			},
+			pattern: "iglob:" + pattern,
+		}, nil
 	}
-	return pathMatcherFunc(p.Match), nil
+	return &pathMatcherFunc{
+		matcher: p.Match,
+		pattern: "glob:" + pattern,
+	}, nil
 }
 
 // pathMatcherAnd is a PathMatcher that matches a path iff all of the
@@ -100,6 +122,18 @@ func (pm pathMatcherAnd) Copy() PathMatcher {
 		pm2[i] = m.Copy()
 	}
 	return pathMatcherAnd(pm2)
+}
+
+func (pm pathMatcherAnd) String() string {
+	var b bytes.Buffer
+	b.WriteString("li:")
+	for i, m := range pm {
+		b.WriteString(m.String())
+		if i != len(pm)-1 {
+			b.WriteString(", ")
+		}
+	}
+	return b.String()
 }
 
 // CompilePatterns compiles the patterns into a PathMatcher func that matches
@@ -149,6 +183,16 @@ func (pm pathMatcherIncludeExclude) Copy() PathMatcher {
 	return pm2
 }
 
+func (pm pathMatcherIncludeExclude) String() string {
+	if pm.include != nil && pm.exclude != nil {
+		return fmt.Sprintf("%s !%s", pm.include.String(), pm.exclude.String())
+	}
+	if pm.include != nil {
+		return pm.include.String()
+	}
+	return "!" + pm.exclude.String()
+}
+
 // CompilePathPatterns returns a PathMatcher func that matches a path iff:
 //
 // * all of the includePatterns match the path; AND
@@ -175,7 +219,10 @@ func CompilePathPatterns(includePatterns []string, excludePattern string, option
 	}
 
 	if include == nil && exclude == nil {
-		return pathMatcherFunc(func(path string) bool { return true }), nil
+		return &pathMatcherFunc{
+			matcher: func(path string) bool { return true },
+			pattern: "noop",
+		}, nil
 	}
 	if exclude == nil {
 		return include, nil
