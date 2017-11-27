@@ -188,6 +188,8 @@ func TestLowerRegexp(t *testing.T) {
 	cases := map[string]string{
 		"foo":           "foo",
 		"FoO":           "foo",
+		"(?m:^foo)":     "(?m:^)foo", // regex parse simplifies to this
+		"(?m:^FoO)":     "(?m:^)foo",
 		"[A-Z]":         "[a-z]",
 		"[^A-Z]":        "[^A-Z]", // before we matched lowercase, and still after
 		"[Z]":           "z",

@@ -94,6 +94,11 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 	if p.IsWordMatch {
 		expr = `\b` + expr + `\b`
 	}
+	if p.IsRegExp {
+		// We don't do the search line by line, therefore we want the
+		// regex engine to consider newlines for anchors (^$).
+		expr = "(?m:" + expr + ")"
+	}
 	if !p.IsCaseSensitive {
 		// We don't just use (?i) because regexp library doesn't seem
 		// to contain good optimizations for case insensitive
@@ -105,11 +110,6 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		lowerRegexpASCII(re)
 		expr = re.String()
 		ignoreCase = true
-	}
-	if p.IsRegExp {
-		// We don't do the search line by line, therefore we want the
-		// regex engine to consider newlines for anchors (^$).
-		expr = "(?m:" + expr + ")"
 	}
 
 	pathOptions := pathmatch.CompileOptions{

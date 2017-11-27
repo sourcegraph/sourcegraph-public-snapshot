@@ -66,6 +66,14 @@ main.go:6:	fmt.Println("Hello world")
 main.go:5:func main() {
 `},
 
+		// https://github.com/sourcegraph/sourcegraph/issues/8155
+		{protocol.PatternInfo{Pattern: "^func", IsRegExp: true}, `
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true}, `
+main.go:5:func main() {
+`},
+
 		{protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}, ""},
 
 		{protocol.PatternInfo{Pattern: "main", IsWordMatch: true}, `
