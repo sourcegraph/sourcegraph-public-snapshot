@@ -20,10 +20,15 @@ func (r *personResolver) Email() string {
 }
 
 func (r *personResolver) DisplayName() string {
+	// Trim space in case of strings like " <a@example.com>" where the name
+	// part is " ". (We wouldn't want to show an all-whitespace name in the UI.)
 	if name := strings.TrimSpace(r.name); name != "" {
 		return name
 	}
-	return r.email
+	if r.email != "" {
+		return r.email
+	}
+	return "unknown"
 }
 
 func (r *personResolver) GravatarHash() string {

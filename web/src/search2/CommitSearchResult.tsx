@@ -43,7 +43,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
             </Link>
             <Link to={commitURL} className="commit-search-result__title-signatureo">
-                <code>{props.result.commit.abbreviatedOid}</code>{' '}
+                <code>{props.result.commit.abbreviatedOID}</code>{' '}
                 {formatDistance(parseCommitDateString(props.result.commit.author.date), new Date(), {
                     addSuffix: true,
                 })}

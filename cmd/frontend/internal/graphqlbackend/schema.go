@@ -566,7 +566,7 @@ type Commit implements Node {
 type CommitInfo {
   repository: Repository!
   oid: GitObjectID!
-  abbreviatedOid: String!
+  abbreviatedOID: String!
   rev: String!
   author: Signature!
   committer: Signature

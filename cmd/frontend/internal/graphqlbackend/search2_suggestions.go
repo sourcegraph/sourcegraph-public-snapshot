@@ -127,9 +127,6 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 			}
 			var suggestions []*searchResultResolver
 			for i, res := range results.results {
-				if res.fileMatch == nil {
-					continue
-				}
 				// TODO(sqs): should parallelize, or reuse data fetched elsewhere
 				commit, err := getCommitSpec(ctx, res.fileMatch)
 				if err != nil {

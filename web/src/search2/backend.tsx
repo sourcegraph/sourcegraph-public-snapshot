@@ -44,7 +44,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                         uri
                                     }
                                     oid
-                                    abbreviatedOid
+                                    abbreviatedOID
                                     author {
                                         person {
                                             displayName

@@ -40,7 +40,7 @@ type gitObject struct {
 	oid gitObjectID
 }
 
-func (o *gitObject) Oid() gitObjectID { return o.oid }
+func (o *gitObject) OID() gitObjectID { return o.oid }
 
 type gitRevSpecExpr struct {
 	expr string
@@ -54,18 +54,9 @@ type gitRevSpec struct {
 	object *gitObject
 }
 
-func (r *gitRevSpec) ToGitRef() (*gitRef, bool) { return r.ref, r.ref != nil }
-func (r *gitRevSpec) ToGitRevSpecExpr() (*gitRevSpecExpr, bool) {
-	// Support converting refs and objects to revspec expressions, too.
-	if r.ref != nil {
-		return &gitRevSpecExpr{expr: r.ref.name}, true
-	}
-	if r.object != nil {
-		return &gitRevSpecExpr{expr: string(r.object.oid)}, true
-	}
-	return r.expr, r.expr != nil
-}
-func (r *gitRevSpec) ToGitObject() (*gitObject, bool) { return r.object, r.object != nil }
+func (r *gitRevSpec) ToGitRef() (*gitRef, bool)                 { return r.ref, r.ref != nil }
+func (r *gitRevSpec) ToGitRevSpecExpr() (*gitRevSpecExpr, bool) { return r.expr, r.expr != nil }
+func (r *gitRevSpec) ToGitObject() (*gitObject, bool)           { return r.object, r.object != nil }
 
 type gitRevisionRange struct {
 	expr       string

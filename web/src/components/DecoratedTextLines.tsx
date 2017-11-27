@@ -58,7 +58,13 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
-        this.setState(this.getStateForProps(nextProps))
+        if (
+            this.props.value !== nextProps.value ||
+            this.props.highlights !== nextProps.highlights ||
+            this.props.lineClasses !== nextProps.lineClasses
+        ) {
+            this.setState(this.getStateForProps(nextProps))
+        }
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {

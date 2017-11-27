@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"sync"
+	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -76,6 +77,12 @@ func searchDiffsInRepo(ctx context.Context, repoName, rev string, info *patternI
 		}
 		return *s
 	}
+
+	// TODO(sqs): set extra strict timeout to avoid runaway resource consumption
+	// during testing of this feature
+	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
+	defer cancel()
+
 	rawResults, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
 		Query: vcs.TextSearchOptions{
 			Pattern:         info.Pattern,
