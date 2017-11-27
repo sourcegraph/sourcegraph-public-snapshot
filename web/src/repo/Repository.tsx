@@ -234,7 +234,7 @@ export class Repository extends React.PureComponent<Props, State> {
                         >
                             <ListIcon />
                         </button>
-                        <TreeHeader title="File Explorer" onDismiss={this.onTreeToggle} />
+                        <TreeHeader title="Files" onDismiss={this.onTreeToggle} />
                         <Tree
                             repoPath={this.props.repoPath}
                             rev={this.props.rev}
