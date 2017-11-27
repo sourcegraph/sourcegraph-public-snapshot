@@ -54,7 +54,7 @@ export class NavLinks extends React.Component<Props, State> {
                         About
                     </a>
                 )}
-                {true && (
+                {window.context.onPrem && (
                     <Link to="/browse" className="nav-links__link">
                         Browse
                     </Link>
