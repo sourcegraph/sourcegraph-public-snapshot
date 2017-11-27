@@ -1277,10 +1277,10 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
-			"checksumSHA1": "QoVjlQFru1ixgV8vh63T4/JAtLI=",
+			"checksumSHA1": "rJab1YdNhQooDiBWNnt7TLWPyBU=",
 			"path": "github.com/pkg/errors",
-			"revision": "a22138067af1c4942683050411a841ade67fe1eb",
-			"revisionTime": "2016-08-08T05:55:40Z"
+			"revision": "f15c970de5b76fac0b59abb32d62c17cc7bed265",
+			"revisionTime": "2017-10-18T19:55:50Z"
 		},
 		{
 			"checksumSHA1": "KxkAlLxQkuSGHH46Dxu6wpAybO4=",

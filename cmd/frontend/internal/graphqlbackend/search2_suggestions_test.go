@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -85,6 +87,38 @@ func TestSearch2Suggestions(t *testing.T) {
 		}
 		if !calledReposListFoo {
 			t.Error("!calledReposListFoo")
+		}
+		if !calledSearchRepos {
+			t.Error("!calledSearchRepos")
+		}
+	})
+
+	t.Run("single term invalid regex", func(t *testing.T) {
+		var calledReposListAll bool
+		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+			wantAll := &store.RepoListOp{ListOptions: listOpts} // when treating term as text query
+			if reflect.DeepEqual(op, wantAll) {
+				calledReposListAll = true
+				return []*sourcegraph.Repo{{URI: "bar-repo"}}, nil
+			}
+			t.Errorf("got %+v, want %+v", op, wantAll)
+			return nil, nil
+		}
+		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		backend.Mocks.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
+		calledSearchRepos := false
+		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
+			calledSearchRepos = true
+			if want := "foo("; args.Query.Pattern != want {
+				t.Errorf("got %q, want %q", args.Query.Pattern, want)
+			}
+			err := &searcherError{StatusCode: 400, Message: "error parsing regexp: missing closing ): `foo(`"}
+			return nil, nil, errors.Wrap(err, "failed to search foo-repo")
+		}
+		defer func() { mockSearchRepos = nil }()
+		testSuggestions(t, "foo(", "", []string{})
+		if !calledReposListAll {
+			t.Error("!calledReposListAll")
 		}
 		if !calledSearchRepos {
 			t.Error("!calledSearchRepos")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
 	"sort"
 	"sync"
 	"time"
@@ -50,6 +51,16 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		} else if len(r.combinedQuery.fieldValues[searchFieldRepo]) > 0 && ((len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) > 0 && len(r.combinedQuery.fieldValues) == 2) || (len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) == 0 && len(r.combinedQuery.fieldValues) == 1)) {
 			effectiveRepoFieldValues = r.combinedQuery.fieldValues[searchFieldRepo].Values()
 		}
+
+		// If we have a query which is not valid, just ignore it since this is for a suggestion.
+		i := 0
+		for _, v := range effectiveRepoFieldValues {
+			if _, err := regexp.Compile(v); err == nil {
+				effectiveRepoFieldValues[i] = v
+				i++
+			}
+		}
+		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 {
 			_, _, repos, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
@@ -107,7 +118,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 			results, err := r.Results(ctx)
 			if err != nil {
 				if err == context.DeadlineExceeded {
-					err = nil // don't log as error below
+					return nil, nil // don't log as error below
 				}
 				return nil, err
 			}
@@ -160,7 +171,12 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 			} else {
 				if err == context.DeadlineExceeded || err == context.Canceled {
 					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.args.Query, "scopeQuery", r.args.ScopeQuery)
-				} else {
+				} else if !isBadRequest(err) {
+					// We exclude bad user input. Note that this means that we
+					// may have some tokens in the input that are valid, but
+					// typing something "bad" results in no suggestions from the
+					// this suggester. In future we should just ignore the bad
+					// token.
 					par.Error(err)
 				}
 			}

@@ -277,7 +277,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	for i, includePattern := range includePatterns {
 		p, err := regexp.Compile("(?i:" + includePattern + ")")
 		if err != nil {
-			return nil, nil, nil, false, err
+			return nil, nil, nil, false, &badRequestError{err}
 		}
 		compiledIncludePatterns[i] = p
 	}
@@ -368,7 +368,7 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 
 	matchPath, err := pathmatch.CompilePathPatterns(includePatterns, excludePattern, pathOptions)
 	if err != nil {
-		return nil, err
+		return nil, &badRequestError{err}
 	}
 
 	var scorerQuery string
@@ -403,4 +403,20 @@ func unionRegExps(patterns []string) string {
 		patterns2[i] = p
 	}
 	return strings.Join(patterns2, "|")
+}
+
+type badRequestError struct {
+	err error
+}
+
+func (e *badRequestError) BadRequest() bool {
+	return true
+}
+
+func (e *badRequestError) Error() string {
+	return "bad request: " + e.err.Error()
+}
+
+func (e *badRequestError) Cause() error {
+	return e.err
 }

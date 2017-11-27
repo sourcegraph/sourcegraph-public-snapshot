@@ -164,7 +164,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	client := &http.Client{Transport: &nethttp.Transport{}}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "searcher request failed")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
@@ -172,7 +172,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		if err != nil {
 			return nil, false, err
 		}
-		return nil, false, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
+		return nil, false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
 	}
 
 	r := struct {
@@ -181,9 +181,44 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&r)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "searcher response invalid")
 	}
 	return r.Matches, r.LimitHit, nil
+}
+
+type searcherError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *searcherError) BadRequest() bool {
+	return e.StatusCode == 400
+}
+
+func (e *searcherError) Error() string {
+	return e.Message
+}
+
+// isBadRequest will check if error or one of its causes is a bad request.
+func isBadRequest(err error) bool {
+	type badRequester interface {
+		BadRequest() bool
+	}
+	type causer interface {
+		Cause() error
+	}
+
+	for err != nil {
+		if badrequest, ok := err.(badRequester); ok && badrequest.BadRequest() {
+			return true
+		}
+		cause, ok := err.(causer)
+		if !ok {
+			break
+		}
+		err = cause.Cause()
+	}
+	return false
 }
 
 var mockSearchRepo func(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
