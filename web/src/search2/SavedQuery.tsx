@@ -44,20 +44,6 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        /*         this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    filter(props => props.refreshedAt > this.state.refreshedAt),
-                    tap(props => {
-                        console.log('PPP', props.refreshedAt, this.state.refreshedAt)
-                        this.setState({ approximateResultCount: undefined, loading: true }, () =>
-                            this.refreshRequested.next(props.savedQuery)
-                        )
-                    })
-                )
-                .subscribe()
-        )
- */
         const propsChanges = this.componentUpdates.pipe(startWith(this.props))
 
         this.subscriptions.add(
@@ -73,7 +59,17 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                         loading: false,
                     }))
                 )
-                .subscribe(newState => this.setState(newState as State), err => console.error(err))
+                .subscribe(
+                    newState => this.setState(newState as State),
+                    err => {
+                        this.setState({
+                            refreshedAt: Date.now(),
+                            approximateResultCount: '!',
+                            loading: false,
+                        })
+                        console.error(err)
+                    }
+                )
         )
         this.refreshRequested.next(props.savedQuery)
 
