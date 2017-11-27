@@ -243,7 +243,7 @@ type Search2 {
   suggestions(first: Int): [SearchSuggestion2!]!
 }
 
-union SearchResult = FileMatch
+union SearchResult = FileMatch | CommitSearchResult
 
 type SearchResults2 {
   results: [SearchResult!]!
@@ -295,6 +295,48 @@ type SearchQuery2 {
 type RepoGroup {
   name: String!
   repositories: [String!]!
+}
+
+# A diff between two diffable Git objects.
+type Diff {
+  # The diff's repository.
+  repository: Repository!
+  # The revision range of the diff.
+  range: GitRevisionRange!
+}
+
+# A search result that is a Git commit.
+type CommitSearchResult {
+  # The commit that matched the search query.
+  commit: CommitInfo!
+  # The matching portion of the diff. TODO(sqs): what format?
+  preview: HighlightedString!
+}
+
+# A search result that is a diff between two diffable Git objects.
+type DiffSearchResult {
+  # The diff that matched the search query.
+  diff: Diff!
+  # The matching portion of the diff. TODO(sqs): what format?
+  preview: HighlightedString!
+}
+
+# A string that has highlights (e.g, query matches).
+type HighlightedString {
+  # The full contents of the string.
+  value: String!
+  # Highlighted matches of the query in the preview string.
+  highlights: [Highlight!]!
+}
+
+# A highlighted region in a string (e.g., matched by a query).
+type Highlight {
+  # The 1-indexed line number.
+  line: Int!
+  # The 1-indexed character on the line.
+  character: Int!
+  # The length of the highlight, in characters (on the same line).
+  length: Int!
 }
 
 # Represents a shared item (either a shared code comment OR code snippet).
@@ -435,6 +477,48 @@ type Repository implements Node {
   redirectURL: String
 }
 
+# A Git object ID (SHA-1 hash, 40 hexadecimal characters).
+scalar GitObjectID
+
+# A Git ref.
+type GitRef {
+  # The ref name.
+  name: String!
+  # The object that the ref points to.
+  target: GitObject!
+}
+
+# A Git object.
+type GitObject {
+  oid: GitObjectID!
+}
+
+# A Git revspec expression that (possibly) evaluates to a Git revision.
+type GitRevSpecExpr {
+  expr: String!
+}
+
+# A Git revspec.
+union GitRevSpec = GitRef | GitRevSpecExpr | GitObject
+
+# A Git revision range of the form "base..head" or "base...head". Other revision
+# range formats are not supported.
+type GitRevisionRange {
+  # The Git revision range expression of the form "base..head" or "base...head".
+  expr: String!
+  # The base (left-hand side) of the range.
+  base: GitRevSpec!
+  # The base's revspec as an expression.
+  baseRevSpec: GitRevSpecExpr!
+  # The head (right-hand side) of the range.
+  head: GitRevSpec!
+  # The head's revspec as an expression.
+  headRevSpec: GitRevSpecExpr!
+  # The merge-base of the base and head revisions, if this is a "base...head"
+  # revision range. If this is a "base..head" revision range, then this field is null.
+  mergeBase: GitObject
+}
+
 type PhabricatorRepo {
   # the canonical repo path, like 'github.com/gorilla/mux'
   uri: String!
@@ -473,8 +557,11 @@ type Commit implements Node {
 }
 
 type CommitInfo {
+  repository: Repository!
+  oid: GitObjectID!
+  abbreviatedOID: String!
   rev: String!
-  author: Signature
+  author: Signature!
   committer: Signature
   message: String!
 }
@@ -487,6 +574,8 @@ type Signature {
 type Person {
   name: String!
   email: String!
+  # The name if set; otherwise the email username.
+  displayName: String!
   gravatarHash: String!
   avatarURL: String!
 }

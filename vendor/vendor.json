@@ -2851,6 +2851,12 @@
 			"revisionTime": "2015-04-25T02:47:25-07:00"
 		},
 		{
+			"checksumSHA1": "FUm/C+egRXt2SnY/0xEL8MHpj8Q=",
+			"path": "sourcegraph.com/sourcegraph/go-diff/diff",
+			"revision": "c0b71564396d0e0344c852f8ef5a2bbd6873f328",
+			"revisionTime": "2017-10-31T05:07:03Z"
+		},
+		{
 			"checksumSHA1": "AuvMK+BY/sGI1lQRCUMn7zst2nI=",
 			"path": "sourcegraph.com/sourcegraph/go-template-lint",
 			"revision": "17cde5e36859a47336e707acd943627178ab4349",
@@ -2861,6 +2867,12 @@
 			"path": "sourcegraph.com/sourcegraph/go-template-lint/tmplwalk",
 			"revision": "17cde5e36859a47336e707acd943627178ab4349",
 			"revisionTime": "2015-08-28T08:55:01Z"
+		},
+		{
+			"checksumSHA1": "GRBoSaxkWfXT9BIP2M87IePcEn8=",
+			"path": "sourcegraph.com/sqs/pbtypes",
+			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
+			"revisionTime": "2016-01-07T09:09:29Z"
 		}
 	],
 	"rootPath": "sourcegraph.com/sourcegraph/sourcegraph"

@@ -30,6 +30,31 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                     offsetAndLengths
                                 }
                             }
+                            ... on CommitSearchResult {
+                                preview {
+                                    value
+                                    highlights {
+                                        line
+                                        character
+                                        length
+                                    }
+                                }
+                                commit {
+                                    repository {
+                                        uri
+                                    }
+                                    oid
+                                    abbreviatedOID
+                                    author {
+                                        person {
+                                            displayName
+                                            avatarURL
+                                        }
+                                        date
+                                    }
+                                    message
+                                }
+                            }
                         }
                         alert {
                             title

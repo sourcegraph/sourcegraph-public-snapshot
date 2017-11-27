@@ -35,6 +35,26 @@ func (c *searchResultsCommon) Missing() []string {
 	return c.missing
 }
 
+// update updates c with the other data, deduping as necessary. It modifies c but
+// does not modify other.
+func (c *searchResultsCommon) update(other searchResultsCommon) {
+	c.limitHit = c.limitHit || other.limitHit
+
+	appendUnique := func(dst *[]string, src []string) {
+		dstSet := make(map[string]struct{}, len(*dst))
+		for _, s := range *dst {
+			dstSet[s] = struct{}{}
+		}
+		for _, s := range src {
+			if _, present := dstSet[s]; !present {
+				*dst = append(*dst, s)
+			}
+		}
+	}
+	appendUnique(&c.cloning, other.cloning)
+	appendUnique(&c.missing, other.missing)
+}
+
 type searchResults2 struct {
 	results []*searchResult
 	searchResultsCommon
@@ -62,6 +82,10 @@ func (sr *searchResults2) ApproximateResultCount() string {
 func (sr *searchResults2) Alert() *searchAlert { return sr.alert }
 
 func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
+	return r.doResults(ctx, "")
+}
+
+func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType string) (*searchResults2, error) {
 	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -118,21 +142,62 @@ func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) 
 		args.Query.ExcludePattern = &pat
 	}
 
-	fileMatches, common, err := searchRepos(ctx, &args)
-	if err != nil {
-		return nil, err
+	// Determine which types of results to return.
+	var searchFuncs []func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error)
+	var resultTypes []string
+	if forceOnlyResultType != "" {
+		resultTypes = []string{forceOnlyResultType}
+	} else {
+		resultTypes = r.combinedQuery.fieldValues[searchFieldType].Values()
+		if len(resultTypes) == 0 {
+			resultTypes = []string{"file"} // TODO(sqs)
+		}
 	}
+	seenResultTypes := make(map[string]struct{}, len(resultTypes))
+	for _, resultType := range resultTypes {
+		if _, seen := seenResultTypes[resultType]; seen {
+			continue
+		}
+		seenResultTypes[resultType] = struct{}{}
+		switch resultType {
+		case "file":
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchRepos(ctx, &args)
+			})
+		case "diff":
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchDiffsInRepos(ctx, &args, r.combinedQuery)
+			})
+		}
+	}
+
+	// Run all search funcs.
 	var results searchResults2
-	results.results = fileMatches
-	results.searchResultsCommon = *common
+	for _, searchFunc := range searchFuncs {
+		results1, common1, err := searchFunc(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if results1 == nil && common1 == nil {
+			continue
+		}
+		results.results = append(results.results, results1...)
+		results.searchResultsCommon.update(*common1)
+	}
+
 	if len(missingRepoRevs) > 0 {
 		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
+
 	return &results, nil
 }
 
 type searchResult struct {
 	fileMatch *fileMatch
+	diff      *commitSearchResult
 }
 
 func (g *searchResult) ToFileMatch() (*fileMatch, bool) { return g.fileMatch, g.fileMatch != nil }
+func (g *searchResult) ToCommitSearchResult() (*commitSearchResult, bool) {
+	return g.diff, g.diff != nil
+}

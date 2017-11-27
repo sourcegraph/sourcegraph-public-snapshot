@@ -183,7 +183,7 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*commitInfoRe
 	commitsResolver := make([]*commitInfoResolver, len(commits))
 	for i, commit := range commits {
 		commitsResolver[i] = &commitInfoResolver{
-			rev: string(commit.ID),
+			oid: gitObjectID(commit.ID),
 			author: &signatureResolver{
 				person: &personResolver{
 					name:  commit.Author.Name,

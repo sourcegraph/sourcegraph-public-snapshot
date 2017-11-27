@@ -33,6 +33,8 @@ type MockRepository struct {
 	Committers_ func(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error)
 
 	Search_ func(context.Context, vcs.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
+
+	RawLogDiffSearch_ func(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, error)
 }
 
 var _ vcs.Repository = MockRepository{}
@@ -103,4 +105,8 @@ func (r MockRepository) Committers(ctx context.Context, opt vcs.CommittersOption
 
 func (r MockRepository) Search(ctx context.Context, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
 	return r.Search_(ctx, commit, opt)
+}
+
+func (r MockRepository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, error) {
+	return r.RawLogDiffSearch_(ctx, opt)
 }

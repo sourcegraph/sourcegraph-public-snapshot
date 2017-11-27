@@ -1,14 +1,22 @@
 package graphqlbackend
 
 type commitInfoResolver struct {
-	rev       string
+	repository *repositoryResolver
+
+	oid       gitObjectID
 	author    *signatureResolver
 	committer *signatureResolver
 	message   string
 }
 
+func (r *commitInfoResolver) Repository() *repositoryResolver { return r.repository }
+
+func (r *commitInfoResolver) OID() gitObjectID { return r.oid }
+
+func (r *commitInfoResolver) AbbreviatedOID() string { return string(r.oid)[:6] }
+
 func (r *commitInfoResolver) Rev() string {
-	return r.rev
+	return string(r.oid)
 }
 
 func (r *commitInfoResolver) Author() *signatureResolver {

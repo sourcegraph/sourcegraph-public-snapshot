@@ -47,6 +47,11 @@ interface Props {
      * The label to display next to the expand button
      */
     expandLabel?: string
+
+    /**
+     * This component does not accept children.
+     */
+    children?: never
 }
 
 interface State {
