@@ -19,6 +19,13 @@ func (r *personResolver) Email() string {
 	return r.email
 }
 
+func (r *personResolver) DisplayName() string {
+	if name := strings.TrimSpace(r.name); name != "" {
+		return name
+	}
+	return r.email
+}
+
 func (r *personResolver) GravatarHash() string {
 	return ConstructGravatarHash(r.email)
 }

@@ -22,7 +22,8 @@
 
         &-title {
             flex: 1 1 auto;
-            margin: 0 1rem;
+            margin: 0 0.25rem;
+            overflow: hidden;
         }
 
         &:hover {

@@ -32,6 +32,13 @@ const (
 	searchFieldRepoGroup search2.Field = "repogroup"
 	searchFieldTerm      search2.Field = ""
 	searchFieldCase      search2.Field = "case"
+	searchFieldType      search2.Field = "type"
+
+	// TODO(sqs): these only apply to type:diff searches
+	searchFieldBefore    search2.Field = "before"
+	searchFieldAfter     search2.Field = "after"
+	searchFieldAuthor    search2.Field = "author"
+	searchFieldCommitter search2.Field = "committer"
 )
 
 var searchFieldAliases = map[search2.Field][]search2.Field{

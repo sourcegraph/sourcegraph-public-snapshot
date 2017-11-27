@@ -29,6 +29,9 @@ var (
 	gitCmdWhitelist = map[string][]string{
 		"log": []string{
 			"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
+			"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
+			"--regexp-ignore-case", "--glob", "--cherry", "-z",
+			"--until", "--since", "--author", "--committer",
 		},
 		"show":   []string{},
 		"remote": []string{"-v"},
@@ -493,13 +496,23 @@ func isWhitelistedGitCmd(args []string) bool {
 	if len(gitCmdWhitelist) == 0 {
 		return false
 	}
-	whiteListedArgs, ok := gitCmdWhitelist[args[0]]
+	cmd := args[0]
+	whiteListedArgs, ok := gitCmdWhitelist[cmd]
 	if !ok {
 		// Command not whitelisted
 		return false
 	}
 	for _, arg := range args[1:] {
 		if strings.HasPrefix(arg, "-") {
+			// Special-case `git log -S` and `git log -G`, which interpret any characters
+			// after their 'S' or 'G' as part of the query. There is no long form of this
+			// flags (such as --something=query), so if we did not special-case these,
+			// there would be no way to safely express a query that began with a '-'
+			// character.
+			if cmd == "log" && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
+				continue // this arg is OK
+			}
+
 			if !isWhitelistedGitArg(whiteListedArgs, arg) {
 				return false
 			}

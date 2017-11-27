@@ -14,6 +14,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { eventLogger } from '../tracking/eventLogger'
 import { searchText } from './backend'
+import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { RepoSearchResult } from './RepoSearchResult'
@@ -231,6 +232,16 @@ export class SearchResults extends React.Component<Props, State> {
                         showAllMatches={false}
                     />
                 )
+            case 'CommitSearchResult':
+                return (
+                    <CommitSearchResult
+                        key={key}
+                        location={this.props.location}
+                        result={result}
+                        onSelect={this.logEvent}
+                        expanded={expanded}
+                    />
+                )
         }
         return undefined
     }
@@ -240,6 +251,8 @@ function resultItemsCount(result: GQL.SearchResult): number {
     switch (result.__typename) {
         case 'FileMatch':
             return result.lineMatches.length
+        case 'CommitSearchResult':
+            return 1
     }
     return 1
 }
