@@ -87,7 +87,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			} else if err == context.DeadlineExceeded || err == context.Canceled {
 				return nil, err
 			}
-			return nil, ErrRepoNotFound
 		}
 		cloneable, err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri)
 		if err != nil {
