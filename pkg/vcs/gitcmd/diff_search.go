@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/url"
 	"reflect"
 	"regexp"
 
@@ -28,7 +30,7 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 }
 
 // RawLogDiffSearch implements vcs.Repository.
-func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, error) {
+func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) (results []*vcs.LogCommitSearchResult, complete bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: RawLogDiffSearch")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -37,17 +39,17 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		opt.FormatArgs = validRawLogDiffSearchFormatArgs[0]
 	}
 	if opt.FormatArgs != nil && !isValidRawLogDiffSearchFormatArgs(opt.FormatArgs) {
-		return nil, fmt.Errorf("invalid FormatArgs: %q", opt.FormatArgs)
+		return nil, false, fmt.Errorf("invalid FormatArgs: %q", opt.FormatArgs)
 	}
 	for _, arg := range opt.Args {
 		if arg == "--" {
-			return nil, fmt.Errorf("invalid Args (must not contain \"--\" element): %q", opt.Args)
+			return nil, false, fmt.Errorf("invalid Args (must not contain \"--\" element): %q", opt.Args)
 		}
 	}
 
 	if opt.Query.IsCaseSensitive != opt.Paths.IsCaseSensitive {
 		// These options can't be set separately in `git log`, so fail.
-		return nil, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
+		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
 	args := []string{"log"}
@@ -69,23 +71,40 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		}
 	}
 	if !isWhitelistedGitCmd(args) {
-		return nil, fmt.Errorf("command failed: %q is not a whitelisted git command", args)
+		return nil, false, fmt.Errorf("command failed: %q is not a whitelisted git command", args)
 	}
 	args = append(args, "--")
 	// Args we append after this don't need to be checked for whitelisting because "--"
 	// precedes them.
 	args = append(args, opt.Paths.ArgsHint...)
 
-	// Run command and parse output.
+	// Run command and read output.
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.Repo
-	data, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(data), "") || isInvalidRevisionRangeError(string(data), "") {
-			return nil, vcs.ErrRevisionNotFound
+	sr, err := gitserver.StdoutReader(ctx, cmd)
+	if urlErr, ok := err.(*url.Error); ok && urlErr.Err == context.DeadlineExceeded {
+		// Continue; the gitserver call exceeded our deadline before the command
+		// produced any output.
+	} else if err != nil {
+		return nil, false, err
+	}
+	var data []byte
+	if sr != nil {
+		defer sr.Close()
+		var err error
+		data, err = ioutil.ReadAll(sr)
+		if err == nil {
+			complete = true
+		} else if err != nil && err != context.DeadlineExceeded {
+			data = bytes.TrimSpace(data)
+			if isBadObjectErr(string(data), "") || isInvalidRevisionRangeError(string(data), "") {
+				return nil, true, vcs.ErrRevisionNotFound
+			}
+			if len(data) > 100 {
+				data = append(data[:100], []byte("... (truncated)")...)
+			}
+			return nil, true, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
 		}
-		return nil, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
 	}
 
 	// Even though we've already searched using the query, we need to
@@ -100,20 +119,25 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	query, err := regexp.Compile(pattern)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	pathMatcher, err := vcs.CompilePathMatcher(opt.Paths)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	var results []*vcs.LogCommitSearchResult
 	for len(data) > 0 {
 		var commit *vcs.Commit
 		var err error
 		commit, data, err = parseCommitFromLog(logFormatFlag, data)
 		if err != nil {
-			return nil, err
+			if !complete {
+				// Partial data can yield parse errors, but we still want to return what we have.
+				// We know all of the results we already found are complete, so we can return
+				// immediately instead of marking the last one as incomplete.
+				return results, false, nil
+			}
+			return nil, complete, err
 		}
 
 		result := &vcs.LogCommitSearchResult{Commit: *commit}
@@ -135,7 +159,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			var err error
 			rawDiff, result.Highlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks, pathMatcher)
 			if err != nil {
-				return nil, err
+				return nil, false, err
 			}
 			if rawDiff == nil {
 				continue // it did not match
@@ -146,5 +170,11 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		results = append(results, result)
 	}
 
-	return results, nil
+	if !complete && len(results) > 0 {
+		// The last result may have been parsed from an incomplete output stream (e.g., stdout
+		// cut off halfway through), so mark it as such.
+		results[len(results)-1].Incomplete = true
+	}
+
+	return results, complete, nil
 }

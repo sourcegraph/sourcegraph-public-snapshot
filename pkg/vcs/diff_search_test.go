@@ -29,7 +29,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, error)
+			RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error)
 		}
 		want map[*vcs.RawLogDiffSearchOptions][]*vcs.LogCommitSearchResult
 	}{
@@ -65,10 +65,13 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 
 	for label, test := range tests {
 		for opt, want := range test.want {
-			results, err := test.repo.RawLogDiffSearch(ctx, *opt)
+			results, complete, err := test.repo.RawLogDiffSearch(ctx, *opt)
 			if err != nil {
 				t.Errorf("%s: %+v: %s", label, *opt, err)
 				continue
+			}
+			if !complete {
+				t.Errorf("%s: !complete", label)
 			}
 			for _, r := range results {
 				r.Highlights = nil // Highlights is tested separately

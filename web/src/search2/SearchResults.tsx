@@ -173,7 +173,14 @@ export class SearchResults extends React.Component<Props, State> {
             this.state.missing.length === 0 &&
             this.state.cloning.length === 0
         ) {
-            alert = { title: 'No results' }
+            if (this.state.limitHit) {
+                alert = {
+                    title: 'Search timed out',
+                    description: 'Try narrowing your query.',
+                }
+            } else {
+                alert = { title: 'No results' }
+            }
         }
 
         let totalMatches = 0
@@ -187,7 +194,8 @@ export class SearchResults extends React.Component<Props, State> {
                 {this.state.results.length > 0 && (
                     <div className="search-results2__header">
                         <span className="search-results2__stats">
-                            {numberWithCommas(totalResults)} {pluralize('result', totalResults)} in
+                            {numberWithCommas(totalResults)}
+                            {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in
                         </span>{' '}
                         <span className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</span>
                     </div>

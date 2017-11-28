@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
@@ -183,4 +186,67 @@ func (c *writeCounter) Write(p []byte) (n int, err error) {
 	n, err = c.w.Write(p)
 	c.n += int64(n)
 	return
+}
+
+// flushingResponseWriter is a http.ResponseWriter that flushes all writes
+// to the underlying connection within a certain time period after Write is
+// called (instead of buffering them indefinitely).
+//
+// This lets, e.g., clients with a context deadline see as much partial response
+// body as possible.
+type flushingResponseWriter struct {
+	// mu ensures we don't concurrently call Flush and Write. It also protects
+	// state.
+	mu      sync.Mutex
+	w       http.ResponseWriter
+	closed  bool
+	doFlush bool
+}
+
+// newFlushingResponseWriter creates a new flushing response writer. Callers
+// must call Close to free the resources created by the writer.
+func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
+	// We panic if we don't implement the needed interfaces.
+	flusher := w.(http.Flusher)
+
+	f := &flushingResponseWriter{w: w}
+	go func() {
+		for {
+			time.Sleep(100 * time.Millisecond)
+			f.mu.Lock()
+			if f.closed {
+				f.mu.Unlock()
+				break
+			}
+			if f.doFlush {
+				flusher.Flush()
+			}
+			f.mu.Unlock()
+		}
+	}()
+	return f
+}
+
+// Header implements http.ResponseWriter.
+func (f *flushingResponseWriter) Header() http.Header { return f.w.Header() }
+
+// WriteHeader implements http.ResponseWriter.
+func (f *flushingResponseWriter) WriteHeader(code int) { f.w.WriteHeader(code) }
+
+// Write implements http.ResponseWriter.
+func (f *flushingResponseWriter) Write(p []byte) (int, error) {
+	f.mu.Lock()
+	n, err := f.w.Write(p)
+	if n > 0 {
+		f.doFlush = true
+	}
+	f.mu.Unlock()
+	return n, err
+}
+
+// Close signals to the flush goroutine to stop.
+func (f *flushingResponseWriter) Close() {
+	f.mu.Lock()
+	f.closed = true
+	f.mu.Unlock()
 }

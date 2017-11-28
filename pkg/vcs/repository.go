@@ -97,7 +97,11 @@ type Repository interface {
 	// RawLogDiffSearch runs a raw `git log` command that is expected to return
 	// logs with patches. It returns a subset of the output, including only hunks
 	// that actually match the given pattern.
-	RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchOptions) ([]*LogCommitSearchResult, error)
+	//
+	// If complete is false, then the results may have been parsed from only
+	// partial output from the underlying git command (because, e.g., it
+	// timed out during execution and only returned partial output).
+	RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error)
 }
 
 // BlameOptions configures a blame.
@@ -270,6 +274,11 @@ type LogCommitSearchResult struct {
 	Commit     Commit      // the commit whose diff was matched
 	Diff       Diff        // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
 	Highlights []Highlight // highlighted query matches in the diff
+
+	// Incomplete indicates that this result may represent a subset of the actual data.
+	// This can occur when the underlying command returns early due to an impending
+	// timeout.
+	Incomplete bool
 }
 
 // Highlight represents a highlighted region in a string.

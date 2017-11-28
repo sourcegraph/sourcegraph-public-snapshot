@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -80,10 +81,16 @@ func searchDiffsInRepo(ctx context.Context, repoName, rev string, info *patternI
 
 	// TODO(sqs): set extra strict timeout to avoid runaway resource consumption
 	// during testing of this feature
-	ctx, cancel := context.WithTimeout(ctx, 7*time.Second)
+	var timeout time.Duration
+	if envvar.DeploymentOnPrem() {
+		timeout = 5 * time.Second
+	} else {
+		timeout = 2500 * time.Millisecond
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	rawResults, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
+	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
 		Query: vcs.TextSearchOptions{
 			Pattern:         info.Pattern,
 			IsRegExp:        info.IsRegExp,
@@ -103,6 +110,7 @@ func searchDiffsInRepo(ctx context.Context, repoName, rev string, info *patternI
 		return nil, false, err
 	}
 
+	limitHit = limitHit || !complete
 	if len(rawResults) > maxResults {
 		limitHit = true
 		rawResults = rawResults[:maxResults]
