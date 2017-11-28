@@ -290,9 +290,6 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	invite.SendEmail(args.Email, user.DisplayName, org.Name, token)
-	if err != nil {
-		return nil, err
-	}
 
 	if user, err := currentUser(ctx); err != nil {
 		// errors swallowed because user is only needed for Slack notifications
