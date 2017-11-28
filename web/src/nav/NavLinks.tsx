@@ -59,15 +59,16 @@ export class NavLinks extends React.Component<Props, State> {
                         Browse
                     </Link>
                 )}
-                {// if on-prem, never show a user avatar or sign-in button
-                window.context.onPrem ? null : this.state.user ? (
+                {this.state.user ? (
                     <Link className="nav-links__link" to="/settings">
                         <UserAvatar size={64} />
                     </Link>
                 ) : (
-                    <Link className="nav-links__link btn btn-primary" to="/sign-in">
-                        Sign in
-                    </Link>
+                    window.context.onPrem && (
+                        <Link className="nav-links__link btn btn-primary" to="/sign-in">
+                            Sign in
+                        </Link>
+                    )
                 )}
             </div>
         )
