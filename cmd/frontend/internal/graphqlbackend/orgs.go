@@ -244,7 +244,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member
-	// of the org that is being modified.
+	// of the org that the user is being invited to.
 	actor := actor.FromContext(ctx)
 	orgMember, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID)
 	if err != nil {
