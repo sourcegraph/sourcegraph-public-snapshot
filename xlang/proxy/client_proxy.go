@@ -448,6 +448,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			}, nil
 		}
 
+		// Note: We do not respect the order messages are received, since we
+		// spins up a goroutine per received request. As such we can't ever use
+		// lsp.TDSKIncremental since that relies on in-order delivery of
+		// notifications. https://github.com/sourcegraph/sourcegraph/issues/4594
 		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
