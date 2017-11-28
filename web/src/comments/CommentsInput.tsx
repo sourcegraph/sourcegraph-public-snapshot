@@ -71,6 +71,7 @@ export const CommentsInput = reactive<Props>(props => {
                     concat(
                         addCommentToThread(props.threadID, textAreaValue, props.ulid).pipe(
                             tap(updatedThread => props.onThreadUpdated(updatedThread)),
+                            tap(() => textAreaChanges.next('')),
                             map((updatedThread): Update => state => ({
                                 ...state,
                                 submitting: false,
@@ -110,7 +111,11 @@ export const CommentsInput = reactive<Props>(props => {
                 />
                 <div className="comments-input__row">
                     <div />
-                    <button type="submit" className="btn btn-primary comments-input__button" disabled={submitting}>
+                    <button
+                        type="submit"
+                        className="btn btn-primary comments-input__button"
+                        disabled={submitting || !textAreaValue}
+                    >
                         Comment
                     </button>
                 </div>
