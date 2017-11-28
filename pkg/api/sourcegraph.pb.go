@@ -60,8 +60,6 @@ type Repo struct {
 	Description string `json:"Description,omitempty"`
 	// HomepageURL is the URL to the repository's homepage, if any.
 	HomepageURL string `json:"HomepageURL,omitempty"`
-	// DefaultBranch is the default git branch used (typically "master").
-	DefaultBranch string `json:"DefaultBranch,omitempty"`
 	// Language is the primary programming language used in this repository.
 	Language string `json:"Language,omitempty"`
 	// Blocked is whether this repo has been blocked by an admin (and
@@ -188,7 +186,7 @@ type GitHubReposWithDetailsList struct {
 type ReposResolveRevOp struct {
 	Repo int32 `json:"repo,omitempty"`
 	// Rev is a VCS revision specifier, such as a branch or
-	// "master~7".
+	// "master~7". If empty, the default branch is resolved.
 	Rev string `json:"rev,omitempty"`
 }
 

@@ -70,7 +70,7 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	if err != nil {
 		return 0, err
 	}
-	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID, Rev: rp.DefaultBranch})
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID})
 	if err != nil {
 		return 0, err
 	}
@@ -133,7 +133,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []sourcegr
 	if err != nil {
 		return nil, err
 	}
-	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID, Rev: rp.DefaultBranch})
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID})
 	if err != nil {
 		return nil, err
 	}

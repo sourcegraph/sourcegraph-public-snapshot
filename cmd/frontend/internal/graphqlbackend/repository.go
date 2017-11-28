@@ -140,20 +140,21 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*commi
 	return r.Latest(ctx)
 }
 
-func (r *repositoryResolver) DefaultBranch(ctx context.Context) (string, error) {
-	if r.repo.DefaultBranch != "" {
-		return r.repo.DefaultBranch, nil
-	}
-
-	// If this repository was retrieved from our local database, not from an external
-	// service, then it won't have DefaultBranch set. We need to query gitserver to
-	// determine it.
+func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error) {
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.repo.ID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defaultBranch, err := vcsrepo.GitCmdRaw(ctx, []string{"rev-parse", "--abbrev-ref", "HEAD"})
-	return strings.TrimSpace(defaultBranch), err
+	// If we fail to get the default branch due to cloning, we return nothing.
+	if err != nil {
+		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+			return nil, nil
+		}
+		return nil, err
+	}
+	t := strings.TrimSpace(defaultBranch)
+	return &t, nil
 }
 
 func (r *repositoryResolver) Branches(ctx context.Context) ([]string, error) {

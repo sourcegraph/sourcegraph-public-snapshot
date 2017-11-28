@@ -39,7 +39,7 @@ func TestRepoShield(t *testing.T) {
 	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		switch uri {
 		case "github.com/gorilla/mux":
-			return &sourcegraph.Repo{ID: 2, URI: uri, DefaultBranch: "master"}, nil
+			return &sourcegraph.Repo{ID: 2, URI: uri}, nil
 		default:
 			panic("wrong path")
 		}

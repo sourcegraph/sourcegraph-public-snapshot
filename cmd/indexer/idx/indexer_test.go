@@ -57,19 +57,16 @@ func Test_index_java(t *testing.T) {
 	depQueries := map[string]string{depIDs[0]: depRepos[0], depIDs[1]: depRepos[1]}
 	repos := map[string]*sourcegraph.Repo{
 		inputRepo: &sourcegraph.Repo{
-			ID:            inputRepoID,
-			URI:           inputRepo,
-			DefaultBranch: "master",
+			ID:  inputRepoID,
+			URI: inputRepo,
 		},
 		depRepos[0]: &sourcegraph.Repo{
-			ID:            234,
-			URI:           depRepos[0],
-			DefaultBranch: "master",
+			ID:  234,
+			URI: depRepos[0],
 		},
 		depRepos[1]: &sourcegraph.Repo{
-			ID:            345,
-			URI:           depRepos[1],
-			DefaultBranch: "master",
+			ID:  345,
+			URI: depRepos[1],
 		},
 	}
 	repoRevs := map[string]vcs.CommitID{

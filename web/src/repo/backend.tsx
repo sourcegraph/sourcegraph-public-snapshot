@@ -81,6 +81,9 @@ export const resolveRev = memoizeObservable(
                 if (!result.data.root.repository.commit.commit) {
                     throw new RevNotFoundError(ctx.rev)
                 }
+                if (!result.data.root.repository.defaultBranch) {
+                    throw new RevNotFoundError('HEAD')
+                }
                 return {
                     commitID: result.data.root.repository.commit.commit.sha1,
                     defaultBranch: result.data.root.repository.defaultBranch,

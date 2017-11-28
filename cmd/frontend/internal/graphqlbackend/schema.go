@@ -475,7 +475,8 @@ type Repository implements Node {
   revState(rev: String!): RevState!
   latest: CommitState!
   lastIndexedRevOrLatest: CommitState!
-  defaultBranch: String!
+  # defaultBranch will not be set if we are cloning the repository
+  defaultBranch: String
   branches: [String!]!
   tags: [String!]!
   listTotalRefs: TotalRefList!

@@ -209,14 +209,13 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		return &u
 	}
 	repo := sourcegraph.Repo{
-		URI:           "github.com/" + *ghrepo.FullName,
-		DefaultBranch: strv(ghrepo.DefaultBranch),
-		Description:   strv(ghrepo.Description),
-		Language:      strv(ghrepo.Language),
-		Private:       boolv(ghrepo.Private),
-		Fork:          boolv(ghrepo.Fork),
-		StarsCount:    uintv(ghrepo.StargazersCount),
-		ForksCount:    uintv(ghrepo.ForksCount),
+		URI:         "github.com/" + *ghrepo.FullName,
+		Description: strv(ghrepo.Description),
+		Language:    strv(ghrepo.Language),
+		Private:     boolv(ghrepo.Private),
+		Fork:        boolv(ghrepo.Fork),
+		StarsCount:  uintv(ghrepo.StargazersCount),
+		ForksCount:  uintv(ghrepo.ForksCount),
 	}
 	if ghrepo.CreatedAt != nil {
 		repo.CreatedAt = &ghrepo.CreatedAt.Time

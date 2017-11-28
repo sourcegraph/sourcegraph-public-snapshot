@@ -9,6 +9,7 @@ import (
 	"path"
 	"strconv"
 
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
@@ -26,7 +27,18 @@ func editorBranch(ctx context.Context, repoURI, branchName string) (string, erro
 		// not exist.
 		return "@" + branchName, nil
 	}
-	if branchName == repo.DefaultBranch {
+	// If we are on the default branch we want to return a clean URL without a
+	// branch. If we fail its best to return the full URL and allow the
+	// front-end to inform them of anything that is wrong.
+	defaultBranch, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID})
+	if err != nil {
+		return "@" + branchName, nil
+	}
+	branch, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: branchName})
+	if err != nil {
+		return "@" + branchName, nil
+	}
+	if defaultBranch.CommitID != branch.CommitID {
 		return "", nil // default branch, so make a clean URL without a branch.
 	}
 	return "@" + branchName, nil

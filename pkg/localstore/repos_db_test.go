@@ -41,8 +41,6 @@ func createRepo(ctx context.Context, t *testing.T, repo *sourcegraph.Repo) {
 func mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
 	var createdRepos []*sourcegraph.Repo
 	for _, repo := range repos {
-		repo.DefaultBranch = "master"
-
 		createRepo(ctx, t, repo)
 		repo, err := Repos.GetByURI(ctx, repo.URI)
 		if err != nil {
@@ -308,7 +306,7 @@ func TestRepos_Create(t *testing.T) {
 	ctx := testContext()
 
 	// Add a repo.
-	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"})
+	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b"})
 
 	repo, err := Repos.GetByURI(ctx, "a/b")
 	if err != nil {
@@ -327,10 +325,10 @@ func TestRepos_Create_dupe(t *testing.T) {
 	ctx := testContext()
 
 	// Add a repo.
-	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"})
+	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b"})
 
 	// Add another repo with the same name.
-	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"})
+	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b"})
 }
 
 func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
@@ -386,8 +384,8 @@ func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
 	// Update two fields
 	repoWant.HomepageURL = "http://foo.com"
 	ghrepo.HomepageURL = "http://foo.com"
-	repoWant.DefaultBranch = "dev"
-	ghrepo.DefaultBranch = "dev"
+	repoWant.Description = "Test description2"
+	ghrepo.Description = "Test description2"
 	check("two updates")
 
 	// Update the other fields we get from GitHub

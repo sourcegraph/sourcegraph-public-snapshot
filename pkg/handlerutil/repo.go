@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
-	"gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -31,18 +30,9 @@ func GetRepo(ctx context.Context, vars map[string]string) (*sourcegraph.Repo, er
 }
 
 // getRepoRev resolves the RepoRevSpec and commit specified in the
-// route vars. The provided defaultBranch is used if no rev is
-// specified in the URL.
-func getRepoRev(ctx context.Context, vars map[string]string, repoID int32, defaultRev string) (sourcegraph.RepoRevSpec, error) {
+// route vars.
+func getRepoRev(ctx context.Context, vars map[string]string, repoID int32) (sourcegraph.RepoRevSpec, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	if repoRev.Rev == "" {
-		repoRev.Rev = defaultRev
-
-		if repoRev.Rev == "" {
-			log15.Warn("getRepoRev: no rev specified and repo has no default rev", "repo", repoRev.Repo)
-		}
-	}
-
 	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repoID,
 		Rev:  repoRev.Rev,
@@ -64,7 +54,7 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegra
 	}
 	repoRevSpec.Repo = repo.ID
 
-	repoRevSpec, err = getRepoRev(ctx, vars, repo.ID, repo.DefaultBranch)
+	repoRevSpec, err = getRepoRev(ctx, vars, repo.ID)
 	return repo, repoRevSpec, err
 }
 
