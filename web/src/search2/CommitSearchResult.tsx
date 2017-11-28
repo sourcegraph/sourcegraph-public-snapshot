@@ -2,7 +2,6 @@ import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import formatDistance from 'date-fns/formatDistance'
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { DecoratedTextLines } from '../components/DecoratedTextLines'
 import { AbsoluteRepoFilePosition, RepoSpec } from '../repo/index'
@@ -35,19 +34,31 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoBreadcrumb repoPath={props.result.commit.repository.uri} rev={props.result.commit.oid} filePath={''} />
-            <Link to={commitURL} className="commit-search-result__title-person">
+            <a
+                href={commitURL}
+                className="commit-search-result__title-person"
+                onClick={stopPropagationToCollapseOrExpand}
+            >
                 <UserAvatar user={props.result.commit.author.person!} size={32} />{' '}
                 {props.result.commit.author.person!.displayName}
-            </Link>
-            <Link to={commitURL} className="commit-search-result__title-message">
+            </a>
+            <a
+                href={commitURL}
+                className="commit-search-result__title-message"
+                onClick={stopPropagationToCollapseOrExpand}
+            >
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
-            </Link>
-            <Link to={commitURL} className="commit-search-result__title-signatureo">
+            </a>
+            <a
+                href={commitURL}
+                className="commit-search-result__title-signatureo"
+                onClick={stopPropagationToCollapseOrExpand}
+            >
                 <code>{props.result.commit.abbreviatedOID}</code>{' '}
                 {formatDistance(parseCommitDateString(props.result.commit.author.date), new Date(), {
                     addSuffix: true,
                 })}
-            </Link>
+            </a>
         </div>
     )
 
@@ -155,4 +166,8 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
 function commitMessageSubject(message: string): string {
     const eol = message.indexOf('\n')
     return eol === -1 ? message : message.slice(0, eol)
+}
+
+function stopPropagationToCollapseOrExpand(e: React.MouseEvent<HTMLElement>): void {
+    e.stopPropagation()
 }
