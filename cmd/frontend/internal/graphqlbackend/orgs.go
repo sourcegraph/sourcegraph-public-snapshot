@@ -189,10 +189,21 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Add the editor-beta tag to all orgs created
-	_, err = store.OrgTags.Create(ctx, newOrg.ID, "editor-beta")
-	if err != nil {
-		return nil, err
+	{
+		// Orgs created by an editor-beta user get the editor-beta tag.
+		user, err := currentUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		const editorBetaTag = "editor-beta"
+		tag, err := store.UserTags.GetByUserIDAndTagName(ctx, *user.SourcegraphID(), editorBetaTag)
+		if _, ok := err.(store.ErrUserTagNotFound); !ok && err != nil {
+			return nil, err
+		} else if tag != nil {
+			if _, err = store.OrgTags.Create(ctx, newOrg.ID, editorBetaTag); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return &orgResolver{org: newOrg}, nil
@@ -303,17 +314,23 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		}
 	}
 
-	if invitedUser != nil {
-		// Add the editor beta tag to an invited user if they're already registered
-		_, err := store.UserTags.CreateIfNotExists(ctx, invitedUser.ID, "editor-beta")
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	org, err := localstore.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
+	}
+
+	if invitedUser != nil {
+		// If the org has the editor-beta tag, add the editor beta tag to an invited user
+		// if they're already registered.
+		const editorBetaTag = "editor-beta"
+		tag, err := store.OrgTags.GetByOrgIDAndTagName(ctx, org.ID, editorBetaTag)
+		if _, ok := err.(store.ErrOrgTagNotFound); !ok && err != nil {
+			return nil, err
+		} else if tag != nil {
+			if _, err = store.UserTags.Create(ctx, invitedUser.ID, editorBetaTag); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	token, err := invite.CreateOrgToken(args.Email, org)
