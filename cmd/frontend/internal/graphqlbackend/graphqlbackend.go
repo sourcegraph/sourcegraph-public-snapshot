@@ -152,22 +152,22 @@ type gqlidNode interface {
 // TODO(sqs): a temporary helper until we execute the migration described in
 // 2ac372aa2773080dc3d077beb056e9513e64bf67.
 func gqlidNodeByID(ctx context.Context, id graphql.ID) (gqlidNode, error) {
-	if strings.HasPrefix(string(id), "auth0|") {
-		user, err := currentUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if user.Auth0ID() != string(id) {
-			return nil, errors.New("can only get current user")
-		}
-		return user, nil
-	}
 	switch relay.UnmarshalKind(id) {
 	case "User":
 		return userByID(ctx, id)
 	case "Org":
 		return orgByID(ctx, id)
 	default:
+		// Treat other unrecognized IDs as User IDs if they match the user's
+		// auth ID. This is because they could be anything, such as "auth0|asdf"
+		// or https://accounts.google.com:1234 or anything else from the authn
+		// provider.
+		if user, err := currentUser(ctx); err == nil && user != nil {
+			if user.Auth0ID() == string(id) {
+				return user, nil
+			}
+		}
+
 		return nil, errors.New("invalid id")
 	}
 }
