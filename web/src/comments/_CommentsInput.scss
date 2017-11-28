@@ -12,7 +12,6 @@
     }
 
     &__info {
-        font-size: 12px;
         margin-left: 0.25rem;
         margin-right: 0.25rem;
     }
@@ -28,10 +27,8 @@
     }
 
     &__error {
-        flex: 10;
+        margin-top: 0.5rem;
         display: flex;
-        padding: 0.5rem;
-        color: $color-error;
     }
 
     &__error-icon {
