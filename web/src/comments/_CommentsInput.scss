@@ -6,24 +6,32 @@
         min-height: 7rem;
     }
 
-    &__bottom-container {
+    &__row {
         display: flex;
-        flex-wrap: wrap;
+        justify-content: space-between;
     }
 
-    &__button {
-        text-align: center;
-        margin-left: 0.5rem;
+    &__info {
+        font-size: 12px;
+        margin-left: 0.25rem;
+        margin-right: 0.25rem;
     }
 
-    &__markdown-supported {
-        flex: 1;
+    &__open-in-editor {
+        // Don't bother showing "Open in Editor" link on small screens because
+        // (1) it is duplicate functionality that's also available elsewhere on
+        // the page and (2) small screens are more likely to be mobile devices,
+        // which wouldn't be able to open in the editor anyway.
+        @media (max-width: $media-sm) {
+            display: none;
+        }
     }
 
     &__error {
         flex: 10;
         display: flex;
         padding: 0.5rem;
+        color: $color-error;
     }
 
     &__error-icon {

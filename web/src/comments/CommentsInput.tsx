@@ -45,17 +45,25 @@ export const CommentsInput = reactive<Props>(props => {
         textAreaChanges.next(e.currentTarget.value)
 
     return merge(
-        props.pipe(map(({ editorURL, onOpenEditor }): Update => state => ({ ...state, editorURL, onOpenEditor }))),
+        props.pipe(
+            map(({ editorURL, onOpenEditor }): Update => state => ({
+                ...state,
+                editorURL,
+                onOpenEditor,
+            }))
+        ),
 
         textAreaChanges.pipe(map((textAreaValue): Update => state => ({ ...state, textAreaValue }))),
 
         // Combine form submits and keyboard shortcut submits
         merge(
             submits.pipe(tap(e => e.preventDefault())),
-            // cmd+enter (darwin) or ctrl+enter (linux/win)
             textAreaKeyDowns.pipe(filter(e => (e.ctrlKey || e.metaKey) && (e.keyCode === 13 || e.keyCode === 10)))
         ).pipe(
-            tap(e => eventLogger.log('RepliedToThread')),
+            tap(
+                // cmd+enter (darwin) or ctrl+enter (linux/win)
+                e => eventLogger.log('RepliedToThread')
+            ),
             withLatestFrom(textAreaChanges, props),
             mergeMap(([, textAreaValue, props]) =>
                 // Start with setting submitting: true
@@ -81,6 +89,17 @@ export const CommentsInput = reactive<Props>(props => {
         scan<Update, State>((state: State, update: Update) => update(state), {} as State),
         map(({ editorURL, onOpenEditor, textAreaValue, submitting, error }: State): JSX.Element | null => (
             <form className="comments-input" onSubmit={nextSubmit}>
+                <div className="comments-input__row comments-input__info">
+                    <span>Markdown supported.</span>
+                    <a
+                        className="comments-input__open-in-editor"
+                        href={editorURL}
+                        target="sourcegraphapp"
+                        onClick={onOpenEditor}
+                    >
+                        Open in Sourcegraph Editor
+                    </a>
+                </div>
                 <textarea
                     className="ui-text-box comments-input__text-box"
                     placeholder="Leave a comment..."
@@ -89,26 +108,18 @@ export const CommentsInput = reactive<Props>(props => {
                     onKeyDown={nextTextAreaKeyDown}
                     value={textAreaValue}
                 />
-                <div className="comments-input__bottom-container">
-                    {error && (
-                        <span className="comments-input__error">
-                            <ErrorIcon className="icon-inline comments-input__error-icon" />
-                            {error.message}
-                        </span>
-                    )}
-                    {!error && <span className="comments-input__markdown-supported">Markdown supported.</span>}
-                    <a
-                        className="btn btn-primary comments-input__button"
-                        href={editorURL}
-                        target="sourcegraphapp"
-                        onClick={onOpenEditor}
-                    >
-                        Open in Sourcegraph Editor
-                    </a>
+                <div className="comments-input__row">
+                    <div />
                     <button type="submit" className="btn btn-primary comments-input__button" disabled={submitting}>
                         Comment
                     </button>
                 </div>
+                {error && (
+                    <div className="comments-input__error">
+                        <ErrorIcon className="icon-inline comments-input__error-icon" />
+                        Error posting comment: {error.message}
+                    </div>
+                )}
             </form>
         ))
     )
