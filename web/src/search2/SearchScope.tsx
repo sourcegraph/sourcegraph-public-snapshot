@@ -200,8 +200,11 @@ export class SearchScope extends React.PureComponent<Props, State> {
                         })
                         break
                     }
+                    case '/:repoRev+/-/tree/:filePath+':
                     case '/:repoRev+/-/blob/:filePath+': {
                         // Blob/tree page
+                        const isTree = match.path === '/:repoRev+/-/tree/:filePath+'
+
                         const [repoPath] = match.params.repoRev!.split('@')
 
                         scopes.push({
@@ -210,7 +213,7 @@ export class SearchScope extends React.PureComponent<Props, State> {
                         })
 
                         if (match.params.filePath) {
-                            const dirname = path.dirname(match.params.filePath)
+                            const dirname = isTree ? match.params.filePath : path.dirname(match.params.filePath)
                             if (dirname !== '.') {
                                 scopes.push({
                                     name: `This directory (${path.basename(dirname)})`,
