@@ -181,19 +181,19 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 </li>
                             </ul>
                         )}
-                    <li className="settings-sidebar__item">
+                    <li className="settings-sidebar__item settings-sidebar__item-action">
                         <a
                             href="/-/sign-out"
-                            className="settings-sidebar__item-link"
+                            className="settings-sidebar__item-action-button btn"
                             onClick={this.logTelemetryOnSignOut}
                         >
-                            <SignOutIcon className="icon-inline settings-sidebar__item-icon" />Sign out
+                            <SignOutIcon className="icon-inline settings-sidebar__item-action-icon" />Sign out
                         </a>
                     </li>
                     {this.state.editorBeta && (
-                        <li className="settings-sidebar__item settings-sidebar__download-editor">
+                        <li className="settings-sidebar__item settings-sidebar__item-action">
                             <a
-                                className="settings-sidebar__download-editor-button btn"
+                                className="settings-sidebar__item-action-button btn"
                                 target="_blank"
                                 href="https://about.sourcegraph.com/beta/201708"
                             >

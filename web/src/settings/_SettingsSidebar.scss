@@ -54,6 +54,29 @@
             background-color: rgba(42, 58, 81, 0.7);
         }
 
+        &-action {
+            border-top: 1px solid #2b3750;
+            padding: 0.5rem;
+            text-align: center;
+
+            &-button {
+                background-color: #2b3750;
+                color: #93a9c8;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            &-button:hover {
+                background-color: rgba(42, 58, 81, 0.7);
+                color: #f2f4f8;
+            }
+
+            &-icon {
+                margin-right: 0.125rem;
+            }
+        }
+
         &-icon {
             margin-right: 0.5rem;
             margin-left: 0.5rem;
@@ -95,22 +118,6 @@
         &-row {
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-    }
-
-    &__download-editor {
-        border-top: 1px solid #2b3750;
-        padding: 0.5rem;
-        text-align: center;
-
-        &-button {
-            background-color: #2b3750;
-            color: #93a9c8;
-        }
-
-        &-button:hover {
-            background-color: rgba(42, 58, 81, 0.7);
-            color: #f2f4f8;
         }
     }
 }
