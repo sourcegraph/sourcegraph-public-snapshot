@@ -348,7 +348,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
 }
 
-func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultResolver, error) {
+func (r *searchResolver2) resolveFiles(ctx context.Context, limit int) ([]*searchResultResolver, error) {
 	repoRevisions, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -394,7 +394,7 @@ func (r *searchResolver2) resolveFiles(ctx context.Context) ([]*searchResultReso
 		scorerQuery: scorerQuery,
 	}
 
-	return searchTree(ctx, matcher, repos, math.MaxInt32)
+	return searchTree(ctx, matcher, repos, limit)
 }
 
 func unionRegExps(patterns []string) string {

@@ -77,7 +77,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		hasRepoOrFileFields := len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) > 0 || len(r.combinedQuery.fieldValues[searchFieldRepo]) > 0 || len(r.combinedQuery.fieldValues[searchFieldFile]) > 0
 		userQueryHasFileFilterAndTerm := len(r.query.fieldValues[searchFieldFile]) > 0 && len(r.query.fieldValues[""]) > 0
 		if hasRepoOrFileFields && len(r.combinedQuery.fieldValues[""]) <= 1 && !userQueryHasFileFilterAndTerm {
-			return r.resolveFiles(ctx)
+			return r.resolveFiles(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
 	}
