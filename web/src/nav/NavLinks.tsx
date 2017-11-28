@@ -64,7 +64,7 @@ export class NavLinks extends React.Component<Props, State> {
                         <UserAvatar size={64} />
                     </Link>
                 ) : (
-                    window.context.onPrem && (
+                    !window.context.onPrem && (
                         <Link className="nav-links__link btn btn-primary" to="/sign-in">
                             Sign in
                         </Link>
