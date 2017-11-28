@@ -276,6 +276,13 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	if !envvar.DeploymentOnPrem() {
+		// Only allow email-verified users to send invites.
+		if emailVerified, err := auth0.GetEmailVerificationStatus(ctx); err != nil {
+			return nil, err
+		} else if !emailVerified {
+			return nil, errors.New("must verify your email to send invites")
+		}
+
 		// Check and decrement our invite quota, to prevent abuse (sending too many invites).
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
