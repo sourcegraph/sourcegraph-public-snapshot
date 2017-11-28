@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN invite_quota integer NOT NULL DEFAULT 15;

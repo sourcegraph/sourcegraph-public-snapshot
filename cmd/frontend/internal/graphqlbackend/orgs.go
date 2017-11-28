@@ -9,6 +9,7 @@ import (
 	"github.com/neelance/graphql-go/relay"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
@@ -272,6 +273,29 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		if _, ok := err.(store.ErrOrgMemberNotFound); !ok {
 			return nil, err
 		}
+	}
+
+	if !envvar.DeploymentOnPrem() {
+		// Only allow email-verified users to send invites.
+		if emailVerified, err := auth0.GetEmailVerificationStatus(ctx); err != nil {
+			return nil, err
+		} else if !emailVerified {
+			return nil, errors.New("must verify your email to send invites")
+		}
+
+		// Check and decrement our invite quota, to prevent abuse (sending too many invites).
+		//
+		// There is no user invite quota for on-prem instances because we assume they can
+		// trust their users to not abuse invites.
+		if err := store.Users.CheckAndDecrementInviteQuota(ctx, user.ID); err != nil {
+			if err == store.ErrInviteQuotaExceeded {
+				return nil, fmt.Errorf("%s (contact support to increase the quota)", err)
+			}
+			return nil, err
+		}
+	}
+
+	if invitedUser != nil {
 		// Add the editor beta tag to an invited user if they're already registered
 		_, err := store.UserTags.CreateIfNotExists(ctx, invitedUser.ID, "editor-beta")
 		if err != nil {

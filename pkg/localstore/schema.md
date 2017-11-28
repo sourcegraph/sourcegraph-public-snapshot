@@ -335,6 +335,7 @@ Foreign-key constraints:
  updated_at   | timestamp with time zone | not null default now()
  deleted_at   | timestamp with time zone | 
  provider     | text                     | not null default ''::text
+ invite_quota | integer                  | not null default 15
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_auth_id_key" UNIQUE CONSTRAINT, btree (auth_id)

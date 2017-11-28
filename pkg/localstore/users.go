@@ -134,6 +134,31 @@ func (u *users) Update(ctx context.Context, id int32, username *string, displayN
 	return user, nil
 }
 
+// CheckAndDecrementInviteQuota should be called before the user (identified by userID) is
+// allowed to invite any other user. If err != nil, then the user is not allowed to invite
+// any other user (either because they've invited too many users, or some other error
+// occurred). If the user has quota remaining, their quota is decremented.
+func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) error {
+	var quotaRemaining int32
+	sqlQuery := `
+	UPDATE users SET invite_quota=(invite_quota - 1)
+	WHERE users.id=$1 AND invite_quota>0 AND deleted_at IS NULL
+	RETURNING invite_quota`
+	row := globalDB.QueryRowContext(ctx, sqlQuery, userID)
+	if err := row.Scan(&quotaRemaining); err == sql.ErrNoRows {
+		// It's possible that some other problem occurred, such as the user being deleted,
+		// but treat that as a quota exceeded error, too.
+		return ErrInviteQuotaExceeded
+	} else if err != nil {
+		return err
+	}
+	return nil // the user has remaining quota to send invites
+}
+
+// ErrInviteQuotaExceeded indicates that the user has exceeded their invite quota
+// and may not send any more invites.
+var ErrInviteQuotaExceeded = errors.New("invite quota exceeded")
+
 func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error) {
 	if Mocks.Users.GetByID != nil {
 		return Mocks.Users.GetByID(ctx, id)

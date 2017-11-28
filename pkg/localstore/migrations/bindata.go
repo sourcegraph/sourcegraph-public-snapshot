@@ -76,6 +76,8 @@
 // ../../../migrations/1511011666_add_user_settings.up.sql
 // ../../../migrations/1511365156_pkgs_and_global_dep_to_repo_foreign_key.down.sql
 // ../../../migrations/1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql
+// ../../../migrations/1511852763_user_invite_quota.down.sql
+// ../../../migrations/1511852763_user_invite_quota.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1663,6 +1665,46 @@ func _1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql() (*asset, error) 
 	return a, nil
 }
 
+var __1511852763_user_invite_quotaDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\xcc\x2b\xcb\x2c\x49\x8d\x2f\x2c\xcd\x2f\x49\xb4\x06\x04\x00\x00\xff\xff\x6c\xa6\x8d\x68\x2b\x00\x00\x00")
+
+func _1511852763_user_invite_quotaDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1511852763_user_invite_quotaDownSql,
+		"1511852763_user_invite_quota.down.sql",
+	)
+}
+
+func _1511852763_user_invite_quotaDownSql() (*asset, error) {
+	bytes, err := _1511852763_user_invite_quotaDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1511852763_user_invite_quota.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1511852763_user_invite_quotaUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\xcc\x2b\xcb\x2c\x49\x8d\x2f\x2c\xcd\x2f\x49\x54\xc8\xcc\x2b\x49\x4d\x4f\x2d\x52\xf0\xf3\x0f\x51\xf0\x0b\xf5\xf1\x51\x70\x71\x75\x73\x0c\xf5\x09\x51\x30\x34\xb5\x06\x04\x00\x00\xff\xff\xe1\x44\x59\x3d\x46\x00\x00\x00")
+
+func _1511852763_user_invite_quotaUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1511852763_user_invite_quotaUpSql,
+		"1511852763_user_invite_quota.up.sql",
+	)
+}
+
+func _1511852763_user_invite_quotaUpSql() (*asset, error) {
+	bytes, err := _1511852763_user_invite_quotaUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1511852763_user_invite_quota.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1791,6 +1833,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1511011666_add_user_settings.up.sql":                         _1511011666_add_user_settingsUpSql,
 	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.down.sql": _1511365156_pkgs_and_global_dep_to_repo_foreign_keyDownSql,
 	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":   _1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql,
+	"1511852763_user_invite_quota.down.sql":                       _1511852763_user_invite_quotaDownSql,
+	"1511852763_user_invite_quota.up.sql":                         _1511852763_user_invite_quotaUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1910,6 +1954,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1511011666_add_user_settings.up.sql":                         &bintree{_1511011666_add_user_settingsUpSql, map[string]*bintree{}},
 	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.down.sql": &bintree{_1511365156_pkgs_and_global_dep_to_repo_foreign_keyDownSql, map[string]*bintree{}},
 	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":   &bintree{_1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql, map[string]*bintree{}},
+	"1511852763_user_invite_quota.down.sql":                       &bintree{_1511852763_user_invite_quotaDownSql, map[string]*bintree{}},
+	"1511852763_user_invite_quota.up.sql":                         &bintree{_1511852763_user_invite_quotaUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
