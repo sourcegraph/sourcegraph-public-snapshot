@@ -16,6 +16,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { eventLogger } from '../tracking/eventLogger'
 import { OrgAvatar } from './org/OrgAvatar'
+import { hasTagRecursive } from './tags'
 import { UserAvatar } from './user/UserAvatar'
 
 interface Props {
@@ -55,7 +56,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     // this.props.history.push('/sign-in')
                     return
                 }
-                const editorBeta = !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta')
+                const editorBeta = hasTagRecursive(user, 'editor-beta')
                 const hasOrgs = !!user && user.orgs && user.orgs.length > 0
                 this.setState({
                     orgs: user.orgs,
