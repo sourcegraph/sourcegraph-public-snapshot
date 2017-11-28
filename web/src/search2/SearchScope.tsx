@@ -4,7 +4,11 @@ import * as path from 'path'
 import * as React from 'react'
 import { matchPath } from 'react-router'
 import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
+import { tap } from 'rxjs/operators/tap'
+import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { routes } from '../routes'
 import { currentConfiguration } from '../settings/configuration'
@@ -54,6 +58,7 @@ export class SearchScope extends React.PureComponent<Props, State> {
     private static REMOTE_SCOPES_STORAGE_KEY = 'SearchScope/remoteScopes'
     private static LAST_SCOPE_STORAGE_KEY = 'SearchScope/lastScope'
 
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     private selectElement: HTMLSelectElement | null
@@ -95,23 +100,34 @@ export class SearchScope extends React.PureComponent<Props, State> {
                 .subscribe(searchScopes => this.setState({ configuredScopes: searchScopes }))
         )
 
-        const savedState = this.loadFromLocalStorage()
-        if (typeof savedState.lastScopeValue === 'string' && this.props.value === undefined) {
-            this.props.onChange(savedState.lastScopeValue)
-        } else {
-            const value = this.selectElement!.value
-            if (this.props.value !== undefined && this.props.value !== value) {
-                this.props.onChange(value)
-                this.saveToLocalStorage()
-            }
-        }
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(this.props),
+                    distinctUntilChanged((a, b) => (!a && !b) || (a && b && a.value === b.value)),
+                    tap(props => {
+                        const savedState = this.loadFromLocalStorage()
+                        if (typeof savedState.lastScopeValue === 'string' && props.value === undefined) {
+                            props.onChange(savedState.lastScopeValue)
+                        } else {
+                            const value = props.value === undefined ? this.selectElement!.value : props.value
+                            if (value !== undefined) {
+                                props.onChange(value)
+                                this.saveToLocalStorage(props)
+                            }
+                        }
+                    })
+                )
+                .subscribe(undefined, err => console.error(err))
+        )
     }
 
     public componentWillReceiveProps(newProps: Props): void {
-        if (newProps.value !== undefined && newProps.value !== this.props.value) {
-            this.props.onChange(newProps.value)
-            this.saveToLocalStorage(newProps)
-        }
+        this.componentUpdates.next(newProps)
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
