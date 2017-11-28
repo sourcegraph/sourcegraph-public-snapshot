@@ -18,8 +18,7 @@ export class Navbar extends React.Component<Props, State> {
         return (
             <div className="navbar navbar-search2">
                 <div className="navbar__left">
-                    {/* ?hp forces link to go to homepage regardless of current search query */}
-                    <Link to="/search?hp" className="navbar__logo-link">
+                    <Link to="/search" className="navbar__logo-link">
                         <img className="navbar__logo" src="/.assets/img/sourcegraph-mark.svg" />
                     </Link>
                 </div>
