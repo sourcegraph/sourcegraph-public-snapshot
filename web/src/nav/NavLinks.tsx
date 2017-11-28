@@ -59,17 +59,23 @@ export class NavLinks extends React.Component<Props, State> {
                         Browse
                     </Link>
                 )}
-                {this.state.user ? (
+                {this.state.user && (
                     <Link className="nav-links__link" to="/settings">
                         <UserAvatar size={64} />
                     </Link>
-                ) : (
+                )}
+                {!this.state.user &&
                     !window.context.onPrem && (
-                        <Link className="nav-links__link btn btn-primary" to="/sign-in">
+                        <Link className="nav-links__link" to="/sign-in">
                             Sign in
                         </Link>
-                    )
-                )}
+                    )}
+                {!this.state.user &&
+                    !window.context.onPrem && (
+                        <Link className="nav-links__link btn btn-primary" to="/sign-up">
+                            Sign up
+                        </Link>
+                    )}
             </div>
         )
     }
