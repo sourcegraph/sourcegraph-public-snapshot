@@ -22,6 +22,7 @@ interface Props {
 
 interface State {
     editorBeta: boolean
+    orgsEnabled: boolean
     currentUser?: GQL.IUser
     orgs?: GQL.IOrg[]
 }
@@ -36,6 +37,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
         super()
         this.state = {
             editorBeta: false,
+            orgsEnabled: false,
         }
     }
 
@@ -48,10 +50,13 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     // this.props.history.push('/sign-in')
                     return
                 }
+                const editorBeta = !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta')
+                const hasOrgs = !!user && user.orgs && user.orgs.length > 0
                 this.setState({
                     orgs: user.orgs,
                     currentUser: user,
-                    editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta'),
+                    editorBeta,
+                    orgsEnabled: editorBeta || hasOrgs,
                 })
             })
         )
@@ -103,14 +108,16 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </div>
                         </NavLink>
                     </li>
-                    {this.state.editorBeta && (
-                        <ul>
+                    <ul>
+                        {this.state.orgsEnabled && (
                             <div className="settings-sidebar__header">
                                 <div className="settings-sidebar__header-icon">
                                     <CityIcon className="icon-inline" />
                                 </div>
                                 <div className="settings-sidebar__header-title ui-title">Organizations</div>
                             </div>
+                        )}
+                        {this.state.orgsEnabled && (
                             <ul>
                                 {this.state.orgs &&
                                     this.state.orgs.map(org => (
@@ -138,12 +145,16 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                     </NavLink>
                                 </li>
                             </ul>
+                        )}
+                        {this.state.editorBeta && (
                             <div className="settings-sidebar__header">
                                 <div className="settings-sidebar__header-icon">
                                     <ChartIcon className="icon-inline" />
                                 </div>
                                 <div className="settings-sidebar__header-title ui-title">Connections</div>
                             </div>
+                        )}
+                        {this.state.editorBeta && (
                             <li className="settings-sidebar__item">
                                 <NavLink
                                     to="/settings/editor-auth"
@@ -153,8 +164,8 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                     <KeyIcon className="icon-inline settings-sidebar__item-icon" />Editor authentication
                                 </NavLink>
                             </li>
-                        </ul>
-                    )}
+                        )}
+                    </ul>
 
                     {window.context.user &&
                         window.context.user.IsAdmin && (
