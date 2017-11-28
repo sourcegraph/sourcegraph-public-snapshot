@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -45,6 +46,34 @@ type patternInfo struct {
 
 	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
+}
+
+func (p *patternInfo) validate() error {
+	if p.IsRegExp {
+		if _, err := regexp.Compile(p.Pattern); err != nil {
+			return err
+		}
+	}
+
+	if p.PathPatternsAreRegExps {
+		if p.IncludePattern != nil {
+			if _, err := regexp.Compile(*p.IncludePattern); err != nil {
+				return err
+			}
+		}
+		if p.ExcludePattern != nil {
+			if _, err := regexp.Compile(*p.ExcludePattern); err != nil {
+				return err
+			}
+		}
+		for _, expr := range p.IncludePatterns {
+			if _, err := regexp.Compile(expr); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 type fileMatch struct {
@@ -328,6 +357,10 @@ var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsC
 func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)
+	}
+
+	if err := args.Query.validate(); err != nil {
+		return nil, nil, &badRequestError{err}
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

@@ -266,6 +266,11 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	for i, includePattern := range includePatterns {
 		repoRev := parseRepositoryRevision(includePattern)
 		repoPattern := repoRev.Repo // trim "@rev" from pattern
+		// Validate pattern now so the error message is more recognizable to the
+		// user
+		if _, err := regexp.Compile(repoPattern); err != nil {
+			return nil, nil, nil, false, &badRequestError{err}
+		}
 		// Optimization: make the "." in "github.com" a literal dot
 		// so that the regexp can be optimized more effectively.
 		if strings.HasPrefix(repoPattern, "github.com") {
