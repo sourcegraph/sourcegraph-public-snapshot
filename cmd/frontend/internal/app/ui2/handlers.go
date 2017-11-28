@@ -478,7 +478,7 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 	baseRevision := q.Get("baseRevision") // e.g. "master"
 
 	// Generally only present for links to exact file/line number:
-	// e.g. https://about.sourcegraph.com/open/#open?repo=ssh%3A%2F%2Fgit%40github.com%2Fsourcegraph%2Fsourcegraph.git&vcs=git&path=web%2Fsrc%2Fcomments%2FCommentsPage.tsx&selection=177&thread=1300
+	// e.g. https://sourcegraph.com/open?repo=ssh%3A%2F%2Fgit%40github.com%2Fsourcegraph%2Fsourcegraph.git&vcs=git&path=web%2Fsrc%2Fcomments%2FCommentsPage.tsx&selection=177&thread=1300
 	pathStr := q.Get("path")           // e.g. "web/src/comments/CommentsPage.tsx"
 	lineNumber := q.Get("selection")   // e.g. "177"
 	_, fileName := path.Split(pathStr) // "CommentsPage.tsx"
