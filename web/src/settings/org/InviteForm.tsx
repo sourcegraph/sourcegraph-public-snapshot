@@ -69,7 +69,7 @@ export const InviteForm = reactive<Props>(props => {
                             invited: true,
                         }))
                             // Hide "invited" text again after 1s
-                            .pipe(concat(of<Update>(state => ({ ...state, invited: false })), delay(1000)))
+                            .pipe(concat(of<Update>(state => ({ ...state, invited: false })).pipe(delay(1000))))
                     ),
                     // Disable button while loading
                     startWith<Update>((state: State): State => ({ ...state, loading: true })),
