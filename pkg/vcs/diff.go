@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"unicode/utf8"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
@@ -19,6 +20,7 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 		matchContextLines = 1
 		maxLinesPerHunk   = 20
 		maxMatchesPerLine = 100
+		maxCharsPerLine   = 200
 	)
 
 	dr := diff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
@@ -36,6 +38,11 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 		newNameMatches := fileDiff.NewName != "/dev/null" && pathMatcher.MatchPath(fileDiff.NewName)
 		if !origNameMatches && !newNameMatches {
 			continue
+		}
+
+		// Truncate long lines, for perf.
+		for _, hunk := range fileDiff.Hunks {
+			hunk.Body = truncateLongLines(hunk.Body, maxCharsPerLine)
 		}
 
 		// Exclude hunks not matching the query.
@@ -98,6 +105,38 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 	}
 
 	return rawDiff, highlights, nil
+}
+
+func truncateLongLines(data []byte, maxCharsPerLine int) []byte {
+	// We reuse data's storage to avoid allocation.
+
+	offset := 0
+	lineLength := 0
+	hasSeenTruncatedLine := false // avoid writing until we need to
+	r := bytes.NewReader(data)
+	for {
+		r, n, err := r.ReadRune()
+		if err != nil {
+			if err != io.EOF {
+				panic(err)
+			}
+			break
+		}
+		if r == '\n' {
+			lineLength = -1 // will be incremented immediately after to 0
+		}
+		if lineLength < maxCharsPerLine {
+			if hasSeenTruncatedLine {
+				utf8.EncodeRune(data[offset:], r)
+			}
+			offset += n
+			lineLength++
+		} else {
+			hasSeenTruncatedLine = true
+		}
+	}
+
+	return data[:offset]
 }
 
 func diffHunkLineStatus(line []byte) (added, removed bool) {
