@@ -97,7 +97,11 @@ export class SearchScope extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             currentConfiguration
                 .pipe(map((config: SearchScopeConfiguration) => config['search.scopes'] || []))
-                .subscribe(searchScopes => this.setState({ configuredScopes: searchScopes }))
+                .subscribe(searchScopes =>
+                    this.setState({
+                        configuredScopes: searchScopes,
+                    })
+                )
         )
 
         this.subscriptions.add(
@@ -119,6 +123,27 @@ export class SearchScope extends React.PureComponent<Props, State> {
                     })
                 )
                 .subscribe(undefined, err => console.error(err))
+        )
+
+        // Emits whenever a repository is browsed to or away from.
+        const repoBrowsedToOrFrom = this.componentUpdates.pipe(
+            startWith(this.props),
+            distinctUntilChanged((a, b) => a.location === b.location),
+            map(({ location }) => repoFromRoute(location)),
+            distinctUntilChanged()
+        )
+
+        // Set scope to current repository when browsing in a repository, and remove it
+        // after browsing away.
+        this.subscriptions.add(
+            repoBrowsedToOrFrom.subscribe(
+                (repoPath: string | null) => {
+                    if (repoPath) {
+                        this.props.onChange(scopeForRepo(repoPath).value)
+                    }
+                },
+                err => console.error(err)
+            )
         )
     }
 
@@ -194,10 +219,7 @@ export class SearchScope extends React.PureComponent<Props, State> {
                     case '/:repoRev+': {
                         // Repo page
                         const [repoPath] = match.params.repoRev!.split('@')
-                        scopes.push({
-                            name: `This repository (${path.basename(repoPath)})`,
-                            value: `repo:^${escapeRegexp(repoPath)}$`,
-                        })
+                        scopes.push(scopeForRepo(repoPath))
                         break
                     }
                     case '/:repoRev+/-/tree/:filePath+':
@@ -241,7 +263,14 @@ export class SearchScope extends React.PureComponent<Props, State> {
         }
 
         writeItem(SearchScope.REMOTE_SCOPES_STORAGE_KEY, this.state.remoteScopes)
-        writeItem(SearchScope.LAST_SCOPE_STORAGE_KEY, props.value)
+
+        // Don't persist if this is the automatic scope set when browsing in
+        // a repo (by repoBrowsedToOrFrom).
+        const repoPath = repoFromRoute(props.location)
+        const isAutoRepoScope = repoPath && scopeForRepo(repoPath).value === props.value
+        if (!isAutoRepoScope) {
+            writeItem(SearchScope.LAST_SCOPE_STORAGE_KEY, props.value)
+        }
     }
 
     private loadFromLocalStorage(): PersistedState {
@@ -273,4 +302,28 @@ export class SearchScope extends React.PureComponent<Props, State> {
         const lastScopeValue = readItem<string>(SearchScope.LAST_SCOPE_STORAGE_KEY, s => typeof s === 'string')
         return { remoteScopes, lastScopeValue }
     }
+}
+
+function scopeForRepo(repoPath: string): ISearchScope {
+    return {
+        name: `This repository (${path.basename(repoPath)})`,
+        value: `repo:^${escapeRegexp(repoPath)}$`,
+    }
+}
+
+/**
+ * Returns the repo path, or null, of the location.
+ */
+function repoFromRoute(loc: H.Location): string | null {
+    for (const route of routes) {
+        const match = matchPath<{ repoRev?: string }>(location.pathname, route)
+        if (match) {
+            if (match.path.startsWith('/:repoRev+')) {
+                const [repoPath] = match.params.repoRev!.split('@')
+                return repoPath
+            }
+            break
+        }
+    }
+    return null
 }
