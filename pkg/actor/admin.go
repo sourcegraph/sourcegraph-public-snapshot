@@ -7,14 +7,14 @@ import (
 )
 
 var (
-	adminAuthIDs = env.Get("ADMIN_AUTH_IDS", "", "space-delimited list of user Auth IDs that should be treated as admins")
-	adminUIDs    map[string]struct{}
+	adminUsernames = env.Get("ADMIN_USERNAMES", "", "space-delimited list of user usernames that should be treated as admins")
+	adminUIDs      map[string]struct{}
 )
 
 func init() {
 	adminUIDs = make(map[string]struct{})
-	for _, uid := range strings.Fields(adminAuthIDs) {
-		adminUIDs[uid] = struct{}{}
+	for _, username := range strings.Fields(adminUsernames) {
+		adminUIDs[username] = struct{}{}
 	}
 }
 
@@ -23,6 +23,7 @@ func (a *Actor) IsAdmin() bool {
 	if a == nil {
 		return false
 	}
-	_, isAdmin := adminUIDs[a.UID]
+
+	_, isAdmin := adminUIDs[a.Login]
 	return isAdmin
 }
