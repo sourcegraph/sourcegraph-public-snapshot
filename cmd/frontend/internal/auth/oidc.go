@@ -34,6 +34,7 @@ var (
 	oidcIDProvider   = env.Get("OIDC_OP", "", "OpenID Connect OpenID Provider (OP)")
 	oidcClientID     = env.Get("OIDC_CLIENT_ID", "", "OpenID Connect Client ID")
 	oidcClientSecret = env.Get("OIDC_CLIENT_SECRET", "", "OpenID Connect Client Secret")
+	oidcEmailDomain  = env.Get("OIDC_EMAIL_DOMAIN", "", "OpenID Connect Hosted Domain")
 )
 
 // newOIDCAuthHandler wraps the passed in handler with OpenID Connect (OIDC) authentication, adding endpoints
@@ -195,6 +196,11 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		userInfo, err := provider.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
 		if err != nil {
 			http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if oidcEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+oidcEmailDomain) {
+			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+oidcEmailDomain), http.StatusUnauthorized)
 			return
 		}
 
