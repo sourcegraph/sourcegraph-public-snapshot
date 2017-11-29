@@ -57,11 +57,19 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	req, err := http.Post("http://localhost:3080/.api/graphql", "application/json; charset=utf-8", bytes.NewReader(data))
+	req, err := http.NewRequest("POST", "http://localhost:3080/.api/graphql", bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
-	defer req.Body.Close()
+	for k := range r.Header {
+		req.Header[k] = r.Header[k]
+	}
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	symbolResp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer symbolResp.Body.Close()
 
 	var resp struct {
 		Data struct {
@@ -77,7 +85,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 			} `json:"root"`
 		} `json:"data"`
 	}
-	if err := json.NewDecoder(req.Body).Decode(&resp); err != nil {
+	if err := json.NewDecoder(symbolResp.Body).Decode(&resp); err != nil {
 		return err
 	}
 
