@@ -31,6 +31,14 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                 }
                             }
                             ... on CommitSearchResult {
+                                messagePreview {
+                                    value
+                                    highlights {
+                                        line
+                                        character
+                                        length
+                                    }
+                                }
                                 diffPreview {
                                     value
                                     highlights {

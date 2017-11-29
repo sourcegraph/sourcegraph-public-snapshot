@@ -168,6 +168,10 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
 				return searchCommitDiffsInRepos(ctx, &args, r.combinedQuery)
 			})
+		case "commit":
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchCommitLogInRepos(ctx, &args, r.combinedQuery)
+			})
 		}
 	}
 
@@ -182,6 +186,8 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 			continue
 		}
 		results.results = append(results.results, results1...)
+		// TODO(sqs): combine diff and commit results that refer to the same underlying
+		// commit (and match on the commit's diff and message, respectively).
 		results.searchResultsCommon.update(*common1)
 	}
 

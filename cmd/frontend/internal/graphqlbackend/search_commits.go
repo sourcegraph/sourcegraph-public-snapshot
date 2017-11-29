@@ -1,7 +1,9 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
+	"regexp"
 	"strconv"
 	"sync"
 	"time"
@@ -25,20 +27,49 @@ func (r *diffSearchResult) Diff() *diff                 { return r.diff }
 func (r *diffSearchResult) Preview() *highlightedString { return r.preview }
 
 type commitSearchResult struct {
-	commit      *commitInfoResolver
-	diffPreview *highlightedString
+	commit         *commitInfoResolver
+	messagePreview *highlightedString
+	diffPreview    *highlightedString
 }
 
-func (r *commitSearchResult) Commit() *commitInfoResolver     { return r.commit }
-func (r *commitSearchResult) DiffPreview() *highlightedString { return r.diffPreview }
+func (r *commitSearchResult) Commit() *commitInfoResolver        { return r.commit }
+func (r *commitSearchResult) MessagePreview() *highlightedString { return r.messagePreview }
+func (r *commitSearchResult) DiffPreview() *highlightedString    { return r.diffPreview }
 
 var mockSearchCommitDiffsInRepo func(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
 
 func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
-	if mockSearchRepo != nil {
+	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoName, rev, info, combinedQuery)
 	}
 
+	args := []string{
+		"--unified=0",
+		"--no-prefix",
+	}
+	textSearchOptions := vcs.TextSearchOptions{
+		Pattern:         info.Pattern,
+		IsRegExp:        info.IsRegExp,
+		IsCaseSensitive: info.IsCaseSensitive,
+	}
+	return searchCommitsInRepo(ctx, repoName, rev, info, combinedQuery, args, textSearchOptions, nil)
+}
+
+var mockSearchCommitLogInRepo func(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
+
+func searchCommitLogInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
+	if mockSearchCommitLogInRepo != nil {
+		return mockSearchCommitLogInRepo(ctx, repoName, rev, info, combinedQuery)
+	}
+
+	var terms []string
+	if info.Pattern != "" {
+		terms = append(terms, info.Pattern)
+	}
+	return searchCommitsInRepo(ctx, repoName, rev, info, combinedQuery, nil, vcs.TextSearchOptions{}, terms)
+}
+
+func searchCommitsInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery, args []string, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return nil, false, err
@@ -55,10 +86,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *pa
 	}
 
 	const maxResults = 20 // TODO(sqs): arbitrary
-	args := []string{
-		"--unified=0",
-		"--no-prefix",
-		"--max-count=" + strconv.Itoa(maxResults+1),
+	args = append(args, "--max-count="+strconv.Itoa(maxResults+1))
+	if info.IsRegExp {
+		args = append(args, "--extended-regexp")
 	}
 	if !combinedQuery.isCaseSensitive() {
 		args = append(args, "--regexp-ignore-case")
@@ -73,8 +103,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *pa
 
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
 	var hasSeenGrepLikeFields, hasSeenInvertedGrepLikeFields bool
-	addGrepLikeFlags := func(args *[]string, gitLogFlag string, field search2.Field) error {
+	addGrepLikeFlags := func(args *[]string, gitLogFlag string, field search2.Field, extraValues []string) error {
 		values := combinedQuery.fieldValues[field].Values()
+		values = append(values, extraValues...)
 		minusValues := combinedQuery.fieldValues[minusField(field)].Values()
 
 		hasSeenGrepLikeFields = hasSeenGrepLikeFields || len(values) > 0
@@ -104,13 +135,13 @@ func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *pa
 		}
 		return nil
 	}
-	if err := addGrepLikeFlags(&args, "--grep", searchFieldMessage); err != nil {
+	if err := addGrepLikeFlags(&args, "--grep", searchFieldMessage, extraMessageValues); err != nil {
 		return nil, false, err
 	}
-	if err := addGrepLikeFlags(&args, "--author", searchFieldAuthor); err != nil {
+	if err := addGrepLikeFlags(&args, "--author", searchFieldAuthor, nil); err != nil {
 		return nil, false, err
 	}
-	if err := addGrepLikeFlags(&args, "--committer", searchFieldCommitter); err != nil {
+	if err := addGrepLikeFlags(&args, "--committer", searchFieldCommitter, nil); err != nil {
 		return nil, false, err
 	}
 
@@ -133,11 +164,7 @@ func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *pa
 	defer cancel()
 
 	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
-		Query: vcs.TextSearchOptions{
-			Pattern:         info.Pattern,
-			IsRegExp:        info.IsRegExp,
-			IsCaseSensitive: info.IsCaseSensitive,
-		},
+		Query: textSearchOptions,
 		Paths: vcs.PathOptions{
 			IncludePatterns: info.IncludePatterns,
 			ExcludePattern:  strv(info.ExcludePattern),
@@ -181,13 +208,43 @@ func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *pa
 				},
 				message: commit.Message,
 			},
-			diffPreview: &highlightedString{
+		}
+
+		// TODO(sqs): properly combine message: and term values for type:commit searches
+		if len(extraMessageValues) > 0 {
+			pat, err := regexp.Compile(extraMessageValues[0])
+			if err == nil {
+				results[i].messagePreview = highlightMatches(pat, []byte(commit.Message))
+			}
+		}
+
+		if rawResult.Diff != nil {
+			results[i].diffPreview = &highlightedString{
 				value:      rawResult.Diff.Raw,
-				highlights: fromVCSHighlights(rawResult.Highlights),
-			},
+				highlights: fromVCSHighlights(rawResult.DiffHighlights),
+			}
 		}
 	}
 	return results, limitHit, nil
+}
+
+func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
+	const maxMatchesPerLine = 25 // arbitrary
+
+	var highlights []*highlightedRange
+	for i, line := range bytes.Split(data, []byte("\n")) {
+		for _, match := range pattern.FindAllIndex(bytes.ToLower(line), maxMatchesPerLine) {
+			highlights = append(highlights, &highlightedRange{
+				line:      int32(i + 1),
+				character: int32(match[0]),
+				length:    int32(match[1] - match[0]),
+			})
+		}
+	}
+	return &highlightedString{
+		value:      string(data),
+		highlights: highlights,
+	}
 }
 
 var mockSearchCommitDiffsInRepos func(args *repoSearchArgs, combinedQuery resolvedQuery) ([]*searchResult, *searchResultsCommon, error)
@@ -224,7 +281,61 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 			mu.Lock()
 			defer mu.Unlock()
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
-				err = errors.Wrapf(searchErr, "failed to search diffs %s", repoRev.String())
+				err = errors.Wrapf(searchErr, "failed to search commit diffs %s", repoRev.String())
+				cancel()
+			}
+			if len(results) > 0 {
+				unflattened = append(unflattened, results)
+			}
+		}(*repoRev)
+	}
+	wg.Wait()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var flattened []*commitSearchResult
+	for _, results := range unflattened {
+		flattened = append(flattened, results...)
+	}
+	return commitSearchResultsToSearchResults(flattened), common, nil
+}
+
+var mockSearchCommitLogInRepos func(args *repoSearchArgs, combinedQuery resolvedQuery) ([]*searchResult, *searchResultsCommon, error)
+
+// searchCommitLogInRepos searches a set of repos for matching commits.
+func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQuery resolvedQuery) ([]*searchResult, *searchResultsCommon, error) {
+	if mockSearchCommitLogInRepos != nil {
+		return mockSearchCommitLogInRepos(args, combinedQuery)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var (
+		err         error
+		wg          sync.WaitGroup
+		mu          sync.Mutex
+		unflattened [][]*commitSearchResult
+		common      = &searchResultsCommon{}
+	)
+	for _, repoRev := range args.Repositories {
+		wg.Add(1)
+		go func(repoRev repositoryRevision) {
+			defer wg.Done()
+			var rev string
+			if repoRev.Rev != nil {
+				rev = *repoRev.Rev
+			}
+			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev.Repo, rev, args.Query, combinedQuery)
+			if ctx.Err() != nil {
+				// Our request has been canceled, we can just ignore searchRepo for this repo.
+				return
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
+				err = errors.Wrapf(searchErr, "failed to search commit log %s", repoRev.String())
 				cancel()
 			}
 			if len(results) > 0 {

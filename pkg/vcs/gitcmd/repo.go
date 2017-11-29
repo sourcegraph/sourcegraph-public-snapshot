@@ -32,7 +32,7 @@ var (
 			"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
 			"--regexp-ignore-case", "--glob", "--cherry", "-z",
 			"--until", "--since", "--author", "--committer",
-			"--all-match", "--invert-grep",
+			"--all-match", "--invert-grep", "--extended-regexp",
 		},
 		"show":   []string{},
 		"remote": []string{"-v"},

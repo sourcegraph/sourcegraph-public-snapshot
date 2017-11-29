@@ -47,7 +47,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 							Message:   "branch1",
 							Parents:   []vcs.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 						},
-						Diff: vcs.Diff{Raw: "diff --git a/f b/f\nindex d8649da..1193ff4 100644\n--- a/f\n+++ b/f\n@@ -1,1 +1,1 @@\n-root\n+branch1\n"},
+						Diff: &vcs.Diff{Raw: "diff --git a/f b/f\nindex d8649da..1193ff4 100644\n--- a/f\n+++ b/f\n@@ -1,1 +1,1 @@\n-root\n+branch1\n"},
 					},
 					{
 						Commit: vcs.Commit{
@@ -56,7 +56,31 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 							Message:   "root",
 						},
-						Diff: vcs.Diff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
+						Diff: &vcs.Diff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
+					},
+				},
+
+				// Without query
+				{
+					Query: vcs.TextSearchOptions{Pattern: ""},
+					Args:  []string{"--grep=branch1|root", "--extended-regexp"},
+				}: {
+					{
+						Commit: vcs.Commit{
+							ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
+							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Message:   "branch1",
+							Parents:   []vcs.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
+						},
+					},
+					{
+						Commit: vcs.Commit{
+							ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
+							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Message:   "root",
+						},
 					},
 				},
 			},
@@ -74,7 +98,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 				t.Errorf("%s: !complete", label)
 			}
 			for _, r := range results {
-				r.Highlights = nil // Highlights is tested separately
+				r.DiffHighlights = nil // Highlights is tested separately
 			}
 			if !reflect.DeepEqual(results, want) {
 				t.Errorf("%s: %+v: got %+v, want %+v", label, *opt, asJSON(results), asJSON(want))

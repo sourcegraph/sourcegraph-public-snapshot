@@ -41,7 +41,9 @@
     }
 
     &__item {
-        padding: 0 !important;
+        &-diff-preview {
+            padding: 0 !important;
+        }
 
         .file-header {
             font-weight: bold;
