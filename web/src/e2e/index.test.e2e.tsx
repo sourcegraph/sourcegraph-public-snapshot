@@ -1,5 +1,5 @@
+import { Chromeless } from '@sourcegraph/chromeless'
 import * as assert from 'assert'
-import { Chromeless } from 'chromeless'
 // tslint:disable-next-line
 import * as _ from 'lodash'
 
@@ -25,6 +25,7 @@ describe('e2e test suite', () => {
     })
     beforeEach(() => {
         chrome = new Chromeless({ waitTimeout: 30000, launchChrome: false })
+        return chrome.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
     })
     afterEach(() => chrome.end())
     after(() => {
