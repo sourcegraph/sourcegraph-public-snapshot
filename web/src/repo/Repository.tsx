@@ -1,5 +1,3 @@
-import ChevronLeftIcon from '@sourcegraph/icons/lib/ChevronLeft'
-import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
@@ -39,8 +37,6 @@ export interface Props {
     filePath?: string
     location: H.Location
     history: H.History
-    onToggleFullWidth: () => void
-    isFullWidth: boolean
     isLightTheme: boolean
     phabricatorCallsign?: string
     isDirectory: boolean
@@ -227,13 +223,16 @@ export class Repository extends React.PureComponent<Props, State> {
                         id="explorer"
                         className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}
                     >
-                        <button
-                            type="button"
-                            className="btn btn-icon repository__sidebar-toggle"
-                            onClick={this.onTreeToggle}
-                        >
-                            <ListIcon />
-                        </button>
+                        {!this.state.showTree && (
+                            <button
+                                type="button"
+                                className="btn btn-icon repository__sidebar-toggle"
+                                onClick={this.onTreeToggle}
+                                title="Show file tree"
+                            >
+                                <ListIcon />
+                            </button>
+                        )}
                         <TreeHeader title="Files" onDismiss={this.onTreeToggle} />
                         <Tree
                             repoPath={this.props.repoPath}
@@ -245,14 +244,6 @@ export class Repository extends React.PureComponent<Props, State> {
                         />
                     </div>
                     <div className="repository__viewer">
-                        <button
-                            type="button"
-                            className="btn btn-icon repository__full-width-toggle"
-                            onClick={this.props.onToggleFullWidth}
-                            title="toggle full width"
-                        >
-                            {this.props.isFullWidth ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-                        </button>
                         {this.state.isDirectory && (
                             <DirectoryPage
                                 repoPath={this.props.repoPath}

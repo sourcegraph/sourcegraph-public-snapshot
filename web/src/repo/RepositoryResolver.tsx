@@ -28,8 +28,6 @@ interface Props {
     location: H.Location
     history: H.History
     match: match<{ repoRev: string; filePath?: string }>
-    onToggleFullWidth: () => void
-    isFullWidth: boolean
     isDirectory: boolean
     isLightTheme: boolean
 }
@@ -181,8 +179,6 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 defaultBranch={this.state.defaultBranch}
                 location={this.props.location}
                 history={this.props.history}
-                onToggleFullWidth={this.props.onToggleFullWidth}
-                isFullWidth={this.props.isFullWidth}
                 isLightTheme={this.props.isLightTheme}
                 isDirectory={this.props.isDirectory}
                 phabricatorCallsign={this.state.phabricatorCallsign}

@@ -163,8 +163,6 @@ body {
         }
 
         &--full-width {
-            padding: 0 5rem;
-
             @media (max-width: $media-md) {
                 padding: 0;
             }
