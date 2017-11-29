@@ -84,7 +84,11 @@ func NewHandler(r *router.Router) http.Handler {
 
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	session.DeleteSession(w, r)
-	http.Redirect(w, r, "https://"+auth0.Domain+"/v2/logout?"+conf.AppURL.String(), http.StatusSeeOther)
+	if auth0.Domain != "" {
+		http.Redirect(w, r, "https://"+auth0.Domain+"/v2/logout?"+conf.AppURL.String(), http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
 }
 
 // DEPRECATED
