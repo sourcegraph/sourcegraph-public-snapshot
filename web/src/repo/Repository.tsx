@@ -39,8 +39,6 @@ export interface Props {
     filePath?: string
     location: H.Location
     history: H.History
-    onToggleFullWidth: () => void
-    isFullWidth: boolean
     isLightTheme: boolean
     phabricatorCallsign?: string
     isDirectory: boolean
@@ -231,6 +229,7 @@ export class Repository extends React.PureComponent<Props, State> {
                             type="button"
                             className="btn btn-icon repository__sidebar-toggle"
                             onClick={this.onTreeToggle}
+                            title={this.state.showTree ? 'Hide file tree' : 'Show file tree'}
                         >
                             <ListIcon />
                         </button>
@@ -245,14 +244,6 @@ export class Repository extends React.PureComponent<Props, State> {
                         />
                     </div>
                     <div className="repository__viewer">
-                        <button
-                            type="button"
-                            className="btn btn-icon repository__full-width-toggle"
-                            onClick={this.props.onToggleFullWidth}
-                            title="toggle full width"
-                        >
-                            {this.props.isFullWidth ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-                        </button>
                         {this.state.isDirectory && (
                             <DirectoryPage
                                 repoPath={this.props.repoPath}

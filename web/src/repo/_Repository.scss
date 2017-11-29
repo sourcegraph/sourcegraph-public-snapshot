@@ -55,23 +55,21 @@
     &__sidebar-toggle {
         position: absolute;
         top: 0;
-        left: -2.5rem;
-        width: 2.5rem;
-        height: 2.5rem;
+        right: -1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
         z-index: 20;
+
+        .icon {
+            width: 1.125rem;
+            height: 1.125rem;
+        }
 
         display: flex;
         justify-content: center;
 
         background: #1c2736;
-        border-radius: 0.25rem 0 0 0.25rem;
-
-        @media (max-width: $media-md) {
-            // Make toggle float over code and file tree instead of off to the right
-            left: inherit;
-            right: -2.5rem;
-            border-radius: 0 0 0.25rem;
-        }
+        border-radius: 0 0 0.25rem;
     }
 
     &__viewer {
