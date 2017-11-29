@@ -6,6 +6,7 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
     flex: 0 0 auto;
     width: 15.75rem;
     background-color: #1c2736;
+    user-select: none;
 
     display: flex;
     flex-direction: column;
