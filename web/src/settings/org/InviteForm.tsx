@@ -100,14 +100,18 @@ export const InviteForm = reactive<Props>(props => {
                         Invite
                     </button>
                 </div>
-                {loading && <LoaderIcon className="icon-inline" />}
-                {error && (
-                    <div className="text-error">
-                        <small>{error.message}</small>
-                    </div>
-                )}
-                <div className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}>
-                    <small>Invited!</small>
+                <div className="invite-form__status">
+                    {error && (
+                        <div className="text-error">
+                            <small>{error.message}</small>
+                        </div>
+                    )}
+                    <small
+                        className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}
+                    >
+                        Invited!
+                    </small>
+                    {loading && <LoaderIcon className="icon-inline" />}
                 </div>
             </form>
         ))

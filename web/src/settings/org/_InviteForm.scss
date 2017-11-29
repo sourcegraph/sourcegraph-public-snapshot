@@ -24,4 +24,10 @@
         width: 100%;
         max-width: 21rem;
     }
+
+    &__status {
+        padding: 0.5rem 0.5rem 0 0;
+        min-height: 2.75rem;
+        overflow: hidden;
+    }
 }
