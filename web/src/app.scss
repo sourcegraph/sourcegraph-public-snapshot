@@ -9,6 +9,7 @@ $color-secondary: #93a9c8;
 $color-success: #0ca678;
 $color-primary: #1c7cd6;
 $color-error: #f03e3e;
+$color-info: #1098ad;
 
 $color-light-page-background: #f2f4f8;
 $color-light-text: #39496a;
@@ -289,6 +290,10 @@ h1 {
     &:focus:not(:disabled) {
         outline: lighten($color-secondary, 5%);
     }
+}
+
+.btn-info {
+    background: $color-info;
 }
 
 .light a,
