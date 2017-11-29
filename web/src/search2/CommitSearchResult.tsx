@@ -80,6 +80,8 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
         const commonCtx: RepoSpec = {
             repoPath: props.result.commit.repository.uri,
         }
+        // lhsCtx and rhsCtx need the cast because their values at const init time lack
+        // the filePath field, which is assigned as we iterate over the lines below.
         const lhsCtx = {
             ...commonCtx,
             commitID: props.result.commit.oid + '~',
