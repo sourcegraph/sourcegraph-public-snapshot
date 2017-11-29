@@ -223,14 +223,16 @@ export class Repository extends React.PureComponent<Props, State> {
                         id="explorer"
                         className={'repository__sidebar' + (this.state.showTree ? ' repository__sidebar--open' : '')}
                     >
-                        <button
-                            type="button"
-                            className="btn btn-icon repository__sidebar-toggle"
-                            onClick={this.onTreeToggle}
-                            title={this.state.showTree ? 'Hide file tree' : 'Show file tree'}
-                        >
-                            <ListIcon />
-                        </button>
+                        {!this.state.showTree && (
+                            <button
+                                type="button"
+                                className="btn btn-icon repository__sidebar-toggle"
+                                onClick={this.onTreeToggle}
+                                title="Show file tree"
+                            >
+                                <ListIcon />
+                            </button>
+                        )}
                         <TreeHeader title="Files" onDismiss={this.onTreeToggle} />
                         <Tree
                             repoPath={this.props.repoPath}
