@@ -88,26 +88,6 @@
     &__blob-placeholder {
         flex: 1 1 50%;
     }
-
-    &__full-width-toggle {
-        position: absolute;
-        width: 2.5rem;
-        height: 2.5rem;
-        top: 0;
-        right: -2.5rem;
-        z-index: 1; // Outline should overlay blob
-
-        display: flex;
-        justify-content: center;
-
-        border-radius: 0 0.25rem 0.25rem 0;
-        background: #1c2736;
-
-        @media (max-width: $media-md) {
-            // toggle is not useful on such a small screen, since we're always 100%.
-            display: none;
-        }
-    }
 }
 
 .theme-light {
@@ -129,14 +109,6 @@
         &__viewer {
             background-color: $color-light-bg-1;
             border: 1px solid $color-light-border;
-        }
-
-        &__full-width-toggle {
-            background: $color-light-bg-2;
-
-            &:hover {
-                color: $color-light-text-5;
-            }
         }
     }
 }

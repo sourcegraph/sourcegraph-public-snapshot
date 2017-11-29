@@ -16,9 +16,7 @@ export interface LayoutRouteProps extends RouteProps {
     render?: (props: any) => React.ReactNode
 
     /**
-     * Whether or not to force the width of the page to be narrow. Otherwise
-     * this is controlled by the user's full-width toggle state, which is not
-     * accessible on all pages.
+     * Whether or not to force the width of the page to be narrow.
      */
     forceNarrowWidth?: boolean
 }

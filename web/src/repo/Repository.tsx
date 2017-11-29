@@ -1,5 +1,3 @@
-import ChevronLeftIcon from '@sourcegraph/icons/lib/ChevronLeft'
-import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'

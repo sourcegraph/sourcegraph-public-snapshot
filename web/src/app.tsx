@@ -21,25 +21,10 @@ interface LayoutProps extends RouteComponentProps<any> {
     isLightTheme: boolean
 }
 
-interface LayoutState {
-    /**
-     * whether or not container is full width
-     */
-    isFullWidth: boolean
-}
-
 /**
  * Defines the layout of all pages that have a navbar
  */
-class Layout extends React.Component<LayoutProps, LayoutState> {
-    public state: LayoutState = {
-        isFullWidth: localStorage.getItem('layout-is-full-width') !== 'false',
-    }
-
-    public componentDidUpdate(): void {
-        localStorage.setItem('layout-is-full-width', this.state.isFullWidth + '')
-    }
-
+class Layout extends React.Component<LayoutProps> {
     public render(): JSX.Element | null {
         return (
             <div className="layout">
@@ -51,7 +36,7 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                 />
                 <Switch>
                     {routes.map((route, i) => {
-                        const isFullWidth = !route.forceNarrowWidth && this.state.isFullWidth
+                        const isFullWidth = !route.forceNarrowWidth
                         const Component = route.component
                         return (
                             <Route
@@ -71,7 +56,6 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                                         {Component && (
                                             <Component
                                                 {...props}
-                                                onToggleFullWidth={this.onToggleFullWidth}
                                                 isFullWidth={isFullWidth}
                                                 onToggleTheme={this.props.onToggleTheme}
                                                 isLightTheme={this.props.isLightTheme}
@@ -80,7 +64,6 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                                         {route.render &&
                                             route.render({
                                                 ...props,
-                                                onToggleFullWidth: this.onToggleFullWidth,
                                                 isFullWidth,
                                                 isLightTheme: this.props.isLightTheme,
                                             })}
@@ -92,13 +75,6 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                 </Switch>
             </div>
         )
-    }
-
-    /**
-     * toggles full-width display of the container
-     */
-    private onToggleFullWidth = () => {
-        this.setState(state => ({ isFullWidth: !state.isFullWidth }))
     }
 }
 
