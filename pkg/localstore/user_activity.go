@@ -97,14 +97,22 @@ func (s *userActivity) GetByUserID(ctx context.Context, userID int32) (*sourcegr
 	return s.getOneBySQL(ctx, "WHERE user_id=$1", userID)
 }
 
-func (*userActivity) LogPageView(ctx context.Context, userID int32) error {
+func (s *userActivity) LogPageView(ctx context.Context, userID int32) error {
+	_, err := s.CreateIfNotExists(ctx, userID)
+	if err != nil {
+		return err
+	}
 	updatedAt := time.Now()
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO user_activity(user_id, page_views) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET page_views = user_activity.page_views + 1, updated_at = $3 WHERE user_activity.user_id=$4", userID, 1, updatedAt, userID)
+	_, err = globalDB.ExecContext(ctx, "UPDATE user_activity SET page_views = user_activity.page_views + 1, updated_at = $1 WHERE user_activity.user_id=$2", updatedAt, userID)
 	return err
 }
 
-func (*userActivity) LogSearchQuery(ctx context.Context, userID int32) error {
+func (s *userActivity) LogSearchQuery(ctx context.Context, userID int32) error {
+	_, err := s.CreateIfNotExists(ctx, userID)
+	if err != nil {
+		return err
+	}
 	updatedAt := time.Now()
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO user_activity(user_id, search_queries) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET search_queries = user_activity.search_queries + 1, updated_at = $3 WHERE user_activity.user_id=$4", userID, 1, updatedAt, userID)
+	_, err = globalDB.ExecContext(ctx, "UPDATE user_activity SET search_queries = user_activity.search_queries + 1, updated_at = $1 WHERE user_activity.user_id=$2", updatedAt, userID)
 	return err
 }
