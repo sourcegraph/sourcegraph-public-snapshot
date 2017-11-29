@@ -226,7 +226,7 @@ export class QueryInput extends React.Component<Props, State> {
         return (
             <div className="query-input2">
                 <input
-                    className="ui-text-box query-input2__field"
+                    className="ui-text-box query-input2__input"
                     value={this.props.value}
                     onChange={this.onInputChange}
                     onKeyDown={this.onInputKeyDown}
