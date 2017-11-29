@@ -75,3 +75,13 @@
         align-items: center;
     }
 }
+
+.theme-light {
+    .comment {
+        border-color: $color-light-border;
+
+        &:first-of-type {
+            border: none;
+        }
+    }
+}

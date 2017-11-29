@@ -8,6 +8,7 @@ interface Props extends AbsoluteRepoFilePosition {
     // How many extra lines to show in the excerpt before/after the ref.
     previewWindowExtraLines?: number
     highlightLength: number
+    isLightTheme: boolean
 }
 
 interface State {
@@ -115,6 +116,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             commitID: props.commitID,
             filePath: props.filePath,
             disableTimeout: true,
+            isLightTheme: props.isLightTheme,
         }).subscribe(
             lines => {
                 this.setState({ blobLines: lines })

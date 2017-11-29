@@ -46,3 +46,14 @@
         margin-top: 1rem;
     }
 }
+
+.theme-light {
+    .hero-page {
+        background-color: inherit;
+        color: inherit;
+
+        &__icon {
+            background-color: $color-light-bg-4;
+        }
+    }
+}

@@ -42,3 +42,18 @@
         margin-right: 0.5rem;
     }
 }
+
+.theme-light {
+    .suggestion2 {
+        background-color: $color-light-bg-1;
+
+        &:first-child {
+            border-top: none;
+        }
+
+        &--selected,
+        &:hover {
+            background-color: $color-light-bg-2;
+        }
+    }
+}

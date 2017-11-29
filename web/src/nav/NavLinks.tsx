@@ -2,9 +2,13 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
+import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { UserAvatar } from '../settings/user/UserAvatar'
 
-interface Props {}
+interface Props {
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
+}
 
 interface State {
     savedQueries: boolean
@@ -66,16 +70,11 @@ export class NavLinks extends React.Component<Props, State> {
                 )}
                 {!this.state.user &&
                     !window.context.onPrem && (
-                        <Link className="nav-links__link" to="/sign-in">
+                        <Link className="nav-links__link btn btn-primary" to="/sign-in">
                             Sign in
                         </Link>
                     )}
-                {!this.state.user &&
-                    !window.context.onPrem && (
-                        <Link className="nav-links__link btn btn-primary" to="/sign-up">
-                            Sign up
-                        </Link>
-                    )}
+                <ThemeSwitcher onToggleTheme={this.props.onToggleTheme} isLightTheme={this.props.isLightTheme} />
             </div>
         )
     }

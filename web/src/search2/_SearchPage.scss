@@ -56,3 +56,11 @@
         margin-right: 0.25rem;
     }
 }
+
+.theme-light {
+    .search-page2 {
+        &__sign-in {
+            color: $color-light-text-4;
+        }
+    }
+}

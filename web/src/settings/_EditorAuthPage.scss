@@ -24,3 +24,15 @@
         margin: 0 0.25rem 0 0;
     }
 }
+
+.theme-light {
+    .editor-auth-page {
+        &__link {
+            color: $color-primary;
+
+            &:hover {
+                color: $color-primary;
+            }
+        }
+    }
+}

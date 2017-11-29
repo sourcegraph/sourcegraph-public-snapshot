@@ -21,6 +21,7 @@ interface Props {
     onThreadUpdated: (updatedThread: GQL.ISharedItemThread) => void
     threadID: number
     ulid: string
+    isLightTheme: boolean
 }
 
 interface State {
@@ -62,7 +63,7 @@ export const CommentsInput = reactive<Props>(props => {
                 // Start with setting submitting: true
                 of<Update>(state => ({ ...state, submitting: true })).pipe(
                     concat(
-                        addCommentToThread(props.threadID, textAreaValue, props.ulid).pipe(
+                        addCommentToThread(props.threadID, textAreaValue, props.ulid, props.isLightTheme).pipe(
                             tap(updatedThread => props.onThreadUpdated(updatedThread)),
                             tap(() => textAreaChanges.next('')),
                             map((updatedThread): Update => state => ({

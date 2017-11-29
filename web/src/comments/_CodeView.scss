@@ -64,3 +64,31 @@
         }
     }
 }
+
+.theme-light {
+    .code-view {
+        &__code {
+            background: inherit;
+            border: 1px solid $color-light-border;
+        }
+
+        &__line {
+            &--main {
+                background: $color-light-bg-2;
+            }
+
+            &--before,
+            &--after {
+                background: inherit;
+            }
+        }
+
+        &__line-number {
+            color: $color-light-text-2;
+        }
+
+        &__chat-icon {
+            color: #8296c4;
+        }
+    }
+}

@@ -111,3 +111,34 @@
         }
     }
 }
+
+.theme-light {
+    .repository {
+        border-bottom: 1px solid;
+
+        &__sidebar {
+            background: $color-light-bg-2;
+        }
+
+        &__sidebar-toggle {
+            background: $color-light-bg-2;
+
+            &:hover {
+                color: $color-light-text-5;
+            }
+        }
+
+        &__viewer {
+            background-color: $color-light-bg-1;
+            border: 1px solid $color-light-border;
+        }
+
+        &__full-width-toggle {
+            background: $color-light-bg-2;
+
+            &:hover {
+                color: $color-light-text-5;
+            }
+        }
+    }
+}

@@ -30,15 +30,15 @@ type ThreadLines {
   # HTML context lines before 'html'.
   #
   # It is sanitized already by the server, and thus is safe for rendering.
-  htmlBefore: String!
+  htmlBefore(isLightTheme: Boolean!): String!
   # HTML lines that the user's selection was made on.
   #
   # It is sanitized already by the server, and thus is safe for rendering.
-  html: String!
+  html(isLightTheme: Boolean!): String!
   # HTML context lines after 'html'.
   #
   # It is sanitized already by the server, and thus is safe for rendering.
-  htmlAfter: String!
+  htmlAfter(isLightTheme: Boolean!): String!
   # text context lines before 'text'.
   textBefore: String!
   # text lines that the user's selection was made on.
@@ -430,9 +430,9 @@ type SharedItemComment {
 # Do NOT use any non-primitive graphql type here unless it is also a SharedItem
 # type.
 type SharedItemThreadLines {
-  htmlBefore: String!
-  html: String!
-  htmlAfter: String!
+  htmlBefore(isLightTheme: Boolean!): String!
+  html(isLightTheme: Boolean!): String!
+  htmlAfter(isLightTheme: Boolean!): String!
   textBefore: String!
   text: String!
   textAfter: String!
@@ -625,7 +625,7 @@ type File implements TreeEntry {
   binary: Boolean!
   isDirectory: Boolean!
   commit: Commit!
-  highlight(disableTimeout: Boolean!): HighlightedFile!
+  highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
   blame(startLine: Int!, endLine: Int!): [Hunk!]!
   commits: [CommitInfo!]!
   lastCommit: CommitInfo!
@@ -839,7 +839,7 @@ type Configuration {
   # The raw JSON contents, encoded as a string.
   contents: String!
   # The contents as highlighted HTML.
-  highlighted: String!
+  highlighted(isLightTheme: Boolean!): String!
   # Error and warning messages about the configuration.
   messages: [String!]!
 }

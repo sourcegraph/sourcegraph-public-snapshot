@@ -56,6 +56,10 @@
         margin: auto;
         margin-top: 0.5rem;
         margin-bottom: 0.5rem;
+
+        &:hover {
+            text-decoration: none;
+        }
     }
 
     &__sign-in {
@@ -64,5 +68,30 @@
         width: 10rem;
         margin-top: 0.5rem;
         margin-bottom: 0.5rem;
+    }
+}
+
+.theme-light {
+    .comments-page {
+        &__content {
+            background-color: inherit;
+        }
+
+        &__no-revision {
+            background: inherit;
+        }
+
+        &__no-shared-code {
+            background: $color-light-bg-2;
+            opacity: 0.75;
+        }
+
+        &__reply-in-editor {
+            color: $color-light-text-4;
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
     }
 }

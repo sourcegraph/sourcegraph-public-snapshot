@@ -7,6 +7,7 @@
     display: flex;
     align-items: start;
     border-radius: 0.25rem;
+    background-color: $color-light-bg-2;
 
     &__logo {
         flex: 0 0 auto;
@@ -57,5 +58,15 @@
 
     &__close-button {
         flex: 0 0 auto;
+    }
+}
+
+.theme-light {
+    .toast {
+        &__close-button {
+            &:hover {
+                color: $color-light-bg-6;
+            }
+        }
     }
 }

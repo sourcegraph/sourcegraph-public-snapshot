@@ -49,7 +49,8 @@ export interface ResolvedRev {
 export const resolveRev = memoizeObservable(
     (ctx: { repoPath: string; rev?: string }): Observable<ResolvedRev> =>
         queryGraphQL(
-            `query ResolveRev($repoPath: String, $rev: String) {
+            `
+            query ResolveRev($repoPath: String, $rev: String) {
                 root {
                     repository(uri: $repoPath) {
                         commit(rev: $rev) {
@@ -62,7 +63,8 @@ export const resolveRev = memoizeObservable(
                         redirectURL
                     }
                 }
-            }`,
+            }
+            `,
             { ...ctx, rev: ctx.rev || '' }
         ).pipe(
             map(result => {
@@ -98,6 +100,7 @@ interface FetchFileCtx {
     commitID: string
     filePath: string
     disableTimeout?: boolean
+    isLightTheme: boolean
 }
 
 interface HighlightedFileResult {
@@ -108,14 +111,14 @@ interface HighlightedFileResult {
 export const fetchHighlightedFile = memoizeObservable(
     (ctx: FetchFileCtx): Observable<HighlightedFileResult> =>
         queryGraphQL(
-            `query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean) {
+            `query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean, $isLightTheme: Boolean) {
                 root {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
                             commit {
                                 file(path: $filePath) {
                                     isDirectory
-                                    highlight(disableTimeout: $disableTimeout) {
+                                    highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
                                         aborted
                                         html
                                     }
@@ -146,7 +149,7 @@ export const fetchHighlightedFile = memoizeObservable(
                 return { isDirectory: file.isDirectory, highlightedFile: file.highlight }
             })
         ),
-    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}`
+    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout} ` + `?isLightTheme=${ctx.isLightTheme}`
 )
 
 /**
@@ -171,7 +174,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
                 return rows
             })
         ),
-    makeRepoURI
+    ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
 )
 
 export const listAllFiles = memoizeObservable(

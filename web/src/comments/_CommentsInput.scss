@@ -35,3 +35,13 @@
         margin-right: 0.25rem;
     }
 }
+
+.theme-light {
+    .comments-input {
+        border-color: $color-light-border;
+
+        &__button {
+            color: $color-light-text-4;
+        }
+    }
+}

@@ -154,16 +154,22 @@ type threadLineResolver struct {
 	*sourcegraph.ThreadLines
 }
 
-func (t *threadLineResolver) HTMLBefore() string {
-	return sanitize(t.ThreadLines.HTMLBefore)
+func (t *threadLineResolver) HTMLBefore(args *struct {
+	IsLightTheme bool
+}) string {
+	return sanitize(colorSwap(t.ThreadLines.HTMLBefore, args.IsLightTheme))
 }
 
-func (t *threadLineResolver) HTML() string {
-	return sanitize(t.ThreadLines.HTML)
+func (t *threadLineResolver) HTML(args *struct {
+	IsLightTheme bool
+}) string {
+	return sanitize(colorSwap(t.ThreadLines.HTML, args.IsLightTheme))
 }
 
-func (t *threadLineResolver) HTMLAfter() string {
-	return sanitize(t.ThreadLines.HTMLAfter)
+func (t *threadLineResolver) HTMLAfter(args *struct {
+	IsLightTheme bool
+}) string {
+	return sanitize(colorSwap(t.ThreadLines.HTMLAfter, args.IsLightTheme))
 }
 
 var (
@@ -179,6 +185,36 @@ func sanitize(html string) string {
 	policy := bluemonday.UGCPolicy()
 	policy.AllowAttrs("style").Matching(onlyColorStyle).OnElements("span")
 	return policy.Sanitize(html)
+}
+
+// colorSwap takes some pre-highlighted HTML from the editor and replaces
+// colors to match our theme.
+//
+// TODO(slimsag): We currently assume the editor will only produce HTML in one
+// theme color.
+func colorSwap(html string, isLightTheme bool) string {
+	if !isLightTheme {
+		return html
+	}
+
+	// lightTheme is a map of old colors to new (light theme) colors.
+	lightTheme := map[string]string{
+		"#ffa8a8": "#2aa198",
+		"#72c3fc": "#657b83",
+		"#fff3bf": "#268bd2",
+		"#2b8a3e": "#93a1a1",
+		"#c9d4e3": "#657b83",
+		"#d4d4d4": "#859900",
+		"#268bd2": "#b58900",
+		"#d3f9d8": "#6c71c4",
+		"#ffc078": "#fc8e00",
+		"#f2f4f8": "#39496a"}
+	for oldColor, newColor := range lightTheme {
+		oldColor = fmt.Sprintf("color: %s;", oldColor)
+		newColor = fmt.Sprintf("color: %s;", newColor)
+		html = strings.Replace(html, oldColor, newColor, -1)
+	}
+	return html
 }
 
 func (t *threadLineResolver) TextBefore() string {

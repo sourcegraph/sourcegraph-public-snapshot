@@ -25,3 +25,13 @@
         }
     }
 }
+
+.theme-light {
+    .tree-header {
+        &__close-button {
+            &:hover {
+                color: $color-light-text-5;
+            }
+        }
+    }
+}

@@ -23,6 +23,7 @@ interface Props {
      * if any.
      */
     commitError?: Error
+    isLightTheme: boolean
 }
 
 interface State {

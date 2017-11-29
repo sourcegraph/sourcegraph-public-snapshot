@@ -10,10 +10,31 @@
 
         &:hover {
             background-color: #151d28;
+            text-decoration: none;
         }
 
         &:not(:first-child) {
             border-top: 1px solid #2a3a51;
+        }
+    }
+}
+
+.theme-light {
+    .file-match {
+        &__item {
+            background-color: $color-light-bg-1;
+            border-top: 1px solid $color-light-border;
+            border-left: 1px solid $color-light-border;
+            border-right: 1px solid $color-light-border;
+
+            &:hover {
+                background-color: $color-light-bg-4;
+                text-decoration: none;
+            }
+
+            &:last-child {
+                border-bottom: 1px solid $color-light-border;
+            }
         }
     }
 }

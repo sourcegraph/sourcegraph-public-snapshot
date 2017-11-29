@@ -571,7 +571,7 @@ class LayerTile extends React.Component<TileProps, {}> {
                         return (
                             <tr
                                 key={i}
-                                className={path === this.props.selectedPath ? 'tree__row--selected' : 'tree__row'}
+                                className={'tree__row' + (path === this.props.selectedPath ? '--selected' : '')}
                             >
                                 <td style={treePadding(this.props.depth, false)}>
                                     <Link

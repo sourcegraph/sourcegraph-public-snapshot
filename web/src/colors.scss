@@ -1,0 +1,33 @@
+/*
+This sets the colors for all styles
+It should be imported into app.scss
+*/
+
+// Dark Theme
+
+$color-page-background: #233043;
+$color-text: #c9d4e3;
+$color-secondary: #93a9c8;
+$color-success: #0ca678;
+$color-primary: #1c7cd6;
+$color-primary-hover: #1862ab;
+$color-error: #f03e3e;
+$color-info: #1098ad;
+
+// TODO add Basics color standards to Dark Theme
+
+// Light Theme
+// Basics
+$color-light-bg-1: white;
+$color-light-bg-2: #f2f4f8;
+$color-light-bg-3: #cad2e2;
+$color-light-bg-4: #e4e9f1;
+$color-light-bg-5: #566e9f;
+$color-light-bg-6: #070a0d;
+$color-light-text-1: #39496a;
+$color-light-text-2: #6078a9;
+$color-light-text-3: rgba(57, 73, 106, 0.5);
+$color-light-text-4: white;
+$color-light-text-5: #0e121b;
+
+$color-light-border: #cad2e2;

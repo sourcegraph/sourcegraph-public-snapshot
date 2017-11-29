@@ -32,7 +32,11 @@ func (o *settingsResolver) Configuration() *configurationResolver {
 func (o *settingsResolver) Contents() string { return o.settings.Contents }
 
 func (o *settingsResolver) Highlighted(ctx context.Context) (string, error) {
-	return o.Configuration().Highlighted(ctx)
+	return o.Configuration().Highlighted(ctx, &struct {
+		IsLightTheme bool
+	}{
+		IsLightTheme: false,
+	})
 }
 
 func (o *settingsResolver) CreatedAt() string {

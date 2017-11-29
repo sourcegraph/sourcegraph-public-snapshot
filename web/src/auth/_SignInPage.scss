@@ -26,14 +26,18 @@
 
     &__mode {
         font-size: inherit;
+        opacity: 0.5;
         cursor: pointer;
 
         &:hover {
             color: white;
+            text-decoration: underline;
+            opacity: 1;
         }
 
         &--active {
             color: white;
+            opacity: 1;
         }
     }
 
@@ -49,5 +53,20 @@
         width: 100%;
         display: flex;
         justify-content: center;
+    }
+}
+
+.theme-light {
+    .login-signup-form {
+        &__mode {
+            &:hover {
+                color: $color-light-text-5;
+                text-decoration: underline;
+            }
+
+            &--active {
+                color: $color-light-text-2;
+            }
+        }
     }
 }

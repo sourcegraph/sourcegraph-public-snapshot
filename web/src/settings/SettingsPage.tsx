@@ -24,6 +24,8 @@ interface SettingsPageProps {
     history: H.History
     location: H.Location
     match: match<{}>
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
 }
 
 /**
@@ -42,19 +44,35 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
         }
         return (
             <div className="settings-page">
-                <SettingsSidebar history={this.props.history} location={this.props.location} />
+                <SettingsSidebar
+                    history={this.props.history}
+                    location={this.props.location}
+                    onToggleTheme={this.props.onToggleTheme}
+                    isLightTheme={this.props.isLightTheme}
+                />
                 <div className="settings-page__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
-                        <Route path={this.props.match.url} exact={true} component={UserProfilePage} />
+                        <Route
+                            path={this.props.match.url}
+                            // tslint:disable-next-line
+                            render={props => <UserProfilePage {...props} isLightTheme={this.props.isLightTheme} />}
+                            exact={true}
+                        />
                         <Route
                             path={`${this.props.match.url}/accept-invite`}
-                            component={AcceptInvitePage}
+                            // tslint:disable-next-line
+                            render={props => <AcceptInvitePage {...props} isLightTheme={this.props.isLightTheme} />}
                             exact={true}
                         />
                         <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
                         <Route path={`${this.props.match.url}/orgs/new`} component={NewOrg} exact={true} />
-                        <Route path={`${this.props.match.url}/orgs/:orgName`} component={Org} exact={true} />
+                        <Route
+                            path={`${this.props.match.url}/orgs/:orgName`}
+                            // tslint:disable-next-line
+                            render={props => <Org {...props} isLightTheme={this.props.isLightTheme} />}
+                            exact={true}
+                        />
                         <Route path={`${this.props.match.url}/admin`} component={OrgAdmin} exact={true} />
                         <Route component={SettingsNotFoundPage} />
                     </Switch>

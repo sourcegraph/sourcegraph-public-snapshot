@@ -3,16 +3,10 @@ This is the main entry point for all styles
 It should import all component stylesheets
 */
 
-$color-page-background: #233043;
-$color-text: #c9d4e3;
-$color-secondary: #93a9c8;
-$color-success: #0ca678;
-$color-primary: #1c7cd6;
-$color-error: #f03e3e;
-$color-info: #1098ad;
+// Use duplicate selectors for the light-theme
+// stylelint-disable no-duplicate-selectors
 
-$color-light-page-background: #f2f4f8;
-$color-light-text: #39496a;
+@import 'colors';
 
 // Media breakpoints
 $media-sm: 576px;
@@ -58,6 +52,12 @@ $media-xl: 1200px;
     background-color: #2a3a51;
 }
 
+.theme-light {
+    ::-webkit-scrollbar-thumb {
+        background-color: $color-light-bg-3;
+    }
+}
+
 html {
     font-family: 'system';
     // Base for layout rem values
@@ -67,7 +67,6 @@ html {
 body {
     height: 100vh;
     display: flex;
-    background-color: $color-page-background;
     color: $color-text;
     // Actual base font size
     font-size: 14px;
@@ -82,10 +81,22 @@ body {
     width: 100%;
 }
 
+// Dark-themed elements
+
+.theme-dark {
+    background-color: $color-page-background;
+    color: $color-text;
+}
 // Light-themed elements
-.light {
-    background-color: $color-light-page-background;
-    color: $color-light-text;
+
+.theme-light {
+    background-color: $color-light-bg-1;
+    color: $color-light-text-1;
+}
+
+.theme {
+    width: 100%;
+    display: flex;
 }
 
 // Selection highlight is the background color for matched/highlighted tokens,
@@ -100,6 +111,16 @@ body {
     background-color: rgba(217, 72, 15, 0.5);
 }
 
+.theme-light {
+    .selection-highlight {
+        background-color: rgba(255, 192, 120, 0.5);
+    }
+
+    .selection-highlight-sticky {
+        background-color: rgba(255, 192, 120, 0.5);
+    }
+}
+
 .layout {
     display: flex;
     width: 100%;
@@ -110,6 +131,7 @@ body {
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
+        overflow: auto;
 
         &--restricted {
             padding: 0 2.5rem;
@@ -192,6 +214,12 @@ kbd {
     box-shadow: inset 0 -2px 0 #5d7eac;
 }
 
+.theme-light {
+    kbd {
+        color: $color-light-text-4;
+    }
+}
+
 .ui-title {
     font-size: 12px;
     letter-spacing: 1px;
@@ -201,12 +229,20 @@ kbd {
 a {
     outline: 0;
     color: #93a9c8;
-    transition: color 100ms ease-out;
     text-decoration: none;
 
     &:hover {
-        text-decoration: none;
         color: white;
+    }
+}
+
+.theme-light {
+    a {
+        color: $color-light-text-1;
+
+        &:hover {
+            color: $color-light-text-5;
+        }
     }
 }
 
@@ -230,7 +266,6 @@ h1 {
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
-    transition: all 100ms ease-out;
     outline: none;
 
     &:focus:not(:disabled) {
@@ -272,6 +307,7 @@ h1 {
 
     &:hover:not(:disabled) {
         background: darken($color-primary, 5%);
+        text-decoration: none;
     }
 
     &:focus:not(:disabled) {
@@ -296,6 +332,24 @@ h1 {
     background: $color-info;
 }
 
+.theme-light {
+    .btn-icon {
+        &:hover {
+            color: $color-light-text-5;
+        }
+    }
+
+    .btn-primary {
+        background: $color-primary;
+        color: $color-light-text-4;
+
+        &:hover:not(:disabled) {
+            text-decoration: none;
+            color: $color-light-text-4;
+        }
+    }
+}
+
 .light a,
 .light .btn-icon {
     &:hover {
@@ -317,7 +371,6 @@ h1 {
     border-radius: 2px;
     padding: 0.5rem 1rem;
     outline: none;
-    transition: all 100ms ease-out;
     width: 100%;
 
     &::placeholder {
@@ -346,6 +399,27 @@ h1 {
 
         + .invalid-feedback {
             display: block;
+        }
+    }
+}
+
+.theme-light {
+    .ui-text-box {
+        background-color: $color-light-bg-1;
+        border: 1px solid $color-light-border;
+        color: $color-light-text-1;
+
+        &::placeholder {
+            color: $color-light-text-3;
+        }
+
+        &:focus {
+            border-color: $color-primary;
+        }
+
+        &:disabled {
+            background-color: $color-light-bg-2;
+            color: $color-light-text-3;
         }
     }
 }
@@ -388,14 +462,11 @@ h1 {
     &.table-hover {
         > tbody > tr:hover > td {
             background: rgba(255, 255, 255, 0.05);
-            color: white;
-            opacity: 1;
         }
     }
 
     tr {
         border-bottom: 1px solid #2a3a51;
-        transition: background 100ms ease-out;
     }
 
     th,
@@ -403,6 +474,22 @@ h1 {
         padding: 0.45rem;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+}
+
+.theme-light {
+    .table {
+        border-color: $color-light-border;
+
+        &.table-hover {
+            > tbody > tr:hover > td {
+                background: #f2f4f8;
+            }
+        }
+
+        tr {
+            border-color: $color-light-border;
+        }
     }
 }
 
@@ -467,6 +554,24 @@ h1 {
     }
 }
 
+.theme-light {
+    .alert {
+        &-danger {
+            background: rgba(201, 42, 42, 0.75);
+            color: #f2f4f8;
+        }
+    }
+}
+
+.theme-light {
+    .alert {
+        &-danger {
+            background: rgba(201, 42, 42, 0.75);
+            color: #f2f4f8;
+        }
+    }
+}
+
 @import './highlight';
 @import './search2/QueryButton';
 @import './search2/SavedQueries';
@@ -478,6 +583,7 @@ h1 {
 @import './search2/SearchScope';
 @import './search2/ScopeLabel';
 @import './search2/SearchButton';
+@import './tree/Tree';
 @import './nav/Navbar';
 @import './nav/NavLinks';
 @import './auth/PasswordResetPage';
@@ -493,3 +599,4 @@ h1 {
 @import './settings/SettingsPage';
 @import './comments/CommentsPage';
 @import './open/OpenPage';
+@import './components/ThemeSwitcher';

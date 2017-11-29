@@ -27,3 +27,17 @@
         display: none;
     }
 }
+
+.theme-light {
+    .security-widget {
+        &__main-label {
+            background: $color-light-bg-2;
+            border-color: $color-light-border;
+        }
+
+        &__extended-help {
+            background: $color-light-bg-2;
+            border-color: $color-light-border;
+        }
+    }
+}

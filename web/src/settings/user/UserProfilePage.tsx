@@ -17,7 +17,9 @@ import { VALID_USERNAME_REGEXP } from '../validation'
 import { UserAvatar } from './UserAvatar'
 import { UserSettingsFile } from './UserSettingsFile'
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<any> {
+    isLightTheme: boolean
+}
 
 interface State {
     user: GQL.IUser | null
@@ -86,7 +88,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                                   }).pipe(catchError(this.handleError))
                     ),
                     tap(() => this.setState({ loading: false, error: undefined, saved: true })),
-                    mergeMap(() => fetchCurrentUser().pipe(concat([null])))
+                    mergeMap(() => fetchCurrentUser(this.props.isLightTheme).pipe(concat([null])))
                 )
                 .subscribe(() => {
                     const searchParams = new URLSearchParams(this.props.location.search)
@@ -113,7 +115,7 @@ export class UserProfilePage extends React.Component<Props, State> {
         return (
             <div className="user-profile-page">
                 <PageTitle title="Profile" />
-                <h1>Your profile</h1>
+                <h2>Your profile</h2>
                 {this.requireBackfill() && (
                     <p className="alert alert-danger">Please complete your profile to continue using Sourcegraph.</p>
                 )}
@@ -188,6 +190,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                             userInEditorBeta={
                                 this.state.user.tags && this.state.user.tags.some(tag => tag.name === 'editor-beta')
                             }
+                            isLightTheme={this.props.isLightTheme}
                         />
                     )}
             </div>

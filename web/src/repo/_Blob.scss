@@ -66,3 +66,36 @@
         flex: 4;
     }
 }
+
+.theme-light {
+    .blob {
+        table {
+            background-color: $color-light-bg-1;
+        }
+
+        td.line {
+            &::before {
+                color: $color-light-text-1;
+            }
+
+            color: $color-light-text-1;
+        }
+
+        td.code {
+            > .blame {
+                &::before {
+                    background-color: $color-light-bg-4; // extends background color for highlighted code to overflown blame content
+                }
+                color: $color-light-text-1;
+            }
+        }
+
+        .right {
+            background-color: $color-light-bg-1;
+        }
+
+        .sg-highlighted {
+            background-color: $color-light-bg-4 !important;
+        }
+    }
+}

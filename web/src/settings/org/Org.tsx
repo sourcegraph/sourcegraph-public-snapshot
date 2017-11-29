@@ -35,6 +35,7 @@ const OrgNotFound = () => (
 
 export interface Props {
     match: match<{ orgName: string }>
+    isLightTheme: boolean
 }
 
 interface State {
@@ -42,6 +43,7 @@ interface State {
     user?: GQL.IUser
     /** Whether the user just left the org */
     left: boolean
+    isLightTheme: boolean
 }
 
 type Update = (s: State) => State
@@ -58,23 +60,25 @@ export const Org = reactive<Props>(props => {
         tap(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
     )
 
+    const lightThemeChanges = props.pipe(map(props => props.isLightTheme), distinctUntilChanged())
+
     const settingsCommits = new Subject<void>()
     const nextSettingsCommit = () => settingsCommits.next(void 0)
 
     return merge<Update>(
-        combineLatest(currentUser, orgChanges, settingsCommits.pipe(startWith(void 0))).pipe(
-            mergeMap(([user, orgName]) => {
+        combineLatest(currentUser, orgChanges, lightThemeChanges, settingsCommits.pipe(startWith(void 0))).pipe(
+            mergeMap(([user, orgName, isLightTheme]) => {
                 if (!user) {
-                    return [(state: State): State => ({ ...state, user: undefined })]
+                    return [(state: State): State => ({ ...state, isLightTheme, user: undefined })]
                 }
                 // Find org ID from user auth state
                 const org = user.orgs.find(org => org.name === orgName)
                 if (!org) {
-                    return [(state: State): State => ({ ...state, user, org })]
+                    return [(state: State): State => ({ ...state, isLightTheme, user, org })]
                 }
                 // Fetch the org by ID by ID
-                return fetchOrg(org.id).pipe(
-                    map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
+                return fetchOrg(org.id, isLightTheme).pipe(
+                    map(org => (state: State): State => ({ ...state, isLightTheme, user, org: org || undefined }))
                 )
             })
         ),
@@ -127,8 +131,8 @@ export const Org = reactive<Props>(props => {
             )
         )
     ).pipe(
-        scan<Update, State>((state: State, update: Update) => update(state), { left: false }),
-        map(({ user, org, left }: State): JSX.Element | null => {
+        scan<Update, State>((state: State, update: Update) => update(state), { left: false } as State),
+        map(({ user, org, left, isLightTheme }: State): JSX.Element | null => {
             // If the current user just left the org, redirect to settings start page
             if (left) {
                 return <Redirect to="/settings" />
@@ -143,7 +147,7 @@ export const Org = reactive<Props>(props => {
                 <div className="org">
                     <PageTitle title={org.name} />
                     <div className="org__header">
-                        <h1>{org.name}</h1>
+                        <h2>{org.name}</h2>
 
                         <InviteForm orgID={org.id} />
                     </div>
@@ -186,6 +190,7 @@ export const Org = reactive<Props>(props => {
                         settings={org.latestSettings}
                         onDidCommit={nextSettingsCommit}
                         orgInEditorBeta={org.tags.some(tag => tag.name === 'editor-beta')}
+                        isLightTheme={isLightTheme}
                     />
                 </div>
             )

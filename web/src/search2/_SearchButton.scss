@@ -20,3 +20,13 @@
         }
     }
 }
+
+.theme-light {
+    .search-button2 {
+        background-color: $color-primary;
+
+        &:hover {
+            background-color: $color-primary-hover;
+        }
+    }
+}

@@ -41,6 +41,7 @@ export interface Props {
     history: H.History
     onToggleFullWidth: () => void
     isFullWidth: boolean
+    isLightTheme: boolean
     phabricatorCallsign?: string
     isDirectory: boolean
 }
@@ -145,6 +146,7 @@ export class Repository extends React.PureComponent<Props, State> {
                             commitID: props.commitID,
                             filePath: props.filePath!,
                             disableTimeout: props.showHighlightingAnyway,
+                            isLightTheme: props.isLightTheme,
                         }).pipe(
                             catchError(err => {
                                 this.setState({
@@ -297,6 +299,7 @@ export class Repository extends React.PureComponent<Props, State> {
                                         ...this.props,
                                         filePath: this.props.filePath!,
                                         position: this.state.position!,
+                                        isLightTheme: this.props.isLightTheme,
                                     }}
                                 />
                             )}

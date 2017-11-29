@@ -50,9 +50,18 @@
             overflow-y: auto;
             color: $color-text;
         }
+    }
+}
 
-        table {
-            background-color: #0e121b;
+.theme-light {
+    .settings-file {
+        &__contents {
+            border-color: $color-light-border;
+
+            &-editor {
+                background-color: inherit;
+                color: inherit;
+            }
         }
     }
 }

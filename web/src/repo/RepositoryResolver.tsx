@@ -31,6 +31,7 @@ interface Props {
     onToggleFullWidth: () => void
     isFullWidth: boolean
     isDirectory: boolean
+    isLightTheme: boolean
 }
 
 interface State {
@@ -182,6 +183,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 history={this.props.history}
                 onToggleFullWidth={this.props.onToggleFullWidth}
                 isFullWidth={this.props.isFullWidth}
+                isLightTheme={this.props.isLightTheme}
                 isDirectory={this.props.isDirectory}
                 phabricatorCallsign={this.state.phabricatorCallsign}
             />

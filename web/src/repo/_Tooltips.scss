@@ -95,3 +95,41 @@
         margin-right: 0.75rem;
     }
 }
+
+.theme-light {
+    .tooltip {
+        background-color: $color-light-bg-2;
+        border: solid 1px $color-light-border;
+        color: inherit;
+
+        &__divider {
+            border-bottom: 1px solid $color-light-border;
+        }
+
+        &__doc {
+            border-bottom: 1px solid $color-light-border;
+        }
+
+        &__action {
+            color: inherit;
+
+            &:not(:last-child) {
+                border-right: 1px solid $color-light-border;
+            }
+
+            &:hover {
+                background-color: $color-light-bg-4;
+            }
+        }
+
+        &__more-actions {
+            color: inherit;
+        }
+
+        &__close-icon {
+            &:hover {
+                color: inherit;
+            }
+        }
+    }
+}

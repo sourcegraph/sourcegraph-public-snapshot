@@ -16,7 +16,10 @@ import { routes } from './routes'
 import { parseSearchURLQuery } from './search2/index'
 import { SearchPage as SearchPage2 } from './search2/SearchPage'
 
-interface LayoutProps extends RouteComponentProps<any> {}
+interface LayoutProps extends RouteComponentProps<any> {
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
+}
 
 interface LayoutState {
     /**
@@ -40,7 +43,12 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
     public render(): JSX.Element | null {
         return (
             <div className="layout">
-                <Navbar location={this.props.location} history={this.props.history} />
+                <Navbar
+                    location={this.props.location}
+                    history={this.props.history}
+                    onToggleTheme={this.props.onToggleTheme}
+                    isLightTheme={this.props.isLightTheme}
+                />
                 <Switch>
                     {routes.map((route, i) => {
                         const isFullWidth = !route.forceNarrowWidth && this.state.isFullWidth
@@ -65,6 +73,8 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                                                 {...props}
                                                 onToggleFullWidth={this.onToggleFullWidth}
                                                 isFullWidth={isFullWidth}
+                                                onToggleTheme={this.props.onToggleTheme}
+                                                isLightTheme={this.props.isLightTheme}
                                             />
                                         )}
                                         {route.render &&
@@ -72,6 +82,7 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
                                                 ...props,
                                                 onToggleFullWidth: this.onToggleFullWidth,
                                                 isFullWidth,
+                                                isLightTheme: this.props.isLightTheme,
                                             })}
                                     </div>
                                 )}
@@ -91,30 +102,49 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
     }
 }
 
-/**
- * handles rendering Search or SearchResults components based on whether or not
- * the search query (e.g. '?q=foo') is in URL.
- */
-const SearchRouter = (props: RouteComponentProps<{}>): JSX.Element | null => {
-    const options = parseSearchURLQuery(props.location.search)
-    if (options && options.query) {
-        return <Layout {...props} />
-    }
-    return <SearchPage2 {...props} />
+interface SearchRouterProps extends RouteComponentProps<{}> {
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
 }
 
 /**
  * handles rendering Search or SearchResults components based on whether or not
  * the search query (e.g. '?q=foo') is in URL.
  */
-class BackfillRedirector extends React.Component<RouteComponentProps<any>, { returnTo: string }> {
-    constructor(props: RouteComponentProps<{}>) {
+const SearchRouter = (props: SearchRouterProps): JSX.Element | null => {
+    const options = parseSearchURLQuery(props.location.search)
+    if (options && options.query) {
+        return <Layout {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
+    }
+    return <SearchPage2 {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
+}
+
+interface BackfillRedirectorProps extends RouteComponentProps<{}> {
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
+}
+
+interface BackfillRedirectorProps extends RouteComponentProps<{}> {
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
+}
+
+/**
+ * handles rendering Search or SearchResults components based on whether or not
+ * the search query (e.g. '?q=foo') is in URL.
+ */
+
+class BackfillRedirector extends React.Component<BackfillRedirectorProps, { returnTo: string }> {
+    constructor(props: BackfillRedirectorProps) {
         super(props)
         const searchParams = new URLSearchParams(this.props.location.search)
         this.state = {
             returnTo: searchParams.get('returnTo') || window.location.href,
         }
     }
+
+    private renderSearchRouter = (props: RouteComponentProps<any>) => <SearchRouter {...this.props} {...props} />
+    private renderLayout = (props: RouteComponentProps<any>) => <Layout {...this.props} {...props} />
 
     public render(): JSX.Element {
         const searchParams = new URLSearchParams(this.props.location.search)
@@ -130,8 +160,8 @@ class BackfillRedirector extends React.Component<RouteComponentProps<any>, { ret
         }
         return (
             <Switch>
-                <Route path="/search" exact={true} component={SearchRouter} />
-                <Route component={Layout} />
+                <Route path="/search" exact={true} render={this.renderSearchRouter} />
+                <Route render={this.renderLayout} />
             </Switch>
         )
     }
@@ -139,21 +169,42 @@ class BackfillRedirector extends React.Component<RouteComponentProps<any>, { ret
 
 interface AppState {
     error?: Error
+    /**
+     * whether or not container is light themed
+     */
+    isLightTheme: boolean
 }
 
 /**
  * The root component
  */
 class App extends React.Component<{}, AppState> {
+    public state: AppState = {
+        isLightTheme: localStorage.getItem('light-theme') === 'true',
+    }
+
     constructor(props: {}) {
         super(props)
-        this.state = {}
         // Fetch current user data
-        fetchCurrentUser().subscribe(undefined, error => {
+        fetchCurrentUser(this.state.isLightTheme).subscribe(undefined, error => {
             console.error(error)
             this.setState({ error })
         })
     }
+
+    public componentDidUpdate(): void {
+        localStorage.setItem('light-theme', this.state.isLightTheme + '')
+        fetchCurrentUser(this.state.isLightTheme).subscribe(undefined, error => {
+            console.error(error)
+            this.setState({ error })
+        })
+    }
+
+    private renderBackfillRedirector = (props: RouteComponentProps<any>) => (
+        <div className={'theme ' + (this.state.isLightTheme ? 'theme-light' : 'theme-dark')}>
+            <BackfillRedirector {...props} onToggleTheme={this.onToggleTheme} isLightTheme={this.state.isLightTheme} />
+        </div>
+    )
 
     public render(): JSX.Element | null {
         if (this.state.error) {
@@ -202,9 +253,16 @@ class App extends React.Component<{}, AppState> {
 
         return (
             <BrowserRouter>
-                <Route path="/" component={BackfillRedirector} />
+                <Route path="/" component={undefined} render={this.renderBackfillRedirector} />
             </BrowserRouter>
         )
+    }
+
+    /**
+     * toggles light theme display of the container
+     */
+    private onToggleTheme = (isLightTheme: boolean) => {
+        this.setState({ isLightTheme })
     }
 }
 

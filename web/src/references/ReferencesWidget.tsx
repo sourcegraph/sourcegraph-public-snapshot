@@ -32,6 +32,7 @@ import { fetchExternalReferences } from './backend'
 interface Props extends AbsoluteRepoFilePosition {
     location: H.Location
     history: H.History
+    isLightTheme: boolean
 }
 
 interface State {
@@ -183,7 +184,14 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     >
                         This repository
                     </Link>
-                    <div className="references-widget__badge">{localRefCount}</div>
+                    <div
+                        className={
+                            'references-widget__badge' +
+                            (this.state.group === 'local' ? ' references-widget__badge--active' : '')
+                        }
+                    >
+                        {localRefCount}
+                    </div>
                     <Link
                         className={
                             'references-widget__title-bar-group' +
@@ -194,7 +202,14 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     >
                         Other repositories
                     </Link>
-                    <div className="references-widget__badge">{externalRefCount}</div>
+                    <div
+                        className={
+                            'references-widget__badge' +
+                            (this.state.group === 'external' ? ' references-widget__badge--active' : '')
+                        }
+                    >
+                        {externalRefCount}
+                    </div>
                     <span className="references-widget__close-icon" onClick={this.onDismiss}>
                         <CloseIcon className="icon-inline" />
                     </span>
@@ -218,6 +233,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                                         icon={RepoIcon}
                                         onSelect={this.logLocalSelection}
                                         showAllMatches={true}
+                                        isLightTheme={this.props.isLightTheme}
                                     />
                                 ))}
                         />
@@ -234,6 +250,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                                     icon={GlobeIcon}
                                     onSelect={this.logExternalSelection}
                                     showAllMatches={true}
+                                    isLightTheme={this.props.isLightTheme}
                                 />
                             ))}
                         />

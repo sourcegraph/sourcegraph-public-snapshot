@@ -106,8 +106,10 @@ type configurationResolver struct {
 
 func (r *configurationResolver) Contents() string { return r.contents }
 
-func (r *configurationResolver) Highlighted(ctx context.Context) (string, error) {
-	html, aborted, err := highlight.Code(ctx, r.contents, "json", false)
+func (r *configurationResolver) Highlighted(ctx context.Context, args *struct {
+	IsLightTheme bool
+}) (string, error) {
+	html, aborted, err := highlight.Code(ctx, r.contents, "json", false, args.IsLightTheme)
 	if err != nil {
 		return "", err
 	}

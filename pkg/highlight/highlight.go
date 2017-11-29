@@ -29,17 +29,22 @@ func init() {
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, code, extension string, disableTimeout bool) (template.HTML, bool, error) {
+func Code(ctx context.Context, code, extension string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
 	if !disableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 	}
+	themechoice := "Sourcegraph"
+	if isLightTheme {
+		themechoice = "Solarized (light)"
+	}
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:      code,
 		Extension: extension,
-		Theme:     "Sourcegraph",
+		Theme:     themechoice,
 	})
+
 	if ctx.Err() == context.DeadlineExceeded {
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)

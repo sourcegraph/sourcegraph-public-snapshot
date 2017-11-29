@@ -43,6 +43,7 @@ interface Props {
      * Whether or not to show all matches for this file, or only a subset.
      */
     showAllMatches: boolean
+    isLightTheme: boolean
 }
 
 const subsetMatches = 2
@@ -110,6 +111,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                                 position={{ line: item.range.start.line, character: item.range.start.character }}
                                 highlightLength={item.range.end.character - item.range.start.character}
                                 previewWindowExtraLines={1}
+                                isLightTheme={props.isLightTheme}
                             />
                         </Link>
                     )

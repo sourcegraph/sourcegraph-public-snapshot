@@ -12,6 +12,7 @@ import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 
 interface Props {
     location: H.Location
+    isLightTheme: boolean
 }
 
 interface State {
@@ -101,6 +102,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         onDidUpdate={this.onDidUpdateSavedQuery}
                         onDidDuplicate={this.onDidDuplicateSavedQuery}
                         onDidDelete={this.onDidDeleteSavedQuery}
+                        isLightTheme={this.props.isLightTheme}
                     />
                 ))}
             </div>

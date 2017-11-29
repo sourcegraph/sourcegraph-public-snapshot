@@ -1,0 +1,58 @@
+$color-theme-switcher-background: rgba(42, 58, 81, 0.7);
+$color-theme-switcher-background-selected: #39496a;
+$color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
+
+.theme-switcher {
+    display: flex;
+    padding: 0.25rem;
+    background-color: $color-theme-switcher-background;
+    text-align: center;
+
+    &__nav-bar {
+        border-radius: 30px;
+        margin-left: 1rem;
+    }
+
+    &__button {
+        width: 50%;
+        padding-top: 0.25rem;
+        color: $color-theme-switcher-btn-text;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+
+        &--selected {
+            background-color: $color-theme-switcher-background-selected;
+            color: inherit;
+        }
+
+        &--left {
+            border-top-left-radius: 50%;
+            border-bottom-left-radius: 50%;
+        }
+
+        &--right {
+            border-top-right-radius: 50%;
+            border-bottom-right-radius: 50%;
+        }
+    }
+
+    &__link {
+        display: inline-flex;
+        vertical-align: text-bottom;
+    }
+}
+
+.theme-light {
+    .theme-switcher {
+        background: $color-light-bg-4;
+
+        &__button {
+            color: $color-light-text-3;
+
+            &--selected {
+                background-color: $color-light-bg-3;
+                color: inherit;
+            }
+        }
+    }
+}

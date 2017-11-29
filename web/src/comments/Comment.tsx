@@ -11,6 +11,7 @@ interface Props {
     comment: GQL.ISharedItemComment
     location: H.Location
     forceTargeted: boolean
+    isLightTheme: boolean
 }
 
 interface State {

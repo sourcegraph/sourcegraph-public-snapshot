@@ -106,10 +106,10 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
 
         return (
             <div className="dir-page">
-                <h1 className="dir-page__head">
-                    <FolderIcon className="dir-page__icon icon-inline" />
+                <h2 className="dir-page__head">
+                    <FolderIcon className="dir-page__icon-top" />
                     <span>{this.getLastPathPart()}</span>
-                </h1>
+                </h2>
                 <table className="dir-page__table table table-hover">
                     <thead>
                         <tr className="dir-page__head-row">

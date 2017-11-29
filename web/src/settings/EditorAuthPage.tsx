@@ -37,10 +37,18 @@ export class EditorAuthPage extends React.Component<Props, State> {
                 <p>Paste this value into the input box in your editor, and click 'Save.'</p>
                 <p>
                     Learn more about{' '}
-                    <a href="https://about.sourcegraph.com/products/editor" target="_blank">
+                    <a
+                        href="https://about.sourcegraph.com/products/editor"
+                        target="_blank"
+                        className="editor-auth-page__link"
+                    >
                         Sourcegraph Editor
                     </a>, and{' '}
-                    <a href="https://about.sourcegraph.com/products/editor#beta" target="_blank">
+                    <a
+                        href="https://about.sourcegraph.com/products/editor#beta"
+                        target="_blank"
+                        className="editor-auth-page__link"
+                    >
                         sign up for beta access
                     </a>{' '}
                     today.

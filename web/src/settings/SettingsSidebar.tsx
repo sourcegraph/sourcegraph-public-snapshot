@@ -1,10 +1,12 @@
-import ActivityIcon from '@sourcegraph/icons/lib/Activity'
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import ChartIcon from '@sourcegraph/icons/lib/Chart'
 import CityIcon from '@sourcegraph/icons/lib/City'
+import ColorPaletteIcon from '@sourcegraph/icons/lib/ColorPalette'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
+import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
+import SunIcon from '@sourcegraph/icons/lib/Sun'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as H from 'history'
 import * as React from 'react'
@@ -18,6 +20,8 @@ import { UserAvatar } from './user/UserAvatar'
 interface Props {
     history: H.History
     location: H.Location
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
 }
 
 interface State {
@@ -108,92 +112,125 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </div>
                         </NavLink>
                     </li>
-                    <ul>
-                        {this.state.orgsEnabled && (
-                            <div className="settings-sidebar__header">
-                                <div className="settings-sidebar__header-icon">
-                                    <CityIcon className="icon-inline" />
-                                </div>
-                                <div className="settings-sidebar__header-title ui-title">Organizations</div>
-                            </div>
-                        )}
-                        {this.state.orgsEnabled && (
-                            <ul>
-                                {this.state.orgs &&
-                                    this.state.orgs.map(org => (
-                                        <li className="settings-sidebar__item" key={org.id}>
-                                            <NavLink
-                                                to={`/settings/orgs/${org.name}`}
-                                                className="settings-sidebar__item-link"
-                                                activeClassName="settings-sidebar__item--active"
-                                            >
-                                                <div className="settings-sidebar__profile-avatar-column">
-                                                    <OrgAvatar org={org.name} />
-                                                </div>
-                                                {org.name}
-                                            </NavLink>
-                                        </li>
-                                    ))}
-                                <li className="settings-sidebar__item">
-                                    <NavLink
-                                        to="/settings/orgs/new"
-                                        className="settings-sidebar__item-link"
-                                        activeClassName="settings-sidebar__item--active"
-                                    >
-                                        <AddIcon className="icon-inline settings-sidebar__item-icon" />Create new
-                                        organization
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        )}
-                        {this.state.editorBeta && (
-                            <div className="settings-sidebar__header">
-                                <div className="settings-sidebar__header-icon">
-                                    <ChartIcon className="icon-inline" />
-                                </div>
-                                <div className="settings-sidebar__header-title ui-title">Connections</div>
-                            </div>
-                        )}
-                        {this.state.editorBeta && (
-                            <li className="settings-sidebar__item">
-                                <NavLink
-                                    to="/settings/editor-auth"
-                                    className="settings-sidebar__item-link"
-                                    activeClassName="settings-sidebar__item--active"
-                                >
-                                    <KeyIcon className="icon-inline settings-sidebar__item-icon" />Editor authentication
-                                </NavLink>
-                            </li>
-                        )}
-                    </ul>
-
-                    {window.context.user &&
-                        window.context.user.IsAdmin && (
-                            <ul>
-                                <li className="settings-sidebar__item">
-                                    <NavLink
-                                        to={`/settings/admin/`}
-                                        className="settings-sidebar__item-link"
-                                        activeClassName="settings-sidebar__item--active"
-                                    >
-                                        <ActivityIcon className="icon-inline settings-sidebar__item-icon" />Admin
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        )}
-                    <li className="settings-sidebar__item settings-sidebar__item-action">
+                    <li className="settings-sidebar__item settings-sidebar__item">
                         <a
                             href="/-/sign-out"
-                            className="settings-sidebar__item-action-button btn"
+                            className="settings-sidebar__item-link"
                             onClick={this.logTelemetryOnSignOut}
                         >
-                            <SignOutIcon className="icon-inline settings-sidebar__item-action-icon" />Sign out
+                            <SignOutIcon className="icon-inline settings-sidebar__item-icon" />
+                            Sign out
                         </a>
                     </li>
                     {this.state.editorBeta && (
-                        <li className="settings-sidebar__item settings-sidebar__item-action">
+                        <ul>
+                            {this.state.orgsEnabled && (
+                                <div className="settings-sidebar__header">
+                                    <div className="settings-sidebar__header-icon">
+                                        <CityIcon className="icon-inline" />
+                                    </div>
+                                    <div className="settings-sidebar__header-title ui-title">Organizations</div>
+                                </div>
+                            )}
+                            {this.state.orgsEnabled && (
+                                <ul>
+                                    {this.state.orgs &&
+                                        this.state.orgs.map(org => (
+                                            <li className="settings-sidebar__item" key={org.id}>
+                                                <NavLink
+                                                    to={`/settings/orgs/${org.name}`}
+                                                    className="settings-sidebar__item-link"
+                                                    activeClassName="settings-sidebar__item--active"
+                                                >
+                                                    <div className="settings-sidebar__profile-avatar-column">
+                                                        <OrgAvatar org={org.name} />
+                                                    </div>
+                                                    {org.name}
+                                                </NavLink>
+                                            </li>
+                                        ))}
+                                    <li className="settings-sidebar__item">
+                                        <NavLink
+                                            to="/settings/orgs/new"
+                                            className="settings-sidebar__item-link"
+                                            activeClassName="settings-sidebar__item--active"
+                                        >
+                                            <AddIcon className="icon-inline settings-sidebar__item-icon" />Create new
+                                            organization
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            )}
+                            {this.state.editorBeta && (
+                                <div className="settings-sidebar__header">
+                                    <div className="settings-sidebar__header-icon">
+                                        <ChartIcon className="icon-inline" />
+                                    </div>
+                                    <div className="settings-sidebar__header-title ui-title">Connections</div>
+                                </div>
+                            )}
+                            {this.state.editorBeta && (
+                                <li className="settings-sidebar__item">
+                                    <NavLink
+                                        to="/settings/editor-auth"
+                                        className="settings-sidebar__item-link"
+                                        activeClassName="settings-sidebar__item--active"
+                                    >
+                                        <KeyIcon className="icon-inline settings-sidebar__item-icon" />Editor
+                                        authentication
+                                    </NavLink>
+                                </li>
+                            )}
+                        </ul>
+                    )}
+                    <div className="settings-sidebar__header">
+                        <div className="settings-sidebar__header-icon">
+                            <ColorPaletteIcon className="icon-inline" />
+                        </div>
+                        <div className="settings-sidebar__header-title ui-title">Color Theme</div>
+                    </div>
+                    <li className="settings-sidebar__item">
+                        <div className="settings-sidebar__theme-switcher">
                             <a
-                                className="btn btn-info"
+                                className="settings-sidebar__link"
+                                onClick={this.enableLightTheme}
+                                title="Switch to light theme"
+                            >
+                                <div
+                                    className={
+                                        'settings-sidebar__theme-switcher--button' +
+                                        (this.props.isLightTheme
+                                            ? ' settings-sidebar__theme-switcher--button--selected'
+                                            : '')
+                                    }
+                                >
+                                    <SunIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
+                                    Light
+                                </div>
+                            </a>
+                            <a
+                                className="settings-sidebar__link"
+                                onClick={this.enableDarkTheme}
+                                title="Switch to dark theme"
+                            >
+                                <div
+                                    className={
+                                        'settings-sidebar__theme-switcher--button' +
+                                        (!this.props.isLightTheme
+                                            ? ' settings-sidebar__theme-switcher--button--selected'
+                                            : '')
+                                    }
+                                >
+                                    <MoonIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
+                                    Dark
+                                </div>
+                            </a>
+                        </div>
+                    </li>
+                    {this.state.editorBeta && (
+                        <li className="settings-sidebar__item settings-sidebar__item-action settings-sidebar__download-editor">
+                            <a
+                                className="settings-sidebar__item-action-button settings-sidebar__download-editor-button btn"
                                 target="_blank"
                                 href="https://about.sourcegraph.com/docs/editor/setup/"
                             >
@@ -205,6 +242,9 @@ export class SettingsSidebar extends React.Component<Props, State> {
             </div>
         )
     }
+
+    private enableLightTheme = () => this.props.onToggleTheme(true)
+    private enableDarkTheme = () => this.props.onToggleTheme(false)
 
     private logTelemetryOnSignOut(): void {
         eventLogger.log('SignOutClicked')

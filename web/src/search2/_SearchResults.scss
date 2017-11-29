@@ -13,3 +13,11 @@
         text-align: right;
     }
 }
+
+.theme-light {
+    .search-results2 {
+        &__header {
+            color: $color-light-text-2;
+        }
+    }
+}

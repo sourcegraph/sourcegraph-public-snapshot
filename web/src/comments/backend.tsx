@@ -28,9 +28,9 @@ const gqlThread = `
     createdAt
     archivedAt
     lines {
-        htmlBefore
-        html
-        htmlAfter
+        htmlBefore(isLightTheme: $isLightTheme)
+        html(isLightTheme: $isLightTheme)
+        htmlAfter(isLightTheme: $isLightTheme)
         textBefore
         text
         textAfter
@@ -54,9 +54,9 @@ const gqlThread = `
  *
  * @return Observable that emits the item or `null` if it doesn't exist
  */
-export function fetchSharedItem(ulid: string): Observable<GQL.ISharedItem | null> {
+export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable<GQL.ISharedItem | null> {
     return queryGraphQL(
-        `query SharedItem($ulid: String!) {
+        `query SharedItem($ulid: String!, $isLightTheme: Boolean!) {
                 root {
                     sharedItem(ulid: $ulid) {
                         author {
@@ -74,7 +74,7 @@ export function fetchSharedItem(ulid: string): Observable<GQL.ISharedItem | null
                 }
             }
         `,
-        { ulid }
+        { ulid, isLightTheme }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.root || errors) {
@@ -97,15 +97,16 @@ export function fetchSharedItem(ulid: string): Observable<GQL.ISharedItem | null
 export function addCommentToThread(
     threadID: number,
     contents: string,
-    ulid: string
+    ulid: string,
+    isLightTheme: boolean
 ): Observable<GQL.ISharedItemThread> {
     return mutateGraphQL(
-        `mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!) {
+        `mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
             addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
                 ${gqlThread}
             }
         }`,
-        { threadID, contents, ulid }
+        { threadID, contents, ulid, isLightTheme }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.addCommentToThreadShared) {

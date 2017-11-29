@@ -13,7 +13,6 @@
         padding-left: 0.5rem;
         border-radius: 0.125rem;
         user-select: none;
-        transition: all 100ms ease-in;
 
         &:not(.rev-switcher__rev-display--disabled):hover {
             border-color: white;
@@ -46,7 +45,6 @@
 
         &::placeholder {
             color: $color-secondary;
-            transition: all 100ms ease-in;
         }
     }
 
@@ -100,5 +98,44 @@
     &__rev-name {
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+}
+
+.theme-light {
+    .rev-switcher {
+        &__rev-display {
+            border-color: $color-light-border;
+
+            &:not(.rev-switcher__rev-display--disabled):hover {
+                border-color: $color-light-border;
+                color: inherit;
+
+                > .rev-switcher__input::placeholder {
+                    color: $color-light-text-3;
+                }
+            }
+        }
+
+        &__input {
+            &::placeholder {
+                color: $color-secondary;
+            }
+        }
+
+        &__revs {
+            background: $color-light-bg-1;
+            border-color: $color-light-border;
+        }
+
+        &__rev {
+            &:hover {
+                background: $color-light-bg-2;
+                color: inherit;
+            }
+
+            &--selected {
+                background: $color-light-bg-2;
+            }
+        }
     }
 }

@@ -10,7 +10,21 @@
 
     background-color: #1c2736;
 
-    &__logo-link {
+    &__right {
+        display: flex;
+        padding-right: 1rem;
+        justify-content: flex-end;
+        align-items: center;
+
+        .avatar,
+        .avatar-icon {
+            width: 2rem;
+            height: 2rem;
+        }
+    }
+
+    &__logo-link,
+    &__nav-link {
         outline: 0;
         margin: 0 1rem;
         display: flex;
@@ -61,5 +75,11 @@
         .navbar__search-box-container {
             flex: 1 0;
         }
+    }
+}
+
+.theme-light {
+    .navbar {
+        background-color: $color-light-bg-2;
     }
 }

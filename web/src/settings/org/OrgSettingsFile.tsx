@@ -8,6 +8,7 @@ export interface Props {
     orgID: string
     settings: GQL.ISettings | null
     orgInEditorBeta: boolean
+    isLightTheme: boolean
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -40,6 +41,7 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
                                 }
                             )
                     }
+                    isLightTheme={this.props.isLightTheme}
                 />
                 <small className="form-text">
                     Documentation:{' '}

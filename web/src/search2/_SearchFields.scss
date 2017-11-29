@@ -78,3 +78,32 @@
         }
     }
 }
+
+.theme-light {
+    .search-fields2 {
+        &__header,
+        &__row {
+            &-example {
+                color: $color-light-text-1;
+            }
+        }
+
+        &__header {
+            border-color: $color-light-border;
+        }
+
+        &__input {
+            border-color: $color-light-border;
+            background: $color-light-bg-1;
+            color: inherit;
+
+            &::placeholder {
+                color: $color-light-text-3;
+            }
+
+            &:focus {
+                border: solid 1px $color-primary;
+            }
+        }
+    }
+}

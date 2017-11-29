@@ -16,6 +16,8 @@ import { SearchScope } from './SearchScope'
 interface Props {
     location: H.Location
     history: H.History
+    onToggleTheme: (isLightTheme: boolean) => void
+    isLightTheme: boolean
 }
 
 interface State {
@@ -52,10 +54,14 @@ export class SearchPage extends React.Component<Props, State> {
         return (
             <div className="search-page2">
                 <PageTitle title={this.getPageTitle()} />
-                <NavLinks />
+                <NavLinks onToggleTheme={this.props.onToggleTheme} isLightTheme={this.props.isLightTheme} />
                 <img
                     className="search-page2__logo"
-                    src={`${window.context.assetsRoot}/img/ui2/sourcegraph-head-logo.svg`}
+                    src={
+                        `${window.context.assetsRoot}/img/ui2/sourcegraph` +
+                        (this.props.isLightTheme ? '-light' : '') +
+                        '-head-logo.svg'
+                    }
                 />
                 <form className="search2 search-page2__container" onSubmit={this.onSubmit}>
                     <div className="search-page2__input-container">

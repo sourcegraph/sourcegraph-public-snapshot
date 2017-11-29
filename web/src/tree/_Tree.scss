@@ -41,7 +41,7 @@
 
     &__row-contents {
         display: flex;
-        color: white !important; // override link color
+        color: white;
         align-items: center;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
@@ -51,5 +51,50 @@
     &__row-label {
         margin-left: 0.25rem;
         color: white !important; // override link color
+    }
+}
+
+.theme-light {
+    .tree {
+        &__row {
+            color: inherit;
+
+            &:hover {
+                background-color: $color-light-bg-3;
+                color: inherit;
+                text-decoration: none;
+            }
+
+            &--selected {
+                background-color: $color-primary;
+                color: $color-light-text-4;
+
+                &:hover {
+                    color: $color-light-text-4;
+                    text-decoration: none;
+                }
+            }
+        }
+
+        &__row-icon {
+            color: inherit !important; // override link color
+        }
+
+        &__row-contents {
+            color: inherit; // override link color
+
+            &:hover {
+                color: inherit;
+                text-decoration: none;
+            }
+        }
+
+        &__row-label {
+            color: inherit !important; // override link color
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
     }
 }

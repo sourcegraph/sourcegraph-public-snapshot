@@ -33,13 +33,17 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             text-decoration: none;
+            opacity: 0.5;
 
             &:hover {
                 color: white;
+                text-decoration: none;
+                opacity: 1;
             }
 
             &--active {
                 color: white;
+                opacity: 1;
             }
         }
     }
@@ -48,6 +52,7 @@
         height: 1.5rem;
         min-width: 1.5rem;
         margin: 0 0.25rem;
+        opacity: 0.5;
 
         display: flex;
         align-items: center;
@@ -58,6 +63,10 @@
         border-radius: 1rem;
         background-color: #2a3a51;
         color: white;
+
+        &--active {
+            opacity: 1;
+        }
     }
 
     &__close-icon {
@@ -80,5 +89,44 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow-y: auto;
+    }
+}
+
+.theme-light {
+    .references-widget {
+        background: $color-light-bg-2;
+
+        &__title-bar {
+            background-color: $color-light-bg-2;
+        }
+
+        &__placeholder {
+            border-top: 1px solid $color-light-border;
+        }
+
+        &__badge {
+            background-color: $color-light-bg-3;
+            color: inherit;
+        }
+
+        &__close-icon {
+            &:hover {
+                color: $color-light-text-5;
+            }
+        }
+
+        .result-container {
+            margin-bottom: 0;
+
+            &__header {
+                border-left: none;
+                border-right: none;
+            }
+        }
+
+        .file-match__item {
+            border-left: none;
+            border-right: none;
+        }
     }
 }

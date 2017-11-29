@@ -110,6 +110,7 @@ func (h *highlightedFileResolver) HTML() string  { return h.html }
 
 func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	DisableTimeout bool
+	IsLightTheme   bool
 }) (*highlightedFileResolver, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -134,7 +135,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 		html   template.HTML
 		result = &highlightedFileResolver{}
 	)
-	html, result.aborted, err = highlight.Code(ctx, string(code), strings.TrimPrefix(path.Ext(r.path), "."), args.DisableTimeout)
+	html, result.aborted, err = highlight.Code(ctx, string(code), strings.TrimPrefix(path.Ext(r.path), "."), args.DisableTimeout, args.IsLightTheme)
 	if err != nil {
 		return nil, err
 	}

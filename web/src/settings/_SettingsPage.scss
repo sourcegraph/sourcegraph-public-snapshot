@@ -20,3 +20,13 @@
         overflow-y: auto;
     }
 }
+
+.theme-light {
+    .settings-page {
+        border: 1px solid $color-light-border;
+
+        &__content {
+            background-color: inherit;
+        }
+    }
+}

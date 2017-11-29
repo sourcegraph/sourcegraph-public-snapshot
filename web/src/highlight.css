@@ -111,3 +111,15 @@
     display: inline-block;
     width: 100%;
 }
+
+.theme-light .hljs {
+    color: inherit;
+}
+
+.theme-light .hljs-subst,
+.hljs-function,
+.hljs-title,
+.hljs-params,
+.hljs-formula {
+    color: inherit;
+}
