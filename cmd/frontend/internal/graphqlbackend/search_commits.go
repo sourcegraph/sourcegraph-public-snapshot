@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -59,12 +60,44 @@ func searchDiffsInRepo(ctx context.Context, repoName, rev string, info *patternI
 		"--no-prefix",
 		"--max-count=" + strconv.Itoa(maxResults+1),
 	}
+	if !combinedQuery.isCaseSensitive() {
+		args = append(args, "--regexp-ignore-case")
+	}
+
+	messageValues := combinedQuery.fieldValues[searchFieldMessage].Values()
+	minusMessageValues := combinedQuery.fieldValues[minusField(searchFieldMessage)].Values()
+	if len(messageValues) > 0 && len(minusMessageValues) > 0 {
+		// TODO(sqs): this is a limitation of `git log` flags, but we could overcome this
+		// with post-filtering
+		return nil, false, fmt.Errorf("invalid query: may contain either 'message:' OR '-message:' filters, but not both")
+	} else if len(messageValues) > 0 || len(minusMessageValues) > 0 {
+		// To be consistent with how other filters work, always treat additional
+		// message:xyz filters as further constraining the result set, not widening it.
+		args = append(args, "--all-match")
+
+		if len(minusMessageValues) > 0 {
+			args = append(args, "--invert-grep")
+		}
+
+		// Only one of these for-loops will have any values to iterate over.
+		for _, s := range messageValues {
+			args = append(args, "--grep="+s)
+		}
+		for _, s := range minusMessageValues {
+			args = append(args, "--grep="+s)
+		}
+	}
+
 	for _, s := range combinedQuery.fieldValues[searchFieldBefore].Values() {
 		args = append(args, "--until="+s)
 	}
 	for _, s := range combinedQuery.fieldValues[searchFieldAfter].Values() {
 		args = append(args, "--since="+s)
 	}
+
+	// TODO(sqs): the git log --author and --committer options widen the result set,
+	// which is inconsistent with how our other search filters work (additional filters
+	// further constrain, not widen, the result set)
 	for _, s := range combinedQuery.fieldValues[searchFieldAuthor].Values() {
 		args = append(args, "--author="+s)
 	}

@@ -35,6 +35,7 @@ const (
 	searchFieldType      search2.Field = "type"
 
 	// TODO(sqs): these only apply to type:diff searches
+	searchFieldMessage   search2.Field = "message"
 	searchFieldBefore    search2.Field = "before"
 	searchFieldAfter     search2.Field = "after"
 	searchFieldAuthor    search2.Field = "author"
@@ -42,13 +43,15 @@ const (
 )
 
 var searchFieldAliases = map[search2.Field][]search2.Field{
-	searchFieldRepo:             {"r"},
-	minusField(searchFieldRepo): {minusField("r")},
-	searchFieldFile:             {"f"},
-	minusField(searchFieldFile): {minusField("f")},
-	searchFieldRepoGroup:        {"g"},
-	searchFieldTerm:             {},
-	searchFieldCase:             {},
+	searchFieldRepo:                {"r"},
+	minusField(searchFieldRepo):    {minusField("r")},
+	searchFieldFile:                {"f"},
+	minusField(searchFieldFile):    {minusField("f")},
+	searchFieldRepoGroup:           {"g"},
+	searchFieldTerm:                {},
+	searchFieldCase:                {},
+	searchFieldMessage:             {"m", "msg"},
+	minusField(searchFieldMessage): {minusField("m"), minusField("msg")},
 }
 
 func minusField(field search2.Field) search2.Field {
