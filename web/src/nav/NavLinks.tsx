@@ -6,7 +6,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { UserAvatar } from '../settings/user/UserAvatar'
 
 interface Props {
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 

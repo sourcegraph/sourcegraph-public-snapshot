@@ -21,7 +21,7 @@ import { UserAvatar } from './user/UserAvatar'
 interface Props {
     history: H.History
     location: H.Location
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 
@@ -208,7 +208,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         <div className="settings-sidebar__theme-switcher">
                             <a
                                 className="settings-sidebar__link"
-                                onClick={this.enableLightTheme}
+                                onClick={this.props.onToggleTheme}
                                 title="Switch to light theme"
                             >
                                 <div
@@ -225,7 +225,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </a>
                             <a
                                 className="settings-sidebar__link"
-                                onClick={this.enableDarkTheme}
+                                onClick={this.props.onToggleTheme}
                                 title="Switch to dark theme"
                             >
                                 <div
@@ -257,9 +257,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
             </div>
         )
     }
-
-    private enableLightTheme = () => this.props.onToggleTheme(true)
-    private enableDarkTheme = () => this.props.onToggleTheme(false)
 
     private logTelemetryOnSignOut(): void {
         eventLogger.log('SignOutClicked')

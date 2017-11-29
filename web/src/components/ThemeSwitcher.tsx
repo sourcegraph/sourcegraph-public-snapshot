@@ -1,10 +1,9 @@
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SunIcon from '@sourcegraph/icons/lib/Sun'
 import * as React from 'react'
-import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 
@@ -15,7 +14,11 @@ export class ThemeSwitcher extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="theme-switcher theme-switcher__nav-bar">
+            <div
+                className="theme-switcher theme-switcher__nav-bar"
+                onClick={this.props.onToggleTheme}
+                title="Switch color theme"
+            >
                 <div
                     className={
                         'theme-switcher__button' +
@@ -24,13 +27,9 @@ export class ThemeSwitcher extends React.Component<Props, State> {
                             : '')
                     }
                 >
-                    <a
-                        className="btn btn-icon theme-switcher__link"
-                        onClick={this.enableLightTheme}
-                        title="Toggle theme"
-                    >
+                    <span className="btn btn-icon theme-switcher__link">
                         <SunIcon />
-                    </a>
+                    </span>
                 </div>
                 <div
                     className={
@@ -40,25 +39,11 @@ export class ThemeSwitcher extends React.Component<Props, State> {
                             : '')
                     }
                 >
-                    <a
-                        className="btn btn-icon theme-switcher__link"
-                        onClick={this.enableDarkTheme}
-                        title="Toggle theme"
-                    >
+                    <span className="btn btn-icon theme-switcher__link">
                         <MoonIcon />
-                    </a>
+                    </span>
                 </div>
             </div>
         )
-    }
-
-    private enableLightTheme = () => {
-        this.props.onToggleTheme(true)
-        eventLogger.log('LightThemeClicked')
-    }
-
-    private enableDarkTheme = () => {
-        this.props.onToggleTheme(false)
-        eventLogger.log('DarkThemeClicked')
     }
 }

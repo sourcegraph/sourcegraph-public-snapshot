@@ -15,9 +15,10 @@ import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search2/index'
 import { SearchPage as SearchPage2 } from './search2/SearchPage'
+import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps extends RouteComponentProps<any> {
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 
@@ -103,7 +104,7 @@ class Layout extends React.Component<LayoutProps, LayoutState> {
 }
 
 interface SearchRouterProps extends RouteComponentProps<{}> {
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 
@@ -120,12 +121,12 @@ const SearchRouter = (props: SearchRouterProps): JSX.Element | null => {
 }
 
 interface BackfillRedirectorProps extends RouteComponentProps<{}> {
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 
 interface BackfillRedirectorProps extends RouteComponentProps<{}> {
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 
@@ -261,8 +262,11 @@ class App extends React.Component<{}, AppState> {
     /**
      * toggles light theme display of the container
      */
-    private onToggleTheme = (isLightTheme: boolean) => {
-        this.setState({ isLightTheme })
+    private onToggleTheme = () => {
+        this.setState(state => ({ isLightTheme: !state.isLightTheme }))
+        if (this.state.isLightTheme) {
+            eventLogger.log(this.state.isLightTheme ? 'DarkThemeClicked' : 'LightThemeClicked')
+        }
     }
 }
 

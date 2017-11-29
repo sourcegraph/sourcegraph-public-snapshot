@@ -24,7 +24,7 @@ interface SettingsPageProps {
     history: H.History
     location: H.Location
     match: match<{}>
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 

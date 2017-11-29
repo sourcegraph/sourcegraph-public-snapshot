@@ -7,7 +7,7 @@ import { NavLinks } from './NavLinks'
 interface Props {
     history: H.History
     location: H.Location
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 

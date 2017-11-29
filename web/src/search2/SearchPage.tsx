@@ -16,7 +16,7 @@ import { SearchScope } from './SearchScope'
 interface Props {
     location: H.Location
     history: H.History
-    onToggleTheme: (isLightTheme: boolean) => void
+    onToggleTheme: () => void
     isLightTheme: boolean
 }
 
