@@ -39,7 +39,7 @@ const (
 	searchFieldAfter     search2.Field = "after"
 	searchFieldAuthor    search2.Field = "author"
 	searchFieldCommitter search2.Field = "committer"
-		searchFieldMessage   search2.Field = "message"
+	searchFieldMessage   search2.Field = "message"
 )
 
 var searchFieldAliases = map[search2.Field][]search2.Field{
