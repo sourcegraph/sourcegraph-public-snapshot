@@ -35,16 +35,7 @@ var (
 	oidcClientID     = env.Get("OIDC_CLIENT_ID", "", "OpenID Connect Client ID")
 	oidcClientSecret = env.Get("OIDC_CLIENT_SECRET", "", "OpenID Connect Client Secret")
 	oidcEmailDomain  = env.Get("OIDC_EMAIL_DOMAIN", "", "OpenID Connect Hosted Domain")
-	// 🚨 SECURITY oidcOverrideToken is for testing purposes only
-	oidcOverrideToken = env.Get("OIDC_OVERRIDE_TOKEN", "", "Key to circumvent OIDC middleware")
 )
-
-type UserClaims struct {
-	Name              string `json:"name"`
-	GivenName         string `json:"given_name"`
-	FamilyName        string `json:"family_name"`
-	PreferredUsername string `json:"preferred_username"`
-}
 
 // newOIDCAuthHandler wraps the passed in handler with OpenID Connect (OIDC) authentication, adding endpoints
 // under the auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
@@ -75,15 +66,6 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	}
 
 	return session.CookieOrSessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if oidcOverrideToken != "" && r.Header.Get("x-oidc-override") == oidcOverrideToken {
-			if err := startAnonUserSession(createCtx, w, r); err != nil {
-				http.Error(w, "Error initializing anonymous user", http.StatusInternalServerError)
-				return
-			}
-			handler.ServeHTTP(w, r)
-			return
-		}
-
 		// If the path is under the authentication path, serve the OIDC Authentication Code Flow handler
 		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/") {
 			oidcHandler.ServeHTTP(w, r)
@@ -101,30 +83,6 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		// At this point, we've verified that the request has a valid sesssion, so serve the requested resource.
 		handler.ServeHTTP(w, r)
 	})), nil
-}
-
-func startAnonUserSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	token := &oidc.IDToken{
-		Issuer:  "oidc-override",
-		Subject: "anon-user",
-	}
-	userInfo := &oidc.UserInfo{
-		Subject:       "anon-user",
-		Profile:       "anon-user",
-		Email:         "anon-user@sourcegraph.com",
-		EmailVerified: true,
-	}
-	claims := &UserClaims{
-		Name:              "Anonymous User",
-		GivenName:         "Anonymous User",
-		FamilyName:        "User",
-		PreferredUsername: "anon-user",
-	}
-	actr, err := getActor(ctx, token, userInfo, claims)
-	if err != nil {
-		return err
-	}
-	return session.StartNewSession(w, r, actr, 0)
 }
 
 // newOIDCLoginHandler returns a handler that defines the necessary endpoints for the OIDC Authentication Code Flow
@@ -246,11 +204,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			return
 		}
 
-		var claims UserClaims
-		if err := userInfo.Claims(&claims); err != nil {
-			log15.Warn("Could not parse userInfo claims", "error", err)
-		}
-		actr, err := getActor(ctx, idToken, userInfo, &claims)
+		actr, err := getActor(ctx, idToken, userInfo)
 		if err != nil {
 			log15.Error("Could not get user for OIDC authentication", "error", err)
 			http.Error(w, "Could not get user (a user with your email or username may already exist).", http.StatusInternalServerError)
@@ -284,7 +238,18 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
 // Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
 // exist.
-func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *UserClaims) (*actor.Actor, error) {
+func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo) (*actor.Actor, error) {
+	var claims struct {
+		Name              string `json:"name"`
+		GivenName         string `json:"given_name"`
+		FamilyName        string `json:"family_name"`
+		PreferredUsername string `json:"preferred_username"`
+	}
+
+	if err := userInfo.Claims(&claims); err != nil {
+		log15.Warn("Could not parse userInfo claims", "error", err)
+	}
+
 	provider := idToken.Issuer
 	authID := oidcToAuthID(provider, idToken.Subject)
 	login := claims.PreferredUsername
