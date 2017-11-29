@@ -193,9 +193,9 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     {this.state.editorBeta && (
                         <li className="settings-sidebar__item settings-sidebar__item-action">
                             <a
-                                className="settings-sidebar__item-action-button btn"
+                                className="btn btn-info"
                                 target="_blank"
-                                href="https://about.sourcegraph.com/beta/201708"
+                                href="https://about.sourcegraph.com/docs/editor/setup/"
                             >
                                 Download Editor
                             </a>
