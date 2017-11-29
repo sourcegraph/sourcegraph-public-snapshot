@@ -17,11 +17,29 @@
         }
     }
 
-    button {
+    &__button {
         margin-top: 0.5rem;
 
         &:not(:first-child) {
             margin-left: 0.5rem;
+        }
+    }
+}
+
+.theme-light {
+    .saved-query-form {
+        background: $color-light-bg-2;
+
+        &__button-cancel {
+            background: $color-light-bg-4;
+
+            &:hover {
+                background: $color-light-bg-3;
+            }
+        }
+
+        .ui-text-box {
+            background: $color-light-bg-1;
         }
     }
 }

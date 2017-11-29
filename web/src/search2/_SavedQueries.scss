@@ -28,3 +28,9 @@
         margin: 1rem 0;
     }
 }
+
+.theme-light {
+    .saved-queries__header-button:hover {
+        color: $color-light-text-4;
+    }
+}

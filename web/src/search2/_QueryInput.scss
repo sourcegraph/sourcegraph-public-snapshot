@@ -4,10 +4,6 @@
     flex: 1 0 auto;
     position: relative;
 
-    &__field {
-        padding: 0 0.5rem;
-    }
-
     &__suggestions {
         position: absolute;
         width: 100%;
@@ -21,6 +17,12 @@
         border: solid 1px rgb(27, 84, 138);
         border-top: none;
     }
+
+    &__input {
+        background: #1c2736;
+        padding: 0.25rem 0.5rem;
+        height: 100%;
+    }
 }
 
 .theme-light {
@@ -28,6 +30,10 @@
         &__suggestions {
             background-color: $color-light-bg-2;
             border-top: none;
+        }
+
+        &__input {
+            background: $color-light-bg-1;
         }
     }
 }

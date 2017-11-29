@@ -215,7 +215,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                         </button>
                         <button
                             type="reset"
-                            className="btn btn-secondary saved-query-form__button"
+                            className="btn btn-secondary saved-query-form__button saved-query-form__button-cancel"
                             disabled={submitting}
                             onClick={onDidCancel}
                         >
