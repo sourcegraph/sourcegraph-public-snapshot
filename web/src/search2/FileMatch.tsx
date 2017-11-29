@@ -100,7 +100,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                                 position,
                             })}
                             key={i}
-                            className="file-match__item"
+                            className="file-match__item file-match__item-clickable"
                             onClick={props.onSelect}
                         >
                             <CodeExcerpt
