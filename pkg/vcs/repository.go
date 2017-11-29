@@ -271,9 +271,9 @@ type RawLogDiffSearchOptions struct {
 
 // LogCommitSearchResult describes a matching diff from (Repository).RawLogDiffSearch.
 type LogCommitSearchResult struct {
-	Commit     Commit      // the commit whose diff was matched
-	Diff       Diff        // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
-	Highlights []Highlight // highlighted query matches in the diff
+	Commit         Commit      // the commit whose diff was matched
+	Diff           *Diff       // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
+	DiffHighlights []Highlight // highlighted query matches in the diff
 
 	// Incomplete indicates that this result may represent a subset of the actual data.
 	// This can occur when the underlying command returns early due to an impending

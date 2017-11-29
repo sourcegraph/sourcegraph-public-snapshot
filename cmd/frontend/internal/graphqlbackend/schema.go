@@ -316,8 +316,10 @@ type Diff {
 type CommitSearchResult {
   # The commit that matched the search query.
   commit: CommitInfo!
-  # The matching portion of the diff. TODO(sqs): what format?
-  preview: HighlightedString!
+  # The matching portion of the commit message, if any.
+  messagePreview: HighlightedString
+  # The matching portion of the diff, if any.
+  diffPreview: HighlightedString
 }
 
 # A search result that is a diff between two diffable Git objects.

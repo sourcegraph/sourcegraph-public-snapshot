@@ -24,19 +24,19 @@ interface Props {
     /**
      * The title component.
      */
-    title: React.ReactChild
+    title: React.ReactFragment
 
     /**
      * The content of the result displayed underneath the result container's
      * header when collapsed.
      */
-    collapsedChildren?: React.ReactChild
+    collapsedChildren?: React.ReactFragment
 
     /**
      * The content of the result displayed underneath the result container's
      * header when expanded.
      */
-    expandedChildren?: React.ReactChild
+    expandedChildren?: React.ReactFragment
 
     /**
      * The label to display next to the collapse button

@@ -17,6 +17,7 @@ import (
 var (
 	validRawLogDiffSearchFormatArgs = [][]string{
 		{"-z", "--patch", logFormatFlag},
+		{"-z", logFormatFlag},
 	}
 )
 
@@ -36,7 +37,11 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	defer span.Finish()
 
 	if opt.FormatArgs == nil {
-		opt.FormatArgs = validRawLogDiffSearchFormatArgs[0]
+		if opt.Query.Pattern == "" {
+			opt.FormatArgs = validRawLogDiffSearchFormatArgs[1] // without --patch
+		} else {
+			opt.FormatArgs = validRawLogDiffSearchFormatArgs[0] // with --patch
+		}
 	}
 	if opt.FormatArgs != nil && !isValidRawLogDiffSearchFormatArgs(opt.FormatArgs) {
 		return nil, false, fmt.Errorf("invalid FormatArgs: %q", opt.FormatArgs)
@@ -69,6 +74,9 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		if opt.Query.IsRegExp {
 			args = append(args, "--pickaxe-regex")
 		}
+	}
+	if opt.Paths.IsRegExp {
+		args = append(args, "--extended-regexp")
 	}
 	if !isWhitelistedGitCmd(args) {
 		return nil, false, fmt.Errorf("command failed: %q is not a whitelisted git command", args)
@@ -142,8 +150,12 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 
 		result := &vcs.LogCommitSearchResult{Commit: *commit}
 
-		if len(data) >= 1 && data[0] == '\n' {
+		if len(data) >= 1 && data[0] == '\x00' {
+			// No diff patch (probably no --patch arg).
 			data = data[1:]
+		} else if len(data) >= 1 && data[0] == '\n' {
+			data = data[1:]
+
 			// Next is the diff patch.
 			patchEnd := bytes.Index(data, []byte("\n\x00"))
 			var rawDiff []byte
@@ -157,14 +169,14 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			}
 
 			var err error
-			rawDiff, result.Highlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks, pathMatcher)
+			rawDiff, result.DiffHighlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks, pathMatcher)
 			if err != nil {
 				return nil, false, err
 			}
 			if rawDiff == nil {
 				continue // it did not match
 			}
-			result.Diff = vcs.Diff{Raw: string(rawDiff)}
+			result.Diff = &vcs.Diff{Raw: string(rawDiff)}
 		}
 
 		results = append(results, result)

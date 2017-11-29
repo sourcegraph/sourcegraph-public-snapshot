@@ -3,10 +3,13 @@
         text-decoration: none; // don't use cascading link style
         display: block;
         padding: 1rem;
-        cursor: pointer;
         overflow-x: auto;
         overflow-y: hidden;
         background-color: #070a0d;
+
+        &-clickable {
+            cursor: pointer;
+        }
 
         &:hover {
             background-color: #151d28;

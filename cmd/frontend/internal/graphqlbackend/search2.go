@@ -39,16 +39,19 @@ const (
 	searchFieldAfter     search2.Field = "after"
 	searchFieldAuthor    search2.Field = "author"
 	searchFieldCommitter search2.Field = "committer"
+	searchFieldMessage   search2.Field = "message"
 )
 
 var searchFieldAliases = map[search2.Field][]search2.Field{
-	searchFieldRepo:             {"r"},
-	minusField(searchFieldRepo): {minusField("r")},
-	searchFieldFile:             {"f"},
-	minusField(searchFieldFile): {minusField("f")},
-	searchFieldRepoGroup:        {"g"},
-	searchFieldTerm:             {},
-	searchFieldCase:             {},
+	searchFieldRepo:                {"r"},
+	minusField(searchFieldRepo):    {minusField("r")},
+	searchFieldFile:                {"f"},
+	minusField(searchFieldFile):    {minusField("f")},
+	searchFieldRepoGroup:           {"g"},
+	searchFieldTerm:                {},
+	searchFieldCase:                {},
+	searchFieldMessage:             {"m", "msg"},
+	minusField(searchFieldMessage): {minusField("m"), minusField("msg")},
 }
 
 func minusField(field search2.Field) search2.Field {

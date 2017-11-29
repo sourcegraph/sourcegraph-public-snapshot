@@ -36,12 +36,14 @@
         }
 
         code {
-            font-size: 0.75em;
+            font-size: 0.9em;
         }
     }
 
     &__item {
-        padding: 0 !important;
+        &-diff-preview {
+            padding: 0 !important;
+        }
 
         .file-header {
             font-weight: bold;
