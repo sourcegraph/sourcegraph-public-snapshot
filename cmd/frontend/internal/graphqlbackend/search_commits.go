@@ -32,11 +32,11 @@ type commitSearchResult struct {
 func (r *commitSearchResult) Commit() *commitInfoResolver     { return r.commit }
 func (r *commitSearchResult) DiffPreview() *highlightedString { return r.diffPreview }
 
-var mockSearchDiffsInRepo func(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
 
-func searchDiffsInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
 	if mockSearchRepo != nil {
-		return mockSearchDiffsInRepo(ctx, repoName, rev, info, combinedQuery)
+		return mockSearchCommitDiffsInRepo(ctx, repoName, rev, info, combinedQuery)
 	}
 
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
@@ -190,12 +190,12 @@ func searchDiffsInRepo(ctx context.Context, repoName, rev string, info *patternI
 	return results, limitHit, nil
 }
 
-var mockSearchDiffsInRepos func(args *repoSearchArgs, combinedQuery resolvedQuery) ([]*searchResult, *searchResultsCommon, error)
+var mockSearchCommitDiffsInRepos func(args *repoSearchArgs, combinedQuery resolvedQuery) ([]*searchResult, *searchResultsCommon, error)
 
-// searchDiffsInRepos searches a set of repos for matching diffs.
-func searchDiffsInRepos(ctx context.Context, args *repoSearchArgs, combinedQuery resolvedQuery) ([]*searchResult, *searchResultsCommon, error) {
-	if mockSearchDiffsInRepos != nil {
-		return mockSearchDiffsInRepos(args, combinedQuery)
+// searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
+func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combinedQuery resolvedQuery) ([]*searchResult, *searchResultsCommon, error) {
+	if mockSearchCommitDiffsInRepos != nil {
+		return mockSearchCommitDiffsInRepos(args, combinedQuery)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -216,7 +216,7 @@ func searchDiffsInRepos(ctx context.Context, args *repoSearchArgs, combinedQuery
 			if repoRev.Rev != nil {
 				rev = *repoRev.Rev
 			}
-			results, repoLimitHit, searchErr := searchDiffsInRepo(ctx, repoRev.Repo, rev, args.Query, combinedQuery)
+			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev.Repo, rev, args.Query, combinedQuery)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return

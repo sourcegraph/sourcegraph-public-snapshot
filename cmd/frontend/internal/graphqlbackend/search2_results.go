@@ -166,7 +166,7 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 			})
 		case "diff":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
-				return searchDiffsInRepos(ctx, &args, r.combinedQuery)
+				return searchCommitDiffsInRepos(ctx, &args, r.combinedQuery)
 			})
 		}
 	}
