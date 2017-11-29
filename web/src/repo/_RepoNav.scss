@@ -15,16 +15,21 @@
         align-items: center;
         overflow: hidden;
         min-width: 0;
+        padding-right: 1rem;
     }
 
     &__action {
         display: flex;
         align-items: center;
         color: #93a9c8;
-        margin-left: 1rem;
         cursor: pointer;
         white-space: nowrap;
         text-overflow: ellipsis;
+
+        // Prevent attempts to copy the breadcrumb from also copying this element's text.
+        &:not(:first-of-type) {
+            margin-left: 1rem;
+        }
 
         &-text {
             margin-left: 0.5rem;
