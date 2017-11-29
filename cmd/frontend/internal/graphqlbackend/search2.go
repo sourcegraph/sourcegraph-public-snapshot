@@ -35,11 +35,11 @@ const (
 	searchFieldType      search2.Field = "type"
 
 	// TODO(sqs): these only apply to type:diff searches
-	searchFieldMessage   search2.Field = "message"
 	searchFieldBefore    search2.Field = "before"
 	searchFieldAfter     search2.Field = "after"
 	searchFieldAuthor    search2.Field = "author"
 	searchFieldCommitter search2.Field = "committer"
+		searchFieldMessage   search2.Field = "message"
 )
 
 var searchFieldAliases = map[search2.Field][]search2.Field{
