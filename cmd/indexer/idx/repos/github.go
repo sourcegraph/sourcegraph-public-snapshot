@@ -29,6 +29,15 @@ type githubConfig struct {
 	Repos       []string `json:"repos"`
 }
 
+// configAndClient binds together a GitHub config and the authenticated GitHub client created from that config.
+// This is a KLUDGE to enable public repository cloning with an authenticated client,
+// This data structure would probably be obviated by better separation of responsibility between the
+// different packages involved in indexing.
+type configAndClient struct {
+	config githubConfig
+	client *github.Client
+}
+
 var (
 	updateIntervalEnv = env.Get("REPOSITORY_SYNC_PERIOD", "60", "The number of seconds to wait in-between syncing repositories with the code host")
 
@@ -87,8 +96,7 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 		}
 	}
 
-	var clients []*github.Client
-	var publicRepoNames []string
+	var clients []configAndClient
 	for _, c := range configs {
 		u, err := url.Parse(c.URL)
 		if err != nil {
@@ -96,16 +104,13 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 		}
 		if u.Hostname() == "github.com" {
 			config := &githubutil.Config{Context: ctx}
-			clients = append(clients, config.AuthedClient(c.Token))
+			clients = append(clients, configAndClient{config: c, client: config.AuthedClient(c.Token)})
 		} else {
 			cl, err := githubEnterpriseClient(ctx, c.URL, c.Certificate, c.Token)
 			if err != nil {
 				return err
 			}
-			clients = append(clients, cl)
-		}
-		if c.Repos != nil {
-			publicRepoNames = append(publicRepoNames, c.Repos...)
+			clients = append(clients, configAndClient{config: c, client: cl})
 		}
 	}
 
@@ -114,30 +119,30 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 	}
 	for {
 		for _, c := range clients {
-			err = updateForClient(ctx, c)
+			// update explicitly listed repositories
+			var explicitRepos []*github.Repository
+			for _, ownerAndRepoString := range c.config.Repos {
+				ownerAndRepo := strings.Split(ownerAndRepoString, "/")
+				if len(ownerAndRepo) != 2 {
+					log15.Error("Could not update public GitHub repository, name must be owner/repo format", "repo", ownerAndRepoString)
+					continue
+				}
+				repo, _, err := c.client.Repositories.Get(ctx, ownerAndRepo[0], ownerAndRepo[1])
+				if err != nil {
+					log15.Error("Could not update public GitHubrepository", "error", err)
+					continue
+				}
+				explicitRepos = append(explicitRepos, repo)
+			}
+			update(ctx, c.client, explicitRepos)
+
+			// update implicit repositories (repositories owned by an organization to which the user who created
+			// the personal access token belongs)
+			err = updateForClient(ctx, c.client)
 			if err != nil {
 				log15.Error("Could not update repositories", "error", err)
 			}
 		}
-
-		var publicRepos []*github.Repository
-		c := &githubutil.Config{Context: ctx}
-		cl := c.UnauthedClient()
-		for _, name := range publicRepoNames {
-			ownerAndRepo := strings.Split(name, "/")
-			if len(ownerAndRepo) != 2 {
-				log15.Error("Could not update public GitHub repository, name must be owner/repo format", "name", name)
-				continue
-			}
-			repo, _, err := cl.Repositories.Get(ctx, ownerAndRepo[0], ownerAndRepo[1])
-			if err != nil {
-				log15.Error("Could not update public GitHubrepository", "error", err)
-				continue
-			}
-			publicRepos = append(publicRepos, repo)
-		}
-		update(ctx, cl, publicRepos)
-
 		time.Sleep(updateInterval)
 	}
 }
