@@ -51,7 +51,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
             </a>
             <a
                 href={commitURL}
-                className="commit-search-result__title-signatureo"
+                className="commit-search-result__title-signature"
                 onClick={stopPropagationToCollapseOrExpand}
             >
                 <code>{props.result.commit.abbreviatedOID}</code>{' '}
