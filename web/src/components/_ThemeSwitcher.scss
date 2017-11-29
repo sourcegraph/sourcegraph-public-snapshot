@@ -7,6 +7,7 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
     padding: 0.25rem;
     background-color: $color-theme-switcher-background;
     text-align: center;
+    user-select: none;
 
     &__nav-bar {
         border-radius: 30px;
