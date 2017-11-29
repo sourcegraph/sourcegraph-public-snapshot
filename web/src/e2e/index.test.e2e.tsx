@@ -572,7 +572,7 @@ describe('e2e test suite', () => {
                 await chrome.wait('select')
                 await chrome.evaluate(() => {
                     const select = document.querySelector('select')!
-                    select.value = 'repogroup:active -file:(test|spec)'
+                    select.value = '-file:(test|spec)'
                     select.dispatchEvent(new Event('change', { bubbles: true }))
                 })
 
