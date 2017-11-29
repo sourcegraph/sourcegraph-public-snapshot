@@ -8,6 +8,7 @@
     align-items: start;
     border-radius: 0.25rem;
     background-color: $color-light-bg-2;
+    color: #39496a;
 
     &__logo {
         flex: 0 0 auto;
@@ -63,6 +64,8 @@
 
 .theme-light {
     .toast {
+        border: 1px solid $color-light-border;
+
         &__close-button {
             &:hover {
                 color: $color-light-bg-6;
