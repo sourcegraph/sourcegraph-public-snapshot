@@ -1,6 +1,10 @@
 .decorated-text-lines {
     a {
-        color: $color-text;
+        color: inherit;
+
+        &:hover {
+            text-decoration: none;
+        }
     }
 
     table {
@@ -17,5 +21,15 @@
 
     tr.deleted {
         background-color: rgba(192, 10, 10, 0.25);
+    }
+}
+
+.theme-light {
+    tr.added {
+        background-color: rgba(31, 116, 31, 0.15);
+    }
+
+    tr.deleted {
+        background-color: rgba(192, 10, 10, 0.15);
     }
 }
