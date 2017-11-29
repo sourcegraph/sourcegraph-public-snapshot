@@ -24,12 +24,12 @@ func (r *diffSearchResult) Diff() *diff                 { return r.diff }
 func (r *diffSearchResult) Preview() *highlightedString { return r.preview }
 
 type commitSearchResult struct {
-	commit  *commitInfoResolver
-	preview *highlightedString
+	commit      *commitInfoResolver
+	diffPreview *highlightedString
 }
 
-func (r *commitSearchResult) Commit() *commitInfoResolver { return r.commit }
-func (r *commitSearchResult) Preview() *highlightedString { return r.preview }
+func (r *commitSearchResult) Commit() *commitInfoResolver     { return r.commit }
+func (r *commitSearchResult) DiffPreview() *highlightedString { return r.diffPreview }
 
 var mockSearchDiffsInRepo func(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
 
@@ -139,7 +139,7 @@ func searchDiffsInRepo(ctx context.Context, repoName, rev string, info *patternI
 				},
 				message: commit.Message,
 			},
-			preview: &highlightedString{
+			diffPreview: &highlightedString{
 				value:      rawResult.Diff.Raw,
 				highlights: fromVCSHighlights(rawResult.Highlights),
 			},

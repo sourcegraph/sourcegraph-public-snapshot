@@ -77,7 +77,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
     } as AbsoluteRepoFilePosition
 
     // Omit "index ", "--- file", and "+++ file" lines.
-    const lines = props.result.preview.value.split('\n')
+    const lines = props.result.diffPreview.value.split('\n')
     const lineClasses: { line: number; className: string; url?: string }[] = []
     let ignoreUntilAtAt = false
     for (const [i, line] of lines.entries()) {
@@ -155,7 +155,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 <DecoratedTextLines
                     className="file-match__item commit-search-result__item"
                     value={lines}
-                    highlights={props.result.preview.highlights}
+                    highlights={props.result.diffPreview.highlights}
                     lineClasses={lineClasses}
                 />
             }

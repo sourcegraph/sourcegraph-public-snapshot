@@ -31,7 +31,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                 }
                             }
                             ... on CommitSearchResult {
-                                preview {
+                                diffPreview {
                                     value
                                     highlights {
                                         line
