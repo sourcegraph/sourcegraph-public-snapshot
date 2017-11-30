@@ -58,7 +58,7 @@
     "javascript-typescript-langserver": "^2.5.4",
     "jsdom": "^11.2.0",
     "mocha": "^3.5.3",
-    "node-sass": "^4.5.3",
+    "node-sass": "^4.7.2",
     "postcss-loader": "^2.0.6",
     "prettier": "^1.8.1",
     "sass-loader": "^6.0.6",
