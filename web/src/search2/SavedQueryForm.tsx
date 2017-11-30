@@ -155,7 +155,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                 error,
             }: State): JSX.Element | null => (
                 <form className="saved-query-form" onSubmit={nextSubmit}>
-                    {title && <h2 className="saved-query-form__title">{title}</h2>}
+                    {title && <h3 className="saved-query-form__title">{title}</h3>}
                     <input
                         type="text"
                         name="description"

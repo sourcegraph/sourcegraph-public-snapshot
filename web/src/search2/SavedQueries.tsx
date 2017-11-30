@@ -76,7 +76,7 @@ export class SavedQueries extends React.Component<Props, State> {
         return (
             <div className="saved-queries">
                 <div className="saved-queries__header">
-                    <h1>Saved queries</h1>
+                    <h2>Saved queries</h2>
 
                     <button
                         className="btn btn-primary btn-icon saved-queries__header-button"
