@@ -242,9 +242,7 @@ class App extends React.Component<{}, AppState> {
         this.setState(
             state => ({ isLightTheme: !state.isLightTheme }),
             () => {
-                if (this.state.isLightTheme) {
-                    eventLogger.log(this.state.isLightTheme ? 'LightThemeClicked' : 'DarkThemeClicked')
-                }
+                eventLogger.log(this.state.isLightTheme ? 'LightThemeClicked' : 'DarkThemeClicked')
             }
         )
     }

@@ -76,7 +76,7 @@
     }
 }
 
-@keyframes light-highlight {
+@keyframes highlight-light {
     0% {
         background: $color-light-bg-3;
     }
@@ -95,7 +95,7 @@
         }
 
         &--targeted {
-            animation: light-highlight 3s;
+            animation: highlight-light 3s;
         }
 
         &__content {
