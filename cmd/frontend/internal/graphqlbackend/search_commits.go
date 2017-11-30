@@ -3,20 +3,33 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"log"
 	"regexp"
 	"strconv"
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/pkg/errors"
 )
+
+var (
+	gitLogSearchTimeout = mustParseDuration(env.Get("GIT_LOG_SEARCH_TIMEOUT", "5s", "maximum duration for type:commit and type:diff queries before incomplete results are returned"))
+)
+
+func mustParseDuration(s string) time.Duration {
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return d
+}
 
 type diffSearchResult struct {
 	diff    *diff
@@ -152,15 +165,7 @@ func searchCommitsInRepo(ctx context.Context, repoName, rev string, info *patter
 		return *s
 	}
 
-	// TODO(sqs): set extra strict timeout to avoid runaway resource consumption
-	// during testing of this feature
-	var timeout time.Duration
-	if envvar.DeploymentOnPrem() {
-		timeout = 5 * time.Second
-	} else {
-		timeout = 2500 * time.Millisecond
-	}
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	ctx, cancel := context.WithTimeout(ctx, gitLogSearchTimeout)
 	defer cancel()
 
 	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
