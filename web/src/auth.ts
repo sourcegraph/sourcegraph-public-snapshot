@@ -86,12 +86,12 @@ export function fetchCurrentUser(isLightTheme?: boolean): Observable<never> {
     `,
         { isLightTheme }
     ).pipe(
-        tap(result => {
-            if (!result.data) {
-                throw new Error('invalid response received from graphql endpoint')
+        tap(({ data, errors }) => {
+            if (!data) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            currentUser.next(result.data.root.currentUser)
-            configurationCascade.next(result.data.root.configuration)
+            currentUser.next(data.root.currentUser)
+            configurationCascade.next(data.root.configuration)
         }),
         mergeMap(() => [])
     )
