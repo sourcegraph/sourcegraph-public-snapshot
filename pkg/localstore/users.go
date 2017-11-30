@@ -8,11 +8,13 @@ import (
 	"regexp"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -54,7 +56,7 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
-func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string) (*sourcegraph.User, error) {
+func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string) (newUser *sourcegraph.User, err error) {
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
@@ -62,7 +64,24 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 	if avatarURL != nil {
 		avatarURLValue = sql.NullString{String: *avatarURL, Valid: true}
 	}
-	err := globalDB.QueryRowContext(
+
+	// Wrap in transaction so we can execute hooks below atomically.
+	tx, err := globalDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
 		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt).Scan(&id)
@@ -78,6 +97,18 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 			}
 		}
 		return nil, err
+	}
+
+	{
+		// Run hooks.
+		//
+		// NOTE: If we need more hooks in the future, we should do something better than just
+		// adding random calls here.
+
+		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
+		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, env.Config.AuthUserOrgMap.OrgsForAllUsersToJoin()); err != nil {
+			return nil, err
+		}
 	}
 
 	return &sourcegraph.User{

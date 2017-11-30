@@ -1,5 +1,7 @@
 package config
 
+import log15 "gopkg.in/inconshreveable/log15.v2"
+
 // Config is the app-level configuration for Sourcegraph Server.
 // The external README generator (which lives in the infrastructre repository) uses this struct to
 // list configuration parameters, using the `json` and `description` tags.
@@ -50,6 +52,8 @@ type Config struct {
 	MandrillKey                    string              `json:"mandrillKey" description:"Key for sending mails via Mandrill."`
 	MaxReposToSearch               string              `json:"maxReposToSearch" description:"The maximum number of repos to search across (the user is prompted to narrow their query if exceeded)"`
 	AdminUsernames                 string              `json:"adminUsernames" description:"Space-separated list of usernames that indicates which users will be treated as instance admins"`
+
+	AuthUserOrgMap UserOrgMap `json:"auth.userOrgMap" description:"Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form <tt>{\"*\": [\"org1\", \"org2\"]}</tt>, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is <tt>\"*\"</tt>."`
 }
 
 type GitHubConfig struct {
@@ -67,4 +71,19 @@ type PhabricatorConfig struct {
 type SearchScope struct {
 	Name  string `json:"name" description:"User-visible name of search scope"`
 	Value string `json:"value" description:"Search scope filter"`
+}
+
+// UserOrgMap is a map from user pattern to a list of org names.
+type UserOrgMap map[string][]string
+
+// OrgsForAllUsersToJoin returns the list of org (names) that all users should be joined to.
+func (m UserOrgMap) OrgsForAllUsersToJoin() []string {
+	for userPattern, orgs := range m {
+		if userPattern != "*" {
+			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\"* is supported)", "userPattern", userPattern)
+			continue
+		}
+		return orgs
+	}
+	return nil
 }

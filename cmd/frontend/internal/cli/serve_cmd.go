@@ -27,6 +27,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
@@ -166,6 +167,7 @@ func Main() error {
 	localstore.ConnectToDB("")
 
 	app.Init()
+	go bg.ApplyUserOrgMap(context.Background())
 
 	conf.AppURL, err = configureAppURL()
 	if err != nil {
