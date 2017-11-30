@@ -101,9 +101,8 @@ export const OrgSettingsForm = reactive<Props>(props => {
                         size={60}
                     />
                     <small className="form-text">
-                        Integrate Sourcegraph's code comments and org updates with your team's Slack channel! Visit
-                        &lt;your-workspace-url&gt;.slack.com/apps/manage/custom-integrations > Incoming Webhooks > Add
-                        Configuration.
+                        Integrate Sourcegraph's code comments and org updates with your team's Slack channel! Go to
+                        &lt;your-workspace-url&gt;.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks
                     </small>
                 </div>
                 <button type="submit" disabled={loading} className="btn btn-primary org-settings-form__submit-button">
