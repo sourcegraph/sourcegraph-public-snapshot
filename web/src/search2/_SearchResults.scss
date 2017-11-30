@@ -14,7 +14,7 @@
 
     &__header {
         color: #93a9c8;
-        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
         text-align: right;
     }
 }
@@ -22,6 +22,9 @@
 .theme-light {
     .search-results2 {
         &__header {
+            &:first-child {
+                border-bottom: 1px solid $color-light-border;
+            }
             color: $color-light-text-2;
         }
     }

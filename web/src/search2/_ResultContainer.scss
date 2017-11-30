@@ -38,9 +38,10 @@
 
 .theme-light {
     .result-container {
+        margin-bottom: 0;
+
         &__header {
             background-color: $color-light-bg-2;
-            border-top: 1px solid $color-light-border;
             border-left: 1px solid $color-light-border;
             border-right: 1px solid $color-light-border;
 
