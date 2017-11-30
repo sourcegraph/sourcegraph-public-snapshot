@@ -39,7 +39,7 @@ interface State {
     editingLastKnownSettingsID?: number | null
 }
 
-const emptySettings = '{\n  // empty configuration\n}'
+const emptySettings = '{\n  // add configuration here\n}'
 
 export class SettingsFile extends React.PureComponent<Props, State> {
     public state: State = { editing: false, saving: false }
