@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
@@ -61,7 +60,7 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 	// 🚨 SECURITY: verify that the current user is authenticated.
 	user, err := store.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		return nil, errors.New("must be authenticated as a user to update user settings")
+		return nil, err
 	}
 
 	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
