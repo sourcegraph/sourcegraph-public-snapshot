@@ -101,20 +101,28 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
-	RepoCanonicalRemoteID *string
+	RepoCanonicalRemoteID *string // TODO(nick): deprecated
+	CanonicalRemoteIDs    *[]string
 	Branch                *string
 	File                  *string
 	Limit                 *int32
 }) (*threadConnectionResolver, error) {
-	var repo *sourcegraph.OrgRepo
+	var canonicalRemoteIDs []string
+	if args.CanonicalRemoteIDs != nil {
+		canonicalRemoteIDs = append(canonicalRemoteIDs, *args.CanonicalRemoteIDs...)
+	}
 	if args.RepoCanonicalRemoteID != nil {
+		canonicalRemoteIDs = append(canonicalRemoteIDs, *args.RepoCanonicalRemoteID)
+	}
+	var repos []*sourcegraph.OrgRepo
+	if len(canonicalRemoteIDs) > 0 {
 		var err error
-		repo, err = getOrgRepo(ctx, o.org.ID, *args.RepoCanonicalRemoteID)
+		repos, err = store.OrgRepos.GetByCanonicalRemoteIDs(ctx, o.org.ID, canonicalRemoteIDs)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &threadConnectionResolver{o.org, repo, args.RepoCanonicalRemoteID, args.File, args.Branch, args.Limit}, nil
+	return &threadConnectionResolver{o.org, repos, canonicalRemoteIDs, args.File, args.Branch, args.Limit}, nil
 }
 
 func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {

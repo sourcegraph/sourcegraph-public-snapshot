@@ -202,11 +202,15 @@ func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (
 	return thread, nil
 }
 
-func (t *threads) listQuery(ctx context.Context, repoID, orgID *int32, branch, file *string) *sqlf.Query {
+func (t *threads) listQuery(orgID *int32, repoIDs []int32, branch, file *string) *sqlf.Query {
 	var join string
 	conds := []*sqlf.Query{}
-	if repoID != nil {
-		conds = append(conds, sqlf.Sprintf("t.org_repo_id=%d", repoID))
+	if len(repoIDs) > 0 {
+		ids := []*sqlf.Query{}
+		for _, id := range repoIDs {
+			ids = append(ids, sqlf.Sprintf("%d", id))
+		}
+		conds = append(conds, sqlf.Sprintf("t.org_repo_id IN (%s)", sqlf.Join(ids, ",")))
 	}
 	if orgID != nil {
 		join = "JOIN org_repos ON (org_repos.id = t.org_repo_id) "
@@ -222,13 +226,13 @@ func (t *threads) listQuery(ctx context.Context, repoID, orgID *int32, branch, f
 	return sqlf.Sprintf(join+"WHERE %s", sqlf.Join(conds, "AND"))
 }
 
-func (t *threads) List(ctx context.Context, repoID, orgID *int32, branch, file *string, limit int32) ([]*sourcegraph.Thread, error) {
-	q := sqlf.Sprintf("%s LIMIT %d", t.listQuery(ctx, repoID, orgID, branch, file), limit)
+func (t *threads) List(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string, limit int32) ([]*sourcegraph.Thread, error) {
+	q := sqlf.Sprintf("%s LIMIT %d", t.listQuery(orgID, repoIDs, branch, file), limit)
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) Count(ctx context.Context, repoID, orgID *int32, branch, file *string) (int32, error) {
-	q := t.listQuery(ctx, repoID, orgID, branch, file)
+func (t *threads) Count(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string) (int32, error) {
+	q := t.listQuery(orgID, repoIDs, branch, file)
 	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 

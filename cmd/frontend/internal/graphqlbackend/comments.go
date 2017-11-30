@@ -353,10 +353,10 @@ func usernamesFromMentions(contents string) []string {
 	return usernames
 }
 
-func repoNameFromRemoteID(CanonicalRemoteID string) string {
-	m := strings.SplitN(CanonicalRemoteID, "/", 2)
+func repoNameFromRemoteID(canonicalRemoteID string) string {
+	m := strings.SplitN(canonicalRemoteID, "/", 2)
 	if len(m) < 2 {
-		return CanonicalRemoteID
+		return canonicalRemoteID
 	}
 	return m[1]
 }

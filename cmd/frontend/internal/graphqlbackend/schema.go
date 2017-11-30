@@ -773,7 +773,9 @@ type Org implements Node, ConfigurationSubject {
   repos: [OrgRepo!]!
   repo(canonicalRemoteID: String!): OrgRepo
   threads(
-    repoCanonicalRemoteID: String
+    # TODO(nick): remove repoCanonicalRemoteID
+    repoCanonicalRemoteID: String 
+    canonicalRemoteIDs: [String!]
     branch: String
     file: String
     limit: Int

@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -35,22 +37,41 @@ func (r *orgRepos) GetByID(ctx context.Context, id int32) (*sourcegraph.OrgRepo,
 	if Mocks.OrgRepos.GetByID != nil {
 		return Mocks.OrgRepos.GetByID(ctx, id)
 	}
-	return r.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	return expectOne(r.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL", id))
 }
 
 func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.OrgRepo, error) {
 	return r.getBySQL(ctx, "WHERE org_id=$1 AND deleted_at IS NULL", orgID)
 }
 
-func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, CanonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
+func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, canonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
 	if Mocks.OrgRepos.GetByCanonicalRemoteID != nil {
-		return Mocks.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, CanonicalRemoteID)
+		return Mocks.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
 	}
-	return r.getOneBySQL(ctx, "WHERE org_id=$1 AND canonical_remote_id=$2 AND deleted_at IS NULL LIMIT 1", orgID, CanonicalRemoteID)
+	q := r.listQuery(orgID, []string{canonicalRemoteID})
+	return expectOne(r.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func (r *orgRepos) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgRepo, error) {
-	repos, err := r.getBySQL(ctx, query, args...)
+func (r *orgRepos) GetByCanonicalRemoteIDs(ctx context.Context, orgID int32, canonicalRemoteIDs []string) ([]*sourcegraph.OrgRepo, error) {
+	q := r.listQuery(orgID, canonicalRemoteIDs)
+	return r.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (r *orgRepos) listQuery(orgID int32, canonicalRemoteIDs []string) *sqlf.Query {
+	conds := []*sqlf.Query{}
+	conds = append(conds, sqlf.Sprintf("org_id=%d", orgID))
+	if len(canonicalRemoteIDs) > 0 {
+		ids := []*sqlf.Query{}
+		for _, id := range canonicalRemoteIDs {
+			ids = append(ids, sqlf.Sprintf("%s", id))
+		}
+		conds = append(conds, sqlf.Sprintf("canonical_remote_id IN (%s)", sqlf.Join(ids, ",")))
+	}
+	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	return sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND"))
+}
+
+func expectOne(repos []*sourcegraph.OrgRepo, err error) (*sourcegraph.OrgRepo, error) {
 	if err != nil {
 		return nil, err
 	}

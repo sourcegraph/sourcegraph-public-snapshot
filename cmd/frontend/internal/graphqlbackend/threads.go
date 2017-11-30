@@ -24,30 +24,31 @@ import (
 )
 
 type threadConnectionResolver struct {
-	org                   *sourcegraph.Org
-	repo                  *sourcegraph.OrgRepo
-	repoCanonicalRemoteID *string
-	file                  *string
-	branch                *string
-	limit                 *int32
+	org                *sourcegraph.Org
+	repos              []*sourcegraph.OrgRepo
+	canonicalRemoteIDs []string
+	file               *string
+	branch             *string
+	limit              *int32
 }
 
-func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoID *int32) {
+func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoIDs []int32) {
 	if t.org != nil {
 		orgID = &t.org.ID
 	}
-	if t.repo != nil {
-		repoID = &t.repo.ID
-		// repoID implies an orgID, avoid unnecessary join.
+	if len(t.repos) > 0 {
+		for _, repo := range t.repos {
+			repoIDs = append(repoIDs, repo.ID)
+		}
+		// repoIDs imply an orgID, avoid unnecessary join.
 		orgID = nil
-	} else if t.repoCanonicalRemoteID != nil {
-		// The query is for a single repo but that repo doesn't exist.
+	} else if len(t.canonicalRemoteIDs) > 0 {
+		// The query is for some repos but none of them exist.
 		// This is not an error condition because we lazily populate org_repos.
 		// Set an invalid repoID so no results are returned.
-		var noRepoID = int32(-1)
-		repoID = &noRepoID
+		repoIDs = []int32{-1}
 	}
-	return orgID, repoID
+	return orgID, repoIDs
 }
 
 const maxLimit = 1000
@@ -57,21 +58,26 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 	if t.limit != nil && *t.limit < maxLimit {
 		limit = *t.limit
 	}
-	orgID, repoID := t.orgRepoArgs()
-	threads, err := store.Threads.List(ctx, repoID, orgID, t.branch, t.file, limit)
+	orgID, repoIDs := t.orgRepoArgs()
+	threads, err := store.Threads.List(ctx, orgID, repoIDs, t.branch, t.file, limit)
 	if err != nil {
 		return nil, err
 	}
+	repos := make(map[int32]*sourcegraph.OrgRepo)
+	for _, repo := range t.repos {
+		repos[repo.ID] = repo
+	}
 	resolvers := []*threadResolver{}
 	for _, thread := range threads {
-		resolvers = append(resolvers, &threadResolver{t.org, t.repo, thread})
+		repo := repos[thread.OrgRepoID]
+		resolvers = append(resolvers, &threadResolver{t.org, repo, thread})
 	}
 	return resolvers, nil
 }
 
 func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	orgID, repoID := t.orgRepoArgs()
-	return store.Threads.Count(ctx, repoID, orgID, t.branch, t.file)
+	orgID, repoIDs := t.orgRepoArgs()
+	return store.Threads.Count(ctx, orgID, repoIDs, t.branch, t.file)
 }
 
 type threadResolver struct {

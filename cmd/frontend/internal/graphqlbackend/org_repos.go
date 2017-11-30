@@ -46,5 +46,5 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 	Branch *string
 	Limit  *int32
 }) *threadConnectionResolver {
-	return &threadConnectionResolver{o.org, o.repo, &o.repo.CanonicalRemoteID, args.File, args.Branch, args.Limit}
+	return &threadConnectionResolver{o.org, []*sourcegraph.OrgRepo{o.repo}, []string{o.repo.CanonicalRemoteID}, args.File, args.Branch, args.Limit}
 }
