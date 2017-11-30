@@ -67,8 +67,27 @@ type updateRepoRequest struct {
 	repo string
 }
 
-// This is a timeout for git commands that should not take a long time.
-var shortGitCommandTimeout = time.Minute
+// shortGitCommandTimeout returns the timeout for git commands that should not
+// take a long time. Some commands such as "git archive" are allowed more time
+// than "git rev-parse", so this will return an appropriate timeout given the
+// command.
+func shortGitCommandTimeout(args []string) time.Duration {
+	if len(args) < 1 {
+		return time.Minute
+	}
+	switch args[0] {
+	case "archive":
+		// 10 minutes is a long time, but this never blocks a user request for
+		// this long. Even repos that are not that large can take a long time,
+		// for example a search over all repos in an organization may have
+		// several large repos. All of those repos will be competing for IO =>
+		// we need a larger timeout.
+		return 10 * time.Minute
+
+	default:
+		return time.Minute
+	}
+}
 
 // This is a timeout for long git commands like clone or remote update.
 // that may take a while for large repos. These types of commands should
@@ -146,7 +165,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w = fw
 	defer fw.Close()
 
-	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
 	defer cancel()
 
 	start := time.Now()
@@ -292,7 +311,7 @@ var testRepoExists func(ctx context.Context, origin string, repoURI string) bool
 
 // isCloneable checks to see if the repo is cloneable.
 func (s *Server) isCloneable(ctx context.Context, repo string) bool {
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout)
+	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(nil))
 	defer cancel()
 
 	if strings.ToLower(repo) == "github.com/sourcegraphtest/alwayscloningtest" {
