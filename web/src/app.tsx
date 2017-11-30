@@ -239,10 +239,14 @@ class App extends React.Component<{}, AppState> {
      * toggles light theme display of the container
      */
     private onToggleTheme = () => {
-        this.setState(state => ({ isLightTheme: !state.isLightTheme }))
-        if (this.state.isLightTheme) {
-            eventLogger.log(this.state.isLightTheme ? 'DarkThemeClicked' : 'LightThemeClicked')
-        }
+        this.setState(
+            state => ({ isLightTheme: !state.isLightTheme }),
+            () => {
+                if (this.state.isLightTheme) {
+                    eventLogger.log(this.state.isLightTheme ? 'LightThemeClicked' : 'DarkThemeClicked')
+                }
+            }
+        )
     }
 }
 
