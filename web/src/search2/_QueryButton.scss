@@ -19,3 +19,9 @@
         padding-bottom: 0.1rem;
     }
 }
+
+.theme-light {
+    .query-button {
+        border-color: $color-light-border;
+    }
+}
