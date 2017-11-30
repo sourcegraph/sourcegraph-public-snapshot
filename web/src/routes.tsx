@@ -43,6 +43,7 @@ export const routes: LayoutRouteProps[] = [
         path: '/search/queries',
         component: SavedQueries,
         exact: true,
+        forceNarrowWidth: true,
     },
     {
         path: '/c/:ulid',

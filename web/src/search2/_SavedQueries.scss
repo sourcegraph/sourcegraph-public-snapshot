@@ -3,7 +3,12 @@
 
 .saved-queries {
     width: 100%;
-    margin: 2rem 0;
+    margin: 2rem;
+
+    @media (min-width: $media-md) {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
 
     &__header {
         margin-bottom: 3rem;
