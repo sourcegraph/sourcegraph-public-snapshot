@@ -1,13 +1,17 @@
 .open-page {
+    width: 80%;
+    max-width: 40rem;
+    margin: 0 auto;
+
     display: flex;
-    text-align: center;
     flex-direction: column;
-    width: 100%;
     justify-content: center;
 
-    &__iframe {
-        display: none;
-        width: 0;
-        height: 0;
+    &__commands {
+        display: block;
+    }
+
+    &__info {
+        margin-top: 2rem;
     }
 }

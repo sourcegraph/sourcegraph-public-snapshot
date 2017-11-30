@@ -2,6 +2,7 @@ import FileIcon from '@sourcegraph/icons/lib/File'
 import FolderIcon from '@sourcegraph/icons/lib/Folder'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
+import { basename, dirname } from '../util/path'
 
 export const enum SuggestionType {
     Repo = 'repo',
@@ -91,23 +92,4 @@ export const SuggestionItem = (props: SuggestionProps) => {
             </div>
         </li>
     )
-}
-
-/**
- * Returns all but the last element of path, or "." if that would be the empty path.
- */
-function dirname(path: string): string | undefined {
-    return (
-        path
-            .split('/')
-            .slice(0, -1)
-            .join('/') || '.'
-    )
-}
-
-/**
- * Returns the last element of path, or "." if path is empty.
- */
-function basename(path: string): string {
-    return path.split('/').slice(-1)[0] || '.'
 }
