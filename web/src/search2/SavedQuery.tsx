@@ -19,9 +19,9 @@ import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
 
 interface Props {
     savedQuery: GQL.ISavedQuery
-    onDidUpdate: () => void
-    onDidDuplicate: () => void
-    onDidDelete: () => void
+    onDidUpdate?: () => void
+    onDidDuplicate?: () => void
+    onDidDelete?: () => void
     isLightTheme: boolean
 }
 
@@ -87,7 +87,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(newSavedQuery => props.onDidDuplicate(), err => console.error(err))
+                .subscribe(newSavedQuery => props.onDidDuplicate && props.onDidDuplicate(), err => console.error(err))
         )
 
         this.subscriptions.add(
@@ -96,7 +96,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                     withLatestFrom(propsChanges),
                     switchMap(([, props]) => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.index))
                 )
-                .subscribe(() => props.onDidDelete(), err => console.error(err))
+                .subscribe(() => props.onDidDelete && props.onDidDelete(), err => console.error(err))
         )
     }
 
@@ -168,7 +168,9 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     private onDidUpdateSavedQuery = () => {
         this.setState({ editing: false, approximateResultCount: undefined, loading: true }, () => {
             this.refreshRequested.next()
-            this.props.onDidUpdate()
+            if (this.props.onDidUpdate) {
+                this.props.onDidUpdate()
+            }
         })
     }
 

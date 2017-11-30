@@ -96,14 +96,7 @@ export class SavedQueries extends React.Component<Props, State> {
                 {!this.state.creating &&
                     this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
                 {this.state.savedQueries.map((savedQuery, i) => (
-                    <SavedQuery
-                        key={i}
-                        savedQuery={savedQuery}
-                        onDidUpdate={this.onDidUpdateSavedQuery}
-                        onDidDuplicate={this.onDidDuplicateSavedQuery}
-                        onDidDelete={this.onDidDeleteSavedQuery}
-                        isLightTheme={this.props.isLightTheme}
-                    />
+                    <SavedQuery key={i} savedQuery={savedQuery} isLightTheme={this.props.isLightTheme} />
                 ))}
             </div>
         )
@@ -113,26 +106,5 @@ export class SavedQueries extends React.Component<Props, State> {
 
     private onDidCreateSavedQuery = () => {
         this.setState({ creating: false })
-    }
-
-    private onDidUpdateSavedQuery = (/* updatedSavedQuery: GQL.ISavedQuery */) => {
-        // Use the new entry immediately instead of waiting for the server response.
-        this.setState({
-            // TODO(sqs)
-            //
-            // savedQueries: this.state.savedQueries.map(q => (q.id === updatedSavedQuery.id ? updatedSavedQuery : q)),
-        })
-    }
-
-    private onDidDuplicateSavedQuery = (/* newSavedQuery: GQL.ISavedQuery */) => {
-        this.setState({
-            // TODO(sqs)
-        })
-    }
-
-    private onDidDeleteSavedQuery = (/* deletedSavedQuery: GQL.ISavedQuery */) => {
-        this.setState({
-            // TODO(sqs): fade out deleted item
-        })
     }
 }
