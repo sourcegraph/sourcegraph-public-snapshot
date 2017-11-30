@@ -250,8 +250,13 @@ type SearchResults2 {
   resultCount: Int!
   approximateResultCount: String!
   limitHit: Boolean!
+  # Repositories that are busy cloning onto gitserver.
   cloning: [String!]!
+  # Repositories or commits that do not exist.
   missing: [String!]!
+  # Repositories or commits which we did not manage to search in time. Trying
+  # again usually will work.
+  timedout: [String!]!
   # An alert message that should be displayed before any results.
   alert: SearchAlert
 }

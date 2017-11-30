@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -270,6 +271,11 @@ func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (m
 	if err != nil {
 		return nil, false, err
 	}
+
+	// We expect textSearch to be fast
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	matches, limitHit, err = textSearch(ctx, repoName, commit.CommitID, info)
 
 	var workspace string
@@ -345,6 +351,8 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		common.missing = append(common.missing, repoRev.Repo)
 	} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
+	} else if searchErr == context.DeadlineExceeded {
+		common.timedout = append(common.timedout, repoRev.Repo)
 	} else if searchErr != nil {
 		return searchErr
 	}
@@ -382,13 +390,16 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 				rev = *repoRev.Rev
 			}
 			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.Repo, rev, args.Query)
-			if ctx.Err() != nil {
-				// Our request has been canceled, we can just ignore searchRepo for this repo.
-				return
-			}
 			mu.Lock()
 			defer mu.Unlock()
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
+				if ctx.Err() != nil {
+					// Our request has been canceled, we can just ignore
+					// searchRepo for this repo. We only check this condition
+					// here since handleRepoSearchResult handles deadlines
+					// exceeded differently to canceled.
+					return
+				}
 				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
 				cancel()
 			}

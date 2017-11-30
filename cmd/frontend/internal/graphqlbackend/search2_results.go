@@ -15,6 +15,11 @@ type searchResultsCommon struct {
 	limitHit bool     // whether the limit on results was hit
 	cloning  []string // repos that could not be searched because they were still being cloned
 	missing  []string // repos that could not be searched because they do not exist
+
+	// timedout usually contains repos that haven't finished being fetched yet.
+	// This should only happen for large repos and the searcher caches are
+	// purged.
+	timedout []string
 }
 
 func (c *searchResultsCommon) LimitHit() bool {
@@ -33,6 +38,13 @@ func (c *searchResultsCommon) Missing() []string {
 		return []string{}
 	}
 	return c.missing
+}
+
+func (c *searchResultsCommon) Timedout() []string {
+	if c.timedout == nil {
+		return []string{}
+	}
+	return c.timedout
 }
 
 // update updates c with the other data, deduping as necessary. It modifies c but
