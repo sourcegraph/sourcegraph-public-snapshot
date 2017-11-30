@@ -74,6 +74,7 @@
 .theme-light {
     .comments-page {
         &__content {
+            border: 1px solid $color-light-border;
             background-color: inherit;
         }
 

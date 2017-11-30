@@ -69,7 +69,7 @@
     .code-view {
         &__code {
             background: inherit;
-            border: 1px solid $color-light-border;
+            border-bottom: 1px solid $color-light-border;
         }
 
         &__line {

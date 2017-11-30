@@ -76,12 +76,41 @@
     }
 }
 
+@keyframes light-highlight {
+    0% {
+        background: $color-light-bg-3;
+    }
+
+    100% {
+        background: none;
+    }
+}
+
 .theme-light {
     .comment {
         border-color: $color-light-border;
 
         &:first-of-type {
             border: none;
+        }
+
+        &--targeted {
+            animation: light-highlight 3s;
+        }
+
+        &__content {
+            code,
+            pre {
+                background: $color-light-bg-4;
+            }
+
+            blockquote {
+                color: $color-light-text-2;
+            }
+        }
+
+        &__share {
+            color: $color-light-text-3;
         }
     }
 }
