@@ -4,7 +4,7 @@ import { createSavedQuery } from './backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
 interface Props {
-    subject: GQL.IConfigurationSubject
+    subject?: GQL.IConfigurationSubject
     onDidCreate: () => void
     onDidCancel: () => void
 }

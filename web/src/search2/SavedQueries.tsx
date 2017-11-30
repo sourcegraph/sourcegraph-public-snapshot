@@ -87,11 +87,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     </button>
                 </div>
                 {this.state.creating && (
-                    <SavedQueryCreateForm
-                        subject={{ id: 'T3JnOjE=' /* TODO(sqs):org id */ } as any}
-                        onDidCreate={this.onDidCreateSavedQuery}
-                        onDidCancel={this.toggleCreating}
-                    />
+                    <SavedQueryCreateForm onDidCreate={this.onDidCreateSavedQuery} onDidCancel={this.toggleCreating} />
                 )}
                 {!this.state.creating &&
                     this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
