@@ -96,6 +96,6 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/:repoRev+',
-        render: (props: any) => <RepositoryResolver {...props} isDirectory={true} />,
+        component: RepositoryResolver,
     },
 ]

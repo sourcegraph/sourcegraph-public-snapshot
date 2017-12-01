@@ -237,8 +237,8 @@ export class Repository extends React.PureComponent<Props, State> {
                         <Tree
                             repoPath={this.props.repoPath}
                             rev={this.props.rev}
-                            defaultBranch={this.props.defaultBranch}
                             history={this.props.history}
+                            scrollRootSelector="#explorer"
                             selectedPath={this.props.filePath || ''}
                             paths={this.state.files || []}
                         />
