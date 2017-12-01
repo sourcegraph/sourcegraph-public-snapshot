@@ -194,6 +194,10 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	client := &http.Client{Transport: &nethttp.Transport{}}
 	resp, err := client.Do(req)
 	if err != nil {
+		// If we failed due to cancellation or timeout, rather return that
+		if ctx.Err() != nil {
+			err = ctx.Err()
+		}
 		return nil, false, errors.Wrap(err, "searcher request failed")
 	}
 	defer resp.Body.Close()
@@ -351,7 +355,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		common.missing = append(common.missing, repoRev.Repo)
 	} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
-	} else if searchErr == context.DeadlineExceeded {
+	} else if errors.Cause(searchErr) == context.DeadlineExceeded {
 		common.timedout = append(common.timedout, repoRev.Repo)
 	} else if searchErr != nil {
 		return searchErr
