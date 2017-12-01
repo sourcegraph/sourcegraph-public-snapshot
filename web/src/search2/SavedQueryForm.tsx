@@ -174,7 +174,6 @@ export const SavedQueryForm = reactive<Props>(props => {
                         placeholder="Query"
                         onChange={nextInputChange}
                         value={query || ''}
-                        required={true}
                         autoCorrect="off"
                         spellCheck={false}
                         autoCapitalize="off"
