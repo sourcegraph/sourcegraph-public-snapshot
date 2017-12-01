@@ -4,6 +4,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { DecoratedTextLines } from '../components/DecoratedTextLines'
+import { GitRefTag } from '../repo/GitRefTag'
 import { AbsoluteRepoFilePosition, RepoSpec } from '../repo/index'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { parseCommitDateString } from '../util/time'
@@ -49,16 +50,19 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
             >
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
             </a>
-            <a
-                href={commitURL}
-                className="commit-search-result__title-signature"
-                onClick={stopPropagationToCollapseOrExpand}
-            >
-                <code>{props.result.commit.abbreviatedOID}</code>{' '}
-                {formatDistance(parseCommitDateString(props.result.commit.author.date), new Date(), {
-                    addSuffix: true,
-                })}
-            </a>
+            <span className="commit-search-result__title-signature">
+                {props.result.sourceRefs.map((ref, i) => <GitRefTag key={i} gitRef={ref} />)}
+                <code>
+                    <a href={commitURL} onClick={stopPropagationToCollapseOrExpand}>
+                        {props.result.commit.abbreviatedOID}
+                    </a>
+                </code>{' '}
+                <a href={commitURL} onClick={stopPropagationToCollapseOrExpand}>
+                    {formatDistance(parseCommitDateString(props.result.commit.author.date), new Date(), {
+                        addSuffix: true,
+                    })}
+                </a>
+            </span>
         </div>
     )
 

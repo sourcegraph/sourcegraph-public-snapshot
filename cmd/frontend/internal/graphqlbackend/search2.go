@@ -133,7 +133,7 @@ type searchResolver2 struct {
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
-	repoRevs, missingRepoRevs []*repositoryRevision
+	repoRevs, missingRepoRevs []*repositoryRevisions
 	repoResults               []*searchResultResolver
 	repoOverLimit             bool
 	repoErr                   error
@@ -204,7 +204,7 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevision, repoResults []*searchResultResolver, overLimit bool, err error) {
+func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchResultResolver, overLimit bool, err error) {
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
@@ -231,7 +231,7 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	return repoRevs, missingRepoRevs, repoResults, overLimit, err
 }
 
-func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevision, repoResolvers []*searchResultResolver, overLimit bool, err error) {
+func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchResultResolver, overLimit bool, err error) {
 	includePatterns := repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
@@ -265,10 +265,10 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 
 	// Treat an include pattern with a suffix of "@rev" as meaning that all
 	// matched repos should be resolved to "rev".
-	includePatternRevs := make([]string, len(includePatterns))
+	includePatternRevs := make([][]revspecOrRefGlob, len(includePatterns))
 	for i, includePattern := range includePatterns {
-		repoRev := parseRepositoryRevision(includePattern)
-		repoPattern := repoRev.Repo // trim "@rev" from pattern
+		repoRev := parseRepositoryRevisions(includePattern)
+		repoPattern := repoRev.repo // trim "@rev" from pattern
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {
@@ -281,9 +281,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 		includePatterns[i] = repoPattern
-		if repoRev.hasRev() {
-			includePatternRevs[i] = *repoRev.Rev
-		}
+		includePatternRevs[i] = repoRev.revs
 	}
 
 	// Support determining which include pattern with a rev (if any) matched
@@ -296,10 +294,10 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		compiledIncludePatterns[i] = p
 	}
-	getRevForMatchedRepo := func(repo string) *string {
+	getRevsForMatchedRepo := func(repo string) []revspecOrRefGlob {
 		for i, pat := range compiledIncludePatterns {
-			if pat.MatchString(repo) && includePatternRevs[i] != "" {
-				return &includePatternRevs[i]
+			if pat.MatchString(repo) {
+				return includePatternRevs[i]
 			}
 		}
 		return nil
@@ -316,22 +314,24 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	}
 	overLimit = len(repos.Repos) >= maxRepoListSize
 
-	repoRevisions = make([]*repositoryRevision, 0, len(repos.Repos))
+	repoRevisions = make([]*repositoryRevisions, 0, len(repos.Repos))
 	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {
-		repoRev := &repositoryRevision{
-			Repo: repo.URI,
-			Rev:  getRevForMatchedRepo(repo.URI),
+		repoRev := &repositoryRevisions{
+			repo: repo.URI,
+			revs: getRevsForMatchedRepo(repo.URI),
 		}
 		repoResolver := &repositoryResolver{repo: repo}
 
-		if repoRev.hasRev() {
+		if len(repoRev.revspecs()) == 1 {
 			// Check if the repository actually has the revision that the user
 			// specified.
+			//
+			// TODO(sqs): make this support multiple revspecs and ref globs
 			_, err := repoResolver.RevState(ctx, &struct {
 				Rev string
 			}{
-				Rev: *repoRev.Rev,
+				Rev: repoRev.revSpecsOrDefaultBranch()[0],
 			})
 			if err == vcs.ErrRevisionNotFound {
 				// revision does not exist, so do not include this repository.
@@ -365,7 +365,7 @@ func (r *searchResolver2) resolveFiles(ctx context.Context, limit int) ([]*searc
 
 	repos := make([]string, len(repoRevisions))
 	for i, repoRevision := range repoRevisions {
-		repos[i] = repoRevision.Repo
+		repos[i] = repoRevision.repo
 	}
 
 	includePatterns := r.combinedQuery.fieldValues[searchFieldFile].Values()

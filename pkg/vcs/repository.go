@@ -245,6 +245,9 @@ type RawLogDiffSearchOptions struct {
 	// See `git log --help` for more information.
 	MatchChangedOccurrenceCount bool
 
+	// Diff is whether the diff should be computed and returned.
+	Diff bool
+
 	// OnlyMatchingHunks makes the diff only include hunks that match the query. If false,
 	// all hunks from files that match the query are included.
 	OnlyMatchingHunks bool
@@ -274,6 +277,13 @@ type LogCommitSearchResult struct {
 	Commit         Commit      // the commit whose diff was matched
 	Diff           *Diff       // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
 	DiffHighlights []Highlight // highlighted query matches in the diff
+
+	// Refs is the list of ref names of this commit (from `git log --decorate`).
+	Refs []string
+
+	// SourceRefs is the list of ref names by which this commit was reached. (See
+	// `git log --help` documentation on the `--source` flag.)
+	SourceRefs []string
 
 	// Incomplete indicates that this result may represent a subset of the actual data.
 	// This can occur when the underlying command returns early due to an impending

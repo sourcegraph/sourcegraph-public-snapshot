@@ -1,6 +1,15 @@
 package graphqlbackend
 
-import "errors"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+)
 
 type gitObjectID string
 
@@ -28,19 +37,71 @@ func isValidGitObjectID(s string) bool {
 	return true
 }
 
-type gitRef struct {
-	name   string
-	target *gitObject
+func gitRefPrefix(ref string) string {
+	if strings.HasPrefix(ref, "refs/heads/") {
+		return "refs/heads/"
+	}
+	if strings.HasPrefix(ref, "refs/tags/") {
+		return "refs/tags/"
+	}
+	if strings.HasPrefix(ref, "refs/pull/") {
+		return "refs/pull/"
+	}
+	if strings.HasPrefix(ref, "refs/") {
+		return "refs/"
+	}
+	return ""
 }
 
-func (r *gitRef) Name() string       { return r.name }
-func (r *gitRef) Target() *gitObject { return r.target }
+func gitRefDisplayName(ref string) string {
+	prefix := gitRefPrefix(ref)
+
+	if prefix == "refs/pull/" && (strings.HasSuffix(ref, "/head") || strings.HasSuffix(ref, "/merge")) {
+		// Special-case GitHub pull requests for a nicer display name.
+		numberStr := ref[len(prefix) : len(prefix)+strings.Index(ref[len(prefix):], "/")]
+		number, err := strconv.Atoi(numberStr)
+		if err == nil {
+			return fmt.Sprintf("#%d", number)
+		}
+	}
+
+	return strings.TrimPrefix(ref, prefix)
+}
+
+type gitRefResolver struct {
+	repo *repositoryResolver
+	name string
+}
+
+func (r *gitRefResolver) Name() string        { return r.name }
+func (r *gitRefResolver) DisplayName() string { return gitRefDisplayName(r.name) }
+func (r *gitRefResolver) Prefix() string      { return gitRefPrefix(r.name) }
+func (r *gitRefResolver) Target() *gitObjectResolver {
+	return &gitObjectResolver{repo: r.repo, revspec: r.name}
+}
+func (r *gitRefResolver) Repository() *repositoryResolver { return r.repo }
 
 type gitObject struct {
 	oid gitObjectID
 }
 
 func (o *gitObject) OID() gitObjectID { return o.oid }
+
+type gitObjectResolver struct {
+	repo    *repositoryResolver
+	revspec string
+}
+
+func (o *gitObjectResolver) OID(ctx context.Context) (gitObjectID, error) {
+	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
+	// the user has permissions to access the repository. (It does not actually need to
+	// resolve the rev.)
+	resolvedRev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: o.repo.repo.ID})
+	if err != nil {
+		return "", err
+	}
+	return gitObjectID(resolvedRev.CommitID), nil
+}
 
 type gitRevSpecExpr struct {
 	expr string
@@ -49,12 +110,12 @@ type gitRevSpecExpr struct {
 func (e *gitRevSpecExpr) Expr() string { return e.expr }
 
 type gitRevSpec struct {
-	ref    *gitRef
+	ref    *gitRefResolver
 	expr   *gitRevSpecExpr
 	object *gitObject
 }
 
-func (r *gitRevSpec) ToGitRef() (*gitRef, bool)                 { return r.ref, r.ref != nil }
+func (r *gitRevSpec) ToGitRef() (*gitRefResolver, bool)         { return r.ref, r.ref != nil }
 func (r *gitRevSpec) ToGitRevSpecExpr() (*gitRevSpecExpr, bool) { return r.expr, r.expr != nil }
 func (r *gitRevSpec) ToGitObject() (*gitObject, bool)           { return r.object, r.object != nil }
 

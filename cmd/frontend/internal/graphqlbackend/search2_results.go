@@ -132,13 +132,8 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 		}
 		patternsToCombine = append(patternsToCombine, value)
 	}
-
-	if len(patternsToCombine) == 0 {
-		return nil, errors.New("no query terms or regexp specified")
-	}
-
 	args := repoSearchArgs{
-		Query: &patternInfo{
+		query: &patternInfo{
 			IsRegExp:                     true,
 			IsCaseSensitive:              r.combinedQuery.isCaseSensitive(),
 			FileMatchLimit:               300,
@@ -147,11 +142,11 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 			PathPatternsAreRegExps:       true,
 			PathPatternsAreCaseSensitive: r.combinedQuery.isCaseSensitive(),
 		},
-		Repositories: repos,
+		repos: repos,
 	}
 	if excludePatterns := r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
 		pat := unionRegExps(excludePatterns)
-		args.Query.ExcludePattern = &pat
+		args.query.ExcludePattern = &pat
 	}
 
 	// Determine which types of results to return.
@@ -173,6 +168,9 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
 		case "file":
+			if len(patternsToCombine) == 0 {
+				return nil, errors.New("no query terms or regexp specified")
+			}
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
 				return searchRepos(ctx, &args)
 			})

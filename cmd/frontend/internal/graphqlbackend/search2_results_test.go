@@ -55,8 +55,8 @@ func TestSearch2Results(t *testing.T) {
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true
-			if want := `foo\d.*?bar\*`; args.Query.Pattern != want {
-				t.Errorf("got %q, want %q", args.Query.Pattern, want)
+			if want := `foo\d.*?bar\*`; args.query.Pattern != want {
+				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
 			return fileMatchesToSearchResults([]*fileMatch{
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},

@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
-	"net/url"
 	"reflect"
 	"regexp"
 
@@ -16,8 +14,8 @@ import (
 
 var (
 	validRawLogDiffSearchFormatArgs = [][]string{
-		{"-z", "--patch", logFormatFlag},
-		{"-z", logFormatFlag},
+		{"-z", "--decorate=full", "--patch", logFormatFlag},
+		{"-z", "--decorate=full", logFormatFlag},
 	}
 )
 
@@ -37,10 +35,10 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	defer span.Finish()
 
 	if opt.FormatArgs == nil {
-		if opt.Query.Pattern == "" {
-			opt.FormatArgs = validRawLogDiffSearchFormatArgs[1] // without --patch
-		} else {
+		if opt.Diff {
 			opt.FormatArgs = validRawLogDiffSearchFormatArgs[0] // with --patch
+		} else {
+			opt.FormatArgs = validRawLogDiffSearchFormatArgs[1] // without --patch
 		}
 	}
 	if opt.FormatArgs != nil && !isValidRawLogDiffSearchFormatArgs(opt.FormatArgs) {
@@ -57,87 +55,129 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
+	appendCommonQueryArgs := func(args *[]string) {
+		if opt.Query.Pattern != "" {
+			var queryArg string
+			if opt.MatchChangedOccurrenceCount {
+				queryArg = "-S"
+			} else {
+				queryArg = "-G"
+			}
+			*args = append(*args, queryArg+opt.Query.Pattern)
+			if !opt.Query.IsCaseSensitive {
+				*args = append(*args, "--regexp-ignore-case")
+			}
+			if opt.Query.IsRegExp {
+				*args = append(*args, "--pickaxe-regex")
+			}
+		}
+		if opt.Paths.IsRegExp {
+			*args = append(*args, "--extended-regexp")
+		}
+	}
+
 	args := []string{"log"}
-	args = append(args, opt.FormatArgs...)
 	args = append(args, opt.Args...)
-	if opt.Query.Pattern != "" {
-		var queryArg string
-		if opt.MatchChangedOccurrenceCount {
-			queryArg = "-S"
-		} else {
-			queryArg = "-G"
-		}
-		args = append(args, queryArg+opt.Query.Pattern)
-		if !opt.Query.IsCaseSensitive {
-			args = append(args, "--regexp-ignore-case")
-		}
-		if opt.Query.IsRegExp {
-			args = append(args, "--pickaxe-regex")
-		}
-	}
-	if opt.Paths.IsRegExp {
-		args = append(args, "--extended-regexp")
-	}
 	if !isWhitelistedGitCmd(args) {
 		return nil, false, fmt.Errorf("command failed: %q is not a whitelisted git command", args)
 	}
-	args = append(args, "--")
-	// Args we append after this don't need to be checked for whitelisting because "--"
-	// precedes them.
-	args = append(args, opt.Paths.ArgsHint...)
 
-	// Run command and read output.
-	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = r.Repo
-	sr, err := gitserver.StdoutReader(ctx, cmd)
-	if urlErr, ok := err.(*url.Error); ok && urlErr.Err == context.DeadlineExceeded {
-		// Continue; the gitserver call exceeded our deadline before the command
-		// produced any output.
-	} else if err != nil {
-		return nil, false, err
+	appendCommonDashDashArgs := func(args *[]string) {
+		*args = append(*args, "--")
+		// Args we append after this don't need to be checked for whitelisting because "--"
+		// precedes them.
+		*args = append(*args, opt.Paths.ArgsHint...)
 	}
-	var data []byte
-	if sr != nil {
-		defer sr.Close()
-		var err error
-		data, err = ioutil.ReadAll(sr)
-		if err == nil {
-			complete = true
-		} else if err != nil && err != context.DeadlineExceeded {
-			data = bytes.TrimSpace(data)
-			if isBadObjectErr(string(data), "") || isInvalidRevisionRangeError(string(data), "") {
-				return nil, true, vcs.ErrRevisionNotFound
-			}
-			if len(data) > 100 {
-				data = append(data[:100], []byte("... (truncated)")...)
-			}
-			return nil, true, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
+
+	// We need to get `git log --source` (the ref by which we reached each commit), but
+	// there is no `git log --format=format:...` string that emits the source info; see
+	// https://stackoverflow.com/questions/12712775/git-get-source-information-in-format.
+	// So we first must run `git log --oneline --source ...` (which does have that info),
+	// and then later we will go look up each commit's patch and other info.
+	onelineArgs := append([]string{}, args...)
+	onelineArgs = append(onelineArgs,
+		"-z",
+		"--no-abbrev-commit",
+		"--format=oneline",
+		"--no-color",
+		"--source",
+		"--no-patch",
+	)
+	appendCommonQueryArgs(&onelineArgs)
+	appendCommonDashDashArgs(&onelineArgs)
+
+	// Run `git log` oneline command and read list of matching commits.
+	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
+	onelineCmd.Repo = r.Repo
+	data, complete, err := readUntilTimeout(ctx, onelineCmd)
+	if err != nil {
+		return nil, complete, err
+	}
+	onelineCommits, err := parseCommitsFromOnelineLog(data)
+	if err != nil {
+		if !complete {
+			// Tolerate parse errors when we received incomplete data.
+		} else {
+			return nil, complete, err
 		}
+	}
+	// Build a map of commit -> source ref.
+	commitSourceRefs := make(map[string]string, len(onelineCommits))
+	for _, c := range onelineCommits {
+		commitSourceRefs[c.sha1] = c.sourceRef
 	}
 
 	// Even though we've already searched using the query, we need to
 	// search the returned diff again to filter to only matching hunks
 	// and to highlight matches.
-	pattern := opt.Query.Pattern
-	if !opt.Query.IsRegExp {
-		pattern = regexp.QuoteMeta(pattern)
+	var query *regexp.Regexp
+	if pattern := opt.Query.Pattern; pattern != "" {
+		if !opt.Query.IsRegExp {
+			pattern = regexp.QuoteMeta(pattern)
+		}
+		if !opt.Query.IsCaseSensitive {
+			pattern = "(?i:" + pattern + ")"
+		}
+		var err error
+		query, err = regexp.Compile(pattern)
+		if err != nil {
+			return nil, false, err
+		}
 	}
-	if !opt.Query.IsCaseSensitive {
-		pattern = "(?i:" + pattern + ")"
-	}
-	query, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, false, err
-	}
+
 	pathMatcher, err := vcs.CompilePathMatcher(opt.Paths)
 	if err != nil {
 		return nil, false, err
 	}
 
+	// Now fetch the full commit data for all of the commits.
+	commitOIDs := make([]string, len(onelineCommits))
+	for i, c := range onelineCommits {
+		commitOIDs[i] = c.sha1
+	}
+	showArgs := append([]string{}, "show")
+	showArgs = append(showArgs, "--no-patch") // will be overridden if opt.FormatArgs has --patch
+	showArgs = append(showArgs, opt.FormatArgs...)
+	showArgs = append(showArgs, opt.Args...)
+	showArgs = append(showArgs, commitOIDs...)
+	appendCommonQueryArgs(&showArgs)
+	appendCommonDashDashArgs(&showArgs)
+	if !isWhitelistedGitCmd(showArgs) {
+		return nil, false, fmt.Errorf("command failed: %q is not a whitelisted git command", showArgs)
+	}
+	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
+	showCmd.Repo = r.Repo
+	var complete2 bool
+	data, complete2, err = readUntilTimeout(ctx, showCmd)
+	if err != nil {
+		return nil, complete, err
+	}
+	complete = complete && complete2
 	for len(data) > 0 {
 		var commit *vcs.Commit
+		var refs []string
 		var err error
-		commit, data, err = parseCommitFromLog(logFormatFlag, data)
+		commit, refs, data, err = parseCommitFromLog(logFormatFlag, data)
 		if err != nil {
 			if !complete {
 				// Partial data can yield parse errors, but we still want to return what we have.
@@ -148,7 +188,11 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			return nil, complete, err
 		}
 
-		result := &vcs.LogCommitSearchResult{Commit: *commit}
+		result := &vcs.LogCommitSearchResult{
+			Commit:     *commit,
+			Refs:       refs,
+			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
+		}
 
 		if len(data) >= 1 && data[0] == '\x00' {
 			// No diff patch (probably no --patch arg).
@@ -169,7 +213,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			}
 
 			var err error
-			rawDiff, result.DiffHighlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks, pathMatcher)
+			rawDiff, result.DiffHighlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks && query != nil, pathMatcher)
 			if err != nil {
 				return nil, false, err
 			}
