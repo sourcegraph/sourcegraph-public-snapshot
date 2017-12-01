@@ -39,6 +39,13 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		return nil, nil
 	}
 
+	// Only suggest for type:file.
+	for _, resultType := range r.combinedQuery.fieldValues[searchFieldType].Values() {
+		if resultType != "file" {
+			return nil, nil
+		}
+	}
+
 	var suggesters []func(ctx context.Context) ([]*searchResultResolver, error)
 
 	showRepoSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
