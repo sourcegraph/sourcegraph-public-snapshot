@@ -15,6 +15,7 @@ import { RevSwitcher } from './RevSwitcher'
 interface RepoSubnavProps {
     repoPath: string
     rev: string
+    defaultBranch?: string
     commitID?: string
     filePath?: string
     onClickRevision?: () => void

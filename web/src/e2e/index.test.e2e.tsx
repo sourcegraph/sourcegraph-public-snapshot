@@ -157,7 +157,7 @@ describe('e2e test suite', () => {
             await chrome.click(`${tooltipActionsSelector} > a:nth-child(2)`)
         }
 
-        describe('file tree', () => {
+        describe.skip('file tree', () => {
             it('does navigation on file click', async () => {
                 await chrome.goto(baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
                 await chrome.click(`[data-tree-path="mux.go"]`)

@@ -26,6 +26,13 @@ export interface RevSpec {
     rev: string
 }
 
+export interface DefaultBranchSpec {
+    /**
+     * a branch name (usually 'master')
+     */
+    defaultBranch: string
+}
+
 export interface ResolvedRevSpec {
     /**
      * a 40 character commit SHA
@@ -75,7 +82,7 @@ export interface ParsedRepoURI
 /**
  * A repo
  */
-export interface Repo extends RepoSpec, Partial<RevSpec> {}
+export interface Repo extends RepoSpec, Partial<RevSpec>, Partial<DefaultBranchSpec> {}
 
 /**
  * A repo resolved to an exact commit

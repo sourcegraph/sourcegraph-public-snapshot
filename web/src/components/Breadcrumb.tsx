@@ -46,6 +46,7 @@ export class Breadcrumb extends React.Component<Props, {}> {
 export interface RepoBreadcrumbProps {
     repoPath: string
     rev?: string
+    defaultBranch?: string
     filePath?: string
     disableLinks?: boolean
 }
