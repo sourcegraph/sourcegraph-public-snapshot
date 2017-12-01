@@ -4,7 +4,7 @@ type commitInfoResolver struct {
 	repository *repositoryResolver
 
 	oid       gitObjectID
-	author    *signatureResolver
+	author    signatureResolver
 	committer *signatureResolver
 	message   string
 }
@@ -20,7 +20,7 @@ func (r *commitInfoResolver) Rev() string {
 }
 
 func (r *commitInfoResolver) Author() *signatureResolver {
-	return r.author
+	return &r.author
 }
 
 func (r *commitInfoResolver) Committer() *signatureResolver {

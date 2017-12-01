@@ -199,21 +199,9 @@ func searchCommitsInRepo(ctx context.Context, repoName, rev string, info *patter
 			commit: &commitInfoResolver{
 				repository: &repositoryResolver{repo: repo},
 				oid:        gitObjectID(commit.ID),
-				author: &signatureResolver{
-					person: &personResolver{
-						name:  commit.Author.Name,
-						email: commit.Author.Email,
-					},
-					date: commit.Author.Date.String(),
-				},
-				committer: &signatureResolver{
-					person: &personResolver{
-						name:  commit.Author.Name,
-						email: commit.Author.Email,
-					},
-					date: commit.Committer.Date.String(),
-				},
-				message: commit.Message,
+				author:     *toSignatureResolver(&commit.Author),
+				committer:  toSignatureResolver(commit.Committer),
+				message:    commit.Message,
 			},
 		}
 
