@@ -265,7 +265,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 
 	// Treat an include pattern with a suffix of "@rev" as meaning that all
 	// matched repos should be resolved to "rev".
-	includePatternRevs := make([]string, len(includePatterns))
+	includePatternRevs := make([][]revspecOrRefGlob, len(includePatterns))
 	for i, includePattern := range includePatterns {
 		repoRev := parseRepositoryRevisions(includePattern)
 		repoPattern := repoRev.repo // trim "@rev" from pattern
@@ -281,10 +281,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 		includePatterns[i] = repoPattern
-		if len(repoRev.revspecs) >= 2 {
-			return nil, nil, nil, false, errMultipleRevSpecsNotSupported
-		}
-		includePatternRevs[i] = repoRev.revSpecsOrDefaultBranch()[0]
+		includePatternRevs[i] = repoRev.revs
 	}
 
 	// Support determining which include pattern with a rev (if any) matched
@@ -297,10 +294,10 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		compiledIncludePatterns[i] = p
 	}
-	getRevForMatchedRepo := func(repo string) []string {
+	getRevsForMatchedRepo := func(repo string) []revspecOrRefGlob {
 		for i, pat := range compiledIncludePatterns {
-			if pat.MatchString(repo) && includePatternRevs[i] != "" {
-				return []string{includePatternRevs[i]}
+			if pat.MatchString(repo) {
+				return includePatternRevs[i]
 			}
 		}
 		return nil
@@ -321,19 +318,16 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {
 		repoRev := &repositoryRevisions{
-			repo:     repo.URI,
-			revspecs: getRevForMatchedRepo(repo.URI),
+			repo: repo.URI,
+			revs: getRevsForMatchedRepo(repo.URI),
 		}
-
-		if len(repoRev.revspecs) >= 2 {
-			return nil, nil, nil, false, errMultipleRevSpecsNotSupported
-		}
-
 		repoResolver := &repositoryResolver{repo: repo}
 
-		if len(repoRev.revspecs) == 1 {
+		if len(repoRev.revspecs()) == 1 {
 			// Check if the repository actually has the revision that the user
 			// specified.
+			//
+			// TODO(sqs): make this support multiple revspecs and ref globs
 			_, err := repoResolver.RevState(ctx, &struct {
 				Rev string
 			}{

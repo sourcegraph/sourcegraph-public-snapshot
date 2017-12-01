@@ -3,9 +3,11 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -42,19 +44,23 @@ func (r *diffSearchResult) Preview() *highlightedString { return r.preview }
 
 type commitSearchResult struct {
 	commit         *commitInfoResolver
+	refs           []*gitRefResolver
+	sourceRefs     []*gitRefResolver
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
 }
 
 func (r *commitSearchResult) Commit() *commitInfoResolver        { return r.commit }
+func (r *commitSearchResult) Refs() []*gitRefResolver            { return r.refs }
+func (r *commitSearchResult) SourceRefs() []*gitRefResolver      { return r.sourceRefs }
 func (r *commitSearchResult) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResult) DiffPreview() *highlightedString    { return r.diffPreview }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
-		return mockSearchCommitDiffsInRepo(ctx, repoName, rev, info, combinedQuery)
+		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, combinedQuery)
 	}
 
 	args := []string{
@@ -66,35 +72,34 @@ func searchCommitDiffsInRepo(ctx context.Context, repoName, rev string, info *pa
 		IsRegExp:        info.IsRegExp,
 		IsCaseSensitive: info.IsCaseSensitive,
 	}
-	return searchCommitsInRepo(ctx, repoName, rev, info, combinedQuery, args, textSearchOptions, nil)
+	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, args, textSearchOptions, nil)
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
-		return mockSearchCommitLogInRepo(ctx, repoName, rev, info, combinedQuery)
+		return mockSearchCommitLogInRepo(ctx, repoRevs, info, combinedQuery)
 	}
 
 	var terms []string
 	if info.Pattern != "" {
 		terms = append(terms, info.Pattern)
 	}
-	return searchCommitsInRepo(ctx, repoName, rev, info, combinedQuery, nil, vcs.TextSearchOptions{}, terms)
+	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, nil, vcs.TextSearchOptions{}, terms)
 }
 
-func searchCommitsInRepo(ctx context.Context, repoName, rev string, info *patternInfo, combinedQuery resolvedQuery, args []string, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
-	repo, err := localstore.Repos.GetByURI(ctx, repoName)
+func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery, args []string, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
+	repo, err := localstore.Repos.GetByURI(ctx, repoRevs.repo)
 	if err != nil {
 		return nil, false, err
 	}
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
-	// the user has permissions to access the repository.
-	resolvedRev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: rev})
-	if err != nil {
+	// the user has permissions to access the repository. (It does not actually need to
+	// resolve the rev.)
+	if _, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID}); err != nil {
 		return nil, false, err
 	}
-	args = append(args, resolvedRev.CommitID)
 
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
@@ -107,6 +112,27 @@ func searchCommitsInRepo(ctx context.Context, repoName, rev string, info *patter
 	}
 	if !combinedQuery.isCaseSensitive() {
 		args = append(args, "--regexp-ignore-case")
+	}
+
+	for _, rev := range repoRevs.revs {
+		switch {
+		case rev.revspec != "":
+			if strings.HasPrefix(rev.revspec, "-") {
+				// A revspec starting with "-" would be interpreted as a `git log` flag.
+				// It would not be a security vulnerability because the flags are checked
+				// against a whitelist, but it could cause unexpected errors by (e.g.)
+				// changing the format of `git log` to a format that our parser doesn't
+				// expect.
+				return nil, false, fmt.Errorf("invalid revspec: %q", rev.revspec)
+			}
+			args = append(args, rev.revspec)
+
+		case rev.refGlob != "":
+			args = append(args, "--glob="+rev.refGlob)
+
+		case rev.excludeRefGlob != "":
+			args = append(args, "--exclude="+rev.excludeRefGlob)
+		}
 	}
 
 	for _, s := range combinedQuery.fieldValues[searchFieldBefore].Values() {
@@ -192,18 +218,30 @@ func searchCommitsInRepo(ctx context.Context, repoName, rev string, info *patter
 		rawResults = rawResults[:maxGitLogSearchResults]
 	}
 
+	repoResolver := &repositoryResolver{repo: repo}
 	results = make([]*commitSearchResult, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
 		results[i] = &commitSearchResult{
 			commit: &commitInfoResolver{
-				repository: &repositoryResolver{repo: repo},
+				repository: repoResolver,
 				oid:        gitObjectID(commit.ID),
 				author:     *toSignatureResolver(&commit.Author),
 				committer:  toSignatureResolver(commit.Committer),
 				message:    commit.Message,
 			},
 		}
+
+		addRefs := func(dst *[]*gitRefResolver, src []string) {
+			for _, ref := range src {
+				*dst = append(*dst, &gitRefResolver{
+					repo: repoResolver,
+					name: ref,
+				})
+			}
+		}
+		addRefs(&results[i].refs, rawResult.Refs)
+		addRefs(&results[i].sourceRefs, rawResult.SourceRefs)
 
 		// TODO(sqs): properly combine message: and term values for type:commit searches
 		if len(extraMessageValues) > 0 {
@@ -261,15 +299,10 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.repos {
-		if len(repoRev.revspecs) >= 2 {
-			return nil, nil, errMultipleRevSpecsNotSupported
-		}
-
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			rev := repoRev.revSpecsOrDefaultBranch()[0]
-			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)
+			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, combinedQuery)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return
@@ -316,15 +349,10 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.repos {
-		if len(repoRev.revspecs) >= 2 {
-			return nil, nil, errMultipleRevSpecsNotSupported
-		}
-
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			rev := repoRev.revSpecsOrDefaultBranch()[0]
-			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)
+			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, combinedQuery)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return

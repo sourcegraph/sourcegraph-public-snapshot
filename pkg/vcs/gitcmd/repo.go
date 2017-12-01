@@ -25,16 +25,11 @@ var (
 	// logEntryPattern is the regexp pattern that matches entries in the output of
 	// the `git shortlog -sne` command.
 	logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+([A-Za-z]+(?:\s[A-Za-z]+)*)\s+<([A-Za-z@.]+)>\s*$`)
+
 	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling GitCmdRaw.
 	gitCmdWhitelist = map[string][]string{
-		"log": []string{
-			"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
-			"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
-			"--regexp-ignore-case", "--glob", "--cherry", "-z",
-			"--until", "--since", "--author", "--committer",
-			"--all-match", "--invert-grep", "--extended-regexp",
-		},
-		"show":   []string{},
+		"log":    append([]string{}, gitCmdLogAndShowCommonWhitelist...),
+		"show":   append([]string{}, gitCmdLogAndShowCommonWhitelist...),
 		"remote": []string{"-v"},
 		"diff": []string{
 			"--name-status", "-R", "-C", "-U1", "--histogram",
@@ -45,6 +40,16 @@ var (
 		"rev-parse": []string{"--abbrev-ref"},
 		"rev-list":  []string{"--max-parents", "--reverse", "--max-count"},
 		"ls-remote": []string{"--get-url"},
+	}
+
+	// `git log` and `git show` share a large common set of whitelisted args.
+	gitCmdLogAndShowCommonWhitelist = []string{
+		"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
+		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
+		"--regexp-ignore-case", "--glob", "--cherry", "-z",
+		"--until", "--since", "--author", "--committer",
+		"--all-match", "--invert-grep", "--extended-regexp",
+		"--no-color", "--decorate", "--no-patch", "--exclude",
 	}
 )
 
@@ -391,7 +396,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	for len(data) > 0 {
 		var commit *vcs.Commit
 		var err error
-		commit, data, err = parseCommitFromLog(logFormatFlag, data)
+		commit, _, data, err = parseCommitFromLog(logFormatFlag, data)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -509,8 +514,8 @@ func isWhitelistedGitCmd(args []string) bool {
 			// after their 'S' or 'G' as part of the query. There is no long form of this
 			// flags (such as --something=query), so if we did not special-case these,
 			// there would be no way to safely express a query that began with a '-'
-			// character.
-			if cmd == "log" && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
+			// character. (Same for `git show`, where the flag has the same meaning.)
+			if (cmd == "log" || cmd == "show") && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
 				continue // this arg is OK
 			}
 

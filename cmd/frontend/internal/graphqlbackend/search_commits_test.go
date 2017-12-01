@@ -28,9 +28,9 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			}
 			if want := []string{
 				"-Sp",
-				"c0",
 				"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
 				"--regexp-ignore-case",
+				"rev",
 			}; !reflect.DeepEqual(opt.Args, want) {
 				t.Errorf("got %v, want %v", opt.Args, want)
 			}
@@ -47,7 +47,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	results, limitHit, err := searchCommitsInRepo(ctx, "repo", "rev", &patternInfo{Pattern: "p"}, *query, []string{"-Sp"}, vcs.TextSearchOptions{Pattern: "p"}, nil)
+	repoRevs := repositoryRevisions{repo: "repo", revs: []revspecOrRefGlob{{revspec: "rev"}}}
+	results, limitHit, err := searchCommitsInRepo(ctx, repoRevs, &patternInfo{Pattern: "p"}, *query, []string{"-Sp"}, vcs.TextSearchOptions{Pattern: "p"}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

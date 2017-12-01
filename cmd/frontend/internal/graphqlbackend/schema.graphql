@@ -314,6 +314,10 @@ type Diff {
 type CommitSearchResult {
   # The commit that matched the search query.
   commit: CommitInfo!
+  # The ref names of the commit.
+  refs: [GitRef!]!
+  # The refs by which this commit was reached.
+  sourceRefs: [GitRef!]!
   # The matching portion of the commit message, if any.
   messagePreview: HighlightedString
   # The matching portion of the diff, if any.
@@ -490,10 +494,21 @@ scalar GitObjectID
 
 # A Git ref.
 type GitRef {
-  # The ref name.
+  # The full ref name (e.g., "refs/heads/mybranch" or "refs/tags/mytag").
   name: String!
+  # The display name of the ref. For branches ("refs/heads/foo"), this is the branch
+  # name ("foo").
+  #
+  # As a special case, for GitHub pull request refs of the form refs/pull/NUMBER/head,
+  # this is "#NUMBER".
+  displayName: String!
+  # The prefix of the ref, either "", "refs/", "refs/heads/", "refs/pull/", or
+  # "refs/tags/". This prefix is always a prefix of the ref's name.
+  prefix: String!
   # The object that the ref points to.
   target: GitObject!
+  # The associated repository.
+  repository: Repository!
 }
 
 # A Git object.
@@ -767,7 +782,7 @@ type Org implements Node, ConfigurationSubject {
   repo(canonicalRemoteID: String!): OrgRepo
   threads(
     # TODO(nick): remove repoCanonicalRemoteID
-    repoCanonicalRemoteID: String 
+    repoCanonicalRemoteID: String
     canonicalRemoteIDs: [String!]
     branch: String
     file: String

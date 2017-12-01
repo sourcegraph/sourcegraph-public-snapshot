@@ -275,6 +275,13 @@ type LogCommitSearchResult struct {
 	Diff           *Diff       // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
 	DiffHighlights []Highlight // highlighted query matches in the diff
 
+	// Refs is the list of ref names of this commit (from `git log --decorate`).
+	Refs []string
+
+	// SourceRefs is the list of ref names by which this commit was reached. (See
+	// `git log --help` documentation on the `--source` flag.)
+	SourceRefs []string
+
 	// Incomplete indicates that this result may represent a subset of the actual data.
 	// This can occur when the underlying command returns early due to an impending
 	// timeout.

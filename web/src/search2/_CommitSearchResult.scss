@@ -9,7 +9,8 @@
         &-person,
         &-message,
         &-signature {
-            display: block;
+            display: flex;
+            align-items: center;
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
@@ -17,22 +18,33 @@
 
         &-person {
             margin-left: 0.75rem;
+            flex: 0 auto;
 
             .avatar {
                 display: inline-block;
                 height: 1.5rem;
                 width: 1.5rem;
+                margin-right: 0.25rem;
             }
         }
 
         &-message {
             margin-left: 0.75rem;
-            flex: 1 1 auto;
+            flex: 1 1;
             min-width: 50px;
         }
 
         &-signature {
+            flex: 0 auto;
             margin-left: 0.5rem;
+        }
+
+        .git-ref-tag {
+            font-size: 12px;
+        }
+
+        code {
+            margin: 0 0.25rem 0 0.125rem;
         }
     }
 
