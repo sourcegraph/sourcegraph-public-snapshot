@@ -78,7 +78,7 @@ func checkSpecArgSafety(spec string) error {
 // ResolveRevision will return the absolute commit for a commit-ish spec.
 // If spec is empty, HEAD is used.
 // Error cases:
-// * Repo does not exist: vsc.RepoNotExistError
+// * Repo does not exist: vcs.RepoNotExistError
 // * Commit does not exist: vcs.ErrRevisionNotFound
 // * Empty repository: vcs.ErrRevisionNotFound
 // * Other unexpected errors.
