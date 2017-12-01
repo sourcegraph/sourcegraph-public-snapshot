@@ -84,26 +84,33 @@ const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
 export function CodeView(sharedItem: GQL.ISharedItem): JSX.Element | null {
     const isSnippet = sharedItem.thread.comments.length === 0
     return (
-        <table className={`code-view__code${sharedItem.thread.lines ? '' : ' code-view__code--blurry'}`}>
-            <tbody>
-                {itemToLines(sharedItem).map((line: Line) => (
-                    <tr className={line.className} key={line.number}>
-                        <td
-                            className={
-                                'code-view__line-number' +
-                                (!isSnippet && line.isStartLine ? ' code-view__line-number--start-line' : '')
-                            }
-                        >
-                            {!isSnippet &&
-                                line.isStartLine && <ChatIcon className="code-view__chat-icon icon-inline" />}
-                            {line.number}
-                        </td>
-                        <td className="code-view__line-content">
-                            <pre className="code-view__pre" dangerouslySetInnerHTML={{ __html: line.content }} />
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+        <code>
+            <table className={`code-view__code${sharedItem.thread.lines ? '' : ' code-view__code--blurry'}`}>
+                <tbody>
+                    {itemToLines(sharedItem).map((line: Line) => (
+                        <tr className={line.className} key={line.number}>
+                            <td
+                                className={
+                                    'code-view__line-number' +
+                                    (!isSnippet && line.isStartLine ? ' code-view__line-number--start-line' : '')
+                                }
+                            >
+                                {!isSnippet &&
+                                    line.isStartLine && <ChatIcon className="code-view__chat-icon icon-inline" />}
+                                {line.number}
+                            </td>
+                            <td className="code-view__line-content">
+                                <code>
+                                    <pre
+                                        className="code-view__pre"
+                                        dangerouslySetInnerHTML={{ __html: line.content }}
+                                    />
+                                </code>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </code>
     )
 }

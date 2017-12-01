@@ -81,7 +81,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
-                <div className="code-excerpt">
+                <code className="code-excerpt">
                     {this.state.blobLines && (
                         <div
                             ref={this.setTableContainerElement}
@@ -101,7 +101,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                             </tbody>
                         </table>
                     )}
-                </div>
+                </code>
             </VisibilitySensor>
         )
     }

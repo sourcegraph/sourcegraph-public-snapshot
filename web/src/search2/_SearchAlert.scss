@@ -11,12 +11,10 @@
     }
 
     &__title {
-        font-size: 1.2em;
         margin-bottom: 0;
     }
 
     &__description {
-        font-size: 0.8em;
         color: #93a9c8;
     }
 
@@ -29,10 +27,6 @@
 
         &-did-you-mean {
             font-weight: bold;
-        }
-
-        &-description {
-            font-size: 0.8em;
         }
     }
 }

@@ -23,8 +23,6 @@
         flex: 0 0 auto;
         min-width: 4rem;
         margin-left: 0.5rem;
-        font-size: 1.75em;
-        font-weight: bold;
         margin-top: -0.5rem;
 
         .icon {
@@ -53,7 +51,6 @@
     &__actions {
         margin-top: -0.5rem;
         display: flex;
-        font-size: 0.825em;
 
         .action {
             align-items: center;

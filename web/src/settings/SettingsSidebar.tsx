@@ -78,14 +78,14 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     <div className="settings-sidebar__header-icon">
                         <GearIcon className="icon-inline" />
                     </div>
-                    <div className="settings-sidebar__header-title ui-title">Account Settings</div>
+                    <h5 className="settings-sidebar__header-title">Account Settings</h5>
                 </div>
                 <ul className="settings-sidebar__items">
                     <div className="settings-sidebar__header">
                         <div className="settings-sidebar__header-icon">
                             <UserIcon className="icon-inline" />
                         </div>
-                        <div className="settings-sidebar__header-title ui-title">Profile</div>
+                        <h5 className="settings-sidebar__header-title">Profile</h5>
                     </div>
                     <li className="settings-sidebar__item">
                         <NavLink
@@ -144,7 +144,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                     <div className="settings-sidebar__header-icon">
                                         <CityIcon className="icon-inline" />
                                     </div>
-                                    <div className="settings-sidebar__header-title ui-title">Organizations</div>
+                                    <h5 className="settings-sidebar__header-title">Organizations</h5>
                                 </div>
                             )}
                             {this.state.orgsEnabled && (
@@ -181,7 +181,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                     <div className="settings-sidebar__header-icon">
                                         <ChartIcon className="icon-inline" />
                                     </div>
-                                    <div className="settings-sidebar__header-title ui-title">Connections</div>
+                                    <h5 className="settings-sidebar__header-title">Connections</h5>
                                 </div>
                             )}
                             {this.state.editorBeta && (
@@ -202,7 +202,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         <div className="settings-sidebar__header-icon">
                             <ColorPaletteIcon className="icon-inline" />
                         </div>
-                        <div className="settings-sidebar__header-title ui-title">Color Theme</div>
+                        <h5 className="settings-sidebar__header-title">Color Theme</h5>
                     </div>
                     <li className="settings-sidebar__item">
                         <div className="settings-sidebar__theme-switcher">

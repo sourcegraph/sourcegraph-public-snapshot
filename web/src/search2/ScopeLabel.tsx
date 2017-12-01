@@ -113,7 +113,7 @@ export class ScopeLabel extends React.Component<Props, State> {
 
         return (
             <div className="scope-label2" title={title}>
-                {joinWithWhitespaceTextNodes(parts)}
+                <small>{joinWithWhitespaceTextNodes(parts)}</small>
             </div>
         )
     }

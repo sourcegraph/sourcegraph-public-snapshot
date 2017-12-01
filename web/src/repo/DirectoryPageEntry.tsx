@@ -141,7 +141,7 @@ export class DirectoryPageEntry extends React.PureComponent<Props, State> {
                             })}
                             className="dir-page-entry__commit-hash-link"
                         >
-                            {lastCommit && lastCommit.rev.substring(0, 7)}
+                            <code>{lastCommit && lastCommit.rev.substring(0, 7)}</code>
                         </Link>
                     </td>
                 </tr>

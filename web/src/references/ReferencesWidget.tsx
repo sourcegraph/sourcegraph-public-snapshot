@@ -174,16 +174,18 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
         return (
             <div className="references-widget">
                 <div className="references-widget__title-bar">
-                    <Link
-                        className={
-                            'references-widget__title-bar-group' +
-                            (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')
-                        }
-                        to={toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
-                        onClick={this.onLocalRefsButtonClick}
-                    >
-                        This repository
-                    </Link>
+                    <h5>
+                        <Link
+                            className={
+                                'references-widget__title-bar-group' +
+                                (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')
+                            }
+                            to={toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
+                            onClick={this.onLocalRefsButtonClick}
+                        >
+                            This repository
+                        </Link>
+                    </h5>
                     <div
                         className={
                             'references-widget__badge' +
@@ -192,16 +194,18 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     >
                         {localRefCount}
                     </div>
-                    <Link
-                        className={
-                            'references-widget__title-bar-group' +
-                            (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')
-                        }
-                        to={toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
-                        onClick={this.onShowExternalRefsButtonClick}
-                    >
-                        Other repositories
-                    </Link>
+                    <h5>
+                        <Link
+                            className={
+                                'references-widget__title-bar-group' +
+                                (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')
+                            }
+                            to={toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
+                            onClick={this.onShowExternalRefsButtonClick}
+                        >
+                            Other repositories
+                        </Link>
+                    </h5>
                     <div
                         className={
                             'references-widget__badge' +

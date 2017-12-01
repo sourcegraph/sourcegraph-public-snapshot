@@ -13,10 +13,6 @@
     }
 
     &__line {
-        font-family: 'Menlo';
-        font-size: 12px;
-        line-height: 20px;
-
         &--main {
             background: #0d111c;
         }
@@ -32,7 +28,6 @@
     }
 
     &__pre {
-        font-family: 'Menlo';
         display: inline;
         padding-right: 1rem;
 

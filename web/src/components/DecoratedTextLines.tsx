@@ -116,7 +116,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
-                <div className={`decorated-text-lines code-excerpt ${this.props.className || ''}`}>
+                <code className={`decorated-text-lines code-excerpt ${this.props.className || ''}`}>
                     <table ref={this.setTableContainerElement}>
                         <tbody>
                             {this.state.lines.map((line, i) => (
@@ -128,7 +128,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
                             ))}
                         </tbody>
                     </table>
-                </div>
+                </code>
             </VisibilitySensor>
         )
     }

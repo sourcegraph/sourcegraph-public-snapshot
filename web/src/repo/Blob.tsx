@@ -219,7 +219,7 @@ export class Blob extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        return <div className="blob" ref={this.onBlobRef} dangerouslySetInnerHTML={{ __html: this.props.html }} />
+        return <code className="blob" ref={this.onBlobRef} dangerouslySetInnerHTML={{ __html: this.props.html }} />
     }
 
     private onBlobRef = (ref: HTMLElement | null) => {

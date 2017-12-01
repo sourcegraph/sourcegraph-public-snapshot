@@ -8,7 +8,6 @@
     &__actions {
         display: flex;
         margin: 0.25rem 0;
-        font-size: 14px;
 
         &-btn {
             padding: 0.25rem 0.5rem;
@@ -40,9 +39,6 @@
         border: 1px solid #2b3750;
         border-radius: 2px;
         padding: 0.5rem 1rem;
-        font-size: 12px;
-        font-family: monospace;
-        white-space: pre;
 
         &-editor {
             background-color: #0e121b;

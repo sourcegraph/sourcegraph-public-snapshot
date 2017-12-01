@@ -1,0 +1,27 @@
+// Defined in https://www.figma.com/file/YVJp5yV7Bz8sueXekODPDEjd/styleguide-atoms?node-id=962%3A0
+
+body {
+    font-size: 14px;
+    // 14px font size -> 24px line height
+    line-height: 1.7142857143;
+}
+
+h1 {
+    font-size: 32px;
+    line-height: 1.25;
+    font-weight: 500;
+    margin: 0 0 1rem;
+}
+
+h5 {
+    font-size: 12px;
+    letter-spacing: 1px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+small {
+    font-size: 12px;
+    line-height: 1.5;
+}

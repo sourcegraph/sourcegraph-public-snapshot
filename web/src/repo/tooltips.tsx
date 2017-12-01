@@ -48,7 +48,7 @@ export function createTooltips(): void {
         return // idempotence
     }
 
-    tooltip = document.createElement('DIV')
+    tooltip = document.createElement('CODE')
     tooltip.className = 'tooltip'
     tooltip.classList.add('sg-tooltip')
     tooltip.style.visibility = 'hidden'

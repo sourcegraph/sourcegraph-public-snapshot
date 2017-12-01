@@ -37,8 +37,8 @@ export class SearchFields extends React.Component<Props, State> {
         return (
             <div className="search-fields2">
                 <div className="search-fields2__header">
-                    <div className="search-fields2__header-input">Search in...</div>
-                    <div className="search-fields2__header-example">Shortcut (in the search box)</div>
+                    <h3 className="search-fields2__header-input">Search in...</h3>
+                    <h3 className="search-fields2__header-example">Shortcut</h3>
                 </div>
                 <div className="search-fields2__row">
                     <div className="search-fields2__row-label">
@@ -87,7 +87,7 @@ export class SearchFields extends React.Component<Props, State> {
                 </div>
 
                 <div className="search-fields2__header">
-                    <div className="search-fields2__header-input">Match...</div>
+                    <h3 className="search-fields2__header-input">Match...</h3>
                 </div>
                 <div className="search-fields2__row">
                     <div className="search-fields2__row-label">

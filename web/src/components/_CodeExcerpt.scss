@@ -1,6 +1,4 @@
 .code-excerpt {
-    font-family: Menlo;
-
     td.line {
         &::before {
             // draw line number with css so it cannot be copied to clipboard
@@ -15,8 +13,6 @@
     .code {
         // stylelint-disable-next-line declaration-property-unit-whitelist
         height: 20px;
-        line-height: 20px;
-        font-size: 12px;
         vertical-align: middle;
         padding: 0;
     }

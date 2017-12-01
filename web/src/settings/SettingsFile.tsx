@@ -127,22 +127,24 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     </div>
                 )}
                 {this.state.editing && (
-                    <textarea
-                        className="settings-file__contents settings-file__contents-editor"
-                        value={this.state.modifiedContents}
-                        onChange={this.onTextareaChange}
-                        disabled={this.state.saving}
-                        spellCheck={false}
-                    />
+                    <code>
+                        <textarea
+                            className="settings-file__contents settings-file__contents-editor ui-text-box"
+                            value={this.state.modifiedContents}
+                            onChange={this.onTextareaChange}
+                            disabled={this.state.saving}
+                            spellCheck={false}
+                        />
+                    </code>
                 )}
                 {!this.state.editing &&
                     (this.props.settings ? (
-                        <div
+                        <code
                             className="settings-file__contents"
                             dangerouslySetInnerHTML={{ __html: this.props.settings.configuration.highlighted }}
                         />
                     ) : (
-                        <div className="settings-file__contents">{emptySettings}</div>
+                        <code className="settings-file__contents">{emptySettings}</code>
                     ))}
             </div>
         )
