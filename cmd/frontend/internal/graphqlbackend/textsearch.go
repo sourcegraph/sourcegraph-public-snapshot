@@ -296,15 +296,15 @@ func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (m
 }
 
 type repoSearchArgs struct {
-	Query        *patternInfo
-	Repositories []*repositoryRevision
+	query *patternInfo
+	repos []*repositoryRevision
 }
 
 // repositoryRevision specifies a repository at an (optional) revision. If no revision is
 // specified, then the repository's default branch is used.
 type repositoryRevision struct {
-	Repo string
-	Rev  *string
+	repo string
+	rev  *string
 }
 
 // parseRepositoryRevision parses strings of the form "repo" or "repo@rev" into
@@ -312,24 +312,24 @@ type repositoryRevision struct {
 func parseRepositoryRevision(repoAndOptionalRev string) repositoryRevision {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
-		return repositoryRevision{Repo: repoAndOptionalRev}
+		return repositoryRevision{repo: repoAndOptionalRev}
 	}
 	rev := repoAndOptionalRev[i+1:]
 	return repositoryRevision{
-		Repo: repoAndOptionalRev[:i],
-		Rev:  &rev,
+		repo: repoAndOptionalRev[:i],
+		rev:  &rev,
 	}
 }
 
 func (repoRev *repositoryRevision) String() string {
 	if repoRev.hasRev() {
-		return repoRev.Repo + "@" + *repoRev.Rev
+		return repoRev.repo + "@" + *repoRev.rev
 	}
-	return repoRev.Repo
+	return repoRev.repo
 }
 
 func (repoRev *repositoryRevision) hasRev() bool {
-	return repoRev.Rev != nil && *repoRev.Rev != ""
+	return repoRev.rev != nil && *repoRev.rev != ""
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a call to searcher or
@@ -347,16 +347,16 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	common.limitHit = common.limitHit || limitHit
 	if e, ok := searchErr.(vcs.RepoNotExistError); ok {
 		if e.CloneInProgress {
-			common.cloning = append(common.cloning, repoRev.Repo)
+			common.cloning = append(common.cloning, repoRev.repo)
 		} else {
-			common.missing = append(common.missing, repoRev.Repo)
+			common.missing = append(common.missing, repoRev.repo)
 		}
 	} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
-		common.missing = append(common.missing, repoRev.Repo)
+		common.missing = append(common.missing, repoRev.repo)
 	} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
 	} else if errors.Cause(searchErr) == context.DeadlineExceeded {
-		common.timedout = append(common.timedout, repoRev.Repo)
+		common.timedout = append(common.timedout, repoRev.repo)
 	} else if searchErr != nil {
 		return searchErr
 	}
@@ -371,7 +371,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		return mockSearchRepos(args)
 	}
 
-	if err := args.Query.validate(); err != nil {
+	if err := args.query.validate(); err != nil {
 		return nil, nil, &badRequestError{err}
 	}
 
@@ -385,15 +385,15 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		unflattened [][]*fileMatch
 		common      = &searchResultsCommon{}
 	)
-	for _, repoRev := range args.Repositories {
+	for _, repoRev := range args.repos {
 		wg.Add(1)
 		go func(repoRev repositoryRevision) {
 			defer wg.Done()
 			var rev string
-			if repoRev.Rev != nil {
-				rev = *repoRev.Rev
+			if repoRev.rev != nil {
+				rev = *repoRev.rev
 			}
-			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.Repo, rev, args.Query)
+			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, rev, args.query)
 			mu.Lock()
 			defer mu.Unlock()
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
@@ -437,7 +437,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		return a > b
 	})
 	var flattened []*fileMatch
-	initialPortion := int(args.Query.FileMatchLimit) / len(unflattened)
+	initialPortion := int(args.query.FileMatchLimit) / len(unflattened)
 	for _, matches := range unflattened {
 		if initialPortion < len(matches) {
 			flattened = append(flattened, matches[:initialPortion]...)
@@ -449,7 +449,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 	// results until we hit our limit.
 	for _, matches := range unflattened {
 		low := initialPortion
-		high := low + (int(args.Query.FileMatchLimit) - len(flattened))
+		high := low + (int(args.query.FileMatchLimit) - len(flattened))
 		if high <= len(matches) {
 			flattened = append(flattened, matches[low:high]...)
 		} else if low < len(matches) {

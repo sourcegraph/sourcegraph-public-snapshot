@@ -268,7 +268,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	includePatternRevs := make([]string, len(includePatterns))
 	for i, includePattern := range includePatterns {
 		repoRev := parseRepositoryRevision(includePattern)
-		repoPattern := repoRev.Repo // trim "@rev" from pattern
+		repoPattern := repoRev.repo // trim "@rev" from pattern
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {
@@ -282,7 +282,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 		includePatterns[i] = repoPattern
 		if repoRev.hasRev() {
-			includePatternRevs[i] = *repoRev.Rev
+			includePatternRevs[i] = *repoRev.rev
 		}
 	}
 
@@ -320,8 +320,8 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {
 		repoRev := &repositoryRevision{
-			Repo: repo.URI,
-			Rev:  getRevForMatchedRepo(repo.URI),
+			repo: repo.URI,
+			rev:  getRevForMatchedRepo(repo.URI),
 		}
 		repoResolver := &repositoryResolver{repo: repo}
 
@@ -331,7 +331,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 			_, err := repoResolver.RevState(ctx, &struct {
 				Rev string
 			}{
-				Rev: *repoRev.Rev,
+				Rev: *repoRev.rev,
 			})
 			if err == vcs.ErrRevisionNotFound {
 				// revision does not exist, so do not include this repository.
@@ -365,7 +365,7 @@ func (r *searchResolver2) resolveFiles(ctx context.Context, limit int) ([]*searc
 
 	repos := make([]string, len(repoRevisions))
 	for i, repoRevision := range repoRevisions {
-		repos[i] = repoRevision.Repo
+		repos[i] = repoRevision.repo
 	}
 
 	includePatterns := r.combinedQuery.fieldValues[searchFieldFile].Values()

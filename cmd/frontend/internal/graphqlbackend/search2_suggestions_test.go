@@ -73,8 +73,8 @@ func TestSearch2Suggestions(t *testing.T) {
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true
-			if want := "foo"; args.Query.Pattern != want {
-				t.Errorf("got %q, want %q", args.Query.Pattern, want)
+			if want := "foo"; args.query.Pattern != want {
+				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
 			return fileMatchesToSearchResults([]*fileMatch{
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file"},
@@ -109,8 +109,8 @@ func TestSearch2Suggestions(t *testing.T) {
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true
-			if want := "foo("; args.Query.Pattern != want {
-				t.Errorf("got %q, want %q", args.Query.Pattern, want)
+			if want := "foo("; args.query.Pattern != want {
+				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
 			err := &searcherError{StatusCode: 400, Message: "error parsing regexp: missing closing ): `foo(`"}
 			return nil, nil, errors.Wrap(err, "failed to search foo-repo")
@@ -150,8 +150,8 @@ func TestSearch2Suggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchRepos = true
-			if want := "foo"; args.Query.Pattern != want {
-				t.Errorf("got %q, want %q", args.Query.Pattern, want)
+			if want := "foo"; args.query.Pattern != want {
+				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
 			return fileMatchesToSearchResults([]*fileMatch{
 				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match"},

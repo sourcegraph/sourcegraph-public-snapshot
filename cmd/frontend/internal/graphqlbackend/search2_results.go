@@ -138,7 +138,7 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 	}
 
 	args := repoSearchArgs{
-		Query: &patternInfo{
+		query: &patternInfo{
 			IsRegExp:                     true,
 			IsCaseSensitive:              r.combinedQuery.isCaseSensitive(),
 			FileMatchLimit:               300,
@@ -147,11 +147,11 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 			PathPatternsAreRegExps:       true,
 			PathPatternsAreCaseSensitive: r.combinedQuery.isCaseSensitive(),
 		},
-		Repositories: repos,
+		repos: repos,
 	}
 	if excludePatterns := r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
 		pat := unionRegExps(excludePatterns)
-		args.Query.ExcludePattern = &pat
+		args.query.ExcludePattern = &pat
 	}
 
 	// Determine which types of results to return.

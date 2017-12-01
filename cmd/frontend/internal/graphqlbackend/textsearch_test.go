@@ -37,11 +37,11 @@ func TestSearchRepos(t *testing.T) {
 	defer func() { mockSearchRepo = nil }()
 
 	args := &repoSearchArgs{
-		Query: &patternInfo{
+		query: &patternInfo{
 			FileMatchLimit: 300,
 			Pattern:        "foo",
 		},
-		Repositories: []*repositoryRevision{{Repo: "foo/one"}, {Repo: "foo/two"}, {Repo: "foo/empty"}, {Repo: "foo/cloning"}, {Repo: "foo/missing"}},
+		repos: []*repositoryRevision{{repo: "foo/one"}, {repo: "foo/two"}, {repo: "foo/empty"}, {repo: "foo/cloning"}, {repo: "foo/missing"}},
 	}
 	results, common, err := searchRepos(context.Background(), args)
 	if err != nil {

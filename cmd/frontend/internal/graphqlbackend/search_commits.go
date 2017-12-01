@@ -260,15 +260,15 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 		unflattened [][]*commitSearchResult
 		common      = &searchResultsCommon{}
 	)
-	for _, repoRev := range args.Repositories {
+	for _, repoRev := range args.repos {
 		wg.Add(1)
 		go func(repoRev repositoryRevision) {
 			defer wg.Done()
 			var rev string
-			if repoRev.Rev != nil {
-				rev = *repoRev.Rev
+			if repoRev.rev != nil {
+				rev = *repoRev.rev
 			}
-			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev.Repo, rev, args.Query, combinedQuery)
+			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return
@@ -314,15 +314,15 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 		unflattened [][]*commitSearchResult
 		common      = &searchResultsCommon{}
 	)
-	for _, repoRev := range args.Repositories {
+	for _, repoRev := range args.repos {
 		wg.Add(1)
 		go func(repoRev repositoryRevision) {
 			defer wg.Done()
 			var rev string
-			if repoRev.Rev != nil {
-				rev = *repoRev.Rev
+			if repoRev.rev != nil {
+				rev = *repoRev.rev
 			}
-			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev.Repo, rev, args.Query, combinedQuery)
+			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return
