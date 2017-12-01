@@ -5,3 +5,5 @@
 web/ @felixfbecker
 searcher/ @keegancsmith
 xlang/ @keegancsmith
+cmd/frontend @nicksnyder
+migrations/ @nicksnyder
