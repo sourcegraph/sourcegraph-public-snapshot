@@ -3,19 +3,16 @@
 import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import * as H from 'history'
-import * as immutable from 'immutable'
-import { Dictionary } from 'lodash'
 import flatten from 'lodash/flatten'
 import groupBy from 'lodash/groupBy'
-import partition from 'lodash/partition'
+import sortBy from 'lodash/sortBy'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import VisibilitySensor from 'react-visibility-sensor'
+import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { Subscription } from 'rxjs/Subscription'
 import { Repo } from '../repo/index'
 import { toBlobURL, toTreeURL } from '../util/url'
-import { createTreeStore, TreeStore } from './store'
-import { getParentDir, isEqualOrAncestor, scrollIntoView } from './util'
+import { getParentDir, scrollIntoView } from './util'
 
 export interface Props extends Repo {
     history: H.History
@@ -24,36 +21,125 @@ export interface Props extends Repo {
     selectedPath: string
 }
 
+interface TreeNodeState {
+    collapsed: boolean
+    selected: boolean
+}
+
+interface TreeNode {
+    filePath: string
+    children: TreeNode[]
+    state: BehaviorSubject<TreeNodeState>
+}
+
+export interface Store {
+    nodes: TreeNode[]
+    nodeMap: Map<string, TreeNode>
+    selectedPath: string
+}
+
 const treePadding = (depth: number, directory: boolean) => ({
     paddingLeft: depth * 12 + (directory ? 0 : 12) + 12 + 'px',
     paddingRight: '16px',
 })
 
-function closeDirectory(store: TreeStore, dir: string): void {
-    const state = store.getValue()
-    let next = state.shownSubpaths
-    for (const path of state.shownSubpaths.toArray().filter(path => isEqualOrAncestor(path, dir))) {
-        next = next.remove(path)
+function selectRow(store: Store, path: string): void {
+    const currSelectedNode = store.nodeMap.get(store.selectedPath)
+    if (currSelectedNode) {
+        currSelectedNode.state.next({ ...currSelectedNode.state.getValue(), selected: false })
     }
-    store.setState({ ...state, shownSubpaths: next, selectedPath: dir, selectedDir: dir })
+    store.selectedPath = path
+    const nextSelectedNode = store.nodeMap.get(path)
+    if (nextSelectedNode) {
+        nextSelectedNode.state.next({ ...nextSelectedNode.state.getValue(), selected: true })
+    }
+}
+
+function closeDirectory(store: Store, dir: string): void {
+    selectRow(store, dir)
+    const node = store.nodeMap.get(dir)
+    if (node) {
+        node.state.next({ ...node.state.getValue(), collapsed: true })
+    } else {
+        console.error('could not locate node', dir)
+    }
 }
 
 export class Tree extends React.PureComponent<Props, {}> {
-    public store: TreeStore
-    public pathSplits: string[][]
     private ref: HTMLDivElement | null
+    private store: Store
+    private relativeDir?: string
 
     constructor(props: Props) {
         super(props)
-        this.store = createTreeStore(props.selectedPath)
-
-        this.pathSplits = props.paths.map(path => path.split('/'))
-
+        const { nodes, nodeMap } = this.parseNodes(props.paths, props.selectedPath)
+        this.store = { nodes, nodeMap, selectedPath: props.selectedPath }
         this.onKeyDown = this.onKeyDown.bind(this)
     }
 
+    public componentDidMount(): void {
+        if (this.props.selectedPath) {
+            setTimeout(() => {
+                const el = this.locateDomNode(this.props.selectedPath!)
+                if (el) {
+                    el.scrollIntoView({ behavior: 'instant' })
+                }
+            }, 500)
+        }
+    }
+
+    public componentWillReceiveProps(nextProps: Props): void {
+        const selectedPath = nextProps.selectedPath
+        if (this.props.paths !== nextProps.paths) {
+            const { nodes, nodeMap } = this.parseNodes(nextProps.paths, nextProps.selectedPath)
+            if (nodes.length > 1) {
+                // Relative dir is the parent of the first entry in the list
+                this.relativeDir = getParentDir(nodes[0].filePath)
+            }
+            this.store = { nodes, nodeMap, selectedPath: nextProps.selectedPath }
+        } else {
+            // If we are trying to show a path not available on the tree, recreate the nodes.
+            const loc = this.locateDomNodeInCollection(selectedPath)
+            if (!loc) {
+                const { nodes, nodeMap } = this.parseNodes(nextProps.paths, nextProps.selectedPath)
+                if (nodes.length > 1) {
+                    // Relative dir is the parent of the first entry in the list
+                    this.relativeDir = getParentDir(nodes[0].filePath)
+                }
+                this.store = { nodes, nodeMap, selectedPath: nextProps.selectedPath }
+            } else {
+                selectRow(this.store, selectedPath)
+            }
+        }
+        if (this.props.selectedPath !== selectedPath) {
+            setTimeout(() => {
+                if (selectedPath) {
+                    const el = this.locateDomNode(selectedPath)
+                    if (el && !this.elementInViewport(el)) {
+                        el.scrollIntoView({ behavior: 'instant' })
+                    }
+                }
+            }, 250)
+        }
+    }
+
+    public render(): JSX.Element | null {
+        return (
+            <div ref={this.focusOnMount} className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
+                <TreeLayer
+                    history={this.props.history}
+                    repoPath={this.props.repoPath}
+                    rev={this.props.rev}
+                    store={this.store}
+                    currSubpath=""
+                    relativeDir={this.relativeDir}
+                />
+            </div>
+        )
+    }
+
     public ArrowDown(): void {
-        const loc = this.locateDomNodeInCollection(this.store.getValue().selectedPath)
+        const loc = this.locateDomNodeInCollection(this.store.selectedPath)
         if (loc) {
             const { items, i } = loc
             if (i < items.length - 1) {
@@ -67,7 +153,7 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public ArrowUp(): void {
-        const loc = this.locateDomNodeInCollection(this.store.getValue().selectedPath)
+        const loc = this.locateDomNodeInCollection(this.store.selectedPath)
         if (loc) {
             const { items, i } = loc
             if (i > 0) {
@@ -81,9 +167,13 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public ArrowLeft(): void {
-        const state = this.store.getValue()
-        const selectedPath = state.selectedPath
-        const isOpenDir = state.shownSubpaths.contains(selectedPath)
+        const selectedPath = this.store.selectedPath
+        const node = this.store.nodeMap.get(selectedPath)
+        if (!node) {
+            console.error('could not locate node (arrow down)', selectedPath)
+            return
+        }
+        const isOpenDir = !node.state.getValue().collapsed
         if (isOpenDir) {
             closeDirectory(this.store, selectedPath)
             return
@@ -110,15 +200,19 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public ArrowRight(): void {
-        const state = this.store.getValue()
-        const selectedPath = state.selectedPath
+        const selectedPath = this.store.selectedPath
+        const node = this.store.nodeMap.get(selectedPath)
+        if (!node) {
+            console.error('could not locate node (arrow right)', selectedPath)
+            return
+        }
         const loc = this.locateDomNodeInCollection(selectedPath)
         if (loc) {
             const { items, i } = loc
             const isDirectory = Boolean(items[i].getAttribute('data-tree-directory'))
-            if (!state.shownSubpaths.contains(selectedPath) && isDirectory) {
+            if (node.state.getValue().collapsed && isDirectory) {
                 // First, show the group (but don't update selection)
-                this.store.setState({ ...state, shownSubpaths: state.shownSubpaths.add(selectedPath) })
+                node.state.next({ collapsed: false, selected: true })
             } else {
                 if (i < items.length - 1) {
                     // select next
@@ -132,20 +226,24 @@ export class Tree extends React.PureComponent<Props, {}> {
     }
 
     public Enter(): void {
-        const state = this.store.getValue()
-        const selectedPath = state.selectedPath
+        const selectedPath = this.store.selectedPath
+        const node = this.store.nodeMap.get(selectedPath)
+        if (!node) {
+            console.error('could not locate node (enter)', selectedPath)
+            return
+        }
         const loc = this.locateDomNodeInCollection(selectedPath)
         if (loc) {
             const { items, i } = loc
             const isDir = Boolean(items[i].getAttribute('data-tree-directory'))
             if (isDir) {
-                const isOpen = state.shownSubpaths.contains(selectedPath)
+                const isOpen = !node.state.getValue().collapsed
                 if (isOpen) {
                     closeDirectory(this.store, selectedPath)
                     return
                 }
             }
-            this.store.setState({ ...state, shownSubpaths: state.shownSubpaths.add(selectedPath) })
+            node.state.next({ collapsed: false, selected: true })
             const urlProps = {
                 repoPath: this.props.repoPath,
                 rev: this.props.rev,
@@ -155,20 +253,37 @@ export class Tree extends React.PureComponent<Props, {}> {
         }
     }
 
-    public selectElement(el: HTMLElement): void {
+    private elementInViewport(el: any): boolean {
+        const rect = el.getBoundingClientRect()
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) /*or $(window).height() */ &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
+        )
+    }
+
+    private focusOnMount = (ref: HTMLDivElement | null) => {
+        if (this.ref === undefined && ref) {
+            this.ref = ref
+            ref.focus()
+        }
+    }
+
+    private selectElement(el: HTMLElement): void {
         const root = (this.props.scrollRootSelector
             ? document.querySelector(this.props.scrollRootSelector)
             : document.querySelector('.tree-container')) as HTMLElement
         scrollIntoView(el, root)
         const path = el.getAttribute('data-tree-path')!
-        this.store.setState({ ...this.store.getValue(), selectedPath: path, selectedDir: getParentDir(path) })
+        selectRow(this.store, path)
     }
 
-    public locateDomNode(path: string): HTMLElement | undefined {
+    private locateDomNode(path: string): HTMLElement | undefined {
         return document.querySelector(`[data-tree-path="${path}"]`) as any
     }
 
-    public locateDomNodeInCollection(path: string): { items: HTMLElement[]; i: number } | undefined {
+    private locateDomNodeInCollection(path: string): { items: HTMLElement[]; i: number } | undefined {
         const items = document.querySelectorAll('.tree__row-contents') as any
         let i = 0
         for (i; i < items.length; ++i) {
@@ -179,7 +294,7 @@ export class Tree extends React.PureComponent<Props, {}> {
         return undefined
     }
 
-    public onKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+    private onKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
         const handler = (this as any)[event.key]
         if (handler) {
             event.preventDefault()
@@ -187,411 +302,287 @@ export class Tree extends React.PureComponent<Props, {}> {
         }
     }
 
-    public componentDidMount(): void {
-        if (this.props.selectedPath) {
-            setTimeout(() => {
-                const el = this.locateDomNode(this.props.selectedPath!)
-                if (el) {
-                    el.scrollIntoView({ behavior: 'instant' })
-                }
-            }, 500)
-        }
-    }
-
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.pathSplits = nextProps.paths.map(path => path.split('/'))
-        if (this.props.selectedPath !== nextProps.selectedPath) {
-            const selectedPath = nextProps.selectedPath
-            let shownSubpaths = this.store.getValue().shownSubpaths
-            if (selectedPath) {
-                let curr = ''
-                const split = selectedPath.split('/')
-                for (const part of split) {
-                    if (curr !== '') {
-                        curr += '/'
-                    }
-                    curr += part
-                    shownSubpaths = shownSubpaths.add(curr)
-                }
+    private parseNodes = (paths: string[], selectedPath: string) => {
+        const getFilePath = (prefix: string, restParts: string[]) => {
+            if (prefix === '') {
+                return restParts.join('/')
             }
-            this.store.setState({
-                ...this.store.getValue(),
-                shownSubpaths,
-                selectedPath,
-                selectedDir: getParentDir(selectedPath),
+            return prefix + '/' + restParts.join('/')
+        }
+
+        const parseHelper = (
+            splits: string[][],
+            subpath = '',
+            nodeMap = new Map<string, TreeNode>()
+        ): { nodes: TreeNode[]; nodeMap: Map<string, TreeNode> } => {
+            const splitsByDir = groupBy(splits, split => {
+                if (split.length === 1) {
+                    return ''
+                }
+                return split[0]
             })
-            setTimeout(() => {
-                if (selectedPath) {
-                    const el = this.locateDomNode(nextProps.selectedPath!)
-                    if (el && !this.elementInViewport(el)) {
-                        el.scrollIntoView({ behavior: 'instant' })
+
+            const entries = flatten<TreeNode>(
+                Object.entries(splitsByDir).map(([dir, pathSplits]) => {
+                    if (dir === '') {
+                        return pathSplits.map(split => {
+                            const filePath = getFilePath(subpath, split)
+                            const node: TreeNode = {
+                                children: [],
+                                filePath,
+                                state: new BehaviorSubject<TreeNodeState>({
+                                    selected: filePath === selectedPath,
+                                    collapsed: true,
+                                }),
+                            }
+                            nodeMap.set(filePath, node)
+                            return node
+                        })
+                    }
+
+                    const dirPath = getFilePath(subpath, [dir])
+                    const dirNode: TreeNode = {
+                        children: parseHelper(
+                            pathSplits.map(split => split.slice(1)),
+                            subpath ? subpath + '/' + dir : dir,
+                            nodeMap
+                        ).nodes,
+                        filePath: dirPath,
+                        state: new BehaviorSubject<TreeNodeState>({
+                            selected: dirPath === selectedPath,
+                            collapsed: true,
+                        }),
+                    }
+                    nodeMap.set(dirPath, dirNode)
+                    return [dirNode]
+                })
+            )
+
+            // filter entries to those that are siblings to the selectedPath
+            let filter = entries
+            const selectedPathParts = selectedPath.split('/')
+            let part = 0
+            while (true) {
+                if (part >= selectedPathParts.length) {
+                    break
+                }
+                let matchedDir: TreeNode | undefined
+                // let matchedFile: TreeNode | undefined
+                for (const entry of filter) {
+                    if (entry.filePath.split('/').pop() === selectedPathParts[part] && entry.children.length > 0) {
+                        matchedDir = entry
+                        break
                     }
                 }
-            }, 250)
+                if (matchedDir) {
+                    filter = matchedDir.children
+                }
+                if (part === selectedPathParts.length - 1) {
+                    // on the last part, filter either contains the matched file + siblings, or the matched directories children
+                    break
+                }
+                ++part
+            }
+
+            // directories first (nodes w/ children), then sort lexicographically
+            return { nodes: sortBy(filter, [(e: TreeNode) => (e.children.length > 0 ? 0 : 1), 'text']), nodeMap }
         }
-    }
 
-    public elementInViewport(el: any): boolean {
-        const rect = el.getBoundingClientRect()
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) /*or $(window).height() */ &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
-        )
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div ref={this.focusOnMount} className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
-                <TreeLayer
-                    history={this.props.history}
-                    repoPath={this.props.repoPath}
-                    rev={this.props.rev}
-                    pathSplits={this.pathSplits}
-                    store={this.store}
-                    currSubpath=""
-                />
-            </div>
-        )
-    }
-
-    private focusOnMount = (ref: HTMLDivElement | null) => {
-        if (this.ref === undefined && ref) {
-            this.ref = ref
-            ref.focus()
-        }
+        return parseHelper(paths.map(path => path.split('/')))
     }
 }
 
 interface TreeLayerProps extends Repo {
     history: H.History
-    pathSplits: string[][] // assume only given paths nested at (or below) the current layer
     currSubpath: string
-    store: TreeStore
+    relativeDir?: string
+    store: Store
 }
 
-interface TreeLayerState {
-    shownSubpaths: immutable.Set<string>
-    selectedPath: string
-    selectedDir: string
-}
-
-class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
-    public subscription: Subscription
-    public files: string[][] // array of path parts
-    public subfiles: string[][] // array of path parts
-    public subfilesByDir: Dictionary<string[][]> // array of path parts
-    public depth: number
-
-    constructor(props: TreeLayerProps) {
-        super(props)
-        this.setup(props)
-        this.state = { ...props.store.getValue() }
-    }
-
-    public setup(props: TreeLayerProps): void {
-        this.depth = this.getDepth(props)
-        const [files, subfiles] = partition(props.pathSplits, split => split.length === this.depth + 1)
-        this.files = files
-        this.subfiles = subfiles
-        this.subfilesByDir = groupBy(subfiles, subfile => subfile[this.depth])
-    }
-
-    public shouldComponentUpdate(nextProps: TreeLayerProps, nextState: TreeLayerState): boolean {
-        const isParentOfSelection = getParentDir(nextState.selectedPath) === nextProps.currSubpath
-        if (isParentOfSelection) {
-            return true
+class TreeLayer extends React.PureComponent<TreeLayerProps, {}> {
+    public getDepth(): number {
+        if (this.props.currSubpath === '') {
+            return 0
         }
-        if (isEqualOrAncestor(this.state.selectedDir, this.props.currSubpath)) {
-            // was previously in the layer
-            return true
+        const subpathDepth = this.props.currSubpath.split('/').length
+        if (this.props.relativeDir) {
+            const relativeDirDepth = this.props.relativeDir.split('/').length
+            return Math.max(0, subpathDepth - relativeDirDepth)
         }
-        if (nextState.selectedDir === nextProps.currSubpath) {
-            // is selecting in curr directory
-            return true
-        }
-
-        return false
-    }
-
-    public componentWillReceiveProps(props: TreeLayerProps): void {
-        this.setup(props)
-    }
-
-    public componentWillUnmount(): void {
-        if (this.subscription) {
-            this.subscription.unsubscribe()
-        }
-    }
-
-    public onChangeVisibility = (isVisible: boolean): void => {
-        if (this.subscription) {
-            this.subscription.unsubscribe()
-        }
-        if (isVisible) {
-            this.subscription = this.props.store.subscribe(state => {
-                this.setState({ ...this.state, ...state })
-            })
-        }
-    }
-
-    public getDepth(props: TreeLayerProps): number {
-        return props.currSubpath === '' ? 0 : props.currSubpath.split('/').length
-    }
-
-    public tile<T>(arr: T[]): T[][] {
-        const res: T[][] = []
-        let i = 0
-        while (i < arr.length) {
-            const next = arr.slice(i, i + 10)
-            i += next.length
-            res.push(next)
-        }
-        return res
+        return subpathDepth
     }
 
     public render(): JSX.Element | null {
+        const { currSubpath, store } = this.props
+        const nodes = currSubpath === '' ? store.nodes : store.nodeMap.get(currSubpath)!.children
         return (
-            <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
-                <table style={{ width: '100%' }}>
-                    <tbody>
-                        <tr>
-                            <td>
-                                {this.tile(Object.keys(this.subfilesByDir)).map((dirs, i) => {
-                                    const subfilesByDir: _.Dictionary<string[][]> = {}
-                                    let subfiles: string[][] = []
-                                    for (const dir of dirs) {
-                                        subfiles = subfiles.concat(this.subfilesByDir[dir])
-                                        subfilesByDir[dir] = this.subfilesByDir[dir]
-                                    }
-                                    return (
-                                        <LayerTile
-                                            key={i}
-                                            {...this.props}
-                                            {...this.state}
-                                            depth={this.depth}
-                                            files={[]}
-                                            subfiles={subfiles}
-                                            subfilesByDir={subfilesByDir}
-                                        />
-                                    )
-                                })}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                {this.tile(this.files).map((files, i) => (
-                                    <LayerTile
-                                        key={i}
-                                        {...this.props}
-                                        {...this.state}
-                                        depth={this.depth}
-                                        files={files}
-                                        subfiles={[]}
-                                        subfilesByDir={{}}
-                                    />
-                                ))}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </VisibilitySensor>
-        )
-    }
-}
-
-interface TileProps extends TreeLayerProps, TreeLayerState {
-    files: string[][] // array of path parts
-    subfiles: string[][] // array of path parts
-    subfilesByDir: _.Dictionary<string[][]> // array of path parts
-    depth: number
-}
-
-class LayerTile extends React.Component<TileProps, {}> {
-    public first: string
-    public last: string
-
-    constructor(props: TileProps) {
-        super(props)
-        const dirs = Object.keys(props.subfilesByDir)
-        if (dirs.length > 0) {
-            this.first = dirs[0]
-            this.last = dirs[dirs.length - 1]
-        }
-        if (props.files.length > 0) {
-            if (!this.first) {
-                const firstFile = props.files[0]
-                this.first = firstFile[firstFile.length - 1] // pluck the last path component
-            }
-            const lastFile = props.files[props.files.length - 1]
-            this.last = lastFile[lastFile.length - 1] // pluck the last path component
-        }
-    }
-
-    public validTokenRange(props: TileProps): boolean {
-        if (props.selectedPath === '') {
-            return true
-        }
-        const token = props.selectedPath.split('/').pop()!
-        return token >= this.first && token <= this.last
-    }
-
-    public shouldComponentUpdate(nextProps: TileProps): boolean {
-        const lastValid = this.validTokenRange(this.props)
-        const nextValid = this.validTokenRange(nextProps)
-        if (!lastValid && !nextValid) {
-            // short circuit
-            return false
-        }
-        if (isEqualOrAncestor(this.props.selectedDir, this.props.currSubpath) && lastValid) {
-            return true
-        }
-        if (nextProps.selectedDir === nextProps.currSubpath && this.validTokenRange(nextProps)) {
-            return true
-        }
-        if (getParentDir(nextProps.selectedDir) === nextProps.currSubpath && this.validTokenRange(nextProps)) {
-            return true
-        }
-        return false
-    }
-
-    public getDepth(props: TreeLayerProps): number {
-        return props.currSubpath === '' ? 0 : props.currSubpath.split('/').length
-    }
-
-    public showSubpath(dir: string): boolean {
-        const prefix = this.currentDirectory(dir)
-        for (const subpathToShow of this.props.shownSubpaths.toArray()) {
-            if (subpathToShow === this.props.currSubpath) {
-                // Don't need to show subpath in the directory we're already in
-                continue
-            }
-            if (isEqualOrAncestor(subpathToShow, prefix)) {
-                return true
-            }
-        }
-        return false
-    }
-
-    public currentDirectory(dir: string): string {
-        return this.props.currSubpath ? this.props.currSubpath + '/' + dir : dir
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <table className="tile" style={{ width: '100%' }}>
+            <table style={{ width: '100%' }}>
                 <tbody>
-                    {flatten(
-                        Object.keys(this.props.subfilesByDir).map((dir, i) => [
-                            <tr
-                                key={i}
-                                className={[
-                                    'tree__row',
-                                    this.props.shownSubpaths.contains(this.currentDirectory(dir)) &&
-                                        'tree__row--expanded',
-                                    this.currentDirectory(dir) === this.props.selectedPath && 'tree__row--selected',
-                                ]
-                                    .filter(c => !!c)
-                                    .join(' ')}
-                            >
-                                <td
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onClick={() => {
-                                        const state = this.props.store.getValue()
-                                        const path = this.currentDirectory(dir)
-                                        const isShown = state.shownSubpaths.contains(path)
-                                        if (isShown) {
-                                            closeDirectory(this.props.store, path)
-                                        } else {
-                                            this.props.store.setState({
-                                                ...state,
-                                                shownSubpaths: state.shownSubpaths.add(path),
-                                                selectedPath: path,
-                                                selectedDir: path,
-                                            })
-                                        }
-                                    }}
-                                >
-                                    <div
-                                        className="tree__row-contents"
-                                        data-tree-directory="true"
-                                        data-tree-path={this.currentDirectory(dir)}
-                                        style={treePadding(this.props.depth, true)}
-                                    >
-                                        <Link
-                                            className="tree__row-icon"
-                                            to={toTreeURL({
-                                                repoPath: this.props.repoPath,
-                                                rev: this.props.rev,
-                                                filePath: this.currentDirectory(dir),
-                                            })}
-                                        >
-                                            {this.props.shownSubpaths.contains(this.currentDirectory(dir)) ? (
-                                                <ChevronDownIcon className="icon-inline" />
-                                            ) : (
-                                                <ChevronRightIcon className="icon-inline" />
-                                            )}
-                                        </Link>
-                                        <a
-                                            href={toTreeURL({
-                                                repoPath: this.props.repoPath,
-                                                rev: this.props.rev,
-                                                filePath: this.currentDirectory(dir),
-                                            })}
-                                            onClick={this.noopRowClick}
-                                            className="tree__row-label"
-                                        >
-                                            {dir}
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>,
-                            this.showSubpath(dir) && (
-                                <tr key={'layer-' + i}>
-                                    <td>
-                                        <TreeLayer
-                                            key={'layer-' + i}
-                                            history={this.props.history}
-                                            repoPath={this.props.repoPath}
-                                            rev={this.props.rev}
-                                            store={this.props.store}
-                                            pathSplits={this.props.pathSplits.filter(
-                                                split => split[this.props.depth] === dir
-                                            )}
-                                            currSubpath={this.currentDirectory(dir)}
-                                        />
-                                    </td>
-                                </tr>
-                            ),
-                        ])
-                    )}
-                    {this.props.files.map((file, i) => {
-                        const path = file.join('/')
-                        return (
-                            <tr
-                                key={i}
-                                className={'tree__row' + (path === this.props.selectedPath ? '--selected' : '')}
-                            >
-                                <td style={treePadding(this.props.depth, false)}>
-                                    <Link
-                                        className="tree__row-contents"
-                                        to={toBlobURL({
-                                            repoPath: this.props.repoPath,
-                                            rev: this.props.rev,
-                                            filePath: path,
-                                        })}
-                                        data-tree-path={path}
-                                    >
-                                        {file[file.length - 1]}
-                                    </Link>
-                                </td>
-                            </tr>
-                        )
-                    })}
+                    <tr>
+                        <td>
+                            {nodes.map((node, i) => (
+                                <TreeRow key={i} {...this.props} depth={this.getDepth()} node={node} />
+                            ))}
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         )
+    }
+}
+
+interface TreeRowProps extends TreeLayerProps {
+    depth: number
+    node: TreeNode
+}
+
+class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
+    private subscriptions = new Subscription()
+
+    constructor(props: TreeRowProps) {
+        super(props)
+        this.state = props.node.state.getValue()
+    }
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.props.node.state.subscribe(state => {
+                this.setState(state)
+            })
+        )
+    }
+
+    public componentWillReceiveProps(nextProps: TreeRowProps): void {
+        if (this.props.node !== nextProps.node) {
+            if (this.subscriptions) {
+                this.subscriptions.unsubscribe()
+                this.subscriptions = new Subscription()
+            }
+            this.subscriptions.add(
+                nextProps.node.state.subscribe(state => {
+                    this.setState(state)
+                })
+            )
+        }
+    }
+
+    public componentWillUnmount(): void {
+        if (this.subscriptions) {
+            this.subscriptions.unsubscribe()
+        }
+    }
+
+    public render(): JSX.Element | null {
+        const { node, store } = this.props
+        return (
+            <table className="tile" style={{ width: '100%' }}>
+                <tbody>
+                    {node.children.length > 0 && [
+                        <tr
+                            key={node.filePath}
+                            className={[
+                                'tree__row',
+                                this.showSubpath(node.filePath) && 'tree__row--expanded',
+                                node.filePath === store.selectedPath && 'tree__row--selected',
+                            ]
+                                .filter(c => !!c)
+                                .join(' ')}
+                        >
+                            <td
+                                // tslint:disable-next-line:jsx-no-lambda
+                                onClick={() => {
+                                    const state = node.state.getValue()
+                                    selectRow(this.props.store, node.filePath)
+                                    if (!state.collapsed) {
+                                        closeDirectory(this.props.store, node.filePath)
+                                    } else {
+                                        // store.selectedPath = node.filePath
+                                        node.state.next({ collapsed: false, selected: true })
+                                    }
+                                }}
+                            >
+                                <div
+                                    className="tree__row-contents"
+                                    data-tree-directory="true"
+                                    data-tree-path={node.filePath}
+                                    style={treePadding(this.props.depth, true)}
+                                >
+                                    <Link
+                                        className="tree__row-icon"
+                                        to={toTreeURL({
+                                            repoPath: this.props.repoPath,
+                                            rev: this.props.rev,
+                                            filePath: node.filePath,
+                                        })}
+                                    >
+                                        {this.showSubpath(node.filePath) ? (
+                                            <ChevronDownIcon className="icon-inline" />
+                                        ) : (
+                                            <ChevronRightIcon className="icon-inline" />
+                                        )}
+                                    </Link>
+                                    <a
+                                        href={toTreeURL({
+                                            repoPath: this.props.repoPath,
+                                            rev: this.props.rev,
+                                            filePath: node.filePath,
+                                        })}
+                                        onClick={this.noopRowClick}
+                                        className="tree__row-label"
+                                    >
+                                        {node.filePath.split('/').pop()}
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>,
+                        this.showSubpath(node.filePath) && (
+                            <tr key={'layer-' + node.filePath}>
+                                <td>
+                                    <TreeLayer
+                                        // key={'layer-' + i}
+                                        history={this.props.history}
+                                        repoPath={this.props.repoPath}
+                                        rev={this.props.rev}
+                                        store={this.props.store}
+                                        currSubpath={node.filePath}
+                                        relativeDir={this.props.relativeDir}
+                                    />
+                                </td>
+                            </tr>
+                        ),
+                    ]}
+                    {node.children.length === 0 && (
+                        <tr
+                            key={node.filePath}
+                            className={'tree__row' + (node.filePath === store.selectedPath ? '--selected' : '')}
+                        >
+                            <td style={treePadding(this.props.depth, false)}>
+                                <Link
+                                    className="tree__row-contents"
+                                    onClick={this.linkRowClick}
+                                    to={toBlobURL({
+                                        repoPath: this.props.repoPath,
+                                        rev: this.props.rev,
+                                        filePath: node.filePath,
+                                    })}
+                                    data-tree-path={node.filePath}
+                                >
+                                    {node.filePath.split('/').pop()}
+                                </Link>
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        )
+    }
+
+    private showSubpath(dir: string): boolean {
+        const node = this.props.store.nodeMap.get(dir)
+        if (!node) {
+            return false
+        }
+        return !node.state.getValue().collapsed
     }
 
     /**
@@ -603,5 +594,13 @@ class LayerTile extends React.Component<TileProps, {}> {
         if (!e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey) {
             e.preventDefault()
         }
+        selectRow(this.props.store, this.props.node.filePath)
+    }
+
+    /**
+     * linkRowClick is the click handler for <Link>
+     */
+    private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        selectRow(this.props.store, this.props.node.filePath)
     }
 }

@@ -139,7 +139,7 @@ describe('e2e test suite', () => {
     }
 
     describe('Repository component', () => {
-        const blobTableSelector = '.repository__viewer > div > table > tbody'
+        const blobTableSelector = '.repository__viewer > code > table > tbody'
         const clickToken = async (line: number, spanOffset: number): Promise<void> => {
             await chrome.click(`${blobTableSelector} > tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`)
         }
@@ -191,12 +191,12 @@ describe('e2e test suite', () => {
                 await chrome.wait('.tree__row--selected [data-tree-path="mux.go"]')
             })
 
-            it('selects and expands the current directory', async () => {
+            it('shows partial tree when opening directory', async () => {
                 await chrome.goto(
                     baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983/-/tree/fuzz'
                 )
-                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
-                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
+                await chrome.wait('.tree__row')
+                assert.equal(await chrome.evaluate(() => document.querySelectorAll('.tree__row').length), 2)
             })
 
             it('responds to keyboard shortcuts', async () => {
@@ -494,9 +494,9 @@ describe('e2e test suite', () => {
                 await chrome.goto(
                     baseURL + '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go#L43:6'
                 )
-                await chrome.wait('.repository__viewer > div > table > tbody > tr:nth-child(43)')
+                await chrome.wait('.repository__viewer > code > table > tbody > tr:nth-child(43)')
                 await chrome.evaluate(() => {
-                    const row = document.querySelector('.repository__viewer > div > table > tbody > tr:nth-child(43)')!
+                    const row = document.querySelector('.repository__viewer > code > table > tbody > tr:nth-child(43)')!
                     const blame = row.querySelector('.blame')!
                     const rect = blame.getBoundingClientRect() as any
                     const ev = new MouseEvent('click', {
