@@ -12,9 +12,9 @@
 
     &__title {
         flex: 1;
-        word-wrap: break-word;
         margin-left: 0;
         padding: 0;
+        white-space: pre-wrap;
     }
 
     &__divider {
