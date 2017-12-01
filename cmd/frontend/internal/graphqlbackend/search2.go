@@ -281,9 +281,10 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 		includePatterns[i] = repoPattern
-		if repoRev.hasRev() {
-			includePatternRevs[i] = *repoRev.rev
+		if len(repoRev.revspecs) >= 2 {
+			panic("only a single revspec to search is supported")
 		}
+		includePatternRevs[i] = repoRev.revSpecsOrDefaultBranch()[0]
 	}
 
 	// Support determining which include pattern with a rev (if any) matched
@@ -296,10 +297,10 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		compiledIncludePatterns[i] = p
 	}
-	getRevForMatchedRepo := func(repo string) *string {
+	getRevForMatchedRepo := func(repo string) []string {
 		for i, pat := range compiledIncludePatterns {
 			if pat.MatchString(repo) && includePatternRevs[i] != "" {
-				return &includePatternRevs[i]
+				return []string{includePatternRevs[i]}
 			}
 		}
 		return nil
@@ -320,18 +321,18 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {
 		repoRev := &repositoryRevision{
-			repo: repo.URI,
-			rev:  getRevForMatchedRepo(repo.URI),
+			repo:     repo.URI,
+			revspecs: getRevForMatchedRepo(repo.URI),
 		}
 		repoResolver := &repositoryResolver{repo: repo}
 
-		if repoRev.hasRev() {
+		if repoRev.hasSingleRevSpec() {
 			// Check if the repository actually has the revision that the user
 			// specified.
 			_, err := repoResolver.RevState(ctx, &struct {
 				Rev string
 			}{
-				Rev: *repoRev.rev,
+				Rev: repoRev.revSpecsOrDefaultBranch()[0],
 			})
 			if err == vcs.ErrRevisionNotFound {
 				// revision does not exist, so do not include this repository.

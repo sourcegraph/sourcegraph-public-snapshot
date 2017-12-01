@@ -300,11 +300,11 @@ type repoSearchArgs struct {
 	repos []*repositoryRevision
 }
 
-// repositoryRevision specifies a repository at an (optional) revision. If no revision is
-// specified, then the repository's default branch is used.
+// repositoryRevision specifies a repository and 0 or more revspecs.
+// If no revspec is specified, then the repository's default branch is used.
 type repositoryRevision struct {
-	repo string
-	rev  *string
+	repo     string
+	revspecs []string
 }
 
 // parseRepositoryRevision parses strings of the form "repo" or "repo@rev" into
@@ -316,20 +316,27 @@ func parseRepositoryRevision(repoAndOptionalRev string) repositoryRevision {
 	}
 	rev := repoAndOptionalRev[i+1:]
 	return repositoryRevision{
-		repo: repoAndOptionalRev[:i],
-		rev:  &rev,
+		repo:     repoAndOptionalRev[:i],
+		revspecs: []string{rev},
 	}
 }
 
 func (repoRev *repositoryRevision) String() string {
-	if repoRev.hasRev() {
-		return repoRev.repo + "@" + *repoRev.rev
+	if repoRev.hasSingleRevSpec() {
+		return repoRev.repo + "@" + repoRev.revspecs[0]
 	}
 	return repoRev.repo
 }
 
-func (repoRev *repositoryRevision) hasRev() bool {
-	return repoRev.rev != nil && *repoRev.rev != ""
+func (repoRev *repositoryRevision) revSpecsOrDefaultBranch() []string {
+	if len(repoRev.revspecs) == 0 {
+		return []string{""}
+	}
+	return repoRev.revspecs
+}
+
+func (repoRev *repositoryRevision) hasSingleRevSpec() bool {
+	return len(repoRev.revspecs) == 1
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a call to searcher or
@@ -353,7 +360,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		}
 	} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
 		common.missing = append(common.missing, repoRev.repo)
-	} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasRev() {
+	} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasSingleRevSpec() {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
 	} else if errors.Cause(searchErr) == context.DeadlineExceeded {
 		common.timedout = append(common.timedout, repoRev.repo)
@@ -386,13 +393,14 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.repos {
+		if len(repoRev.revspecs) >= 2 {
+			panic("only a single revspec to search is supported")
+		}
+
 		wg.Add(1)
 		go func(repoRev repositoryRevision) {
 			defer wg.Done()
-			var rev string
-			if repoRev.rev != nil {
-				rev = *repoRev.rev
-			}
+			rev := repoRev.revSpecsOrDefaultBranch()[0]
 			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, rev, args.query)
 			mu.Lock()
 			defer mu.Unlock()

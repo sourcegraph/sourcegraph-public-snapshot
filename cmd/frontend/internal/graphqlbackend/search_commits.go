@@ -261,13 +261,14 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.repos {
+		if len(repoRev.revspecs) >= 2 {
+			panic("only a single revspec to search is supported")
+		}
+
 		wg.Add(1)
 		go func(repoRev repositoryRevision) {
 			defer wg.Done()
-			var rev string
-			if repoRev.rev != nil {
-				rev = *repoRev.rev
-			}
+			rev := repoRev.revSpecsOrDefaultBranch()[0]
 			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
@@ -315,13 +316,14 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.repos {
+		if len(repoRev.revspecs) >= 2 {
+			panic("only a single revspec to search is supported")
+		}
+
 		wg.Add(1)
 		go func(repoRev repositoryRevision) {
 			defer wg.Done()
-			var rev string
-			if repoRev.rev != nil {
-				rev = *repoRev.rev
-			}
+			rev := repoRev.revSpecsOrDefaultBranch()[0]
 			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.

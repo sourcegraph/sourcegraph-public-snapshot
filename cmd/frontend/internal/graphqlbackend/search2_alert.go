@@ -262,11 +262,11 @@ outer:
 func (r *searchResolver2) alertForMissingRepoRevs(missingRepoRevs []*repositoryRevision) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
-		description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].repo, *missingRepoRevs[0].rev)
+		description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].repo, missingRepoRevs[0].revSpecsOrDefaultBranch()[0])
 	} else {
 		revs := make([]string, 0, len(missingRepoRevs))
 		for _, r := range missingRepoRevs {
-			revs = append(revs, *r.rev)
+			revs = append(revs, r.revSpecsOrDefaultBranch()...)
 		}
 		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because they do not contain the specified revisions: %s.", len(missingRepoRevs), strings.Join(revs, ", "))
 	}
