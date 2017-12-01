@@ -50,6 +50,7 @@ var (
 		"--until", "--since", "--author", "--committer",
 		"--all-match", "--invert-grep", "--extended-regexp",
 		"--no-color", "--decorate", "--no-patch", "--exclude",
+		"--no-merges",
 	}
 )
 

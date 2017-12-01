@@ -14,8 +14,8 @@ import (
 
 var (
 	validRawLogDiffSearchFormatArgs = [][]string{
-		{"-z", "--decorate=full", "--patch", logFormatFlag},
-		{"-z", "--decorate=full", logFormatFlag},
+		{"--no-merges", "-z", "--decorate=full", "--patch", logFormatFlag},
+		{"--no-merges", "-z", "--decorate=full", logFormatFlag},
 	}
 )
 
