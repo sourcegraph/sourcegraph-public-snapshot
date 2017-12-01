@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -271,6 +274,19 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
 	w.WriteHeader(http.StatusOK)
 
+	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
+	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
+	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
+	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
+		if resolved, err := quickRevParseHead(dir); err == nil && len(resolved) == 40 {
+			w.Write([]byte(resolved))
+			w.Header().Set("X-Exec-Error", "")
+			w.Header().Set("X-Exec-Exit-Status", "0")
+			w.Header().Set("X-Exec-Stderr", "")
+			return
+		}
+	}
+
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
 	stderrW := &writeCounter{w: &stderrBuf}
@@ -454,4 +470,49 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
 		return
 	}
+}
+
+// quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
+// It just reads the relevant files from the bare git repository directory.
+func quickRevParseHead(dir string) (string, error) {
+	// See if HEAD contains a commit hash and return it if so.
+	headBytes, err := ioutil.ReadFile(filepath.Join(dir, "HEAD"))
+	if err != nil {
+		return "", err
+	}
+	head := strings.TrimSpace(string(headBytes))
+	if len(head) == 40 {
+		return head, nil
+	}
+
+	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
+	if !strings.HasPrefix(head, "ref: ") {
+		return "", errors.New("unrecognized HEAD file format")
+	}
+	// Look for the file in refs/heads. If it exists, it contains the commit hash.
+	headRef := strings.TrimPrefix(head, "ref: ")
+	headRefFile := filepath.Join(dir, filepath.FromSlash(headRef))
+	if refsBytes, err := ioutil.ReadFile(headRefFile); err == nil {
+		return string(bytes.TrimSpace(refsBytes)), nil
+	}
+
+	// File didn't exist in refs/heads. Look for it in packed-refs.
+	packedRefsFile := filepath.Join(dir, "packed-refs")
+	packedRefsBytes, err := ioutil.ReadFile(packedRefsFile)
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(string(packedRefsBytes), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			continue
+		}
+		commit, ref := fields[0], fields[1]
+		if ref == headRef {
+			return commit, nil
+		}
+	}
+
+	// Didn't find the refs/heads/$HEAD_BRANCH in packed_refs
+	return "", errors.New("could not compute `git rev-parse HEAD` in-process, try running `git` process")
 }
