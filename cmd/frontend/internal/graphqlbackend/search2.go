@@ -25,7 +25,7 @@ var (
 )
 
 const (
-	maxQueryLength = 200
+	maxQueryLength = 400
 
 	searchFieldRepo      search2.Field = "repo"
 	searchFieldFile      search2.Field = "file"
