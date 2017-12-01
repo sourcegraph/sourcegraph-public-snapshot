@@ -90,7 +90,7 @@ interface SearchRouterProps extends RouteComponentProps<{}> {
  */
 const SearchRouter = (props: SearchRouterProps): JSX.Element | null => {
     const options = parseSearchURLQuery(props.location.search)
-    if (options && options.query) {
+    if (options) {
         return <Layout {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
     }
     return <SearchPage2 {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
