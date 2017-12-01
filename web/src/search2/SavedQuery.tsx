@@ -113,7 +113,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             <div className={`saved-query ${this.state.editing ? 'editing' : ''}`}>
                 <div className="saved-query__row">
                     <h2 className="saved-query__description">{this.props.savedQuery.description}</h2>
-                    <div className="saved-query__result-count">
+                    <h2 className="saved-query__result-count">
                         {this.state.loading ? (
                             <Loader className="icon-inline" />
                         ) : (
@@ -124,7 +124,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                                 {this.state.approximateResultCount}
                             </Link>
                         )}
-                    </div>
+                    </h2>
                 </div>
                 <div className="saved-query__row">
                     <div className="saved-query__query">

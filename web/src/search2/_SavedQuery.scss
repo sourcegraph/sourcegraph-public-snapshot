@@ -13,17 +13,19 @@
         height: 2.5rem;
     }
 
-    &__description {
+    &__description,
+    &__result-count {
         flex: 0 0 auto;
         margin-bottom: 0;
+    }
+
+    &__description {
         font-weight: normal;
     }
 
     &__result-count {
-        flex: 0 0 auto;
         min-width: 4rem;
         margin-left: 0.5rem;
-        margin-top: -0.5rem;
 
         .icon {
             height: 1.25rem;
