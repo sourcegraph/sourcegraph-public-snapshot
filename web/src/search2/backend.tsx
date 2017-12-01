@@ -31,6 +31,12 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                 }
                             }
                             ... on CommitSearchResult {
+                                refs {
+                                    name
+                                    displayName
+                                    prefix
+                                    repository { uri }
+                                }
                                 sourceRefs {
                                     name
                                     displayName

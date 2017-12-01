@@ -51,7 +51,9 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
             </a>
             <span className="commit-search-result__title-signature">
-                {props.result.sourceRefs.map((ref, i) => <GitRefTag key={i} gitRef={ref} />)}
+                {uniqueRefs([...props.result.refs, ...props.result.sourceRefs]).map((ref, i) => (
+                    <GitRefTag key={i} gitRef={ref} />
+                ))}
                 <code>
                     <a href={commitURL} onClick={stopPropagationToCollapseOrExpand}>
                         {props.result.commit.abbreviatedOID}
@@ -195,4 +197,16 @@ function commitMessageSubject(message: string): string {
 
 function stopPropagationToCollapseOrExpand(e: React.MouseEvent<HTMLElement>): void {
     e.stopPropagation()
+}
+
+function uniqueRefs(refs: GQL.IGitRef[]): GQL.IGitRef[] {
+    const seenName = new Set<string>()
+    const uniq: GQL.IGitRef[] = []
+    for (const ref of refs) {
+        if (!seenName.has(ref.name)) {
+            uniq.push(ref)
+            seenName.add(ref.name)
+        }
+    }
+    return uniq
 }
