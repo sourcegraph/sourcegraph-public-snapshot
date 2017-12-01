@@ -95,27 +95,28 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-file">
+                <h3>Configuration</h3>
                 <div className="settings-file__actions">
                     {this.state.saving && (
-                        <span className="btn btn-icon settings-file__actions-btn">
+                        <span className="settings-file__action">
                             <Loader className="icon-inline" /> Saving...
                         </span>
                     )}
                     {!this.state.saving &&
                         !this.state.editing && (
-                            <button className="btn btn-icon settings-file__actions-btn" onClick={this.edit}>
+                            <button className="btn btn-sm btn-link settings-file__action" onClick={this.edit}>
                                 <PencilIcon className="icon-inline" /> Edit
                             </button>
                         )}
                     {!this.state.saving &&
                         this.state.editing && (
-                            <button className="btn btn-icon settings-file__actions-btn" onClick={this.save}>
+                            <button className="btn btn-sm btn-link settings-file__action" onClick={this.save}>
                                 <CheckmarkIcon className="icon-inline" /> Save
                             </button>
                         )}
                     {!this.state.saving &&
                         this.state.editing && (
-                            <button className="btn btn-icon settings-file__actions-btn" onClick={this.discard}>
+                            <button className="btn btn-sm btn-link settings-file__action" onClick={this.discard}>
                                 <CloseIcon className="icon-inline" /> Discard
                             </button>
                         )}

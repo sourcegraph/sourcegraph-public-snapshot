@@ -1,0 +1,115 @@
+.btn {
+    display: inline-block;
+    border-radius: 0.25rem;
+    padding: 0.5rem 1rem;
+    font-size: inherit;
+    line-height: inherit;
+    font-family: inherit;
+    border: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    outline: none;
+    transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
+
+    &:disabled {
+        opacity: 0.65;
+    }
+}
+
+.btn-block {
+    width: 100%;
+}
+
+// This class is meant for clickable icons
+// It is NOT meant for buttons with icons in it
+.btn-icon {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+
+    .icon {
+        @extend .icon-inline;
+    }
+
+    &:focus:not(:disabled) {
+        outline: darken($color-primary, 5%);
+        box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
+    }
+
+    &:hover:not(:disabled) {
+        color: white;
+
+        .theme-light & {
+            color: $color-light-text-2;
+        }
+    }
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-link {
+    @extend a;
+}
+
+.btn-primary {
+    background: $color-primary;
+
+    &:hover:not(:disabled) {
+        background: darken($color-primary, 5%);
+    }
+
+    &:focus:not(:disabled) {
+        outline: darken($color-primary, 5%);
+        box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
+    }
+}
+
+.btn-secondary {
+    background: $color-secondary;
+    color: $color-page-background;
+
+    &:hover:not(:disabled) {
+        background: lighten($color-secondary, 5%);
+    }
+
+    &:focus:not(:disabled) {
+        outline: lighten($color-secondary, 5%);
+        box-shadow: 0 0 0 2px rgba($color-secondary, 0.5);
+    }
+}
+
+.btn-info {
+    background: $color-info;
+
+    &:hover:not(:disabled) {
+        background: lighten($color-info, 5%);
+    }
+
+    &:focus:not(:disabled) {
+        outline: lighten($color-info, 5%);
+        box-shadow: 0 0 0 2px rgba($color-info, 0.5);
+    }
+}
+
+.btn-primary,
+.btn-info {
+    // Make sure these styles are applied
+    // even when used on an achor element
+    &,
+    &:hover {
+        &,
+        .theme-light & {
+            color: white;
+            text-decoration: none;
+        }
+    }
+}

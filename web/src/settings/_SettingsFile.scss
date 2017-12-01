@@ -7,20 +7,12 @@
 .settings-file {
     &__actions {
         display: flex;
-        margin: 0.25rem 0;
+        justify-content: flex-end;
+    }
 
-        &-btn {
-            padding: 0.25rem 0.5rem;
-
-            &:first-child {
-                margin-left: -0.5rem;
-            }
-
-            .icon {
-                width: 1.25rem;
-                height: 1.25rem;
-            }
-        }
+    &__action {
+        display: flex;
+        align-items: center;
     }
 
     &__error {

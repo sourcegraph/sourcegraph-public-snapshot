@@ -20,7 +20,6 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-file-container">
-                <h3>Configuration</h3>
                 <SettingsFile
                     settings={this.props.settings}
                     onDidCommit={this.onDidCommit}

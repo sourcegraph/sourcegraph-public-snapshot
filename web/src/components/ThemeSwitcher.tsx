@@ -27,7 +27,7 @@ export class ThemeSwitcher extends React.Component<Props, State> {
                             : '')
                     }
                 >
-                    <span className="btn btn-icon theme-switcher__link">
+                    <span className="btn-icon theme-switcher__link">
                         <SunIcon />
                     </span>
                 </div>
@@ -39,7 +39,7 @@ export class ThemeSwitcher extends React.Component<Props, State> {
                             : '')
                     }
                 >
-                    <span className="btn btn-icon theme-switcher__link">
+                    <span className="btn-icon theme-switcher__link">
                         <MoonIcon />
                     </span>
                 </div>

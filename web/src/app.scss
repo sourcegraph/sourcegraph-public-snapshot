@@ -20,6 +20,7 @@ $media-xl: 1200px;
 @import './global-styles/colors';
 @import './global-styles/type';
 @import './global-styles/code';
+@import './global-styles/buttons';
 
 // Define the 'system' font family
 //
@@ -191,131 +192,6 @@ body {
 // Special case for the loader
 .icon-inline > .icon-loader {
     stroke: currentColor;
-}
-
-a {
-    outline: 0;
-    color: #93a9c8;
-    text-decoration: none;
-
-    &:hover {
-        color: white;
-    }
-}
-
-.theme-light {
-    a {
-        color: $color-light-text-1;
-
-        &:hover {
-            color: $color-light-text-5;
-        }
-    }
-}
-
-.btn {
-    display: inline-block;
-    border-radius: 0.25rem;
-    padding: 0.5rem 1rem;
-    color: white;
-    font-size: inherit;
-    text-decoration: none;
-    line-height: inherit;
-    font-family: inherit;
-    border: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
-    outline: none;
-
-    &:focus:not(:disabled) {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
-    }
-
-    &:disabled {
-        opacity: 0.65;
-    }
-}
-
-.btn-block {
-    width: 100%;
-}
-
-.btn-icon {
-    // Increase clickable area
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    border: none;
-    cursor: pointer;
-
-    .icon {
-        @extend .icon-inline;
-    }
-
-    &:hover:not(:disabled) {
-        color: white;
-    }
-}
-
-.btn-primary {
-    background: $color-primary;
-
-    &:hover:not(:disabled) {
-        background: darken($color-primary, 5%);
-        text-decoration: none;
-    }
-
-    &:focus:not(:disabled) {
-        outline: darken($color-primary, 5%);
-    }
-}
-
-.btn-secondary {
-    background: $color-secondary;
-    color: $color-page-background;
-
-    &:hover:not(:disabled) {
-        background: lighten($color-secondary, 5%);
-    }
-
-    &:focus:not(:disabled) {
-        outline: lighten($color-secondary, 5%);
-    }
-}
-
-.btn-info {
-    background: $color-info;
-}
-
-.theme-light {
-    .btn-icon {
-        &:hover {
-            color: $color-light-text-5;
-        }
-    }
-
-    .btn-primary {
-        background: $color-primary;
-        color: $color-light-text-4;
-
-        &:hover:not(:disabled) {
-            text-decoration: none;
-            color: $color-light-text-4;
-        }
-    }
-}
-
-.light a,
-.light .btn-icon {
-    &:hover {
-        color: #070a0d;
-    }
 }
 
 // Class used for feedback on invalid input fields

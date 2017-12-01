@@ -25,3 +25,28 @@ small {
     font-size: 12px;
     line-height: 1.5;
 }
+
+a {
+    &,
+    &:not([href]):not([tabindex]) {
+        outline: 0;
+        color: #93a9c8;
+        text-decoration: none;
+        transition: color 0.15s ease-in-out;
+
+        &:hover,
+        &:focus {
+            color: white;
+            text-decoration: none; // necessary override
+        }
+
+        .theme-light & {
+            color: #566e9f;
+
+            &:hover,
+            &:focus {
+                color: $color-light-text-5;
+            }
+        }
+    }
+}
