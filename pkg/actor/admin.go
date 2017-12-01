@@ -14,7 +14,7 @@ var (
 func init() {
 	adminUIDs = make(map[string]struct{})
 	for _, username := range strings.Fields(adminUsernames) {
-		adminUIDs[username] = struct{}{}
+		adminUIDs[strings.ToLower(username)] = struct{}{}
 	}
 }
 
