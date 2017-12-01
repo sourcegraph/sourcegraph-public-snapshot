@@ -31,10 +31,7 @@
         margin-bottom: 0;
         font-family: system;
         border-bottom: 1px solid #2a3a51;
-
-        p:not(:first-child) {
-            margin-top: 0.5rem;
-        }
+        white-space: normal;
     }
 
     &__actions {
