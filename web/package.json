@@ -16,7 +16,8 @@
     "watch-graphql": "chokidar ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql\"",
     "lint": "npm run tslint && npm run stylelint && npm run prettier",
     "tslint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.ts?(x)'",
-    "stylelint": "stylelint 'src/**/*.scss' --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
+    "stylelint": "stylelint 'src/**/*.scss'",
+    "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
     "prettier": "prettier '**/*.{js?(on),ts?(x)}' --write --list-different"
   },
   "author": "John Rothfels <john@sourcegraph.com>",

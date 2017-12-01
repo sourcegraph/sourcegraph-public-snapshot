@@ -21,7 +21,7 @@
     },
     {
       "type": "npm",
-      "script": "stylelint",
+      "script": "stylelint-compact",
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",
