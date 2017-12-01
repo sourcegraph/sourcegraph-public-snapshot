@@ -90,9 +90,11 @@ func searchCommitsInRepo(ctx context.Context, repoName, rev string, info *patter
 	}
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
 	// the user has permissions to access the repository.
-	if _, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: rev}); err != nil {
+	resolvedRev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: rev})
+	if err != nil {
 		return nil, false, err
 	}
+	args = append(args, resolvedRev.CommitID)
 
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
