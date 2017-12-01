@@ -320,7 +320,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		}
 	} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
 		common.missing = append(common.missing, repoRev.repo)
-	} else if searchErr == vcs.ErrRevisionNotFound && !repoRev.hasSingleRevSpec() {
+	} else if searchErr == vcs.ErrRevisionNotFound && len(repoRev.revspecs) == 0 {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
 	} else if errors.Cause(searchErr) == context.DeadlineExceeded {
 		common.timedout = append(common.timedout, repoRev.repo)
@@ -354,7 +354,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 	)
 	for _, repoRev := range args.repos {
 		if len(repoRev.revspecs) >= 2 {
-			panic("only a single revspec to search is supported")
+			return nil, nil, errMultipleRevSpecsNotSupported
 		}
 
 		wg.Add(1)

@@ -282,7 +282,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 		includePatterns[i] = repoPattern
 		if len(repoRev.revspecs) >= 2 {
-			panic("only a single revspec to search is supported")
+			return nil, nil, nil, false, errMultipleRevSpecsNotSupported
 		}
 		includePatternRevs[i] = repoRev.revSpecsOrDefaultBranch()[0]
 	}
@@ -324,9 +324,14 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 			repo:     repo.URI,
 			revspecs: getRevForMatchedRepo(repo.URI),
 		}
+
+		if len(repoRev.revspecs) >= 2 {
+			return nil, nil, nil, false, errMultipleRevSpecsNotSupported
+		}
+
 		repoResolver := &repositoryResolver{repo: repo}
 
-		if repoRev.hasSingleRevSpec() {
+		if len(repoRev.revspecs) == 1 {
 			// Check if the repository actually has the revision that the user
 			// specified.
 			_, err := repoResolver.RevState(ctx, &struct {

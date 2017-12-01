@@ -262,7 +262,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 	)
 	for _, repoRev := range args.repos {
 		if len(repoRev.revspecs) >= 2 {
-			panic("only a single revspec to search is supported")
+			return nil, nil, errMultipleRevSpecsNotSupported
 		}
 
 		wg.Add(1)
@@ -317,7 +317,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 	)
 	for _, repoRev := range args.repos {
 		if len(repoRev.revspecs) >= 2 {
-			panic("only a single revspec to search is supported")
+			return nil, nil, errMultipleRevSpecsNotSupported
 		}
 
 		wg.Add(1)
