@@ -27,7 +27,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 				t.Errorf("got %q, want %q", opt.Query.Pattern, want)
 			}
 			if want := []string{
-				"-Sp",
+				"--unified=0",
+				"--no-prefix",
 				"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
 				"--regexp-ignore-case",
 				"rev",
@@ -48,7 +49,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := repositoryRevisions{repo: "repo", revs: []revspecOrRefGlob{{revspec: "rev"}}}
-	results, limitHit, err := searchCommitsInRepo(ctx, repoRevs, &patternInfo{Pattern: "p"}, *query, []string{"-Sp"}, vcs.TextSearchOptions{Pattern: "p"}, nil)
+	results, limitHit, err := searchCommitsInRepo(ctx, repoRevs, &patternInfo{Pattern: "p"}, *query, true, vcs.TextSearchOptions{Pattern: "p"}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

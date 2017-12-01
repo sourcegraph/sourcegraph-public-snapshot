@@ -245,6 +245,9 @@ type RawLogDiffSearchOptions struct {
 	// See `git log --help` for more information.
 	MatchChangedOccurrenceCount bool
 
+	// Diff is whether the diff should be computed and returned.
+	Diff bool
+
 	// OnlyMatchingHunks makes the diff only include hunks that match the query. If false,
 	// all hunks from files that match the query are included.
 	OnlyMatchingHunks bool

@@ -38,6 +38,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			want: map[*vcs.RawLogDiffSearchOptions][]*vcs.LogCommitSearchResult{
 				{
 					Query: vcs.TextSearchOptions{Pattern: "root"},
+					Diff:  true,
 				}: {
 					{
 						Commit: vcs.Commit{

@@ -35,10 +35,10 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	defer span.Finish()
 
 	if opt.FormatArgs == nil {
-		if opt.Query.Pattern == "" {
-			opt.FormatArgs = validRawLogDiffSearchFormatArgs[1] // without --patch
-		} else {
+		if opt.Diff {
 			opt.FormatArgs = validRawLogDiffSearchFormatArgs[0] // with --patch
+		} else {
+			opt.FormatArgs = validRawLogDiffSearchFormatArgs[1] // without --patch
 		}
 	}
 	if opt.FormatArgs != nil && !isValidRawLogDiffSearchFormatArgs(opt.FormatArgs) {
@@ -130,17 +130,21 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	// Even though we've already searched using the query, we need to
 	// search the returned diff again to filter to only matching hunks
 	// and to highlight matches.
-	pattern := opt.Query.Pattern
-	if !opt.Query.IsRegExp {
-		pattern = regexp.QuoteMeta(pattern)
+	var query *regexp.Regexp
+	if pattern := opt.Query.Pattern; pattern != "" {
+		if !opt.Query.IsRegExp {
+			pattern = regexp.QuoteMeta(pattern)
+		}
+		if !opt.Query.IsCaseSensitive {
+			pattern = "(?i:" + pattern + ")"
+		}
+		var err error
+		query, err = regexp.Compile(pattern)
+		if err != nil {
+			return nil, false, err
+		}
 	}
-	if !opt.Query.IsCaseSensitive {
-		pattern = "(?i:" + pattern + ")"
-	}
-	query, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, false, err
-	}
+
 	pathMatcher, err := vcs.CompilePathMatcher(opt.Paths)
 	if err != nil {
 		return nil, false, err
@@ -154,6 +158,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	showArgs := append([]string{}, "show")
 	showArgs = append(showArgs, "--no-patch") // will be overridden if opt.FormatArgs has --patch
 	showArgs = append(showArgs, opt.FormatArgs...)
+	showArgs = append(showArgs, opt.Args...)
 	showArgs = append(showArgs, commitOIDs...)
 	appendCommonQueryArgs(&showArgs)
 	appendCommonDashDashArgs(&showArgs)
@@ -208,7 +213,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			}
 
 			var err error
-			rawDiff, result.DiffHighlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks, pathMatcher)
+			rawDiff, result.DiffHighlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks && query != nil, pathMatcher)
 			if err != nil {
 				return nil, false, err
 			}

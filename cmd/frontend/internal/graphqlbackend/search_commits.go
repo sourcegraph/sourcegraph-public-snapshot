@@ -63,16 +63,12 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, combinedQuery)
 	}
 
-	args := []string{
-		"--unified=0",
-		"--no-prefix",
-	}
 	textSearchOptions := vcs.TextSearchOptions{
 		Pattern:         info.Pattern,
 		IsRegExp:        info.IsRegExp,
 		IsCaseSensitive: info.IsCaseSensitive,
 	}
-	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, args, textSearchOptions, nil)
+	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, true, textSearchOptions, nil)
 }
 
 var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery) (results []*commitSearchResult, limitHit bool, err error)
@@ -86,10 +82,10 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 	if info.Pattern != "" {
 		terms = append(terms, info.Pattern)
 	}
-	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, nil, vcs.TextSearchOptions{}, terms)
+	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, false, vcs.TextSearchOptions{}, terms)
 }
 
-func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery, args []string, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery resolvedQuery, diff bool, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
 	repo, err := localstore.Repos.GetByURI(ctx, repoRevs.repo)
 	if err != nil {
 		return nil, false, err
@@ -106,7 +102,11 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 		return nil, false, err
 	}
 
-	args = append(args, "--max-count="+strconv.Itoa(maxGitLogSearchResults+1))
+	args := []string{
+		"--unified=0",
+		"--no-prefix",
+		"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
+	}
 	if info.IsRegExp {
 		args = append(args, "--extended-regexp")
 	}
@@ -205,6 +205,7 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 			IsRegExp:        info.PathPatternsAreRegExps,
 			// TODO(sqs): use ArgsHint for better perf
 		},
+		Diff:              diff,
 		OnlyMatchingHunks: true,
 		Args:              args,
 	})

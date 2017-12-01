@@ -132,11 +132,6 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 		}
 		patternsToCombine = append(patternsToCombine, value)
 	}
-
-	if len(patternsToCombine) == 0 {
-		return nil, errors.New("no query terms or regexp specified")
-	}
-
 	args := repoSearchArgs{
 		query: &patternInfo{
 			IsRegExp:                     true,
@@ -173,6 +168,9 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
 		case "file":
+			if len(patternsToCombine) == 0 {
+				return nil, errors.New("no query terms or regexp specified")
+			}
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
 				return searchRepos(ctx, &args)
 			})

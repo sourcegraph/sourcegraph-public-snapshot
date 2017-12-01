@@ -94,13 +94,15 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 		if len(line) == 0 {
 			continue
 		}
-		lineWithoutStatus := line[1:] // don't match '-' or '+' line status
-		for _, match := range query.FindAllIndex(lineWithoutStatus, maxMatchesPerLine) {
-			highlights = append(highlights, Highlight{
-				Line:      i + 1,
-				Character: match[0] + 1,
-				Length:    match[1] - match[0],
-			})
+		if query != nil {
+			lineWithoutStatus := line[1:] // don't match '-' or '+' line status
+			for _, match := range query.FindAllIndex(lineWithoutStatus, maxMatchesPerLine) {
+				highlights = append(highlights, Highlight{
+					Line:      i + 1,
+					Character: match[0] + 1,
+					Length:    match[1] - match[0],
+				})
+			}
 		}
 	}
 
