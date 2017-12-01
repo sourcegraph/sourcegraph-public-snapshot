@@ -2,41 +2,41 @@ package graphqlbackend
 
 import "strings"
 
-// repositoryRevision specifies a repository and 0 or more revspecs.
+// repositoryRevisions specifies a repository and 0 or more revspecs.
 // If no revspec is specified, then the repository's default branch is used.
-type repositoryRevision struct {
+type repositoryRevisions struct {
 	repo     string
 	revspecs []string
 }
 
-// parseRepositoryRevision parses strings of the form "repo" or "repo@rev" into
-// a repositoryRevision.
-func parseRepositoryRevision(repoAndOptionalRev string) repositoryRevision {
+// parseRepositoryRevisions parses strings of the form "repo" or "repo@rev" into
+// a repositoryRevisions.
+func parseRepositoryRevisions(repoAndOptionalRev string) repositoryRevisions {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
-		return repositoryRevision{repo: repoAndOptionalRev}
+		return repositoryRevisions{repo: repoAndOptionalRev}
 	}
 	rev := repoAndOptionalRev[i+1:]
-	return repositoryRevision{
+	return repositoryRevisions{
 		repo:     repoAndOptionalRev[:i],
 		revspecs: []string{rev},
 	}
 }
 
-func (repoRev *repositoryRevision) String() string {
-	if repoRev.hasSingleRevSpec() {
-		return repoRev.repo + "@" + repoRev.revspecs[0]
+func (r *repositoryRevisions) String() string {
+	if r.hasSingleRevSpec() {
+		return r.repo + "@" + r.revspecs[0]
 	}
-	return repoRev.repo
+	return r.repo
 }
 
-func (repoRev *repositoryRevision) revSpecsOrDefaultBranch() []string {
-	if len(repoRev.revspecs) == 0 {
+func (r *repositoryRevisions) revSpecsOrDefaultBranch() []string {
+	if len(r.revspecs) == 0 {
 		return []string{""}
 	}
-	return repoRev.revspecs
+	return r.revspecs
 }
 
-func (repoRev *repositoryRevision) hasSingleRevSpec() bool {
-	return len(repoRev.revspecs) == 1
+func (r *repositoryRevisions) hasSingleRevSpec() bool {
+	return len(r.revspecs) == 1
 }

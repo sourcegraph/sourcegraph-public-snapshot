@@ -259,7 +259,7 @@ outer:
 	return alert, nil
 }
 
-func (r *searchResolver2) alertForMissingRepoRevs(missingRepoRevs []*repositoryRevision) *searchAlert {
+func (r *searchResolver2) alertForMissingRepoRevs(missingRepoRevs []*repositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].repo, missingRepoRevs[0].revSpecsOrDefaultBranch()[0])

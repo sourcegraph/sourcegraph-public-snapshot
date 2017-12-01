@@ -296,7 +296,7 @@ func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (m
 
 type repoSearchArgs struct {
 	query *patternInfo
-	repos []*repositoryRevision
+	repos []*repositoryRevisions
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a call to searcher or
@@ -310,7 +310,7 @@ type repoSearchArgs struct {
 //     err = errors.Wrapf(searchErr, "failed to search %s because foo", ...) // return this error
 //     cancel() // cancel any other in-flight operations
 //	}
-func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevision, limitHit bool, searchErr error) (fatalErr error) {
+func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevisions, limitHit bool, searchErr error) (fatalErr error) {
 	common.limitHit = common.limitHit || limitHit
 	if e, ok := searchErr.(vcs.RepoNotExistError); ok {
 		if e.CloneInProgress {
@@ -358,7 +358,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		}
 
 		wg.Add(1)
-		go func(repoRev repositoryRevision) {
+		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revSpecsOrDefaultBranch()[0]
 			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, rev, args.query)

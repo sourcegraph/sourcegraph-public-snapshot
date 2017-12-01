@@ -133,7 +133,7 @@ type searchResolver2 struct {
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
-	repoRevs, missingRepoRevs []*repositoryRevision
+	repoRevs, missingRepoRevs []*repositoryRevisions
 	repoResults               []*searchResultResolver
 	repoOverLimit             bool
 	repoErr                   error
@@ -204,7 +204,7 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevision, repoResults []*searchResultResolver, overLimit bool, err error) {
+func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchResultResolver, overLimit bool, err error) {
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
@@ -231,7 +231,7 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 	return repoRevs, missingRepoRevs, repoResults, overLimit, err
 }
 
-func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevision, repoResolvers []*searchResultResolver, overLimit bool, err error) {
+func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchResultResolver, overLimit bool, err error) {
 	includePatterns := repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
@@ -267,7 +267,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	// matched repos should be resolved to "rev".
 	includePatternRevs := make([]string, len(includePatterns))
 	for i, includePattern := range includePatterns {
-		repoRev := parseRepositoryRevision(includePattern)
+		repoRev := parseRepositoryRevisions(includePattern)
 		repoPattern := repoRev.repo // trim "@rev" from pattern
 		// Validate pattern now so the error message is more recognizable to the
 		// user
@@ -317,10 +317,10 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	}
 	overLimit = len(repos.Repos) >= maxRepoListSize
 
-	repoRevisions = make([]*repositoryRevision, 0, len(repos.Repos))
+	repoRevisions = make([]*repositoryRevisions, 0, len(repos.Repos))
 	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {
-		repoRev := &repositoryRevision{
+		repoRev := &repositoryRevisions{
 			repo:     repo.URI,
 			revspecs: getRevForMatchedRepo(repo.URI),
 		}

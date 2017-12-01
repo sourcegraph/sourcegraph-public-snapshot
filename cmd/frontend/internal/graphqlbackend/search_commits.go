@@ -266,7 +266,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 		}
 
 		wg.Add(1)
-		go func(repoRev repositoryRevision) {
+		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revSpecsOrDefaultBranch()[0]
 			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)
@@ -321,7 +321,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 		}
 
 		wg.Add(1)
-		go func(repoRev repositoryRevision) {
+		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revSpecsOrDefaultBranch()[0]
 			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev.repo, rev, args.query, combinedQuery)

@@ -41,7 +41,7 @@ func TestSearchRepos(t *testing.T) {
 			FileMatchLimit: 300,
 			Pattern:        "foo",
 		},
-		repos: []*repositoryRevision{{repo: "foo/one"}, {repo: "foo/two"}, {repo: "foo/empty"}, {repo: "foo/cloning"}, {repo: "foo/missing"}},
+		repos: []*repositoryRevisions{{repo: "foo/one"}, {repo: "foo/two"}, {repo: "foo/empty"}, {repo: "foo/cloning"}, {repo: "foo/missing"}},
 	}
 	results, common, err := searchRepos(context.Background(), args)
 	if err != nil {
