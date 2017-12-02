@@ -13,9 +13,15 @@
     }
 
     &__header {
+        display: flex;
+        justify-content: space-between;
         color: #93a9c8;
         padding-bottom: 0.5rem;
-        text-align: right;
+
+        &-notice {
+            display: flex;
+            align-items: center;
+        }
     }
 }
 

@@ -1,3 +1,4 @@
+import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
@@ -34,6 +35,7 @@ interface State {
     limitHit: boolean
     cloning: string[]
     missing: string[]
+    timedout: string[]
 }
 
 function numberWithCommas(x: any): string {
@@ -52,6 +54,7 @@ export class SearchResults extends React.Component<Props, State> {
         limitHit: false,
         cloning: [],
         missing: [],
+        timedout: [],
     }
 
     private componentUpdates = new Subject<Props>()
@@ -136,6 +139,7 @@ export class SearchResults extends React.Component<Props, State> {
                         alert: null,
                         missing: [],
                         cloning: [],
+                        timedout: [],
                         limitHit: false,
                         error: undefined,
                         loading: true,
@@ -193,13 +197,21 @@ export class SearchResults extends React.Component<Props, State> {
         return (
             <div className="search-results2">
                 {this.state.results.length > 0 && (
-                    <div className="search-results2__header">
-                        <span className="search-results2__stats">
+                    <small className="search-results2__header">
+                        {this.state.timedout.length > 0 && (
+                            <span className="search-results2__header-notice" title={this.state.timedout.join('\n')}>
+                                <HourglassIcon className="icon-inline" />
+                                {this.state.timedout.length}{' '}
+                                {pluralize('repository', this.state.timedout.length, 'repositories')} timed out (reload
+                                to view)
+                            </span>
+                        )}
+                        <span className="search-results2__header-stats">
                             {numberWithCommas(totalResults)}
-                            {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in
-                        </span>{' '}
-                        <span className="search-results2__duration">{this.state.searchDuration! / 1000} seconds</span>
-                    </div>
+                            {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
+                            {this.state.searchDuration! / 1000} seconds
+                        </span>
+                    </small>
                 )}
                 {this.state.cloning.map((repoPath, i) => (
                     <RepoSearchResult repoPath={repoPath} key={i} icon={Loader} />
