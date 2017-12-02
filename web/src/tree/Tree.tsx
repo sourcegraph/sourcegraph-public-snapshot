@@ -492,38 +492,26 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                 .join(' ')}
                         >
                             <td onClick={this.handleDirClick}>
-                                <div
+                                <Link
                                     className="tree__row-contents"
                                     data-tree-directory="true"
                                     data-tree-path={node.filePath}
+                                    to={toTreeURL({
+                                        repoPath: this.props.repoPath,
+                                        rev: this.props.rev,
+                                        filePath: node.filePath,
+                                    })}
                                     style={treePadding(this.props.depth, true)}
                                 >
-                                    <Link
-                                        className="tree__row-icon"
-                                        to={toTreeURL({
-                                            repoPath: this.props.repoPath,
-                                            rev: this.props.rev,
-                                            filePath: node.filePath,
-                                        })}
-                                    >
+                                    <span className="tree__row-icon">
                                         {this.showSubpath(node.filePath) ? (
                                             <ChevronDownIcon className="icon-inline" />
                                         ) : (
                                             <ChevronRightIcon className="icon-inline" />
                                         )}
-                                    </Link>
-                                    <a
-                                        href={toTreeURL({
-                                            repoPath: this.props.repoPath,
-                                            rev: this.props.rev,
-                                            filePath: node.filePath,
-                                        })}
-                                        onClick={this.noopRowClick}
-                                        className="tree__row-label"
-                                    >
-                                        {node.filePath.split('/').pop()}
-                                    </a>
-                                </div>
+                                    </span>
+                                    <span className="tree__row-label">{node.filePath.split('/').pop()}</span>
+                                </Link>
                             </td>
                         </tr>,
                         this.showSubpath(node.filePath) && (
