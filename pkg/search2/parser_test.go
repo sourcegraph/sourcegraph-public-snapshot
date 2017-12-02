@@ -18,12 +18,14 @@ func TestParse(t *testing.T) {
 		"a c":       {tokens: Tokens{{Value: Value{Value: "a"}}, {Value: Value{Value: "c"}}}},
 		" a ":       {tokens: Tokens{{Value: Value{Value: "a"}}}},
 		` "a" `:     {tokens: Tokens{{Value: Value{Value: "a", Quoted: true}}}},
+		"(a:b)":     {tokens: Tokens{{Value: Value{Value: "(a:b)"}}}},
 		`"a" b "c"`: {tokens: Tokens{{Value: Value{Value: "a", Quoted: true}}, {Value: Value{Value: "b"}}, {Value: Value{Value: "c", Quoted: true}}}},
 		`"a\`:       {tokens: Tokens{{Value: Value{Value: `a`, Quoted: true}}}},
 		`"\uzz"`:    {err: true},
 		`"\uzz`:     {err: true},
 
 		"f:a":       {tokens: Tokens{{Field: "f", Value: Value{Value: "a"}}}},
+		"f:a:b":     {tokens: Tokens{{Field: "f", Value: Value{Value: "a:b"}}}},
 		"f:":        {tokens: Tokens{{Field: "f", Value: Value{Value: ""}}}},
 		"f:abc":     {tokens: Tokens{{Field: "f", Value: Value{Value: "abc"}}}},
 		`f:"a c"`:   {tokens: Tokens{{Field: "f", Value: Value{Value: "a c", Quoted: true}}}},
@@ -73,7 +75,7 @@ func TestParse(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(tokens, test.tokens) {
-				t.Fatalf("got tokens %v, want %v", tokens, test.tokens)
+				t.Fatalf("got tokens %#v, want %#v", tokens, test.tokens)
 			}
 		})
 	}

@@ -42,7 +42,11 @@ func Parse(query string) (tokens Tokens, err error) {
 				start = i
 
 			default:
-				state = fieldOrTerm
+				if isFieldNameChar(r) {
+					state = fieldOrTerm
+				} else {
+					state = term
+				}
 				start = i
 			}
 
@@ -70,6 +74,11 @@ func Parse(query string) (tokens Tokens, err error) {
 				field = Field(query[start:i])
 				state = term
 				start = i + 1
+
+			case state == fieldOrTerm && !isFieldNameChar(r):
+				start -= len(field)
+				field = ""
+				state = term
 			}
 
 		case quotedTerm:
@@ -122,6 +131,11 @@ func Parse(query string) (tokens Tokens, err error) {
 	}
 
 	return
+}
+
+// isFieldNameChar returns whether r is a valid character in a field name.
+func isFieldNameChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
 }
 
 // ParseError occurs when Parse is called with an invalid query string.
