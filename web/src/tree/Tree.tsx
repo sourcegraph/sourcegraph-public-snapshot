@@ -498,9 +498,10 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                     data-tree-path={node.filePath}
                                     style={treePadding(this.props.depth, true)}
                                 >
-                                    <Link
+                                    <a
                                         className="tree__row-icon"
-                                        to={toTreeURL({
+                                        onClick={this.noopRowClick}
+                                        href={toTreeURL({
                                             repoPath: this.props.repoPath,
                                             rev: this.props.rev,
                                             filePath: node.filePath,
@@ -511,18 +512,17 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                         ) : (
                                             <ChevronRightIcon className="icon-inline" />
                                         )}
-                                    </Link>
-                                    <a
-                                        href={toTreeURL({
+                                    </a>
+                                    <Link
+                                        to={toTreeURL({
                                             repoPath: this.props.repoPath,
                                             rev: this.props.rev,
                                             filePath: node.filePath,
                                         })}
-                                        onClick={this.noopRowClick}
                                         className="tree__row-label"
                                     >
                                         {node.filePath.split('/').pop()}
-                                    </a>
+                                    </Link>
                                 </div>
                             </td>
                         </tr>,
