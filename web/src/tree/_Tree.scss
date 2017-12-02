@@ -63,17 +63,11 @@
             &:hover {
                 background-color: $color-light-bg-3;
                 color: inherit;
-                text-decoration: none;
             }
 
             &--selected {
                 background-color: $color-primary;
-                color: $color-light-text-4;
-
-                &:hover {
-                    color: $color-light-text-4;
-                    text-decoration: none;
-                }
+                color: $color-light-text-4 !important;
             }
         }
 
@@ -86,16 +80,11 @@
 
             &:hover {
                 color: inherit;
-                text-decoration: none;
             }
         }
 
-        &__row-label {
+        a {
             color: inherit !important; // override link color
-
-            &:hover {
-                text-decoration: none;
-            }
         }
     }
 }
