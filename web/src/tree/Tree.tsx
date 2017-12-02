@@ -32,10 +32,15 @@ interface TreeNode {
     state: BehaviorSubject<TreeNodeState>
 }
 
-export interface Store {
+interface Store {
     nodes: TreeNode[]
     nodeMap: Map<string, TreeNode>
     selectedPath: string
+}
+
+interface State {
+    store: Store
+    relativeDir?: string
 }
 
 const treePadding = (depth: number, directory: boolean) => ({
@@ -65,16 +70,16 @@ function closeDirectory(store: Store, dir: string): void {
     }
 }
 
-export class Tree extends React.PureComponent<Props, {}> {
+export class Tree extends React.PureComponent<Props, State> {
     private ref: HTMLDivElement | null
-    private store: Store
-    private relativeDir?: string
 
     constructor(props: Props) {
         super(props)
         const { nodes, nodeMap } = this.parseNodes(props.paths, props.selectedPath)
-        this.store = { nodes, nodeMap, selectedPath: props.selectedPath }
-        this.onKeyDown = this.onKeyDown.bind(this)
+        this.state = {
+            store: { nodes, nodeMap, selectedPath: props.selectedPath },
+            relativeDir: nodes.length > 1 ? getParentDir(nodes[0].filePath) : undefined,
+        }
     }
 
     public componentDidMount(): void {
@@ -91,24 +96,22 @@ export class Tree extends React.PureComponent<Props, {}> {
     public componentWillReceiveProps(nextProps: Props): void {
         const selectedPath = nextProps.selectedPath
         if (this.props.paths !== nextProps.paths) {
-            const { nodes, nodeMap } = this.parseNodes(nextProps.paths, nextProps.selectedPath)
-            if (nodes.length > 1) {
-                // Relative dir is the parent of the first entry in the list
-                this.relativeDir = getParentDir(nodes[0].filePath)
-            }
-            this.store = { nodes, nodeMap, selectedPath: nextProps.selectedPath }
+            const { nodes, nodeMap } = this.parseNodes(nextProps.paths, selectedPath)
+            this.setState({
+                store: { nodes, nodeMap, selectedPath },
+                relativeDir: nodes.length > 1 ? getParentDir(nodes[0].filePath) : undefined,
+            })
         } else {
             // If we are trying to show a path not available on the tree, recreate the nodes.
             const loc = this.locateDomNodeInCollection(selectedPath)
             if (!loc) {
-                const { nodes, nodeMap } = this.parseNodes(nextProps.paths, nextProps.selectedPath)
-                if (nodes.length > 1) {
-                    // Relative dir is the parent of the first entry in the list
-                    this.relativeDir = getParentDir(nodes[0].filePath)
-                }
-                this.store = { nodes, nodeMap, selectedPath: nextProps.selectedPath }
+                const { nodes, nodeMap } = this.parseNodes(nextProps.paths, selectedPath)
+                this.setState({
+                    store: { nodes, nodeMap, selectedPath },
+                    relativeDir: nodes.length > 1 ? getParentDir(nodes[0].filePath) : undefined,
+                })
             } else {
-                selectRow(this.store, selectedPath)
+                selectRow(this.state.store, selectedPath)
             }
         }
         if (this.props.selectedPath !== selectedPath) {
@@ -130,16 +133,16 @@ export class Tree extends React.PureComponent<Props, {}> {
                     history={this.props.history}
                     repoPath={this.props.repoPath}
                     rev={this.props.rev}
-                    store={this.store}
+                    store={this.state.store}
                     currSubpath=""
-                    relativeDir={this.relativeDir}
+                    relativeDir={this.state.relativeDir}
                 />
             </div>
         )
     }
 
-    public ArrowDown(): void {
-        const loc = this.locateDomNodeInCollection(this.store.selectedPath)
+    public ArrowDown = () => {
+        const loc = this.locateDomNodeInCollection(this.state.store.selectedPath)
         if (loc) {
             const { items, i } = loc
             if (i < items.length - 1) {
@@ -152,8 +155,8 @@ export class Tree extends React.PureComponent<Props, {}> {
         }
     }
 
-    public ArrowUp(): void {
-        const loc = this.locateDomNodeInCollection(this.store.selectedPath)
+    public ArrowUp = () => {
+        const loc = this.locateDomNodeInCollection(this.state.store.selectedPath)
         if (loc) {
             const { items, i } = loc
             if (i > 0) {
@@ -166,16 +169,16 @@ export class Tree extends React.PureComponent<Props, {}> {
         }
     }
 
-    public ArrowLeft(): void {
-        const selectedPath = this.store.selectedPath
-        const node = this.store.nodeMap.get(selectedPath)
+    public ArrowLeft = () => {
+        const selectedPath = this.state.store.selectedPath
+        const node = this.state.store.nodeMap.get(selectedPath)
         if (!node) {
             console.error('could not locate node (arrow down)', selectedPath)
             return
         }
         const isOpenDir = !node.state.getValue().collapsed
         if (isOpenDir) {
-            closeDirectory(this.store, selectedPath)
+            closeDirectory(this.state.store, selectedPath)
             return
         }
         const loc = this.locateDomNodeInCollection(selectedPath)
@@ -199,9 +202,9 @@ export class Tree extends React.PureComponent<Props, {}> {
         }
     }
 
-    public ArrowRight(): void {
-        const selectedPath = this.store.selectedPath
-        const node = this.store.nodeMap.get(selectedPath)
+    public ArrowRight = () => {
+        const selectedPath = this.state.store.selectedPath
+        const node = this.state.store.nodeMap.get(selectedPath)
         if (!node) {
             console.error('could not locate node (arrow right)', selectedPath)
             return
@@ -225,9 +228,9 @@ export class Tree extends React.PureComponent<Props, {}> {
         }
     }
 
-    public Enter(): void {
-        const selectedPath = this.store.selectedPath
-        const node = this.store.nodeMap.get(selectedPath)
+    public Enter = () => {
+        const selectedPath = this.state.store.selectedPath
+        const node = this.state.store.nodeMap.get(selectedPath)
         if (!node) {
             console.error('could not locate node (enter)', selectedPath)
             return
@@ -239,7 +242,7 @@ export class Tree extends React.PureComponent<Props, {}> {
             if (isDir) {
                 const isOpen = !node.state.getValue().collapsed
                 if (isOpen) {
-                    closeDirectory(this.store, selectedPath)
+                    closeDirectory(this.state.store, selectedPath)
                     return
                 }
             }
@@ -276,7 +279,7 @@ export class Tree extends React.PureComponent<Props, {}> {
             : document.querySelector('.tree-container')) as HTMLElement
         scrollIntoView(el, root)
         const path = el.getAttribute('data-tree-path')!
-        selectRow(this.store, path)
+        selectRow(this.state.store, path)
     }
 
     private locateDomNode(path: string): HTMLElement | undefined {
@@ -488,19 +491,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                 .filter(c => !!c)
                                 .join(' ')}
                         >
-                            <td
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onClick={() => {
-                                    const state = node.state.getValue()
-                                    selectRow(this.props.store, node.filePath)
-                                    if (!state.collapsed) {
-                                        closeDirectory(this.props.store, node.filePath)
-                                    } else {
-                                        // store.selectedPath = node.filePath
-                                        node.state.next({ collapsed: false, selected: true })
-                                    }
-                                }}
-                            >
+                            <td onClick={this.handleDirClick}>
                                 <div
                                     className="tree__row-contents"
                                     data-tree-directory="true"
@@ -539,7 +530,6 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                             <tr key={'layer-' + node.filePath}>
                                 <td>
                                     <TreeLayer
-                                        // key={'layer-' + i}
                                         history={this.props.history}
                                         repoPath={this.props.repoPath}
                                         rev={this.props.rev}
@@ -575,6 +565,16 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                 </tbody>
             </table>
         )
+    }
+
+    private handleDirClick = () => {
+        const state = this.props.node.state.getValue()
+        selectRow(this.props.store, this.props.node.filePath)
+        if (!state.collapsed) {
+            closeDirectory(this.props.store, this.props.node.filePath)
+        } else {
+            this.props.node.state.next({ collapsed: false, selected: true })
+        }
     }
 
     private showSubpath(dir: string): boolean {
