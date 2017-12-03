@@ -110,12 +110,34 @@ func main() {
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
 
-	pipeline.AddStep(":html:",
+	pipeline.AddStep(":lipstick:",
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm install"),
-		Cmd("NODE_ENV=production npm run build"),
-		Cmd("npm run lint"),
+		Cmd("npm run prettier"))
+
+	pipeline.AddStep(":typescript:",
+		Env("FORCE_COLOR", "1"),
+		Cmd("cd web"),
+		Cmd("npm install"),
+		Cmd("npm run tslint"))
+
+	pipeline.AddStep(":stylelint:",
+		Env("FORCE_COLOR", "1"),
+		Cmd("cd web"),
+		Cmd("npm install"),
+		Cmd("npm run stylelint"))
+
+	pipeline.AddStep(":webpack:",
+		Env("FORCE_COLOR", "1"),
+		Cmd("cd web"),
+		Cmd("npm install"),
+		Cmd("NODE_ENV=production npm run build"))
+
+	pipeline.AddStep(":mocha:",
+		Env("FORCE_COLOR", "1"),
+		Cmd("cd web"),
+		Cmd("npm install"),
 		Cmd("npm test"))
 
 	for _, path := range pkgs {
