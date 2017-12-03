@@ -22,6 +22,7 @@ $media-xl: 1200px;
 @import './global-styles/code';
 @import './global-styles/buttons';
 @import './global-styles/forms';
+@import './global-styles/highlight';
 
 // Define the 'system' font family
 //
@@ -319,7 +320,6 @@ body {
     }
 }
 
-@import './highlight';
 @import './search2/QueryButton';
 @import './search2/SavedQueries';
 @import './search2/SearchNavbarItem';

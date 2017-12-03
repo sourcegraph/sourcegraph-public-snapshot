@@ -2,6 +2,7 @@ import * as ExtractTextPlugin from 'extract-text-webpack-plugin'
 import * as path from 'path'
 import * as Tapable from 'tapable'
 import * as webpack from 'webpack'
+const sassImportOnce = require('node-sass-import-once')
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
 const plugins: webpack.Plugin[] = [
@@ -94,6 +95,10 @@ const config: webpack.Configuration = {
                         loader: 'sass-loader',
                         options: {
                             includePaths: [__dirname + '/node_modules'],
+                            importer: sassImportOnce,
+                            importOnce: {
+                                css: true,
+                            },
                         },
                     },
                 ]),
