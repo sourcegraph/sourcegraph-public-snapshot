@@ -19,6 +19,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                         limitHit
                         missing
                         cloning
+                        timedout
                         results {
                             __typename
                             ... on FileMatch {

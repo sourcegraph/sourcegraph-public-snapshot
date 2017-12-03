@@ -65,6 +65,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	}
 	appendUnique(&c.cloning, other.cloning)
 	appendUnique(&c.missing, other.missing)
+	appendUnique(&c.timedout, other.timedout)
 }
 
 type searchResults2 struct {
