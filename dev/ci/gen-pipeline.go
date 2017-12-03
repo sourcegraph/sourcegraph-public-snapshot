@@ -111,6 +111,7 @@ func main() {
 		Cmd("./dev/check/all.sh"))
 
 	pipeline.AddStep(":html:",
+		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm install"),
 		Cmd("NODE_ENV=production npm run build"),
