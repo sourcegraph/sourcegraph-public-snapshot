@@ -5,11 +5,11 @@ import { skip } from 'rxjs/operators/skip'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { Help } from './Help'
 import { submitSearch } from './helpers'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { QueryInput } from './QueryInput'
 import { ScopeLabel } from './ScopeLabel'
+import { Search2Help } from './Search2Help'
 import { SearchButton } from './SearchButton'
 import { SearchScope } from './SearchScope'
 
@@ -93,7 +93,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                         autoFocus={autoFocus ? 'cursor-at-end' : undefined}
                     />
                     <SearchButton />
-                    <Help />
+                    <Search2Help />
                 </div>
                 <div className="search-navbar-item2__row">
                     <SearchScope

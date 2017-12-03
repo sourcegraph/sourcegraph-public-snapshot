@@ -41,13 +41,13 @@ export class SearchFields extends React.Component<Props, State> {
                     <h3 className="search-fields2__header-example">Shortcut</h3>
                 </div>
                 <div className="search-fields2__row">
-                    <div className="search-fields2__row-label">
-                        <label htmlFor="search-fields2__repo">Repositories:</label>
-                    </div>
+                    <label className="search-fields2__row-label" htmlFor="search-fields2__repo">
+                        Repositories:
+                    </label>
                     <div className="search-fields2__row-input">
                         <input
                             id="search-fields2__repo"
-                            className="search-fields2__input"
+                            className="form-control search-fields2__input"
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
@@ -64,13 +64,13 @@ export class SearchFields extends React.Component<Props, State> {
                     </div>
                 </div>
                 <div className="search-fields2__row">
-                    <div className="search-fields2__row-label">
-                        <label htmlFor="search-fields2__file">File paths:</label>
-                    </div>
+                    <label className="search-fields2__row-label" htmlFor="search-fields2__file">
+                        File paths:
+                    </label>
                     <div className="search-fields2__row-input">
                         <input
                             id="search-fields2__file"
-                            className="search-fields2__input"
+                            className="form-control search-fields2__input"
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
@@ -90,13 +90,13 @@ export class SearchFields extends React.Component<Props, State> {
                     <h3 className="search-fields2__header-input">Match...</h3>
                 </div>
                 <div className="search-fields2__row">
-                    <div className="search-fields2__row-label">
-                        <label htmlFor="search-fields2__patterns">Patterns:</label>
-                    </div>
+                    <label className="search-fields2__row-label" htmlFor="search-fields2__patterns">
+                        Patterns:
+                    </label>
                     <div className="search-fields2__row-input">
                         <input
                             id="search-fields2__patterns"
-                            className="search-fields2__input"
+                            className="form-control search-fields2__input"
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
@@ -112,13 +112,13 @@ export class SearchFields extends React.Component<Props, State> {
                     </div>
                 </div>
                 <div className="search-fields2__row">
-                    <div className="search-fields2__row-label">
-                        <label htmlFor="search-fields2__quoted-term">Exact string:</label>
-                    </div>
+                    <label className="search-fields2__row-label" htmlFor="search-fields2__quoted-term">
+                        Exact string:
+                    </label>
                     <div className="search-fields2__row-input">
                         <input
                             id="search-fields2__quoted-term"
-                            className="search-fields2__input"
+                            className="form-control search-fields2__input"
                             spellCheck={false}
                             autoCapitalize="off"
                             placeholder=""
@@ -134,13 +134,13 @@ export class SearchFields extends React.Component<Props, State> {
                     </div>
                 </div>
                 <div className="search-fields2__row">
-                    <div className="search-fields2__row-label">
-                        <label htmlFor="search-fields2__case">Case sensitive?</label>
-                    </div>
+                    <label className="search-fields2__row-label" htmlFor="search-fields2__case">
+                        Case sensitive?
+                    </label>
                     <div className="search-fields2__row-input">
                         <select
                             id="search-fields2__case"
-                            className="search-fields2__input search-fields2__input-select"
+                            className="form-control search-fields2__input search-fields2__input-select"
                             ref={e => (this.caseFieldInput = e)}
                             onChange={this.onInputChange}
                         >

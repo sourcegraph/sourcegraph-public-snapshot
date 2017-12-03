@@ -161,7 +161,7 @@ export class SearchScope extends React.PureComponent<Props, State> {
         return (
             <div className="search-scope2">
                 <select
-                    className="search-scope2__select ui-text-box"
+                    className="search-scope2__select form-control"
                     onChange={this.onChange}
                     value={this.props.value}
                     ref={e => (this.selectElement = e)}

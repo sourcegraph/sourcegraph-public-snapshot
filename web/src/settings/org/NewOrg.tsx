@@ -98,7 +98,7 @@ export class NewOrg extends React.Component<Props, State> {
                         <label>Organization name</label>
                         <input
                             type="text"
-                            className="ui-text-box"
+                            className="form-control"
                             placeholder="acme-corp"
                             pattern={VALID_ORG_NAME_REGEXP.toString().slice(1, -1)}
                             required={true}
@@ -119,7 +119,7 @@ export class NewOrg extends React.Component<Props, State> {
                         <label>Display name</label>
                         <input
                             type="text"
-                            className="ui-text-box"
+                            className="form-control"
                             placeholder="ACME Corporation"
                             required={true}
                             autoCorrect="off"

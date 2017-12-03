@@ -130,7 +130,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                             <label>Username</label>
                             <input
                                 type="text"
-                                className="ui-text-box"
+                                className="form-control"
                                 value={this.state.username}
                                 onChange={this.onUsernameFieldChange}
                                 pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
@@ -150,7 +150,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                         <input
                             readOnly={true}
                             type="email"
-                            className="ui-text-box"
+                            className="form-control"
                             value={(this.state.user && this.state.user.email) || ''}
                             disabled={true}
                             spellCheck={false}
@@ -161,7 +161,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                         <label>Display name (optional)</label>
                         <input
                             type="text"
-                            className="ui-text-box"
+                            className="form-control"
                             value={this.state.displayName}
                             onChange={this.onDisplayNameFieldChange}
                             disabled={this.state.loading}

@@ -81,7 +81,7 @@ export const OrgSettingsForm = reactive<Props>(props => {
                     <label>Display name</label>
                     <input
                         type="text"
-                        className="ui-text-box org-settings-form__display-name"
+                        className="form-control org-settings-form__display-name"
                         placeholder="Organization name"
                         onChange={nextDisplayNameChange}
                         value={displayName}
@@ -93,7 +93,7 @@ export const OrgSettingsForm = reactive<Props>(props => {
                     <label>Slack webhook URL</label>
                     <input
                         type="url"
-                        className="ui-text-box org-settings-form__slack-webhook-url"
+                        className="form-control org-settings-form__slack-webhook-url"
                         placeholder=""
                         onChange={nextSlackWebhookURLChange}
                         value={slackWebhookURL}

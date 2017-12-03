@@ -88,7 +88,7 @@ export const InviteForm = reactive<Props>(props => {
                 <div className="invite-form__container">
                     <input
                         type="email"
-                        className="ui-text-box invite-form__email"
+                        className="form-control invite-form__email"
                         placeholder="newmember@yourcompany.com"
                         onChange={nextEmailChange}
                         value={email}

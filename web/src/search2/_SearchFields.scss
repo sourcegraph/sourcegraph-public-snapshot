@@ -13,6 +13,10 @@
         &-example {
             flex: 0 0 13rem;
             color: #93a9c8;
+
+            .theme-light & {
+                color: $color-light-text-1;
+            }
         }
     }
 
@@ -41,7 +45,10 @@
         padding-bottom: 0.15rem;
 
         &-label {
-            flex: 0 0 125px;
+            flex: 0 0 8rem;
+            display: flex;
+            align-items: center;
+            margin: 0;
         }
 
         &-input {
@@ -49,6 +56,9 @@
         }
 
         &-example {
+            display: flex;
+            align-items: center;
+
             @media (max-width: $media-md) {
                 width: 100%;
             }
@@ -57,52 +67,13 @@
 
     &__input {
         width: calc(100% - 1rem);
-        padding: 0 0.35rem;
-        border: solid 1px rgb(51, 68, 90);
-        outline: none;
-        background: #1c2736;
-        color: white;
-
-        &::placeholder {
-            color: rgb(62, 82, 104);
-        }
-
-        &:focus {
-            border: solid 1px #1c7cd6;
-        }
-
-        &-select {
-            padding-top: 0.19rem;
-            padding-bottom: 0.19rem;
-        }
     }
 }
 
 .theme-light {
     .search-fields2 {
-        &__header,
-        &__row {
-            &-example {
-                color: $color-light-text-1;
-            }
-        }
-
         &__header {
             border-color: $color-light-border;
-        }
-
-        &__input {
-            border-color: $color-light-border;
-            background: $color-light-bg-1;
-            color: inherit;
-
-            &::placeholder {
-                color: $color-light-text-3;
-            }
-
-            &:focus {
-                border: solid 1px $color-primary;
-            }
         }
     }
 }

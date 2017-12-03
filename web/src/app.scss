@@ -21,6 +21,7 @@ $media-xl: 1200px;
 @import './global-styles/type';
 @import './global-styles/code';
 @import './global-styles/buttons';
+@import './global-styles/forms';
 
 // Define the 'system' font family
 //
@@ -173,6 +174,7 @@ body {
 // Formats an icon so that it appears inline in the text
 // with height matching the text
 .icon-inline {
+    vertical-align: middle;
     // Center SVG inside the container
     display: inline-flex;
     align-items: center;
@@ -192,91 +194,6 @@ body {
 // Special case for the loader
 .icon-inline > .icon-loader {
     stroke: currentColor;
-}
-
-// Class used for feedback on invalid input fields
-// Use it next to the input it shoud give feedback for
-.invalid-feedback {
-    color: $color-error;
-}
-
-.ui-text-box {
-    background-color: #0e121b;
-    border: 1px solid #2b3750;
-    color: white;
-    font-size: inherit;
-    border-radius: 2px;
-    padding: 0.5rem 1rem;
-    outline: none;
-    width: 100%;
-
-    &::placeholder {
-        color: $color-secondary;
-    }
-
-    &:focus {
-        border-color: $color-primary;
-    }
-
-    &:disabled {
-        cursor: not-allowed;
-        background-color: #1d2535;
-        color: #a2b0cd;
-    }
-
-    &:valid,
-    &:placeholder-shown {
-        + .invalid-feedback {
-            display: none;
-        }
-    }
-
-    &:invalid:not(:placeholder-shown) {
-        border-color: $color-error;
-
-        + .invalid-feedback {
-            display: block;
-        }
-    }
-}
-
-.theme-light {
-    .ui-text-box {
-        background-color: $color-light-bg-1;
-        border: 1px solid $color-light-border;
-        color: $color-light-text-1;
-
-        &::placeholder {
-            color: $color-light-text-3;
-        }
-
-        &:focus {
-            border-color: $color-primary;
-        }
-
-        &:disabled {
-            background-color: $color-light-bg-2;
-            color: $color-light-text-3;
-        }
-    }
-}
-
-.form-inline {
-    .ui-text-box {
-        width: auto;
-    }
-}
-
-// Group for e.g. a label, an input, form-text and invalid-feedback
-.form-group {
-    width: 100%;
-    margin-bottom: 1rem;
-}
-
-// Used for help texts below inputs in forms
-.form-text {
-    display: block;
-    margin-top: 0.25rem;
 }
 
 .text-error {
@@ -408,7 +325,6 @@ body {
 @import './search2/SearchNavbarItem';
 @import './search2/SearchPage';
 @import './search2/SearchResults';
-@import './search2/Help';
 @import './search2/QueryInput';
 @import './search2/SearchScope';
 @import './search2/ScopeLabel';

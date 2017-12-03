@@ -25,7 +25,7 @@ export class EditorAuthPage extends React.Component<Props, State> {
                 <PageTitle title="Authenticate editor" />
                 <h1>Authenticate your editor</h1>
                 <p>Your session ID is:</p>
-                <p className="ui-text-box editor-auth-page__session-id-container">
+                <p className="form-control editor-auth-page__session-id-container">
                     <textarea readOnly={true} className="editor-auth-page__session-id" value={this.sessionId} />
                     <input
                         type="button"

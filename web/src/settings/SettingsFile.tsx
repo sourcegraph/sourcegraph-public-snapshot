@@ -130,7 +130,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 {this.state.editing && (
                     <code>
                         <textarea
-                            className="settings-file__contents settings-file__contents-editor ui-text-box"
+                            className="settings-file__contents settings-file__contents-editor form-control"
                             value={this.state.modifiedContents}
                             onChange={this.onTextareaChange}
                             disabled={this.state.saving}

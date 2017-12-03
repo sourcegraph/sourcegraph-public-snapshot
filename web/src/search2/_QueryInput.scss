@@ -16,24 +16,10 @@
         background-color: #1c2736;
         border: solid 1px rgb(27, 84, 138);
         border-top: none;
-    }
 
-    &__input {
-        background: #1c2736;
-        padding: 0.25rem 0.5rem;
-        height: 100%;
-    }
-}
-
-.theme-light {
-    .query-input2 {
-        &__suggestions {
+        .theme-light & {
             background-color: $color-light-bg-2;
             border-top: none;
-        }
-
-        &__input {
-            background: $color-light-bg-1;
         }
     }
 }

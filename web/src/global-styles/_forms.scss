@@ -1,0 +1,96 @@
+.form-control {
+    background-color: #0e121b;
+    border: 1px solid #2b3750;
+    color: white;
+    font-size: inherit;
+    border-radius: 2px;
+    padding: 0.375rem 0.75rem;
+    outline: none;
+    width: 100%;
+
+    &::placeholder {
+        color: $color-secondary;
+
+        .theme-light & {
+            color: $color-light-text-3;
+        }
+    }
+
+    &:focus {
+        border-color: $color-primary;
+
+        .theme-light & {
+            border-color: $color-primary;
+        }
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background-color: #1d2535;
+        color: #a2b0cd;
+
+        .theme-light & {
+            background-color: $color-light-bg-2;
+            color: $color-light-text-3;
+        }
+    }
+
+    &:valid,
+    &:placeholder-shown {
+        + .invalid-feedback {
+            display: none;
+        }
+    }
+
+    &:invalid:not(:placeholder-shown) {
+        border-color: $color-error;
+
+        + .invalid-feedback {
+            display: block;
+        }
+    }
+
+    .theme-light & {
+        background-color: $color-light-bg-1;
+        border: 1px solid $color-light-border;
+        color: $color-light-text-1;
+    }
+}
+
+.form-control-sm {
+    padding: 0 0.5rem;
+}
+
+select.form-control-sm {
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    height: 26px;
+}
+
+select.form-control {
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    height: 38px;
+}
+
+.form-inline {
+    .form-control {
+        width: auto;
+    }
+}
+
+// Group for e.g. a label, an input, form-text and invalid-feedback
+.form-group {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+// Used for help texts below inputs in forms
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+}
+
+// Class used for feedback on invalid input fields
+// Use it next to the input it shoud give feedback for
+.invalid-feedback {
+    color: $color-error;
+}

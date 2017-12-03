@@ -159,7 +159,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                     <input
                         type="text"
                         name="description"
-                        className="ui-text-box"
+                        className="form-control"
                         placeholder="Description"
                         autoFocus={true}
                         onChange={nextInputChange}
@@ -170,7 +170,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                     <input
                         type="text"
                         name="query"
-                        className="ui-text-box"
+                        className="form-control"
                         placeholder="Query"
                         onChange={nextInputChange}
                         value={query || ''}
@@ -182,7 +182,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                     <input
                         type="text"
                         name="scope-query"
-                        className="ui-text-box"
+                        className="form-control"
                         placeholder="Scope query"
                         onChange={nextInputChange}
                         value={scopeQuery || ''}
@@ -193,7 +193,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                     />
                     <select
                         name="subject"
-                        className="ui-text-box"
+                        className="form-control"
                         onChange={nextInputChange}
                         value={subject}
                         ref={e => (subjectInput = e)}

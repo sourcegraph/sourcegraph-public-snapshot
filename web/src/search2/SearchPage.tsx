@@ -4,11 +4,11 @@ import { PageTitle } from '../components/PageTitle'
 import { NavLinks } from '../nav/NavLinks'
 import { eventLogger } from '../tracking/eventLogger'
 import { limitString } from '../util'
-import { Help } from './Help'
 import { submitSearch } from './helpers'
 import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
 import { ScopeLabel } from './ScopeLabel'
+import { Search2Help } from './Search2Help'
 import { SearchButton } from './SearchButton'
 import { SearchFields } from './SearchFields'
 import { SearchScope } from './SearchScope'
@@ -82,7 +82,7 @@ export class SearchPage extends React.Component<Props, State> {
                     </div>
                     <div className="search-page2__input-sub-container">
                         <ScopeLabel scopeQuery={this.state.scopeQuery} />
-                        <Help />
+                        <Search2Help />
                     </div>
                     <SearchFields onFieldsQueryChange={this.onFieldsQueryChange} />
                 </form>

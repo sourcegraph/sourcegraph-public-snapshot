@@ -67,7 +67,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 </div>
                 <div className="form-group">
                     <input
-                        className="ui-text-box login-signup-form__input"
+                        className="form-control login-signup-form__input"
                         onChange={this.onEmailFieldChange}
                         value={this.state.email}
                         type="email"
@@ -80,7 +80,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 {this.props.mode === 'signup' && (
                     <div className="form-group">
                         <input
-                            className="ui-text-box login-signup-form__input"
+                            className="form-control login-signup-form__input"
                             onChange={this.onUsernameFieldChange}
                             value={this.state.username}
                             type="text"
@@ -93,7 +93,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 )}
                 <div className="form-group">
                     <input
-                        className="ui-text-box login-signup-form__input"
+                        className="form-control login-signup-form__input"
                         onChange={this.onPasswordFieldChange}
                         value={this.state.password}
                         required={true}
@@ -111,7 +111,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 {this.props.mode === 'signup' && (
                     <div className="form-group">
                         <input
-                            className="ui-text-box login-signup-form__input"
+                            className="form-control login-signup-form__input"
                             onChange={this.onDisplayNameFieldChange}
                             value={this.state.displayName}
                             type="text"

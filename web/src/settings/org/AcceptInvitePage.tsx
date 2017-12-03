@@ -174,7 +174,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                             <label>Your company email</label>
                             <input
                                 type="email"
-                                className="ui-text-box"
+                                className="form-control"
                                 placeholder="you@yourcompany.com"
                                 required={true}
                                 autoCorrect="off"

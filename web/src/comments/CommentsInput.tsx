@@ -96,7 +96,7 @@ export const CommentsInput = reactive<Props>(props => {
                     </a>
                 </small>
                 <textarea
-                    className="ui-text-box comments-input__text-box"
+                    className="form-control comments-input__text-box"
                     placeholder="Leave a comment..."
                     autoFocus={true}
                     onChange={nextTextAreaChange}
