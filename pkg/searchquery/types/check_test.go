@@ -90,7 +90,7 @@ func TestCheck(t *testing.T) {
 				"b": {{Value: true}},
 			},
 		},
-		`-a`:         {wantErr: &TypeError{Pos: 1, Err: errors.New(`field "" does not support negation`)}},
+		`-a`:         {wantErr: &TypeError{Pos: 1, Err: errors.New(`negated terms (-term) are not yet supported`)}},
 		`-b:yes`:     {wantErr: &TypeError{Pos: 1, Err: errors.New(`field "b" does not support negation`)}},
 		"b:yes b:no": {wantErr: &TypeError{Pos: 6, Err: errors.New(`field "b" may not be used more than once`)}},
 		`/a\x/`:      {wantErr: &TypeError{Pos: 1, Err: errors.New("error parsing regexp: invalid escape sequence: `\\x`")}},

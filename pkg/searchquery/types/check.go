@@ -67,7 +67,11 @@ func (c *Config) resolveField(field string, not bool) (resolvedField string, typ
 		return
 	}
 	if not && !typ.Negatable {
-		err = fmt.Errorf("field %q does not support negation", field)
+		if field == "" {
+			err = errors.New("negated terms (-term) are not yet supported")
+		} else {
+			err = fmt.Errorf("field %q does not support negation", field)
+		}
 		return
 	}
 	return field, typ, nil
