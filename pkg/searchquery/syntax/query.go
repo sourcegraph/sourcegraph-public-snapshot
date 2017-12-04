@@ -1,6 +1,9 @@
 package syntax
 
-import "bytes"
+import (
+	"bytes"
+	"strings"
+)
 
 // A Query contains parse tree of a query.
 type Query struct {
@@ -34,4 +37,13 @@ func (e Expr) String() string {
 		buf.WriteByte('/')
 	}
 	return buf.String()
+}
+
+// ExprString returns the query string that parses to expr.
+func ExprString(expr []*Expr) string {
+	s := make([]string, len(expr))
+	for i, e := range expr {
+		s[i] = e.String()
+	}
+	return strings.Join(s, " ")
 }

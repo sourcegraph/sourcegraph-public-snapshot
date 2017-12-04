@@ -2,7 +2,6 @@ package syntax
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -102,17 +101,9 @@ func TestParser(t *testing.T) {
 			if test.wantString == "" && len(query.Expr) > 0 {
 				test.wantString = input
 			}
-			if exprString := exprString(query.Expr); exprString != test.wantString {
+			if exprString := ExprString(query.Expr); exprString != test.wantString {
 				t.Errorf("expr string: %s\ngot  %s\nwant %s", input, exprString, test.wantString)
 			}
 		})
 	}
-}
-
-func exprString(expr []*Expr) string {
-	s := make([]string, len(expr))
-	for i, e := range expr {
-		s[i] = e.String()
-	}
-	return strings.Join(s, " ")
 }
