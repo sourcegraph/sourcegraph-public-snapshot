@@ -165,32 +165,32 @@
 		{
 			"checksumSHA1": "8zBDp6vRYSBYxja1o+Vr3RpAq2U=",
 			"path": "github.com/crewjam/saml",
-			"revision": "5e89d545f563261a14cd84483eb5ff10233e208e",
-			"revisionTime": "2017-09-26T17:35:36Z"
+			"revision": "345c5c7c18d35d903497692816e5dd7b940fd8c4",
+			"revisionTime": "2017-12-03T04:06:39Z"
 		},
 		{
 			"checksumSHA1": "lKNxxjwhZtBRpx6/uRQTL8EQ4Io=",
 			"path": "github.com/crewjam/saml/logger",
-			"revision": "5e89d545f563261a14cd84483eb5ff10233e208e",
-			"revisionTime": "2017-09-26T17:35:36Z"
+			"revision": "345c5c7c18d35d903497692816e5dd7b940fd8c4",
+			"revisionTime": "2017-12-03T04:06:39Z"
 		},
 		{
 			"checksumSHA1": "ClxKbehT9+0SR/n0lQJps5PIo/4=",
 			"path": "github.com/crewjam/saml/samlidp",
-			"revision": "5e89d545f563261a14cd84483eb5ff10233e208e",
-			"revisionTime": "2017-09-26T17:35:36Z"
+			"revision": "345c5c7c18d35d903497692816e5dd7b940fd8c4",
+			"revisionTime": "2017-12-03T04:06:39Z"
 		},
 		{
-			"checksumSHA1": "2uBwuxWKlPo4edXDyysWwGi96cE=",
+			"checksumSHA1": "CkM4lhaZUx71bZYFsLDuHIWv5Mc=",
 			"path": "github.com/crewjam/saml/samlsp",
-			"revision": "5e89d545f563261a14cd84483eb5ff10233e208e",
-			"revisionTime": "2017-09-26T17:35:36Z"
+			"revision": "345c5c7c18d35d903497692816e5dd7b940fd8c4",
+			"revisionTime": "2017-12-03T04:06:39Z"
 		},
 		{
 			"checksumSHA1": "OfLuV96DWYV71+47je/q5duOoEc=",
 			"path": "github.com/crewjam/saml/xmlenc",
-			"revision": "5e89d545f563261a14cd84483eb5ff10233e208e",
-			"revisionTime": "2017-09-26T17:35:36Z"
+			"revision": "345c5c7c18d35d903497692816e5dd7b940fd8c4",
+			"revisionTime": "2017-12-03T04:06:39Z"
 		},
 		{
 			"checksumSHA1": "SdSd7pyjONWWTHc5XE3AhglLo34=",

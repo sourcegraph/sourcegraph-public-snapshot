@@ -53,6 +53,7 @@ type Middleware struct {
 	CookieName        string
 	CookieMaxAge      time.Duration
 	CookieDomain      string
+	CookieSecure      bool
 }
 
 const defaultCookieMaxAge = time.Hour
@@ -151,7 +152,7 @@ func (m *Middleware) RequireAccount(handler http.Handler) http.Handler {
 			Value:    signedState,
 			MaxAge:   int(saml.MaxIssueDelay.Seconds()),
 			HttpOnly: true,
-			Secure:   r.URL.Scheme == "https",
+			Secure:   m.CookieSecure || r.URL.Scheme == "https",
 			Path:     m.ServiceProvider.AcsURL.Path,
 		})
 
@@ -283,7 +284,7 @@ func (m *Middleware) Authorize(w http.ResponseWriter, r *http.Request, assertion
 		Value:    signedToken,
 		MaxAge:   int(m.CookieMaxAge.Seconds()),
 		HttpOnly: true,
-		Secure:   r.URL.Scheme == "https",
+		Secure:   m.CookieSecure || r.URL.Scheme == "https",
 		Path:     "/",
 	})
 

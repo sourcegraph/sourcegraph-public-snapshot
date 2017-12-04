@@ -27,6 +27,7 @@ type Options struct {
 	IDPMetadataURL    *url.URL
 	HTTPClient        *http.Client
 	CookieMaxAge      time.Duration
+	CookieSecure      bool
 	ForceAuthn        bool
 }
 
@@ -61,6 +62,7 @@ func New(opts Options) (*Middleware, error) {
 		CookieName:        defaultCookieName,
 		CookieMaxAge:      cookieMaxAge,
 		CookieDomain:      opts.URL.Host,
+		CookieSecure:      opts.CookieSecure,
 	}
 
 	// fetch the IDP metadata if needed.
