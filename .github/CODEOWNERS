@@ -5,5 +5,5 @@
 web/ @felixfbecker
 searcher/ @keegancsmith
 xlang/ @keegancsmith
-cmd/frontend @nicksnyder
+cmd/frontend/internal/graphqlbackend @nicksnyder
 migrations/ @nicksnyder
