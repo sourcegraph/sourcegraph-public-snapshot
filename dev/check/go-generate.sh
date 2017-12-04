@@ -2,6 +2,11 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
+export GOBIN="$PWD/vendor/.bin"
+export PATH=$GOBIN:$PATH
+
+go install sourcegraph.com/sourcegraph/sourcegraph/vendor/golang.org/x/tools/cmd/stringer
+
 # Runs generate.sh and ensures no files changed. This relies on the go
 # generation that ran are idempotent.
 
