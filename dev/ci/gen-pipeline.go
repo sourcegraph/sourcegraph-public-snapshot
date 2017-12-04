@@ -68,6 +68,57 @@ var golangPlugin = map[string]interface{}{
 }
 
 func main() {
+	pipeline := &Pipeline{}
+
+	branch := os.Getenv("BUILDKITE_BRANCH")
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	if commit == "" {
+		commit = "1234567890123456789012345678901234567890" // for testing
+	}
+	buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
+	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
+
+	addDockerImageStep := func(app string, latest bool) {
+		cmdDir := "./cmd/" + app
+		if _, err := os.Stat(cmdDir); err != nil {
+			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
+			os.Exit(1)
+		}
+		cmds := []StepOpt{
+			Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+		}
+
+		preBuildScript := cmdDir + "/pre-build.sh"
+		if _, err := os.Stat(preBuildScript); err == nil {
+			cmds = append(cmds, Cmd(preBuildScript))
+		}
+
+		image := "us.gcr.io/sourcegraph-dev/" + app
+		buildScript := cmdDir + "/build.sh"
+		if _, err := os.Stat(buildScript); err == nil {
+			cmds = append(cmds,
+				Env("IMAGE", image+":"+version),
+				Env("VERSION", version),
+				Cmd(buildScript),
+			)
+		} else {
+			cmds = append(cmds,
+				Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize"),
+				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s sourcegraph.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
+			)
+		}
+		cmds = append(cmds,
+			Cmd(fmt.Sprintf("gcloud docker -- push %s:%s", image, version)),
+		)
+		if latest {
+			cmds = append(cmds,
+				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
+				Cmd(fmt.Sprintf("gcloud docker -- push %s:latest", image)),
+			)
+		}
+		pipeline.AddStep(":docker:", cmds...)
+	}
+
 	pkgs := []string{"xlang"} // put slow xlang test first
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -104,8 +155,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	pipeline := &Pipeline{}
 
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
@@ -156,55 +205,6 @@ func main() {
 		Cmd("buildkite-agent artifact download '*/coverage.txt' ."),
 		Cmd("buildkite-agent artifact download '*/coverage-final.json' ."),
 		Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
-
-	branch := os.Getenv("BUILDKITE_BRANCH")
-	commit := os.Getenv("BUILDKITE_COMMIT")
-	if commit == "" {
-		commit = "1234567890123456789012345678901234567890" // for testing
-	}
-	buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
-	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
-
-	addDockerImageStep := func(app string, latest bool) {
-		cmdDir := "./cmd/" + app
-		if _, err := os.Stat(cmdDir); err != nil {
-			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
-			os.Exit(1)
-		}
-		cmds := []StepOpt{
-			Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
-		}
-
-		preBuildScript := cmdDir + "/pre-build.sh"
-		if _, err := os.Stat(preBuildScript); err == nil {
-			cmds = append(cmds, Cmd(preBuildScript))
-		}
-
-		image := "us.gcr.io/sourcegraph-dev/" + app
-		buildScript := cmdDir + "/build.sh"
-		if _, err := os.Stat(buildScript); err == nil {
-			cmds = append(cmds,
-				Env("IMAGE", image+":"+version),
-				Env("VERSION", version),
-				Cmd(buildScript),
-			)
-		} else {
-			cmds = append(cmds,
-				Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize"),
-				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s sourcegraph.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
-			)
-		}
-		cmds = append(cmds,
-			Cmd(fmt.Sprintf("gcloud docker -- push %s:%s", image, version)),
-		)
-		if latest {
-			cmds = append(cmds,
-				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
-				Cmd(fmt.Sprintf("gcloud docker -- push %s:latest", image)),
-			)
-		}
-		pipeline.AddStep(":docker:", cmds...)
-	}
 
 	switch {
 	case branch == "master":
