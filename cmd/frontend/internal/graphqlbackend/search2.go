@@ -15,48 +15,16 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
 )
 
 var (
 	maxReposToSearch, _ = strconv.Atoi(env.Get("MAX_REPOS_TO_SEARCH", "30", `the maximum number of repos to search across (the user is prompted to narrow their query if exceeded)`))
 )
 
-const (
-	maxQueryLength = 400
-
-	searchFieldRepo      search2.Field = "repo"
-	searchFieldFile      search2.Field = "file"
-	searchFieldRepoGroup search2.Field = "repogroup"
-	searchFieldTerm      search2.Field = ""
-	searchFieldCase      search2.Field = "case"
-	searchFieldType      search2.Field = "type"
-
-	// TODO(sqs): these only apply to type:diff searches
-	searchFieldBefore    search2.Field = "before"
-	searchFieldAfter     search2.Field = "after"
-	searchFieldAuthor    search2.Field = "author"
-	searchFieldCommitter search2.Field = "committer"
-	searchFieldMessage   search2.Field = "message"
-)
-
-var searchFieldAliases = map[search2.Field][]search2.Field{
-	searchFieldRepo:                {"r"},
-	minusField(searchFieldRepo):    {minusField("r")},
-	searchFieldFile:                {"f"},
-	minusField(searchFieldFile):    {minusField("f")},
-	searchFieldRepoGroup:           {"g"},
-	searchFieldTerm:                {},
-	searchFieldCase:                {},
-	searchFieldMessage:             {"m", "msg"},
-	minusField(searchFieldMessage): {minusField("m"), minusField("msg")},
-}
-
-func minusField(field search2.Field) search2.Field {
-	return search2.Field("-" + field)
-}
+const maxQueryLength = 400
 
 type searchArgs2 struct {
 	// Query is the search query.
@@ -68,15 +36,19 @@ type searchArgs2 struct {
 
 // Search2 provides search results and suggestions.
 func (r *rootResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
-	combinedQuery, err := resolveQuery(args.Query + " " + args.ScopeQuery)
+	if len(args.Query)+len(args.ScopeQuery) > maxQueryLength {
+		return nil, fmt.Errorf("query exceeds max length (%d)", maxQueryLength)
+	}
+
+	combinedQuery, err := searchquery.ParseAndCheck(args.Query + " " + args.ScopeQuery)
 	if err != nil {
 		return nil, err
 	}
-	query, err := resolveQuery(args.Query)
+	query, err := searchquery.ParseAndCheck(args.Query)
 	if err != nil {
 		return nil, err
 	}
-	scopeQuery, err := resolveQuery(args.ScopeQuery)
+	scopeQuery, err := searchquery.ParseAndCheck(args.ScopeQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -89,47 +61,24 @@ func (r *rootResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
 	}, nil
 }
 
-func resolveQuery(query string) (*resolvedQuery, error) {
-	if len(query) > maxQueryLength {
-		return nil, fmt.Errorf("query exceeds max length (%d)", maxQueryLength)
+func asString(v *types.Value) string {
+	switch {
+	case v.String != nil:
+		return *v.String
+	case v.Regexp != nil:
+		return v.Regexp.String()
+	default:
+		panic("unable to get value as string")
 	}
-
-	tokens, err := search2.Parse(query)
-	if err != nil {
-		return nil, err
-	}
-	tokens.Normalize(searchFieldAliases)
-	fieldValues := tokens.Extract()
-
-	return &resolvedQuery{
-		tokens:      tokens,
-		fieldValues: fieldValues,
-	}, nil
-}
-
-type resolvedQuery struct {
-	tokens      search2.Tokens
-	fieldValues map[search2.Field]search2.Values
-}
-
-func (q resolvedQuery) isCaseSensitive() bool {
-	for _, s := range q.fieldValues[searchFieldCase].Values() {
-		v, _ := strconv.ParseBool(s)
-		v = v || (s == "yes" || s == "y")
-		if v {
-			return true
-		}
-	}
-	return false
 }
 
 type searchResolver2 struct {
 	root *rootResolver
 	args searchArgs2
 
-	combinedQuery resolvedQuery // the scope and user query combined (most callers should use this)
-	query         resolvedQuery // the user query only
-	scopeQuery    resolvedQuery // the scope query only
+	combinedQuery searchquery.Query // the scope and user query combined (most callers should use this)
+	query         searchquery.Query // the user query only
+	scopeQuery    searchquery.Query // the scope query only
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -213,12 +162,11 @@ func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepo
 		}
 	}
 
-	repoFilters := effectiveRepoFieldValues
-	if repoFilters == nil {
-		repoFilters = r.combinedQuery.fieldValues[searchFieldRepo].Values()
+	repoFilters, minusRepoFilters := r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
+	if effectiveRepoFieldValues != nil {
+		repoFilters = effectiveRepoFieldValues
 	}
-	minusRepoFilters := r.combinedQuery.fieldValues[minusField(searchFieldRepo)].Values()
-	repoGroupFilters := r.combinedQuery.fieldValues[searchFieldRepoGroup].Values()
+	repoGroupFilters, _ := r.combinedQuery.StringValues(searchquery.FieldRepoGroup)
 
 	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, repoFilters, minusRepoFilters, repoGroupFilters)
 	if effectiveRepoFieldValues == nil {
@@ -368,17 +316,17 @@ func (r *searchResolver2) resolveFiles(ctx context.Context, limit int) ([]*searc
 		repos[i] = repoRevision.repo
 	}
 
-	includePatterns := r.combinedQuery.fieldValues[searchFieldFile].Values()
-	excludePattern := unionRegExps(r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values())
+	includePatterns, excludePatterns := r.combinedQuery.RegexpPatterns(searchquery.FieldFile)
+	excludePattern := unionRegExps(excludePatterns)
 	pathOptions := pathmatch.CompileOptions{
 		RegExp:        true,
-		CaseSensitive: r.combinedQuery.isCaseSensitive(),
+		CaseSensitive: r.combinedQuery.IsCaseSensitive(),
 	}
 
 	// If a single term is specified in the user query, and no other file patterns,
 	// then treat it as an include pattern (which is a nice UX for users).
-	if len(r.query.fieldValues[searchFieldTerm]) == 1 {
-		includePatterns = append(includePatterns, r.query.fieldValues[searchFieldTerm][0].Value)
+	if vs := r.query.Values(searchquery.FieldDefault); len(vs) == 1 {
+		includePatterns = append(includePatterns, asString(vs[0]))
 	}
 
 	matchPath, err := pathmatch.CompilePathPatterns(includePatterns, excludePattern, pathOptions)

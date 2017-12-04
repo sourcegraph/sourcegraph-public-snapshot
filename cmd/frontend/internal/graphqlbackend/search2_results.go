@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs
@@ -119,35 +121,36 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 	}
 
 	var patternsToCombine []string
-	for _, term := range r.combinedQuery.fieldValues[""] {
-		if term.Value == "" {
+	for _, v := range r.combinedQuery.Values(searchquery.FieldDefault) {
+		// Treat quoted strings as literal strings to match, not regexps.
+		var pattern string
+		switch {
+		case v.String != nil:
+			pattern = regexp.QuoteMeta(*v.String)
+		case v.Regexp != nil:
+			pattern = v.Regexp.String()
+		}
+		if pattern == "" {
 			continue
 		}
-
-		// Treat quoted strings as literal strings to match, not regexps.
-		var value string
-		if term.Quoted {
-			value = regexp.QuoteMeta(term.Value)
-		} else {
-			value = term.Value
-		}
-		patternsToCombine = append(patternsToCombine, value)
+		patternsToCombine = append(patternsToCombine, pattern)
 	}
+	includePatterns, excludePatterns := r.combinedQuery.RegexpPatterns(searchquery.FieldFile)
 	args := repoSearchArgs{
 		query: &patternInfo{
 			IsRegExp:                     true,
-			IsCaseSensitive:              r.combinedQuery.isCaseSensitive(),
+			IsCaseSensitive:              r.combinedQuery.IsCaseSensitive(),
 			FileMatchLimit:               300,
 			Pattern:                      strings.Join(patternsToCombine, ".*?"), // "?" makes it prefer shorter matches
-			IncludePatterns:              r.combinedQuery.fieldValues[searchFieldFile].Values(),
+			IncludePatterns:              includePatterns,
 			PathPatternsAreRegExps:       true,
-			PathPatternsAreCaseSensitive: r.combinedQuery.isCaseSensitive(),
+			PathPatternsAreCaseSensitive: r.combinedQuery.IsCaseSensitive(),
 		},
 		repos: repos,
 	}
-	if excludePatterns := r.combinedQuery.fieldValues[minusField(searchFieldFile)].Values(); len(excludePatterns) > 0 {
-		pat := unionRegExps(excludePatterns)
-		args.query.ExcludePattern = &pat
+	if len(excludePatterns) > 0 {
+		excludePattern := unionRegExps(excludePatterns)
+		args.query.ExcludePattern = &excludePattern
 	}
 
 	// Determine which types of results to return.
@@ -156,7 +159,7 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
 	} else {
-		resultTypes = r.combinedQuery.fieldValues[searchFieldType].Values()
+		resultTypes, _ = r.combinedQuery.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
 			resultTypes = []string{"file"} // TODO(sqs)
 		}

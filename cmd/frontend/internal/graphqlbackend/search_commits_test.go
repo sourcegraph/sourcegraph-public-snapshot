@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -44,7 +46,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		},
 	})
 
-	query, err := resolveQuery("p")
+	query, err := searchquery.ParseAndCheck("p")
 	if err != nil {
 		t.Fatal(err)
 	}
