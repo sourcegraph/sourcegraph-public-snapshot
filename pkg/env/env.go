@@ -1,10 +1,17 @@
 package env
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"sort"
+	"strings"
+
+	"gopkg.in/inconshreveable/log15.v2"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env/config"
 )
 
 var descriptions = make(map[string]string)
@@ -12,6 +19,31 @@ var locked = false
 
 var Version = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
 
+// Config is the source of truth for Sourcegraph Server configuration.
+var Config config.Config
+
+func init() {
+	// Read SOURCEGRAPH_CONFIG to config
+	if rawConfig := os.Getenv("SOURCEGRAPH_CONFIG"); rawConfig != "" {
+		if err := json.Unmarshal([]byte(rawConfig), &Config); err != nil {
+			log15.Warn("failed to unmarshal SOURCEGRAPH_CONFIG", "error", err)
+		}
+	}
+}
+
+func getFromConfig(name string) string {
+	v := reflect.ValueOf(Config).FieldByName(envVarNameToCamelCase(name))
+	if !v.IsValid() {
+		return ""
+	}
+	if v.Kind() != reflect.String {
+		return ""
+	}
+	return v.String()
+}
+
+// DEPRECATED: env.Get is deprecated in favor of reading the value of the field from Config.
+//
 // Get returns the value of the given environment variable. It also registers the description for
 // PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on
 // package initialization. Calls at a later point will cause a panic if Lock was called before.
@@ -19,6 +51,11 @@ func Get(name string, defaultValue string, description string) string {
 	if locked {
 		panic("env.Get has to be called on package initialization")
 	}
+
+	if configVal := getFromConfig(name); configVal != "" {
+		return configVal
+	}
+
 	if _, ok := descriptions[name]; ok {
 		panic(fmt.Sprintf("%q already registered", name))
 	}
@@ -64,4 +101,12 @@ func HandleHelpFlag() {
 			os.Exit(0)
 		}
 	}
+}
+
+func envVarNameToCamelCase(e string) string {
+	cmps := strings.Split(e, "_")
+	for i := 0; i < len(cmps); i++ {
+		cmps[i] = strings.Title(strings.ToLower(cmps[i]))
+	}
+	return strings.Join(cmps, "")
 }
