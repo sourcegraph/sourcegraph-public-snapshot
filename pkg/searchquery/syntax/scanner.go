@@ -97,32 +97,30 @@ func (s *scanner) emitError(msg string) {
 }
 
 func scanDefault(s *scanner) stateFn {
-	for {
-		if s.eof() {
-			s.emit(TokenEOF)
-			return nil
-		}
-		r := s.next()
-		if !unicode.IsSpace(r) {
-			s.backup()
-			s.ignore()
-			if typ, ok := singleCharTokens[r]; ok {
-				s.next()
-				s.emit(typ)
-				return scanDefault
-			}
-
-			if r == '"' || r == '\'' {
-				return scanQuoted
-			}
-			if r == '/' {
-				return scanPattern
-			}
-
-			return scanText
-		}
-		return scanSpace
+	if s.eof() {
+		s.emit(TokenEOF)
+		return nil
 	}
+	r := s.next()
+	if !unicode.IsSpace(r) {
+		s.backup()
+		s.ignore()
+		if typ, ok := singleCharTokens[r]; ok {
+			s.next()
+			s.emit(typ)
+			return scanDefault
+		}
+
+		if r == '"' || r == '\'' {
+			return scanQuoted
+		}
+		if r == '/' {
+			return scanPattern
+		}
+
+		return scanText
+	}
+	return scanSpace
 }
 
 func scanText(s *scanner) stateFn {
