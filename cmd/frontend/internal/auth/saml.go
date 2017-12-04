@@ -71,6 +71,7 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		Key:            keyPair.PrivateKey.(*rsa.PrivateKey),
 		Certificate:    keyPair.Leaf,
 		IDPMetadataURL: idpMetadataURL,
+		CookieSecure:   entityIDURL.Scheme == "https",
 	})
 	if err != nil {
 		return nil, err
