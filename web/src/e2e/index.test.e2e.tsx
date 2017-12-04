@@ -166,22 +166,22 @@ describe('e2e test suite', () => {
                 )
             })
 
-            it('does navigation on directory expander click', async () => {
+            it('expands directory on row click (no navigation)', async () => {
                 await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
                 await chrome.click('.tree__row-icon')
+                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
+                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
+                await assertWindowLocation('/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+            })
+
+            it('does navigation on directory row click ', async () => {
+                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await chrome.click('.tree__row-label')
                 await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
                 await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
                 await assertWindowLocation(
                     '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983/-/tree/fuzz'
                 )
-            })
-
-            it('expands directory on row click (no navigation)', async () => {
-                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
-                await chrome.click('.tree__row-label')
-                await chrome.wait('.tree__row--selected [data-tree-path="fuzz"]')
-                await chrome.wait('.tree__row--expanded [data-tree-path="fuzz"]')
-                await assertWindowLocation('/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
             })
 
             it('selects the current file', async () => {
@@ -539,13 +539,13 @@ describe('e2e test suite', () => {
             await chrome.goto(
                 baseURL + '/search?q=router+repo:gorilla/mux%40eac83ba2c004bb759a2875b1f1dbb032adf8bb4a&sq='
             )
-            await chrome.wait('.search-results2__stats')
-            await retry(async () =>
-                assert.equal(
-                    await chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
-                    '126 results in'
+            await chrome.wait('.search-results2__header-stats')
+            await retry(async () => {
+                const label = await chrome.evaluate<string>(
+                    () => document.querySelector('.search-results2__header-stats')!.textContent
                 )
-            )
+                assert.equal(label.startsWith('126 results in'), true, 'incorrect number of search results')
+            })
             // navigate to result on click
             await chrome.click('.file-match__item')
             await retry(async () =>
@@ -579,13 +579,13 @@ describe('e2e test suite', () => {
                 // Submit the search
                 await chrome.click('button')
 
-                await chrome.wait('.search-results2__stats')
-                await retry(async () =>
-                    assert.equal(
-                        await chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
-                        '91 results in'
+                await chrome.wait('.search-results2__header-stats')
+                await retry(async () => {
+                    const label = await chrome.evaluate<string>(
+                        () => document.querySelector('.search-results2__header-stats')!.textContent
                     )
-                )
+                    assert.equal(label.startsWith('91 results in'), true, 'incorrect number of search results')
+                })
             })
         } else {
             it('renders results for gorilla/mux (w/ search group)', async () => {
@@ -606,13 +606,13 @@ describe('e2e test suite', () => {
                 // Submit the search
                 await chrome.click('button')
 
-                await chrome.wait('.search-results2__stats')
-                await retry(async () =>
-                    assert.equal(
-                        await chrome.evaluate(() => document.querySelector('.search-results2__stats')!.textContent),
-                        '91 results in'
+                await chrome.wait('.search-results2__header-stats')
+                await retry(async () => {
+                    const label = await chrome.evaluate<string>(
+                        () => document.querySelector('.search-results2__header-stats')!.textContent
                     )
-                )
+                    assert.equal(label.startsWith('91 results in'), true, 'incorrect number of search results')
+                })
             })
         }
     })
