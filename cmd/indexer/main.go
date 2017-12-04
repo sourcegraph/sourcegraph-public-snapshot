@@ -73,9 +73,16 @@ func main() {
 		go idx.Work(ctx, wq)
 	}
 
-	// Repository syncing thread
+	// GitHub Repository syncing thread
 	go func() {
 		if err := repos.RunRepositorySyncWorker(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	// Phabricator Repository syncing thread
+	go func() {
+		if err := repos.RunPhabricatorRepositorySyncWorker(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}()
