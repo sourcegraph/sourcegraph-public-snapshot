@@ -47,6 +47,7 @@ type Config struct {
 	HTMLBodyTop                    string              `json:"htmlBodyTop" description:"HTML to inject at the top of the <body> element on each page, for analytics scripts"`
 	HTMLBodyBottom                 string              `json:"htmlBodyBottom" description:"HTML to inject at the bottom of the <body> element on each page, for analytics scripts"`
 	LicenseKey                     string              `json:"licenseKey" description:"License key. You must purchase a license to obtain this."`
+	MandrillKey                    string              `json:"mandrillKey" description:"Key for sending mails via Mandrill."`
 	MaxReposToSearch               string              `json:"maxReposToSearch" description:"The maximum number of repos to search across (the user is prompted to narrow their query if exceeded)"`
 	AdminUsernames                 string              `json:"adminUsernames" description:"Space-separated list of usernames that indicates which users will be treated as instance admins"`
 }
