@@ -78,6 +78,46 @@ var golangPlugin = map[string]interface{}{
 	},
 }
 
+func pkgs() []string {
+	pkgs := []string{"xlang"} // put slow xlang test first
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			panic(err)
+		}
+		if path == "." || !info.IsDir() {
+			return nil
+		}
+		switch path {
+		case ".git", "dev", "ui", "vendor":
+			return filepath.SkipDir
+		}
+
+		if path == "xlang" {
+			return nil // already first entry
+		}
+
+		pkg, err := build.Import("sourcegraph.com/sourcegraph/sourcegraph/"+path, "", 0)
+		if err != nil {
+			if _, ok := err.(*build.NoGoError); ok {
+				return nil
+			}
+			panic(err)
+		}
+
+		if len(pkg.TestGoFiles) == 0 && len(pkg.XTestGoFiles) == 0 {
+			fmt.Fprintf(os.Stderr, "error: package %s has no tests\n", pkg.ImportPath)
+			os.Exit(1)
+		}
+
+		pkgs = append(pkgs, path)
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	return pkgs
+}
+
 func main() {
 	pipeline := &Pipeline{}
 
@@ -130,43 +170,6 @@ func main() {
 		pipeline.AddStep(":docker:", cmds...)
 	}
 
-	pkgs := []string{"xlang"} // put slow xlang test first
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			panic(err)
-		}
-		if path == "." || !info.IsDir() {
-			return nil
-		}
-		switch path {
-		case ".git", "dev", "ui", "vendor":
-			return filepath.SkipDir
-		}
-
-		if path == "xlang" {
-			return nil // already first entry
-		}
-
-		pkg, err := build.Import("sourcegraph.com/sourcegraph/sourcegraph/"+path, "", 0)
-		if err != nil {
-			if _, ok := err.(*build.NoGoError); ok {
-				return nil
-			}
-			panic(err)
-		}
-
-		if len(pkg.TestGoFiles) == 0 && len(pkg.XTestGoFiles) == 0 {
-			fmt.Fprintf(os.Stderr, "error: package %s has no tests\n", pkg.ImportPath)
-			os.Exit(1)
-		}
-
-		pkgs = append(pkgs, path)
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
 
@@ -202,7 +205,7 @@ func main() {
 		Cmd("node_modules/.bin/nyc report -r json"),
 		ArtifactPaths("web/coverage/coverage-final.json"))
 
-	for _, path := range pkgs {
+	for _, path := range pkgs() {
 		coverageFile := path + "/coverage.txt"
 		pipeline.AddStep(":go:",
 			Cmd("go test ./"+path+" -v -race -i"),
@@ -253,7 +256,7 @@ func main() {
 
 	}
 
-	_, err = pipeline.WriteTo(os.Stdout)
+	_, err := pipeline.WriteTo(os.Stdout)
 	if err != nil {
 		panic(err)
 	}
