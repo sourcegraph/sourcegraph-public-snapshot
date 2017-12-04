@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go/build"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -35,6 +36,16 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		opt(step)
 	}
 	p.Steps = append(p.Steps, step)
+}
+
+func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
+	output, err := yaml.Marshal(p)
+	if err != nil {
+		return 0, err
+	}
+
+	n, err := w.Write(output)
+	return int64(n), err
 }
 
 type StepOpt func(step *Step)
@@ -242,10 +253,8 @@ func main() {
 
 	}
 
-	output, err := yaml.Marshal(pipeline)
+	_, err = pipeline.WriteTo(os.Stdout)
 	if err != nil {
 		panic(err)
 	}
-
-	os.Stdout.Write(output)
 }
