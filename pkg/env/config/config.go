@@ -58,8 +58,8 @@ type GitHubConfig struct {
 }
 
 type PhabricatorConfig struct {
-	URL   string `json"url" description:"URL of a Phabricator instance, e.g. http://phabricator.mycompany.com."`
-	Token string `json"token" description:"API token for Phabricator instance."`
+	URL   string `json:"url" description:"URL of a Phabricator instance, e.g. http://phabricator.mycompany.com."`
+	Token string `json:"token" description:"API token for Phabricator instance."`
 }
 
 type SearchScope struct {
