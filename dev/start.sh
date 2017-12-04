@@ -47,7 +47,7 @@ export SRC_SYNTECT_SERVER=http://localhost:3700
 export PHABRICATOR_URL="http://phabricator.sgdev.org"
 export GITOLITE_HOSTS="gitolite.sgdev.org/!git@gitolite.sgdev.org"
 export CORS_ORIGIN="https://github.com http://phabricator.sgdev.org"
-export PHABRICATOR_CONFIG='[{"url":"http://phabricator.sgdev.org","token":"api-74h7tm6owpew7tihfydetsz7cxpk"}]'
+export PHABRICATOR_CONFIG='[{"url":"http://phabricator.sgdev.org","token":"api-agswx2nwodkweitoo3t5l4dcc5xu"}]'
 
 export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
 export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
