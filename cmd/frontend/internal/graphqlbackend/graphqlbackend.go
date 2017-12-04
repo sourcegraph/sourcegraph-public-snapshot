@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
@@ -198,10 +197,6 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 }
 
 func (r *rootResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI string }) (*phabricatorRepoResolver, error) {
-	if !envvar.DeploymentOnPrem() {
-		return nil, errors.New("PhabricatorRepo: illegal operation on public Sourcegraph server")
-	}
-
 	repo, err := localstore.Phabricator.GetByURI(ctx, args.URI)
 	if err != nil {
 		return nil, err
