@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 )
 
 func TestAddQueryRegexpField(t *testing.T) {
 	tests := []struct {
 		query      string
-		addField   search2.Field
+		addField   string
 		addPattern string
 		want       string
 	}{
@@ -83,12 +84,12 @@ func TestAddQueryRegexpField(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s, add %s:%s", test.query, test.addField, test.addPattern), func(t *testing.T) {
-			query, err := resolveQuery(test.query)
+			query, err := searchquery.ParseAndCheck(test.query)
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := addQueryRegexpField(query.tokens, test.addField, test.addPattern)
-			if got.String() != test.want {
+			got := addQueryRegexpField(query, test.addField, test.addPattern)
+			if got := syntax.ExprString(got); got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
 		})

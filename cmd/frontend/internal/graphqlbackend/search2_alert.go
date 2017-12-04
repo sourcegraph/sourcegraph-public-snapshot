@@ -9,7 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/search2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 )
 
 type searchAlert struct {
@@ -35,9 +36,8 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 }
 
 func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
-	repoFilters := r.combinedQuery.fieldValues[searchFieldRepo]
-	minusRepoFilters := r.combinedQuery.fieldValues[minusField(searchFieldRepo)]
-	repoGroupFilters := r.combinedQuery.fieldValues[searchFieldRepoGroup]
+	repoFilters, minusRepoFilters := r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
+	repoGroupFilters, _ := r.combinedQuery.StringValues(searchquery.FieldRepoGroup)
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
@@ -49,7 +49,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
 		return &searchAlert{
 			title:       fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
-			description: fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0].Value),
+			description: fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
@@ -72,25 +72,25 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0])
 
-		repos1, _, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
+		repos1, _, _, _, err := resolveRepositories(ctx, repoFilters, minusRepoFilters, nil)
 		if err != nil {
 			return nil, err
 		}
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, searchFieldRepoGroup),
+				query:       omitQueryFields(r, searchquery.FieldRepoGroup),
 			})
 		}
 
-		unionRepoFilter := unionRegExps(repoFilters.Values())
-		repos2, _, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
+		unionRepoFilter := unionRegExps(repoFilters)
+		repos2, _, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters, repoGroupFilters)
 		if err != nil {
 			return nil, err
 		}
 		if len(repos2) > 0 {
-			query := omitQueryFields(r, searchFieldRepo)
-			query.query += " " + search2.NewToken(searchFieldRepo, unionRepoFilter).String()
+			query := omitQueryFields(r, searchquery.FieldRepo)
+			query.query += fmt.Sprintf(" repo:%s", unionRepoFilter)
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
@@ -99,7 +99,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 			// Fall back to removing repo filters.
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: "remove repo: filters",
-				query:       omitQueryFields(r, searchFieldRepo),
+				query:       omitQueryFields(r, searchquery.FieldRepo),
 			})
 		}
 
@@ -107,34 +107,34 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied your repo: filter.", repoGroupFilters[0])
 
-		repos1, _, _, _, err := resolveRepositories(ctx, repoFilters.Values(), minusRepoFilters.Values(), nil)
+		repos1, _, _, _, err := resolveRepositories(ctx, repoFilters, minusRepoFilters, nil)
 		if err != nil {
 			return nil, err
 		}
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, searchFieldRepoGroup),
+				query:       omitQueryFields(r, searchquery.FieldRepoGroup),
 			})
 		}
 
 		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
-			query:       omitQueryFields(r, searchFieldRepo),
+			query:       omitQueryFields(r, searchquery.FieldRepo),
 		})
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
 		a.title = "Expand your repo: filters to see results"
 		a.description = fmt.Sprintf("No repositories satisfied all of your repo: filters.")
 
-		unionRepoFilter := unionRegExps(repoFilters.Values())
-		repos2, _, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters.Values(), repoGroupFilters.Values())
+		unionRepoFilter := unionRegExps(repoFilters)
+		repos2, _, _, _, err := resolveRepositories(ctx, []string{unionRepoFilter}, minusRepoFilters, repoGroupFilters)
 		if err != nil {
 			return nil, err
 		}
 		if len(repos2) > 0 {
-			query := omitQueryFields(r, searchFieldRepo)
-			query.query += " " + search2.NewToken(searchFieldRepo, unionRepoFilter).String()
+			query := omitQueryFields(r, searchquery.FieldRepo)
+			query.query += fmt.Sprintf(" repo:%s", unionRepoFilter)
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
@@ -143,7 +143,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 
 		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
-			query:       omitQueryFields(r, searchFieldRepo),
+			query:       omitQueryFields(r, searchquery.FieldRepo),
 		})
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
@@ -152,7 +152,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 
 		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 			description: "remove repo: filter",
-			query:       omitQueryFields(r, searchFieldRepo),
+			query:       omitQueryFields(r, searchquery.FieldRepo),
 		})
 	}
 
@@ -199,7 +199,7 @@ outer:
 			break
 		}
 		repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-		repoFieldValues := r.combinedQuery.fieldValues[searchFieldRepo].Values()
+		repoFieldValues, _ := r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
 
 		for _, v := range repoFieldValues {
 			if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
@@ -224,12 +224,12 @@ outer:
 		// add it to the user's query, but be smart. For example, if the user's
 		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		query := addQueryRegexpField(r.query.tokens, searchFieldRepo, repoParentPattern)
+		newExpr := addQueryRegexpField(&r.query, searchquery.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
 			query: searchQuery{
-				query:      query.String(),
-				scopeQuery: r.scopeQuery.tokens.String(),
+				query:      syntax.ExprString(newExpr),
+				scopeQuery: r.scopeQuery.Syntax.Input,
 			},
 		})
 	}
@@ -245,12 +245,12 @@ outer:
 			if i >= maxReposToPropose {
 				break
 			}
-			query := addQueryRegexpField(r.query.tokens, searchFieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+			newExpr := addQueryRegexpField(&r.query, searchquery.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
 				query: searchQuery{
-					query:      query.String(),
-					scopeQuery: r.scopeQuery.tokens.String(),
+					query:      syntax.ExprString(newExpr),
+					scopeQuery: r.scopeQuery.Syntax.Input,
 				},
 			})
 		}
@@ -276,22 +276,22 @@ func (r *searchResolver2) alertForMissingRepoRevs(missingRepoRevs []*repositoryR
 	}
 }
 
-func omitQueryFields(r *searchResolver2, field search2.Field) searchQuery {
+func omitQueryFields(r *searchResolver2, field string) searchQuery {
 	return searchQuery{
-		query:      omitQueryTokensWithField(r.query.tokens, field).String(),
-		scopeQuery: omitQueryTokensWithField(r.scopeQuery.tokens, field).String(),
+		query:      syntax.ExprString(omitQueryExprWithField(&r.query, field)),
+		scopeQuery: syntax.ExprString(omitQueryExprWithField(&r.scopeQuery, field)),
 	}
 }
 
-func omitQueryTokensWithField(tokens search2.Tokens, field search2.Field) search2.Tokens {
-	tokens2 := make(search2.Tokens, 0, len(tokens))
-	for _, t := range tokens {
-		if t.Field == field {
+func omitQueryExprWithField(query *searchquery.Query, field string) []*syntax.Expr {
+	expr2 := make([]*syntax.Expr, 0, len(query.Syntax.Expr))
+	for _, e := range query.Syntax.Expr {
+		if e.Field == field {
 			continue
 		}
-		tokens2 = append(tokens2, t)
+		expr2 = append(expr2, e)
 	}
-	return tokens2
+	return expr2
 }
 
 // pathParentsByFrequency returns the most common path parents of the given paths.
@@ -316,26 +316,36 @@ func pathParentsByFrequency(paths []string) []string {
 	return parents
 }
 
-// addQueryRegexpField adds a new token to the query with the given field
-// and pattern value. The token is assumed to be a regexp.
+// addQueryRegexpField adds a new expr to the query with the given field
+// and pattern value. The field is assumed to be a regexp.
 //
 // It tries to simplify (avoid redundancy in) the result. For example, given
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func addQueryRegexpField(queryTokens search2.Tokens, field search2.Field, pattern string) search2.Tokens {
-	queryTokens = queryTokens.Copy()
+func addQueryRegexpField(query *searchquery.Query, field, pattern string) []*syntax.Expr {
+	// Copy query expressions.
+	expr := make([]*syntax.Expr, len(query.Syntax.Expr))
+	for i, e := range query.Syntax.Expr {
+		tmp := *e
+		expr[i] = &tmp
+	}
+
 	var added bool
-	for i, token := range queryTokens {
-		if token.Field == field && strings.Contains(pattern, token.Value.Value) {
-			queryTokens[i] = search2.NewToken(field, pattern)
+	for i, e := range expr {
+		if e.Field == field && strings.Contains(pattern, e.Value) {
+			expr[i].Value = pattern
 			added = true
 			break
 		}
 	}
 
 	if !added {
-		queryTokens = append(queryTokens, search2.NewToken(field, pattern))
+		expr = append(expr, &syntax.Expr{
+			Field:     field,
+			Value:     pattern,
+			ValueType: syntax.TokenLiteral,
+		})
 	}
-	return queryTokens
+	return expr
 }

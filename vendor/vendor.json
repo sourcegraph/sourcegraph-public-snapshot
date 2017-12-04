@@ -1943,6 +1943,12 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
+			"checksumSHA1": "mjpTlZwJefhOYNqyo7H/FMhReh0=",
+			"path": "golang.org/x/tools/cmd/stringer",
+			"revision": "04447353bc504b9a5c02eb227b9ecd252e64ea20",
+			"revisionTime": "2017-11-30T05:28:37Z"
+		},
+		{
 			"checksumSHA1": "8QUPOpsU35L0haBAhsFzsV4gPDs=",
 			"path": "golang.org/x/tools/go/ast/astutil",
 			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",

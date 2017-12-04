@@ -13,6 +13,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"github.com/neelance/parallel"
 )
@@ -35,12 +36,13 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchResultResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if len(r.combinedQuery.tokens) == 0 {
+	if len(r.combinedQuery.Syntax.Expr) == 0 {
 		return nil, nil
 	}
 
 	// Only suggest for type:file.
-	for _, resultType := range r.combinedQuery.fieldValues[searchFieldType].Values() {
+	typeValues, _ := r.combinedQuery.StringValues(searchquery.FieldType)
+	for _, resultType := range typeValues {
 		if resultType != "file" {
 			return nil, nil
 		}
@@ -53,10 +55,10 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		// * If only repo fields (except 1 term in user query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.query.fieldValues[searchFieldTerm]) == 1 && len(r.query.fieldValues) == 1 {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.fieldValues[searchFieldTerm][0].Value)
-		} else if len(r.combinedQuery.fieldValues[searchFieldRepo]) > 0 && ((len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) > 0 && len(r.combinedQuery.fieldValues) == 2) || (len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) == 0 && len(r.combinedQuery.fieldValues) == 1)) {
-			effectiveRepoFieldValues = r.combinedQuery.fieldValues[searchFieldRepo].Values()
+		if len(r.query.Values(searchquery.FieldDefault)) == 1 && len(r.query.Fields) == 1 {
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, asString(r.query.Values(searchquery.FieldDefault)[0]))
+		} else if len(r.combinedQuery.Values(searchquery.FieldRepo)) > 0 && ((len(r.combinedQuery.Values(searchquery.FieldRepoGroup)) > 0 && len(r.combinedQuery.Fields) == 2) || (len(r.combinedQuery.Values(searchquery.FieldRepoGroup)) == 0 && len(r.combinedQuery.Fields) == 1)) {
+			effectiveRepoFieldValues, _ = r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
 		}
 
 		// If we have a query which is not valid, just ignore it since this is for a suggestion.
@@ -81,9 +83,9 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
 		// If the user query has a file: filter AND a term, then abort; we will use showFilesWithTextMatches
 		// instead.
-		hasRepoOrFileFields := len(r.combinedQuery.fieldValues[searchFieldRepoGroup]) > 0 || len(r.combinedQuery.fieldValues[searchFieldRepo]) > 0 || len(r.combinedQuery.fieldValues[searchFieldFile]) > 0
-		userQueryHasFileFilterAndTerm := len(r.query.fieldValues[searchFieldFile]) > 0 && len(r.query.fieldValues[""]) > 0
-		if hasRepoOrFileFields && len(r.combinedQuery.fieldValues[""]) <= 1 && !userQueryHasFileFilterAndTerm {
+		hasRepoOrFileFields := len(r.combinedQuery.Values(searchquery.FieldRepoGroup)) > 0 || len(r.combinedQuery.Values(searchquery.FieldRepo)) > 0 || len(r.combinedQuery.Values(searchquery.FieldFile)) > 0
+		userQueryHasFileFilterAndTerm := len(r.query.Values(searchquery.FieldFile)) > 0 && len(r.query.Values(searchquery.FieldDefault)) > 0
+		if hasRepoOrFileFields && len(r.combinedQuery.Values(searchquery.FieldDefault)) <= 1 && !userQueryHasFileFilterAndTerm {
 			return r.resolveFiles(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
@@ -121,7 +123,7 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		if len(r.combinedQuery.fieldValues[""]) > 0 {
+		if len(r.combinedQuery.Values(searchquery.FieldDefault)) > 0 {
 			results, err := r.doResults(ctx, "file") // only "file" result type
 			if err != nil {
 				if err == context.DeadlineExceeded {
