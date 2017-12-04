@@ -41,30 +41,6 @@
 
     &__content {
         margin-left: 1.25rem;
-
-        p,
-        pre {
-            margin-bottom: 0;
-        }
-
-        code,
-        pre {
-            background: #141a2a;
-        }
-
-        pre {
-            padding: 0.5rem;
-        }
-
-        code {
-            padding: 0.25rem;
-        }
-
-        blockquote {
-            padding: 0 1rem;
-            color: #93a9c8;
-            border-left: 4px solid #93a9c8;
-        }
     }
 
     &__share {

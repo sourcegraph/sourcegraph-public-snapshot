@@ -39,6 +39,10 @@ func (c *commentResolver) Contents() string {
 	return c.comment.Contents
 }
 
+func (c *commentResolver) RichHTML() (string, error) {
+	return renderMarkdown(c.comment.Contents)
+}
+
 func (c *commentResolver) CreatedAt() string {
 	return c.comment.CreatedAt.Format(time.RFC3339) // ISO
 }

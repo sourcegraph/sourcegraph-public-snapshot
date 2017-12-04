@@ -1,9 +1,9 @@
 import copy from 'copy-to-clipboard'
 import formatDistance from 'date-fns/formatDistance'
 import * as H from 'history'
-import marked from 'marked'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { Markdown } from '../components/Markdown'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -67,12 +67,9 @@ export class Comment extends React.Component<Props, State> {
                         {this.state.copiedLink ? 'Copied link to clipboard!' : timeSince}
                     </Link>
                 </div>
-                <div
-                    className="comment__content"
-                    dangerouslySetInnerHTML={{
-                        __html: marked(comment.contents, { gfm: true, breaks: true, sanitize: true }),
-                    }}
-                />
+                <div className="comment__content">
+                    <Markdown dangerousInnerHTML={comment.richHTML} />
+                </div>
             </div>
         )
     }

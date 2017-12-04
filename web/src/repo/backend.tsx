@@ -105,6 +105,7 @@ interface FetchFileCtx {
 
 interface HighlightedFileResult {
     isDirectory: boolean
+    richHTML: string
     highlightedFile: GQL.IHighlightedFile
 }
 
@@ -118,6 +119,7 @@ export const fetchHighlightedFile = memoizeObservable(
                             commit {
                                 file(path: $filePath) {
                                     isDirectory
+                                    richHTML
                                     highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
                                         aborted
                                         html
@@ -145,7 +147,7 @@ export const fetchHighlightedFile = memoizeObservable(
                     )
                 }
                 const file = data.root.repository.commit.commit.file
-                return { isDirectory: file.isDirectory, highlightedFile: file.highlight }
+                return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
     ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout} ` + `?isLightTheme=${ctx.isLightTheme}`

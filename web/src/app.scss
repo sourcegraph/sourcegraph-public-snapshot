@@ -320,6 +320,7 @@ body {
     }
 }
 
+@import './highlight';
 @import './search2/QueryButton';
 @import './search2/SavedQueries';
 @import './search2/SearchNavbarItem';
@@ -343,6 +344,7 @@ body {
 @import './components/CodeExcerpt';
 @import './components/DecoratedTextLines';
 @import './components/HeroPage';
+@import './components/Markdown';
 @import './settings/SettingsPage';
 @import './comments/CommentsPage';
 @import './open/OpenPage';

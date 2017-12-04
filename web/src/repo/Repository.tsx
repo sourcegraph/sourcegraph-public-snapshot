@@ -14,6 +14,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Position } from 'vscode-languageserver-types'
 import { HeroPage } from '../components/HeroPage'
+import { Markdown } from '../components/Markdown'
 import { PageTitle } from '../components/PageTitle'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
@@ -71,6 +72,12 @@ interface State {
      * the current position selected
      */
     position?: Position
+    /**
+     * Plain is the normal blob view. Rich is rendered (i.e. markdown). Undefined
+     * if we can't switch to rendered.
+     */
+    viewerType?: 'plain' | 'rich'
+    richHTML?: string
 }
 
 export class Repository extends React.PureComponent<Props, State> {
@@ -149,6 +156,8 @@ export class Repository extends React.PureComponent<Props, State> {
                                     highlightedFile: undefined,
                                     isDirectory: false,
                                     highlightingError: err,
+                                    viewerType: undefined,
+                                    richHTML: undefined,
                                 })
                                 console.error(err)
                                 return []
@@ -164,6 +173,8 @@ export class Repository extends React.PureComponent<Props, State> {
                             // we prefer not to display that
                             highlightedFile: !result.isDirectory ? result.highlightedFile : undefined,
                             highlightingError: undefined,
+                            viewerType: !result.isDirectory && result.richHTML ? 'rich' : undefined,
+                            richHTML: result.richHTML,
                         }),
                     err => console.error(err)
                 )
@@ -214,7 +225,12 @@ export class Repository extends React.PureComponent<Props, State> {
         return (
             <div className="repository">
                 <PageTitle title={this.getPageTitle()} />
-                <RepoNav {...this.props} rev={this.props.rev || this.props.defaultBranch} />
+                <RepoNav
+                    {...this.props}
+                    rev={this.props.rev || this.props.defaultBranch}
+                    viewButtonType={this.getViewButtonType()}
+                    onViewButtonClick={this.onViewButtonClick}
+                />
                 {IS_CHROME && <ChromeExtensionToast />}
                 {IS_FIREFOX && <FirefoxExtensionToast />}
                 <SurveyToast />
@@ -259,7 +275,14 @@ export class Repository extends React.PureComponent<Props, State> {
                                 subtitle={'Error: ' + this.state.highlightingError.message}
                             />
                         )}
-                        {this.state.highlightedFile &&
+                        {this.state.viewerType === 'rich' &&
+                            this.state.richHTML && (
+                                <div className="repository__rich-content">
+                                    <Markdown dangerousInnerHTML={this.state.richHTML} />
+                                </div>
+                            )}
+                        {this.state.viewerType !== 'rich' &&
+                            this.state.highlightedFile &&
                             this.state.highlightedFile.aborted && (
                                 <p className="repository__blob-alert">
                                     <ErrorIcon className="icon-inline" />
@@ -272,7 +295,8 @@ export class Repository extends React.PureComponent<Props, State> {
                                     {/* NOTE: The above parentheses are so that the text renders literally as "(show anyway)" */}
                                 </p>
                             )}
-                        {!this.state.isDirectory &&
+                        {this.state.viewerType !== 'rich' &&
+                            !this.state.isDirectory &&
                             (this.state.highlightedFile ? (
                                 <Blob
                                     {...this.props}
@@ -309,6 +333,10 @@ export class Repository extends React.PureComponent<Props, State> {
         }
         return `${repoStr}`
     }
+
+    private getViewButtonType = () => this.state.viewerType && (this.state.viewerType === 'plain' ? 'rich' : 'plain')
+
+    private onViewButtonClick = () => this.setState({ viewerType: this.getViewButtonType() })
 
     private onTreeToggle = () => this.setState({ showTree: !this.state.showTree })
 

@@ -7,10 +7,13 @@ import (
 	"html/template"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"github.com/microcosm-cc/bluemonday"
+	gfm "github.com/shurcooL/github_flavored_markdown"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
@@ -83,6 +86,29 @@ func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, err
 		return nil, err
 	}
 	return &repositoryResolver{repo: repo}, nil
+}
+
+func (r *fileResolver) RichHTML(ctx context.Context) (string, error) {
+	switch path.Ext(r.path) {
+	case ".md", ".mdown", ".markdown", ".markdn":
+		break
+	default:
+		return "", nil
+	}
+	content, err := r.Content(ctx)
+	if err != nil {
+		return "", err
+	}
+	return renderMarkdown(content)
+}
+
+func renderMarkdown(content string) (string, error) {
+	unsafeHTML := gfm.Markdown([]byte(content))
+
+	// The recommended policy at https://github.com/russross/blackfriday#extensions
+	p := bluemonday.UGCPolicy()
+	p.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
+	return string(p.SanitizeBytes(unsafeHTML)), nil
 }
 
 func (r *fileResolver) Binary(ctx context.Context) (bool, error) {

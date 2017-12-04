@@ -422,6 +422,7 @@ type SharedItemComment {
   id: Int!
   title: String!
   contents: String!
+  richHTML: String!
   createdAt: String!
   updatedAt: String!
   author: SharedItemUser!
@@ -636,6 +637,13 @@ type HighlightedFile {
 type File implements TreeEntry {
   name: String!
   content: String!
+
+  # The file rendered as rich HTML, or an empty string if it is not a supported
+  # rich file type.
+  #
+  # This HTML string is already escaped and thus is always safe to render.
+  richHTML: String!
+
   repository: Repository!
   binary: Boolean!
   isDirectory: Boolean!
@@ -902,6 +910,13 @@ type Comment {
   id: Int!
   title: String!
   contents: String!
+
+  # The file rendered as rich HTML, or an empty string if it is not a supported
+  # rich file type.
+  #
+  # This HTML string is already escaped and thus is always safe to render.
+  richHTML: String!
+
   createdAt: String!
   updatedAt: String!
   author: User!

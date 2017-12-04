@@ -45,7 +45,7 @@ const gqlThread = `
             avatarURL
         }
         createdAt
-        contents
+        markdown
     }
 `
 

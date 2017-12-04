@@ -2,6 +2,8 @@ import ComputerIcon from '@sourcegraph/icons/lib/Computer'
 import CopyIcon from '@sourcegraph/icons/lib/Copy'
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
+import ViewIcon from '@sourcegraph/icons/lib/View'
+import ViewOffIcon from '@sourcegraph/icons/lib/ViewOff'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
@@ -18,6 +20,8 @@ interface RepoSubnavProps {
     commitID?: string
     filePath?: string
     onClickRevision?: () => void
+    viewButtonType?: 'plain' | 'rich'
+    onViewButtonClick?: () => void
     hideCopyLink?: boolean
     customEditorURL?: string
     revSwitcherDisabled?: boolean
@@ -84,6 +88,18 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
                         <span className="repo-nav__action-text">{this.state.copiedLink ? 'Copied!' : 'Copy link'}</span>
                     </a>
                 )}
+                {this.props.viewButtonType === 'rich' && (
+                    <a href="" className="repo-nav__action" onClick={this.onViewButtonClick} title="View rendered">
+                        <ViewOffIcon className="icon-inline" />
+                        <span className="repo-nav__action-text">View rendered</span>
+                    </a>
+                )}
+                {this.props.viewButtonType === 'plain' && (
+                    <a href="" className="repo-nav__action" onClick={this.onViewButtonClick} title="View source">
+                        <ViewIcon className="icon-inline" />
+                        <span className="repo-nav__action-text">View source</span>
+                    </a>
+                )}
                 {(this.props.repoPath.split('/')[0] === 'github.com' ||
                     githubHosts[this.props.repoPath.split('/')[0]]) && (
                     <a
@@ -139,6 +155,14 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
         setTimeout(() => {
             this.setState({ copiedLink: false })
         }, 1000)
+    }
+
+    private onViewButtonClick: React.MouseEventHandler<HTMLElement> = event => {
+        event.preventDefault()
+        eventLogger.log('ViewButtonClicked')
+        if (this.props.onViewButtonClick) {
+            this.props.onViewButtonClick()
+        }
     }
 
     private onViewOnCodeHostButtonClicked: React.MouseEventHandler<HTMLAnchorElement> = () => {
