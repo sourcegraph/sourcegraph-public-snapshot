@@ -14,6 +14,7 @@ type Config struct {
 	DisablePublicRepoRedirects     bool                `json:"disablePublicRepoRedirects" description:"Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server."`
 	GitHub                         []GitHubConfig      `json:"github" description:"JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information."`
 	Phabricator                    []PhabricatorConfig `json:"phabricator" description:"JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information."`
+	PhabricatorURL                 string              `json:"phabricatorURL" description:"(Deprecated: Use Phabricator) URL of Phabricator instance."`
 	GithubClientID                 string              `json:"githubClientID" description:"Client ID for GitHub."`
 	GithubClientSecret             string              `json:"githubClientSecret" description:"Client secret for GitHub."`
 	GithubPersonalAccessToken      string              `json:"githubPersonalAccessToken" description:"(Deprecated: Use GitHub) Personal access token for GitHub. "`
