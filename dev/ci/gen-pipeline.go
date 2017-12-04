@@ -170,6 +170,16 @@ func main() {
 		pipeline.AddStep(":docker:", cmds...)
 	}
 
+	if strings.HasPrefix(branch, "docker-images-yolo/") {
+		version = version + "_yolo"
+		addDockerImageStep(branch[19:], false)
+		_, err := pipeline.WriteTo(os.Stdout)
+		if err != nil {
+			panic(err)
+		}
+		return
+	}
+
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("./dev/check/all.sh"))
 
