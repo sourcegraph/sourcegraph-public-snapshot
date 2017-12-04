@@ -97,7 +97,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 
 	actor := &actor.Actor{
 		UID:             info.UserID,
-		Login:           info.Nickname,
+		Login:           username,
 		Email:           info.Email,
 		AvatarURL:       info.Picture,
 		GitHubConnected: false, // TODO: Remove
