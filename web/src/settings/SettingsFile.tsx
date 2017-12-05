@@ -173,13 +173,13 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.getPropsSettingsContentsOrEmpty() === this.state.modifiedContents ||
             window.confirm('Really discard edits?')
         ) {
-            eventLogger.log('SettingsFileDiscard', { organization: { settings: { canceled: false } } })
+            eventLogger.log('SettingsFileDiscard')
             this.setState({
                 editing: false,
                 modifiedContents: undefined,
             })
         } else {
-            eventLogger.log('SettingsFileDiscard', { organization: { settings: { canceled: true } } })
+            eventLogger.log('SettingsFileDiscardCanceled')
         }
     }
 
