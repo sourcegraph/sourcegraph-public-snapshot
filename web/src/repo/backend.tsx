@@ -139,7 +139,8 @@ export const fetchHighlightedFile = memoizeObservable(
                     !data.root.repository ||
                     !data.root.repository.commit ||
                     !data.root.repository.commit.commit ||
-                    !data.root.repository.commit.commit.file
+                    !data.root.repository.commit.commit.file ||
+                    !data.root.repository.commit.commit.file.highlight
                 ) {
                     throw Object.assign(
                         new Error('Could not fetch highlighted file: ' + (errors || []).map(e => e.message).join('\n')),
