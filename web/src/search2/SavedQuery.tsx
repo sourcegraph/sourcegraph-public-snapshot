@@ -120,7 +120,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             <Link
                                 to={'/search?' + buildSearchURLQuery(this.props.savedQuery.query)}
                                 title="Number of results for this query"
-                                onMouseDown={this.logEvent}
+                                onMouseUp={this.logEvent}
                             >
                                 {this.state.approximateResultCount}
                             </Link>
