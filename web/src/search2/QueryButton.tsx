@@ -6,9 +6,10 @@ interface Props {
     query: GQL.ISearchQuery2
 
     /**
-     * Called when the user clicks on the component.
+     * Called when the user mouseups on the component. This captures normal
+     * clicks and middle-clicks.
      */
-    onClick?: () => void
+    onMouseUp?: () => void
 }
 
 export const QueryButton: React.StatelessComponent<Props> = (props: Props) => (
@@ -16,7 +17,7 @@ export const QueryButton: React.StatelessComponent<Props> = (props: Props) => (
         className="query-button"
         to={'/search?' + buildSearchURLQuery(props.query)}
         title={`${props.query.scopeQuery} ${props.query.query}`}
-        onClick={props.onClick}
+        onClick={props.onMouseUp}
     >
         {props.query.scopeQuery && <span className="query-button__scope">{props.query.scopeQuery}</span>}{' '}
         {props.query.query}
