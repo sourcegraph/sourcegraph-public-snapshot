@@ -224,7 +224,7 @@ func (r *rootResolver) Repositories(ctx context.Context, args *struct {
 	Query string
 }) ([]*repositoryResolver, error) {
 	opt := &sourcegraph.RepoListOptions{Query: args.Query}
-	opt.PerPage = 200
+	opt.PerPage = 10000 // we want every repo
 	return listRepos(ctx, opt)
 }
 
