@@ -89,7 +89,12 @@ const config: webpack.Configuration = {
                 // sass / scss loader for webpack
                 test: /\.(css|sass|scss)$/,
                 loader: ExtractTextPlugin.extract([
-                    'css-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            minimize: process.env.NODE_ENV === 'production',
+                        },
+                    },
                     'postcss-loader',
                     {
                         loader: 'sass-loader',
