@@ -102,8 +102,8 @@ export const Org = reactive<Props>(props => {
                 if (member.org.members.length === 1) {
                     return confirm(
                         [
-                            `You're the last member of ${member.org.displayName}.`,
-                            `Leaving will delete the ${member.org.displayName} organization.`,
+                            `You're the last member of ${member.org.displayName}. `,
+                            `Leaving will delete the ${member.org.displayName} organization. `,
                             `Leave this organization?`,
                         ].join('')
                     )
