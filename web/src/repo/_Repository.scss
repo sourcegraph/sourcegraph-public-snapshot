@@ -90,7 +90,9 @@
     &__rich-content {
         overflow: auto;
         padding: 3rem;
-        max-width: 50rem;
+        &-container {
+            max-width: 50rem;
+        }
     }
 }
 

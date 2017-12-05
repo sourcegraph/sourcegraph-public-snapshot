@@ -278,7 +278,9 @@ export class Repository extends React.PureComponent<Props, State> {
                         {this.state.viewerType === 'rich' &&
                             this.state.richHTML && (
                                 <div className="repository__rich-content">
-                                    <Markdown dangerousInnerHTML={this.state.richHTML} />
+                                    <div className="repository__rich-content-container">
+                                        <Markdown dangerousInnerHTML={this.state.richHTML} />
+                                    </div>
                                 </div>
                             )}
                         {this.state.viewerType !== 'rich' &&
