@@ -32,7 +32,7 @@ const InvitedNotification: React.SFC<{
         <div className={`${className} invited-notification`}>
             <span className="invited-notification__message">
                 Generated invite link. You must copy and send it to {email}:{' '}
-                <a href={acceptInviteURL} target="_blank" className="invited-notification__link">
+                <a href={acceptInviteURL} target="_blank">
                     Invite link
                 </a>
             </span>

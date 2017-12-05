@@ -300,6 +300,17 @@ body {
         background: #1d2535;
         color: #f2f4f8;
     }
+
+    a {
+        text-decoration: underline;
+        font-weight: bold;
+        color: #f2f4f8;
+
+        &:hover,
+        &:focus {
+            color: white;
+        }
+    }
 }
 
 .theme-light {
@@ -311,14 +322,6 @@ body {
         &-danger {
             background: rgba(201, 42, 42, 0.75);
             color: #f2f4f8;
-        }
-
-        a {
-            color: #f2f4f8;
-
-            &:hover {
-                color: $color-light-text-4;
-            }
         }
     }
 }
