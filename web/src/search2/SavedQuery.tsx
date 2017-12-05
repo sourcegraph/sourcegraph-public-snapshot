@@ -120,6 +120,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             <Link
                                 to={'/search?' + buildSearchURLQuery(this.props.savedQuery.query)}
                                 title="Number of results for this query"
+                                onMouseUp={this.logEvent}
                             >
                                 {this.state.approximateResultCount}
                             </Link>
@@ -128,7 +129,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                 </div>
                 <div className="saved-query__row">
                     <div className="saved-query__query">
-                        <QueryButton query={this.props.savedQuery.query} onClick={this.logEvent} />
+                        <QueryButton query={this.props.savedQuery.query} onMouseUp={this.logEvent} />
                     </div>
                     <div className="saved-query__actions">
                         {!this.state.editing && (
@@ -163,9 +164,13 @@ export class SavedQuery extends React.PureComponent<Props, State> {
         )
     }
 
-    private toggleEditing = () => this.setState({ editing: !this.state.editing })
+    private toggleEditing = () => {
+        eventLogger.log('SavedQueryToggleEditing', { queries: { editing: !this.state.editing } })
+        this.setState({ editing: !this.state.editing })
+    }
 
     private onDidUpdateSavedQuery = () => {
+        eventLogger.log('SavedQueryUpdated')
         this.setState({ editing: false, approximateResultCount: undefined, loading: true }, () => {
             this.refreshRequested.next()
             if (this.props.onDidUpdate) {
@@ -178,7 +183,10 @@ export class SavedQuery extends React.PureComponent<Props, State> {
 
     private confirmDelete = () => {
         if (window.confirm('Really delete this saved query?')) {
+            eventLogger.log('SavedQueryDeleted')
             this.deleteRequested.next()
+        } else {
+            eventLogger.log('SavedQueryDeletedCanceled')
         }
     }
 

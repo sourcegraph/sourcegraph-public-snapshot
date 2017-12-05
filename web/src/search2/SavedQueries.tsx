@@ -92,15 +92,28 @@ export class SavedQueries extends React.Component<Props, State> {
                 {!this.state.creating &&
                     this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
                 {this.state.savedQueries.map((savedQuery, i) => (
-                    <SavedQuery key={i} savedQuery={savedQuery} isLightTheme={this.props.isLightTheme} />
+                    <SavedQuery
+                        key={i}
+                        savedQuery={savedQuery}
+                        isLightTheme={this.props.isLightTheme}
+                        onDidDuplicate={this.onDidDuplicateSavedQuery}
+                    />
                 ))}
             </div>
         )
     }
 
-    private toggleCreating = () => this.setState({ creating: !this.state.creating })
+    private toggleCreating = () => {
+        eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: !this.state.creating } })
+        this.setState({ creating: !this.state.creating })
+    }
 
     private onDidCreateSavedQuery = () => {
+        eventLogger.log('SavedQueryCreated')
         this.setState({ creating: false })
+    }
+
+    private onDidDuplicateSavedQuery = () => {
+        eventLogger.log('SavedQueryDuplicated')
     }
 }
