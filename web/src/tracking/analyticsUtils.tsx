@@ -13,6 +13,12 @@ export interface EventQueryParameters {
     utm_source?: string
     utm_product_name?: string
     utm_product_version?: string
+    native: {
+        /**
+         *  Editor machine_id property for syncing editor <-> webapp
+         */
+        common_machine_id?: string
+    }
 }
 
 /**
@@ -60,6 +66,9 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
         utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
         utm_product_name: parsedUrl.searchParams.get('utm_product_name') || undefined,
         utm_product_version: parsedUrl.searchParams.get('utm_product_version') || undefined,
+        native: {
+            common_machine_id: parsedUrl.searchParams.get('mid') || undefined,
+        },
     }
 }
 
@@ -96,6 +105,7 @@ export function handleQueryEvents(url: string): void {
         'utm_product_name',
         'utm_product_version',
         'badge',
+        'mid',
     ])
 }
 

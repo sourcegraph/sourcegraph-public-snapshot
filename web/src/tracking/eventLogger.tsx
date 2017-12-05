@@ -104,6 +104,7 @@ class EventLogger {
         serverAdmin.trackPageView()
         this.logToConsole(pageTitle, decoratedProps)
 
+        // Use flag to ensure URL query params are only stripped once
         if (!this.hasStrippedQueryParameters) {
             handleQueryEvents(window.location.href)
             this.hasStrippedQueryParameters = true
