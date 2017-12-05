@@ -253,25 +253,13 @@ func Main() error {
 
 			// CORS
 			if corsOrigin != "" {
-				origins := strings.Fields(corsOrigin)
-				// compare whitelisted origins to request origin, select only if it matches
-				var origin string
-				for _, o := range origins {
-					if o == r.Header.Get("Origin") {
-						origin = r.Header.Get("Origin")
-						break
-					}
-				}
-				if origin != "" {
-					// whitelisted origin matched
-					w.Header().Set("Access-Control-Allow-Credentials", "true")
-					w.Header().Set("Access-Control-Allow-Origin", origin)
-					if r.Method == "OPTIONS" {
-						w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-						w.Header().Set("Access-Control-Allow-Headers", "X-Requested-With, X-Oidc-Override, X-Sourcegraph-Client, Content-Type")
-						w.WriteHeader(http.StatusOK)
-						return // do not invoke next handler
-					}
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
+				if r.Method == "OPTIONS" {
+					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+					w.Header().Set("Access-Control-Allow-Headers", "X-Requested-With, X-Sourcegraph-Client, Content-Type")
+					w.WriteHeader(http.StatusOK)
+					return // do not invoke next handler
 				}
 			}
 
