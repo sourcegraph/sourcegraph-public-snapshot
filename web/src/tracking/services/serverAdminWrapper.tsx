@@ -11,6 +11,10 @@ class ServerAdminWrapper {
         if (window.context.onPrem && window.context.version !== 'dev') {
             currentUser.subscribe(user => {
                 if (user) {
+                    if (!this.active) {
+                        // Handles initial page load
+                        logUserEvent('PAGEVIEW').subscribe()
+                    }
                     this.active = true
                 }
             })
