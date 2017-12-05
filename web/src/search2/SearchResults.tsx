@@ -18,6 +18,7 @@ import { searchText } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { queryTelemetryData } from './queryTelemetry'
 import { RepoSearchResult } from './RepoSearchResult'
 import { SearchAlert } from './SearchAlert'
 
@@ -73,6 +74,10 @@ export class SearchResults extends React.Component<Props, State> {
                         return !currentSearchOptions || searchOptionsEqual(searchOptions, currentSearchOptions)
                     }),
                     switchMap(searchOptions => {
+                        eventLogger.log('SearchResultsQueried', {
+                            code_search: { query: queryTelemetryData(searchOptions) },
+                        })
+
                         const start = Date.now()
                         return searchText(searchOptions).pipe(
                             tap(res => {
