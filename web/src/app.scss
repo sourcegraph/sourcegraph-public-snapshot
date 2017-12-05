@@ -300,19 +300,35 @@ body {
         background: #1d2535;
         color: #f2f4f8;
     }
-}
 
-.theme-light {
-    .alert {
-        &-danger {
-            background: rgba(201, 42, 42, 0.75);
-            color: #f2f4f8;
+    a {
+        text-decoration: underline;
+        font-weight: bold;
+        color: #f2f4f8;
+
+        &:hover,
+        &:focus {
+            color: white;
+        }
+    }
+
+    .btn-icon {
+        &:hover,
+        &:focus {
+            &,
+            .theme-light & {
+                color: white;
+            }
         }
     }
 }
 
 .theme-light {
     .alert {
+        &-success {
+            background: rgba(43, 138, 62, 0.85);
+        }
+
         &-danger {
             background: rgba(201, 42, 42, 0.75);
             color: #f2f4f8;

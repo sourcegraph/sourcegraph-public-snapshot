@@ -1,6 +1,4 @@
 .invite-form {
-    text-align: right;
-
     &__email {
         flex: 1 1 auto;
     }
@@ -10,24 +8,29 @@
         flex: 0 0 auto;
     }
 
-    &__invited-text {
-        opacity: 0;
-        transition: opacity 500ms ease-out;
-
-        &--visible {
-            opacity: 1;
-        }
-    }
-
     &__container {
         display: flex;
         width: 100%;
-        max-width: 21rem;
     }
 
     &__status {
-        padding: 0.5rem 0.5rem 0 0;
-        min-height: 2.75rem;
+        padding-top: 0.5rem;
         overflow: hidden;
+    }
+
+    &__alerts {
+        margin-bottom: 1rem;
+    }
+}
+
+.invited-notification {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin: 0.25rem 0;
+
+    &__message {
+        flex: 1;
     }
 }

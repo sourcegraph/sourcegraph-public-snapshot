@@ -9,7 +9,6 @@ import (
 	"github.com/mattbaird/gochimp"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/conf"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	appconf "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
@@ -60,7 +59,7 @@ func CreateOrgToken(email string, org *sourcegraph.Org) (string, error) {
 	return payload.SignedString(conf.AppSecretKey)
 }
 
-func SendEmail(inviteEmail, fromName, orgName, token string) {
+func SendEmail(inviteEmail, fromName, orgName, inviteURL string) {
 	config := &notif.EmailConfig{
 		Template:  "invite-user",
 		FromName:  fromName,
@@ -69,7 +68,6 @@ func SendEmail(inviteEmail, fromName, orgName, token string) {
 		Subject:   fmt.Sprintf("%s has invited you to join %s on Sourcegraph", fromName, orgName),
 	}
 
-	inviteURL := appconf.AppURL.String() + "/settings/accept-invite?token=" + token
 	notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
 		gochimp.Var{Name: "INVITE_URL", Content: inviteURL},
 		gochimp.Var{Name: "ORG", Content: orgName},

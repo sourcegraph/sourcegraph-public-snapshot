@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -256,10 +257,16 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	return nil, store.OrgMembers.Remove(ctx, orgID, args.UserID)
 }
 
+type inviteUserResult struct {
+	acceptInviteURL string
+}
+
+func (r *inviteUserResult) AcceptInviteURL() string { return r.acceptInviteURL }
+
 func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	OrgID graphql.ID
 	Email string
-}) (*EmptyResponse, error) {
+}) (*inviteUserResult, error) {
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.OrgID, &orgID); err != nil {
 		return nil, err
@@ -340,7 +347,8 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	invite.SendEmail(args.Email, user.DisplayName, org.Name, token)
+	inviteURL := conf.AppURL.String() + "/settings/accept-invite?token=" + token
+	invite.SendEmail(args.Email, user.DisplayName, org.Name, inviteURL)
 
 	if user, err := currentUser(ctx); err != nil {
 		// errors swallowed because user is only needed for Slack notifications
@@ -350,7 +358,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		go client.NotifyOnInvite(user, org, args.Email)
 	}
 
-	return nil, nil
+	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
 }
 
 func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {

@@ -1,11 +1,10 @@
+import CloseIcon from '@sourcegraph/icons/lib/Close'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import reactive from 'rx-component'
 import { merge } from 'rxjs/observable/merge'
 import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
-import { concat } from 'rxjs/operators/concat'
-import { delay } from 'rxjs/operators/delay'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { scan } from 'rxjs/operators/scan'
@@ -16,15 +15,45 @@ import { Subject } from 'rxjs/Subject'
 import { eventLogger } from '../../tracking/eventLogger'
 import { inviteUser } from '../backend'
 
+const emailInvitesEnabled = window.context.emailEnabled
+
+const InvitedNotification: React.SFC<{
+    className: string
+    email: string
+    acceptInviteURL: string
+    onDismiss: () => void
+}> = ({ className, email, acceptInviteURL, onDismiss }) => (
+    <div className={`${className} invited-notification`}>
+        {emailInvitesEnabled ? (
+            <span className="invited-notification__message">Invite sent to {email}</span>
+        ) : (
+            <span className="invited-notification__message">
+                Generated invite link. You must copy and send it to {email}:{' '}
+                <a href={acceptInviteURL} target="_blank">
+                    Invite link
+                </a>
+            </span>
+        )}
+        <button className="btn btn-icon">
+            <CloseIcon title="Dismiss" onClick={onDismiss} />
+        </button>
+    </div>
+)
+
 export interface Props {
     orgID: string
+}
+
+interface SubmittedInvite {
+    email: string
+    acceptInviteURL: string
 }
 
 interface State {
     orgID: string
     email: string
     loading: boolean
-    invited: boolean
+    invited?: SubmittedInvite[]
     error?: Error
 }
 
@@ -37,12 +66,21 @@ export const InviteForm = reactive<Props>(props => {
     const emailChanges = new Subject<string>()
     const nextEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => emailChanges.next(event.currentTarget.value)
 
+    const notificationDismissals = new Subject<number>()
+
     const orgID = props.pipe(map(({ orgID }) => orgID))
 
     return merge<Update>(
         orgID.pipe(map(orgID => (state: State): State => ({ ...state, orgID }))),
 
         emailChanges.pipe(map(email => (state: State): State => ({ ...state, email }))),
+
+        notificationDismissals.pipe(
+            map(i => (state: State): State => ({
+                ...state,
+                invited: (state.invited || []).filter((_, j) => i !== j),
+            }))
+        ),
 
         submits.pipe(
             tap(e => e.preventDefault()),
@@ -59,17 +97,15 @@ export const InviteForm = reactive<Props>(props => {
             ),
             mergeMap(([, orgID, email]) =>
                 inviteUser(email, orgID).pipe(
-                    mergeMap(() =>
+                    mergeMap(({ acceptInviteURL }) =>
                         // Reset email, reenable submit button, flash "invited" text
                         of((state: State): State => ({
                             ...state,
                             loading: false,
                             error: undefined,
                             email: '',
-                            invited: true,
+                            invited: [...(state.invited || []), { email, acceptInviteURL }],
                         }))
-                            // Hide "invited" text again after 1s
-                            .pipe(concat(of<Update>(state => ({ ...state, invited: false })).pipe(delay(1000))))
                     ),
                     // Disable button while loading
                     startWith<Update>((state: State): State => ({ ...state, loading: true })),
@@ -79,7 +115,6 @@ export const InviteForm = reactive<Props>(props => {
         )
     ).pipe(
         scan<Update, State>((state: State, update: Update) => update(state), {
-            invited: false,
             loading: false,
             email: '',
         } as State),
@@ -97,22 +132,28 @@ export const InviteForm = reactive<Props>(props => {
                         size={30}
                     />
                     <button type="submit" disabled={loading} className="btn btn-primary invite-form__submit-button">
-                        Invite
+                        {emailInvitesEnabled ? 'Invite' : 'Make invite link'}
                     </button>
                 </div>
                 <div className="invite-form__status">
-                    {error && (
-                        <div className="text-error">
-                            <small>{error.message}</small>
+                    {loading && <LoaderIcon className="icon-inline" />}
+                    {error && <div className="text-error">{error.message}</div>}
+                </div>
+                {invited &&
+                    invited.length > 0 && (
+                        <div className="invite-form__alerts">
+                            {invited.map(({ email, acceptInviteURL }, i) => (
+                                <InvitedNotification
+                                    key={i}
+                                    className="alert alert-success invite-form__invited"
+                                    email={email}
+                                    acceptInviteURL={acceptInviteURL}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onDismiss={() => notificationDismissals.next(i)}
+                                />
+                            ))}
                         </div>
                     )}
-                    <small
-                        className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}
-                    >
-                        Invited!
-                    </small>
-                    {loading && <LoaderIcon className="icon-inline" />}
-                </div>
             </form>
         ))
     )
