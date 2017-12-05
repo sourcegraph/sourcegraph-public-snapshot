@@ -22,27 +22,23 @@ const InvitedNotification: React.SFC<{
     email: string
     acceptInviteURL: string
     onDismiss: () => void
-}> = ({ className, email, acceptInviteURL, onDismiss }) =>
-    emailInvitesEnabled ? (
-        <div className={`${className} invited-notification`}>
+}> = ({ className, email, acceptInviteURL, onDismiss }) => (
+    <div className={`${className} invited-notification`}>
+        {emailInvitesEnabled ? (
             <span className="invited-notification__message">Invite sent to {email}</span>
-            <button className="btn btn-icon">
-                <CloseIcon title="Dismiss" onClick={onDismiss} />
-            </button>
-        </div>
-    ) : (
-        <div className={`${className} invited-notification`}>
+        ) : (
             <span className="invited-notification__message">
                 Generated invite link. You must copy and send it to {email}:{' '}
                 <a href={acceptInviteURL} target="_blank">
                     Invite link
                 </a>
             </span>
-            <button className="btn btn-icon">
-                <CloseIcon title="Dismiss" onClick={onDismiss} />
-            </button>
-        </div>
-    )
+        )}
+        <button className="btn btn-icon">
+            <CloseIcon title="Dismiss" onClick={onDismiss} />
+        </button>
+    </div>
+)
 
 export interface Props {
     orgID: string
