@@ -19,7 +19,7 @@ func ApplyUserOrgMap(ctx context.Context) {
 
 	for userPattern, orgs := range env.Config.AuthUserOrgMap {
 		if userPattern != "*" {
-			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\"* is supported)", "userPattern", userPattern)
+			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\" is supported)", "userPattern", userPattern)
 			continue
 		}
 		if err := localstore.OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, nil, orgs); err != nil {

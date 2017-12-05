@@ -80,7 +80,7 @@ type UserOrgMap map[string][]string
 func (m UserOrgMap) OrgsForAllUsersToJoin() []string {
 	for userPattern, orgs := range m {
 		if userPattern != "*" {
-			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\"* is supported)", "userPattern", userPattern)
+			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\" is supported)", "userPattern", userPattern)
 			continue
 		}
 		return orgs
