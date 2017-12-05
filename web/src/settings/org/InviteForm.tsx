@@ -15,6 +15,8 @@ import { Subject } from 'rxjs/Subject'
 import { eventLogger } from '../../tracking/eventLogger'
 import { inviteUser } from '../backend'
 
+const emailInvitesEnabled = window.context.emailEnabled
+
 const InvitedNotification: React.SFC<{
     className: string
     email: string
@@ -56,8 +58,6 @@ interface State {
 }
 
 type Update = (state: State) => State
-
-const emailInvitesEnabled = window.context.emailEnabled
 
 export const InviteForm = reactive<Props>(props => {
     const submits = new Subject<React.FormEvent<HTMLFormElement>>()
