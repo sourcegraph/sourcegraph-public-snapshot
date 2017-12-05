@@ -149,12 +149,13 @@ export const InviteForm = reactive<Props>(props => {
                                 email={email}
                                 acceptInviteURL={acceptInviteURL}
                             >
-                                <CloseIcon
-                                    className="icon-inline invite-form__invited-icon"
-                                    title="Dismiss"
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onClick={() => notificationDismissals.next(i)}
-                                />
+                                <button className="btn btn-icon">
+                                    <CloseIcon
+                                        title="Dismiss"
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        onClick={() => notificationDismissals.next(i)}
+                                    />
+                                </button>
                             </InvitedNotification>
                         ))}
                     {loading && <LoaderIcon className="icon-inline" />}
