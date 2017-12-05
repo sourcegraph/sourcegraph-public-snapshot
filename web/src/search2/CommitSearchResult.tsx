@@ -7,6 +7,7 @@ import { DecoratedTextLines } from '../components/DecoratedTextLines'
 import { GitRefTag } from '../repo/GitRefTag'
 import { AbsoluteRepoFilePosition, RepoSpec } from '../repo/index'
 import { UserAvatar } from '../settings/user/UserAvatar'
+import { eventLogger } from '../tracking/eventLogger'
 import { parseCommitDateString } from '../util/time'
 import { toPrettyBlobURL } from '../util/url'
 import { ResultContainer } from './ResultContainer'
@@ -31,6 +32,32 @@ interface Props {
 }
 
 export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props) => {
+    const telemetryData: { [key: string]: any } = {
+        preview_type: props.result.diffPreview ? 'diff' : 'message',
+    }
+    const logClickOnPerson = () =>
+        eventLogger.log('CommitSearchResultClicked', { commit_search_result: { ...telemetryData, target: 'person' } })
+    const logClickOnMessage = () =>
+        eventLogger.log('CommitSearchResultClicked', {
+            commit_search_result: { ...telemetryData, target: 'message' },
+        })
+    const logClickOnTag = () =>
+        eventLogger.log('CommitSearchResultClicked', {
+            commit_search_result: { ...telemetryData, target: 'tag' },
+        })
+    const logClickOnCommitID = () =>
+        eventLogger.log('CommitSearchResultClicked', {
+            commit_search_result: { ...telemetryData, target: 'commit-id' },
+        })
+    const logClickOnTimestamp = () =>
+        eventLogger.log('CommitSearchResultClicked', {
+            commit_search_result: { ...telemetryData, target: 'timestamp' },
+        })
+    const logClickOnText = () =>
+        eventLogger.log('CommitSearchResultClicked', {
+            commit_search_result: { ...telemetryData, target: 'text' },
+        })
+
     const commitURL = `https://${props.result.commit.repository.uri}/commit/${props.result.commit.oid}`
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
@@ -39,6 +66,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 href={commitURL}
                 className="commit-search-result__title-person"
                 onClick={stopPropagationToCollapseOrExpand}
+                onMouseDown={logClickOnPerson}
             >
                 <UserAvatar user={props.result.commit.author.person!} size={32} />{' '}
                 {props.result.commit.author.person!.displayName}
@@ -47,19 +75,20 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 href={commitURL}
                 className="commit-search-result__title-message"
                 onClick={stopPropagationToCollapseOrExpand}
+                onMouseDown={logClickOnMessage}
             >
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
             </a>
             <span className="commit-search-result__title-signature">
                 {uniqueRefs([...props.result.refs, ...props.result.sourceRefs]).map((ref, i) => (
-                    <GitRefTag key={i} gitRef={ref} />
+                    <GitRefTag key={i} gitRef={ref} onMouseDown={logClickOnTag} />
                 ))}
                 <code>
-                    <a href={commitURL} onClick={stopPropagationToCollapseOrExpand}>
+                    <a href={commitURL} onClick={stopPropagationToCollapseOrExpand} onMouseDown={logClickOnCommitID}>
                         {props.result.commit.abbreviatedOID}
                     </a>
                 </code>{' '}
-                <a href={commitURL} onClick={stopPropagationToCollapseOrExpand}>
+                <a href={commitURL} onClick={stopPropagationToCollapseOrExpand} onMouseDown={logClickOnTimestamp}>
                     {formatDistance(parseCommitDateString(props.result.commit.author.date), new Date(), {
                         addSuffix: true,
                     })}
@@ -78,6 +107,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 value={props.result.messagePreview.value.trim().split('\n')}
                 highlights={props.result.messagePreview.highlights}
                 lineClasses={[{ line: 1, className: 'strong' }]}
+                onMouseDown={logClickOnText}
             />
         )
     }
@@ -175,6 +205,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 value={lines}
                 highlights={props.result.diffPreview.highlights}
                 lineClasses={lineClasses}
+                onMouseDown={logClickOnText}
             />
         )
     }

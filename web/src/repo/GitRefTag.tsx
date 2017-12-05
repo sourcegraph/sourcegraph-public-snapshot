@@ -5,9 +5,14 @@ import React from 'react'
 
 interface Props {
     gitRef: GQL.IGitRef
+
+    /**
+     * Called when the mousedown event is triggered on the element.
+     */
+    onMouseDown: () => void
 }
 
-export const GitRefTag: React.SFC<Props> = ({ gitRef }: Props) => {
+export const GitRefTag: React.SFC<Props> = ({ gitRef, onMouseDown }: Props) => {
     // TODO(sqs): make not github specific
     const githubRepoURL = gitRef.repository.uri.startsWith('github.com/')
         ? `https://${gitRef.repository.uri}`
@@ -56,7 +61,7 @@ export const GitRefTag: React.SFC<Props> = ({ gitRef }: Props) => {
     }
 
     return url ? (
-        <a href={url} {...props}>
+        <a href={url} {...props} onMouseDown={onMouseDown}>
             {children}
         </a>
     ) : (

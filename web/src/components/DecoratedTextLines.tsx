@@ -23,6 +23,11 @@ interface Props {
      * A list of classes to apply to 1-indexed line numbers.
      */
     lineClasses?: { line: number; className: string; url?: string }[]
+
+    /**
+     * Called when the mousedown event is triggered on the element.
+     */
+    onMouseDown: () => void
 }
 
 interface DecoratedLine {
@@ -121,7 +126,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
                         <tbody>
                             {this.state.lines.map((line, i) => (
                                 <tr key={i} className={line.classNames ? line.classNames.join(' ') : undefined}>
-                                    <td className="code">
+                                    <td className="code" onMouseDown={this.props.onMouseDown}>
                                         {line.url ? <Link to={line.url}>{line.value}</Link> : line.value}
                                     </td>
                                 </tr>
