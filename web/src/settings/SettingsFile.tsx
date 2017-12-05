@@ -159,22 +159,27 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         return this.props.settings ? this.props.settings.id : null
     }
 
-    private edit = () =>
+    private edit = () => {
+        eventLogger.log('SettingsFileEdit')
         this.setState({
             editing: true,
             modifiedContents: this.getPropsSettingsContentsOrEmpty(),
             editingLastKnownSettingsID: this.getPropsSettingsID(),
         })
+    }
 
     private discard = () => {
         if (
             this.getPropsSettingsContentsOrEmpty() === this.state.modifiedContents ||
             window.confirm('Really discard edits?')
         ) {
+            eventLogger.log('SettingsFileDiscard', { canceled: false })
             this.setState({
                 editing: false,
                 modifiedContents: undefined,
             })
+        } else {
+            eventLogger.log('SettingsFileDiscard', { canceled: true })
         }
     }
 
