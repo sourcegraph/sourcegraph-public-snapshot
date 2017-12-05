@@ -79,7 +79,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     <h2>Saved queries</h2>
 
                     <button
-                        className="btn btn-primary btn-icon saved-queries__header-button"
+                        className="btn btn-primary saved-queries__header-button"
                         onClick={this.toggleCreating}
                         disabled={this.state.creating}
                     >

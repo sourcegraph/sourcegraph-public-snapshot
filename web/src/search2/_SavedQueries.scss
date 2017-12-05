@@ -20,7 +20,7 @@
         }
 
         &-button {
-            padding-right: 0.4rem;
+            padding: 0.25rem 0.75rem 0.25rem 0.25rem;
             margin-left: 0.75rem;
         }
     }
@@ -31,11 +31,5 @@
 
     .saved-query-form {
         margin: 1rem 0;
-    }
-}
-
-.theme-light {
-    .saved-queries__header-button:hover {
-        color: $color-light-text-4;
     }
 }
