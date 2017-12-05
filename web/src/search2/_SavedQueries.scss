@@ -21,8 +21,12 @@
 
         &-button {
             padding: 0.25rem 0.75rem 0.25rem 0.25rem;
-            margin-left: 0.75rem;
+            margin: 0 0.5rem 0 0.75rem;
         }
+    }
+
+    &__help {
+        line-height: normal;
     }
 
     .saved-query {
