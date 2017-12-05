@@ -18,6 +18,7 @@ const gqlThread = `
     }
     file
     repoRevision
+    linesRevision
     branch
     title
     startLine

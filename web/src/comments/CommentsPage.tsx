@@ -160,7 +160,7 @@ export const CommentsPage = reactive<Props>(props => {
                             history={history}
                         />
                         {sharedItem &&
-                            !sharedItem.thread.repoRevision && (
+                            !sharedItem.thread.linesRevision && (
                                 <div className="comments-page__no-revision">
                                     <ErrorIcon className="icon-inline comments-page__error-icon" />
                                     {sharedItem.thread.comments.length === 0

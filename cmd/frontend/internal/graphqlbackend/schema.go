@@ -395,6 +395,7 @@ type SharedItemThread {
   file: String!
   branch: String
   repoRevision: String!
+  linesRevision: String!
   title: String!
   startLine: Int!
   endLine: Int!
