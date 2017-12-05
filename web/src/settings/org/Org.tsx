@@ -149,7 +149,7 @@ export const Org = reactive<Props>(props => {
                     <div className="org__header">
                         <h2>{org.name}</h2>
 
-                        <InviteForm orgID={org.id} />
+                        {window.context.emailEnabled && <InviteForm orgID={org.id} />}
                     </div>
                     <h3>Members</h3>
                     <table className="table table-hover org__table">

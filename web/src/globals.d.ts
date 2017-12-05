@@ -107,4 +107,9 @@ interface SourcegraphContext {
      * Server License
      */
     license: License | null
+
+    /**
+     * Emails support enabled
+     */
+    emailEnabled: boolean
 }

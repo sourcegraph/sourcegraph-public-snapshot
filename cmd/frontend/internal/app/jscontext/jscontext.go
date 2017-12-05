@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+
 	"github.com/gorilla/csrf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -106,6 +108,7 @@ type JSContext struct {
 	PhabricatorURL       string                     `json:"phabricatorURL"`
 	License              *license.License           `json:"license"`
 	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
+	EmailEnabled         bool                       `json:"emailEnabled"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -184,6 +187,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		PhabricatorURL:       phabricatorURL,
 		License:              license,
 		LicenseStatus:        licenseStatus,
+		EmailEnabled:         notif.EmailIsConfigured(),
 	}
 }
 
