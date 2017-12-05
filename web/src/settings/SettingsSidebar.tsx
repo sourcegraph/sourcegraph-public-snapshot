@@ -134,63 +134,60 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             Sign out
                         </a>
                     </li>
-                    {this.state.editorBeta && (
+                    <ul>
+                        <div className="settings-sidebar__header">
+                            <div className="settings-sidebar__header-icon">
+                                <CityIcon className="icon-inline" />
+                            </div>
+                            <h5 className="settings-sidebar__header-title ui-title">Organizations</h5>
+                        </div>
                         <ul>
+                            {this.state.orgs &&
+                                this.state.orgs.map(org => (
+                                    <li className="settings-sidebar__item" key={org.id}>
+                                        <NavLink
+                                            to={`/settings/orgs/${org.name}`}
+                                            className="settings-sidebar__item-link"
+                                            activeClassName="settings-sidebar__item--active"
+                                        >
+                                            <div className="settings-sidebar__profile-avatar-column">
+                                                <OrgAvatar org={org.name} />
+                                            </div>
+                                            {org.name}
+                                        </NavLink>
+                                    </li>
+                                ))}
+                            <li className="settings-sidebar__item">
+                                <NavLink
+                                    to="/settings/orgs/new"
+                                    className="settings-sidebar__item-link"
+                                    activeClassName="settings-sidebar__item--active"
+                                >
+                                    <AddIcon className="icon-inline settings-sidebar__item-icon" />Create new
+                                    organization
+                                </NavLink>
+                            </li>
+                        </ul>
+                        {this.state.editorBeta && (
                             <div className="settings-sidebar__header">
                                 <div className="settings-sidebar__header-icon">
-                                    <CityIcon className="icon-inline" />
+                                    <ChartIcon className="icon-inline" />
                                 </div>
-                                <h5 className="settings-sidebar__header-title ui-title">Organizations</h5>
+                                <h5 className="settings-sidebar__header-title">Connections</h5>
                             </div>
-                            <ul>
-                                {this.state.orgs &&
-                                    this.state.orgs.map(org => (
-                                        <li className="settings-sidebar__item" key={org.id}>
-                                            <NavLink
-                                                to={`/settings/orgs/${org.name}`}
-                                                className="settings-sidebar__item-link"
-                                                activeClassName="settings-sidebar__item--active"
-                                            >
-                                                <div className="settings-sidebar__profile-avatar-column">
-                                                    <OrgAvatar org={org.name} />
-                                                </div>
-                                                {org.name}
-                                            </NavLink>
-                                        </li>
-                                    ))}
-                                <li className="settings-sidebar__item">
-                                    <NavLink
-                                        to="/settings/orgs/new"
-                                        className="settings-sidebar__item-link"
-                                        activeClassName="settings-sidebar__item--active"
-                                    >
-                                        <AddIcon className="icon-inline settings-sidebar__item-icon" />Create new
-                                        organization
-                                    </NavLink>
-                                </li>
-                            </ul>
-                            {this.state.editorBeta && (
-                                <div className="settings-sidebar__header">
-                                    <div className="settings-sidebar__header-icon">
-                                        <ChartIcon className="icon-inline" />
-                                    </div>
-                                    <h5 className="settings-sidebar__header-title">Connections</h5>
-                                </div>
-                            )}
-                            {this.state.editorBeta && (
-                                <li className="settings-sidebar__item">
-                                    <NavLink
-                                        to="/settings/editor-auth"
-                                        className="settings-sidebar__item-link"
-                                        activeClassName="settings-sidebar__item--active"
-                                    >
-                                        <KeyIcon className="icon-inline settings-sidebar__item-icon" />Editor
-                                        authentication
-                                    </NavLink>
-                                </li>
-                            )}
-                        </ul>
-                    )}
+                        )}
+                        {this.state.editorBeta && (
+                            <li className="settings-sidebar__item">
+                                <NavLink
+                                    to="/settings/editor-auth"
+                                    className="settings-sidebar__item-link"
+                                    activeClassName="settings-sidebar__item--active"
+                                >
+                                    <KeyIcon className="icon-inline settings-sidebar__item-icon" />Editor authentication
+                                </NavLink>
+                            </li>
+                        )}
+                    </ul>
                     <div className="settings-sidebar__header">
                         <div className="settings-sidebar__header-icon">
                             <ColorPaletteIcon className="icon-inline" />
