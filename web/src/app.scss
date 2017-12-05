@@ -323,15 +323,6 @@ body {
     }
 }
 
-.theme-light {
-    .alert {
-        &-danger {
-            background: rgba(201, 42, 42, 0.75);
-            color: #f2f4f8;
-        }
-    }
-}
-
 @import './search2/QueryButton';
 @import './search2/SavedQueries';
 @import './search2/SearchNavbarItem';
