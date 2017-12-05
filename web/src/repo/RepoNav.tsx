@@ -10,6 +10,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
+import { hasTagRecursive } from '../settings/tags'
 import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toEditorURL } from '../util/url'
 import { RevSwitcher } from './RevSwitcher'
@@ -52,7 +53,7 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
     public componentDidMount(): void {
         this.subscriptions.add(
             currentUser.subscribe(user => {
-                this.setState({ editorBeta: !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta') })
+                this.setState({ editorBeta: hasTagRecursive(user, 'editor-beta') })
             })
         )
     }

@@ -16,6 +16,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { eventLogger } from '../tracking/eventLogger'
 import { OrgAvatar } from './org/OrgAvatar'
+import { hasTagRecursive } from './tags'
 import { UserAvatar } from './user/UserAvatar'
 
 interface Props {
@@ -27,7 +28,6 @@ interface Props {
 
 interface State {
     editorBeta: boolean
-    orgsEnabled: boolean
     currentUser?: GQL.IUser
     orgs?: GQL.IOrg[]
 }
@@ -42,7 +42,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
         super()
         this.state = {
             editorBeta: false,
-            orgsEnabled: false,
         }
     }
 
@@ -55,13 +54,11 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     // this.props.history.push('/sign-in')
                     return
                 }
-                const editorBeta = !!user && user.tags && user.tags.some(tag => tag.name === 'editor-beta')
-                const hasOrgs = !!user && user.orgs && user.orgs.length > 0
+                const editorBeta = hasTagRecursive(user, 'editor-beta')
                 this.setState({
                     orgs: user.orgs,
                     currentUser: user,
                     editorBeta,
-                    orgsEnabled: editorBeta || hasOrgs,
                 })
             })
         )
@@ -139,43 +136,39 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     </li>
                     {this.state.editorBeta && (
                         <ul>
-                            {this.state.orgsEnabled && (
-                                <div className="settings-sidebar__header">
-                                    <div className="settings-sidebar__header-icon">
-                                        <CityIcon className="icon-inline" />
-                                    </div>
-                                    <h5 className="settings-sidebar__header-title">Organizations</h5>
+                            <div className="settings-sidebar__header">
+                                <div className="settings-sidebar__header-icon">
+                                    <CityIcon className="icon-inline" />
                                 </div>
-                            )}
-                            {this.state.orgsEnabled && (
-                                <ul>
-                                    {this.state.orgs &&
-                                        this.state.orgs.map(org => (
-                                            <li className="settings-sidebar__item" key={org.id}>
-                                                <NavLink
-                                                    to={`/settings/orgs/${org.name}`}
-                                                    className="settings-sidebar__item-link"
-                                                    activeClassName="settings-sidebar__item--active"
-                                                >
-                                                    <div className="settings-sidebar__profile-avatar-column">
-                                                        <OrgAvatar org={org.name} />
-                                                    </div>
-                                                    {org.name}
-                                                </NavLink>
-                                            </li>
-                                        ))}
-                                    <li className="settings-sidebar__item">
-                                        <NavLink
-                                            to="/settings/orgs/new"
-                                            className="settings-sidebar__item-link"
-                                            activeClassName="settings-sidebar__item--active"
-                                        >
-                                            <AddIcon className="icon-inline settings-sidebar__item-icon" />Create new
-                                            organization
-                                        </NavLink>
-                                    </li>
-                                </ul>
-                            )}
+                                <h5 className="settings-sidebar__header-title ui-title">Organizations</h5>
+                            </div>
+                            <ul>
+                                {this.state.orgs &&
+                                    this.state.orgs.map(org => (
+                                        <li className="settings-sidebar__item" key={org.id}>
+                                            <NavLink
+                                                to={`/settings/orgs/${org.name}`}
+                                                className="settings-sidebar__item-link"
+                                                activeClassName="settings-sidebar__item--active"
+                                            >
+                                                <div className="settings-sidebar__profile-avatar-column">
+                                                    <OrgAvatar org={org.name} />
+                                                </div>
+                                                {org.name}
+                                            </NavLink>
+                                        </li>
+                                    ))}
+                                <li className="settings-sidebar__item">
+                                    <NavLink
+                                        to="/settings/orgs/new"
+                                        className="settings-sidebar__item-link"
+                                        activeClassName="settings-sidebar__item--active"
+                                    >
+                                        <AddIcon className="icon-inline settings-sidebar__item-icon" />Create new
+                                        organization
+                                    </NavLink>
+                                </li>
+                            </ul>
                             {this.state.editorBeta && (
                                 <div className="settings-sidebar__header">
                                     <div className="settings-sidebar__header-icon">

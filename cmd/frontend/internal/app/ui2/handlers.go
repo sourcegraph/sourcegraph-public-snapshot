@@ -212,7 +212,8 @@ func serveBasicPageWithEmailVerification(title func(c *Common, r *http.Request) 
 }
 
 func serveEditorAuthWithEditorBetaRegistration(w http.ResponseWriter, r *http.Request) error {
-	// Add editor beta tag for users who sign in or sign up from the editor.
+	// Add editor beta tag for users who sign in or sign up from the editor, and to
+	// all of their orgs.
 	// This logic is executed when they are redirected to the editor-auth page
 	// with the referrer=editor query string.
 	user, err := localstore.Users.GetByCurrentAuthUser(r.Context())
@@ -222,9 +223,22 @@ func serveEditorAuthWithEditorBetaRegistration(w http.ResponseWriter, r *http.Re
 	if user != nil {
 		referrer := r.URL.Query().Get("referrer")
 		if referrer == "editor" {
-			_, err := localstore.UserTags.CreateIfNotExists(r.Context(), user.ID, "editor-beta")
+			const editorBetaTag = "editor-beta"
+			// Add tag to user.
+			_, err := localstore.UserTags.CreateIfNotExists(r.Context(), user.ID, editorBetaTag)
 			if err != nil {
 				return err
+			}
+
+			// Add tag to all orgs.
+			orgs, err := localstore.Orgs.GetByUserID(r.Context(), user.Auth0ID)
+			if err != nil {
+				return err
+			}
+			for _, org := range orgs {
+				if _, err := localstore.OrgTags.CreateIfNotExists(r.Context(), org.ID, editorBetaTag); err != nil {
+					return err
+				}
 			}
 		}
 	}
