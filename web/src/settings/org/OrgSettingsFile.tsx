@@ -29,17 +29,7 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
                 <SettingsFile
                     settings={this.props.settings}
                     commitError={this.state.commitError}
-                    onDidCommit={(lastKnownSettingsID: number | null, contents: string) =>
-                        updateOrgSettings(this.props.orgID, lastKnownSettingsID, contents) // tslint:disable-next-line:jsx-no-lambda
-                            .pipe(tap(this.props.onDidCommit), switchMap(refreshConfiguration))
-                            .subscribe(
-                                () => this.setState({ commitError: undefined }),
-                                err => {
-                                    this.setState({ commitError: err })
-                                    console.error(err)
-                                }
-                            )
-                    }
+                    onDidCommit={this.onDidCommit}
                     isLightTheme={this.props.isLightTheme}
                 />
                 <small className="form-text">
@@ -58,4 +48,15 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
             </div>
         )
     }
+
+    private onDidCommit = (lastKnownSettingsID: number | null, contents: string) =>
+        updateOrgSettings(this.props.orgID, lastKnownSettingsID, contents)
+            .pipe(tap(this.props.onDidCommit), switchMap(refreshConfiguration))
+            .subscribe(
+                () => this.setState({ commitError: undefined }),
+                err => {
+                    this.setState({ commitError: err })
+                    console.error(err)
+                }
+            )
 }
