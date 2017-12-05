@@ -22,12 +22,12 @@ const InvitedNotification: React.SFC<{
     children: React.ReactChild
 }> = ({ className, email, acceptInviteURL, children }) =>
     emailInvitesEnabled ? (
-        <small className={`${className} invited-notification`}>
+        <div className={`${className} invited-notification`}>
             <span className="invited-notification__message">Invite sent to {email}</span>
             {children}
-        </small>
+        </div>
     ) : (
-        <small className={`${className} invited-notification`}>
+        <div className={`${className} invited-notification`}>
             <span className="invited-notification__message">
                 Generated invite link. You must copy and send it to {email}:{' '}
                 <a href={acceptInviteURL} target="_blank" className="invited-notification__link">
@@ -35,7 +35,7 @@ const InvitedNotification: React.SFC<{
                 </a>
             </span>
             {children}
-        </small>
+        </div>
     )
 
 export interface Props {
@@ -137,11 +137,7 @@ export const InviteForm = reactive<Props>(props => {
                 </div>
                 <div className="invite-form__status">
                     {loading && <LoaderIcon className="icon-inline" />}
-                    {error && (
-                        <div className="text-error">
-                            <small>{error.message}</small>
-                        </div>
-                    )}
+                    {error && <div className="text-error">{error.message}</div>}
                 </div>
                 {invited &&
                     invited.length > 0 && (
