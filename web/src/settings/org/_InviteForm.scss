@@ -18,12 +18,8 @@
         overflow: hidden;
     }
 
-    &__invited {
-        margin: 0.25rem 0;
-
-        &:last-child {
-            margin-bottom: 0.75rem;
-        }
+    &__alerts {
+        margin-bottom: 1rem;
     }
 }
 
@@ -31,6 +27,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    margin: 0.25rem 0;
 
     &__message {
         flex: 1;

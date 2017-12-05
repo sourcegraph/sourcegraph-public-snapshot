@@ -136,30 +136,34 @@ export const InviteForm = reactive<Props>(props => {
                     </button>
                 </div>
                 <div className="invite-form__status">
+                    {loading && <LoaderIcon className="icon-inline" />}
                     {error && (
                         <div className="text-error">
                             <small>{error.message}</small>
                         </div>
                     )}
-                    {invited &&
-                        invited.map(({ email, acceptInviteURL }, i) => (
-                            <InvitedNotification
-                                key={i}
-                                className="alert alert-success invite-form__invited"
-                                email={email}
-                                acceptInviteURL={acceptInviteURL}
-                            >
-                                <button className="btn btn-icon">
-                                    <CloseIcon
-                                        title="Dismiss"
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        onClick={() => notificationDismissals.next(i)}
-                                    />
-                                </button>
-                            </InvitedNotification>
-                        ))}
-                    {loading && <LoaderIcon className="icon-inline" />}
                 </div>
+                {invited &&
+                    invited.length > 0 && (
+                        <div className="invite-form__alerts">
+                            {invited.map(({ email, acceptInviteURL }, i) => (
+                                <InvitedNotification
+                                    key={i}
+                                    className="alert alert-success invite-form__invited"
+                                    email={email}
+                                    acceptInviteURL={acceptInviteURL}
+                                >
+                                    <button className="btn btn-icon">
+                                        <CloseIcon
+                                            title="Dismiss"
+                                            // tslint:disable-next-line:jsx-no-lambda
+                                            onClick={() => notificationDismissals.next(i)}
+                                        />
+                                    </button>
+                                </InvitedNotification>
+                            ))}
+                        </div>
+                    )}
             </form>
         ))
     )
