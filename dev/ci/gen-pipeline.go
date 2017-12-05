@@ -126,7 +126,7 @@ func main() {
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm install"),
-		Cmd("npm run stylelint"))
+		Cmd("npm run stylelint -- --quiet"))
 
 	pipeline.AddStep(":webpack:",
 		Env("FORCE_COLOR", "1"),
