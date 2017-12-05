@@ -261,7 +261,7 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 	}
 	lineVars := []gochimp.Var{}
 	if len(previousComments) == 0 && thread.Lines != nil {
-		lines := thread.Lines.TextBefore + thread.Lines.Text
+		lines := strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
 		lineVars = []gochimp.Var{
 			gochimp.Var{Name: "CONTEXT_LINES", Content: html.EscapeString(lines)},
 		}
