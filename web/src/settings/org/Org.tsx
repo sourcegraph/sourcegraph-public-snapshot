@@ -174,12 +174,8 @@ export const Org = reactive<Props>(props => {
                                         <button
                                             className="btn btn-icon"
                                             title={user.auth0ID === member.user.auth0ID ? 'Leave' : 'Remove'}
-                                            onClick={() =>
-                                                memberRemoves.next(
-                                                    // tslint:disable-next-line:jsx-no-lambda
-                                                    { ...member, org }
-                                                )
-                                            }
+                                            // tslint:disable-next-line:jsx-no-lambda
+                                            onClick={() => memberRemoves.next({ ...member, org })}
                                         >
                                             <CloseIcon className="icon-inline" />
                                         </button>
