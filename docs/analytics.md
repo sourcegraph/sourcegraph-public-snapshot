@@ -22,7 +22,9 @@ import { eventLogger } from '../tracking/eventLogger'
 eventLogger.log('FindReferencesButtonClicked')
 ```
 
-3. Turn on event debug mode in your browser to confirm it's working as expected. In your browser's console, type: `localStorage.eventLogDebug="true"`. You should begin to see events stream into your console as you do actions.
+3. Turn on event debug mode in your browser to confirm it's working as expected. In your browser's console, type: `localStorage.eventLogDebug="true"`. After this, make sure your console is displaying `All levels` of output, and not filtering debug messages. If you see the text: "X items hidden by filters," you likely need to select "Verbose" output using the dropdown menu next to it.
+
+You should begin to see events stream into your console as you do actions.
 <BR><BR>
 When you click your new "Find References" button, you should see the following appear in gray in the console:
 ```
