@@ -292,7 +292,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		}
 		if exact != nil {
 			if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
-				conds = append(conds, sqlf.Sprintf("FALSE"))
+				conds = append(conds, sqlf.Sprintf("TRUE"))
 			} else {
 				items := []*sqlf.Query{}
 				for _, v := range exact {

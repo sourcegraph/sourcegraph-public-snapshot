@@ -83,9 +83,10 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
 		// If the user query has a file: filter AND a term, then abort; we will use showFilesWithTextMatches
 		// instead.
+		hasOnlyEmptyRepoField := len(r.combinedQuery.Values(searchquery.FieldRepo)) > 0 && allEmptyStrings(r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)) && len(r.combinedQuery.Fields) == 1
 		hasRepoOrFileFields := len(r.combinedQuery.Values(searchquery.FieldRepoGroup)) > 0 || len(r.combinedQuery.Values(searchquery.FieldRepo)) > 0 || len(r.combinedQuery.Values(searchquery.FieldFile)) > 0
 		userQueryHasFileFilterAndTerm := len(r.query.Values(searchquery.FieldFile)) > 0 && len(r.query.Values(searchquery.FieldDefault)) > 0
-		if hasRepoOrFileFields && len(r.combinedQuery.Values(searchquery.FieldDefault)) <= 1 && !userQueryHasFileFilterAndTerm {
+		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.combinedQuery.Values(searchquery.FieldDefault)) <= 1 && !userQueryHasFileFilterAndTerm {
 			return r.resolveFiles(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
@@ -230,4 +231,18 @@ func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestio
 	}
 
 	return allSuggestions, nil
+}
+
+func allEmptyStrings(ss1, ss2 []string) bool {
+	for _, s := range ss1 {
+		if s != "" {
+			return false
+		}
+	}
+	for _, s := range ss2 {
+		if s != "" {
+			return false
+		}
+	}
+	return true
 }
