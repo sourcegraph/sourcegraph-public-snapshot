@@ -106,15 +106,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): v
         // Try resolving to internal code host.
         fetchPhabricatorRepo({ repoPath: ctx.repoPath }).subscribe(phabRepo => {
             if (phabRepo) {
-                if (!window.context.phabricatorURL) {
-                    window.context.phabricatorURL = 'http://phabricator.aws.sgdev.org'
-                    // TODO(john): use line below
-                    // return console.error('cannot locate Phabricator instance, make sure your admin has set PHABRICATOR_URL')
-                }
-                openFromJS(
-                    `${window.context.phabricatorURL}/r${phabRepo.callsign.toUpperCase()}${ctx.commitID}`,
-                    clickEvent
-                )
+                openFromJS(`${phabRepo.url}/r${phabRepo.callsign.toUpperCase()}${ctx.commitID}`, clickEvent)
             }
         })
     }

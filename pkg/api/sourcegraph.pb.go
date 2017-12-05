@@ -517,6 +517,7 @@ type Settings struct {
 type PhabricatorRepo struct {
 	ID       int32  `json:"ID"`
 	URI      string `json:"URI"`
+	URL      string `json:"URL"`
 	Callsign string `json:"Callsign"`
 }
 

@@ -35,9 +35,14 @@ interface Props {
 interface State {
     commitID?: string
     defaultBranch?: string
-    phabricatorCallsign?: string
+    phabricator?: PhabricatorRepo
     cloneInProgress: boolean
     notFound: boolean
+}
+
+export interface PhabricatorRepo {
+    callsign: string
+    url: string
 }
 
 /**
@@ -114,7 +119,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 .subscribe(
                     phabRepo => {
                         if (phabRepo) {
-                            this.setState({ phabricatorCallsign: phabRepo.callsign })
+                            this.setState({ phabricator: { callsign: phabRepo.callsign, url: phabRepo.url } })
                         }
                     },
                     err => console.error(err)
@@ -133,7 +138,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 cloneInProgress: false,
                 notFound: false,
                 commitID: undefined,
-                phabricatorCallsign: undefined,
+                phabricator: undefined,
             })
             this.componentUpdates.next(nextProps)
         }
@@ -181,7 +186,7 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 history={this.props.history}
                 isLightTheme={this.props.isLightTheme}
                 isDirectory={this.props.isDirectory}
-                phabricatorCallsign={this.state.phabricatorCallsign}
+                phabricator={this.state.phabricator}
             />
         )
     }

@@ -94,11 +94,6 @@ interface SourcegraphContext {
     githubEnterpriseURLs: { [key: string]: string }
 
     /**
-     * phabricatorURL is the URL for outbound Phabricator links
-     */
-    phabricatorURL: string
-
-    /**
      * Status of license
      */
     licenseStatus: string

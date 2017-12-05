@@ -46,15 +46,7 @@ var githubConf = env.Get("GITHUB_CONFIG", "", "A JSON array of GitHub host confi
 // This can be used for the purposes of generating external GitHub enterprise links.
 var githubEnterpriseURLs = make(map[string]string)
 
-var phabricatorURL = env.Get("PHABRICATOR_URL", "", "URL for internal Phabricator instance (on-prem)")
-
 func init() {
-	if phabricatorURL != "" {
-		if !strings.HasPrefix(phabricatorURL, "http") {
-			phabricatorURL = "https://" + phabricatorURL
-		}
-		phabricatorURL = strings.TrimSuffix(phabricatorURL, "/")
-	}
 	if githubConf != "" {
 		var configs []githubConfig
 		err := json.Unmarshal([]byte(githubConf), &configs)
@@ -105,7 +97,6 @@ type JSContext struct {
 	SessionID            string                     `json:"sessionID"`
 	Auth0Domain          string                     `json:"auth0Domain"`
 	Auth0ClientID        string                     `json:"auth0ClientID"`
-	PhabricatorURL       string                     `json:"phabricatorURL"`
 	License              *license.License           `json:"license"`
 	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
 	EmailEnabled         bool                       `json:"emailEnabled"`
@@ -184,7 +175,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SessionID:            sessionID,
 		Auth0Domain:          auth0.Domain,
 		Auth0ClientID:        auth0.Config.ClientID,
-		PhabricatorURL:       phabricatorURL,
 		License:              license,
 		LicenseStatus:        licenseStatus,
 		EmailEnabled:         notif.EmailIsConfigured(),

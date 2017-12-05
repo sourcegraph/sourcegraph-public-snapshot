@@ -13,6 +13,7 @@ import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { hasTagRecursive } from '../settings/tags'
 import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toEditorURL } from '../util/url'
+import { PhabricatorRepo } from './RepositoryResolver'
 import { RevSwitcher } from './RevSwitcher'
 
 interface RepoSubnavProps {
@@ -27,7 +28,7 @@ interface RepoSubnavProps {
     customEditorURL?: string
     revSwitcherDisabled?: boolean
     breadcrumbDisabled?: boolean
-    phabricatorCallsign?: string
+    phabricator?: PhabricatorRepo
     isDirectory: boolean
     /**
      * overrides the line number that 'View on GitHub' should link to. By
@@ -115,9 +116,9 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
                     </a>
                 )}
                 {this.props.filePath &&
-                    this.props.phabricatorCallsign && (
+                    this.props.phabricator && (
                         <a
-                            href={this.urlToPhabricator()}
+                            href={this.urlToPhabricator(this.props.phabricator)}
                             target="_blank"
                             className="repo-nav__action"
                             title="View on Phabricator"
@@ -195,10 +196,7 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
         return `${repoURL}/tree/${this.props.rev}/`
     }
 
-    private urlToPhabricator(): string {
-        if (!window.context.phabricatorURL) {
-            throw new Error('cannot locate Phabricator instance, make sure your admin has set PHABRICATOR_URL')
-        }
-        return `${window.context.phabricatorURL}/source/${this.props.phabricatorCallsign}/browse/${this.props.filePath}`
+    private urlToPhabricator(phabRepo: PhabricatorRepo): string {
+        return `${phabRepo.url}/source/${phabRepo.callsign}/browse/${this.props.filePath}`
     }
 }

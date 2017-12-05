@@ -174,7 +174,7 @@ func updatePhabRepos(ctx context.Context, cfg *phabConfig, repos []*phabRepo) er
 			// some repos have no attachments
 			return nil
 		}
-		_, err := localstore.Phabricator.CreateIfNotExists(ctx, repo.Fields.Callsign, uri)
+		_, err := localstore.Phabricator.CreateIfNotExists(ctx, repo.Fields.Callsign, uri, cfg.URL)
 		if err != nil {
 			return err
 		}

@@ -169,6 +169,14 @@ func Main() error {
 	app.Init()
 	go bg.ApplyUserOrgMap(context.Background())
 
+	// This is a temporary backfill which dynamically sets a column value in the db
+	// based on the customer's environment. It should be removed after all customers have
+	// updated their server and run this code at least once.
+	err = localstore.Phabricator.BackfillURL()
+	if err != nil {
+		return err
+	}
+
 	conf.AppURL, err = configureAppURL()
 	if err != nil {
 		return err

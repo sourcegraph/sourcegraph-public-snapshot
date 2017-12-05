@@ -137,7 +137,7 @@ type Mutation {
   # adds a phabricator repository to the Sourcegraph server.
   # example callsign: "MUX"
   # example uri: "github.com/gorilla/mux"
-  addPhabricatorRepo(callsign: String!, uri: String!): EmptyResponse
+  addPhabricatorRepo(callsign: String!, uri: String!, url: String!): EmptyResponse
   logUserEvent(event: UserEvent!): EmptyResponse
   # All mutations that update configuration setings are under this field.
   configuration(input: ConfigurationMutationGroupInput!): ConfigurationMutation
@@ -555,6 +555,8 @@ type PhabricatorRepo {
   uri: String!
   # the unique Phabricator identifier for the repo, like 'MUX'
   callsign: String!
+  # the URL to the phabricator instance, e.g. http://phabricator.sgdev.org
+  url: String!
 }
 
 type TotalRefList {

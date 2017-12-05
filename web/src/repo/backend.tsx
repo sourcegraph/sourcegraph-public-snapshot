@@ -306,6 +306,7 @@ export const fetchPhabricatorRepo = memoizeObservable(
                     phabricatorRepo(uri: $repoPath) {
                         callsign
                         uri
+                        url
                     }
                 }
             }`,

@@ -78,6 +78,8 @@
 // ../../../migrations/1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql
 // ../../../migrations/1511852763_user_invite_quota.down.sql
 // ../../../migrations/1511852763_user_invite_quota.up.sql
+// ../../../migrations/1512437090_update_phabricator_repos.down.sql
+// ../../../migrations/1512437090_update_phabricator_repos.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1705,6 +1707,46 @@ func _1511852763_user_invite_quotaUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1512437090_update_phabricator_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xc8\x48\x4c\x2a\xca\x4c\x4e\x2c\xc9\x2f\x8a\x2f\x4a\x2d\xc8\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x2d\xca\x21\xa4\x9e\x8b\xd3\xd1\xc5\x45\x21\xd4\xcf\x33\x30\xd4\x55\x41\x23\x39\x31\x27\xa7\x38\x33\x3d\x4f\xd3\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x1a\x10\x00\x00\xff\xff\x44\x9c\xc1\x88\x76\x00\x00\x00")
+
+func _1512437090_update_phabricator_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1512437090_update_phabricator_reposDownSql,
+		"1512437090_update_phabricator_repos.down.sql",
+	)
+}
+
+func _1512437090_update_phabricator_reposDownSql() (*asset, error) {
+	bytes, err := _1512437090_update_phabricator_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1512437090_update_phabricator_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1512437090_update_phabricator_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\xcc\xb1\xae\xc2\x20\x14\x06\xe0\xf9\xf2\x14\xff\xd6\x87\xe8\x44\x0b\xd7\x90\x1c\x0e\x06\x0f\x89\x1b\xc1\xa6\xd1\x46\x62\x1b\xaa\x83\x6f\xef\x03\x38\xb8\x7f\xf9\x06\x7b\x70\xdc\x2b\xa5\x49\x6c\x84\xe8\x81\x2c\xb6\x5b\xb9\xb4\x65\x2a\xcf\xb5\xe5\x36\x6f\xeb\x0e\x6d\x0c\xc6\x40\xc9\x33\x5e\xad\x42\xec\x59\xc0\x41\xc0\x89\x08\xc6\xfe\xeb\x44\x82\xae\xfb\xf5\xa8\x3f\x13\xc3\x11\x63\xe0\x93\x44\xed\x58\xbe\x49\x9e\x4a\xad\xfb\x72\x7d\xe4\xfb\xfc\xee\x95\x1a\x83\xf7\x4e\xfa\x4f\x00\x00\x00\xff\xff\xf3\xbd\x63\xdc\xa7\x00\x00\x00")
+
+func _1512437090_update_phabricator_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1512437090_update_phabricator_reposUpSql,
+		"1512437090_update_phabricator_repos.up.sql",
+	)
+}
+
+func _1512437090_update_phabricator_reposUpSql() (*asset, error) {
+	bytes, err := _1512437090_update_phabricator_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1512437090_update_phabricator_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1835,6 +1877,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":   _1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql,
 	"1511852763_user_invite_quota.down.sql":                       _1511852763_user_invite_quotaDownSql,
 	"1511852763_user_invite_quota.up.sql":                         _1511852763_user_invite_quotaUpSql,
+	"1512437090_update_phabricator_repos.down.sql":                _1512437090_update_phabricator_reposDownSql,
+	"1512437090_update_phabricator_repos.up.sql":                  _1512437090_update_phabricator_reposUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1956,6 +2000,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":   &bintree{_1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql, map[string]*bintree{}},
 	"1511852763_user_invite_quota.down.sql":                       &bintree{_1511852763_user_invite_quotaDownSql, map[string]*bintree{}},
 	"1511852763_user_invite_quota.up.sql":                         &bintree{_1511852763_user_invite_quotaUpSql, map[string]*bintree{}},
+	"1512437090_update_phabricator_repos.down.sql":                &bintree{_1512437090_update_phabricator_reposDownSql, map[string]*bintree{}},
+	"1512437090_update_phabricator_repos.up.sql":                  &bintree{_1512437090_update_phabricator_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

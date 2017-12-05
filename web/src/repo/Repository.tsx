@@ -29,6 +29,7 @@ import { Blob } from './Blob'
 import { DirectoryPage } from './DirectoryPage'
 import { replaceRevisionInURL } from './index'
 import { RepoNav } from './RepoNav'
+import { PhabricatorRepo } from './RepositoryResolver'
 
 export interface Props {
     repoPath: string
@@ -39,7 +40,7 @@ export interface Props {
     location: H.Location
     history: H.History
     isLightTheme: boolean
-    phabricatorCallsign?: string
+    phabricator?: PhabricatorRepo
     isDirectory: boolean
 }
 

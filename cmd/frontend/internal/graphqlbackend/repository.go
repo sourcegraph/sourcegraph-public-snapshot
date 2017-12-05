@@ -312,10 +312,11 @@ func (s sortByRepoSpecID) Less(i, j int) bool {
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	URI      string
+	URL      string
 }) (*EmptyResponse, error) {
-	_, err := localstore.Phabricator.CreateIfNotExists(ctx, args.Callsign, args.URI)
+	_, err := localstore.Phabricator.CreateIfNotExists(ctx, args.Callsign, args.URI, args.URL)
 	if err != nil {
-		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI)
+		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI, "url", args.URL)
 	}
 	return nil, err
 }
