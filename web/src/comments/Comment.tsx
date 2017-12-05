@@ -53,7 +53,7 @@ export class Comment extends React.Component<Props, State> {
             >
                 <div className="comment__top-area">
                     <span className="comment__author" title={comment.author.username || undefined}>
-                        <UserAvatar size={16} user={comment.author} className="comment__author-avatar" />
+                        <UserAvatar size={64} user={comment.author} className="comment__author-avatar" />
                         <span className="comment__author-name">
                             {comment.author.displayName ? comment.author.displayName : comment.author.username}
                         </span>
