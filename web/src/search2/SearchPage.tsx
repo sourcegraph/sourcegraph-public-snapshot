@@ -54,7 +54,11 @@ export class SearchPage extends React.Component<Props, State> {
         return (
             <div className="search-page2">
                 <PageTitle title={this.getPageTitle()} />
-                <NavLinks onToggleTheme={this.props.onToggleTheme} isLightTheme={this.props.isLightTheme} />
+                <NavLinks
+                    location={this.props.location}
+                    onToggleTheme={this.props.onToggleTheme}
+                    isLightTheme={this.props.isLightTheme}
+                />
                 <img
                     className="search-page2__logo"
                     src={

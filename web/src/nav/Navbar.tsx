@@ -27,7 +27,11 @@ export class Navbar extends React.Component<Props, State> {
                 <div className="navbar__search-box-container">
                     <SearchNavbarItem history={this.props.history} location={this.props.location} />
                 </div>
-                <NavLinks onToggleTheme={this.props.onToggleTheme} isLightTheme={this.props.isLightTheme} />
+                <NavLinks
+                    location={this.props.location}
+                    onToggleTheme={this.props.onToggleTheme}
+                    isLightTheme={this.props.isLightTheme}
+                />
             </div>
         )
     }
