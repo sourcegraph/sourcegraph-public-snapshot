@@ -191,6 +191,8 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 
 	{
 		// Orgs created by an editor-beta user get the editor-beta tag.
+		//
+		// TODO(sqs): perform this transactionally with the other operations above.
 		user, err := currentUser(ctx)
 		if err != nil {
 			return nil, err
