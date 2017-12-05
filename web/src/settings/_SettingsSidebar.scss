@@ -201,7 +201,7 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
                 background-color: $color-primary;
                 color: $color-light-text-4;
 
-                &:hover {
+                &:hover, &:focus {
                     background-color: $color-primary;
                     text-decoration: none;
                     color: $color-light-text-4;
