@@ -143,13 +143,14 @@ export const Org = reactive<Props>(props => {
             if (!org) {
                 return <OrgNotFound />
             }
+            const canInvite = window.context.emailEnabled
             return (
                 <div className="org">
                     <PageTitle title={org.name} />
                     <div className="org__header">
                         <h2>{org.name}</h2>
 
-                        {window.context.emailEnabled && <InviteForm orgID={org.id} />}
+                        {canInvite && <InviteForm orgID={org.id} />}
                     </div>
                     <h3>Members</h3>
                     <table className="table table-hover org__table">
