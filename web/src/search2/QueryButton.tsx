@@ -17,7 +17,7 @@ export const QueryButton: React.StatelessComponent<Props> = (props: Props) => (
         className="query-button"
         to={'/search?' + buildSearchURLQuery(props.query)}
         title={`${props.query.scopeQuery} ${props.query.query}`}
-        onClick={props.onMouseUp}
+        onMouseUp={props.onMouseUp}
     >
         {props.query.scopeQuery && <span className="query-button__scope">{props.query.scopeQuery}</span>}{' '}
         {props.query.query}
