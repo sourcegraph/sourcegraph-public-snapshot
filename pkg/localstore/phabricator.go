@@ -57,7 +57,7 @@ func (*phabricator) Create(ctx context.Context, callsign string, uri string, pha
 	}
 	err := globalDB.QueryRowContext(
 		ctx,
-		"INSERT INTO phabricator_repos(callsign, uri, url) VALUES($1, $2) RETURNING id",
+		"INSERT INTO phabricator_repos(callsign, uri, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.URI, r.URL).Scan(&r.ID)
 	if err != nil {
 		return nil, err
