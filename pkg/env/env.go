@@ -52,9 +52,9 @@ func Get(name string, defaultValue string, description string) string {
 		panic("env.Get has to be called on package initialization")
 	}
 
-	if configVal := getFromConfig(name); configVal != "" {
-		return configVal
-	}
+	// if configVal := getFromConfig(name); configVal != "" {
+	// 	return configVal
+	// }
 
 	if _, ok := descriptions[name]; ok {
 		panic(fmt.Sprintf("%q already registered", name))
