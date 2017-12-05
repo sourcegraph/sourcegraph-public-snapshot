@@ -104,7 +104,7 @@ export class SavedQueries extends React.Component<Props, State> {
     }
 
     private toggleCreating = () => {
-        eventLogger.log('SavedQueriesToggleCreating', { creating: !this.state.creating })
+        eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: !this.state.creating } })
         this.setState({ creating: !this.state.creating })
     }
 

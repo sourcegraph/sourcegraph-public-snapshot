@@ -165,7 +165,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     }
 
     private toggleEditing = () => {
-        eventLogger.log('SavedQueryToggleEditing', { editing: !this.state.editing })
+        eventLogger.log('SavedQueryToggleEditing', { queries: { editing: !this.state.editing } })
         this.setState({ editing: !this.state.editing })
     }
 
@@ -183,10 +183,10 @@ export class SavedQuery extends React.PureComponent<Props, State> {
 
     private confirmDelete = () => {
         if (window.confirm('Really delete this saved query?')) {
-            eventLogger.log('SavedQueryDeleted', { canceled: false })
+            eventLogger.log('SavedQueryDeleted')
             this.deleteRequested.next()
         } else {
-            eventLogger.log('SavedQueryDeleted', { canceled: true })
+            eventLogger.log('SavedQueryDeletedCanceled')
         }
     }
 
