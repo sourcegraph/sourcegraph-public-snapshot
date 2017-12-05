@@ -94,6 +94,8 @@
         background: $color-light-bg-2;
 
         &__title-bar {
+            border-bottom: 1px solid $color-light-border;
+            border-top: 1px solid $color-light-border;
             background-color: $color-light-bg-2;
         }
 

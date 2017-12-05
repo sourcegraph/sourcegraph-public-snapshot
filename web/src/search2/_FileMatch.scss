@@ -26,9 +26,9 @@
     .file-match {
         &__item {
             background-color: $color-light-bg-1;
-            border-top: 1px solid $color-light-border;
             border-left: 1px solid $color-light-border;
             border-right: 1px solid $color-light-border;
+            border-color: $color-light-border;
 
             &:hover {
                 background-color: $color-light-bg-4;
