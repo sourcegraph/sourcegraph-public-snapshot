@@ -86,14 +86,18 @@ export const CommentsInput = reactive<Props>(props => {
             <form className="comments-input" onSubmit={nextSubmit}>
                 <small className="comments-input__row comments-input__info">
                     Markdown supported.
-                    <a
-                        className="comments-input__open-in-editor"
-                        href={editorURL}
-                        target="sourcegraphapp"
-                        onClick={onOpenEditor}
-                    >
-                        Open in Sourcegraph Editor
-                    </a>
+                    <span>
+                        <a
+                            className="comments-input__open-in-editor"
+                            href={editorURL}
+                            target="sourcegraphapp"
+                            onClick={onOpenEditor}
+                        >
+                            Open in Sourcegraph Editor
+                        </a>
+                        {' | '}
+                        <a href="https://about.sourcegraph.com/beta/201708/#beta">Download Sourcegraph Editor</a>
+                    </span>
                 </small>
                 <textarea
                     className="form-control comments-input__text-box"
