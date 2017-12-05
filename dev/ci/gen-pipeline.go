@@ -138,7 +138,9 @@ func main() {
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm install"),
-		Cmd("npm test"))
+		Cmd("npm run cover"),
+		Cmd("node_modules/.bin/nyc report -r json"),
+		ArtifactPaths("web/coverage/coverage-final.json"))
 
 	for _, path := range pkgs {
 		coverageFile := path + "/coverage.txt"
@@ -152,7 +154,7 @@ func main() {
 
 	pipeline.AddStep(":codecov:",
 		Cmd("buildkite-agent artifact download '*/coverage.txt' ."),
-		Cmd("buildkite-agent artifact download '*/lcov.info' ."),
+		Cmd("buildkite-agent artifact download '*/coverage-final.json' ."),
 		Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
 	branch := os.Getenv("BUILDKITE_BRANCH")

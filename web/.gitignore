@@ -1,4 +1,6 @@
-node_modules
+node_modules/
 npm-debug.log
-out
+out/
+.nyc_output/
+coverage/
 typings/graphqlschema.d.ts
