@@ -2,8 +2,11 @@ package localstore
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/lib/pq"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -97,4 +100,39 @@ func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface
 		return nil, err
 	}
 	return members, nil
+}
+
+// CreateMembershipInOrgsForAllUsers causes *ALL* users to become members of every org in the
+// orgNames list.
+//
+// The provided dbh is used as the DB handle to execute the query. It may be either a global
+// DB handle or a transaction. If nil, the global DB handle is used.
+func (*orgMembers) CreateMembershipInOrgsForAllUsers(ctx context.Context, dbh interface {
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}, orgNames []string) error {
+	if len(orgNames) == 0 {
+		return nil
+	}
+
+	orgNameVars := []*sqlf.Query{}
+	for _, orgName := range orgNames {
+		orgNameVars = append(orgNameVars, sqlf.Sprintf("%s", orgName))
+	}
+
+	sqlQuery := sqlf.Sprintf(`
+			WITH org_ids AS (SELECT id FROM orgs WHERE name IN (%s)),
+				 user_ids AS (SELECT auth_id FROM users),
+				 to_join AS (SELECT org_ids.id AS org_id, user_ids.auth_id AS user_id
+						  FROM org_ids join user_ids ON true
+						  LEFT JOIN org_members ON org_members.org_id=org_ids.id AND
+									org_members.user_id=user_ids.auth_id
+						  WHERE org_members.id is null)
+			INSERT INTO org_members(org_id,user_id) SELECT to_join.org_id, to_join.user_id FROM to_join;`,
+		sqlf.Join(orgNameVars, ","))
+
+	if dbh == nil {
+		dbh = globalDB
+	}
+	_, err := dbh.ExecContext(ctx, sqlQuery.Query(sqlf.PostgresBindVar), sqlQuery.Args()...)
+	return err
 }
