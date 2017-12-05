@@ -1,4 +1,5 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import HelpIcon from '@sourcegraph/icons/lib/Help'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
@@ -79,12 +80,23 @@ export class SavedQueries extends React.Component<Props, State> {
                     <h2>Saved queries</h2>
 
                     <button
-                        className="btn btn-primary btn-icon saved-queries__header-button"
+                        className="btn btn-primary saved-queries__header-button"
                         onClick={this.toggleCreating}
                         disabled={this.state.creating}
                     >
                         <AddIcon className="icon-inline" /> New
                     </button>
+
+                    <a
+                        className="saved-queries__help"
+                        href="https://about.sourcegraph.com/docs/search#saved-queries"
+                        target="_blank"
+                    >
+                        <small>
+                            <HelpIcon className="icon-inline" />
+                            <span>Help</span>
+                        </small>
+                    </a>
                 </div>
                 {this.state.creating && (
                     <SavedQueryCreateForm onDidCreate={this.onDidCreateSavedQuery} onDidCancel={this.toggleCreating} />
