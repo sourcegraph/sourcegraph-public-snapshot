@@ -124,7 +124,7 @@ type Mutation {
     lastKnownSettingsID: Int
     contents: String!
   ): Settings!
-  inviteUser(email: String!, orgID: ID!): EmptyResponse
+  inviteUser(email: String!, orgID: ID!): InviteUserResult
   acceptUserInvite(inviteToken: String!): OrgInviteStatus!
   removeUserFromOrg(userID: String!, orgID: ID!): EmptyResponse
   # adds a phabricator repository to the Sourcegraph server.
@@ -805,6 +805,11 @@ type OrgMember {
   user: User!
   createdAt: String!
   updatedAt: String!
+}
+
+type InviteUserResult {
+	# The URL that the invited user can visit to accept the invitation.
+	acceptInviteURL: String!
 }
 
 type OrgInviteStatus {

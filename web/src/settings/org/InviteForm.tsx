@@ -1,11 +1,10 @@
+import CloseIcon from '@sourcegraph/icons/lib/Close'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import reactive from 'rx-component'
 import { merge } from 'rxjs/observable/merge'
 import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
-import { concat } from 'rxjs/operators/concat'
-import { delay } from 'rxjs/operators/delay'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { scan } from 'rxjs/operators/scan'
@@ -16,19 +15,49 @@ import { Subject } from 'rxjs/Subject'
 import { eventLogger } from '../../tracking/eventLogger'
 import { inviteUser } from '../backend'
 
+const InvitedNotification: React.SFC<{
+    className: string
+    email: string
+    acceptInviteURL: string
+    children: React.ReactChild
+}> = ({ className, email, acceptInviteURL, children }) =>
+    emailInvitesEnabled ? (
+        <small className={`${className} invited-notification`}>
+            <span className="invited-notification__message">Invite sent to {email}</span>
+            {children}
+        </small>
+    ) : (
+        <small className={`${className} invited-notification`}>
+            <span className="invited-notification__message">
+                Generated invite link. You must copy and send it to {email}:{' '}
+                <a href={acceptInviteURL} target="_blank" className="invited-notification__link">
+                    Invite link
+                </a>
+            </span>
+            {children}
+        </small>
+    )
+
 export interface Props {
     orgID: string
+}
+
+interface SubmittedInvite {
+    email: string
+    acceptInviteURL: string
 }
 
 interface State {
     orgID: string
     email: string
     loading: boolean
-    invited: boolean
+    invited?: SubmittedInvite[]
     error?: Error
 }
 
 type Update = (state: State) => State
+
+const emailInvitesEnabled = window.context.emailEnabled
 
 export const InviteForm = reactive<Props>(props => {
     const submits = new Subject<React.FormEvent<HTMLFormElement>>()
@@ -37,12 +66,21 @@ export const InviteForm = reactive<Props>(props => {
     const emailChanges = new Subject<string>()
     const nextEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => emailChanges.next(event.currentTarget.value)
 
+    const notificationDismissals = new Subject<number>()
+
     const orgID = props.pipe(map(({ orgID }) => orgID))
 
     return merge<Update>(
         orgID.pipe(map(orgID => (state: State): State => ({ ...state, orgID }))),
 
         emailChanges.pipe(map(email => (state: State): State => ({ ...state, email }))),
+
+        notificationDismissals.pipe(
+            map(i => (state: State): State => ({
+                ...state,
+                invited: (state.invited || []).filter((_, j) => i !== j),
+            }))
+        ),
 
         submits.pipe(
             tap(e => e.preventDefault()),
@@ -59,17 +97,15 @@ export const InviteForm = reactive<Props>(props => {
             ),
             mergeMap(([, orgID, email]) =>
                 inviteUser(email, orgID).pipe(
-                    mergeMap(() =>
+                    mergeMap(({ acceptInviteURL }) =>
                         // Reset email, reenable submit button, flash "invited" text
                         of((state: State): State => ({
                             ...state,
                             loading: false,
                             error: undefined,
                             email: '',
-                            invited: true,
+                            invited: [...(state.invited || []), { email, acceptInviteURL }],
                         }))
-                            // Hide "invited" text again after 1s
-                            .pipe(concat(of<Update>(state => ({ ...state, invited: false })).pipe(delay(1000))))
                     ),
                     // Disable button while loading
                     startWith<Update>((state: State): State => ({ ...state, loading: true })),
@@ -79,7 +115,6 @@ export const InviteForm = reactive<Props>(props => {
         )
     ).pipe(
         scan<Update, State>((state: State, update: Update) => update(state), {
-            invited: false,
             loading: false,
             email: '',
         } as State),
@@ -97,7 +132,7 @@ export const InviteForm = reactive<Props>(props => {
                         size={30}
                     />
                     <button type="submit" disabled={loading} className="btn btn-primary invite-form__submit-button">
-                        Invite
+                        {emailInvitesEnabled ? 'Invite' : 'Make invite link'}
                     </button>
                 </div>
                 <div className="invite-form__status">
@@ -106,11 +141,22 @@ export const InviteForm = reactive<Props>(props => {
                             <small>{error.message}</small>
                         </div>
                     )}
-                    <small
-                        className={'invite-form__invited-text' + (invited ? ' invite-form__invited-text--visible' : '')}
-                    >
-                        Invited!
-                    </small>
+                    {invited &&
+                        invited.map(({ email, acceptInviteURL }, i) => (
+                            <InvitedNotification
+                                key={i}
+                                className="alert alert-success invite-form__invited"
+                                email={email}
+                                acceptInviteURL={acceptInviteURL}
+                            >
+                                <CloseIcon
+                                    className="icon-inline invite-form__invited-icon"
+                                    title="Dismiss"
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => notificationDismissals.next(i)}
+                                />
+                            </InvitedNotification>
+                        ))}
                     {loading && <LoaderIcon className="icon-inline" />}
                 </div>
             </form>

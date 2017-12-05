@@ -143,16 +143,14 @@ export const Org = reactive<Props>(props => {
             if (!org) {
                 return <OrgNotFound />
             }
-            const canInvite = window.context.emailEnabled
             return (
                 <div className="org">
                     <PageTitle title={org.name} />
                     <div className="org__header">
                         <h2>{org.name}</h2>
-
-                        {canInvite && <InviteForm orgID={org.id} />}
                     </div>
                     <h3>Members</h3>
+                    <InviteForm orgID={org.id} />
                     <table className="table table-hover org__table">
                         <thead>
                             <tr>
@@ -175,8 +173,13 @@ export const Org = reactive<Props>(props => {
                                     <td className="org__actions-cell">
                                         <button
                                             className="btn btn-icon"
-                                            title={user.auth0ID === member.user.auth0ID ? 'Leave' : 'Remove'} // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={() => memberRemoves.next({ ...member, org })}
+                                            title={user.auth0ID === member.user.auth0ID ? 'Leave' : 'Remove'}
+                                            onClick={() =>
+                                                memberRemoves.next(
+                                                    // tslint:disable-next-line:jsx-no-lambda
+                                                    { ...member, org }
+                                                )
+                                            }
                                         >
                                             <CloseIcon className="icon-inline" />
                                         </button>

@@ -273,7 +273,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
  * @param orgID The ID of the org
  * @return Observable that emits `undefined`, then completes
  */
-export function inviteUser(email: string, orgID: string): Observable<void> {
+export function inviteUser(email: string, orgID: string): Observable<GQL.IInviteUserResult> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
@@ -289,7 +289,7 @@ export function inviteUser(email: string, orgID: string): Observable<void> {
                 `
                 mutation inviteUser($email: String!, $orgID: ID!) {
                     inviteUser(email: $email, orgID: $orgID) {
-                        alwaysNil
+                        acceptInviteURL
                     }
                 }
             `,
@@ -305,12 +305,12 @@ export function inviteUser(email: string, orgID: string): Observable<void> {
                     org_id: orgID,
                 },
             }
-            if (!data || (errors && errors.length > 0)) {
+            if (!data || !data.inviteUser || (errors && errors.length > 0)) {
                 eventLogger.log('InviteOrgMemberFailed', eventData)
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             eventLogger.log('OrgMemberInvited', eventData)
-            return
+            return data.inviteUser
         })
     )
     // For now, no need to re-fetch auth state after this fetch completes. The

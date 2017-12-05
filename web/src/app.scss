@@ -304,9 +304,21 @@ body {
 
 .theme-light {
     .alert {
+        &-success {
+            background: rgba(43, 138, 62, 0.85);
+        }
+
         &-danger {
             background: rgba(201, 42, 42, 0.75);
             color: #f2f4f8;
+        }
+
+        a {
+            color: #f2f4f8;
+
+            &:hover {
+                color: $color-light-text-4;
+            }
         }
     }
 }
