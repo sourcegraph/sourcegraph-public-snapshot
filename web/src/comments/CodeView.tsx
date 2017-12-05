@@ -54,22 +54,29 @@ const splitLines = (linesToSplit: string) => {
 const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
     const startLine = sharedItem.thread.startLine
     const threadLines = sharedItem.thread.lines
-    const htmlBefore = threadLines ? splitLines(threadLines.htmlBefore) : phonyBeforeLines
-    const html = threadLines ? splitLines(threadLines.html) : phonyLines
-    const htmlAfter = threadLines ? splitLines(threadLines.htmlAfter) : phonyAfterLines
+
+    // Using either the HTML or the textual raw lines.
+    const beforeRaw = (threadLines && threadLines.htmlBefore) || (threadLines && threadLines.textBefore) || ''
+    const selectionRaw = (threadLines && threadLines.html) || (threadLines && threadLines.text) || ''
+    const afterRaw = (threadLines && threadLines.htmlAfter) || (threadLines && threadLines.textAfter) || ''
+
+    // Split the lines into an array, or use phony lines if we have no threadLines.
+    const before = threadLines ? splitLines(beforeRaw) : phonyBeforeLines
+    const selection = threadLines ? splitLines(selectionRaw) : phonyLines
+    const after = threadLines ? splitLines(afterRaw) : phonyAfterLines
     const lines = [
-        ...htmlBefore.map((line: string, i: number) => ({
-            number: startLine - (htmlBefore.length - i),
+        ...before.map((line: string, i: number) => ({
+            number: startLine - (before.length - i),
             content: line,
             className: 'code-view__line--before',
         })),
-        ...html.map((line: string, i: number) => ({
+        ...selection.map((line: string, i: number) => ({
             number: startLine + i,
             content: line,
             className: 'code-view__line--main',
         })),
-        ...htmlAfter.map((line: string, i: number) => ({
-            number: startLine + i + html.length,
+        ...after.map((line: string, i: number) => ({
+            number: startLine + i + selection.length,
             content: line,
             className: 'code-view__line--after',
         })),
