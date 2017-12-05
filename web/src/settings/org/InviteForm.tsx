@@ -21,12 +21,14 @@ const InvitedNotification: React.SFC<{
     className: string
     email: string
     acceptInviteURL: string
-    children: React.ReactChild
-}> = ({ className, email, acceptInviteURL, children }) =>
+    onDismiss: () => void
+}> = ({ className, email, acceptInviteURL, onDismiss }) =>
     emailInvitesEnabled ? (
         <div className={`${className} invited-notification`}>
             <span className="invited-notification__message">Invite sent to {email}</span>
-            {children}
+            <button className="btn btn-icon">
+                <CloseIcon title="Dismiss" onClick={onDismiss} />
+            </button>
         </div>
     ) : (
         <div className={`${className} invited-notification`}>
@@ -36,7 +38,9 @@ const InvitedNotification: React.SFC<{
                     Invite link
                 </a>
             </span>
-            {children}
+            <button className="btn btn-icon">
+                <CloseIcon title="Dismiss" onClick={onDismiss} />
+            </button>
         </div>
     )
 
@@ -148,15 +152,9 @@ export const InviteForm = reactive<Props>(props => {
                                     className="alert alert-success invite-form__invited"
                                     email={email}
                                     acceptInviteURL={acceptInviteURL}
-                                >
-                                    <button className="btn btn-icon">
-                                        <CloseIcon
-                                            title="Dismiss"
-                                            // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={() => notificationDismissals.next(i)}
-                                        />
-                                    </button>
-                                </InvitedNotification>
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onDismiss={() => notificationDismissals.next(i)}
+                                />
                             ))}
                         </div>
                     )}
