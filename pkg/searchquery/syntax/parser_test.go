@@ -21,6 +21,7 @@ func TestParser(t *testing.T) {
 			wantExpr:   []*Expr{{Value: "a", ValueType: TokenLiteral}},
 			wantString: "a",
 		},
+		"a:": {wantExpr: []*Expr{{Field: "a", Value: "", ValueType: TokenLiteral}}},
 		"a-": {
 			wantExpr: []*Expr{{Value: "a-", ValueType: TokenLiteral}},
 		},
@@ -60,8 +61,11 @@ func TestParser(t *testing.T) {
 				{Field: "c", Value: "d", ValueType: TokenLiteral},
 			},
 		},
-		"a:": {
-			wantErr: &ParseError{Pos: 2, Msg: "got TokenEOF, want value"},
+		"a: b:": {
+			wantExpr: []*Expr{
+				{Field: "a", Value: "", ValueType: TokenLiteral},
+				{Field: "b", Value: "", ValueType: TokenLiteral},
+			},
 		},
 		"--": {
 			wantErr: &ParseError{Pos: 1, Msg: "got TokenMinus, want expr"},

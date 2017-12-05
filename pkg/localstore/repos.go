@@ -292,7 +292,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		}
 		if exact != nil {
 			if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
-				conds = append(conds, sqlf.Sprintf("FALSE"))
+				conds = append(conds, sqlf.Sprintf("TRUE"))
 			} else {
 				items := []*sqlf.Query{}
 				for _, v := range exact {
@@ -306,7 +306,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 			for _, v := range like {
 				likeConds = append(likeConds, sqlf.Sprintf(`lower(uri) LIKE %s`, strings.ToLower(v)))
 			}
-			conds = append(conds, sqlf.Join(likeConds, " OR "))
+			conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
 		}
 		if pattern != "" {
 			conds = append(conds, sqlf.Sprintf("lower(uri) ~* %s", pattern))
