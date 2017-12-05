@@ -311,6 +311,16 @@ body {
             color: white;
         }
     }
+
+    .btn-icon {
+        &:hover,
+        &:focus {
+            &,
+            .theme-light & {
+                color: white;
+            }
+        }
+    }
 }
 
 .theme-light {
