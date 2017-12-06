@@ -40,6 +40,13 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 			continue
 		}
 
+		// TODO(sqs): preserve the "no newline" message. We clear it out because our truncateLongLines
+		// and SplitHunkMatches funcs don't properly adjust its offset as they modify hunk.Body. If
+		// the OrigNoNewlineAt points to an out-of-bounds offset, a panic will occur.
+		for _, hunk := range fileDiff.Hunks {
+			hunk.OrigNoNewlineAt = 0
+		}
+
 		// Truncate long lines, for perf.
 		for _, hunk := range fileDiff.Hunks {
 			hunk.Body = truncateLongLines(hunk.Body, maxCharsPerLine)
