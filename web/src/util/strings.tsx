@@ -15,3 +15,11 @@ export function count(str: string, ...patterns: RegExp[]): number {
     }
     return n
 }
+
+export function numberWithCommas(x: any): string {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
+
+export function pluralize(str: string, n: number, plural = str + 's'): string {
+    return n === 1 ? str : plural
+}

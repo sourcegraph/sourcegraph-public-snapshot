@@ -14,6 +14,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { eventLogger } from '../tracking/eventLogger'
+import { numberWithCommas, pluralize } from '../util/strings'
 import { searchText } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
@@ -37,14 +38,6 @@ interface State {
     cloning: string[]
     missing: string[]
     timedout: string[]
-}
-
-function numberWithCommas(x: any): string {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-}
-
-function pluralize(str: string, n: number, plural = str + 's'): string {
-    return n === 1 ? str : plural
 }
 
 export class SearchResults extends React.Component<Props, State> {

@@ -7,6 +7,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { scan } from 'rxjs/operators/scan'
 import { currentUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'
+import { pluralize } from '../../util/strings'
 import { fetchAllUsers } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 
@@ -29,7 +30,7 @@ export const OrgAdmin = reactive<Props>(props => {
     if (window.context.license) {
         expiry = new Date(window.context.license.Expiry)
     }
-    const timeDiff = Math.abs(expiry.getTime() - today.getTime())
+    const timeDiff = Math.abs(expiry.getTime() - today.getTime()) + Date.now()
     const dateDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
     return merge<Update>(
         currentUser.pipe(
@@ -51,11 +52,11 @@ export const OrgAdmin = reactive<Props>(props => {
         scan<Update, State>((state: State, update: Update) => update(state), {} as State),
         map(({ user, users }: State): JSX.Element | null => (
             <div className="org-admin">
-                <h1>Server Admin Page</h1>
+                <h1>Server administration</h1>
                 {window.context.license &&
                     window.context.license.Expiry && (
                         <p className="alert alert-primary">
-                            <b>Trial</b>. {dateDiff} days remaining. Contact{' '}
+                            <b>Trial</b>. {dateDiff} {pluralize('day', dateDiff)} remaining. Contact{' '}
                             <a href="mailto:sales@sourcegraph.com">sales@sourcegraph.com</a> to purchase.
                         </p>
                     )}
@@ -102,7 +103,7 @@ export const OrgAdmin = reactive<Props>(props => {
                         Contact <a href="mailto:support@sourcegraph.com">support@sourcegraph.com</a> or{' '}
                         <a href="https://about.sourcegraph.com/docs/server/api">
                             view Sourcegraph Server documentation
-                        </a>
+                        </a>.
                     </p>
                 </div>
             </div>
