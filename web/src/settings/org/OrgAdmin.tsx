@@ -91,7 +91,7 @@ export const OrgAdmin = reactive<Props>(props => {
                         Contact <a href="mailto:support@sourcegraph.com">support@sourcegraph.com</a> or{' '}
                         <a href="https://about.sourcegraph.com/docs/server/api">
                             view Sourcegraph Server documentation
-                        </a>
+                        </a>.
                     </p>
                 </div>
             </div>
