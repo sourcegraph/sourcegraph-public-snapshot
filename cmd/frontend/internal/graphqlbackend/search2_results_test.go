@@ -72,3 +72,10 @@ func TestSearch2Results(t *testing.T) {
 		}
 	})
 }
+
+func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {
+	got := regexpPatternMatchingExprsInOrder([]string{"a", "b|c"})
+	if want := "a.*?(b|c)"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}

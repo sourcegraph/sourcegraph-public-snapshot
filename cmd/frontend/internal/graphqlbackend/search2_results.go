@@ -141,7 +141,7 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 			IsRegExp:                     true,
 			IsCaseSensitive:              r.combinedQuery.IsCaseSensitive(),
 			FileMatchLimit:               300,
-			Pattern:                      strings.Join(patternsToCombine, ".*?"), // "?" makes it prefer shorter matches
+			Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
 			IncludePatterns:              includePatterns,
 			PathPatternsAreRegExps:       true,
 			PathPatternsAreCaseSensitive: r.combinedQuery.IsCaseSensitive(),
@@ -220,4 +220,10 @@ type searchResult struct {
 func (g *searchResult) ToFileMatch() (*fileMatch, bool) { return g.fileMatch, g.fileMatch != nil }
 func (g *searchResult) ToCommitSearchResult() (*commitSearchResult, bool) {
 	return g.diff, g.diff != nil
+}
+
+// regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain
+// non-overlapping matches for each pattern in order.
+func regexpPatternMatchingExprsInOrder(patterns []string) string {
+	return strings.Join(patterns, ".*?") // "?" makes it prefer shorter matches
 }
