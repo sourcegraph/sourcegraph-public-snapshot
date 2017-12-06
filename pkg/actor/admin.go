@@ -14,7 +14,7 @@ var (
 func init() {
 	adminUIDs = make(map[string]struct{})
 	for _, username := range strings.Fields(adminUsernames) {
-		adminUIDs[username] = struct{}{}
+		adminUIDs[strings.ToLower(username)] = struct{}{}
 	}
 }
 
@@ -23,6 +23,6 @@ func (a *Actor) IsAdmin() bool {
 	if a == nil {
 		return false
 	}
-	_, isAdmin := adminUIDs[a.Login]
+	_, isAdmin := adminUIDs[strings.ToLower(a.Login)]
 	return isAdmin
 }
