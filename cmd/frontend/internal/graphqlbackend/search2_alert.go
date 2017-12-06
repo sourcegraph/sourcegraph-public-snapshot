@@ -173,7 +173,7 @@ func (r *searchResolver2) alertForOverRepoLimit(ctx context.Context) (*searchAle
 	// search for "repo:kubernetes". If that still matches > 30 repositories,
 	// then try to narrow it further using "/kubernetes/", etc.
 	//
-	// (Above we assume MAX_REPOS_TO_SEARCH is 30.)
+	// (In the above sample paragraph, we assume MAX_REPOS_TO_SEARCH is 30.)
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
