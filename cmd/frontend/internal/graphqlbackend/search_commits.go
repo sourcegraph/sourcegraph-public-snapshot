@@ -103,9 +103,13 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 	}
 
 	args := []string{
-		"--unified=0",
-		"--no-prefix",
 		"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
+	}
+	if diff {
+		args = append(args,
+			"--unified=0",
+			"--no-prefix",
+		)
 	}
 	if info.IsRegExp {
 		args = append(args, "--extended-regexp")
