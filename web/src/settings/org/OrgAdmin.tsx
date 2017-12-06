@@ -84,6 +84,17 @@ export const OrgAdmin = reactive<Props>(props => {
                                 </tr>
                             ))}
                     </tbody>
+                    {users && (
+                        <tfoot>
+                            <tr>
+                                <td />
+                                <td />
+                                <td>Total</td>
+                                <td>{users.reduce((c, v) => c + v.activity.pageViews, 0)}</td>
+                                <td>{users.reduce((c, v) => c + v.activity.searchQueries, 0)}</td>
+                            </tr>
+                        </tfoot>
+                    )}
                 </table>
                 <div className="org-admin__section">
                     <h1>Help and support</h1>
