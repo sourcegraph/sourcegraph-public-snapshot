@@ -246,10 +246,16 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 		addRefs(&results[i].sourceRefs, rawResult.SourceRefs)
 
 		// TODO(sqs): properly combine message: and term values for type:commit searches
-		if len(extraMessageValues) > 0 {
-			pat, err := regexp.Compile(extraMessageValues[0])
-			if err == nil {
-				results[i].messagePreview = highlightMatches(pat, []byte(commit.Message))
+		if !diff {
+			var patString string
+			if len(extraMessageValues) > 0 {
+				patString = extraMessageValues[0]
+				pat, err := regexp.Compile(patString)
+				if err == nil {
+					results[i].messagePreview = highlightMatches(pat, []byte(commit.Message))
+				}
+			} else {
+				results[i].messagePreview = &highlightedString{value: string(commit.Message)}
 			}
 		}
 
