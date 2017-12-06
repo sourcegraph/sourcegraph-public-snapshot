@@ -250,6 +250,9 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 			var patString string
 			if len(extraMessageValues) > 0 {
 				patString = extraMessageValues[0]
+				if !combinedQuery.IsCaseSensitive() {
+					patString = "(?i:" + patString + ")"
+				}
 				pat, err := regexp.Compile(patString)
 				if err == nil {
 					results[i].messagePreview = highlightMatches(pat, []byte(commit.Message))
