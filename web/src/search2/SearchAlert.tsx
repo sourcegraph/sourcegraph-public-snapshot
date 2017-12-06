@@ -3,6 +3,7 @@ import * as React from 'react'
 import { QueryButton } from './QueryButton'
 
 interface Props {
+    className: string
     title: string
     description?: string
     proposedQueries?: GQL.ISearchQuery2Description[]
@@ -21,7 +22,7 @@ export class SearchAlert extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="search-alert">
+            <div className={`search-alert ${this.props.className}`}>
                 <div className="search-alert__message">
                     {<h2 className="search-alert__title">{this.props.title}</h2>}
                     {this.props.description && <p className="search-alert__description">{this.props.description}</p>}
