@@ -68,7 +68,7 @@ export class SearchResults extends React.Component<Props, State> {
                     }),
                     switchMap(searchOptions => {
                         eventLogger.log('SearchResultsQueried', {
-                            code_search: { query: queryTelemetryData(searchOptions) },
+                            code_search: { query_data: queryTelemetryData(searchOptions) },
                         })
 
                         const start = Date.now()
