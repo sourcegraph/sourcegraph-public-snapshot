@@ -206,6 +206,9 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				}
 				ev.Send()
 			}
+			if duration > 2500*time.Millisecond {
+				log15.Warn("Long git exec request", "repo", req.Repo, "args", req.Args, "duration", duration)
+			}
 		}()
 	}
 
@@ -262,14 +265,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.EnsureRevision != "" {
-		cmd := exec.CommandContext(ctx, "git", "rev-parse", req.EnsureRevision)
-		cmd.Dir = dir
-		if err := cmd.Run(); err != nil {
-			// Revision not found, update before running actual command.
-			s.doRepoUpdate(ctx, req.Repo)
-		}
-	}
+	s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir)
 
 	w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
 	w.WriteHeader(http.StatusOK)
@@ -470,6 +466,24 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
 		return
 	}
+}
+
+func (s *Server) ensureRevision(ctx context.Context, repo string, rev string, repoDir string) {
+	if rev == "" {
+		return
+	}
+	if rev == "HEAD" {
+		if _, err := quickRevParseHead(repoDir); err == nil {
+			return
+		}
+	}
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", rev)
+	cmd.Dir = repoDir
+	if err := cmd.Run(); err == nil {
+		return
+	}
+	// Revision not found, update before returning.
+	s.doRepoUpdate(ctx, repo)
 }
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
