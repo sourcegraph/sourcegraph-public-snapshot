@@ -5,7 +5,7 @@ import log15 "gopkg.in/inconshreveable/log15.v2"
 // Config is the app-level configuration for Sourcegraph Server.
 // The external README generator (which lives in the infrastructre repository) uses this struct to
 // list configuration parameters, using the `json` and `description` tags.
-// Fields can be tagged `noreadme:"true"` to be omitted from the README.
+// Fields can be tagged `readme:"enterprise"` to be included only in the Sourcegraph Enterprise README.
 type Config struct {
 	AppID                          string              `json:"appID" description:"Application ID to attribute front end user logs to. Providing this value will send usage data back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data)."`
 	AppURL                         string              `json:"appURL" description:"Publicly accessible URL to web app (e.g., what you type into your browser)."`
