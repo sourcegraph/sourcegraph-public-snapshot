@@ -8,7 +8,7 @@ class ServerAdminWrapper {
     private active = false
 
     constructor() {
-        if (window.context.onPrem && window.context.version !== 'dev') {
+        if (window.context.onPrem) {
             currentUser.subscribe(user => {
                 if (user) {
                     if (!this.active) {
