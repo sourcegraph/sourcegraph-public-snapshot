@@ -5,7 +5,7 @@ export const Search2Help: React.SFC = () => (
     <a className="search2-help" href="https://about.sourcegraph.com/docs/search" target="_blank">
         <small>
             <HelpIcon className="icon-inline" />
-            <span>Help</span>
+            <span className="search2-help__text">Help</span>
         </small>
     </a>
 )
