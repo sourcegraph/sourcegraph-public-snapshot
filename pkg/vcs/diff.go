@@ -176,7 +176,7 @@ func computeDiffHunkInfo(lines [][]byte, query *regexp.Regexp, matchContextLines
 	for i, line := range lines {
 		lineInfo[i].added, lineInfo[i].removed = diffHunkLineStatus(line)
 		if lineInfo[i].changed() {
-			lineInfo[i].matching = query.Match(line)
+			lineInfo[i].matching = query == nil || query.Match(line)
 			if lineInfo[i].matching {
 				// Mark context lines before/after matching lines.
 				start, end := contextLines(i)
