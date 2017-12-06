@@ -37,7 +37,7 @@ var (
 		"blame":  []string{"--root", "--incremental", "--"},
 		"branch": []string{"-r", "-a", "--contains"},
 
-		"rev-parse": []string{"--abbrev-ref"},
+		"rev-parse": []string{"--abbrev-ref", "--symbolic-full-name"},
 		"rev-list":  []string{"--max-parents", "--reverse", "--max-count"},
 		"ls-remote": []string{"--get-url"},
 	}
