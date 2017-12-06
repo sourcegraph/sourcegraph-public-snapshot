@@ -7,6 +7,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { scan } from 'rxjs/operators/scan'
 import { currentUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'
+import { pluralize } from '../../util/strings'
 import { fetchAllUsers } from '../backend'
 import { UserAvatar } from '../user/UserAvatar'
 
@@ -29,7 +30,7 @@ export const OrgAdmin = reactive<Props>(props => {
     if (window.context.license) {
         expiry = new Date(window.context.license.Expiry)
     }
-    const timeDiff = Math.abs(expiry.getTime() - today.getTime())
+    const timeDiff = Math.abs(expiry.getTime() - today.getTime()) + Date.now()
     const dateDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
     return merge<Update>(
         currentUser.pipe(
@@ -55,7 +56,7 @@ export const OrgAdmin = reactive<Props>(props => {
                 {window.context.license &&
                     window.context.license.Expiry && (
                         <p className="alert alert-primary">
-                            <b>Trial</b>. {dateDiff} days remaining. Contact{' '}
+                            <b>Trial</b>. {dateDiff} {pluralize('day', dateDiff)} remaining. Contact{' '}
                             <a href="mailto:sales@sourcegraph.com">sales@sourcegraph.com</a> to purchase.
                         </p>
                     )}
