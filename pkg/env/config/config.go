@@ -50,7 +50,7 @@ type Config struct {
 	HTMLBodyBottom                 string              `json:"htmlBodyBottom" description:"HTML to inject at the bottom of the <body> element on each page, for analytics scripts"`
 	LicenseKey                     string              `json:"licenseKey" description:"License key. You must purchase a license to obtain this."`
 	MandrillKey                    string              `json:"mandrillKey" description:"Key for sending mails via Mandrill."`
-	MaxReposToSearch               string              `json:"maxReposToSearch" description:"The maximum number of repos to search across (the user is prompted to narrow their query if exceeded)"`
+	MaxReposToSearch               string              `json:"maxReposToSearch" description:"The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value 0 means unlimited."`
 	AdminUsernames                 string              `json:"adminUsernames" description:"Space-separated list of usernames that indicates which users will be treated as instance admins"`
 
 	AuthUserOrgMap UserOrgMap `json:"auth.userOrgMap" description:"Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form <tt>{\"*\": [\"org1\", \"org2\"]}</tt>, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is <tt>\"*\"</tt>."`

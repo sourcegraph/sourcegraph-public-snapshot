@@ -21,8 +21,15 @@ import (
 )
 
 var (
-	maxReposToSearch, _ = strconv.Atoi(env.Get("MAX_REPOS_TO_SEARCH", "30", `the maximum number of repos to search across (the user is prompted to narrow their query if exceeded)`))
+	maxReposToSearch, _ = strconv.Atoi(env.Get("MAX_REPOS_TO_SEARCH", "30", `The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value 0 means unlimited.`))
 )
+
+func init() {
+	if maxReposToSearch == 0 {
+		// Default to a very large number that will not overflow if incremented.
+		maxReposToSearch = int(math.MaxInt32 >> 1)
+	}
+}
 
 const maxQueryLength = 400
 
