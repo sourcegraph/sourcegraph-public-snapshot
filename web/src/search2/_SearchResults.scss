@@ -7,11 +7,6 @@
     width: 100%;
     padding: 0.5rem 5rem;
 
-    @media (max-width: $media-lg) {
-        padding-left: 0;
-        padding-right: 0;
-    }
-
     &__header {
         display: flex;
         justify-content: space-between;
@@ -21,6 +16,19 @@
         &-notice {
             display: flex;
             align-items: center;
+        }
+    }
+
+    // In narrow windows, make the results flush with the left/right sides,
+    // but we still need padding for the header and alerts.
+    @media (max-width: $media-lg) {
+        padding-left: 0;
+        padding-right: 0;
+
+        &__header,
+        &__alert {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
         }
     }
 }

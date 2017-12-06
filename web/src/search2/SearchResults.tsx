@@ -227,6 +227,7 @@ export class SearchResults extends React.Component<Props, State> {
                 {this.state.loading && <Loader className="icon-inline" />}
                 {alert && (
                     <SearchAlert
+                        className="search-results2__alert"
                         title={alert.title}
                         description={alert.description || undefined}
                         proposedQueries={this.state.alert ? this.state.alert.proposedQueries : undefined}
