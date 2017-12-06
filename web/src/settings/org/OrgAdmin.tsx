@@ -51,7 +51,7 @@ export const OrgAdmin = reactive<Props>(props => {
         scan<Update, State>((state: State, update: Update) => update(state), {} as State),
         map(({ user, users }: State): JSX.Element | null => (
             <div className="org-admin">
-                <h1>Server Admin Page</h1>
+                <h1>Server administration</h1>
                 {window.context.license &&
                     window.context.license.Expiry && (
                         <p className="alert alert-primary">
