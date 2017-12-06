@@ -55,7 +55,7 @@ func TestSearch2Results(t *testing.T) {
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true
-			if want := `foo\d.*?bar\*`; args.query.Pattern != want {
+			if want := `(foo\d).*?(bar\*)`; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
 			return fileMatchesToSearchResults([]*fileMatch{
@@ -74,8 +74,18 @@ func TestSearch2Results(t *testing.T) {
 }
 
 func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {
-	got := regexpPatternMatchingExprsInOrder([]string{"a", "b|c"})
-	if want := "a.*?(b|c)"; got != want {
+	got := regexpPatternMatchingExprsInOrder([]string{})
+	if want := ""; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	got = regexpPatternMatchingExprsInOrder([]string{"a"})
+	if want := "a"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	got = regexpPatternMatchingExprsInOrder([]string{"a", "b|c"})
+	if want := "(a).*?(b|c)"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }

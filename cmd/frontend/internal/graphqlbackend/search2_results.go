@@ -225,5 +225,11 @@ func (g *searchResult) ToCommitSearchResult() (*commitSearchResult, bool) {
 // regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain
 // non-overlapping matches for each pattern in order.
 func regexpPatternMatchingExprsInOrder(patterns []string) string {
-	return strings.Join(patterns, ".*?") // "?" makes it prefer shorter matches
+	if len(patterns) == 0 {
+		return ""
+	}
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	return "(" + strings.Join(patterns, ").*?(") + ")" // "?" makes it prefer shorter matches
 }
