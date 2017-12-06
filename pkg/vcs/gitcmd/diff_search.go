@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -193,6 +194,14 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			Refs:       refs,
 			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
 		}
+		result.Refs, err = r.filterAndResolveRefs(ctx, result.Refs)
+		if err != nil {
+			return nil, false, err
+		}
+		result.SourceRefs, err = r.filterAndResolveRefs(ctx, result.SourceRefs)
+		if err != nil {
+			return nil, false, err
+		}
 
 		if len(data) >= 1 && data[0] == '\x00' {
 			// No diff patch (probably no --patch arg).
@@ -233,4 +242,31 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 
 	return results, complete, nil
+}
+
+// filterAndResolveRefs replaces "HEAD" entries with the names of the ref they refer to,
+// and it omits "HEAD -> ..." entries.
+func (r *Repository) filterAndResolveRefs(ctx context.Context, refs []string) ([]string, error) {
+	var headRefTarget string
+
+	filtered := refs[:0]
+	for _, ref := range refs {
+		if strings.HasPrefix(ref, "HEAD -> ") {
+			continue
+		}
+		if ref == "HEAD" {
+			if headRefTarget == "" {
+				cmd := gitserver.DefaultClient.Command("git", "rev-parse", "--symbolic-full-name", "HEAD")
+				cmd.Repo = r.Repo
+				stdout, err := cmd.Output(ctx)
+				if err != nil {
+					return nil, err
+				}
+				headRefTarget = string(bytes.TrimSpace(stdout))
+			}
+			ref = headRefTarget
+		}
+		filtered = append(filtered, ref)
+	}
+	return filtered, nil
 }
