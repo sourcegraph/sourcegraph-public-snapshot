@@ -16,12 +16,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-
-    &__close-button {
-        @media (max-width: $media-md) {
-            display: none;
-        }
-    }
 }
 
 .theme-light {
