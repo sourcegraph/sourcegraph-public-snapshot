@@ -276,7 +276,8 @@ export class Repository extends React.PureComponent<Props, State> {
                                 subtitle={'Error: ' + this.state.highlightingError.message}
                             />
                         )}
-                        {this.state.viewerType === 'rich' &&
+                        {!this.state.isDirectory &&
+                            this.state.viewerType === 'rich' &&
                             this.state.richHTML && (
                                 <div className="repository__rich-content">
                                     <div className="repository__rich-content-container">
