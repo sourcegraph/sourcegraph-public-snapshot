@@ -161,6 +161,12 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	showArgs = append(showArgs, opt.FormatArgs...)
 	showArgs = append(showArgs, opt.Args...)
 	showArgs = append(showArgs, commitOIDs...)
+	// Need --patch (TODO(sqs): or just --raw, which is smaller) if we are filtering by file paths,
+	// because we post-filter by path since we need to support regexps. Just the commit message
+	// alone would be insufficient for our post-filtering.
+	if opt.Paths.ExcludePattern != "" || len(opt.Paths.IncludePatterns) > 0 {
+		showArgs = append(showArgs, "--patch")
+	}
 	appendCommonQueryArgs(&showArgs)
 	appendCommonDashDashArgs(&showArgs)
 	if !isWhitelistedGitCmd(showArgs) {
