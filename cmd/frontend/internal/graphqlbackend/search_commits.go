@@ -253,7 +253,7 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 		if !diff {
 			var patString string
 			if len(extraMessageValues) > 0 {
-				patString = extraMessageValues[0]
+				patString = regexpPatternMatchingExprsInOrder(extraMessageValues)
 				if !combinedQuery.IsCaseSensitive() {
 					patString = "(?i:" + patString + ")"
 				}
