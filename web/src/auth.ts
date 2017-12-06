@@ -54,6 +54,7 @@ export function fetchCurrentUser(isLightTheme?: boolean): Observable<never> {
         query CurrentAuthState {
             root {
                 currentUser {
+                    __typename
                     auth0ID
                     sourcegraphID
                     username

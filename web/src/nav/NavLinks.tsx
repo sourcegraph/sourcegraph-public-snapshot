@@ -16,6 +16,8 @@ interface State {
     user: GQL.IUser | ImmutableUser | null
 }
 
+const isGQLUser = (val: any): val is GQL.IUser => val && typeof val === 'object' && val.__typename === 'User'
+
 export class NavLinks extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
@@ -29,9 +31,7 @@ export class NavLinks extends React.Component<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             currentUser.subscribe(user => {
-                this.setState({
-                    user: user || window.context.user,
-                })
+                this.setState({ user })
             })
         )
     }
@@ -60,7 +60,11 @@ export class NavLinks extends React.Component<Props, State> {
                 )}
                 {this.state.user && (
                     <Link className="nav-links__link" to="/settings">
-                        <UserAvatar size={64} />
+                        {window.context.onPrem && isGQLUser(this.state.user) ? (
+                            this.state.user.username
+                        ) : (
+                            <UserAvatar size={64} />
+                        )}
                     </Link>
                 )}
                 {!this.state.user &&
