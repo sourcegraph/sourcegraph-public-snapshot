@@ -1,6 +1,6 @@
 gitserver: .bin/gitserver
 indexer: .bin/indexer
-searcher: .bin/searcher
+searcher: vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher
 github-proxy: .bin/github-proxy
 lsp-proxy: .bin/lsp-proxy -prof-http=:6061
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062
