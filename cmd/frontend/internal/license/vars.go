@@ -95,7 +95,7 @@ func Get(appID string) (*License, LicenseStatus) {
 	return license, licenseStatus
 }
 
-// WithLicenseGenerator attaches a HTTP handler for generating license keys if the env varx LICENSE_GENERATOR_PRIVATE_KEY is set.
+// WithLicenseGenerator attaches a HTTP handler for generating license keys if the env var LICENSE_GENERATOR_PRIVATE_KEY is set.
 func WithLicenseGenerator(h http.Handler) http.Handler {
 	if privateKey == nil {
 		return h
