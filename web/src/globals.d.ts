@@ -64,12 +64,6 @@ interface SourcegraphContext {
     auth0ClientID: string
 
     /**
-     * authEnabled, set as AUTH_ENABLED as an env var and enabled by default, causes Sourcegraph to require GitHub.com authentication.
-     * With authEnabled set to false, no sign in is required or possible, and repositories are pulled from local disk. Used for on-prem.
-     */
-    authEnabled: boolean
-
-    /**
      * onPrem is defined as the env var DEPLOYMENT_ON_PREM. True if the server is a privately hosted instance, as opposed
      * to the public sourcegraph.com.
      */
