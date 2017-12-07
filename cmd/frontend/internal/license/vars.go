@@ -114,10 +114,6 @@ func WithLicenseGenerator(h http.Handler) http.Handler {
 </html>`))
 		case "POST":
 			appID := r.FormValue("appID")
-			if appID == "" {
-				http.Error(w, "no AppID specified", http.StatusBadRequest)
-				return
-			}
 			expiryVal := r.FormValue("expiry")
 			var expiry *time.Time
 			if expiryVal != "" {
@@ -135,7 +131,11 @@ func WithLicenseGenerator(h http.Handler) http.Handler {
 			}
 
 			w.Write([]byte("<html>"))
-			w.Write([]byte(fmt.Sprintf("AppID: %s<br>", appID)))
+			if appID != "" {
+				w.Write([]byte(fmt.Sprintf("AppID: %s<br>", appID)))
+			} else {
+				w.Write([]byte("WARNING: no AppID was set. This will be an anonymous license.<br>"))
+			}
 			if expiry == nil {
 				w.Write([]byte("Expiry: no expiry set, license is perpetual<br>"))
 			} else {
