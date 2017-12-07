@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -396,6 +397,11 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 }
 
 func commitSearchResultsToSearchResults(results []*commitSearchResult) []*searchResult {
+	// Show most recent commits first.
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].commit.author.date > results[j].commit.author.date
+	})
+
 	results2 := make([]*searchResult, len(results))
 	for i, result := range results {
 		results2[i] = &searchResult{diff: result}
