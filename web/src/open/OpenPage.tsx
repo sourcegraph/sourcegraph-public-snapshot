@@ -112,6 +112,7 @@ export class OpenPage extends React.Component<Props, State> {
         const revision = params.get('revision')
         if (revision) {
             commands.push(`git checkout ${sanitize(revision)}`)
+            commands.push(`git pull`)
         }
 
         const cmd = this.state.scheme
