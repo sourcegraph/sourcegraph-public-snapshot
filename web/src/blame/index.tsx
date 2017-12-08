@@ -106,7 +106,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): v
         // Try resolving to internal code host.
         fetchPhabricatorRepo({ repoPath: ctx.repoPath }).subscribe(phabRepo => {
             if (phabRepo) {
-                openFromJS(`${phabRepo.url}/r${phabRepo.callsign.toUpperCase()}${ctx.commitID}`, clickEvent)
+                openFromJS(`${phabRepo.url}/r${phabRepo.callsign.toUpperCase()}${rev}`, clickEvent)
             }
         })
     }
