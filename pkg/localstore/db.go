@@ -2,9 +2,12 @@ package localstore
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/mattes/migrate"
 	"github.com/mattes/migrate/database/postgres"
@@ -22,7 +25,7 @@ var (
 // ConnectToDB connects to the given DB and stores the handle globally.
 func ConnectToDB(dataSource string) {
 	var err error
-	globalDB, err = dbutil2.Open(dataSource)
+	globalDB, err = openDBWithStartupWait(dataSource)
 	if err != nil {
 		log.Fatal("DB not available: " + err.Error())
 	}
@@ -43,6 +46,23 @@ func ConnectToDB(dataSource string) {
 
 	if err := globalMigrate.Up(); err != nil && err != migrate.ErrNoChange {
 		log.Fatal("error migrating DB: " + err.Error())
+	}
+}
+
+func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
+	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
+	const startupTimeout = 10 * time.Second
+	startupDeadline := time.Now().Add(startupTimeout)
+	for {
+		if time.Now().After(startupDeadline) {
+			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
+		}
+		db, err = dbutil2.Open(dataSource)
+		if err != nil && strings.Contains(err.Error(), "pq: the database system is starting up") {
+			time.Sleep(startupTimeout / 10)
+			continue
+		}
+		return db, err
 	}
 }
 
