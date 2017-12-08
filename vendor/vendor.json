@@ -1126,12 +1126,6 @@
 			"revisionTime": "2016-07-07T22:02:19Z"
 		},
 		{
-			"checksumSHA1": "QrLkNIEViGtM2R5jGHoOCnILHkI=",
-			"path": "github.com/neelance/godockerize",
-			"revision": "035757a1644e720378f1dff9286d37e5c4ad1303",
-			"revisionTime": "2017-08-11T16:56:20Z"
-		},
-		{
 			"checksumSHA1": "Xe767JGU0kFzRBki569Z+wWNpyE=",
 			"path": "github.com/neelance/graphql-go",
 			"revision": "10eb949b8f4439212ef19d5d924c47c10c110cc7",
@@ -1527,6 +1521,12 @@
 			"path": "github.com/sourcegraph/go-vcsurl",
 			"revision": "2305ecca26ab74e3f819cb3875cd631f467e0c2b",
 			"revisionTime": "2016-11-14T16:56:20Z"
+		},
+		{
+			"checksumSHA1": "eAVhacVAXB9Z3MOqFcOAUv6FTpM=",
+			"path": "github.com/sourcegraph/godockerize",
+			"revision": "05bac79edd17c0f55127871fa9c6f4d91bebf07c",
+			"revisionTime": "2017-12-04T13:32:57Z"
 		},
 		{
 			"checksumSHA1": "Pod4/wb+6tjEMLyJY/MizqnWxPY=",

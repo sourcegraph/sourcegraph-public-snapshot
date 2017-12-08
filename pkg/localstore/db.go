@@ -14,16 +14,26 @@ import (
 	bindata "github.com/mattes/migrate/source/go-bindata"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore/migrations"
 )
 
 var (
-	globalDB      *sql.DB
-	globalMigrate *migrate.Migrate
+	globalDB          *sql.DB
+	globalMigrate     *migrate.Migrate
+	defaultDataSource = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 )
 
 // ConnectToDB connects to the given DB and stores the handle globally.
+//
+// Note: github.com/lib/pq parses the environment as well. This function will
+// also use the value of PGDATASOURCE if supplied and dataSource is the empty
+// string.
 func ConnectToDB(dataSource string) {
+	if dataSource == "" {
+		dataSource = defaultDataSource
+	}
+
 	var err error
 	globalDB, err = openDBWithStartupWait(dataSource)
 	if err != nil {

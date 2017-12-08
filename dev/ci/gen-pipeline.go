@@ -154,7 +154,7 @@ func main() {
 			)
 		} else {
 			cmds = append(cmds,
-				Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize"),
+				Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
 				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s sourcegraph.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
 			)
 		}
@@ -245,7 +245,7 @@ func main() {
 			panic(err)
 		}
 		for _, cmd := range cmds {
-			if cmd.Name() == "xlang-java" {
+			if cmd.Name() == "xlang-java" || cmd.Name() == "monolith" {
 				continue // xlang-java currently does not build successfully on CI
 			}
 			addDockerImageStep(cmd.Name(), false)
@@ -255,6 +255,10 @@ func main() {
 			Env("VERSION", version),
 			Cmd("./dev/ci/deploy-staging.sh"))
 		pipeline.AddWait()
+
+	case branch == "docker-images/monolith":
+		// Special case monolith to prevent a failing deploy to dogfood/prod
+		addDockerImageStep(branch[14:], true)
 
 	case strings.HasPrefix(branch, "docker-images/"):
 		addDockerImageStep(branch[14:], true)

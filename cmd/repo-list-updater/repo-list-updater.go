@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -9,7 +10,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-var interval, _ = strconv.Atoi(env.Get("REPO_LIST_UPDATE_INTERVAL", "", "interval (in minutes) for checking code hosts (e.g. gitolite) for new repositories"))
+var (
+	interval, _      = strconv.Atoi(env.Get("REPO_LIST_UPDATE_INTERVAL", "", "interval (in minutes) for checking code hosts (e.g. gitolite) for new repositories"))
+	frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
+)
 
 func main() {
 	if interval == 0 {
@@ -20,7 +24,7 @@ func main() {
 	for {
 		time.Sleep(time.Duration(interval) * time.Minute)
 
-		resp, err := http.Post("http://sourcegraph-frontend-internal/.api/repos-update", "", nil)
+		resp, err := http.Post(fmt.Sprintf("http://%s/.api/repos-update", frontendInternal), "", nil)
 		if err != nil {
 			log.Println(err)
 			continue
