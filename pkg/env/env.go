@@ -2,6 +2,7 @@ package env
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/jsonx"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env/config"
 )
@@ -25,10 +26,20 @@ var Config config.Config
 func init() {
 	// Read SOURCEGRAPH_CONFIG to config
 	if rawConfig := os.Getenv("SOURCEGRAPH_CONFIG"); rawConfig != "" {
-		if err := json.Unmarshal([]byte(rawConfig), &Config); err != nil {
-			log15.Warn("failed to unmarshal SOURCEGRAPH_CONFIG", "error", err)
+		if err := jsonxUnmarshal(rawConfig, &Config); err != nil {
+			log.Fatal("failed to unmarshal SOURCEGRAPH_CONFIG: ", err)
 		}
 	}
+}
+
+// jsonxUnmarshal unmarshals the JSON using a fault tolerant parser. If any
+// unrecoverable faults are found an error is returned
+func jsonxUnmarshal(text string, v interface{}) error {
+	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(errs) > 0 {
+		return errors.New("failed to parse json")
+	}
+	return json.Unmarshal(data, v)
 }
 
 func getFromConfig(name string) string {
