@@ -157,7 +157,7 @@ func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken strin
 	var transport http.RoundTripper
 	if cert != "" {
 		certPool := x509.NewCertPool()
-		if ok := certPool.AppendCertsFromPEM([]byte(gheCert)); !ok {
+		if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
 			return nil, errors.New("Invalid certificate value")
 		}
 		transport = &http.Transport{
