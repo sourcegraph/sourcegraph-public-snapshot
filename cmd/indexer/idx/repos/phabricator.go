@@ -39,6 +39,10 @@ type phabRepo struct {
 						Raw        string `json:"raw"`
 						Normalized string `json:"normalized"`
 					} `json:"uri"`
+					Builtin *struct {
+						Protocol   *string `json:"protocol"`
+						Identifier *string `json:"identifier"`
+					} `json:"builtin"`
 				} `json:"fields"`
 			} `json:"uris"`
 		} `json:"uris"`
@@ -147,12 +151,6 @@ func fetchPhabRepos(ctx context.Context, cfg phabConfig, after string) (*phabRep
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
 func updatePhabRepos(ctx context.Context, cfg *phabConfig, repos []*phabRepo) error {
-	url, err := url.Parse(cfg.URL)
-	if err != nil {
-		return err
-	}
-	phabHost := url.Hostname()
-
 	for _, repo := range repos {
 		if repo.Fields.VCS != "git" {
 			continue
@@ -163,8 +161,9 @@ func updatePhabRepos(ctx context.Context, cfg *phabConfig, repos []*phabRepo) er
 		var uri string
 		for _, u := range repo.Attachments.URIs.URIs {
 			// Phabricator may list multiple URIs for a repo, some of which are internal Phabricator resources.
-			// We select the first URI which doesn't start with the phab config hostname.
-			if strings.HasPrefix(u.Fields.URI.Normalized, phabHost+"/") {
+			// We select the first URI which doesn't have `builtin` fields (as those only come from internal Phab
+			// resources).
+			if u.Fields.Builtin != nil && u.Fields.Builtin.Identifier != nil {
 				continue
 			}
 			uri = u.Fields.URI.Normalized
