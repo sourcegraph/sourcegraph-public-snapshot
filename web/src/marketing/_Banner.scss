@@ -1,0 +1,47 @@
+.banner {
+    flex: none;
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #1c2736;
+
+    padding: 1rem;
+    position: relative;
+    border-radius: 0.125rem;
+    margin-top: 0.5rem;
+
+    &__contents {
+        flex: 1 1 auto;
+        display: flex;
+    }
+
+    &__contents-title {
+        font-weight: 500;
+        margin: 0;
+    }
+
+    &__contents-cta {
+        color: $color-primary;
+    }
+
+    &__close-button {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        flex: 0 0 auto;
+    }
+
+}
+
+.theme-light {
+    .banner {
+        background-color: $color-light-bg-2;
+        border: 1px solid $color-light-border;
+
+        &__contents-cta {
+            color: $color-primary;
+        }
+    }
+}

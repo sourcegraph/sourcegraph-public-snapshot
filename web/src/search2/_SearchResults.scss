@@ -2,6 +2,7 @@
 @import './FileMatch';
 @import './ResultContainer';
 @import './SearchAlert';
+@import '../marketing/Banner';
 
 .search-results2 {
     width: 100%;
@@ -9,6 +10,7 @@
 
     &__header {
         display: flex;
+        flex-direction: column;
         justify-content: space-between;
         color: #93a9c8;
         padding-bottom: 0.5rem;
@@ -36,10 +38,11 @@
 .theme-light {
     .search-results2 {
         &__header {
-            &:first-child {
-                border-bottom: 1px solid $color-light-border;
-            }
             color: $color-light-text-2;
+        }
+
+        &__header-border-bottom {
+            border-bottom: 1px solid $color-light-border;
         }
     }
 }

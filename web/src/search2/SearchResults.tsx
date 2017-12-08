@@ -13,6 +13,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { ServerBanner } from '../marketing/ServerBanner'
 import { eventLogger } from '../tracking/eventLogger'
 import { numberWithCommas, pluralize } from '../util/strings'
 import { searchText } from './backend'
@@ -194,23 +195,27 @@ export class SearchResults extends React.Component<Props, State> {
 
         return (
             <div className="search-results2">
-                {this.state.results.length > 0 && (
-                    <small className="search-results2__header">
-                        {this.state.timedout.length > 0 && (
-                            <span className="search-results2__header-notice" title={this.state.timedout.join('\n')}>
-                                <HourglassIcon className="icon-inline" />
-                                {this.state.timedout.length}{' '}
-                                {pluralize('repository', this.state.timedout.length, 'repositories')} timed out (reload
-                                to view)
+                <div className="search-results2__header">
+                    {this.state.results.length > 0 && (
+                        <small>
+                            {this.state.timedout.length > 0 && (
+                                <span className="search-results2__header-notice" title={this.state.timedout.join('\n')}>
+                                    <HourglassIcon className="icon-inline" />
+                                    {this.state.timedout.length}{' '}
+                                    {pluralize('repository', this.state.timedout.length, 'repositories')} timed out
+                                    (reload to view)
+                                </span>
+                            )}
+                            <span className="search-results2__header-stats">
+                                {numberWithCommas(totalResults)}
+                                {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
+                                {this.state.searchDuration! / 1000} seconds
                             </span>
-                        )}
-                        <span className="search-results2__header-stats">
-                            {numberWithCommas(totalResults)}
-                            {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
-                            {this.state.searchDuration! / 1000} seconds
-                        </span>
-                    </small>
-                )}
+                        </small>
+                    )}
+                    {!this.state.alert && !this.state.error && !window.context.onPrem && <ServerBanner />}
+                </div>
+                {this.state.results.length > 0 && <div className="search-results2__header-border-bottom" />}
                 {this.state.cloning.map((repoPath, i) => (
                     <RepoSearchResult repoPath={repoPath} key={i} icon={Loader} />
                 ))}
