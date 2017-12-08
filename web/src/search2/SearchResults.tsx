@@ -213,7 +213,10 @@ export class SearchResults extends React.Component<Props, State> {
                             </span>
                         </small>
                     )}
-                    {!this.state.alert && !this.state.error && !window.context.onPrem && <ServerBanner />}
+                    {!this.state.alert &&
+                        !this.state.error &&
+                        !this.state.loading &&
+                        !window.context.onPrem && <ServerBanner />}
                 </div>
                 {this.state.results.length > 0 && <div className="search-results2__header-border-bottom" />}
                 {this.state.cloning.map((repoPath, i) => (
