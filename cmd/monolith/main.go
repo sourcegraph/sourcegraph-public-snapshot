@@ -63,18 +63,6 @@ var defaultEnv = map[string]string{
 	// * TRACKING_APP_ID can be guessed from LICENSE_KEY https://github.com/sourcegraph/sourcegraph/issues/8377
 }
 
-// setDefaultEnv will set the environment variable if it is not set.
-func setDefaultEnv(k, v string) string {
-	if s, ok := os.LookupEnv(k); ok {
-		return s
-	}
-	err := os.Setenv(k, v)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return v
-}
-
 func main() {
 	log.SetFlags(0)
 
@@ -85,12 +73,28 @@ func main() {
 		if err != nil && !os.IsNotExist(err) {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
 		}
-		// As a convenience, we can store the license on disk in its own file.
-		b, err := ioutil.ReadFile(filepath.Join(configDir, "license.sgl"))
-		if err != nil && !os.IsNotExist(err) {
-			log.Fatal(err)
+
+		// As a convenience some environment variables can stored as a file
+		envFiles := map[string]string{
+			"license.sgl": "LICENSE_KEY",
+			"config.json": "SOURCEGRAPH_CONFIG",
 		}
-		setDefaultEnv("LICENSE_KEY", strings.TrimSpace(string(b)))
+		for name, key := range envFiles {
+			b, err := ioutil.ReadFile(filepath.Join(configDir, name))
+			if err != nil {
+				if !os.IsNotExist(err) {
+					continue
+				}
+				log.Fatal(err)
+			}
+			setDefaultEnv(key, strings.TrimSpace(string(b)))
+		}
+
+		// Convert SOURCEGRAPH_CONFIG into env vars, since it may influence
+		// the rest of this script.
+		if config, ok := os.LookupEnv("SOURCEGRAPH_CONFIG"); ok {
+			setDefaultEnvFromConfig(config)
+		}
 	}
 
 	// Next persistence
