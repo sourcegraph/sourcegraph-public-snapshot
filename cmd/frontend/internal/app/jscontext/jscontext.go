@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -18,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -29,37 +29,26 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-type githubConfig struct {
-	URL string `json:"url"`
-}
-
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
 
 // TrackingAppID is used by the Telligent data pipeline
-var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
+var TrackingAppID = conf.Get().AppID
 
 var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
-var githubConf = env.Get("GITHUB_CONFIG", "", "A JSON array of GitHub host configuration values.")
+var githubConf = conf.Get().GitHub
 
 // githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs.
 // This can be used for the purposes of generating external GitHub enterprise links.
 var githubEnterpriseURLs = make(map[string]string)
 
 func init() {
-	if githubConf != "" {
-		var configs []githubConfig
-		err := json.Unmarshal([]byte(githubConf), &configs)
+	for _, c := range githubConf {
+		gheURL, err := url.Parse(c.URL)
 		if err != nil {
 			log15.Error("error parsing GitHub config", "error", err)
 		}
-		for _, c := range configs {
-			gheURL, err := url.Parse(c.URL)
-			if err != nil {
-				log15.Error("error parsing GitHub config", "error", err)
-			}
-			githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.URL, "/")
-		}
+		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.URL, "/")
 	}
 }
 
@@ -108,7 +97,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	actor := actor.FromContext(req.Context())
 
 	headers := make(map[string]string)
-	headers["x-sourcegraph-client"] = conf.AppURL.String()
+	headers["x-sourcegraph-client"] = globals.AppURL.String()
 	sessionCookie := session.SessionCookie(req)
 	sessionID := httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
 	if sessionCookie != "" {
@@ -155,7 +144,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	license, licenseStatus := license.Get(TrackingAppID)
 
 	return JSContext{
-		AppURL:               conf.AppURL.String(),
+		AppURL:               globals.AppURL.String(),
 		XHRHeaders:           headers,
 		CSRFToken:            csrfToken,
 		UserAgentIsBot:       isBot(req.UserAgent()),

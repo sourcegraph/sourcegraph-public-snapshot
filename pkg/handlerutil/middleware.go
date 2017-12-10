@@ -3,7 +3,6 @@ package handlerutil
 import (
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/gorilla/csrf"
@@ -39,13 +38,13 @@ func NewBasicAuthHandlerWithPassword(handler http.Handler, expectedPassword stri
 // Example:
 // 	<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
 //
-func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
+func NewHandlerWithCSRFProtection(handler http.Handler, secure bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := csrf.Protect(
 			[]byte("e953612ddddcdd5ec60d74e07d40218c"),
 			csrf.CookieName("csrf_token"),
 			csrf.Path("/"),
-			csrf.Secure(conf.AppURL.Scheme == "https"),
+			csrf.Secure(secure),
 		)
 		p(handler).ServeHTTP(w, r)
 	})

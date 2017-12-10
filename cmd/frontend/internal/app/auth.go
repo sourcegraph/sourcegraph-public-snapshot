@@ -13,10 +13,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -37,8 +37,8 @@ func auth0ConfigWithRedirectURL(redirectURL string) *oauth2.Config {
 
 func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	cookie := &oauthCookie{
-		Nonce:       "",                   // the empty default value is not accepted unless impersonating
-		RedirectURL: conf.AppURL.String(), // impersonation does not allow this to be empty
+		Nonce:       "",                      // the empty default value is not accepted unless impersonating
+		RedirectURL: globals.AppURL.String(), // impersonation does not allow this to be empty
 		ReturnTo:    "/",
 		ReturnToNew: "/",
 	}

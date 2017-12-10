@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"log"
 	"os"
-	"unicode"
 
 	"github.com/sourcegraph/jsonx"
 )
@@ -27,7 +25,7 @@ func setDefaultEnv(k, v string) string {
 // the fields present.
 func setDefaultEnvFromConfig(rawConfig string) {
 	env, err := getEnvironFromConfig(rawConfig)
-	log.Fatal("failed to unmarshal SOURCEGRAPH_CONFIG: ", err)
+	log.Fatal("failed to unmarshal config.json: ", err)
 	for k, v := range env {
 		setDefaultEnv(k, v)
 	}
@@ -41,18 +39,6 @@ func getEnvironFromConfig(rawConfig string) (map[string]string, error) {
 	}
 	environ := map[string]string{}
 	for k, v := range raw {
-		// Convert key from camelCase into CAMEL_CASE
-		var b bytes.Buffer
-		inword := false
-		for _, c := range k {
-			if inword && unicode.IsUpper(c) {
-				b.WriteRune('_')
-			}
-			inword = !unicode.IsUpper(c)
-			b.WriteRune(unicode.ToUpper(c))
-		}
-		k = b.String()
-
 		// Convert into an environ value
 		s := string(*v)
 		// The only value we "unwrap" is a string

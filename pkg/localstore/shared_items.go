@@ -12,8 +12,17 @@ import (
 
 	"github.com/oklog/ulid"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
+
+// AppURL is the base URL relative to which share links will be resolved.
+// This must be set by a client of this package before use.
+//
+// HACK: It's a bit of a hack to have this variable, because it is only
+// set in the frontend's main function, and localstore can be called
+// from other services. Currently, we are okay, because localstore.SharedItems
+// is only referenced in the frontend service. Should this ever cease to be
+// the case, we'll need to rethink this variable.
+var AppURL *url.URL
 
 // ErrSharedItemNotFound is an error returned by SharedItems.Get when the
 // requested shared item is not found.
@@ -52,7 +61,7 @@ func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) 
 	}
 	if existingULID != "" {
 		// We already have a shared item for the thread, so do not create another one.
-		return s.ulidToURL(existingULID, item.CommentID), nil
+		return s.ulidToURL(existingULID, item.CommentID)
 	}
 
 	// Generate ULID with entropy from crypto/rand.
@@ -66,7 +75,7 @@ func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) 
 	if err != nil {
 		return nil, err
 	}
-	return s.ulidToURL(ulid.String(), item.CommentID), nil
+	return s.ulidToURL(ulid.String(), item.CommentID)
 }
 
 func (s *sharedItems) Get(ctx context.Context, ulid string) (*sourcegraph.SharedItem, error) {
@@ -105,9 +114,12 @@ func (s *sharedItems) getByThreadID(ctx context.Context, threadID int32, wantPub
 	return ulid, nil
 }
 
-// ulidToURL converts the given ulid and optional comment ID until a shared URL.
-func (s *sharedItems) ulidToURL(ulid string, commentID *int32) *url.URL {
-	shareURL := conf.AppURL.ResolveReference(&url.URL{
+// ulidToURL converts the given ulid and optional comment ID into a shared URL.
+func (s *sharedItems) ulidToURL(ulid string, commentID *int32) (*url.URL, error) {
+	if AppURL == nil {
+		return nil, errors.New("AppURL has not been set, so could not resolve share URL")
+	}
+	shareURL := AppURL.ResolveReference(&url.URL{
 		Path: path.Join("c", ulid),
 	})
 	if commentID != nil {
@@ -116,5 +128,5 @@ func (s *sharedItems) ulidToURL(ulid string, commentID *int32) *url.URL {
 		q.Set("id", fmt.Sprint(*commentID))
 		shareURL.RawQuery = q.Encode()
 	}
-	return shareURL
+	return shareURL, nil
 }

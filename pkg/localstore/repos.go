@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	regexpsyntax "regexp/syntax"
-	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -15,14 +14,14 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
-var autoRepoAdd, _ = strconv.ParseBool(env.Get("AUTO_REPO_ADD", "false", "when true, automatically add/clone reposotiries if they are requested but do not currently exist in the DB"))
-var publicRepoRedirectEnabled, _ = strconv.ParseBool(env.Get("PUBLIC_REPO_REDIRECTS", "true", "when true, automatically redirect public repos that do not exists on this server to sourcegraph.com"))
+var autoRepoAdd = conf.Get().AutoRepoAdd
+var publicRepoRedirectEnabled = !conf.Get().DisablePublicRepoRedirects
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external sourcegraph server.
 type ErrRepoSeeOther struct {

@@ -12,6 +12,7 @@ import (
 	"sync"
 	"syscall"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
@@ -20,8 +21,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var githubClientID = env.Get("GITHUB_CLIENT_ID", "", "client ID for GitHub")
-var githubClientSecret = env.Get("GITHUB_CLIENT_SECRET", "", "client secret for GitHub")
+var githubClientID = conf.Get().GithubClientID
+var githubClientSecret = conf.Get().GithubClientSecret
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 

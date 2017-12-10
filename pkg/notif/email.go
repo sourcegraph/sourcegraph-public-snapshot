@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -15,7 +15,7 @@ var mandrillEnabled bool
 
 var mandrill *gochimp.MandrillAPI
 
-var mandrillKey = env.Get("MANDRILL_KEY", "", "key for sending mails via Mandrill")
+var mandrillKey = conf.Get().MandrillKey
 
 func init() {
 	if mandrillKey != "" {

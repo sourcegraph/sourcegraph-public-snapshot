@@ -8,13 +8,12 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type prefixAndOrgin struct {
@@ -22,16 +21,12 @@ type prefixAndOrgin struct {
 	Origin string
 }
 
-type githubConfig struct {
-	URL string `json:"url"`
-}
-
-var originMapEnv = env.Get("ORIGIN_MAP", "", `space separated list of mappings from repo name prefix to origin url, for example "github.com/!https://github.com/%.git"`)
-var gitoliteHostsEnv = env.Get("GITOLITE_HOSTS", "", `space separated list of mappings from repo name prefix to gitolite hosts"`)
-var githubConf = env.Get("GITHUB_CONFIG", "", "A JSON array of GitHub host configuration values.")
+var originMapEnv = conf.Get().GitOriginMap
+var gitoliteHostsEnv = conf.Get().GitoliteHosts
+var githubConf = conf.Get().GitHub
 
 // DEPRECATED in favor of GITHUB_CONFIG:
-var githubEnterpriseURLEnv = env.Get("GITHUB_ENTERPRISE_URL", "", "URL to a GitHub Enterprise instance. If non-empty, repositories are synced from this instance periodically")
+var githubEnterpriseURLEnv = conf.Get().GithubEnterpriseURL
 
 var originMap []prefixAndOrgin
 var gitoliteHostMap []prefixAndOrgin
@@ -63,19 +58,12 @@ func init() {
 	}
 
 	// Add origin map for GitHub Enterprise instances of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
-	if githubConf != "" {
-		var configs []githubConfig
-		err := json.Unmarshal([]byte(githubConf), &configs)
+	for _, c := range githubConf {
+		gheURL, err := url.Parse(c.URL)
 		if err != nil {
-			log.Fatalf("error parsing GitHub config: %s", err)
+			log.Fatal(err)
 		}
-		for _, c := range configs {
-			gheURL, err := url.Parse(c.URL)
-			if err != nil {
-				log.Fatal(err)
-			}
-			originMap = append(originMap, prefixAndOrgin{Prefix: gheURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", gheURL.Hostname())})
-		}
+		originMap = append(originMap, prefixAndOrgin{Prefix: gheURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", gheURL.Hostname())})
 	}
 
 	addGitHubDefaults()

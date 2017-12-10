@@ -5,7 +5,7 @@ import (
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -17,7 +17,7 @@ func ApplyUserOrgMap(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	for userPattern, orgs := range env.Config.AuthUserOrgMap {
+	for userPattern, orgs := range conf.Get().Auth.UserOrgMap {
 		if userPattern != "*" {
 			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\" is supported)", "userPattern", userPattern)
 			continue

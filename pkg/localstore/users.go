@@ -14,7 +14,7 @@ import (
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -106,7 +106,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 		// adding random calls here.
 
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
-		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, env.Config.AuthUserOrgMap.OrgsForAllUsersToJoin()); err != nil {
+		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, conf.Get().Auth.UserOrgMap.OrgsForAllUsersToJoin()); err != nil {
 			return nil, err
 		}
 	}

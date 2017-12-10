@@ -22,17 +22,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 var (
-	injectedHTMLHeadTop    = env.Get("HTML_HEAD_TOP", "", "HTML to inject at the top of the <head> element on each page")
-	injectedHTMLHeadBottom = env.Get("HTML_HEAD_BOTTOM", "", "HTML to inject at the bottom of the <head> element on each page")
-	injectedHTMLBodyTop    = env.Get("HTML_BODY_TOP", "", "HTML to inject at the top of the <body> element on each page")
-	injectedHTMLBodyBottom = env.Get("HTML_BODY_BOTTOM", "", "HTML to inject at the bottom of the <body> element on each page")
+	injectedHTMLHeadTop    = conf.Get().HTMLHeadTop
+	injectedHTMLHeadBottom = conf.Get().HTMLHeadTop
+	injectedHTMLBodyTop    = conf.Get().HTMLBodyTop
+	injectedHTMLBodyBottom = conf.Get().HTMLBodyTop
 )
 
 type InjectedHTML struct {

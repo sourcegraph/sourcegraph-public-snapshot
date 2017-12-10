@@ -13,7 +13,7 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	maxReposToSearch, _ = strconv.Atoi(env.Get("MAX_REPOS_TO_SEARCH", "30", `The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value 0 means unlimited.`))
+	maxReposToSearch, _ = strconv.Atoi(conf.Get().MaxReposToSearch)
 )
 
 func init() {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,44 +15,39 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-github/github"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/config"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
-
-type githubConfig struct {
-	URL         string   `json:"url"`
-	Token       string   `json:"token"`
-	Certificate string   `json:"certificate"`
-	Repos       []string `json:"repos"`
-}
 
 // configAndClient binds together a GitHub config and the authenticated GitHub client created from that config.
 // This is a KLUDGE to enable public repository cloning with an authenticated client,
 // This data structure would probably be obviated by better separation of responsibility between the
 // different packages involved in indexing.
 type configAndClient struct {
-	config githubConfig
+	config config.GitHubConfig
 	client *github.Client
 }
 
 var (
 	updateIntervalEnv = env.Get("REPOSITORY_SYNC_PERIOD", "60", "The number of seconds to wait in-between syncing repositories with the code host")
 
-	githubConf = env.Get("GITHUB_CONFIG", "", "A JSON array of GitHub host configuration values.")
+	githubConf = conf.Get().GitHub
 
 	// GitHub.com config
 	//
 	// DEPRECATED (use GITHUB_CONFIG instead).
-	ghcAccessToken = env.Get("GITHUB_PERSONAL_ACCESS_TOKEN", "", "personal access token for GitHub.com. All requests will use this token to access the Github API. If set, this will be used to sync private GitHub repositories to Sourcegraph Server.")
+	ghcAccessToken = conf.Get().GithubPersonalAccessToken
 
 	// GitHub Enterprise config
 	//
 	// DEPRECATED (use GITHUB_CONFIG instead).
-	gheURL         = env.Get("GITHUB_ENTERPRISE_URL", "", "URL to a GitHub Enterprise instance. If non-empty, repositories are synced from this instance periodically. Note: this environment variable must be set to the same value in the gitserver process.")
-	gheCert        = env.Get("GITHUB_ENTERPRISE_CERT", "", "TLS certificate of GitHub Enterprise instance, if not part of the standard certificate chain")
-	gheAccessToken = env.Get("GITHUB_ENTERPRISE_TOKEN", "", "Access token used to authenticate GitHub Enterprise API requests")
+	gheURL         = conf.Get().GithubEnterpriseURL
+	gheCert        = conf.Get().GithubEnterpriseCert
+	gheAccessToken = conf.Get().GithubEnterpriseAccessToken
 	gheParsedURL   *url.URL
 )
 
@@ -76,23 +70,17 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 	}
 	updateInterval := time.Duration(updateIntervalParsed) * time.Second
 
-	configs := []githubConfig{}
-	if githubConf != "" {
-		err := json.Unmarshal([]byte(githubConf), &configs)
-		if err != nil {
-			return fmt.Errorf("error processing GitHub config: %s", err)
-		}
-	}
+	configs := githubConf
 
 	// For backwards compatibility, add configs for the deprecated GitHub config env variables.
 	//
 	// TODO: remove.
-	if githubConf == "" {
+	if len(configs) == 0 {
 		if gheURL != "" {
-			configs = append(configs, githubConfig{URL: gheURL, Certificate: gheCert, Token: gheAccessToken})
+			configs = append(configs, config.GitHubConfig{URL: gheURL, Certificate: gheCert, Token: gheAccessToken})
 		}
 		if ghcAccessToken != "" {
-			configs = append(configs, githubConfig{URL: "https://github.com", Token: ghcAccessToken})
+			configs = append(configs, config.GitHubConfig{URL: "https://github.com", Token: ghcAccessToken})
 		}
 	}
 

@@ -5,12 +5,12 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
 	"strings"
 )
 
-var ssoUserHeader = env.Get("SSO_USER_HEADER", "", "Header injected by an SSO proxy to indicate the logged in user")
+var ssoUserHeader = conf.Get().SSOUserHeader
 
 // AuthorizationMiddleware authenticates the user based on the "Authorization" header.
 func AuthorizationMiddleware(next http.Handler) http.Handler {

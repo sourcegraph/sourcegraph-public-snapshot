@@ -10,9 +10,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -21,7 +21,7 @@ import (
 // NewHandler returns a new app handler that uses the provided app
 // router.
 func NewHandler(r *router.Router) http.Handler {
-	session.SetSessionStore(session.MustNewRedisStore(conf.AppURL.Scheme == "https"))
+	session.SetSessionStore(session.MustNewRedisStore(globals.AppURL.Scheme == "https"))
 
 	m := http.NewServeMux()
 
@@ -52,7 +52,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.UI).Handler(ui2.Router())
 
-	signInURL := "https://" + auth0.Domain + "/authorize?response_type=code&client_id=" + auth0.Config.ClientID + "&connection=Sourcegraph&redirect_uri=" + conf.AppURL.String() + "/-/auth0/sign-in"
+	signInURL := "https://" + auth0.Domain + "/authorize?response_type=code&client_id=" + auth0.Config.ClientID + "&connection=Sourcegraph&redirect_uri=" + globals.AppURL.String() + "/-/auth0/sign-in"
 	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, signInURL, http.StatusSeeOther)
 	})))
@@ -85,7 +85,7 @@ func NewHandler(r *router.Router) http.Handler {
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	session.DeleteSession(w, r)
 	if auth0.Domain != "" {
-		http.Redirect(w, r, "https://"+auth0.Domain+"/v2/logout?"+conf.AppURL.String(), http.StatusSeeOther)
+		http.Redirect(w, r, "https://"+auth0.Domain+"/v2/logout?"+globals.AppURL.String(), http.StatusSeeOther)
 	} else {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}

@@ -3,11 +3,11 @@ package actor
 import (
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 var (
-	adminUsernames = env.Get("ADMIN_USERNAMES", "", "space-delimited list of user usernames that should be treated as admins")
+	adminUsernames = conf.Get().AdminUsernames
 	adminUIDs      map[string]struct{}
 )
 

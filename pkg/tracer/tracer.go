@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 
@@ -27,8 +28,8 @@ func (f *tagsAndLogsFilter) RecordSpan(span basictracer.RawSpan) {
 	f.rec.RecordSpan(span)
 }
 
-var lightstepAccessToken = env.Get("LIGHTSTEP_ACCESS_TOKEN", "", "access token for sending traces to LightStep")
-var lightstepProject = env.Get("LIGHTSTEP_PROJECT", "", "the project id on LightStep, only used for creating links to traces")
+var lightstepAccessToken = conf.Get().LightstepAccessToken
+var lightstepProject = conf.Get().LightstepProject
 var lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span tags and logs to LightStep"))
 
 var useJaeger, _ = strconv.ParseBool(env.Get("USE_JAEGER", "", "send traces to Jaeger instead of LightStep"))

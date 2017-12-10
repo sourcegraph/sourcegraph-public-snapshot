@@ -77,7 +77,6 @@ func main() {
 		// As a convenience some environment variables can stored as a file
 		envFiles := map[string]string{
 			"license.sgl": "LICENSE_KEY",
-			"config.json": "SOURCEGRAPH_CONFIG",
 		}
 		for name, key := range envFiles {
 			b, err := ioutil.ReadFile(filepath.Join(configDir, name))
@@ -90,10 +89,9 @@ func main() {
 			setDefaultEnv(key, strings.TrimSpace(string(b)))
 		}
 
-		// Convert SOURCEGRAPH_CONFIG into env vars, since it may influence
-		// the rest of this script.
-		if config, ok := os.LookupEnv("SOURCEGRAPH_CONFIG"); ok {
-			setDefaultEnvFromConfig(config)
+		// Set config
+		if b, err := ioutil.ReadFile(filepath.Join(configDir, "config.json")); err == nil {
+			setDefaultEnvFromConfig(string(b))
 		}
 	}
 

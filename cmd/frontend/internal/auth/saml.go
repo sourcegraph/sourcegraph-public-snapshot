@@ -17,15 +17,15 @@ import (
 
 	"github.com/crewjam/saml/samlsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 var (
 	// SAML App creation vars
-	samlSPCert         = env.Get("SAML_CERT", "", "SAML Service Provider certificate")
-	samlSPKey          = env.Get("SAML_KEY", "", "SAML Service Provider private key")
-	samlIDPMetadataURL = env.Get("SAML_ID_PROVIDER_METADATA_URL", "", "SAML Identity Provider metadata URL")
+	samlSPCert         = conf.Get().SAMLSPCert
+	samlSPKey          = conf.Get().SAMLSPKey
+	samlIDPMetadataURL = conf.Get().SAMLIDProviderMetadataURL
 
 	idpMetadataURL *url.URL
 )

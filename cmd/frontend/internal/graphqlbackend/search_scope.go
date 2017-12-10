@@ -1,12 +1,8 @@
 package graphqlbackend
 
 import (
-	"encoding/json"
-	"log"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type searchScope struct {
@@ -18,11 +14,21 @@ func (s searchScope) Name() string  { return s.JName }
 func (s searchScope) Value() string { return s.JValue }
 
 var (
-	searchScopes     = env.Get("SEARCH_SCOPES", defaultSearchScopesJSON(), `JSON array of predefined search scopes - [{"name":"...","value":"..."}, ...]`)
 	searchScopesList []*searchScope
 )
 
-func defaultSearchScopesJSON() string {
+func init() {
+	if conf.Get().SearchScopes == nil {
+		searchScopesList = defaultSearchScopes()
+	} else {
+		searchScopesList = make([]*searchScope, len(conf.Get().SearchScopes))
+		for i, s := range conf.Get().SearchScopes {
+			searchScopesList[i] = &searchScope{JName: s.Name, JValue: s.Value}
+		}
+	}
+}
+
+func defaultSearchScopes() []*searchScope {
 	var prependScope string
 	var defaultSearchScopes []*searchScope
 	useActiveInactiveRepos := envvar.DeploymentOnPrem() && inactiveRepos != ""
@@ -59,14 +65,7 @@ func defaultSearchScopesJSON() string {
 		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Inactive repos", JValue: "repogroup:inactive"})
 	}
 
-	b, _ := json.Marshal(defaultSearchScopes)
-	return string(b)
-}
-
-func init() {
-	if err := json.Unmarshal([]byte(searchScopes), &searchScopesList); err != nil {
-		log.Fatal("SEARCH_SCOPES:", err)
-	}
+	return defaultSearchScopes
 }
 
 func (r *rootResolver) SearchScopes2() []*searchScope {

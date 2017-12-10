@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -58,7 +58,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
 		pathElements := strings.Split(req.URL.Path[1:], "/")
 		if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
-			host := conf.AppURL.Host
+			host := globals.AppURL.Host
 
 			user := pathElements[0]
 			repo := pathElements[1]

@@ -14,9 +14,10 @@ import (
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
@@ -31,12 +32,12 @@ const (
 )
 
 var (
-	oidcIDProvider   = env.Get("OIDC_OP", "", "OpenID Connect OpenID Provider (OP)")
-	oidcClientID     = env.Get("OIDC_CLIENT_ID", "", "OpenID Connect Client ID")
-	oidcClientSecret = env.Get("OIDC_CLIENT_SECRET", "", "OpenID Connect Client Secret")
-	oidcEmailDomain  = env.Get("OIDC_EMAIL_DOMAIN", "", "OpenID Connect Hosted Domain")
+	oidcIDProvider   = conf.Get().OIDCProvider
+	oidcClientID     = conf.Get().OIDCClientID
+	oidcClientSecret = conf.Get().OIDCClientSecret
+	oidcEmailDomain  = conf.Get().OIDCEmailDomain
 	// 🚨 SECURITY oidcOverrideToken is for testing purposes only
-	oidcOverrideToken = env.Get("OIDC_OVERRIDE_TOKEN", "", "Key to circumvent OIDC middleware")
+	oidcOverrideToken = conf.Get().OIDCOverrideToken
 )
 
 type UserClaims struct {
@@ -278,7 +279,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		}
 		http.Redirect(w, r, redirect, http.StatusFound)
 	})
-	return http.StripPrefix(authURLPrefix, handlerutil.NewHandlerWithCSRFProtection(r)), nil
+	return http.StripPrefix(authURLPrefix, handlerutil.NewHandlerWithCSRFProtection(r, globals.AppURL.Scheme == "https")), nil
 }
 
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.

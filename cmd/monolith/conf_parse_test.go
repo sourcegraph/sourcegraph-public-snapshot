@@ -18,12 +18,12 @@ func TestGetEnvironFromConfig(t *testing.T) {
 }
 `
 	wantM := map[string]string{
-		"KEY1_ID":         "value",
-		"KEY2_TEST":       "5",
-		"KEY3_CAMEL_CASE": "true",
-		"KEY4":            "[1,2]",
-		"KEY5":            `{"foo":"bar"}`,
-		"KEY6":            `[{"foo":"bar"}]`,
+		"key1ID":        "value",
+		"key2Test":      "5",
+		"key3CamelCase": "true",
+		"key4":          "[1,2]",
+		"key5":          `{"foo":"bar"}`,
+		"key6":          `[{"foo":"bar"}]`,
 	}
 	gotM, err := getEnvironFromConfig(rawConfig)
 	if err != nil {

@@ -30,6 +30,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
@@ -54,13 +55,14 @@ var (
 
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
-	appURL     = env.Get("SRC_APP_URL", "http://<http-addr>", "publicly accessible URL to web app (e.g., what you type into your browser)")
-	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
-	corsOrigin = env.Get("CORS_ORIGIN", "", "value for the Access-Control-Allow-Origin header returned with all requests")
+	appURL     = conf.Get().AppURL
+	corsOrigin = conf.Get().CorsOrigin
 
-	tlsCert     = env.Get("TLS_CERT", "", "certificate for TLS")
+	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
+
+	tlsCert     = conf.Get().TLSCert
 	tlsCertFile = env.Get("TLS_CERT_FILE", "", "certificate file for TLS (overrides TLS_CERT)")
-	tlsKey      = env.Get("TLS_KEY", "", "key for TLS")
+	tlsKey      = conf.Get().TLSKey
 	tlsKeyFile  = env.Get("TLS_KEY_FILE", "", "key file for TLS (overrides TLS_KEY)")
 
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
@@ -177,14 +179,15 @@ func Main() error {
 		return err
 	}
 
-	conf.AppURL, err = configureAppURL()
+	globals.AppURL, err = configureAppURL()
 	if err != nil {
 		return err
 	}
+	localstore.AppURL = globals.AppURL
 
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New())))
+	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New()), globals.AppURL.Scheme == "https"))
 	assets.Mount(sm)
 
 	if biLoggerAddr != "" {
@@ -222,12 +225,12 @@ func Main() error {
 	}
 	useTLS := tlsCert != "" && tlsKey != ""
 
-	if useTLS && conf.AppURL.Scheme == "http" {
-		log15.Warn("TLS is enabled but app url scheme is http", "appURL", conf.AppURL)
+	if useTLS && globals.AppURL.Scheme == "http" {
+		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
 	}
 
-	if !useTLS && conf.AppURL.Scheme == "https" {
-		log15.Warn("TLS is disabled but app url scheme is https", "appURL", conf.AppURL)
+	if !useTLS && globals.AppURL.Scheme == "https" {
+		log15.Warn("TLS is disabled but app url scheme is https", "appURL", globals.AppURL)
 	}
 
 	var h http.Handler = sm

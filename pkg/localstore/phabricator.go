@@ -7,7 +7,7 @@ import (
 	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type phabricator struct{}
@@ -18,7 +18,7 @@ type errPhabricatorRepoNotFound struct {
 
 // DEPRECATED: use PHABRICATOR_CONFIG instead
 // This environment variable determines the value to use to backfill an empty 'url' column.
-var phabricatorURL = env.Get("PHABRICATOR_URL", "", "URL for internal Phabricator instance (on-prem)")
+var phabricatorURL = conf.Get().PhabricatorURL
 
 func (p *phabricator) BackfillURL() error {
 	// If this exceeds the timeout (e.g., DB lock), there are probably other problems

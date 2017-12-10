@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 
@@ -18,7 +18,7 @@ import (
 // noGoGetDomains is a list of domains we do not attempt standard go vanity
 // import resolution. Instead we take an educated guess based on the URL how
 // to create the directory struct.
-var noGoGetDomains = strings.Split(env.Get("NO_GO_GET_DOMAINS", "", "list of domains to NOT perform go get on. Separated by ','"), ",")
+var noGoGetDomains = strings.Split(conf.Get().NoGoGetDomains, ",")
 
 func init() {
 	// Clean-up noGoGetDomains to avoid needing to validate them when

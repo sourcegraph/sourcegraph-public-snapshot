@@ -20,9 +20,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
@@ -66,7 +66,7 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 
 	webSessionID := r.URL.Query().Get("web-session-id")
 
-	base := conf.AppURL
+	base := globals.AppURL
 	// use X-App-Url header as base if available to make reverse proxies work
 	if h := r.Header.Get("X-App-Url"); h != "" {
 		if u, err := url.Parse(h); err == nil {
@@ -114,8 +114,8 @@ func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 
 func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
 	cookie := &oauthCookie{
-		Nonce:       "",                   // the empty default value is not accepted unless impersonating
-		RedirectURL: conf.AppURL.String(), // impersonation does not allow this to be empty
+		Nonce:       "",                      // the empty default value is not accepted unless impersonating
+		RedirectURL: globals.AppURL.String(), // impersonation does not allow this to be empty
 		ReturnTo:    "/",
 		ReturnToNew: "/",
 	}
