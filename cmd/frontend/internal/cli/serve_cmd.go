@@ -271,7 +271,10 @@ func Main() error {
 	})(h)
 
 	// The internal HTTP handler does not include the SSO or Basic Auth middleware handlers
-	internalHandler := gcontext.ClearHandler(h)
+	smi := http.NewServeMux()
+	smi.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
+	var internalHandler http.Handler = smi
+	internalHandler = gcontext.ClearHandler(internalHandler)
 
 	// 🚨 SECURITY: Verify user identity if required
 	h, err = auth.NewSSOAuthHandler(context.Background(), h, appURL)

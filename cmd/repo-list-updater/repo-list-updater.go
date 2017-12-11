@@ -1,18 +1,18 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
-	"net/http"
+	"strconv"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 var (
-	interval         = conf.Get().RepoListUpdateInterval
-	frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
+	interval, _ = strconv.Atoi(env.Get("REPO_LIST_UPDATE_INTERVAL", "", "interval (in minutes) for checking code hosts (e.g. gitolite) for new repositories"))
 )
 
 func main() {
@@ -24,12 +24,11 @@ func main() {
 	for {
 		time.Sleep(time.Duration(interval) * time.Minute)
 
-		resp, err := http.Post(fmt.Sprintf("http://%s/.api/repos-update", frontendInternal), "", nil)
+		err := sourcegraph.InternalClient.GitoliteUpdateRepos(context.Background())
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		log.Printf("status: %s", resp.Status)
-		resp.Body.Close()
+		log.Println("updated Gitolite repos")
 	}
 }

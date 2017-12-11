@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/config"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
@@ -188,13 +188,10 @@ func update(ctx context.Context, client *github.Client, repos []*github.Reposito
 			hostPart = "github.com"
 		}
 		uri := fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName())
-		if err := backend.Repos.TryInsertNew(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), ghRepo.GetPrivate()); err != nil {
-			log15.Warn("Could not ensure repository existence", "uri", uri, "error", err)
-			continue
-		}
-		repo, err := backend.Repos.GetByURI(ctx, uri)
+
+		repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), ghRepo.GetPrivate())
 		if err != nil {
-			log15.Warn("Could not ensure repository existence", "uri", uri, "error", err)
+			log15.Warn("Could not ensure repository exists", "uri", uri, "error", err)
 			continue
 		}
 		// Run a fetch kick-off an update or a clone if the repo doesn't already exist.
@@ -203,6 +200,7 @@ func update(ctx context.Context, client *github.Client, repos []*github.Reposito
 		err = cmd.Run(ctx)
 		if err != nil {
 			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+			continue
 		}
 
 		// Every 100 repos we clone, wait a bit to prevent overloading gitserver.

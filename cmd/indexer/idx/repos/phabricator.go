@@ -13,8 +13,8 @@ import (
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 type phabConfig struct {
@@ -173,7 +173,8 @@ func updatePhabRepos(ctx context.Context, cfg *phabConfig, repos []*phabRepo) er
 			// some repos have no attachments
 			return nil
 		}
-		_, err := localstore.Phabricator.CreateIfNotExists(ctx, repo.Fields.Callsign, uri, cfg.URL)
+
+		err := sourcegraph.InternalClient.PhabricatorRepoCreate(ctx, uri, repo.Fields.Callsign, cfg.URL)
 		if err != nil {
 			return err
 		}

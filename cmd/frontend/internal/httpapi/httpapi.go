@@ -31,7 +31,6 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoShield).Handler(traceutil.TraceRoute(handler(serveRepoShield)))
-	m.Get(apirouter.ReposUpdate).Handler(traceutil.TraceRoute(handler(serveReposUpdate)))
 
 	m.Get(apirouter.SubmitForm).Handler(traceutil.TraceRoute(handler(serveSubmitForm)))
 
@@ -74,6 +73,35 @@ func NewHandler(m *mux.Router) http.Handler {
 	h = httpapiauth.AuthorizationMiddleware(h)
 
 	return h
+}
+
+// NewInternalHandler returns a new API handler for internal endpoints that uses
+// the provided API router, which must have been created by httpapi/router.NewInternal.
+//
+// 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
+// This handler is not guarenteed to provide the same authorization checks as
+// public API handlers.
+func NewInternalHandler(m *mux.Router) http.Handler {
+	if m == nil {
+		m = apirouter.New(nil)
+	}
+	m.StrictSlash(true)
+
+	m.Get(apirouter.PhabricatorRepoCreate).Handler(traceutil.TraceRoute(handler(servePhabricatorRepoCreate)))
+	m.Get(apirouter.ReposCreateIfNotExists).Handler(traceutil.TraceRoute(handler(serveReposCreateIfNotExists)))
+	m.Get(apirouter.ReposUpdateIndex).Handler(traceutil.TraceRoute(handler(serveReposUpdateIndex)))
+	m.Get(apirouter.ReposUnindexedDependencies).Handler(traceutil.TraceRoute(handler(serveReposUnindexedDependencies)))
+	m.Get(apirouter.ReposInventoryUncached).Handler(traceutil.TraceRoute(handler(serveReposInventoryUncached)))
+	m.Get(apirouter.ReposGetByURI).Handler(traceutil.TraceRoute(handler(serveReposGetByURI)))
+	m.Get(apirouter.DefsRefreshIndex).Handler(traceutil.TraceRoute(handler(serveDefsRefreshIndex)))
+	m.Get(apirouter.GitoliteUpdateRepos).Handler(traceutil.TraceRoute(handler(serveGitoliteUpdateRepos)))
+
+	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
+		http.Error(w, "no route", http.StatusNotFound)
+	})
+
+	return m
 }
 
 // handler is a wrapper func for API handlers.
@@ -125,7 +153,12 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 		displayErrBody = string(errBody)
 	}
 	http.Error(w, displayErrBody, status)
+	traceSpan := opentracing.SpanFromContext(r.Context())
+	var spanURL string
+	if traceSpan != nil {
+		spanURL = traceutil.SpanURL(traceSpan)
+	}
 	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
 	}
 }

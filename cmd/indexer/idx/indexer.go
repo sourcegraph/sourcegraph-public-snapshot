@@ -11,9 +11,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -118,7 +115,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 	if rev == "" {
 		rev = "HEAD"
 	}
-	repo, err := backend.Repos.GetByURI(ctx, repoName)
+	repo, err := sourcegraph.InternalClient.ReposGetByURI(ctx, repoName)
 	if err != nil {
 		return fmt.Errorf("Repos.GetByURI failed: %s", err)
 	}
@@ -148,11 +145,10 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 		}
 	}
 
-	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
+	inv, err := sourcegraph.InternalClient.ReposGetInventoryUncached(ctx, sourcegraph.RepoRevSpec{
 		Repo:     repo.ID,
 		CommitID: string(headCommit),
 	})
-
 	if err != nil {
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}
@@ -168,7 +164,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 	if !repo.Fork {
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
-		defErr := backend.Defs.RefreshIndex(ctx, repo.URI, string(headCommit))
+		defErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
 			defErr = fmt.Errorf("Defs.RefreshIndex failed: %s", err)
 		}
@@ -176,7 +172,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 		// As part of package indexing, it's fine to index private repositories
 		// because backend.Pkgs.ListPackages is responsible for authentication
 		// checks.
-		pkgErr := backend.Pkgs.RefreshIndex(ctx, repo.URI, string(headCommit))
+		pkgErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
 			pkgErr = fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
 		}
@@ -189,14 +185,10 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 		}
 	}
 
-	if err := localstore.Repos.UpdateIndexedRevision(ctx, repo.ID, string(headCommit)); err != nil {
-		return fmt.Errorf("Repos.UpdateIndexedRevision failed: %s", err)
+	err = sourcegraph.InternalClient.ReposUpdateIndex(ctx, repo.ID, string(headCommit), inv.PrimaryProgrammingLanguage())
+	if err != nil {
+		return err
 	}
-
-	if err := localstore.Repos.UpdateLanguage(ctx, repo.ID, inv.PrimaryProgrammingLanguage()); err != nil {
-		return fmt.Errorf("Repos.UpdateLanguage failed: %s", err)
-	}
-
 	return nil
 }
 
@@ -210,32 +202,18 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID
 	if lang != "Java" {
 		return nil
 	}
-
 	log15.Info("Enqueuing dependencies for repo", "repo", repoID, "lang", lang)
 
-	excludePrivate := !feature.Features.Sep20Auth
-	deps, err := backend.Defs.Dependencies(ctx, repoID, excludePrivate)
+	unfetchedDeps, err := sourcegraph.InternalClient.ReposUnindexedDependencies(ctx, repoID, lang)
 	if err != nil {
-		return fmt.Errorf("Defs.DependencyReferences failed: %s", err)
-	}
-
-	// Filter out already-indexed dependencies
-	var unfetchedDeps []*sourcegraph.DependencyReference
-	for _, dep := range deps {
-		pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, PkgQuery: depReferenceToPkgQuery(lang, dep), Limit: 1})
-		if err != nil {
-			return err
-		}
-		if len(pkgs) == 0 {
-			unfetchedDeps = append(unfetchedDeps, dep)
-		}
+		return err
 	}
 
 	// Resolve and enqueue unindexed dependencies for indexing
 	resolvedDeps := resolveDependencies(ctx, lang, unfetchedDeps)
 	resolvedDepsList := make([]string, 0, len(resolvedDeps))
 	for rawDepRepo, _ := range resolvedDeps {
-		repo, err := backend.Repos.GetByURI(ctx, rawDepRepo)
+		repo, err := sourcegraph.InternalClient.ReposGetByURI(ctx, rawDepRepo)
 		if err != nil {
 			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
 			continue
@@ -245,18 +223,6 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID
 	}
 	log15.Info("Enqueued dependencies for repo", "repo", repoID, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)
 	return nil
-}
-
-// depReferenceToPkgQuery maps from a DependencyReference to a package descriptor query that
-// uniquely identifies the dependency package (typically discarding version information).  The
-// mapping can be different for different languages, so languages are handled case-by-case.
-func depReferenceToPkgQuery(lang string, dep *sourcegraph.DependencyReference) map[string]interface{} {
-	switch lang {
-	case "Java":
-		return map[string]interface{}{"id": dep.DepData["id"]}
-	default:
-		return nil
-	}
 }
 
 // resolveDependencies resolves a list of DependencyReferences to a set of source repository URLs.
