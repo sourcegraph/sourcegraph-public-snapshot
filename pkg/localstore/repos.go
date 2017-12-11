@@ -152,7 +152,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourcegraph.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, uri, description, homepage_url, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, uri, description, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -168,7 +168,6 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 			&repo.ID,
 			&repo.URI,
 			&repo.Description,
-			&repo.HomepageURL,
 			&repo.Language,
 			&repo.Blocked,
 			&repo.Fork,
@@ -535,9 +534,6 @@ func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegrap
 	var updates []*sqlf.Query
 	if ghrepo.Description != repo.Description {
 		updates = append(updates, sqlf.Sprintf("description=%s", ghrepo.Description))
-	}
-	if ghrepo.HomepageURL != repo.HomepageURL {
-		updates = append(updates, sqlf.Sprintf("homepage_url=%s", ghrepo.HomepageURL))
 	}
 	if ghrepo.Private != repo.Private {
 		updates = append(updates, sqlf.Sprintf("private=%v", ghrepo.Private))

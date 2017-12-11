@@ -80,6 +80,8 @@
 // ../../../migrations/1511852763_user_invite_quota.up.sql
 // ../../../migrations/1512437090_update_phabricator_repos.down.sql
 // ../../../migrations/1512437090_update_phabricator_repos.up.sql
+// ../../../migrations/1512998571_repo_nullable.down.sql
+// ../../../migrations/1512998571_repo_nullable.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1747,6 +1749,46 @@ func _1512437090_update_phabricator_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1512998571_repo_nullableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\xcc\xbd\x4e\xc3\x30\x14\x47\xf1\x3d\x4f\xf1\xdf\xba\xd0\xbe\x00\x53\x80\x30\x99\x54\x02\x67\x46\xc6\xbe\xc1\x57\xba\xf8\x56\xfe\xa8\xe9\xdb\x23\x84\x32\x01\xea\x7a\xf4\xd3\x19\x8d\x9d\x9e\x61\xc7\x3b\x33\x21\xd3\x49\x07\xe0\x27\xdd\x1f\xcd\xf2\x34\xe3\xec\x0b\x5e\x26\x8b\x87\xe9\x71\x5c\x8c\xc5\x6e\x77\xf3\x1f\x99\x8f\x16\xf3\x62\xcc\x2f\x10\x68\x75\x4d\xea\xeb\x5b\x76\xc9\xc7\x6b\xbb\x3f\xf4\x76\xbe\x1d\x86\xfd\x1e\x63\x08\x1b\x82\xd6\x48\xb9\x73\x21\x04\xed\x09\x9d\x45\xb0\x3a\x16\x84\x46\xa8\x8a\xac\xbd\x80\x3e\xb9\x54\x4e\xef\xe8\x91\x7d\x84\xcb\xf4\xbd\x49\x4d\xe4\x80\x59\x2b\x81\x13\xb4\x65\x78\x0d\x84\x4e\x70\xd2\xdd\xa5\x20\xba\x33\xa1\x46\x2a\x84\x95\x49\x42\x01\x7d\x9c\xea\xe5\x30\x7c\x05\x00\x00\xff\xff\x74\x88\x85\x6c\x34\x01\x00\x00")
+
+func _1512998571_repo_nullableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1512998571_repo_nullableDownSql,
+		"1512998571_repo_nullable.down.sql",
+	)
+}
+
+func _1512998571_repo_nullableDownSql() (*asset, error) {
+	bytes, err := _1512998571_repo_nullableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1512998571_repo_nullable.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1512998571_repo_nullableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\xe7\x52\x50\x80\x08\x39\xfb\xfb\x84\xfa\xfa\x29\x94\x25\x17\x2b\xb8\x04\xf9\x07\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\xe8\xa0\xab\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x4f\x2a\x4a\xcc\x4b\xce\x40\x55\x6c\xcd\x05\x08\x00\x00\xff\xff\xe3\x25\x39\xce\x60\x00\x00\x00")
+
+func _1512998571_repo_nullableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1512998571_repo_nullableUpSql,
+		"1512998571_repo_nullable.up.sql",
+	)
+}
+
+func _1512998571_repo_nullableUpSql() (*asset, error) {
+	bytes, err := _1512998571_repo_nullableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1512998571_repo_nullable.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1879,6 +1921,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1511852763_user_invite_quota.up.sql":                         _1511852763_user_invite_quotaUpSql,
 	"1512437090_update_phabricator_repos.down.sql":                _1512437090_update_phabricator_reposDownSql,
 	"1512437090_update_phabricator_repos.up.sql":                  _1512437090_update_phabricator_reposUpSql,
+	"1512998571_repo_nullable.down.sql":                           _1512998571_repo_nullableDownSql,
+	"1512998571_repo_nullable.up.sql":                             _1512998571_repo_nullableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2002,6 +2046,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1511852763_user_invite_quota.up.sql":                         &bintree{_1511852763_user_invite_quotaUpSql, map[string]*bintree{}},
 	"1512437090_update_phabricator_repos.down.sql":                &bintree{_1512437090_update_phabricator_reposDownSql, map[string]*bintree{}},
 	"1512437090_update_phabricator_repos.up.sql":                  &bintree{_1512437090_update_phabricator_reposUpSql, map[string]*bintree{}},
+	"1512998571_repo_nullable.down.sql":                           &bintree{_1512998571_repo_nullableDownSql, map[string]*bintree{}},
+	"1512998571_repo_nullable.up.sql":                             &bintree{_1512998571_repo_nullableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

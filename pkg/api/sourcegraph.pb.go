@@ -58,8 +58,6 @@ type Repo struct {
 	URI string `json:"URI,omitempty"`
 	// Description is a brief description of the repository.
 	Description string `json:"Description,omitempty"`
-	// HomepageURL is the URL to the repository's homepage, if any.
-	HomepageURL string `json:"HomepageURL,omitempty"`
 	// Language is the primary programming language used in this repository.
 	Language string `json:"Language,omitempty"`
 	// Blocked is whether this repo has been blocked by an admin (and

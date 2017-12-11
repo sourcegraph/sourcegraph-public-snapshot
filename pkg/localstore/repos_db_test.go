@@ -382,8 +382,8 @@ func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
 	check("one update")
 
 	// Update two fields
-	repoWant.HomepageURL = "http://foo.com"
-	ghrepo.HomepageURL = "http://foo.com"
+	repoWant.Private = true
+	ghrepo.Private = true
 	repoWant.Description = "Test description2"
 	ghrepo.Description = "Test description2"
 	check("two updates")
@@ -391,8 +391,8 @@ func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
 	// Update the other fields we get from GitHub
 	t1 := time.Now().UTC()
 	t2 := t1.Add(time.Second)
-	repoWant.Private = true
-	ghrepo.Private = true
+	repoWant.Private = false
+	ghrepo.Private = false
 	repoWant.UpdatedAt = normaliseTime(&t1)
 	ghrepo.UpdatedAt = normaliseTime(&t1)
 	repoWant.PushedAt = normaliseTime(&t2)

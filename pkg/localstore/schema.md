@@ -166,11 +166,11 @@ Foreign-key constraints:
  owner                   | citext                   | 
  name                    | citext                   | 
  description             | text                     | 
- vcs                     | text                     | not null
+ vcs                     | text                     | 
  http_clone_url          | text                     | 
  ssh_clone_url           | text                     | 
  homepage_url            | text                     | 
- default_branch          | text                     | not null
+ default_branch          | text                     | 
  language                | text                     | 
  blocked                 | boolean                  | 
  deprecated              | boolean                  | 
