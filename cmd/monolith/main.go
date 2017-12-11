@@ -92,6 +92,8 @@ func main() {
 		// Set config
 		if b, err := ioutil.ReadFile(filepath.Join(configDir, "config.json")); err == nil {
 			setDefaultEnvFromConfig(string(b))
+		} else if !os.IsNotExist(err) {
+			log.Fatal("failed to read contents of `config.json`")
 		}
 	}
 
