@@ -10,6 +10,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/lib/pq"
 
@@ -106,7 +107,11 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 		// adding random calls here.
 
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
-		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, conf.Get().Auth.UserOrgMap.OrgsForAllUsersToJoin()); err != nil {
+		orgs, errs := conf.Get().Auth.UserOrgMap.OrgsForAllUsersToJoin()
+		for _, err := range errs {
+			log15.Warn(err.Error())
+		}
+		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, orgs); err != nil {
 			return nil, err
 		}
 	}

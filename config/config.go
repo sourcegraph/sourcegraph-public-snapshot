@@ -1,6 +1,9 @@
+// Package config contains the configuration definition for Sourcegraph Server. This should mirror the configuration
+// definition that's used in the editor. The sole responsibility of this package is to provide that definition and
+// therefore it should avoid any business logic or third-party dependencies.
 package config
 
-import log15 "gopkg.in/inconshreveable/log15.v2"
+import "fmt"
 
 // Config is the app-level configuration for Sourcegraph Server.
 // The external README generator (which lives in the infrastructre repository) uses this struct to
@@ -97,14 +100,17 @@ type SearchScope struct {
 // UserOrgMap is a map from user pattern to a list of org names.
 type UserOrgMap map[string][]string
 
-// OrgsForAllUsersToJoin returns the list of org (names) that all users should be joined to.
-func (m UserOrgMap) OrgsForAllUsersToJoin() []string {
+// OrgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
+// is a list of errors encountered while generating this list. Note that even if errors are returned, the first
+// return value is still valid.
+func (m UserOrgMap) OrgsForAllUsersToJoin() ([]string, []error) {
+	var errors []error
 	for userPattern, orgs := range m {
 		if userPattern != "*" {
-			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\" is supported)", "userPattern", userPattern)
+			errors = append(errors, fmt.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
 			continue
 		}
-		return orgs
+		return orgs, errors
 	}
-	return nil
+	return nil, errors
 }
