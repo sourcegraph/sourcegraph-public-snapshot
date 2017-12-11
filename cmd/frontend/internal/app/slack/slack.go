@@ -209,7 +209,7 @@ func (c *Client) notifyOnComments(
 				Color:      color,
 				Fields: []*Field{
 					&Field{
-						Title: "Org ",
+						Title: "Org",
 						Value: fmt.Sprintf("`%s`\n(%d member(s) notified)", org.Name, len(recipients)),
 						Short: true,
 					},
@@ -233,6 +233,13 @@ func (c *Client) notifyOnComments(
 				Short: true,
 			},
 		}, payload.Attachments[0].Fields...)
+	} else {
+		payload.Attachments[0].Fields = append(payload.Attachments[0].Fields,
+			&Field{
+				Title: "IDs",
+				Value: fmt.Sprintf("Comment ID: %d\nThread ID: %d", comment.ID, thread.ID),
+				Short: true,
+			})
 	}
 
 	if user.AvatarURL() != nil {

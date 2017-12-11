@@ -135,10 +135,9 @@ class EventLogger {
         }
     }
 
-    private decorateEventProperties(platformProperties: any): any {
+    private decorateEventProperties(eventProperties: any): any {
         const props = {
-            ...platformProperties,
-            platform: 'Web',
+            ...eventProperties,
             is_authed: window.context.user ? 'true' : 'false',
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }
