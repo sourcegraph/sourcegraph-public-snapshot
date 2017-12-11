@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -54,6 +52,5 @@ func Start(addr string, extra ...Endpoint) {
 	for _, e := range extra {
 		pp.Handle(e.Path, e.Handler)
 	}
-	handler := handlerutil.NewBasicAuthHandler(pp)
-	log.Println("warning: could not start debug HTTP server:", http.ListenAndServe(addr, handler))
+	log.Println("warning: could not start debug HTTP server:", http.ListenAndServe(addr, pp))
 }
