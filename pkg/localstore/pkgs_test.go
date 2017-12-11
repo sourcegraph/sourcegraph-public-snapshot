@@ -216,7 +216,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 
 	for repo, pks := range repoToPkgs {
 		if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id, vcs, default_branch) VALUES ($1, '', 'master')`, repo); err != nil {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id) VALUES ($1)`, repo); err != nil {
 				return err
 			}
 			if err := Pkgs.update(ctx, tx, repo, "go", pks); err != nil {

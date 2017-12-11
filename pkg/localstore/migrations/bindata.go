@@ -82,6 +82,8 @@
 // ../../../migrations/1512437090_update_phabricator_repos.up.sql
 // ../../../migrations/1512998571_repo_nullable.down.sql
 // ../../../migrations/1512998571_repo_nullable.up.sql
+// ../../../migrations/1513000124_rm_repos_cols.down.sql
+// ../../../migrations/1513000124_rm_repos_cols.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1789,6 +1791,46 @@ func _1512998571_repo_nullableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1513000124_rm_repos_colsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xca\x4d\x0e\x82\x30\x10\xc5\xf1\x3d\xa7\x98\x03\x78\x03\x57\x28\xec\x50\x13\x83\xeb\x66\x28\xa3\x6d\xd2\x76\x9a\xe9\x80\x1f\xa7\x37\x71\xa7\x01\x97\xef\xfd\x7f\x75\xd7\xb7\x67\xe8\xeb\x5d\xd7\x82\x50\xe6\x0a\xa0\x6e\x1a\xd8\x9f\xba\xcb\xe1\x08\xb3\x2d\xa0\xf4\xd0\xcd\xf7\xed\x54\xb3\xb1\x81\x13\x99\x49\xc2\x92\x28\xc5\xfd\x07\x8e\x23\x65\xbc\xad\xf6\x91\xae\x38\x05\x35\x83\x60\xb2\x6e\x59\x64\x21\x8b\x4a\x23\x0c\xcc\x81\x30\xfd\x80\xe8\x45\x58\x56\xe2\x6c\x8b\x29\xcf\x64\x69\x34\xa8\xa0\x3e\x52\x51\x8c\x19\xee\x5e\xdd\x67\xc2\x8b\x13\x6d\xab\x77\x00\x00\x00\xff\xff\x9e\x7c\xb6\xc5\x20\x01\x00\x00")
+
+func _1513000124_rm_repos_colsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513000124_rm_repos_colsDownSql,
+		"1513000124_rm_repos_cols.down.sql",
+	)
+}
+
+func _1513000124_rm_repos_colsDownSql() (*asset, error) {
+	bytes, err := _1513000124_rm_repos_colsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513000124_rm_repos_cols.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1513000124_rm_repos_colsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xc9\x31\x0e\xc2\x30\x0c\x00\xc0\xbd\xaf\xf0\x03\xf8\x01\x53\x81\x6e\x81\xa2\xaa\xcc\x91\x71\x0c\x41\x4a\x93\xc8\x76\x2b\xf1\x7b\xf6\x00\xeb\x5d\xef\xe6\x61\x82\xb9\x3f\xb8\x01\x84\x6b\xe9\x00\x4e\xd3\x78\x85\xe3\xe8\x6e\xe7\x0b\x6c\xa4\xbb\x86\xa2\x59\xf5\x94\x4a\x66\xbf\x4a\x6a\x57\x35\xfe\xcf\x58\x16\xae\xf8\xfc\x79\x81\x1f\xb8\x26\xf3\x77\xc1\x4c\xf1\x7b\xab\x30\xa1\x71\x68\x67\x79\x89\x14\x69\x75\x23\xf5\xfa\xce\xc4\xc1\xa3\xed\xbb\x4f\x00\x00\x00\xff\xff\x87\x12\x2f\xb1\xe6\x00\x00\x00")
+
+func _1513000124_rm_repos_colsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513000124_rm_repos_colsUpSql,
+		"1513000124_rm_repos_cols.up.sql",
+	)
+}
+
+func _1513000124_rm_repos_colsUpSql() (*asset, error) {
+	bytes, err := _1513000124_rm_repos_colsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513000124_rm_repos_cols.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1923,6 +1965,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1512437090_update_phabricator_repos.up.sql":                  _1512437090_update_phabricator_reposUpSql,
 	"1512998571_repo_nullable.down.sql":                           _1512998571_repo_nullableDownSql,
 	"1512998571_repo_nullable.up.sql":                             _1512998571_repo_nullableUpSql,
+	"1513000124_rm_repos_cols.down.sql":                           _1513000124_rm_repos_colsDownSql,
+	"1513000124_rm_repos_cols.up.sql":                             _1513000124_rm_repos_colsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2048,6 +2092,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1512437090_update_phabricator_repos.up.sql":                  &bintree{_1512437090_update_phabricator_reposUpSql, map[string]*bintree{}},
 	"1512998571_repo_nullable.down.sql":                           &bintree{_1512998571_repo_nullableDownSql, map[string]*bintree{}},
 	"1512998571_repo_nullable.up.sql":                             &bintree{_1512998571_repo_nullableUpSql, map[string]*bintree{}},
+	"1513000124_rm_repos_cols.down.sql":                           &bintree{_1513000124_rm_repos_colsDownSql, map[string]*bintree{}},
+	"1513000124_rm_repos_cols.up.sql":                             &bintree{_1513000124_rm_repos_colsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

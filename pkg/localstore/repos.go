@@ -569,7 +569,7 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev str
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, vcs, default_branch, homepage_url, language, blocked) VALUES ($1, $2, $3, $4, $5, '', '', '', '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, language, blocked) VALUES ($1, $2, $3, $4, $5, '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {

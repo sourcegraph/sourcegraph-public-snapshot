@@ -166,21 +166,13 @@ Foreign-key constraints:
  owner                   | citext                   | 
  name                    | citext                   | 
  description             | text                     | 
- vcs                     | text                     | 
- http_clone_url          | text                     | 
- ssh_clone_url           | text                     | 
- homepage_url            | text                     | 
- default_branch          | text                     | 
  language                | text                     | 
  blocked                 | boolean                  | 
- deprecated              | boolean                  | 
  fork                    | boolean                  | 
- mirror                  | boolean                  | 
  private                 | boolean                  | 
  created_at              | timestamp with time zone | 
  updated_at              | timestamp with time zone | 
  pushed_at               | timestamp with time zone | 
- vcs_synced_at           | timestamp with time zone | 
  indexed_revision        | text                     | 
  freeze_indexed_revision | boolean                  | 
  origin_repo_id          | text                     | 
