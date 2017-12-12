@@ -35,37 +35,32 @@ var defaultEnv = map[string]string{
 	// We adjust behaviour for on-prem vs prod
 	"DEPLOYMENT_ON_PREM": "true",
 
-	// TODO environment variables we need to support
+	// TODO environment variables we need to support related to codehosts
 	// GITHUB_CONFIG
-	// GITHUB_PERSONAL_ACCESS_TOKEN   deprecated??
 	// GITOLITE_HOSTS
 	// ORIGIN_MAP
+	// PUBLIC_REPO_REDIRECTS
+	"AUTO_REPO_ADD": "true", // false in server-gen, but until we have a nice way to setup repo cloning this is best
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher to ensure this value isn't larger than the volume for
 	// CACHE_DIR.
 	"SEARCHER_CACHE_SIZE_MB": 100000,
 
-	// TODO this is true in sourcegraph-server-gen, but seems uneeded in
-	// practice? It causes requests to be logged in github-proxy
-	"LOG_REQUESTS": "true",
-
 	// Enable our repo-list-updater to run every minute. Currently this is
 	// only used to sync from gitolite.
 	"REPO_LIST_UPDATE_INTERVAL": "1",
 
-	// TODO wizard which may avoid setting this. This is setup to auto-clone
-	// github using our github dev secrets.
+	// Env vars for higher rate limits to api.github.com
+	// https://github.com/sourcegraph/sourcegraph/issues/8459
 	//"GITHUB_BASE_URL":       "http://127.0.0.1:3180",
 	//"GITHUB_CLIENT_ID":      "6f2a43bd8877ff5fd1d5",
 	//"GITHUB_CLIENT_SECRET":  "c5ff37d80e3736924cbbdf2922a50cac31963e43",
-	//"PUBLIC_REPO_REDIRECTS": "false",
-	"AUTO_REPO_ADD": "true", // false in server-gen, but until we have a nice way to setup repo cloning this is best
 
 	// TODO other bits
-	// * should we guess SRC_APP_URL?
-	// * Do we need BI_LOGGER?
-	// * SRC_LOG_LEVEL and DEBUG
+	// * Guess SRC_APP_URL based on hostname
+	// * Do we need BI_LOGGER? https://github.com/sourcegraph/sourcegraph/issues/8457
+	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 	// * TRACKING_APP_ID can be guessed from LICENSE_KEY https://github.com/sourcegraph/sourcegraph/issues/8377
 }
 
