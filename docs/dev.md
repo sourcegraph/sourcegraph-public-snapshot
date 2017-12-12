@@ -26,7 +26,7 @@ For Linux users or if you don't want to use Homebrew on macOS.
 This is a streamlined setup for Mac machines.
 
 1. Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
-2. Install [Homebrew](http://homebrew.sh).
+2. Install [Homebrew](http://brew.sh).
 3. Install Go, Node, PostgreSQL, Redis, Git, Python.
 
     ```
