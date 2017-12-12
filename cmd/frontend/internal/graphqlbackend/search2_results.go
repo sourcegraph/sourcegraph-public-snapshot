@@ -161,7 +161,7 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 	} else {
 		resultTypes, _ = r.combinedQuery.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file"} // TODO(sqs)
+			resultTypes = []string{"file"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
