@@ -45,7 +45,7 @@ var defaultEnv = map[string]string{
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher to ensure this value isn't larger than the volume for
 	// CACHE_DIR.
-	"SEARCHER_CACHE_SIZE_MB": 100000,
+	"SEARCHER_CACHE_SIZE_MB": "100000",
 
 	// Enable our repo-list-updater to run every minute. Currently this is
 	// only used to sync from gitolite.
