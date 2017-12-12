@@ -80,7 +80,10 @@ func main() {
 		}
 		for name, key := range envFiles {
 			b, err := ioutil.ReadFile(filepath.Join(configDir, name))
-			if err != nil && !os.IsNotExist(err) {
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
 				log.Fatalf("could not read file %q into environment variable %s: %s", name, key, err)
 			}
 			setDefaultEnv(key, strings.TrimSpace(string(b)))
