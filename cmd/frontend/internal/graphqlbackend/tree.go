@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
@@ -32,10 +33,11 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 
 	entries, err := vcsrepo.ReadDir(ctx, vcs.CommitID(commit.CommitID), path, recursive)
 	if err != nil {
-		if err.Error() == "file does not exist" { // TODO proper error value
-			return nil, nil
+		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
+			// empty tree is not an error
+		} else {
+			return nil, err
 		}
-		return nil, err
 	}
 
 	return &treeResolver{

@@ -76,7 +76,7 @@ func parseRepositoryRevisions(repoAndOptionalRev string) (string, []revspecOrRef
 	return repo, revs
 }
 
-func (r *repositoryRevisions) String() string {
+func (r repositoryRevisions) String() string {
 	if len(r.revs) == 0 {
 		return r.repo.URI
 	}

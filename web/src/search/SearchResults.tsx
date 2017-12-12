@@ -1,4 +1,5 @@
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
+import DocumentIcon from '@sourcegraph/icons/lib/Document'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -228,7 +229,7 @@ export class SearchResults extends React.Component<Props, State> {
         let totalMatches = 0
         let totalResults = 0
         for (const result of this.state.results) {
-            totalResults += resultItemsCount(result)
+            totalResults += resultItemsCount(result) || 1 // 1 to count "empty" results like type:path results
         }
 
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
@@ -314,10 +315,11 @@ export class SearchResults extends React.Component<Props, State> {
     private renderResult(key: number, result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
+                console.log(result)
                 return (
                     <FileMatch
                         key={key}
-                        icon={RepoIcon}
+                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepoIcon : DocumentIcon}
                         result={result}
                         onSelect={this.logEvent}
                         expanded={false}

@@ -457,7 +457,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.combinedQuery.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file"}
+			resultTypes = []string{"file", "path"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
@@ -475,6 +475,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			}
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
 				return searchRepos(ctx, &args)
+			})
+		case "path":
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchPathsInRepos(ctx, args.repos, r.combinedQuery)
 			})
 		case "diff":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {

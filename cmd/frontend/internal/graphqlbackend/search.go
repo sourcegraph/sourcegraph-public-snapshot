@@ -428,7 +428,7 @@ func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisio
 		}
 
 		go func(repoRev repositoryRevisions) {
-			fileResults, err := searchTreeForRepo(ctx, matcher, repoRev.repo.URI, repoRev.revSpecsOrDefaultBranch()[0], limit)
+			fileResults, err := searchTreeForRepo(ctx, matcher, repoRev, limit, true)
 			if err != nil {
 				done <- err
 				return
@@ -450,23 +450,19 @@ func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisio
 	return res, nil
 }
 
-var mockSearchFilesForRepo func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error)
+var mockSearchFilesForRepo func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchResultResolver, error)
 
 // searchTreeForRepo searches the specified repository for files whose name matches
 // the matcher
-func searchTreeForRepo(ctx context.Context, matcher matcher, repoURI, rev string, limit int) (res []*searchResultResolver, err error) {
+func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) (res []*searchResultResolver, err error) {
 	if mockSearchFilesForRepo != nil {
-		return mockSearchFilesForRepo(matcher, repoURI, limit)
+		return mockSearchFilesForRepo(matcher, repoRevs, limit, includeDirs)
 	}
 
-	repo, err := backend.Repos.GetByURI(ctx, repoURI)
-	if err != nil {
-		return nil, err
-	}
-	repoResolver := &repositoryResolver{repo: repo}
+	repoResolver := &repositoryResolver{repo: repoRevs.repo}
 	commitStateResolver, err := repoResolver.Commit(ctx, &struct {
 		Rev string
-	}{Rev: rev})
+	}{Rev: repoRevs.revSpecsOrDefaultBranch()[0]})
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +472,9 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoURI, rev string
 	}
 	commitResolver := commitStateResolver.Commit()
 	if commitResolver == nil {
-		return nil, fmt.Errorf("unable to resolve commit %q for repo %s", rev, repoURI)
+		// TODO(sqs): this means the repository is empty or the revision did not resolve - in either case,
+		// there no tree entries here, but maybe we should handle this better
+		return nil, nil
 	}
 	treeResolver, err := commitResolver.Tree(ctx, &struct {
 		Path      string
@@ -495,6 +493,16 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoURI, rev string
 
 	scorer := newScorer(scorerQuery)
 	for _, fileResolver := range treeResolver.Entries() {
+		if !includeDirs {
+			isDir, err := fileResolver.IsDirectory(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if isDir {
+				continue
+			}
+		}
+
 		score := scorer.calcScore(fileResolver)
 		if score <= 0 && matcher.scorerQuery != "" && matcher.match(fileResolver.path) {
 			score = 1 // minimum to ensure everything included by match.match is included
