@@ -276,6 +276,20 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	c.initOnce.Do(func() {
 		didWeInit = true
 
+		// SECURITY NOTE: We assume that the caller to the LSP client
+		// proxy has already checked the user's permissions to read
+		// this repo, so we don't need to check permissions again
+		// here.
+		//
+		// Do this check early in case the rev does not exist / the repo is no
+		// longer cloneable.
+		var err error
+		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootURI.CloneURL(), id.rootURI.Rev())
+		if err != nil {
+			c.initErr = err
+			return
+		}
+
 		mode := id.mode
 		if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode {
 			repo := id.rootURI.Repo()
@@ -298,18 +312,6 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
 		}
 		c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
-
-		// SECURITY NOTE: We assume that the caller to the LSP client
-		// proxy has already checked the user's permissions to read
-		// this repo, so we don't need to check permissions again
-		// here.
-		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootURI.CloneURL(), id.rootURI.Rev())
-		if err != nil {
-			_ = c.conn.Close()
-			_ = rwc.Close()
-			c.initErr = err
-			return
-		}
 
 		if err := c.lspInitialize(ctx); err != nil {
 			// Ignore cleanup errors (best effort).
