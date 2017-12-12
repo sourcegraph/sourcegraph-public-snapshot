@@ -27,16 +27,10 @@ This is a streamlined setup for Mac machines.
 
 1. Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
 2. Install [Homebrew](http://brew.sh).
-3. Install Go, Node, PostgreSQL, Redis, Git, Python.
+3. Install Go, Node, PostgreSQL, Redis, Git.
 
     ```
-    brew install go node redis postgresql git python gnu-sed
-    ```
-
-4. Install virtualenv.
-
-    ```
-    pip install virtualenv
+    brew install go node redis postgresql git gnu-sed
     ```
 
 5. Configure PostgreSQL and Redis to start automatically
