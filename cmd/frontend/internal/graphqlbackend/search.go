@@ -57,7 +57,7 @@ func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisio
 		}
 
 		go func(repoRev repositoryRevisions) {
-			fileResults, err := searchTreeForRepoURI(ctx, matcher, repoRev.repo, repoRev.revSpecsOrDefaultBranch()[0], limit)
+			fileResults, err := searchTreeForRepo(ctx, matcher, repoRev.repo, repoRev.revSpecsOrDefaultBranch()[0], limit)
 			if err != nil {
 				done <- err
 				return
@@ -77,13 +77,13 @@ func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisio
 	return res, nil
 }
 
-var mockSearchFilesForRepoURI func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error)
+var mockSearchFilesForRepo func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error)
 
-// searchTreeForRepoURI searches the specified repository for files whose name matches
+// searchTreeForRepo searches the specified repository for files whose name matches
 // the matcher
-func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoPath, rev string, limit int) (res []*searchResultResolver, err error) {
-	if mockSearchFilesForRepoURI != nil {
-		return mockSearchFilesForRepoURI(matcher, repoPath, limit)
+func searchTreeForRepo(ctx context.Context, matcher matcher, repoPath, rev string, limit int) (res []*searchResultResolver, err error) {
+	if mockSearchFilesForRepo != nil {
+		return mockSearchFilesForRepo(matcher, repoPath, limit)
 	}
 
 	repo, err := backend.Repos.GetByURI(ctx, repoPath)
