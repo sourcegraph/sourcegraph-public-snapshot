@@ -33,6 +33,8 @@ This is a streamlined setup for Mac machines.
     brew install go node redis postgresql git gnu-sed
     ```
 
+4. Set up your [Go Workspace](https://golang.org/doc/code.html#Workspaces)
+
 5. Configure PostgreSQL and Redis to start automatically
 
     ```
@@ -149,7 +151,7 @@ To run tests within a directory (and recursively within its
 subdirectories):
 
 ```
-go test ./app/...
+go test ./cmd/...
 ```
 
 To run a specific package's tests:
