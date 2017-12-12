@@ -138,6 +138,25 @@ describe.skip('e2e test suite', () => {
         )
     }
 
+    describe('Theme switcher', () => {
+        it('changes the theme when toggle is clicked', async () => {
+            await chrome.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
+            await chrome.wait('.theme')
+            const currentThemes = await chrome.evaluate<string[]>(() =>
+                Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
+            )
+            assert.equal(currentThemes.length, 1, 'Expected 1 theme')
+            const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
+            await chrome.click('.theme-switcher')
+            assert.deepEqual(
+                await chrome.evaluate<string>(() =>
+                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
+                ),
+                [expectedTheme]
+            )
+        })
+    })
+
     describe('Repository component', () => {
         const blobTableSelector = '.repository__viewer > code > table > tbody'
         const clickToken = async (line: number, spanOffset: number): Promise<void> => {
