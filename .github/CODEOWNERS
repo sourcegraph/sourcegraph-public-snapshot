@@ -2,8 +2,9 @@
 # Each line is a file pattern followed by one or more owners.
 # https://help.github.com/articles/about-codeowners/
 
-web/ @felixfbecker
-searcher/ @keegancsmith
-xlang/ @keegancsmith
 cmd/frontend/internal/graphqlbackend @nicksnyder
 migrations/ @nicksnyder
+monolith/ @keegancsmith
+searcher/ @keegancsmith
+web/ @felixfbecker
+xlang/ @keegancsmith
