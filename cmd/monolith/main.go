@@ -36,7 +36,6 @@ var defaultEnv = map[string]string{
 	"DEPLOYMENT_ON_PREM": "true",
 
 	// TODO environment variables we need to support
-	// CACHE_DIR
 	// GITHUB_CONFIG
 	// GITHUB_PERSONAL_ACCESS_TOKEN   deprecated??
 	// GITOLITE_HOSTS
@@ -104,6 +103,7 @@ func main() {
 	{
 		dataDir := setDefaultEnv("DATA_DIR", "/var/opt/sourcegraph")
 		setDefaultEnv("SRC_REPOS_DIR", filepath.Join(dataDir, "repos"))
+		setDefaultEnv("CACHE_DIR", filepath.Join(dataDir, "cache"))
 	}
 
 	// Special case some convenience environment variables
