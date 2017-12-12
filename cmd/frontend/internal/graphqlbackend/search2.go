@@ -318,11 +318,6 @@ func (r *searchResolver2) resolveFiles(ctx context.Context, limit int) ([]*searc
 		return nil, nil
 	}
 
-	repos := make([]string, len(repoRevisions))
-	for i, repoRevision := range repoRevisions {
-		repos[i] = repoRevision.repo
-	}
-
 	includePatterns, excludePatterns := r.combinedQuery.RegexpPatterns(searchquery.FieldFile)
 	excludePattern := unionRegExps(excludePatterns)
 	pathOptions := pathmatch.CompileOptions{
@@ -352,7 +347,7 @@ func (r *searchResolver2) resolveFiles(ctx context.Context, limit int) ([]*searc
 		scorerQuery: scorerQuery,
 	}
 
-	return searchTree(ctx, matcher, repos, limit)
+	return searchTree(ctx, matcher, repoRevisions, limit)
 }
 
 func unionRegExps(patterns []string) string {

@@ -45,16 +45,19 @@ type matcher struct {
 }
 
 // searchTree searches the specified repositories for files and dirs whose name matches the matcher.
-func searchTree(ctx context.Context, matcher matcher, repoURIs []string, limit int) ([]*searchResultResolver, error) {
+func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisions, limit int) ([]*searchResultResolver, error) {
 	var (
 		resMu sync.Mutex
 		res   []*searchResultResolver
 	)
-	done := make(chan error, len(repoURIs))
-	for _, repoURI := range repoURIs {
-		repoURI := repoURI
-		go func() {
-			fileResults, err := searchTreeForRepoURI(ctx, matcher, repoURI, limit)
+	done := make(chan error, len(repos))
+	for _, repoRev := range repos {
+		if len(repoRev.revs) >= 2 {
+			return nil, errMultipleRevsNotSupported
+		}
+
+		go func(repoRev repositoryRevisions) {
+			fileResults, err := searchTreeForRepoURI(ctx, matcher, repoRev.repo, repoRev.revSpecsOrDefaultBranch()[0], limit)
 			if err != nil {
 				done <- err
 				return
@@ -63,9 +66,9 @@ func searchTree(ctx context.Context, matcher matcher, repoURIs []string, limit i
 			res = append(res, fileResults...)
 			resMu.Unlock()
 			done <- nil
-		}()
+		}(*repoRev)
 	}
-	for range repoURIs {
+	for range repos {
 		if err := <-done; err != nil {
 			// TODO collect error
 			log.Println("searchFiles error: " + err.Error())
@@ -78,19 +81,19 @@ var mockSearchFilesForRepoURI func(matcher matcher, repoURI string, limit int) (
 
 // searchTreeForRepoURI searches the specified repository for files whose name matches
 // the matcher
-func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoURI string, limit int) (res []*searchResultResolver, err error) {
+func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoPath, rev string, limit int) (res []*searchResultResolver, err error) {
 	if mockSearchFilesForRepoURI != nil {
-		return mockSearchFilesForRepoURI(matcher, repoURI, limit)
+		return mockSearchFilesForRepoURI(matcher, repoPath, limit)
 	}
 
-	repo, err := backend.Repos.GetByURI(ctx, repoURI)
+	repo, err := backend.Repos.GetByURI(ctx, repoPath)
 	if err != nil {
 		return nil, err
 	}
 	repoResolver := &repositoryResolver{repo: repo}
 	commitStateResolver, err := repoResolver.Commit(ctx, &struct {
 		Rev string
-	}{Rev: ""})
+	}{Rev: rev})
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +103,7 @@ func searchTreeForRepoURI(ctx context.Context, matcher matcher, repoURI string, 
 	}
 	commitResolver := commitStateResolver.Commit()
 	if commitResolver == nil {
-		return nil, fmt.Errorf("unable to resolve commit for repo %s", repoURI)
+		return nil, fmt.Errorf("unable to resolve commit for repo %s", repoPath)
 	}
 	treeResolver, err := commitResolver.Tree(ctx, &struct {
 		Path      string
