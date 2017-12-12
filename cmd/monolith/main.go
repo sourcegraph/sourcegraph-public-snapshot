@@ -40,7 +40,11 @@ var defaultEnv = map[string]string{
 	// GITHUB_PERSONAL_ACCESS_TOKEN   deprecated??
 	// GITOLITE_HOSTS
 	// ORIGIN_MAP
-	// SEARCHER_CACHE_SIZE_MB
+
+	// Limit our cache size to 100GB, same as prod. We should probably update
+	// searcher to ensure this value isn't larger than the volume for
+	// CACHE_DIR.
+	"SEARCHER_CACHE_SIZE_MB": 100000,
 
 	// TODO this is true in sourcegraph-server-gen, but seems uneeded in
 	// practice? It causes requests to be logged in github-proxy
