@@ -40,8 +40,8 @@ export class NewOrg extends React.Component<Props, State> {
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
 
-    constructor() {
-        super()
+    constructor(props: Props) {
+        super(props)
         this.state = {
             loading: false,
             name: '',

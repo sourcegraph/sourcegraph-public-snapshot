@@ -21,8 +21,8 @@ const isGQLUser = (val: any): val is GQL.IUser => val && typeof val === 'object'
 export class NavLinks extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
-    constructor() {
-        super()
+    constructor(props: Props) {
+        super(props)
         this.state = {
             user: window.context.user,
         }

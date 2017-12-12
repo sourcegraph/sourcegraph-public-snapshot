@@ -24,8 +24,8 @@ interface State {
 export class UserAvatar extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
-    constructor() {
-        super()
+    constructor(props: Props) {
+        super(props)
         this.state = {
             user: null,
         }

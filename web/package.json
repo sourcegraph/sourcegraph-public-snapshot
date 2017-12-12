@@ -47,10 +47,10 @@
     "@types/marked": "^0.0.28",
     "@types/mocha": "^2.2.43",
     "@types/node": "^8.0.28",
-    "@types/react": "^15.6.6",
-    "@types/react-dom": "^16.0.2",
-    "@types/react-router": "^4.0.16",
-    "@types/react-router-dom": "^4.0.8",
+    "@types/react": "^16.0.29",
+    "@types/react-dom": "^16.0.3",
+    "@types/react-router": "^4.0.19",
+    "@types/react-router-dom": "^4.2.3",
     "@types/strip-json-comments": "0.0.30",
     "@types/webpack": "^3.0.12",
     "babel-core": "^6.26.0",
@@ -84,11 +84,9 @@
     "ts-node": "^3.3.0",
     "tslint": "^5.8.0",
     "tslint-language-service": "^0.9.6",
-    "typescript": "^2.6.1",
-    "typescript-formatter": "^6.0.0",
+    "typescript": "^2.6.2",
     "webpack": "^3.5.6",
-    "webpack-bundle-analyzer": "^2.9.0",
-    "webpack-shell-plugin": "^0.5.0"
+    "webpack-bundle-analyzer": "^2.9.0"
   },
   "dependencies": {
     "@sourcegraph/icons": "^1.9.0",

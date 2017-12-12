@@ -38,8 +38,8 @@ interface State {
 export class SettingsSidebar extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
-    constructor() {
-        super()
+    constructor(props: Props) {
+        super(props)
         this.state = {
             editorBeta: false,
         }

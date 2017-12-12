@@ -17,8 +17,8 @@ interface State {
 export class SurveyToast extends React.Component<{}, State> {
     private subscriptions = new Subscription()
 
-    constructor() {
-        super()
+    constructor(props: {}) {
+        super(props)
         this.state = {
             user: null,
             visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount === 3,

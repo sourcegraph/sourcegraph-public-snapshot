@@ -33,7 +33,7 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
-        super()
+        super(props)
         this.state = {
             visible: false,
         }
