@@ -28,13 +28,11 @@ recommended in order to use the persisted volumes.)
 
 ## Run the Docker image
 
-The following command runs Sourcegraph Server with the temporary preview
-license.
+The following command runs Sourcegraph Server.
 
 ```sh
 docker run \
  --rm \
- -e LICENSE_KEY=$(curl -s https://storage.googleapis.com/sourcegraph-assets/licenses/sourcegraph-server-3029.sgl) \
  -e ORIGIN_MAP='github.com/!https://github.com/%.git' \
  --publish 3080:80 \
  --volume /tmp/sourcegraph/config:/etc/sourcegraph \

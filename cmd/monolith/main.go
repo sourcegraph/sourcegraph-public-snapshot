@@ -51,6 +51,10 @@ var defaultEnv = map[string]string{
 	// only used to sync from gitolite.
 	"REPO_LIST_UPDATE_INTERVAL": "1",
 
+	// We don't want to require users to have a license. So we use the magic
+	// license which bypasses license checks.
+	"LICENSE_KEY": "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
+
 	// Env vars for higher rate limits to api.github.com
 	// https://github.com/sourcegraph/sourcegraph/issues/8459
 	//"GITHUB_BASE_URL":       "http://127.0.0.1:3180",
@@ -110,7 +114,9 @@ func main() {
 		setDefaultEnv("REDIS_MASTER_ENDPOINT", redis)
 		setDefaultEnv("SRC_SESSION_STORE_REDIS", redis)
 	}
-	// TODO is this an alright idea for skipping this bit of config?
+	// TODO Most users are using the same LICENSE_KEY, so we need to use
+	// something that can't be guessed across installations (crypto random
+	// number we save?)
 	setDefaultEnv("SRC_APP_SECRET_KEY", os.Getenv("LICENSE_KEY"))
 
 	for k, v := range defaultEnv {
