@@ -600,10 +600,15 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		return nil, nil, err
 	}
 
+	flattened := flattenFileMatches(unflattened, int(args.query.FileMatchLimit))
+	return fileMatchesToSearchResults(flattened), common, nil
+}
+
+func flattenFileMatches(unflattened [][]*fileMatch, fileMatchLimit int) []*fileMatch {
 	// Return early so we don't have to worry about empty lists in later
 	// calculations.
 	if len(unflattened) == 0 {
-		return nil, common, nil
+		return nil
 	}
 
 	// We pass in a limit to each repository so we may end up with R*limit
@@ -616,7 +621,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		return a > b
 	})
 	var flattened []*fileMatch
-	initialPortion := int(args.query.FileMatchLimit) / len(unflattened)
+	initialPortion := fileMatchLimit / len(unflattened)
 	for _, matches := range unflattened {
 		if initialPortion < len(matches) {
 			flattened = append(flattened, matches[:initialPortion]...)
@@ -628,7 +633,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 	// results until we hit our limit.
 	for _, matches := range unflattened {
 		low := initialPortion
-		high := low + (int(args.query.FileMatchLimit) - len(flattened))
+		high := low + (fileMatchLimit - len(flattened))
 		if high <= len(matches) {
 			flattened = append(flattened, matches[low:high]...)
 		} else if low < len(matches) {
@@ -642,7 +647,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		return a > b
 	})
 
-	return fileMatchesToSearchResults(flattened), common, nil
+	return flattened
 }
 
 var zoektHost = env.Get("ZOEKT_HOST", "", "host:port of the zoekt instance")
