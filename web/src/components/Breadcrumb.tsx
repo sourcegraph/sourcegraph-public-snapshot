@@ -48,6 +48,7 @@ export interface RepoBreadcrumbProps {
     rev?: string
     filePath?: string
     disableLinks?: boolean
+    isDirectory?: boolean
 }
 
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
@@ -83,7 +84,7 @@ export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
         if (this.props.filePath) {
             const j = i - uriParts.length
             const pathParts = this.props.filePath.split('/')
-            if (j < pathParts.length - 1) {
+            if (this.props.isDirectory || j < pathParts.length - 1) {
                 return toTreeURL({
                     repoPath: this.props.repoPath,
                     rev: this.props.rev,
