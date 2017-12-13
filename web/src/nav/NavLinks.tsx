@@ -53,6 +53,11 @@ export class NavLinks extends React.Component<Props, State> {
                         About
                     </a>
                 )}
+                {!window.context.onPrem && (
+                    <a href="https://about.sourcegraph.com/trial/" className="nav-links__border-link">
+                        Try Sourcegraph Server
+                    </a>
+                )}
                 {window.context.onPrem && (
                     <Link to="/browse" className="nav-links__link">
                         Browse
