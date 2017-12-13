@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"regexp/syntax"
 	"sync"
+	"sync/atomic"
 	"unicode"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
@@ -261,87 +262,80 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 	defer cancel()
 
 	var (
-		files     = make(chan *srcFile)
-		matches   = make(chan protocol.FileMatch)
-		wg        sync.WaitGroup
-		wgErrOnce sync.Once
-		wgErr     error
+		filesmu       sync.Mutex // protects files
+		files         = zf.Files
+		matchesmu     sync.Mutex // protects matches, limitHit
+		matches       = []protocol.FileMatch{}
+		done          = ctx.Done()
+		wg            sync.WaitGroup
+		wgErrOnce     sync.Once
+		wgErr         error
+		filesSkipped  uint32 // accessed atomically
+		filesSearched uint32 // accessed atomically
 	)
-
-	// goroutine responsible for writing to files. It also is the only
-	// goroutine which listens for cancellation.
-	go func() {
-		var filesSkipped, filesSearched int
-		defer func() {
-			// We can write to span since nothing else will until files is
-			// closed
-			span.LogFields(
-				otlog.Int("filesSkipped", filesSkipped),
-				otlog.Int("filesSearched", filesSearched),
-			)
-			close(files)
-		}()
-
-		done := ctx.Done()
-		for _, f := range zf.Files {
-			if !rg.matchPath.MatchPath(f.Name) {
-				filesSkipped++
-				continue
-			}
-			select {
-			case files <- f:
-				filesSearched++
-			case <-done:
-				return
-			}
-		}
-	}()
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func(rg *readerGrep) {
 			defer wg.Done()
-			for f := range files {
+
+			for {
+				// check whether we've been cancelled
+				select {
+				case <-done:
+					return
+				default:
+				}
+
+				// grab a file to work on
+				filesmu.Lock()
+				if len(files) == 0 {
+					filesmu.Unlock()
+					return
+				}
+				f := files[0]
+				files = files[1:]
+				filesmu.Unlock()
+
+				// decide whether to process, record that decision
+				if !rg.matchPath.MatchPath(f.Name) {
+					atomic.AddUint32(&filesSkipped, 1)
+					continue
+				}
+				atomic.AddUint32(&filesSearched, 1)
+
+				// process
 				fm, err := rg.FindZip(f)
 				if err != nil {
 					wgErrOnce.Do(func() {
 						wgErr = err
-						// Drain files
-						for range files {
-						}
+						cancel()
 					})
 					return
 				}
 				if len(fm.LineMatches) > 0 {
-					matches <- fm
+					matchesmu.Lock()
+					if len(matches) < fileMatchLimit {
+						matches = append(matches, fm)
+					} else {
+						limitHit = true
+						cancel()
+					}
+					matchesmu.Unlock()
 				}
 			}
 		}(rg.Copy())
 	}
 
-	// Wait for workers to be done. Signal to collector there is no more
-	// results coming by closing matches.
-	go func() {
-		wg.Wait()
-		close(matches)
-	}()
+	wg.Wait()
 
-	// Collect all matches. Do not return a nil slice if we find nothing
-	// so we can nicely serialize it.
-	m := []protocol.FileMatch{}
-	for fm := range matches {
-		m = append(m, fm)
-		if len(m) >= fileMatchLimit {
-			limitHit = true
-			cancel()
-			// drain matches
-			for range matches {
-			}
-		}
-	}
+	span.LogFields(
+		otlog.Int("filesSkipped", int(atomic.LoadUint32(&filesSkipped))),
+		otlog.Int("filesSearched", int(atomic.LoadUint32(&filesSearched))),
+	)
 
-	return m, limitHit, wgErr
+	return matches, limitHit, wgErr
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include
