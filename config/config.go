@@ -27,15 +27,16 @@ type Config struct {
 	Phabricator    []PhabricatorConfig `json:"phabricator" legacyenv:"PHABRICATOR_CONFIG" description:"JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information."`
 	PhabricatorURL string              `json:"phabricatorURL" legacyenv:"PHABRICATOR_URL" description:"(Deprecated: Use Phabricator) URL of Phabricator instance."`
 
-	GitHub                      []GitHubConfig `json:"github" legacyenv:"GITHUB_CONFIG" description:"JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information."`
-	GithubClientID              string         `json:"githubClientID" legacyenv:"GITHUB_CLIENT_ID" description:"Client ID for GitHub."`
-	GithubClientSecret          string         `json:"githubClientSecret" legacyenv:"GITHUB_CLIENT_SECRET" description:"Client secret for GitHub."`
-	GithubPersonalAccessToken   string         `json:"githubPersonalAccessToken" legacyenv:"GITHUB_PERSONAL_ACCESS_TOKEN" description:"(Deprecated: Use GitHub) Personal access token for GitHub. "`
-	GithubEnterpriseURL         string         `json:"githubEnterpriseURL" legacyenv:"GITHUB_ENTERPRISE_URL" description:"(Deprecated: Use GitHub) URL of GitHub Enterprise instance from which to sync repositories."`
-	GithubEnterpriseCert        string         `json:"githubEnterpriseCert" legacyenv:"GITUB_ENTERPRISE_CERT" description:"(Deprecated: Use GitHub) TLS certificate of GitHub Enterprise instance, if from a CA that's not part of the standard certificate chain."`
-	GithubEnterpriseAccessToken string         `json:"githubEnterpriseAccessToken" legacyenv:"GITHUB_ENTERPRISE_TOKEN" description:"(Deprecated: Use GitHub) Access token to authenticate to GitHub Enterprise API."`
-	GitoliteHosts               string         `json:"gitoliteHosts" legacyenv:"GITOLITE_HOSTS" description:"Space separated list of mappings from repo name prefix to gitolite hosts."`
-	GitOriginMap                string         `json:"gitOriginMap" legacyenv:"ORIGIN_MAP" description:"Space separated list of mappings from repo name prefix to origin url, for example \"github.com/!https://github.com/%.git\"."`
+	GitHub                      []GitHubConfig   `json:"github" legacyenv:"GITHUB_CONFIG" description:"JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information."`
+	GithubClientID              string           `json:"githubClientID" legacyenv:"GITHUB_CLIENT_ID" description:"Client ID for GitHub."`
+	GithubClientSecret          string           `json:"githubClientSecret" legacyenv:"GITHUB_CLIENT_SECRET" description:"Client secret for GitHub."`
+	GithubPersonalAccessToken   string           `json:"githubPersonalAccessToken" legacyenv:"GITHUB_PERSONAL_ACCESS_TOKEN" description:"(Deprecated: Use GitHub) Personal access token for GitHub. "`
+	GithubEnterpriseURL         string           `json:"githubEnterpriseURL" legacyenv:"GITHUB_ENTERPRISE_URL" description:"(Deprecated: Use GitHub) URL of GitHub Enterprise instance from which to sync repositories."`
+	GithubEnterpriseCert        string           `json:"githubEnterpriseCert" legacyenv:"GITUB_ENTERPRISE_CERT" description:"(Deprecated: Use GitHub) TLS certificate of GitHub Enterprise instance, if from a CA that's not part of the standard certificate chain."`
+	GithubEnterpriseAccessToken string           `json:"githubEnterpriseAccessToken" legacyenv:"GITHUB_ENTERPRISE_TOKEN" description:"(Deprecated: Use GitHub) Access token to authenticate to GitHub Enterprise API."`
+	GitoliteHosts               string           `json:"gitoliteHosts" legacyenv:"GITOLITE_HOSTS" description:"Space separated list of mappings from repo name prefix to gitolite hosts."`
+	GitOriginMap                string           `json:"gitOriginMap" legacyenv:"ORIGIN_MAP" description:"Space separated list of mappings from repo name prefix to origin url, for example \"github.com/!https://github.com/%.git\"."`
+	ReposList                   []RepoListConfig `json:"repos.list" legacyenv:"REPOS_LIST" description:"JSON array of configuration for external repositories."`
 
 	InactiveRepos          string `json:"inactiveRepos" legacyenv:"INACTIVE_REPOS" description:"Comma-separated list of repos to consider 'inactive' (e.g. while searching)."`
 	LightstepAccessToken   string `json:"lightstepAccessToken" legacyenv:"LIGHTSTEP_ACCESS_TOKEN" description:"Access token for sending traces to LightStep."`
@@ -90,6 +91,12 @@ type GitHubConfig struct {
 type PhabricatorConfig struct {
 	URL   string `json:"url" description:"URL of a Phabricator instance, e.g. http://phabricator.mycompany.com."`
 	Token string `json:"token" description:"API token for Phabricator instance."`
+}
+
+type RepoListConfig struct {
+	Type string `json:"type" description:"Type of the version control system for this URL e.g. git"`
+	URL  string `json:"url" description:"Clone URL for the repository e.g. git@gitolite.example.com/my/repo.git"`
+	Path string `json:"path" description:"Display path for the url e.g. gitolite/my/repo"`
 }
 
 type SearchScope struct {

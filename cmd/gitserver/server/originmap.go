@@ -21,15 +21,24 @@ type prefixAndOrgin struct {
 	Origin string
 }
 
+type originMapping struct {
+	URI    string
+	Origin string
+}
+
 var originMapEnv = conf.Get().GitOriginMap
 var gitoliteHostsEnv = conf.Get().GitoliteHosts
 var githubConf = conf.Get().GitHub
+var reposListConf = conf.Get().ReposList
 
 // DEPRECATED in favor of GITHUB_CONFIG:
 var githubEnterpriseURLEnv = conf.Get().GithubEnterpriseURL
 
 var originMap []prefixAndOrgin
 var gitoliteHostMap []prefixAndOrgin
+
+// reposListOriginMap is a mapping from repo URI (path) to repo origin (clone URL).
+var reposListOriginMap = make(map[string]string)
 
 func init() {
 	var err error
@@ -44,6 +53,11 @@ func init() {
 	}
 	for _, entry := range gitoliteHostMap {
 		originMap = append(originMap, prefixAndOrgin{Prefix: entry.Prefix, Origin: entry.Origin + ":%"})
+	}
+
+	// Add origin map for repos.list configuration.
+	for _, c := range reposListConf {
+		reposListOriginMap[c.Path] = c.URL
 	}
 
 	// Add origin map for GitHub Enterprise instance of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
@@ -86,6 +100,9 @@ func addGitHubDefaults() {
 
 // OriginMap maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
 func OriginMap(repoURI string) string {
+	if origin, ok := reposListOriginMap[repoURI]; ok {
+		return origin
+	}
 	for _, entry := range originMap {
 		if strings.HasPrefix(repoURI, entry.Prefix) {
 			return strings.Replace(entry.Origin, "%", strings.TrimPrefix(repoURI, entry.Prefix), 1)
@@ -96,6 +113,11 @@ func OriginMap(repoURI string) string {
 
 // reverse maps the repository origin (clone URL) to the repo URI. Returns empty string of no mapping was found.
 func reverse(cloneURL string) string {
+	for uri, origin := range reposListOriginMap {
+		if cloneURL == origin {
+			return uri
+		}
+	}
 	for _, entry := range originMap {
 		s := strings.Split(entry.Origin, "%")
 		originPrefix := s[0]

@@ -59,8 +59,8 @@ func init() {
 	}
 }
 
-// RunRepositorySyncWorker runs the worker that syncs repositories from the GitHub Enterprise instance to Sourcegraph
-func RunRepositorySyncWorker(ctx context.Context) error {
+// RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the GitHub Enterprise instance to Sourcegraph
+func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 	updateIntervalParsed, err := strconv.Atoi(updateIntervalEnv)
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 				}
 				explicitRepos = append(explicitRepos, repo)
 			}
-			update(ctx, c.client, explicitRepos)
+			updateGitHubRepos(ctx, c.client, explicitRepos)
 
 			// update implicit repositories (repositories owned by an organization to which the user who created
 			// the personal access token belongs)
@@ -175,13 +175,13 @@ func updateForClient(ctx context.Context, client *github.Client) error {
 	if err != nil {
 		return fmt.Errorf("could not list repositories: %s", err)
 	}
-	return update(ctx, client, repos)
+	return updateGitHubRepos(ctx, client, repos)
 }
 
 // update ensures that all provided repositories exist in the repository table.
 // It adds each repository with a URI of the form
 // "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
-func update(ctx context.Context, client *github.Client, repos []*github.Repository) error {
+func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*github.Repository) error {
 	for i, ghRepo := range repos {
 		hostPart := client.BaseURL.Host
 		if hostPart == "api.github.com" {
