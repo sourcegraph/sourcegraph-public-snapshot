@@ -1,10 +1,10 @@
 gitserver: .bin/gitserver
-indexer: .bin/indexer
-searcher: vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher
+indexer: sh -c "sleep 5 && exec .bin/indexer"
+searcher: .bin/searcher
 github-proxy: .bin/github-proxy
 lsp-proxy: .bin/lsp-proxy -prof-http=:6061
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062
 frontend: vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="dev" -extra-watches='cmd/frontend/internal/graphqlbackend/schema.graphql' sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend
-web: npm --prefix ./web run watch
-syntect_server: docker run --name=syntect_server --rm -p3700:80 -e QUIET='true' -e ROCKET_LIMITS='{json=10485760}' sourcegraph/syntect_server
+web: sh -c "npm --prefix ./web install && npm --prefix ./web run watch"
+syntect_server: ./dev/syntect_server
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest

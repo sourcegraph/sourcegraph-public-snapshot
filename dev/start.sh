@@ -4,14 +4,6 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-if [[ -z "${OFFLINE-}" ]] && ! docker pull sourcegraph/syntect_server; then
-	echo
-	echo Unable to pull latest container image for sourcegraph/syntect_server from the server.
-	echo
-	echo To run the dev server using the latest image available locally, rerun with OFFLINE=true.
-	exit 1
-fi
-
 GOBIN="$PWD"/vendor/.bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sqs/rego sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
 
 export AUTH0_CLIENT_ID=onW9hT0c7biVUqqNNuggQtMLvxUWHWRC
@@ -59,10 +51,9 @@ export LICENSE_KEY=${LICENSE_KEY:-24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae
 
 # WebApp
 export NODE_ENV=development
-npm --prefix ./web install
 
 mkdir -p .bin
-env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
+env GOBIN=$PWD/.bin go install -tags="dev" -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
