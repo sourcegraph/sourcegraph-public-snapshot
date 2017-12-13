@@ -50,6 +50,7 @@ export PHABRICATOR_URL="http://phabricator.sgdev.org"
 export GITOLITE_HOSTS="gitolite.sgdev.org/!git@gitolite.sgdev.org"
 export CORS_ORIGIN="https://github.com http://phabricator.sgdev.org"
 export PHABRICATOR_CONFIG='[{"url":"http://phabricator.sgdev.org","token":"api-agswx2nwodkweitoo3t5l4dcc5xu"}]'
+export GITHUB_CONFIG='[{"url":"http://35.197.32.22","token":"d5afedc3177a94048cd39ae285df610d51e6d505"}]'
 
 export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
 export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
