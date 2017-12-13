@@ -181,10 +181,12 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 	// match over the whole file. This does mean we duplicate work when
 	// actually searching for results. We use the same approach when we
 	// search per-line.
-	if rg.re.Find(fileMatchBuf) == nil {
+	first := rg.re.FindIndex(fileMatchBuf)
+	if first == nil {
 		return nil, false, nil
 	}
 
+	idx := 0
 	for i := 0; len(matches) < maxLineMatches; i++ {
 		advance, lineBuf, err := bufio.ScanLines(fileBuf, true)
 		if err != nil {
@@ -203,6 +205,12 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 		// Advance file bufs in sync
 		fileBuf = fileBuf[advance:]
 		fileMatchBuf = fileMatchBuf[advance:]
+
+		// Check whether we're before the first match.
+		idx += advance
+		if idx < first[0] {
+			continue
+		}
 
 		// Skip lines that are too long.
 		if len(matchBuf) > maxLineSize {
