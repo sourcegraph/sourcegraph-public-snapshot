@@ -67,7 +67,7 @@ class EventLogger {
      */
     public setUserIds(uniqueSourcegraphId: number | null, uniqueAuth0Id: string, username: string | null): void {
         if (username) {
-            telligent.setUsername(username)
+            telligent.setUserProperty('username', username)
         }
         if (uniqueSourcegraphId) {
             telligent.setUserProperty('user_id', uniqueSourcegraphId)

@@ -27,13 +27,6 @@ class TelligentWrapper {
         return Boolean(this.telligent)
     }
 
-    public setUsername(login: string): void {
-        if (!this.telligent) {
-            return
-        }
-        this.telligent('setUserId', login)
-    }
-
     public addStaticMetadataObject(metadata: any): void {
         if (!this.telligent) {
             return
