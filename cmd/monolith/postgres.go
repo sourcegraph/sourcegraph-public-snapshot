@@ -58,6 +58,16 @@ func maybePostgresProcFile() (string, error) {
 			os.RemoveAll(path)
 			return "", err
 		}
+	} else {
+		// Between restarts the owner of the volume may have changed. Ensure
+		// postgres can still read it.
+		var output bytes.Buffer
+		e := execer{Out: &output}
+		e.Command("chown", "postgres", path)
+		if err := e.Error(); err != nil {
+			log.Printf("Adjusting fs owners for postgres failed:\n%s", output.String())
+			return "", err
+		}
 	}
 
 	setDefaultEnv("PGUSER", "postgres")
