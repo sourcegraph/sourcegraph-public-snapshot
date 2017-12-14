@@ -421,13 +421,15 @@ describe('e2e test suite', () => {
                     return await chrome.wait('.tree__row--selected [data-tree-path="diff/diff.pb.go"]')
                 })
 
-                it.skip('does navigation (external repo)', async () => {
+                it('does navigation (external repo)', async () => {
                     await chrome.goto(
                         baseURL +
-                            '/github.com/gorilla/sessions@a3acf13e802c358d65f249324d14ed24aac11370/-/blob/sessions.go#L134:10'
+                            '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
                     )
                     await clickTooltipJ2D()
-                    await assertWindowLocation('/github.com/gorilla/context@HEAD/-/blob/context.go#L20:6')
+                    await assertWindowLocation(
+                        '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go#L103:6'
+                    )
                 })
             })
 
