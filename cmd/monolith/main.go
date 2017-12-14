@@ -79,9 +79,10 @@ func main() {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
 		}
 
-		// As a convenience some environment variables can stored as a file
+		// As a convenience some environment variables can be stored as a file
 		envFiles := map[string]string{
 			"license.sgl": "LICENSE_KEY",
+			"config.json": "SOURCEGRAPH_CONFIG",
 		}
 		for name, key := range envFiles {
 			b, err := ioutil.ReadFile(filepath.Join(configDir, name))
