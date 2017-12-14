@@ -33,7 +33,6 @@
     ]
   },
   "devDependencies": {
-    "@sourcegraph/chromeless": "^1.3.0",
     "@sourcegraph/prettierrc": "^2.0.0",
     "@sourcegraph/tsconfig": "^2.0.0",
     "@sourcegraph/tslint-config": "^9.0.4",
@@ -61,6 +60,7 @@
     "babel-preset-env": "^1.6.0",
     "chokidar-cli": "^1.2.0",
     "chrome-launcher": "^0.8.1",
+    "chromeless": "^1.4.0",
     "concurrently": "^3.5.0",
     "css-loader": "^0.28.4",
     "extract-text-webpack-plugin": "^3.0.0",

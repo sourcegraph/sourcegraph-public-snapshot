@@ -1,5 +1,5 @@
-import { Chromeless } from '@sourcegraph/chromeless'
 import * as assert from 'assert'
+import { Chromeless } from 'chromeless'
 // tslint:disable-next-line
 import * as _ from 'lodash'
 
