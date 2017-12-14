@@ -6,7 +6,7 @@ import * as _ from 'lodash'
 const chromeLauncher = require('chrome-launcher')
 
 describe('e2e test suite', () => {
-    const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'https://sourcegraph.sgdev.org'
+    const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'https://localhost:3080'
 
     let headlessChrome: any
     let chrome: Chromeless<any>
@@ -586,31 +586,92 @@ describe('e2e test suite', () => {
             )
         })
 
-        it('renders results for sourcegraph/go-diff (w/ search group)', async () => {
-            await chrome.goto(baseURL + '/search')
+        // it.only('renders results for sourcegraph/go-diff (w/ search group)', async () => {
+        //     await chrome.goto(baseURL + '/search')
 
-            // Update the input value
-            await chrome.wait('input')
-            await chrome.type('diff repo:sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d')
+        //     // Update the input value
+        //     await chrome.wait('input')
+        //     await chrome.type('diff repo:sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d')
 
-            // Update the select value
-            await chrome.wait('select')
-            await chrome.evaluate(() => {
-                const select = document.querySelector('select')!
-                select.value = 'repogroup:sample -file:(test|spec)'
-                select.dispatchEvent(new Event('change', { bubbles: true }))
+        //     // Update the select value
+        //     await chrome.wait('select')
+        //     await chrome.evaluate(() => {
+        //         const select = document.querySelector('select')!
+        //         select.value = 'repogroup:sample file:(test|spec)'
+        //         select.dispatchEvent(new Event('change', { bubbles: true }))
+        //     })
+
+        //     // Submit the search
+        //     await chrome.click('button')
+
+        //     await chrome.wait('.search-results2__header-stats')
+        //     await retry(async () => {
+        //         const label = await chrome.evaluate<string>(
+        //             () => document.querySelector('.search-results2__header-stats')!.textContent
+        //         )
+        //         assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')
+        //     })
+        // })
+
+        if (baseURL !== 'http://localhost:3080') {
+            // TEMPORARY KLUDGE:
+            // Currently the behavior of search is different on localhost vs. the dogfood server;
+            // on localhost the repo groups are called `repogroup:sample *` while on dogfood they
+            // are `repogroup:active *`.
+            it('renders results for sourcegraph/go-diff (w/ search group)', async () => {
+                await chrome.goto(baseURL + '/search')
+
+                // Update the input value
+                await chrome.wait('input')
+                await chrome.type('diff repo:sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d')
+
+                // Update the select value
+                await chrome.wait('select')
+                await chrome.evaluate(() => {
+                    const select = document.querySelector('select')!
+                    select.value = '-file:(test|spec)'
+                    select.dispatchEvent(new Event('change', { bubbles: true }))
+                })
+
+                // Submit the search
+                await chrome.click('button')
+
+                await chrome.wait('.search-results2__header-stats')
+                await retry(async () => {
+                    const label = await chrome.evaluate<string>(
+                        () => document.querySelector('.search-results2__header-stats')!.textContent
+                    )
+                    assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')
+                })
             })
+        } else {
+            it('renders results for sourcegraph/go-diff (w/ search group)', async () => {
+                await chrome.goto(baseURL + '/search')
 
-            // Submit the search
-            await chrome.click('button')
+                // Update the input value
+                await chrome.wait('input')
+                await chrome.type('diff repo:sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d')
 
-            await chrome.wait('.search-results2__header-stats')
-            await retry(async () => {
-                const label = await chrome.evaluate<string>(
-                    () => document.querySelector('.search-results2__header-stats')!.textContent
-                )
-                assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')
+                // Update the select value
+                await chrome.wait('select')
+                await chrome.evaluate(() => {
+                    const select = document.querySelector('select')!
+                    select.value = '-file:(test|spec)'
+                    select.dispatchEvent(new Event('change', { bubbles: true }))
+                })
+
+                // Submit the search
+                await chrome.click('button')
+
+                await chrome.wait('.search-results2__header-stats')
+                await retry(async () => {
+                    const label = await chrome.evaluate<string>(
+                        () => document.querySelector('.search-results2__header-stats')!.textContent
+                    )
+                    console.log(label)
+                    assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')
+                })
             })
-        })
+        }
     })
 })
