@@ -63,7 +63,6 @@ var defaultEnv = map[string]string{
 
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
-	// * Do we need BI_LOGGER? https://github.com/sourcegraph/sourcegraph/issues/8457
 	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 	// * TRACKING_APP_ID can be guessed from LICENSE_KEY https://github.com/sourcegraph/sourcegraph/issues/8377
 }
