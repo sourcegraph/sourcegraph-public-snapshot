@@ -25,7 +25,9 @@ func setDefaultEnv(k, v string) string {
 // the fields present.
 func setDefaultEnvFromConfig(rawConfig string) {
 	env, err := getEnvironFromConfig(rawConfig)
-	log.Fatal("failed to unmarshal config.json: ", err)
+	if err != nil {
+		log.Fatal("failed to unmarshal SOURCEGRAPH_CONFIG: ", err)
+	}
 	for k, v := range env {
 		setDefaultEnv(k, v)
 	}

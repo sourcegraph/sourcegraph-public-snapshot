@@ -94,11 +94,9 @@ func main() {
 			setDefaultEnv(key, strings.TrimSpace(string(b)))
 		}
 
-		// Set config
-		if b, err := ioutil.ReadFile(filepath.Join(configDir, "config.json")); err == nil {
-			setDefaultEnvFromConfig(string(b))
-		} else if !os.IsNotExist(err) {
-			log.Fatal("failed to read contents of `config.json`")
+		// Convert SOURCEGRAPH_CONFIG into env vars
+		if config, ok := os.LookupEnv("SOURCEGRAPH_CONFIG"); ok {
+			setDefaultEnvFromConfig(config)
 		}
 	}
 
