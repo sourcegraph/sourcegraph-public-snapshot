@@ -6,7 +6,7 @@ import * as _ from 'lodash'
 const chromeLauncher = require('chrome-launcher')
 
 describe('e2e test suite', () => {
-    const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'https://localhost:3080'
+    const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'http://localhost:3080'
 
     let headlessChrome: any
     let chrome: Chromeless<any>
