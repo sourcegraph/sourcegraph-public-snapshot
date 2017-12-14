@@ -4,9 +4,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -121,4 +126,111 @@ func TestRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
+	dir, err := ioutil.TempDir("", "gitserver_test")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	// This simulates the most amount of work quickRevParseHead has to do, and
+	// is also the most common in prod. That is where the final rev is in
+	// packed-refs.
+	err = ioutil.WriteFile(filepath.Join(dir, "HEAD"), []byte("ref: refs/heads/master\n"), 0600)
+	if err != nil {
+		b.Fatal(err)
+	}
+	// in prod the kubernetes repo has a packed-refs file that is 62446 lines
+	// long. Simulate something like that with everything except master
+	masterRev := "4d5092a09bca95e0153c423d76ef62d4fcd168ec"
+	{
+		f, err := os.Create(filepath.Join(dir, "packed-refs"))
+		if err != nil {
+			b.Fatal(err)
+		}
+		writeRef := func(refBase string, num int) {
+			_, err := fmt.Fprintf(f, "%016x%016x%08x %s-%d\n", rand.Uint64(), rand.Uint64(), rand.Uint32(), refBase, num)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+		for i := 0; i < 32; i++ {
+			writeRef("refs/heads/feature-branch", i)
+		}
+		_, err = fmt.Fprintf(f, "%s refs/heads/master\n", masterRev)
+		if err != nil {
+			b.Fatal(err)
+		}
+		for i := 0; i < 10000; i++ {
+			// actual format is refs/pull/${i}/head, but doesn't actually
+			// matter for testing
+			writeRef("refs/pull/head", i)
+			writeRef("refs/pull/merge", i)
+		}
+		err = f.Close()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	// Exclude setup
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		rev, err := quickRevParseHead(dir)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if rev != masterRev {
+			b.Fatal("unexpected rev: ", rev)
+		}
+	}
+
+	// Exclude cleanup (defers)
+	b.StopTimer()
+}
+
+func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
+	dir, err := ioutil.TempDir("", "gitserver_test")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	// This simulates the usual case for a repo that HEAD is often
+	// updated. The master ref will be unpacked.
+	masterRev := "4d5092a09bca95e0153c423d76ef62d4fcd168ec"
+	files := map[string]string{
+		"HEAD":              "ref: refs/heads/master\n",
+		"refs/heads/master": masterRev + "\n",
+	}
+	for path, content := range files {
+		path = filepath.Join(dir, path)
+		err := os.MkdirAll(filepath.Dir(path), 0700)
+		if err != nil {
+			b.Fatal(err)
+		}
+		err = ioutil.WriteFile(path, []byte(content), 0600)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	// Exclude setup
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		rev, err := quickRevParseHead(dir)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if rev != masterRev {
+			b.Fatal("unexpected rev: ", rev)
+		}
+	}
+
+	// Exclude cleanup (defers)
+	b.StopTimer()
 }

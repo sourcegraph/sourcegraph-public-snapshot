@@ -1,12 +1,15 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -490,41 +493,48 @@ func (s *Server) ensureRevision(ctx context.Context, repo string, rev string, re
 // It just reads the relevant files from the bare git repository directory.
 func quickRevParseHead(dir string) (string, error) {
 	// See if HEAD contains a commit hash and return it if so.
-	headBytes, err := ioutil.ReadFile(filepath.Join(dir, "HEAD"))
+	head, err := ioutil.ReadFile(filepath.Join(dir, "HEAD"))
 	if err != nil {
 		return "", err
 	}
-	head := strings.TrimSpace(string(headBytes))
+	head = bytes.TrimSpace(head)
 	if len(head) == 40 {
-		return head, nil
+		return string(head), nil
 	}
 
 	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
-	if !strings.HasPrefix(head, "ref: ") {
+	if !bytes.HasPrefix(head, []byte("ref: ")) {
 		return "", errors.New("unrecognized HEAD file format")
 	}
 	// Look for the file in refs/heads. If it exists, it contains the commit hash.
-	headRef := strings.TrimPrefix(head, "ref: ")
-	headRefFile := filepath.Join(dir, filepath.FromSlash(headRef))
-	if refsBytes, err := ioutil.ReadFile(headRefFile); err == nil {
-		return string(bytes.TrimSpace(refsBytes)), nil
+	headRef := bytes.TrimPrefix(head, []byte("ref: "))
+	if bytes.HasPrefix(headRef, []byte("../")) || bytes.Contains(headRef, []byte("/../")) || bytes.HasSuffix(headRef, []byte("/..")) {
+		// 🚨 SECURITY: prevent leakage of file contents outside repo dir
+		return "", fmt.Errorf("invalid ref format: %s", headRef)
+	}
+	headRefFile := filepath.Join(dir, filepath.FromSlash(string(headRef)))
+	if refs, err := ioutil.ReadFile(headRefFile); err == nil {
+		return string(bytes.TrimSpace(refs)), nil
 	}
 
 	// File didn't exist in refs/heads. Look for it in packed-refs.
-	packedRefsFile := filepath.Join(dir, "packed-refs")
-	packedRefsBytes, err := ioutil.ReadFile(packedRefsFile)
+	f, err := os.Open(filepath.Join(dir, "packed-refs"))
 	if err != nil {
 		return "", err
 	}
-	for _, line := range strings.Split(string(packedRefsBytes), "\n") {
-		fields := strings.Fields(line)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		fields := bytes.Fields(scanner.Bytes())
 		if len(fields) != 2 {
 			continue
 		}
 		commit, ref := fields[0], fields[1]
-		if ref == headRef {
-			return commit, nil
+		if bytes.Equal(ref, headRef) {
+			return string(commit), nil
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
 	}
 
 	// Didn't find the refs/heads/$HEAD_BRANCH in packed_refs
