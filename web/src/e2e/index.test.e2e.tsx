@@ -1,7 +1,5 @@
 import * as assert from 'assert'
 import { Chromeless } from 'chromeless'
-// tslint:disable-next-line
-import * as _ from 'lodash'
 
 const chromeLauncher = require('chrome-launcher')
 
@@ -75,13 +73,13 @@ describe.skip('e2e test suite', () => {
     }
 
     const assertAllHighlightedTokens = async (label: string): Promise<void> => {
-        const highlightedTokens = JSON.parse(
+        const highlightedTokens: string[] = JSON.parse(
             await chrome.evaluate<string>(() =>
                 JSON.stringify(Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent))
             )
         )
         assert.ok(
-            _.every(highlightedTokens, txt => txt === label),
+            highlightedTokens.every(txt => txt === label),
             `unexpected tokens highlighted (expected '${label}'): ${highlightedTokens}`
         )
     }
