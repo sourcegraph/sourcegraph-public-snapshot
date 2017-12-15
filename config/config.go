@@ -75,6 +75,8 @@ type Config struct {
 	ExecuteGradleOriginalRootPaths string `json:"executeGradleOriginalRootPaths" legacyenv:"EXECUTE_GRADLE_ORIGINAL_ROOT_PATHS" description:"Java: A comma-delimited list of patterns that selects repository revisions for which to execute Gradle scripts, rather than extracting Gradle metadata statically. **Security note:** these should be restricted to repositories within your own organization. A percent sign ('%') can be used to prefix-match. For example, <tt>git://my.internal.host/org1/%,git://my.internal.host/org2/repoA?%</tt> would select all revisions of all repositories in org1 and all revisions of repoA in org2."`
 	PrivateArtifactRepoID          string `json:"privateArtifactRepoID" legacyenv:"PRIVATE_ARTIFACT_REPO_ID" description:"Java: Private artifact repository ID in your build files. If you do not explicitly include the private artifact repository, then set this to some unique string (e.g,. \"my-repository\")."`
 	PrivateArtifactRepoURL         string `json:"privateArtifactRepoURL" legacyenv:"PRIVATE_ARTIFACT_REPO_URL" description:"Java: The URL that corresponds to privateArtifactRepoID (e.g., http://my.artifactory.local/artifactory/root)."`
+	PrivateArtifactRepoUsername    string `json:"privateArtifactRepoUsername" legacyenv:"PRIVATE_ARTIFACT_REPO_USERNAME" description:"Java: The username to authenticate to the private Artifactory."`
+	PrivateArtifactRepoPassword    string `json:"privateArtifactRepoPassword" legacyenv:"PRIVATE_ARTIFACT_REPO_PASSWORD" description:"Java: The password to authenticate to the private Artifactory."`
 }
 
 type Auth struct {
