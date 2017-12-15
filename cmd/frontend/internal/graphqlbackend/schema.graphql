@@ -68,14 +68,32 @@ input ThreadLinesInput {
   textSelectionRangeLength: Int!
 }
 
+input CreateThreadInput {
+    orgID: ID!
+    canonicalRemoteID: String!
+    cloneURL: String!
+    repoRevisionPath: String!
+    linesRevisionPath: String!
+    repoRevision: String!
+    linesRevision: String!
+    branch: String
+    startLine: Int!
+    endLine: Int!
+    startCharacter: Int!
+    endCharacter: Int!
+    rangeLength: Int!
+    contents: String!
+    lines: ThreadLinesInput
+}
+
 # A string containing valid JSON.
 scalar JSONString
 
 type Mutation {
   createUser(username: String!, displayName: String!, avatarURL: String): User!
+
+  @deprecated(reason: "use createThread2")
   createThread(
-    # Temporarily until all clients are migrated, the orgInt32OrID type allows
-    # orgID to be specified either as an ID! or Int!.
     orgID: ID!
     canonicalRemoteID: String!
     cloneURL: String!
@@ -91,6 +109,7 @@ type Mutation {
     contents: String!
     lines: ThreadLinesInput
   ): Thread!
+  createThread2(input: CreateThreadInput!): Thread!
   updateUser(username: String, displayName: String, avatarURL: String): User!
   # Update the settings for the currently authenticated user.
   updateUserSettings(lastKnownSettingsID: Int, contents: String!): Settings!
@@ -878,7 +897,14 @@ type Configuration {
 type Thread {
   id: Int!
   repo: OrgRepo!
-  file: String!
+  file: String! @deprecated(reason: "use repoRevisionPath (or linesRevisionPath)")
+
+  # The relative path of the resource in the repository at repoRevision.
+  repoRevisionPath: String!
+
+  # The relative path of the resource in the repository at linesRevision.
+  linesRevisionPath: String!
+
   branch: String
   # The commit ID of the repository at the time the thread was created.
   repoRevision: String!

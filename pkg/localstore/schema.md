@@ -262,7 +262,7 @@ Indexes:
 -----------------------------------+--------------------------+------------------------------------------------------
  id                                | bigint                   | not null default nextval('threads_id_seq'::regclass)
  org_repo_id                       | bigint                   | 
- file                              | text                     | 
+ repo_revision_path                | text                     | not null
  repo_revision                     | text                     | not null
  start_line                        | integer                  | 
  end_line                          | integer                  | 
@@ -284,11 +284,12 @@ Indexes:
  text_lines_selection_range_start  | integer                  | not null default 0
  text_lines_selection_range_length | integer                  | not null default 0
  lines_revision                    | text                     | not null
+ lines_revision_path               | text                     | not null
 Indexes:
     "threads_pkey" PRIMARY KEY, btree (id)
-    "threads_local_repo_id_file_idx" btree (org_repo_id, file)
     "threads_org_repo_id_branch_idx" btree (org_repo_id, branch)
-    "threads_org_repo_id_file_branch_idx" btree (org_repo_id, file, branch)
+    "threads_org_repo_id_lines_revision_path_branch_idx" btree (org_repo_id, lines_revision_path, branch)
+    "threads_org_repo_id_repo_revision_path_branch_idx" btree (org_repo_id, repo_revision_path, branch)
 
 ```
 

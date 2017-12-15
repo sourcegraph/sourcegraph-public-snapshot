@@ -86,6 +86,8 @@
 // ../../../migrations/1513000124_rm_repos_cols.up.sql
 // ../../../migrations/1513188842_add_app_config_table.down.sql
 // ../../../migrations/1513188842_add_app_config_table.up.sql
+// ../../../migrations/1513188843_rename_threads_file.down.sql
+// ../../../migrations/1513188843_rename_threads_file.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1873,6 +1875,46 @@ func _1513188842_add_app_config_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1513188843_rename_threads_fileDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x90\x4d\x6a\xc3\x30\x14\x84\xf7\x3a\xc5\x23\xab\x06\x72\x03\xad\x94\xe4\x51\x0c\xfa\x29\x42\x81\xee\x84\x1a\xab\xb5\x40\x58\x41\x36\xa5\xc7\x2f\xfe\x6b\x4d\x2b\xec\x95\x40\xcc\x7c\xf3\x66\xce\xf8\x5c\x49\x4a\xc8\x55\xab\x17\xa8\xe4\x15\x5f\xa1\x6f\xb2\x77\x75\x67\x53\xfe\xb0\xd9\x3f\x92\x0d\xf5\xf4\x66\xff\x19\xba\x90\x5a\xfb\x70\x7d\x63\xdf\xb2\x6b\xef\x8d\x0d\xf5\x17\xdd\x73\xc7\xd0\xfa\x6e\xc3\x4e\x18\x37\xa8\xc1\xb0\x33\xc7\x05\x00\xd3\xdf\x45\xf1\x9b\x90\xf0\x3f\x1f\xc6\x4c\xa9\x0c\xc8\x1b\xe7\xb4\x88\x18\x25\x33\xa1\x70\x43\xd9\xa4\x51\x32\x81\x1b\xc1\x46\xc1\xe1\x3d\x44\x7f\xa0\x84\x5c\x34\x32\x83\x7f\xaa\xc7\x74\x77\xf1\xa7\xfc\x20\x1d\x6a\x82\x92\x8b\xe2\x69\x35\xce\x69\x86\x1d\x69\x19\xb6\xde\x71\x44\xfd\x0e\xb7\x43\x3c\xc1\x24\x3d\x0e\x77\x2a\x21\x2a\x43\xc9\x77\x00\x00\x00\xff\xff\x7f\x43\xa0\x92\xef\x01\x00\x00")
+
+func _1513188843_rename_threads_fileDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513188843_rename_threads_fileDownSql,
+		"1513188843_rename_threads_file.down.sql",
+	)
+}
+
+func _1513188843_rename_threads_fileDownSql() (*asset, error) {
+	bytes, err := _1513188843_rename_threads_fileDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513188843_rename_threads_file.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1513188843_rename_threads_fileUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\x41\x6a\xc3\x30\x10\x45\xf7\x3a\xc5\x90\x55\x0b\xb9\x81\xe8\x42\xb1\x86\x62\x90\xa5\xe0\x8e\x21\x3b\xe1\xc6\x6a\x2d\x30\x76\x90\x43\xe9\xf1\x4b\x9c\x9a\xda\x64\x42\xb3\x15\xff\xfd\xf7\x35\x3b\x7c\xcd\xad\x14\x42\x97\x6e\x0f\xb9\xd5\x78\x80\x73\x9b\x42\xdd\x8c\xbe\x1b\x8e\x75\xe7\x53\x38\x0d\x3e\x36\xfe\x23\x76\xc1\xc7\xe6\x5b\x72\xd1\x21\x7d\xae\x83\xef\xa9\xee\x8f\xed\x35\x2f\x94\x21\x2c\x81\xd4\xce\xe0\x4c\x40\x89\x56\x15\x08\x99\x33\x55\x61\x61\x73\x81\x36\x40\x0e\xa6\x96\x14\xbe\xe2\x18\x87\xde\x9f\xea\x73\x2b\x59\x5e\x69\x3d\xc3\x5d\xec\xc3\xb8\x66\x80\xf0\x40\x52\x88\x6a\xaf\x15\xfd\x41\x6f\x48\x6c\xfa\x85\xd5\xf2\xde\xe9\xed\xd7\x7c\x4b\x4d\x0a\xeb\x08\x6c\x65\xcc\x9d\xe5\xcb\x06\x6e\xcd\xba\x42\x64\x25\x5e\xfe\x70\xff\xe0\xb7\x2b\x16\xe7\x07\x67\x67\xe8\x69\x01\x6d\x99\xed\x5b\xb8\x62\xcf\xf2\x7f\x27\xb3\xfb\x11\x29\x83\x2d\xac\x22\x73\x45\x91\x93\xfc\x09\x00\x00\xff\xff\x06\x3c\x34\x52\x94\x02\x00\x00")
+
+func _1513188843_rename_threads_fileUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513188843_rename_threads_fileUpSql,
+		"1513188843_rename_threads_file.up.sql",
+	)
+}
+
+func _1513188843_rename_threads_fileUpSql() (*asset, error) {
+	bytes, err := _1513188843_rename_threads_fileUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513188843_rename_threads_file.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2011,6 +2053,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1513000124_rm_repos_cols.up.sql":                             _1513000124_rm_repos_colsUpSql,
 	"1513188842_add_app_config_table.down.sql":                    _1513188842_add_app_config_tableDownSql,
 	"1513188842_add_app_config_table.up.sql":                      _1513188842_add_app_config_tableUpSql,
+	"1513188843_rename_threads_file.down.sql":                     _1513188843_rename_threads_fileDownSql,
+	"1513188843_rename_threads_file.up.sql":                       _1513188843_rename_threads_fileUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2140,6 +2184,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1513000124_rm_repos_cols.up.sql":                             &bintree{_1513000124_rm_repos_colsUpSql, map[string]*bintree{}},
 	"1513188842_add_app_config_table.down.sql":                    &bintree{_1513188842_add_app_config_tableDownSql, map[string]*bintree{}},
 	"1513188842_add_app_config_table.up.sql":                      &bintree{_1513188842_add_app_config_tableUpSql, map[string]*bintree{}},
+	"1513188843_rename_threads_file.down.sql":                     &bintree{_1513188843_rename_threads_fileDownSql, map[string]*bintree{}},
+	"1513188843_rename_threads_file.up.sql":                       &bintree{_1513188843_rename_threads_fileUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

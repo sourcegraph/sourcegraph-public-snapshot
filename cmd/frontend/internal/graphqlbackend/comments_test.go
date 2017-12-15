@@ -245,15 +245,15 @@ func TestComments_Create(t *testing.T) {
 		CanonicalRemoteID: "github.com/foo/bar",
 	}
 	thread := sourcegraph.Thread{
-		ID:             1,
-		OrgRepoID:      1,
-		File:           "foo.go",
-		RepoRevision:   "1234",
-		LinesRevision:  "5678",
-		StartLine:      1,
-		EndLine:        2,
-		StartCharacter: 3,
-		EndCharacter:   4,
+		ID:               1,
+		OrgRepoID:        1,
+		RepoRevisionPath: "foo.go",
+		RepoRevision:     "1234",
+		LinesRevision:    "5678",
+		StartLine:        1,
+		EndLine:          2,
+		StartCharacter:   3,
+		EndCharacter:     4,
 	}
 	wantComment := sourcegraph.Comment{
 		ThreadID:    1,

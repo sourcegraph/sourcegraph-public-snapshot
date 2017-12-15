@@ -427,22 +427,23 @@ type ThreadLines struct {
 }
 
 type Thread struct {
-	ID             int32        `json:"ID,omitempty"`
-	OrgRepoID      int32        `json:"OrgRepoID,omitempty"`
-	File           string       `json:"File,omitempty"`
-	RepoRevision   string       `json:"RepoRevision,omitempty"`
-	LinesRevision  string       `json:"LinesRevision,omitempty"`
-	Branch         *string      `json:"Branch,omitempty"`
-	StartLine      int32        `json:"StartLine,omitempty"`
-	EndLine        int32        `json:"EndLine,omitempty"`
-	StartCharacter int32        `json:"StartCharacter,omitempty"`
-	EndCharacter   int32        `json:"EndCharacter,omitempty"`
-	RangeLength    int32        `json:"RangeLength,omitempty"`
-	CreatedAt      time.Time    `json:"CreatedAt,omitempty"`
-	UpdatedAt      time.Time    `json:"UpdatedAt,omitempty"`
-	ArchivedAt     *time.Time   `json:"ArchivedAt,omitempty"`
-	AuthorUserID   string       `json:"AuthorUserID,omitempty"`
-	Lines          *ThreadLines `json:"ThreadLines,omitempty"`
+	ID                int32        `json:"ID,omitempty"`
+	OrgRepoID         int32        `json:"OrgRepoID,omitempty"`
+	RepoRevisionPath  string       `json:"RepoRevisionPath,omitempty"`
+	LinesRevisionPath string       `json:"LinesRevisionPath,omitempty"`
+	RepoRevision      string       `json:"RepoRevision,omitempty"`
+	LinesRevision     string       `json:"LinesRevision,omitempty"`
+	Branch            *string      `json:"Branch,omitempty"`
+	StartLine         int32        `json:"StartLine,omitempty"`
+	EndLine           int32        `json:"EndLine,omitempty"`
+	StartCharacter    int32        `json:"StartCharacter,omitempty"`
+	EndCharacter      int32        `json:"EndCharacter,omitempty"`
+	RangeLength       int32        `json:"RangeLength,omitempty"`
+	CreatedAt         time.Time    `json:"CreatedAt,omitempty"`
+	UpdatedAt         time.Time    `json:"UpdatedAt,omitempty"`
+	ArchivedAt        *time.Time   `json:"ArchivedAt,omitempty"`
+	AuthorUserID      string       `json:"AuthorUserID,omitempty"`
+	Lines             *ThreadLines `json:"ThreadLines,omitempty"`
 }
 
 type Comment struct {

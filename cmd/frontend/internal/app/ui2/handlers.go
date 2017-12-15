@@ -405,7 +405,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	snippet := false
 	if title == "" {
 		snippet = true
-		title = fmt.Sprintf("%s (Snippet)", thread.File)
+		title = fmt.Sprintf("%s (Snippet)", thread.RepoRevisionPath)
 	}
 
 	var rev string
@@ -414,9 +414,9 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	}
 	var description string
 	if snippet {
-		description = fmt.Sprintf("Snippet from %s:%d (%s%s) ", thread.File, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
+		description = fmt.Sprintf("Snippet from %s:%d (%s%s) ", thread.RepoRevisionPath, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
 	} else {
-		description = fmt.Sprintf("Discussion at %s:%d (%s%s) ", thread.File, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
+		description = fmt.Sprintf("Discussion at %s:%d (%s%s) ", thread.RepoRevisionPath, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
 	}
 
 	metadata := &Metadata{}

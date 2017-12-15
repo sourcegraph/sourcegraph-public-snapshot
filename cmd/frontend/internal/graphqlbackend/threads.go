@@ -101,8 +101,17 @@ func (t *threadResolver) Repo(ctx context.Context) (*orgRepoResolver, error) {
 	return &orgRepoResolver{t.org, t.repo}, nil
 }
 
+// TODO(nick): deprecated
 func (t *threadResolver) File() string {
-	return t.thread.File
+	return t.thread.RepoRevisionPath
+}
+
+func (t *threadResolver) RepoRevisionPath() string {
+	return t.thread.RepoRevisionPath
+}
+
+func (t *threadResolver) LinesRevisionPath() string {
+	return t.thread.LinesRevisionPath
 }
 
 func (t *threadResolver) Branch() *string {
@@ -282,36 +291,35 @@ type threadLines struct {
 	TextSelectionRangeLength    int32
 }
 
-// orgInt32OrID allows a GraphQL resolver arg to be specified either as
-// an ID! or an Int!.
-type orgInt32OrID struct {
+type orgID struct {
 	int32Value int32
 }
 
-func (orgInt32OrID) ImplementsGraphQLType(name string) bool {
-	return name == "ID" || name == "Int"
+func (orgID) ImplementsGraphQLType(name string) bool {
+	return name == "ID"
 }
 
-func (v *orgInt32OrID) UnmarshalGraphQL(input interface{}) error {
+func (v *orgID) UnmarshalGraphQL(input interface{}) error {
 	switch input := input.(type) {
-	case string: // graphql.ID
+	case string:
 		var int32Value int32
 		id := graphql.ID(input)
+		if kind := relay.UnmarshalKind(id); kind != "Org" {
+			return fmt.Errorf("expected id with kind Org; got %s", kind)
+		}
 		if err := relay.UnmarshalSpec(id, &int32Value); err != nil {
 			return err
 		}
-		*v = orgInt32OrID{int32Value: int32Value}
-		return nil
-	case int32:
-		*v = orgInt32OrID{int32Value: input}
+		*v = orgID{int32Value: int32Value}
 		return nil
 	default:
 		return fmt.Errorf("wrong type")
 	}
 }
 
+// TODO(nick): deprecated
 func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
-	OrgID             orgInt32OrID // accept int32 and org graphql.ID
+	OrgID             orgID
 	CanonicalRemoteID string
 	CloneURL          string
 	File              string
@@ -326,6 +334,50 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	Contents          string
 	Lines             *threadLines
 }) (*threadResolver, error) {
+	return s.createThread2Input(ctx, &createThreadInput{
+		OrgID:             args.OrgID,
+		CanonicalRemoteID: args.CanonicalRemoteID,
+		CloneURL:          args.CloneURL,
+		RepoRevisionPath:  args.File,
+		LinesRevisionPath: args.File,
+		RepoRevision:      args.RepoRevision,
+		LinesRevision:     args.LinesRevision,
+		Branch:            args.Branch,
+		StartLine:         args.StartLine,
+		EndLine:           args.EndLine,
+		StartCharacter:    args.StartCharacter,
+		EndCharacter:      args.EndCharacter,
+		RangeLength:       args.RangeLength,
+		Contents:          args.Contents,
+		Lines:             args.Lines,
+	})
+}
+
+type createThreadInput struct {
+	OrgID             orgID // accept int32 and org graphql.ID
+	CanonicalRemoteID string
+	CloneURL          string
+	RepoRevisionPath  string
+	LinesRevisionPath string
+	RepoRevision      string
+	LinesRevision     string
+	Branch            *string
+	StartLine         int32
+	EndLine           int32
+	StartCharacter    int32
+	EndCharacter      int32
+	RangeLength       int32
+	Contents          string
+	Lines             *threadLines
+}
+
+func (s *schemaResolver) CreateThread2(ctx context.Context, args *struct {
+	Input *createThreadInput
+}) (*threadResolver, error) {
+	return s.createThread2Input(ctx, args.Input)
+}
+
+func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThreadInput) (*threadResolver, error) {
 	// 🚨 SECURITY: verify that the current user is in the org.
 	actor := actor.FromContext(ctx)
 	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID.int32Value, actor.UID)
@@ -352,17 +404,18 @@ func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 
 	// TODO(nick): transaction
 	thread := &sourcegraph.Thread{
-		OrgRepoID:      repo.ID,
-		File:           args.File,
-		RepoRevision:   args.RepoRevision,
-		LinesRevision:  args.LinesRevision,
-		Branch:         args.Branch,
-		StartLine:      args.StartLine,
-		EndLine:        args.EndLine,
-		StartCharacter: args.StartCharacter,
-		EndCharacter:   args.EndCharacter,
-		RangeLength:    args.RangeLength,
-		AuthorUserID:   actor.UID,
+		OrgRepoID:         repo.ID,
+		RepoRevisionPath:  args.RepoRevisionPath,
+		LinesRevisionPath: args.LinesRevisionPath,
+		RepoRevision:      args.RepoRevision,
+		LinesRevision:     args.LinesRevision,
+		Branch:            args.Branch,
+		StartLine:         args.StartLine,
+		EndLine:           args.EndLine,
+		StartCharacter:    args.StartCharacter,
+		EndCharacter:      args.EndCharacter,
+		RangeLength:       args.RangeLength,
+		AuthorUserID:      actor.UID,
 	}
 	if args.Lines != nil {
 		thread.Lines = &sourcegraph.ThreadLines{
