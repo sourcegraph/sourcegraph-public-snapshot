@@ -215,7 +215,7 @@ func colorSwap(html string, isLightTheme bool) string {
 		"#d3f9d8": "#6c71c4",
 		"#ffc078": "#fc8e00",
 		"#f2f4f8": "#39496a",
-		"#87cefa": "#329af0"}
+		"#87cefa": "#7443ad"}
 	for oldColor, newColor := range lightTheme {
 		oldColor = fmt.Sprintf("color: %s;", oldColor)
 		newColor = fmt.Sprintf("color: %s;", newColor)
