@@ -8,3 +8,9 @@
  * which is a mirror of all public GitHub.com repositories.
  */
 export const canListAllRepositories = window.context.onPrem
+
+/**
+ * Whether the application should show the user marketing elements (links, etc.)
+ * that are intended for Sourcegraph.com.
+ */
+export const showDotComMarketing = !window.context.onPrem
