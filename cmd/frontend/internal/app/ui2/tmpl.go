@@ -13,8 +13,8 @@ import (
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 // TODO(slimsag): tests for everything in this file
@@ -67,7 +67,7 @@ func loadTemplate(path string) (*template.Template, error) {
 	loadTemplateMu.RLock()
 	tmpl, ok := loadTemplateCache[path]
 	loadTemplateMu.RUnlock()
-	if ok && !handlerutil.DebugMode {
+	if ok && !envvar.DebugMode() {
 		return tmpl, nil
 	}
 
@@ -203,7 +203,7 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 // onceOrDebug invokes f() if running in debug mode, otherwise it just
 // invokes o.Do(f)
 func onceOrDebug(o *sync.Once, f func()) {
-	if handlerutil.DebugMode {
+	if envvar.DebugMode() {
 		f()
 		return
 	}

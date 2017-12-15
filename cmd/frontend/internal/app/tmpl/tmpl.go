@@ -11,11 +11,11 @@ import (
 	"reflect"
 	"sync"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 
@@ -108,7 +108,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 			AuthInfo:     actor.FromContext(req.Context()).AuthInfo(),
 			TemplateName: name,
 			Ctx:          req.Context(),
-			Debug:        handlerutil.DebugMode,
+			Debug:        envvar.DebugMode(),
 			ErrorID:      existingCommon.ErrorID,
 			JSCtx:        jsctx,
 		}))

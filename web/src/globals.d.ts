@@ -64,6 +64,11 @@ interface SourcegraphContext {
     auth0ClientID: string
 
     /**
+     * Debug is whether debug mode is enabled.
+     */
+    debug: boolean
+
+    /**
      * onPrem is defined as the env var DEPLOYMENT_ON_PREM. True if the server is a privately hosted instance, as opposed
      * to the public sourcegraph.com.
      */

@@ -81,6 +81,7 @@ type JSContext struct {
 	SentryDSN            string                     `json:"sentryDSN"`
 	IntercomHash         string                     `json:"intercomHash"`
 	TrackingAppID        string                     `json:"trackingAppID"`
+	Debug                bool                       `json:"debug"`
 	OnPrem               bool                       `json:"onPrem"`
 	RepoHomeRegexFilter  string                     `json:"repoHomeRegexFilter"`
 	SessionID            string                     `json:"sessionID"`
@@ -158,6 +159,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
 		IntercomHash:         intercomHMAC(actor.UID),
+		Debug:                envvar.DebugMode(),
 		OnPrem:               envvar.DeploymentOnPrem(),
 		TrackingAppID:        TrackingAppID,
 		RepoHomeRegexFilter:  repoHomeRegexFilter,

@@ -19,7 +19,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -212,7 +211,7 @@ func init() {
 	}))
 	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
-		if handlerutil.DebugMode && r.URL.Path == "/__errorTest" {
+		if envvar.DebugMode() && r.URL.Path == "/__errorTest" {
 			handler(serveErrorTest).ServeHTTP(w, r)
 			return
 		}
@@ -357,7 +356,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	}
 
 	var errorIfDebug string
-	if handlerutil.DebugMode && !nodebug {
+	if envvar.DebugMode() && !nodebug {
 		errorIfDebug = err.Error()
 	}
 
@@ -412,7 +411,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 // in production), `error` controls the error message text, and status controls
 // the status code.
 func serveErrorTest(w http.ResponseWriter, r *http.Request) error {
-	if !handlerutil.DebugMode {
+	if !envvar.DebugMode() {
 		w.WriteHeader(http.StatusNotFound)
 		return nil
 	}
