@@ -56,10 +56,9 @@ var defaultEnv = map[string]string{
 	"LICENSE_KEY": "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
 
 	// Env vars for higher rate limits to api.github.com
-	// https://github.com/sourcegraph/sourcegraph/issues/8459
-	//"GITHUB_BASE_URL":       "http://127.0.0.1:3180",
-	//"GITHUB_CLIENT_ID":      "6f2a43bd8877ff5fd1d5",
-	//"GITHUB_CLIENT_SECRET":  "c5ff37d80e3736924cbbdf2922a50cac31963e43",
+	"GITHUB_BASE_URL":      "http://localhost:3180",
+	"GITHUB_CLIENT_ID":     "a359c6590ebe783800b1",
+	"GITHUB_CLIENT_SECRET": "2f8c304d01ad3b23c1f6c0a3b42bd09a8694262f",
 
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
