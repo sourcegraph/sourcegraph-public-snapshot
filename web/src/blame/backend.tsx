@@ -8,27 +8,25 @@ export const fetchBlameFile = memoizeObservable(
     (ctx: AbsoluteRepoFilePosition): Observable<GQL.IHunk[] | null> =>
         queryGraphQL(
             `query BlameFile($repoPath: String, $commitID: String, $filePath: String, $startLine: Int, $endLine: Int) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    blame(startLine: $startLine, endLine: $endLine) {
-                                        startLine
-                                        endLine
-                                        startByte
-                                        endByte
-                                        rev
-                                        author {
-                                            person {
-                                                name
-                                                email
-                                                gravatarHash
-                                            }
-                                            date
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            file(path: $filePath) {
+                                blame(startLine: $startLine, endLine: $endLine) {
+                                    startLine
+                                    endLine
+                                    startByte
+                                    endByte
+                                    rev
+                                    author {
+                                        person {
+                                            name
+                                            email
+                                            gravatarHash
                                         }
-                                        message
+                                        date
                                     }
+                                    message
                                 }
                             }
                         }
@@ -46,17 +44,16 @@ export const fetchBlameFile = memoizeObservable(
             map(result => {
                 if (
                     !result.data ||
-                    !result.data.root ||
-                    !result.data.root.repository ||
-                    !result.data.root.repository.commit ||
-                    !result.data.root.repository.commit.commit ||
-                    !result.data.root.repository.commit.commit.file ||
-                    !result.data.root.repository.commit.commit.file.blame
+                    !result.data.repository ||
+                    !result.data.repository.commit ||
+                    !result.data.repository.commit.commit ||
+                    !result.data.repository.commit.commit.file ||
+                    !result.data.repository.commit.commit.file.blame
                 ) {
                     console.error('unexpected BlameFile response:', result)
                     return null
                 }
-                return result.data.root.repository.commit.commit.file.blame
+                return result.data.repository.commit.commit.file.blame
             })
         ),
     makeRepoURI

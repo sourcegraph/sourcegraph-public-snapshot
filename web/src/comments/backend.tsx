@@ -58,19 +58,17 @@ const gqlThread = `
 export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable<GQL.ISharedItem | null> {
     return queryGraphQL(
         `query SharedItem($ulid: String!, $isLightTheme: Boolean!) {
-                root {
-                    sharedItem(ulid: $ulid) {
-                        author {
-                            displayName
-                        }
-                        public
-                        thread {
-                            ${gqlThread}
-                        }
-                        comment {
-                            id
-                            title
-                        }
+                sharedItem(ulid: $ulid) {
+                    author {
+                        displayName
+                    }
+                    public
+                    thread {
+                        ${gqlThread}
+                    }
+                    comment {
+                        id
+                        title
                     }
                 }
             }
@@ -78,14 +76,14 @@ export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable
         { ulid, isLightTheme }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || errors) {
+            if (!data || errors) {
                 // TODO(slimsag): string comparison is bad practice, remove this
                 if (errors && errors[0].message === 'permission denied') {
                     throw new PermissionDeniedError()
                 }
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.sharedItem
+            return data.sharedItem
         })
     )
 }

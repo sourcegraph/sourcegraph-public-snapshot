@@ -28,17 +28,15 @@ function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
     return queryGraphQL(
         `
         query Configuration() {
-            root {
-                ${configurationGQL}
-            }
+            ${configurationGQL}
         }
     `
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.configuration) {
+            if (!data || !data.configuration) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.configuration
+            return data.configuration
         })
     )
 }
@@ -52,33 +50,31 @@ export function fetchOrg(id: string, isLightTheme: boolean): Observable<GQL.IOrg
     return queryGraphQL(
         `
         query Org($id: ID!) {
-            root {
-                org(id: $id) {
+            org(id: $id) {
+                id
+                name
+                slackWebhookURL
+                displayName
+                latestSettings {
                     id
+                    configuration {
+                        contents
+                        highlighted(isLightTheme: $isLightTheme)
+                    }
+                }
+                members {
+                    id
+                    createdAt
+                    user {
+                        auth0ID
+                        username
+                        email
+                        displayName
+                        avatarURL
+                    }
+                }
+                tags {
                     name
-                    slackWebhookURL
-                    displayName
-                    latestSettings {
-                        id
-                        configuration {
-                            contents
-                            highlighted(isLightTheme: $isLightTheme)
-                        }
-                    }
-                    members {
-                        id
-                        createdAt
-                        user {
-                            auth0ID
-                            username
-                            email
-                            displayName
-                            avatarURL
-                        }
-                    }
-                    tags {
-                        name
-                    }
                 }
             }
         }
@@ -86,10 +82,10 @@ export function fetchOrg(id: string, isLightTheme: boolean): Observable<GQL.IOrg
         { id, isLightTheme }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.org) {
+            if (!data || !data.org) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.org
+            return data.org
         })
     )
 }
@@ -408,25 +404,23 @@ export function fetchAllUsers(): Observable<GQL.IUser[] | null> {
     return queryGraphQL(
         `
             query Users {
-                root {
-                    users {
-                        id
-                        username
-                        displayName
-                        activity {
-                            searchQueries
-                            pageViews
-                        }
+                users {
+                    id
+                    username
+                    displayName
+                    activity {
+                        searchQueries
+                        pageViews
                     }
                 }
             }
         `
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.users) {
+            if (!data || !data.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.users
+            return data.users
         })
     )
 }

@@ -52,37 +52,35 @@ export function fetchCurrentUser(isLightTheme?: boolean): Observable<never> {
     return queryGraphQL(
         `
         query CurrentAuthState {
-            root {
-                currentUser {
-                    __typename
-                    auth0ID
-                    sourcegraphID
-                    username
-                    avatarURL
-                    email
-                    username
-                    displayName
-                    latestSettings {
-                        id
-                        configuration {
-                            contents
-                            highlighted(isLightTheme: $isLightTheme)
-                        }
+            currentUser {
+                __typename
+                auth0ID
+                sourcegraphID
+                username
+                avatarURL
+                email
+                username
+                displayName
+                latestSettings {
+                    id
+                    configuration {
+                        contents
+                        highlighted(isLightTheme: $isLightTheme)
                     }
-                    orgs {
-                        id
-                        name
-                        tags {
-                            name
-                        }
-                    }
+                }
+                orgs {
+                    id
+                    name
                     tags {
-                        id
                         name
                     }
                 }
-                ${configurationGQL}
+                tags {
+                    id
+                    name
+                }
             }
+            ${configurationGQL}
         }
     `,
         { isLightTheme }
@@ -91,8 +89,8 @@ export function fetchCurrentUser(isLightTheme?: boolean): Observable<never> {
             if (!data) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            currentUser.next(data.root.currentUser)
-            configurationCascade.next(data.root.configuration)
+            currentUser.next(data.currentUser)
+            configurationCascade.next(data.configuration)
         }),
         mergeMap(() => [])
     )

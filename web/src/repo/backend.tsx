@@ -51,17 +51,15 @@ export const resolveRev = memoizeObservable(
         queryGraphQL(
             `
             query ResolveRev($repoPath: String, $rev: String) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $rev) {
-                            cloneInProgress,
-                            commit {
-                                sha1
-                            }
+                repository(uri: $repoPath) {
+                    commit(rev: $rev) {
+                        cloneInProgress,
+                        commit {
+                            sha1
                         }
-                        defaultBranch
-                        redirectURL
                     }
+                    defaultBranch
+                    redirectURL
                 }
             }
             `,
@@ -71,24 +69,24 @@ export const resolveRev = memoizeObservable(
                 if (!data) {
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
                 }
-                if (data.root.repository && data.root.repository.redirectURL) {
-                    throw new RepoSeeOtherError(data.root.repository.redirectURL)
+                if (data.repository && data.repository.redirectURL) {
+                    throw new RepoSeeOtherError(data.repository.redirectURL)
                 }
-                if (!data.root.repository || !data.root.repository.commit) {
+                if (!data.repository || !data.repository.commit) {
                     throw new RepoNotFoundError(ctx.repoPath)
                 }
-                if (data.root.repository.commit.cloneInProgress) {
+                if (data.repository.commit.cloneInProgress) {
                     throw new CloneInProgressError(ctx.repoPath)
                 }
-                if (!data.root.repository.commit.commit) {
+                if (!data.repository.commit.commit) {
                     throw new RevNotFoundError(ctx.rev)
                 }
-                if (!data.root.repository.defaultBranch) {
+                if (!data.repository.defaultBranch) {
                     throw new RevNotFoundError('HEAD')
                 }
                 return {
-                    commitID: data.root.repository.commit.commit.sha1,
-                    defaultBranch: data.root.repository.defaultBranch,
+                    commitID: data.repository.commit.commit.sha1,
+                    defaultBranch: data.repository.defaultBranch,
                 }
             })
         ),
@@ -113,17 +111,15 @@ export const fetchHighlightedFile = memoizeObservable(
     (ctx: FetchFileCtx): Observable<HighlightedFileResult> =>
         queryGraphQL(
             `query HighlightedFile($repoPath: String, $commitID: String, $filePath: String, $disableTimeout: Boolean, $isLightTheme: Boolean) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    isDirectory
-                                    richHTML
-                                    highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
-                                        aborted
-                                        html
-                                    }
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            file(path: $filePath) {
+                                isDirectory
+                                richHTML
+                                highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
+                                    aborted
+                                    html
                                 }
                             }
                         }
@@ -135,19 +131,18 @@ export const fetchHighlightedFile = memoizeObservable(
             map(({ data, errors }) => {
                 if (
                     !data ||
-                    !data.root ||
-                    !data.root.repository ||
-                    !data.root.repository.commit ||
-                    !data.root.repository.commit.commit ||
-                    !data.root.repository.commit.commit.file ||
-                    !data.root.repository.commit.commit.file.highlight
+                    !data.repository ||
+                    !data.repository.commit ||
+                    !data.repository.commit.commit ||
+                    !data.repository.commit.commit.file ||
+                    !data.repository.commit.commit.file.highlight
                 ) {
                     throw Object.assign(
                         new Error('Could not fetch highlighted file: ' + (errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                const file = data.root.repository.commit.commit.file
+                const file = data.repository.commit.commit.file
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
@@ -183,14 +178,12 @@ export const listAllFiles = memoizeObservable(
     (ctx: { repoPath: string; commitID: string }): Observable<string[]> =>
         queryGraphQL(
             `query FileTree($repoPath: String!, $commitID: String!) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                tree(recursive: true) {
-                                    files {
-                                        name
-                                    }
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            tree(recursive: true) {
+                                files {
+                                    name
                                 }
                             }
                         }
@@ -202,15 +195,15 @@ export const listAllFiles = memoizeObservable(
             map(({ data, errors }) => {
                 if (
                     !data ||
-                    !data.root.repository ||
-                    !data.root.repository.commit ||
-                    !data.root.repository.commit.commit ||
-                    !data.root.repository.commit.commit.tree ||
-                    !data.root.repository.commit.commit.tree.files
+                    !data.repository ||
+                    !data.repository.commit ||
+                    !data.repository.commit.commit ||
+                    !data.repository.commit.commit.tree ||
+                    !data.repository.commit.commit.tree.files
                 ) {
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
                 }
-                return data.root.repository.commit.commit.tree.files.map(file => file.name)
+                return data.repository.commit.commit.tree.files.map(file => file.name)
             })
         ),
     makeRepoURI
@@ -225,14 +218,12 @@ export const fetchBlobContent = memoizeObservable(
     (ctx: FetchFileCtx): Observable<BlobContent> =>
         queryGraphQL(
             `query BlobContent($repoPath: String, $commitID: String, $filePath: String) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    isDirectory
-                                    content
-                                }
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            file(path: $filePath) {
+                                isDirectory
+                                content
                             }
                         }
                     }
@@ -243,18 +234,17 @@ export const fetchBlobContent = memoizeObservable(
             map(({ data, errors }) => {
                 if (
                     !data ||
-                    !data.root ||
-                    !data.root.repository ||
-                    !data.root.repository.commit ||
-                    !data.root.repository.commit.commit ||
-                    !data.root.repository.commit.commit.file
+                    !data.repository ||
+                    !data.repository.commit ||
+                    !data.repository.commit.commit ||
+                    !data.repository.commit.commit.file
                 ) {
                     throw Object.assign(
                         'Could not fetch blob content: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                const file = data.root.repository.commit.commit.file
+                const file = data.repository.commit.commit.file
                 return { isDirectory: file.isDirectory, content: file.content }
             })
         ),
@@ -270,29 +260,21 @@ export const fetchRepoRevisions = memoizeObservable(
     (ctx: { repoPath: string }): Observable<RepoRevisions> =>
         queryGraphQL(
             `query RepoRevisions($repoPath: String) {
-                root {
-                    repository(uri: $repoPath) {
-                        branches
-                        tags
-                    }
+                repository(uri: $repoPath) {
+                    branches
+                    tags
                 }
             }`,
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.root ||
-                    !data.root.repository ||
-                    !data.root.repository.branches ||
-                    !data.root.repository.tags
-                ) {
+                if (!data || !data.repository || !data.repository.branches || !data.repository.tags) {
                     throw Object.assign(
                         'Could not fetch repo revisions: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                return data.root.repository
+                return data.repository
             })
         ),
     makeRepoURI
@@ -302,12 +284,10 @@ export const fetchPhabricatorRepo = memoizeObservable(
     (ctx: { repoPath: string }): Observable<GQL.IPhabricatorRepo | null> =>
         queryGraphQL(
             `query PhabricatorRepo($repoPath: String) {
-                root {
-                    phabricatorRepo(uri: $repoPath) {
-                        callsign
-                        uri
-                        url
-                    }
+                phabricatorRepo(uri: $repoPath) {
+                    callsign
+                    uri
+                    url
                 }
             }`,
             ctx
@@ -326,17 +306,15 @@ export const fetchDirTree = memoizeObservable(
     (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ITree> =>
         queryGraphQL(
             `query fetchDirectoryTree($repoPath: String, $commitID: String, $filePath: String) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                tree(path: $filePath) {
-                                    directories {
-                                        name
-                                    }
-                                    files {
-                                        name
-                                    }
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            tree(path: $filePath) {
+                                directories {
+                                    name
+                                }
+                                files {
+                                    name
                                 }
                             }
                         }
@@ -348,17 +326,16 @@ export const fetchDirTree = memoizeObservable(
             map(({ data, errors }) => {
                 if (
                     !data ||
-                    !data.root ||
-                    !data.root.repository ||
-                    !data.root.repository.commit.commit ||
-                    !data.root.repository.commit.commit.tree
+                    !data.repository ||
+                    !data.repository.commit.commit ||
+                    !data.repository.commit.commit.tree
                 ) {
                     throw Object.assign(
                         'Could not fetch directory tree: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                return data.root.repository.commit.commit.tree
+                return data.repository.commit.commit.tree
             })
         ),
     makeRepoURI
@@ -368,21 +345,19 @@ export const fetchFileCommitInfo = memoizeObservable(
     (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ICommitInfo> =>
         queryGraphQL(
             `query fetchFileCommitInfo($repoPath: String, $commitID: String, $filePath: String) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    lastCommit {
-                                        rev
-                                        message
-                                        committer {
-                                            person {
-                                                name
-                                                avatarURL
-                                            }
-                                            date
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            file(path: $filePath) {
+                                lastCommit {
+                                    rev
+                                    message
+                                    committer {
+                                        person {
+                                            name
+                                            avatarURL
                                         }
+                                        date
                                     }
                                 }
                             }
@@ -395,18 +370,17 @@ export const fetchFileCommitInfo = memoizeObservable(
             map(({ data, errors }) => {
                 if (
                     !data ||
-                    !data.root ||
-                    !data.root.repository ||
-                    !data.root.repository.commit.commit ||
-                    !data.root.repository.commit.commit.file ||
-                    !data.root.repository.commit.commit.file.lastCommit
+                    !data.repository ||
+                    !data.repository.commit.commit ||
+                    !data.repository.commit.commit.file ||
+                    !data.repository.commit.commit.file.lastCommit
                 ) {
                     throw Object.assign(
                         'Could not fetch commit info: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                return data.root.repository.commit.commit.file.lastCommit
+                return data.repository.commit.commit.file.lastCommit
             })
         ),
     makeRepoURI
@@ -416,24 +390,22 @@ export const fetchRepositories = memoizeObservable(
     (ctx: { query: string }): Observable<GQL.IRepository[]> =>
         queryGraphQL(
             `query fetchRepositories($query: String) {
-                root {
-                    repositories(query: $query) {
-                        uri
-                        description
-                        private
-                    }
+                repositories(query: $query) {
+                    uri
+                    description
+                    private
                 }
             }`,
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.root || !data.root.repositories) {
+                if (!data || !data.repositories) {
                     throw Object.assign(
                         'Could not fetch repositories: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                return data.root.repositories
+                return data.repositories
             })
         ),
     ctx => ctx.query

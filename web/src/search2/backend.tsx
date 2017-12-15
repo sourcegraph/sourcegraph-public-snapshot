@@ -13,79 +13,77 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
             $query: String!,
             $scopeQuery: String!,
         ) {
-            root {
-                search2(query: $query, scopeQuery: $scopeQuery) {
+            search2(query: $query, scopeQuery: $scopeQuery) {
+                results {
+                    limitHit
+                    missing
+                    cloning
+                    timedout
                     results {
-                        limitHit
-                        missing
-                        cloning
-                        timedout
-                        results {
-                            __typename
-                            ... on FileMatch {
-                                resource
-                                limitHit
-                                lineMatches {
-                                    preview
-                                    lineNumber
-                                    offsetAndLengths
-                                }
-                            }
-                            ... on CommitSearchResult {
-                                refs {
-                                    name
-                                    displayName
-                                    prefix
-                                    repository { uri }
-                                }
-                                sourceRefs {
-                                    name
-                                    displayName
-                                    prefix
-                                    repository { uri }
-                                }
-                                messagePreview {
-                                    value
-                                    highlights {
-                                        line
-                                        character
-                                        length
-                                    }
-                                }
-                                diffPreview {
-                                    value
-                                    highlights {
-                                        line
-                                        character
-                                        length
-                                    }
-                                }
-                                commit {
-                                    repository {
-                                        uri
-                                    }
-                                    oid
-                                    abbreviatedOID
-                                    author {
-                                        person {
-                                            displayName
-                                            avatarURL
-                                        }
-                                        date
-                                    }
-                                    message
-                                }
+                        __typename
+                        ... on FileMatch {
+                            resource
+                            limitHit
+                            lineMatches {
+                                preview
+                                lineNumber
+                                offsetAndLengths
                             }
                         }
-                        alert {
-                            title
-                            description
-                            proposedQueries {
-                                description
-                                query {
-                                    query
-                                    scopeQuery
+                        ... on CommitSearchResult {
+                            refs {
+                                name
+                                displayName
+                                prefix
+                                repository { uri }
+                            }
+                            sourceRefs {
+                                name
+                                displayName
+                                prefix
+                                repository { uri }
+                            }
+                            messagePreview {
+                                value
+                                highlights {
+                                    line
+                                    character
+                                    length
                                 }
+                            }
+                            diffPreview {
+                                value
+                                highlights {
+                                    line
+                                    character
+                                    length
+                                }
+                            }
+                            commit {
+                                repository {
+                                    uri
+                                }
+                                oid
+                                abbreviatedOID
+                                author {
+                                    person {
+                                        displayName
+                                        avatarURL
+                                    }
+                                    date
+                                }
+                                message
+                            }
+                        }
+                    }
+                    alert {
+                        title
+                        description
+                        proposedQueries {
+                            description
+                            query {
+                                query
+                                scopeQuery
                             }
                         }
                     }
@@ -95,10 +93,10 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
         { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.search2 || !data.root.search2.results) {
+            if (!data || !data.search2 || !data.search2.results) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.search2.results
+            return data.search2.results
         })
     )
 }
@@ -109,25 +107,23 @@ export function fetchSearchResultCount(options: SearchOptions): Observable<GQL.I
             $query: String!,
             $scopeQuery: String!,
         ) {
-            root {
-                search2(query: $query, scopeQuery: $scopeQuery) {
-                    results {
-                        limitHit
-                        missing
-                        cloning
-                        resultCount
-                        approximateResultCount
-                    }
+            search2(query: $query, scopeQuery: $scopeQuery) {
+                results {
+                    limitHit
+                    missing
+                    cloning
+                    resultCount
+                    approximateResultCount
                 }
             }
         }`,
         { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.search2 || !data.root.search2.results) {
+            if (!data || !data.search2 || !data.search2.results) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.search2.results
+            return data.search2.results
         })
     )
 }
@@ -138,20 +134,18 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
             $query: String!,
             $scopeQuery: String!,
         ) {
-            root {
-                search2(query: $query, scopeQuery: $scopeQuery) {
-                    suggestions {
-                        ... on Repository {
-                            __typename
+            search2(query: $query, scopeQuery: $scopeQuery) {
+                suggestions {
+                    ... on Repository {
+                        __typename
+                        uri
+                    }
+                    ... on File {
+                        __typename
+                        name
+                        isDirectory
+                        repository {
                             uri
-                        }
-                        ... on File {
-                            __typename
-                            name
-                            isDirectory
-                            repository {
-                                uri
-                            }
                         }
                     }
                 }
@@ -160,10 +154,10 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
         { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).pipe(
         mergeMap(({ data, errors }) => {
-            if (!data || !data.root || !data.root.search2 || !data.root.search2.suggestions) {
+            if (!data || !data.search2 || !data.search2.suggestions) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.search2.suggestions
+            return data.search2.suggestions
         })
     )
 }
@@ -171,19 +165,17 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
 export function fetchSearchScopes(): Observable<GQL.ISearchScope2[]> {
     return queryGraphQL(`
         query SearchScopes2 {
-            root {
-                searchScopes2 {
-                    name
-                    value
-                }
+            searchScopes2 {
+                name
+                value
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.searchScopes2) {
+            if (!data || !data.searchScopes2) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.searchScopes2
+            return data.searchScopes2
         })
     )
 }
@@ -191,19 +183,17 @@ export function fetchSearchScopes(): Observable<GQL.ISearchScope2[]> {
 export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
     return queryGraphQL(`
         query RepoGroups {
-            root {
-                repoGroups {
-                    name
-                    repositories
-                }
+            repoGroups {
+                name
+                repositories
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.repoGroups) {
+            if (!data || !data.repoGroups) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.repoGroups
+            return data.repoGroups
         })
     )
 }
@@ -251,17 +241,15 @@ export function observeSavedQueries(): Observable<GQL.ISavedQuery[]> {
 function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
     return queryGraphQL(`
                 query SavedQueries {
-                    root {
-                        savedQueries {
-                            ${gqlSavedQuery}
-                        }
+                    savedQueries {
+                        ${gqlSavedQuery}
                     }
                 }`).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || !data.root.savedQueries) {
+            if (!data || !data.savedQueries) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.savedQueries
+            return data.savedQueries
         })
     )
 }
@@ -269,10 +257,8 @@ function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
 export function updateDeploymentConfiguration(email: string, telemetryEnabled: boolean): Observable<void> {
     return queryGraphQL(
         `query UpdateDeploymentConfiguration($email: String, $enableTelemetry: Boolean) {
-                root {
-                    updateDeploymentConfiguration(email: $email, enableTelemetry: $enableTelemetry) {
-                        alwaysNil
-                    }
+                updateDeploymentConfiguration(email: $email, enableTelemetry: $enableTelemetry) {
+                    alwaysNil
                 }
             }`,
         { email, enableTelemetry: telemetryEnabled }
