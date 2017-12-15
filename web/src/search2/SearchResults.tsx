@@ -15,6 +15,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { ServerBanner } from '../marketing/ServerBanner'
 import { eventLogger } from '../tracking/eventLogger'
+import { showDotComMarketing } from '../util/features'
 import { numberWithCommas, pluralize } from '../util/strings'
 import { searchText } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
@@ -216,7 +217,7 @@ export class SearchResults extends React.Component<Props, State> {
                     {!this.state.alert &&
                         !this.state.error &&
                         !this.state.loading &&
-                        !window.context.onPrem && <ServerBanner />}
+                        showDotComMarketing && <ServerBanner />}
                 </div>
                 {this.state.results.length > 0 && <div className="search-results2__header-border-bottom" />}
                 {this.state.cloning.map((repoPath, i) => (

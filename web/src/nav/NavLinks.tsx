@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { UserAvatar } from '../settings/user/UserAvatar'
+import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
 interface Props {
     location: H.Location
@@ -48,17 +49,17 @@ export class NavLinks extends React.Component<Props, State> {
                         Queries
                     </Link>
                 )}
-                {!window.context.onPrem && (
+                {showDotComMarketing && (
                     <a href="https://about.sourcegraph.com" className="nav-links__link">
                         About
                     </a>
                 )}
-                {!window.context.onPrem && (
+                {showDotComMarketing && (
                     <a href="https://about.sourcegraph.com/trial/" className="nav-links__border-link">
                         Try Sourcegraph Server
                     </a>
                 )}
-                {window.context.onPrem && (
+                {canListAllRepositories && (
                     <Link to="/browse" className="nav-links__link">
                         Browse
                     </Link>

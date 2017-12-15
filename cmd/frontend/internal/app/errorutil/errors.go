@@ -10,9 +10,9 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
@@ -99,7 +99,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		if e := recover(); e != nil {
 			log15.Error("panic during execution of error template", "error", e, "error_id", errorID, "func_name", "HandleError", "tmpl_name", "error/error.html")
 			err := fmt.Errorf("panic during execution of error template (error id %v): %v", errorID, e)
-			if !handlerutil.DebugMode {
+			if !envvar.DebugMode() {
 				err = errPublicFacingErrorMessage
 			}
 			http.Error(resp, err.Error(), http.StatusInternalServerError)
@@ -128,7 +128,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 	if err2 != nil {
 		log15.Error("error during execution of error template", "error", err2, "error_id", errorID)
 		err := fmt.Errorf("error during execution of error template (error id %v): %v", errorID, err2)
-		if !handlerutil.DebugMode {
+		if !envvar.DebugMode() {
 			err = errPublicFacingErrorMessage
 		}
 		http.Error(resp, err.Error(), http.StatusInternalServerError)
