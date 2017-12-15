@@ -98,6 +98,11 @@ interface SourcegraphContext {
     licenseStatus: string
 
     /**
+     * Status of onboarding
+     */
+    showOnboarding: boolean
+
+    /**
      * Server License
      */
     license: License | null

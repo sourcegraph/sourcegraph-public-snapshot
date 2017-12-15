@@ -17,4 +17,5 @@ var (
 	Settings     = &settings{}
 	Users        = &users{}
 	UserTags     = &userTags{}
+	Config       = &config{}
 )

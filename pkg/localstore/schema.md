@@ -16,6 +16,20 @@ Indexes:
 
 ```
 
+# Table "public.deployment_configuration"
+```
+      Column      |  Type   |  Modifiers   
+------------------+---------+--------------
+ id               | integer | not null
+ app_id           | uuid    | not null
+ enable_telemetry | boolean | default true
+ email            | text    | 
+ last_updated     | text    | 
+Indexes:
+    "deployment_configuration_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.global_dep"
 ```
   Column  |  Type   | Modifiers 

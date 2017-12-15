@@ -240,6 +240,7 @@ type Query {
     limit: Int
   ): [Dependency!]!
   users: [User!]!
+  updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 }
 
 type Search2 {
@@ -984,5 +985,11 @@ type UserActivity {
 enum UserEvent {
   PAGEVIEW
   SEARCHQUERY
+}
+
+type DeploymentConfiguration {
+	email: String
+	telemetryEnabled: Boolean
+	appID: String
 }
 `

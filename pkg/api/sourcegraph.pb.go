@@ -528,6 +528,13 @@ type UserActivity struct {
 	UpdatedAt     time.Time
 }
 
+type DeploymentConfiguration struct {
+	AppID            string `json:"AppID"`
+	Email            string `json:"Email"`
+	TelemetryEnabled bool   `json:"TelemetryEnabled"`
+	LastUpdated      string `json:"LastUpdated"`
+}
+
 type UserList struct {
 	Users []*User
 }

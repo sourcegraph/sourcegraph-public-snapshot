@@ -84,6 +84,8 @@
 // ../../../migrations/1512998571_repo_nullable.up.sql
 // ../../../migrations/1513000124_rm_repos_cols.down.sql
 // ../../../migrations/1513000124_rm_repos_cols.up.sql
+// ../../../migrations/1513188842_add_app_config_table.down.sql
+// ../../../migrations/1513188842_add_app_config_table.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1831,6 +1833,46 @@ func _1513000124_rm_repos_colsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1513188842_add_app_config_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x48\x49\x2d\xc8\xc9\xaf\xcc\x4d\xcd\x2b\x89\x4f\xce\xcf\x4b\xcb\x4c\x2f\x2d\x4a\x2c\xc9\xcc\xcf\xb3\xe6\x02\x04\x00\x00\xff\xff\x0c\x4e\x2e\x34\x25\x00\x00\x00")
+
+func _1513188842_add_app_config_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513188842_add_app_config_tableDownSql,
+		"1513188842_add_app_config_table.down.sql",
+	)
+}
+
+func _1513188842_add_app_config_tableDownSql() (*asset, error) {
+	bytes, err := _1513188842_add_app_config_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513188842_add_app_config_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1513188842_add_app_config_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xce\x4d\x4a\x04\x31\x10\x40\xe1\x75\xea\x14\xb5\x54\xe8\x1b\xcc\xaa\x47\xa3\x0c\x64\x5a\x90\xf4\x3a\x54\x9b\x52\x0a\xf3\x47\xac\x80\xb9\xbd\xb4\xdb\xc7\x5b\x7c\x57\xfb\x7a\xdb\x2e\x00\x4f\xef\x76\xf5\x16\xfd\x7a\x75\x16\x23\xb7\x54\x67\xe6\xa2\xe1\xa3\x96\x4f\xf9\x1a\x9d\x54\x6a\xc1\x07\x30\x12\x51\x8a\x62\xeb\x92\xa9\x4f\xfc\xe6\xb9\x80\xa1\xd6\x82\x44\x1c\x43\x22\x96\xaa\xb8\xed\xce\x2d\x60\xb8\xd0\x91\x38\x28\x27\xce\xac\x7d\xe2\x51\x6b\x62\x2a\xf8\x6c\x5f\xd6\xdd\x79\xd4\x3e\xf8\xfc\x32\x49\x42\xe5\x5f\x5d\xc0\x24\xfa\xd1\x30\x5a\x24\xe5\xf8\xdf\xe0\xf1\xf4\xbd\xdd\xef\x37\x7f\x81\xbf\x00\x00\x00\xff\xff\x33\x14\x5f\x69\xb0\x00\x00\x00")
+
+func _1513188842_add_app_config_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513188842_add_app_config_tableUpSql,
+		"1513188842_add_app_config_table.up.sql",
+	)
+}
+
+func _1513188842_add_app_config_tableUpSql() (*asset, error) {
+	bytes, err := _1513188842_add_app_config_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513188842_add_app_config_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1967,6 +2009,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1512998571_repo_nullable.up.sql":                             _1512998571_repo_nullableUpSql,
 	"1513000124_rm_repos_cols.down.sql":                           _1513000124_rm_repos_colsDownSql,
 	"1513000124_rm_repos_cols.up.sql":                             _1513000124_rm_repos_colsUpSql,
+	"1513188842_add_app_config_table.down.sql":                    _1513188842_add_app_config_tableDownSql,
+	"1513188842_add_app_config_table.up.sql":                      _1513188842_add_app_config_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2094,6 +2138,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1512998571_repo_nullable.up.sql":                             &bintree{_1512998571_repo_nullableUpSql, map[string]*bintree{}},
 	"1513000124_rm_repos_cols.down.sql":                           &bintree{_1513000124_rm_repos_colsDownSql, map[string]*bintree{}},
 	"1513000124_rm_repos_cols.up.sql":                             &bintree{_1513000124_rm_repos_colsUpSql, map[string]*bintree{}},
+	"1513188842_add_app_config_table.down.sql":                    &bintree{_1513188842_add_app_config_tableDownSql, map[string]*bintree{}},
+	"1513188842_add_app_config_table.up.sql":                      &bintree{_1513188842_add_app_config_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

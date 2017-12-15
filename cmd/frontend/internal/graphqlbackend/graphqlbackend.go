@@ -471,3 +471,18 @@ func (r *schemaResolver) Dependents(ctx context.Context, args *struct {
 
 	return depResolvers, nil
 }
+
+func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args *struct {
+	Email           string
+	EnableTelemetry bool
+}) (*EmptyResponse, error) {
+	configuration := &sourcegraph.DeploymentConfiguration{
+		Email:            args.Email,
+		TelemetryEnabled: args.EnableTelemetry,
+	}
+	err := localstore.Config.UpdateConfiguration(ctx, configuration)
+	if err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}

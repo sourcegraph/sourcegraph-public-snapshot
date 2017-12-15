@@ -63,6 +63,7 @@ type immutableUser struct {
 type JSContext struct {
 	AppRoot        string            `json:"appRoot,omitempty"`
 	AppURL         string            `json:"appURL,omitempty"`
+	AppID          string            `json:"appID,omitempty"`
 	XHRHeaders     map[string]string `json:"xhrHeaders"`
 	CSRFToken      string            `json:"csrfToken"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
@@ -89,6 +90,7 @@ type JSContext struct {
 	Auth0ClientID        string                     `json:"auth0ClientID"`
 	License              *license.License           `json:"license"`
 	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
+	ShowOnboarding       bool                       `json:"showOnboarding"`
 	EmailEnabled         bool                       `json:"emailEnabled"`
 }
 
@@ -141,8 +143,19 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 			backfill = true
 		}
 	}
-
+	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
 	license, licenseStatus := license.Get(TrackingAppID)
+	var showOnboarding = false
+	if license == nil || license.AppID == "" {
+		deploymentConfiguration, err := store.Config.Get(req.Context())
+		if err != nil {
+			// errors swallowed because telemetry is optional.
+			log15.Error("store.Config.Get failed", "error", err)
+		} else if deploymentConfiguration.TelemetryEnabled {
+			TrackingAppID = deploymentConfiguration.AppID
+		}
+		showOnboarding = deploymentConfiguration.LastUpdated == ""
+	}
 
 	return JSContext{
 		AppURL:               globals.AppURL.String(),
@@ -168,6 +181,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Auth0ClientID:        auth0.Config.ClientID,
 		License:              license,
 		LicenseStatus:        licenseStatus,
+		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         notif.EmailIsConfigured(),
 	}
 }
