@@ -172,20 +172,31 @@ class OnboardingRedirector extends React.Component<{}, {}> {
                             />
                             <form onSubmit={this.onSubmit}>
                                 <div style={{ textAlign: 'left' }}>
-                                    <h2 style={{ color: 'black', marginBottom: 0, paddingTop: 20 }}>Sign in</h2>
-                                    <div style={{ color: 'black' }}>to continue to Sourcegraph</div>
+                                    <h2 style={{ color: 'black', marginBottom: 0, paddingTop: 20 }}>
+                                        Welcome to Sourcegraph Server!
+                                    </h2>
+                                    <div style={{ color: 'black' }}>
+                                        Configure your server with an optional admin email address.
+                                    </div>
                                 </div>
                                 <div style={{ paddingTop: '1rem' }}>
                                     <input
                                         ref={e => (this.emailInput = e)}
                                         style={{ width: '100%', padding: 5 }}
-                                        placeholder="Email"
+                                        placeholder="Admin email (optional)"
                                         type="email"
                                     />
                                 </div>
-                                <div>
-                                    <input ref={e => (this.telemetryInput = e)} defaultChecked={true} type="checkbox" />
-                                    <span style={{ color: 'black', paddingLeft: 5 }}>Enable telemetry</span>
+                                <div style={{ margin: '9px 0 15px 0' }}>
+                                    <label style={{ color: 'black', paddingLeft: 5 }}>
+                                        <input
+                                            ref={e => (this.telemetryInput = e)}
+                                            defaultChecked={true}
+                                            type="checkbox"
+                                        />
+                                        &nbsp; Send product usage data and check for updates (file contents and names
+                                        are never sent)
+                                    </label>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <button
