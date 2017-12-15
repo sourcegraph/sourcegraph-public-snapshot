@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { UserAvatar } from '../settings/user/UserAvatar'
+import { canListAllRepositories } from '../util/features'
 
 interface Props {
     location: H.Location
@@ -58,7 +59,7 @@ export class NavLinks extends React.Component<Props, State> {
                         Try Sourcegraph Server
                     </a>
                 )}
-                {window.context.onPrem && (
+                {canListAllRepositories && (
                     <Link to="/browse" className="nav-links__link">
                         Browse
                     </Link>
