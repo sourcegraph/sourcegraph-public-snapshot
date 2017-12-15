@@ -127,18 +127,6 @@ func main() {
 		log.Fatal("Please set the environment variable LICENSE_KEY. Please contact sales@sourcegraph.com to obtain a license.")
 	}
 
-	// TODO we are requiring origin map, but if you have github or ghe setup
-	// you don't need it.
-	if originMap := os.Getenv("ORIGIN_MAP"); originMap == "" {
-		log.Println("Please set the environment variable ORIGIN_MAP.")
-		log.Println("ORIGIN_MAP tells sourcegraph how to map repo names into cloneable URLs.")
-		log.Printf("The format is prefix!cloneURL with a special '%%' denoting the suffix. Example:")
-		// TODO (give example URLs they are accessible from)
-		log.Println()
-		log.Printf(" gitlab.mycompany.com/!git@gitlab.mycompany.com:%%.git")
-		log.Fatal()
-	}
-
 	// Now we put things in the right place on the FS
 	if err := copySSH(); err != nil {
 		// TODO There are likely several cases where we don't need SSH

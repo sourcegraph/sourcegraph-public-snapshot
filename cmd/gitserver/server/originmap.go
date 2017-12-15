@@ -73,11 +73,15 @@ func init() {
 
 	// Add origin map for GitHub Enterprise instances of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
 	for _, c := range githubConf {
-		gheURL, err := url.Parse(c.URL)
+		ghURL, err := url.Parse(c.URL)
 		if err != nil {
 			log.Fatal(err)
 		}
-		originMap = append(originMap, prefixAndOrgin{Prefix: gheURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", gheURL.Hostname())})
+		var auth string
+		if c.Token != "" {
+			auth = c.Token + "@"
+		}
+		originMap = append(originMap, prefixAndOrgin{Prefix: ghURL.Hostname() + "/", Origin: fmt.Sprintf("%s://%s%s/%%.git", ghURL.Scheme, auth, ghURL.Hostname())})
 	}
 
 	addGitHubDefaults()
