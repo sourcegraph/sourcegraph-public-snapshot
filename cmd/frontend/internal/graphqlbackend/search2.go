@@ -42,7 +42,7 @@ type searchArgs2 struct {
 }
 
 // Search2 provides search results and suggestions.
-func (r *rootResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
+func (r *schemaResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
 	if len(args.Query)+len(args.ScopeQuery) > maxQueryLength {
 		return nil, fmt.Errorf("query exceeds max length (%d)", maxQueryLength)
 	}
@@ -80,7 +80,7 @@ func asString(v *types.Value) string {
 }
 
 type searchResolver2 struct {
-	root *rootResolver
+	root *schemaResolver
 	args searchArgs2
 
 	combinedQuery searchquery.Query // the scope and user query combined (most callers should use this)

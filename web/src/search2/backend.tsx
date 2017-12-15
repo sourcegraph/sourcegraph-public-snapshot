@@ -275,7 +275,7 @@ export function createSavedQuery(
     return mutateConfigurationGraphQL(
         subject,
         `mutation CreateSavedQuery($subject: ID!, $lastID: Int, $description: String!, $query: String!, $scopeQuery: String!) {
-            configuration(input: {subject: $subject, lastID: $lastID}) {
+            configurationMutation(input: {subject: $subject, lastID: $lastID}) {
                 createSavedQuery(description: $description, query: $query, scopeQuery: $scopeQuery) {
                     ${gqlSavedQuery}
                 }
@@ -284,10 +284,10 @@ export function createSavedQuery(
         { description, query, scopeQuery }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configuration || !data.configuration.createSavedQuery) {
+            if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.configuration.createSavedQuery
+            return data.configurationMutation.createSavedQuery
         })
     )
 }
@@ -302,7 +302,7 @@ export function updateSavedQuery(
     return mutateConfigurationGraphQL(
         subject,
         `mutation UpdateSavedQuery($subject: ID!, $lastID: Int, $index: Int!, $description: String, $query: String, $scopeQuery: String) {
-            configuration(input: {subject: $subject, lastID: $lastID}) {
+            configurationMutation(input: {subject: $subject, lastID: $lastID}) {
                 updateSavedQuery(index: $index, description: $description, query: $query, scopeQuery: $scopeQuery) {
                     ${gqlSavedQuery}
                 }
@@ -311,10 +311,10 @@ export function updateSavedQuery(
         { index, description, query, scopeQuery }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configuration || !data.configuration.updateSavedQuery) {
+            if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.configuration.updateSavedQuery
+            return data.configurationMutation.updateSavedQuery
         })
     )
 }
@@ -326,7 +326,7 @@ export function deleteSavedQuery(
     return mutateConfigurationGraphQL(
         subject,
         `mutation DeleteSavedQuery($subject: ID!, $lastID: Int, $index: Int!) {
-            configuration(input: {subject: $subject, lastID: $lastID}) {
+            configurationMutation(input: {subject: $subject, lastID: $lastID}) {
                 deleteSavedQuery(index: $index) {
                     alwaysNil
                 }
@@ -335,7 +335,7 @@ export function deleteSavedQuery(
         { index }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configuration || !data.configuration.deleteSavedQuery) {
+            if (!data || !data.configurationMutation || !data.configurationMutation.deleteSavedQuery) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
         })

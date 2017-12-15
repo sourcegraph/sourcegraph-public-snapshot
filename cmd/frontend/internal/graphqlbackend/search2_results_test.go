@@ -15,7 +15,7 @@ func TestSearch2Results(t *testing.T) {
 
 	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
 		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
-		r, err := (&rootResolver{}).Search2(args)
+		r, err := (&schemaResolver{}).Search2(args)
 		if err != nil {
 			t.Fatal("Search2:", err)
 		}

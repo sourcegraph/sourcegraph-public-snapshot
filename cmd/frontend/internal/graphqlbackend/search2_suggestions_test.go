@@ -18,7 +18,7 @@ func TestSearch2Suggestions(t *testing.T) {
 
 	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
 		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
-		r, err := (&rootResolver{}).Search2(args)
+		r, err := (&schemaResolver{}).Search2(args)
 		if err != nil {
 			t.Fatal("Search2:", err)
 		}
@@ -94,7 +94,7 @@ func TestSearch2Suggestions(t *testing.T) {
 
 	t.Run("single term invalid regex", func(t *testing.T) {
 		args := &searchArgs2{Query: "foo(", ScopeQuery: ""}
-		_, err := (&rootResolver{}).Search2(args)
+		_, err := (&schemaResolver{}).Search2(args)
 		if err == nil {
 			t.Fatal("err == nil")
 		} else if want := "error parsing regexp"; !strings.Contains(err.Error(), want) {

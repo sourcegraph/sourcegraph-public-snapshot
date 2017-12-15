@@ -110,8 +110,9 @@ func (r *nodeResolver) ToCommit() (*commitResolver, bool) {
 
 type schemaResolver struct{}
 
-func (r *schemaResolver) Root() *rootResolver {
-	return &rootResolver{}
+// DEPRECATED
+func (r *schemaResolver) Root() *schemaResolver {
+	return &schemaResolver{}
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*nodeResolver, error) {
@@ -171,9 +172,7 @@ func gqlidNodeByID(ctx context.Context, id graphql.ID) (gqlidNode, error) {
 	}
 }
 
-type rootResolver struct{}
-
-func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string }) (*repositoryResolver, error) {
+func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI string }) (*repositoryResolver, error) {
 	if args.URI == "" {
 		return nil, nil
 	}
@@ -196,7 +195,7 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 	return &repositoryResolver{repo: repo}, nil
 }
 
-func (r *rootResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI string }) (*phabricatorRepoResolver, error) {
+func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI string }) (*phabricatorRepoResolver, error) {
 	repo, err := localstore.Phabricator.GetByURI(ctx, args.URI)
 	if err != nil {
 		return nil, err
@@ -220,7 +219,7 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 	return backend.Repos.RefreshIndex(ctx, repo.URI)
 }
 
-func (r *rootResolver) Repositories(ctx context.Context, args *struct {
+func (r *schemaResolver) Repositories(ctx context.Context, args *struct {
 	Query string
 }) ([]*repositoryResolver, error) {
 	opt := &sourcegraph.RepoListOptions{Query: args.Query}
@@ -245,7 +244,7 @@ func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*reposi
 	return l, nil
 }
 
-func (r *rootResolver) Users(ctx context.Context) ([]*userResolver, error) {
+func (r *schemaResolver) Users(ctx context.Context) ([]*userResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAdmin() {
 		return nil, errors.New("Must be an admin")
@@ -270,7 +269,7 @@ func listUsers(ctx context.Context) ([]*userResolver, error) {
 }
 
 // Resolves symbols by a global symbol ID (use case for symbol URLs)
-func (r *rootResolver) Symbols(ctx context.Context, args *struct {
+func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 	ID   string
 	Mode string
 }) ([]*symbolResolver, error) {
@@ -336,13 +335,13 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	return resolvers, nil
 }
 
-func (r *rootResolver) CurrentUser(ctx context.Context) (*userResolver, error) {
+func (r *schemaResolver) CurrentUser(ctx context.Context) (*userResolver, error) {
 	return currentUser(ctx)
 }
 
 // RevealCustomerCompany transforms a user's IP addresses into a company profile by using
 // Clearbit's reveal API.
-func (r *rootResolver) RevealCustomerCompany(ctx context.Context, args *struct{ IP string }) (*revealResolver, error) {
+func (r *schemaResolver) RevealCustomerCompany(ctx context.Context, args *struct{ IP string }) (*revealResolver, error) {
 	c, err := clearbitutil.NewClient()
 	if err != nil {
 		return nil, err
@@ -388,7 +387,7 @@ func (r *rootResolver) RevealCustomerCompany(ctx context.Context, args *struct{ 
 	}, nil
 }
 
-func (r *rootResolver) Packages(ctx context.Context, args *struct {
+func (r *schemaResolver) Packages(ctx context.Context, args *struct {
 	Lang    string
 	ID      *string
 	Type    *string
@@ -429,7 +428,7 @@ func (r *rootResolver) Packages(ctx context.Context, args *struct {
 	return pkgResolvers, nil
 }
 
-func (r *rootResolver) Dependents(ctx context.Context, args *struct {
+func (r *schemaResolver) Dependents(ctx context.Context, args *struct {
 	Lang    string
 	ID      *string
 	Type    *string

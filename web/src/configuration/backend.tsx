@@ -46,14 +46,14 @@ function doUpdateConfiguration(
             $configurationInput: ConfigurationMutationGroupInput!,
             $updateInput: UpdateConfigurationInput
         ) {
-            configuration(input: $configurationInput) {
+            configurationMutation(input: $configurationInput) {
                 updateConfiguration(input: $updateInput) { }
             }
         }`,
         { configurationInput: configuration, updateInput: input }
     ).pipe(
         mergeMap(({ data, errors }) => {
-            if (!data || !data.configuration || data.configuration.updateConfiguration) {
+            if (!data || !data.configurationMutation || data.configurationMutation.updateConfiguration) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return refreshConfiguration()

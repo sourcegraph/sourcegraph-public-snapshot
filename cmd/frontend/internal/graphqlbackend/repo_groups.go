@@ -11,7 +11,7 @@ func (g repoGroup) Name() string { return g.name }
 
 func (g repoGroup) Repositories() []string { return g.repositories }
 
-func (r *rootResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
+func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 	groupsByName, err := resolveRepoGroups(ctx)
 	if err != nil {
 		return nil, err

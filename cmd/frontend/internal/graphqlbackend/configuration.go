@@ -251,7 +251,7 @@ func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 	return out, fmt.Errorf("errors merging configurations: %q", errs)
 }
 
-func (rootResolver) Configuration() *configurationCascadeResolver {
+func (schemaResolver) Configuration() *configurationCascadeResolver {
 	return &configurationCascadeResolver{}
 }
 
@@ -265,8 +265,8 @@ type configurationMutationResolver struct {
 	subject *configurationSubject
 }
 
-// Configuration defines the Mutation.configuration field.
-func (r *schemaResolver) Configuration(ctx context.Context, args *struct {
+// ConfigurationMutation defines the Mutation.configuration field.
+func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
 	Input *configurationMutationGroupInput
 }) (*configurationMutationResolver, error) {
 	subject, err := configurationSubjectByID(ctx, args.Input.Subject)

@@ -21,11 +21,6 @@ interface Node {
   id: ID!
 }
 
-type Query {
-  root: Root!
-  node(id: ID!): Node
-}
-
 type ThreadLines {
   # HTML context lines before 'html'.
   #
@@ -140,7 +135,7 @@ type Mutation {
   addPhabricatorRepo(callsign: String!, uri: String!, url: String!): EmptyResponse
   logUserEvent(event: UserEvent!): EmptyResponse
   # All mutations that update configuration setings are under this field.
-  configuration(input: ConfigurationMutationGroupInput!): ConfigurationMutation
+  configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
 }
 
 # Input for Mutation.configuration, which contains fields that all configuration
@@ -203,7 +198,9 @@ type UpdateConfigurationPayload {
   empty: EmptyResponse
 }
 
-type Root {
+type Query {
+  root: Query! @deprecated
+  node(id: ID!): Node
   repository(uri: String!): Repository
   phabricatorRepo(uri: String!): PhabricatorRepo
   repositories(query: String = ""): [Repository!]!
