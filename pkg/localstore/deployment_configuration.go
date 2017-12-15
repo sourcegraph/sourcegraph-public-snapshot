@@ -12,11 +12,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-type config struct{}
+type deploymentConfiguration struct{}
 
 var isDisabled = env.Get("DISABLE_TELEMETRY", "false", "disable telemetry")
 
-func (o *config) Get(ctx context.Context) (*sourcegraph.DeploymentConfiguration, error) {
+func (o *deploymentConfiguration) Get(ctx context.Context) (*sourcegraph.DeploymentConfiguration, error) {
 	configuration, err := o.getConfiguration(ctx)
 	if err == nil {
 		return configuration, nil
@@ -28,7 +28,7 @@ func (o *config) Get(ctx context.Context) (*sourcegraph.DeploymentConfiguration,
 	return o.getConfiguration(ctx)
 }
 
-func (o *config) getConfiguration(ctx context.Context) (*sourcegraph.DeploymentConfiguration, error) {
+func (o *deploymentConfiguration) getConfiguration(ctx context.Context) (*sourcegraph.DeploymentConfiguration, error) {
 	configuration := &sourcegraph.DeploymentConfiguration{}
 	err := globalDB.QueryRowContext(ctx, "SELECT app_id, enable_telemetry, last_updated from deployment_configuration LIMIT 1").Scan(
 		&configuration.AppID,
@@ -41,7 +41,7 @@ func (o *config) getConfiguration(ctx context.Context) (*sourcegraph.DeploymentC
 	return configuration, nil
 }
 
-func (o *config) UpdateConfiguration(ctx context.Context, updatedConfiguration *sourcegraph.DeploymentConfiguration) error {
+func (o *deploymentConfiguration) UpdateConfiguration(ctx context.Context, updatedConfiguration *sourcegraph.DeploymentConfiguration) error {
 	_, err := o.Get(ctx)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (o *config) UpdateConfiguration(ctx context.Context, updatedConfiguration *
 	return err
 }
 
-func (o *config) tryInsertNew(ctx context.Context) error {
+func (o *deploymentConfiguration) tryInsertNew(ctx context.Context) error {
 	appID, err := uuid.NewUUID()
 	if err != nil {
 		return err

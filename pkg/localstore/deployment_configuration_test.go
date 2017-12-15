@@ -9,7 +9,7 @@ func Test_Get(t *testing.T) {
 		t.Skip()
 	}
 	ctx := testContext()
-	config, err := Config.Get(ctx)
+	config, err := DeploymentConfiguration.Get(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

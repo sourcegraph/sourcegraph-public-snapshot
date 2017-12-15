@@ -480,7 +480,7 @@ func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args
 		Email:            args.Email,
 		TelemetryEnabled: args.EnableTelemetry,
 	}
-	err := localstore.Config.UpdateConfiguration(ctx, configuration)
+	err := localstore.DeploymentConfiguration.UpdateConfiguration(ctx, configuration)
 	if err != nil {
 		return nil, err
 	}

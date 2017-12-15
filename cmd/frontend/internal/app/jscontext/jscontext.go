@@ -146,8 +146,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
 	license, licenseStatus := license.Get(TrackingAppID)
 	var showOnboarding = false
-	if license == nil || license.AppID == "" {
-		deploymentConfiguration, err := store.Config.Get(req.Context())
+	if envvar.DeploymentOnPrem() && (license == nil || license.AppID == "") {
+		deploymentConfiguration, err := store.DeploymentConfiguration.Get(req.Context())
 		if err != nil {
 			// errors swallowed because telemetry is optional.
 			log15.Error("store.Config.Get failed", "error", err)

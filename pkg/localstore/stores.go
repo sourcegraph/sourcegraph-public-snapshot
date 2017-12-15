@@ -1,21 +1,21 @@
 package localstore
 
 var (
-	GlobalDeps   = &globalDeps{}
-	Pkgs         = &pkgs{}
-	RepoVCS      = &repoVCS{}
-	Repos        = &repos{}
-	Phabricator  = &phabricator{}
-	OrgRepos     = &orgRepos{}
-	Threads      = &threads{}
-	Comments     = &comments{}
-	UserActivity = &userActivity{}
-	SharedItems  = &sharedItems{}
-	Orgs         = &orgs{}
-	OrgTags      = &orgTags{}
-	OrgMembers   = &orgMembers{}
-	Settings     = &settings{}
-	Users        = &users{}
-	UserTags     = &userTags{}
-	Config       = &config{}
+	GlobalDeps              = &globalDeps{}
+	Pkgs                    = &pkgs{}
+	RepoVCS                 = &repoVCS{}
+	Repos                   = &repos{}
+	Phabricator             = &phabricator{}
+	OrgRepos                = &orgRepos{}
+	Threads                 = &threads{}
+	Comments                = &comments{}
+	UserActivity            = &userActivity{}
+	SharedItems             = &sharedItems{}
+	Orgs                    = &orgs{}
+	OrgTags                 = &orgTags{}
+	OrgMembers              = &orgMembers{}
+	Settings                = &settings{}
+	Users                   = &users{}
+	UserTags                = &userTags{}
+	DeploymentConfiguration = &deploymentConfiguration{}
 )
