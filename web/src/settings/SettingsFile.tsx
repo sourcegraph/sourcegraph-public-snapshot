@@ -39,15 +39,16 @@ interface State {
 const emptySettings = '{\n  // add configuration here\n}'
 
 export class SettingsFile extends React.PureComponent<Props, State> {
-    public state: State = { saving: false }
-
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
 
-        this.state.contents = this.getPropsSettingsContentsOrEmpty()
+        this.state = {
+            saving: false,
+            contents: this.getPropsSettingsContentsOrEmpty(),
+        }
 
         // We are finished saving when we receive the new settings ID and it's
         // higher than the one we saved on top of.
