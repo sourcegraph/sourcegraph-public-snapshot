@@ -4,14 +4,6 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-if [[ -z "${OFFLINE-}" ]] && ! docker pull sourcegraph/syntect_server; then
-	echo
-	echo Unable to pull latest container image for sourcegraph/syntect_server from the server.
-	echo
-	echo To run the dev server using the latest image available locally, rerun with OFFLINE=true.
-	exit 1
-fi
-
 GOBIN="$PWD"/vendor/.bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sqs/rego sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
 
 export AUTH0_CLIENT_ID=onW9hT0c7biVUqqNNuggQtMLvxUWHWRC
@@ -50,6 +42,7 @@ export PHABRICATOR_URL="http://phabricator.sgdev.org"
 export GITOLITE_HOSTS="gitolite.sgdev.org/!git@gitolite.sgdev.org"
 export CORS_ORIGIN="https://github.com http://phabricator.sgdev.org"
 export PHABRICATOR_CONFIG='[{"url":"http://phabricator.sgdev.org","token":"api-agswx2nwodkweitoo3t5l4dcc5xu"}]'
+export GITHUB_CONFIG='[{"url": "https://ghe.sgdev.org", "token":"23993bbf8e0fee068b8f70db05fc445d5a7a83da"}]'
 
 export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
 export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
@@ -58,10 +51,9 @@ export LICENSE_KEY=${LICENSE_KEY:-24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae
 
 # WebApp
 export NODE_ENV=development
-npm --prefix ./web install
 
 mkdir -p .bin
-env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
+env GOBIN=$PWD/.bin go install -tags="dev" -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true

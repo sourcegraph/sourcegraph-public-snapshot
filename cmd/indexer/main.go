@@ -70,9 +70,16 @@ func main() {
 		go idx.Work(ctx, wq)
 	}
 
-	// GitHub Repository syncing thread
+	// Repos List syncing thread
 	go func() {
 		if err := repos.RunRepositorySyncWorker(ctx); err != nil {
+			log.Fatalf("Fatal error RunRepositorySyncWorker: %s", err)
+		}
+	}()
+
+	// GitHub Repository syncing thread
+	go func() {
+		if err := repos.RunGitHubRepositorySyncWorker(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -80,7 +87,7 @@ func main() {
 	// Phabricator Repository syncing thread
 	go func() {
 		if err := repos.RunPhabricatorRepositorySyncWorker(ctx); err != nil {
-			log.Fatal(err)
+			log.Fatalf("Fatal error RunPhabricatorRepositorySyncworker: %s", err)
 		}
 	}()
 
@@ -96,5 +103,5 @@ func main() {
 	})
 
 	fmt.Println("indexer: listening on :3179")
-	log.Fatal(http.ListenAndServe(":3179", nil))
+	log.Fatalf("Fatal error serving: %s", http.ListenAndServe(":3179", nil))
 }

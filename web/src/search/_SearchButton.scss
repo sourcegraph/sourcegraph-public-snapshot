@@ -1,0 +1,14 @@
+.search-button {
+    display: flex;
+    padding: 0 0.5rem;
+
+    &__label {
+        margin-left: 0.25rem;
+    }
+
+    @media (max-width: $media-sm) {
+        &__label {
+            display: none;
+        }
+    }
+}

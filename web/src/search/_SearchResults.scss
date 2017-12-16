@@ -1,0 +1,48 @@
+@import './CommitSearchResult';
+@import './FileMatch';
+@import './ResultContainer';
+@import './SearchAlert';
+@import '../marketing/Banner';
+
+.search-results {
+    width: 100%;
+    padding: 0.5rem 5rem;
+
+    &__header {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: #93a9c8;
+        padding-bottom: 0.5rem;
+
+        &-notice {
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    // In narrow windows, make the results flush with the left/right sides,
+    // but we still need padding for the header and alerts.
+    @media (max-width: $media-lg) {
+        padding-left: 0;
+        padding-right: 0;
+
+        &__header,
+        &__alert {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    }
+}
+
+.theme-light {
+    .search-results {
+        &__header {
+            color: $color-light-text-2;
+        }
+
+        &__header-border-bottom {
+            border-bottom: 1px solid $color-light-border;
+        }
+    }
+}

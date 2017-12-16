@@ -287,7 +287,7 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, append([]gochimp.Var{
 			gochimp.Var{Name: "CONTENTS", Content: contents},
 			gochimp.Var{Name: "COMMENT_URL", Content: commentURL.String()},
-			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.File, thread.StartLine)},
+			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)},
 		}, lineVars...))
 	}
 	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil

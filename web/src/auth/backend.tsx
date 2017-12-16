@@ -6,9 +6,7 @@ export function isUsernameAvailable(username: string): Observable<boolean> {
     return queryGraphQL(
         `
         query UsernameAvailability($username: String!) {
-            root {
-                isUsernameAvailable(username: $username)
-            }
+            isUsernameAvailable(username: $username)
         }
         `,
         {
@@ -16,10 +14,10 @@ export function isUsernameAvailable(username: string): Observable<boolean> {
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.root || typeof data.root.isUsernameAvailable !== 'boolean') {
+            if (!data || typeof data.isUsernameAvailable !== 'boolean') {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.root.isUsernameAvailable
+            return data.isUsernameAvailable
         })
     )
 }

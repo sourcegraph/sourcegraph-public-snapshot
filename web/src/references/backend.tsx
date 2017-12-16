@@ -20,35 +20,33 @@ export const fetchDependencyReferences = memoizeObservable(
         const mode = util.getModeFromExtension(util.getPathExtension(ctx.filePath))
         return queryGraphQL(
             `query DependencyReferences($repoPath: String, $commitID: String, $filePath: String, $mode: String, $line: Int, $character: Int) {
-                root {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    dependencyReferences(Language: $mode, Line: $line, Character: $character) {
-                                        dependencyReferenceData {
-                                            references {
-                                                dependencyData
-                                                repoId
-                                                hints
-                                            }
-                                            location {
-                                                location
-                                                symbol
-                                            }
+                repository(uri: $repoPath) {
+                    commit(rev: $commitID) {
+                        commit {
+                            file(path: $filePath) {
+                                dependencyReferences(Language: $mode, Line: $line, Character: $character) {
+                                    dependencyReferenceData {
+                                        references {
+                                            dependencyData
+                                            repoId
+                                            hints
                                         }
-                                        repoData {
-                                            repos {
-                                                id
-                                                uri
-                                                lastIndexedRevOrLatest {
-                                                    commit {
-                                                        sha1
-                                                    }
+                                        location {
+                                            location
+                                            symbol
+                                        }
+                                    }
+                                    repoData {
+                                        repos {
+                                            id
+                                            uri
+                                            lastIndexedRevOrLatest {
+                                                commit {
+                                                    sha1
                                                 }
                                             }
-                                            repoIds
                                         }
+                                        repoIds
                                     }
                                 }
                             }
@@ -68,21 +66,20 @@ export const fetchDependencyReferences = memoizeObservable(
             map(result => {
                 if (
                     !result.data ||
-                    !result.data.root ||
-                    !result.data.root.repository ||
-                    !result.data.root.repository.commit ||
-                    !result.data.root.repository.commit.commit ||
-                    !result.data.root.repository.commit.commit.file ||
-                    !result.data.root.repository.commit.commit.file.dependencyReferences ||
-                    !result.data.root.repository.commit.commit.file.dependencyReferences.repoData ||
-                    !result.data.root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData ||
-                    !result.data.root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData
-                        .references.length
+                    !result.data.repository ||
+                    !result.data.repository.commit ||
+                    !result.data.repository.commit.commit ||
+                    !result.data.repository.commit.commit.file ||
+                    !result.data.repository.commit.commit.file.dependencyReferences ||
+                    !result.data.repository.commit.commit.file.dependencyReferences.repoData ||
+                    !result.data.repository.commit.commit.file.dependencyReferences.dependencyReferenceData ||
+                    !result.data.repository.commit.commit.file.dependencyReferences.dependencyReferenceData.references
+                        .length
                 ) {
                     return null
                 }
 
-                return result.data.root.repository.commit.commit.file.dependencyReferences
+                return result.data.repository.commit.commit.file.dependencyReferences
             })
         )
     },

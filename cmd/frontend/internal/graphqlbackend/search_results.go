@@ -1,0 +1,235 @@
+package graphqlbackend
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+)
+
+// searchResultsCommon contains fields that should be returned by all funcs
+// that contribute to the overall search result set.
+type searchResultsCommon struct {
+	limitHit bool     // whether the limit on results was hit
+	cloning  []string // repos that could not be searched because they were still being cloned
+	missing  []string // repos that could not be searched because they do not exist
+
+	// timedout usually contains repos that haven't finished being fetched yet.
+	// This should only happen for large repos and the searcher caches are
+	// purged.
+	timedout []string
+}
+
+func (c *searchResultsCommon) LimitHit() bool {
+	return c.limitHit
+}
+
+func (c *searchResultsCommon) Cloning() []string {
+	if c.cloning == nil {
+		return []string{}
+	}
+	return c.cloning
+}
+
+func (c *searchResultsCommon) Missing() []string {
+	if c.missing == nil {
+		return []string{}
+	}
+	return c.missing
+}
+
+func (c *searchResultsCommon) Timedout() []string {
+	if c.timedout == nil {
+		return []string{}
+	}
+	return c.timedout
+}
+
+// update updates c with the other data, deduping as necessary. It modifies c but
+// does not modify other.
+func (c *searchResultsCommon) update(other searchResultsCommon) {
+	c.limitHit = c.limitHit || other.limitHit
+
+	appendUnique := func(dst *[]string, src []string) {
+		dstSet := make(map[string]struct{}, len(*dst))
+		for _, s := range *dst {
+			dstSet[s] = struct{}{}
+		}
+		for _, s := range src {
+			if _, present := dstSet[s]; !present {
+				*dst = append(*dst, s)
+			}
+		}
+	}
+	appendUnique(&c.cloning, other.cloning)
+	appendUnique(&c.missing, other.missing)
+	appendUnique(&c.timedout, other.timedout)
+}
+
+type searchResults struct {
+	results []*searchResult
+	searchResultsCommon
+	alert *searchAlert
+}
+
+func (sr *searchResults) Results() []*searchResult {
+	return sr.results
+}
+
+func (sr *searchResults) ResultCount() int32 {
+	return int32(len(sr.results))
+}
+
+func (sr *searchResults) ApproximateResultCount() string {
+	if sr.alert != nil {
+		return "?"
+	}
+	if sr.limitHit || len(sr.missing) > 0 || len(sr.cloning) > 0 {
+		return fmt.Sprintf("%d+", len(sr.results))
+	}
+	return strconv.Itoa(len(sr.results))
+}
+
+func (sr *searchResults) Alert() *searchAlert { return sr.alert }
+
+func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
+	return r.doResults(ctx, "")
+}
+
+func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (*searchResults, error) {
+	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(repos) == 0 {
+		alert, err := r.alertForNoResolvedRepos(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &searchResults{alert: alert}, nil
+	}
+	if overLimit {
+		alert, err := r.alertForOverRepoLimit(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &searchResults{alert: alert}, nil
+	}
+
+	var patternsToCombine []string
+	for _, v := range r.combinedQuery.Values(searchquery.FieldDefault) {
+		// Treat quoted strings as literal strings to match, not regexps.
+		var pattern string
+		switch {
+		case v.String != nil:
+			pattern = regexp.QuoteMeta(*v.String)
+		case v.Regexp != nil:
+			pattern = v.Regexp.String()
+		}
+		if pattern == "" {
+			continue
+		}
+		patternsToCombine = append(patternsToCombine, pattern)
+	}
+	includePatterns, excludePatterns := r.combinedQuery.RegexpPatterns(searchquery.FieldFile)
+	args := repoSearchArgs{
+		query: &patternInfo{
+			IsRegExp:                     true,
+			IsCaseSensitive:              r.combinedQuery.IsCaseSensitive(),
+			FileMatchLimit:               300,
+			Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
+			IncludePatterns:              includePatterns,
+			PathPatternsAreRegExps:       true,
+			PathPatternsAreCaseSensitive: r.combinedQuery.IsCaseSensitive(),
+		},
+		repos: repos,
+	}
+	if len(excludePatterns) > 0 {
+		excludePattern := unionRegExps(excludePatterns)
+		args.query.ExcludePattern = &excludePattern
+	}
+
+	// Determine which types of results to return.
+	var searchFuncs []func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error)
+	var resultTypes []string
+	if forceOnlyResultType != "" {
+		resultTypes = []string{forceOnlyResultType}
+	} else {
+		resultTypes, _ = r.combinedQuery.StringValues(searchquery.FieldType)
+		if len(resultTypes) == 0 {
+			resultTypes = []string{"file"}
+		}
+	}
+	seenResultTypes := make(map[string]struct{}, len(resultTypes))
+	for _, resultType := range resultTypes {
+		if _, seen := seenResultTypes[resultType]; seen {
+			continue
+		}
+		seenResultTypes[resultType] = struct{}{}
+		switch resultType {
+		case "file":
+			if len(patternsToCombine) == 0 {
+				return nil, errors.New("no query terms or regexp specified")
+			}
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchRepos(ctx, &args)
+			})
+		case "diff":
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchCommitDiffsInRepos(ctx, &args, r.combinedQuery)
+			})
+		case "commit":
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchCommitLogInRepos(ctx, &args, r.combinedQuery)
+			})
+		}
+	}
+
+	// Run all search funcs.
+	var results searchResults
+	for _, searchFunc := range searchFuncs {
+		results1, common1, err := searchFunc(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if results1 == nil && common1 == nil {
+			continue
+		}
+		results.results = append(results.results, results1...)
+		// TODO(sqs): combine diff and commit results that refer to the same underlying
+		// commit (and match on the commit's diff and message, respectively).
+		results.searchResultsCommon.update(*common1)
+	}
+
+	if len(missingRepoRevs) > 0 {
+		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
+	}
+
+	return &results, nil
+}
+
+type searchResult struct {
+	fileMatch *fileMatch
+	diff      *commitSearchResult
+}
+
+func (g *searchResult) ToFileMatch() (*fileMatch, bool) { return g.fileMatch, g.fileMatch != nil }
+func (g *searchResult) ToCommitSearchResult() (*commitSearchResult, bool) {
+	return g.diff, g.diff != nil
+}
+
+// regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain
+// non-overlapping matches for each pattern in order.
+func regexpPatternMatchingExprsInOrder(patterns []string) string {
+	if len(patterns) == 0 {
+		return ""
+	}
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	return "(" + strings.Join(patterns, ").*?(") + ")" // "?" makes it prefer shorter matches
+}

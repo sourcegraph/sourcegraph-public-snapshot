@@ -227,7 +227,7 @@ func (c *Client) notifyOnComments(
 				Value: fmt.Sprintf("<%s|%s/%s (lines %d–%d)>",
 					deepURL,
 					orgRepo.CanonicalRemoteID,
-					thread.File,
+					thread.RepoRevisionPath,
 					thread.StartLine,
 					thread.EndLine),
 				Short: true,

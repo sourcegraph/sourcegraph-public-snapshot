@@ -63,6 +63,7 @@ type immutableUser struct {
 type JSContext struct {
 	AppRoot        string            `json:"appRoot,omitempty"`
 	AppURL         string            `json:"appURL,omitempty"`
+	AppID          string            `json:"appID,omitempty"`
 	XHRHeaders     map[string]string `json:"xhrHeaders"`
 	CSRFToken      string            `json:"csrfToken"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
@@ -81,6 +82,7 @@ type JSContext struct {
 	SentryDSN            string                     `json:"sentryDSN"`
 	IntercomHash         string                     `json:"intercomHash"`
 	TrackingAppID        string                     `json:"trackingAppID"`
+	Debug                bool                       `json:"debug"`
 	OnPrem               bool                       `json:"onPrem"`
 	RepoHomeRegexFilter  string                     `json:"repoHomeRegexFilter"`
 	SessionID            string                     `json:"sessionID"`
@@ -88,6 +90,7 @@ type JSContext struct {
 	Auth0ClientID        string                     `json:"auth0ClientID"`
 	License              *license.License           `json:"license"`
 	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
+	ShowOnboarding       bool                       `json:"showOnboarding"`
 	EmailEnabled         bool                       `json:"emailEnabled"`
 }
 
@@ -140,8 +143,21 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 			backfill = true
 		}
 	}
-
+	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
 	license, licenseStatus := license.Get(TrackingAppID)
+	var showOnboarding = false
+	if envvar.DeploymentOnPrem() && (license == nil || license.AppID == "") {
+		deploymentConfiguration, err := store.DeploymentConfiguration.Get(req.Context())
+		if err != nil {
+			// errors swallowed because telemetry is optional.
+			log15.Error("store.Config.Get failed", "error", err)
+		} else if deploymentConfiguration.TelemetryEnabled {
+			TrackingAppID = deploymentConfiguration.AppID
+		} else {
+			TrackingAppID = ""
+		}
+		showOnboarding = deploymentConfiguration.LastUpdated == ""
+	}
 
 	return JSContext{
 		AppURL:               globals.AppURL.String(),
@@ -158,6 +174,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
 		IntercomHash:         intercomHMAC(actor.UID),
+		Debug:                envvar.DebugMode(),
 		OnPrem:               envvar.DeploymentOnPrem(),
 		TrackingAppID:        TrackingAppID,
 		RepoHomeRegexFilter:  repoHomeRegexFilter,
@@ -166,6 +183,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Auth0ClientID:        auth0.Config.ClientID,
 		License:              license,
 		LicenseStatus:        licenseStatus,
+		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         notif.EmailIsConfigured(),
 	}
 }

@@ -36,7 +36,7 @@ type partialConfigSavedQueries struct {
 	SavedQueries []configSavedQuery `json:"search.savedQueries"`
 }
 
-func (r *rootResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolver, error) {
+func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolver, error) {
 	configSubjects, err := r.Configuration().Subjects(ctx)
 	if err != nil {
 		return nil, err

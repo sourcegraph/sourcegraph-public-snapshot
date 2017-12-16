@@ -26,18 +26,14 @@ For Linux users or if you don't want to use Homebrew on macOS.
 This is a streamlined setup for Mac machines.
 
 1. Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
-2. Install [Homebrew](http://homebrew.sh).
-3. Install Go, Node, PostgreSQL, Redis, Git, Python.
+2. Install [Homebrew](http://brew.sh).
+3. Install Go, Node, PostgreSQL, Redis, Git.
 
     ```
-    brew install go node redis postgresql git python gnu-sed
+    brew install go node redis postgresql git gnu-sed
     ```
 
-4. Install virtualenv.
-
-    ```
-    pip install virtualenv
-    ```
+4. Set up your [Go Workspace](https://golang.org/doc/code.html#Workspaces)
 
 5. Configure PostgreSQL and Redis to start automatically
 
@@ -155,7 +151,7 @@ To run tests within a directory (and recursively within its
 subdirectories):
 
 ```
-go test ./app/...
+go test ./cmd/...
 ```
 
 To run a specific package's tests:

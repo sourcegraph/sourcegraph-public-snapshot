@@ -1,0 +1,9 @@
+.search-help {
+    white-space: nowrap;
+
+    @media (max-width: $media-md) {
+        &__text {
+            display: none;
+        }
+    }
+}

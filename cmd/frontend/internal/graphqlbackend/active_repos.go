@@ -47,7 +47,7 @@ func (a *activeRepoResults) Inactive() []string {
 
 // ActiveRepos returns a list of active and inactive repository URIs for the
 // given user.
-func (*rootResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, error) {
+func (*schemaResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

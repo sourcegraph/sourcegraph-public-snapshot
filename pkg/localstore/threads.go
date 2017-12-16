@@ -35,7 +35,8 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 		err = globalDB.QueryRowContext(ctx, `
 			INSERT INTO threads(
 				org_repo_id,
-				file,
+				repo_revision_path,
+				lines_revision_path,
 				repo_revision,
 				lines_revision,
 				branch,
@@ -64,7 +65,8 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 			) RETURNING id
 			`,
 			newThread.OrgRepoID,
-			newThread.File,
+			newThread.RepoRevisionPath,
+			newThread.LinesRevisionPath,
 			newThread.RepoRevision,
 			newThread.LinesRevision,
 			newThread.Branch,
@@ -81,7 +83,8 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 		err = globalDB.QueryRowContext(ctx, `
 			INSERT INTO threads(
 				org_repo_id,
-				file,
+				repo_revision_path,
+				lines_revision_path,
 				repo_revision,
 				lines_revision,
 				branch,
@@ -122,10 +125,12 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 				$18,
 				$19,
 				$20,
-				$21
+				$21,
+				$22
 			) RETURNING id`,
 			newThread.OrgRepoID,
-			newThread.File,
+			newThread.RepoRevisionPath,
+			newThread.LinesRevisionPath,
 			newThread.RepoRevision,
 			newThread.LinesRevision,
 			newThread.Branch,
@@ -220,7 +225,7 @@ func (t *threads) listQuery(orgID *int32, repoIDs []int32, branch, file *string)
 		conds = append(conds, sqlf.Sprintf("t.branch=%s", *branch))
 	}
 	if file != nil {
-		conds = append(conds, sqlf.Sprintf("t.file=%s", *file))
+		conds = append(conds, sqlf.Sprintf("(t.repo_revision_path=%s OR t.lines_revision_path=%s)", *file, *file))
 	}
 	conds = append(conds, sqlf.Sprintf("t.deleted_at IS NULL"))
 	return sqlf.Sprintf(join+"WHERE %s", sqlf.Join(conds, "AND"))
@@ -249,7 +254,8 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 		SELECT
 			t.id,
 			t.org_repo_id,
-			t.file,
+			t.repo_revision_path,
+			t.lines_revision_path,
 			t.repo_revision,
 			t.lines_revision,
 			t.branch,
@@ -286,7 +292,8 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 		err := rows.Scan(
 			&t.ID,
 			&t.OrgRepoID,
-			&t.File,
+			&t.RepoRevisionPath,
+			&t.LinesRevisionPath,
 			&t.RepoRevision,
 			&t.LinesRevision,
 			&t.Branch,

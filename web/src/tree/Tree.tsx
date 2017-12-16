@@ -78,7 +78,7 @@ export class Tree extends React.PureComponent<Props, State> {
         const { nodes, nodeMap } = this.parseNodes(props.paths, props.selectedPath)
         this.state = {
             store: { nodes, nodeMap, selectedPath: props.selectedPath },
-            relativeDir: nodes.length > 1 ? getParentDir(nodes[0].filePath) : undefined,
+            relativeDir: nodes.length > 0 ? getParentDir(nodes[0].filePath) : undefined,
         }
     }
 
@@ -99,7 +99,7 @@ export class Tree extends React.PureComponent<Props, State> {
             const { nodes, nodeMap } = this.parseNodes(nextProps.paths, selectedPath)
             this.setState({
                 store: { nodes, nodeMap, selectedPath },
-                relativeDir: nodes.length > 1 ? getParentDir(nodes[0].filePath) : undefined,
+                relativeDir: nodes.length > 0 ? getParentDir(nodes[0].filePath) : undefined,
             })
         } else {
             // If we are trying to show a path not available on the tree, recreate the nodes.
@@ -108,7 +108,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 const { nodes, nodeMap } = this.parseNodes(nextProps.paths, selectedPath)
                 this.setState({
                     store: { nodes, nodeMap, selectedPath },
-                    relativeDir: nodes.length > 1 ? getParentDir(nodes[0].filePath) : undefined,
+                    relativeDir: nodes.length > 0 ? getParentDir(nodes[0].filePath) : undefined,
                 })
             } else {
                 selectRow(this.state.store, selectedPath)

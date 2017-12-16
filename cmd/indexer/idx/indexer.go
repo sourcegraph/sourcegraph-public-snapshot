@@ -3,6 +3,7 @@ package idx
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +14,14 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
+
+var LSPEnabled bool
+
+func init() {
+	if _, exists := os.LookupEnv("LSP_PROXY"); exists {
+		LSPEnabled = true
+	}
+}
 
 type qitem struct {
 	repo string
@@ -161,7 +170,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 	defer log15.Info("Indexing finished", "repo", repoName, "headCommit", headCommit)
 
 	// Global refs & packages indexing. Neither index forks.
-	if !repo.Fork {
+	if !repo.Fork && LSPEnabled {
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
 		defErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, string(headCommit))

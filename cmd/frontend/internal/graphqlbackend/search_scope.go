@@ -68,6 +68,6 @@ func defaultSearchScopes() []*searchScope {
 	return defaultSearchScopes
 }
 
-func (r *rootResolver) SearchScopes2() []*searchScope {
+func (r *schemaResolver) SearchScopes() []*searchScope {
 	return searchScopesList
 }

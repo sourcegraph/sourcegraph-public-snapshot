@@ -79,7 +79,7 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string,
 			continue
 		}
 		if err := g.refreshIndexForLanguage(ctx, langName, repo, commitID); err != nil {
-			log15.Crit("refreshing index failed", "language", langName, "error", err)
+			log15.Error("refreshing index failed", "language", langName, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", langName, err))
 		}
 	}

@@ -3,13 +3,15 @@ import { RouteProps } from 'react-router'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { CommentsPage } from './comments/CommentsPage'
+import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { LicenseInvalidPage } from './LicenseInvalidPage'
 import { OpenPage } from './open/OpenPage'
 import { RepoBrowser } from './repo/RepoBrowser'
 import { RepositoryResolver } from './repo/RepositoryResolver'
-import { SavedQueries } from './search2/SavedQueries'
-import { SearchResults } from './search2/SearchResults'
+import { SavedQueries } from './search/SavedQueries'
+import { SearchResults } from './search/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
+import { canListAllRepositories } from './util/features'
 
 export interface LayoutRouteProps extends RouteProps {
     component?: React.ComponentType<any>
@@ -82,7 +84,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/browse',
-        component: RepoBrowser,
+        component: canListAllRepositories ? RepoBrowser : ErrorNotSupportedPage,
         exact: true,
         forceNarrowWidth: true,
     },

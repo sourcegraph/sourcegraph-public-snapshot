@@ -10,6 +10,16 @@
         margin-left: 1rem;
     }
 
+    &__border-link {
+        display: inline-block;
+        text-decoration: none;
+        margin-left: 1rem;
+        border: 1px #cad2e2;
+        border-radius: 0.125rem;
+        border-style: solid;
+        padding: 0.3125rem;
+    }
+
     .avatar,
     .avatar-icon {
         width: 2rem;

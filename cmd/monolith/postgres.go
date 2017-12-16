@@ -29,7 +29,7 @@ func maybePostgresProcFile() (string, error) {
 	var output bytes.Buffer
 	e := execer{Out: &output}
 	e.Command("mkdir", "-p", "/run/postgresql")
-	e.Command("chown", "postgres", "/run/postgresql")
+	e.Command("chown", "-R", "postgres", "/run/postgresql")
 	if err := e.Error(); err != nil {
 		log.Printf("Setting up postgres failed:\n%s", output.String())
 		return "", err
@@ -56,6 +56,16 @@ func maybePostgresProcFile() (string, error) {
 		if err := e.Error(); err != nil {
 			log.Printf("Setting up postgres failed:\n%s", output.String())
 			os.RemoveAll(path)
+			return "", err
+		}
+	} else {
+		// Between restarts the owner of the volume may have changed. Ensure
+		// postgres can still read it.
+		var output bytes.Buffer
+		e := execer{Out: &output}
+		e.Command("chown", "-R", "postgres", path)
+		if err := e.Error(); err != nil {
+			log.Printf("Adjusting fs owners for postgres failed:\n%s", output.String())
 			return "", err
 		}
 	}

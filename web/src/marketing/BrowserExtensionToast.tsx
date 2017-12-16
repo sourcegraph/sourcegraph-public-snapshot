@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { eventLogger } from '../tracking/eventLogger'
+import { showDotComMarketing } from '../util/features'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
 
@@ -33,7 +34,7 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
-        super()
+        super(props)
         this.state = {
             visible: false,
         }
@@ -46,7 +47,7 @@ export abstract class BrowserExtensionToast extends React.Component<Props, State
             browserExtensionInstalled.subscribe(isInstalled => {
                 const visible =
                     !isInstalled &&
-                    !window.context.onPrem &&
+                    showDotComMarketing &&
                     localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' &&
                     daysActiveCount === 1
                 this.setState({ visible })

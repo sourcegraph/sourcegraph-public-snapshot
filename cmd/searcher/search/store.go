@@ -198,6 +198,10 @@ func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadClose
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
+		if err != nil {
+			fetchFailed.Inc()
+			log.Printf("failed to fetch %s@%s: %s", repo, commit, err)
+		}
 		pw.CloseWithError(err)
 	}()
 
@@ -299,6 +303,12 @@ var (
 		Subsystem: "store",
 		Name:      "evictions",
 		Help:      "The total number of items evicted from the cache.",
+	})
+	fetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "fetch_failed",
+		Help:      "The total number of archive fetches that failed.",
 	})
 )
 

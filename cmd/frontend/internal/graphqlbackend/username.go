@@ -6,7 +6,7 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-func (*rootResolver) IsUsernameAvailable(ctx context.Context, args *struct {
+func (*schemaResolver) IsUsernameAvailable(ctx context.Context, args *struct {
 	Username string
 }) (bool, error) {
 	_, err := store.Users.GetByUsername(ctx, args.Username)

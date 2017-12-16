@@ -31,17 +31,18 @@ func TestThreads_Create(t *testing.T) {
 	store.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
 	repoRev, lineRev := "abcd", "dcba"
 	threadCreateCalled, _ := store.Mocks.Threads.MockCreate_Return(t, &sourcegraph.Thread{
-		ID:            1,
-		OrgRepoID:     wantRepo.ID,
-		File:          "foo.go",
-		RepoRevision:  repoRev,
-		LinesRevision: lineRev,
+		ID:                1,
+		OrgRepoID:         wantRepo.ID,
+		RepoRevisionPath:  "foo.go",
+		LinesRevisionPath: "foo.go",
+		RepoRevision:      repoRev,
+		LinesRevision:     lineRev,
 	}, nil)
 	commentCreateCalled, _ := store.Mocks.Comments.MockCreate(t)
 
 	r := &schemaResolver{}
 	_, err := r.CreateThread(ctx, &struct {
-		OrgID             orgInt32OrID
+		OrgID             orgID
 		CanonicalRemoteID string
 		CloneURL          string
 		File              string

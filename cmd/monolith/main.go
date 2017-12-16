@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"k8s.io/client-go/pkg/util/rand"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/monolith/internal/goreman"
 )
@@ -23,43 +24,46 @@ var defaultEnv = map[string]string{
 	"SRC_SESSION_STORE_REDIS": "127.0.0.1:6379",
 	"SRC_INDEXER":             "127.0.0.1:3179",
 	"SRC_SYNTECT_SERVER":      "http://localhost:3700",
-	"SRC_HTTP_ADDR":           ":80",
+	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
 
 	// We disable google analytics, etc
 	"SRC_APP_DISABLE_SUPPORT_SERVICES": "true",
 
+	// Sourcegraph penance
+	"SG_FEATURE_SEP20AUTH": "true",
+
 	// We adjust behaviour for on-prem vs prod
 	"DEPLOYMENT_ON_PREM": "true",
 
-	// TODO environment variables we need to support
-	// CACHE_DIR
+	// TODO environment variables we need to support related to codehosts
 	// GITHUB_CONFIG
-	// GITHUB_PERSONAL_ACCESS_TOKEN   deprecated??
 	// GITOLITE_HOSTS
 	// ORIGIN_MAP
-	// SEARCHER_CACHE_SIZE_MB
+	// PUBLIC_REPO_REDIRECTS
+	"AUTO_REPO_ADD": "true", // false in server-gen, but until we have a nice way to setup repo cloning this is best
 
-	// TODO this is true in sourcegraph-server-gen, but seems uneeded in
-	// practice? It causes requests to be logged in github-proxy
-	"LOG_REQUESTS": "true",
+	// Limit our cache size to 100GB, same as prod. We should probably update
+	// searcher to ensure this value isn't larger than the volume for
+	// CACHE_DIR.
+	"SEARCHER_CACHE_SIZE_MB": "100000",
 
 	// Enable our repo-list-updater to run every minute. Currently this is
 	// only used to sync from gitolite.
 	"REPO_LIST_UPDATE_INTERVAL": "1",
 
-	// TODO wizard which may avoid setting this. This is setup to auto-clone
-	// github using our github dev secrets.
-	//"GITHUB_BASE_URL":       "http://127.0.0.1:3180",
-	//"GITHUB_CLIENT_ID":      "6f2a43bd8877ff5fd1d5",
-	//"GITHUB_CLIENT_SECRET":  "c5ff37d80e3736924cbbdf2922a50cac31963e43",
-	//"PUBLIC_REPO_REDIRECTS": "false",
-	"AUTO_REPO_ADD": "true", // false in server-gen, but until we have a nice way to setup repo cloning this is best
+	// We don't want to require users to have a license. So we use the magic
+	// license which bypasses license checks.
+	"LICENSE_KEY": "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
+
+	// Env vars for higher rate limits to api.github.com
+	"GITHUB_BASE_URL":      "http://localhost:3180",
+	"GITHUB_CLIENT_ID":     "a359c6590ebe783800b1",
+	"GITHUB_CLIENT_SECRET": "2f8c304d01ad3b23c1f6c0a3b42bd09a8694262f",
 
 	// TODO other bits
-	// * should we guess SRC_APP_URL?
-	// * Do we need BI_LOGGER?
-	// * SRC_LOG_LEVEL and DEBUG
+	// * Guess SRC_APP_URL based on hostname
+	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 	// * TRACKING_APP_ID can be guessed from LICENSE_KEY https://github.com/sourcegraph/sourcegraph/issues/8377
 }
 
@@ -74,23 +78,39 @@ func main() {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
 		}
 
-		// As a convenience some environment variables can stored as a file
+		// As a convenience some environment variables can be stored as a file
 		envFiles := map[string]string{
 			"license.sgl": "LICENSE_KEY",
+			"config.json": "SOURCEGRAPH_CONFIG",
 		}
 		for name, key := range envFiles {
 			b, err := ioutil.ReadFile(filepath.Join(configDir, name))
-			if err != nil && !os.IsNotExist(err) {
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
 				log.Fatalf("could not read file %q into environment variable %s: %s", name, key, err)
 			}
 			setDefaultEnv(key, strings.TrimSpace(string(b)))
 		}
 
-		// Set config
-		if b, err := ioutil.ReadFile(filepath.Join(configDir, "config.json")); err == nil {
-			setDefaultEnvFromConfig(string(b))
-		} else if !os.IsNotExist(err) {
-			log.Fatal("failed to read contents of `config.json`")
+		// Convert SOURCEGRAPH_CONFIG into env vars
+		if config, ok := os.LookupEnv("SOURCEGRAPH_CONFIG"); ok {
+			setDefaultEnvFromConfig(config)
+		}
+
+		if _, ok := os.LookupEnv("SRC_APP_SECRET_KEY"); !ok {
+			appSecretKeyFile := filepath.Join(configDir, "srcAppSecretKey")
+			appSecretKey, err := ioutil.ReadFile(appSecretKeyFile)
+			if os.IsNotExist(err) {
+				appSecretKey = []byte(rand.String(128))
+				if err := ioutil.WriteFile(appSecretKeyFile, appSecretKey, 0644); err != nil {
+					log.Fatalf("could not write secret key file: %s", err)
+				}
+			} else if err != nil {
+				log.Fatalf("could not read app secret key file: %s", err)
+			}
+			setDefaultEnv("SRC_APP_SECRET_KEY", string(appSecretKey))
 		}
 	}
 
@@ -98,6 +118,7 @@ func main() {
 	{
 		dataDir := setDefaultEnv("DATA_DIR", "/var/opt/sourcegraph")
 		setDefaultEnv("SRC_REPOS_DIR", filepath.Join(dataDir, "repos"))
+		setDefaultEnv("CACHE_DIR", filepath.Join(dataDir, "cache"))
 	}
 
 	// Special case some convenience environment variables
@@ -105,7 +126,9 @@ func main() {
 		setDefaultEnv("REDIS_MASTER_ENDPOINT", redis)
 		setDefaultEnv("SRC_SESSION_STORE_REDIS", redis)
 	}
-	// TODO is this an alright idea for skipping this bit of config?
+	// TODO Most users are using the same LICENSE_KEY, so we need to use
+	// something that can't be guessed across installations (crypto random
+	// number we save?)
 	setDefaultEnv("SRC_APP_SECRET_KEY", os.Getenv("LICENSE_KEY"))
 
 	for k, v := range defaultEnv {
@@ -116,18 +139,6 @@ func main() {
 	// is missing
 	if _, ok := os.LookupEnv("LICENSE_KEY"); !ok {
 		log.Fatal("Please set the environment variable LICENSE_KEY. Please contact sales@sourcegraph.com to obtain a license.")
-	}
-
-	// TODO we are requiring origin map, but if you have github or ghe setup
-	// you don't need it.
-	if originMap := os.Getenv("ORIGIN_MAP"); originMap == "" {
-		log.Println("Please set the environment variable ORIGIN_MAP.")
-		log.Println("ORIGIN_MAP tells sourcegraph how to map repo names into cloneable URLs.")
-		log.Printf("The format is prefix!cloneURL with a special '%%' denoting the suffix. Example:")
-		// TODO (give example URLs they are accessible from)
-		log.Println()
-		log.Printf(" gitlab.mycompany.com/!git@gitlab.mycompany.com:%%.git")
-		log.Fatal()
 	}
 
 	// Now we put things in the right place on the FS

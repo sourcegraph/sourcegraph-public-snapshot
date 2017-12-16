@@ -13,3 +13,11 @@ var deploymentOnPrem, _ = strconv.ParseBool(env.Get("DEPLOYMENT_ON_PREM", "false
 func DeploymentOnPrem() bool {
 	return deploymentOnPrem
 }
+
+var debugMode, _ = strconv.ParseBool(env.Get("DEBUG", "false", "debug mode"))
+
+// DebugMode is true if and only if the application is running in debug mode. In
+// this mode, the application should display more verbose and informative errors
+// in the UI. It should also show all features (as possible). Debug should NEVER
+// be true in production.
+func DebugMode() bool { return debugMode }

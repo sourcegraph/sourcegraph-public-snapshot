@@ -34,7 +34,7 @@ func (s *sharedItemResolver) Comment(ctx context.Context) *commentResolver {
 	return s.comment
 }
 
-func (r *rootResolver) SharedItem(ctx context.Context, args *struct {
+func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 	ULID string
 }) (*sharedItemResolver, error) {
 	item, err := store.SharedItems.Get(ctx, args.ULID)

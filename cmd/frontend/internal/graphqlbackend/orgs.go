@@ -21,7 +21,7 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-func (r *rootResolver) Org(ctx context.Context, args *struct {
+func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*orgResolver, error) {
 	return orgByID(ctx, args.ID)

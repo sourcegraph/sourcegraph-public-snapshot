@@ -36,6 +36,10 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, repoURI string) ([]byte, error
 		env.Set("PATH", gitPassHelperDir+string(filepath.ListSeparator)+os.Getenv("PATH"))
 		cmd.Env = env
 	} else {
+		// Suppress asking to add SSH host key to known_hosts (which will hang because
+		// the command is non-interactive).
+		cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=yes")
+
 		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 	}
 

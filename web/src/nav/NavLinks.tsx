@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { UserAvatar } from '../settings/user/UserAvatar'
+import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
 interface Props {
     location: H.Location
@@ -21,8 +22,8 @@ const isGQLUser = (val: any): val is GQL.IUser => val && typeof val === 'object'
 export class NavLinks extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
-    constructor() {
-        super()
+    constructor(props: Props) {
+        super(props)
         this.state = {
             user: window.context.user,
         }
@@ -48,12 +49,17 @@ export class NavLinks extends React.Component<Props, State> {
                         Queries
                     </Link>
                 )}
-                {!window.context.onPrem && (
+                {showDotComMarketing && (
                     <a href="https://about.sourcegraph.com" className="nav-links__link">
                         About
                     </a>
                 )}
-                {window.context.onPrem && (
+                {showDotComMarketing && (
+                    <a href="https://about.sourcegraph.com/trial/" className="nav-links__border-link">
+                        Try Sourcegraph Server
+                    </a>
+                )}
+                {canListAllRepositories && (
                     <Link to="/browse" className="nav-links__link">
                         Browse
                     </Link>

@@ -48,6 +48,8 @@
     ],
     "selector-max-id": [0],
     "string-quotes": "single",
-    "value-no-vendor-prefix": true
+    "value-no-vendor-prefix": true,
+    "font-family-no-missing-generic-family-keyword": null,
+    "no-descending-specificity": null
   }
 }

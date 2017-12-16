@@ -21,11 +21,6 @@ interface Node {
   id: ID!
 }
 
-type Query {
-  root: Root!
-  node(id: ID!): Node
-}
-
 type ThreadLines {
   # HTML context lines before 'html'.
   #
@@ -80,14 +75,32 @@ input ThreadLinesInput {
   textSelectionRangeLength: Int!
 }
 
+input CreateThreadInput {
+    orgID: ID!
+    canonicalRemoteID: String!
+    cloneURL: String!
+    repoRevisionPath: String!
+    linesRevisionPath: String!
+    repoRevision: String!
+    linesRevision: String!
+    branch: String
+    startLine: Int!
+    endLine: Int!
+    startCharacter: Int!
+    endCharacter: Int!
+    rangeLength: Int!
+    contents: String!
+    lines: ThreadLinesInput
+}
+
 # A string containing valid JSON.
 scalar JSONString
 
 type Mutation {
   createUser(username: String!, displayName: String!, avatarURL: String): User!
+
+  @deprecated(reason: "use createThread2")
   createThread(
-    # Temporarily until all clients are migrated, the orgInt32OrID type allows
-    # orgID to be specified either as an ID! or Int!.
     orgID: ID!
     canonicalRemoteID: String!
     cloneURL: String!
@@ -103,6 +116,7 @@ type Mutation {
     contents: String!
     lines: ThreadLinesInput
   ): Thread!
+  createThread2(input: CreateThreadInput!): Thread!
   updateUser(username: String, displayName: String, avatarURL: String): User!
   # Update the settings for the currently authenticated user.
   updateUserSettings(lastKnownSettingsID: Int, contents: String!): Settings!
@@ -140,7 +154,7 @@ type Mutation {
   addPhabricatorRepo(callsign: String!, uri: String!, url: String!): EmptyResponse
   logUserEvent(event: UserEvent!): EmptyResponse
   # All mutations that update configuration setings are under this field.
-  configuration(input: ConfigurationMutationGroupInput!): ConfigurationMutation
+  configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
 }
 
 # Input for Mutation.configuration, which contains fields that all configuration
@@ -203,7 +217,9 @@ type UpdateConfigurationPayload {
   empty: EmptyResponse
 }
 
-type Root {
+type Query {
+  root: Query! @deprecated
+  node(id: ID!): Node
   repository(uri: String!): Repository
   phabricatorRepo(uri: String!): PhabricatorRepo
   repositories(query: String = ""): [Repository!]!
@@ -211,8 +227,8 @@ type Root {
   currentUser: User
   isUsernameAvailable(username: String!): Boolean!
   configuration: ConfigurationCascade!
-  search2(query: String = "", scopeQuery: String = ""): Search2
-  searchScopes2: [SearchScope2!]!
+  search(query: String = "", scopeQuery: String = ""): Search
+  searchScopes: [SearchScope!]!
   # All saved queries configured for the current user, merged from all configurations.
   savedQueries: [SavedQuery!]!
   repoGroups: [RepoGroup!]!
@@ -243,16 +259,17 @@ type Root {
     limit: Int
   ): [Dependency!]!
   users: [User!]!
+  updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 }
 
-type Search2 {
-  results: SearchResults2!
-  suggestions(first: Int): [SearchSuggestion2!]!
+type Search {
+  results: SearchResults!
+  suggestions(first: Int): [SearchSuggestion!]!
 }
 
 union SearchResult = FileMatch | CommitSearchResult
 
-type SearchResults2 {
+type SearchResults {
   results: [SearchResult!]!
   resultCount: Int!
   approximateResultCount: String!
@@ -268,9 +285,9 @@ type SearchResults2 {
   alert: SearchAlert
 }
 
-union SearchSuggestion2 = Repository | File
+union SearchSuggestion = Repository | File
 
-type SearchScope2 {
+type SearchScope {
   name: String!
   value: String!
 }
@@ -280,7 +297,7 @@ type SearchAlert {
   title: String!
   description: String
   # "Did you mean: ____" query proposals
-  proposedQueries: [SearchQuery2Description!]
+  proposedQueries: [SearchQueryDescription!]
 }
 
 # A saved search query, defined in configuration.
@@ -290,15 +307,15 @@ type SavedQuery {
   # The 0-indexed index of this saved query in the subject's configuration.
   index: Int!
   description: String!
-  query: SearchQuery2!
+  query: SearchQuery!
 }
 
-type SearchQuery2Description {
+type SearchQueryDescription {
   description: String
-  query: SearchQuery2!
+  query: SearchQuery!
 }
 
-type SearchQuery2 {
+type SearchQuery {
   query: String!
   scopeQuery: String!
 }
@@ -887,7 +904,14 @@ type Configuration {
 type Thread {
   id: Int!
   repo: OrgRepo!
-  file: String!
+  file: String! @deprecated(reason: "use repoRevisionPath (or linesRevisionPath)")
+
+  # The relative path of the resource in the repository at repoRevision.
+  repoRevisionPath: String!
+
+  # The relative path of the resource in the repository at linesRevision.
+  linesRevisionPath: String!
+
   branch: String
   # The commit ID of the repository at the time the thread was created.
   repoRevision: String!
@@ -987,5 +1011,11 @@ type UserActivity {
 enum UserEvent {
   PAGEVIEW
   SEARCHQUERY
+}
+
+type DeploymentConfiguration {
+	email: String
+	telemetryEnabled: Boolean
+	appID: String
 }
 `
