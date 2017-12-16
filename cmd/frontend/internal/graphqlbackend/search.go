@@ -481,7 +481,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoPath, rev strin
 	}
 	commitResolver := commitStateResolver.Commit()
 	if commitResolver == nil {
-		return nil, fmt.Errorf("unable to resolve commit for repo %s", repoPath)
+		return nil, fmt.Errorf("unable to resolve commit %q for repo %s", rev, repoPath)
 	}
 	treeResolver, err := commitResolver.Tree(ctx, &struct {
 		Path      string
