@@ -154,7 +154,8 @@ class OnboardingRedirector extends React.Component<{}, {}> {
             eventLogger.log('ServerInstallationComplete', {
                 server: {
                     email: this.emailInput.value,
-                    appID: window.context.trackingAppID,
+                    appId: window.context.trackingAppID,
+                    telemetryEnabled: this.telemetryInput.checked,
                 },
             })
             updateDeploymentConfiguration(this.emailInput.value, this.telemetryInput.checked).subscribe(

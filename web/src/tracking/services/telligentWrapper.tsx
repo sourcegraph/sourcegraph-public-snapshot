@@ -59,6 +59,7 @@ class TelligentWrapper {
                 page_title: eventProps.page_title,
                 language: eventProps.language,
                 platform: eventProps.platform,
+                server: eventProps.server,
             }
             this.telligent('track', eventAction, limitedEventProps)
             return
