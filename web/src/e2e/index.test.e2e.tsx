@@ -589,7 +589,7 @@ describe('e2e test suite', () => {
             // Currently the behavior of search is different on localhost vs. the dogfood server;
             // on localhost the repo groups are called `repogroup:sample *` while on dogfood they
             // are `repogroup:active *`.
-            it('renders results for sourcegraph/go-diff (w/ search group)', async () => {
+            it.skip('renders results for sourcegraph/go-diff (w/ search group)', async () => {
                 await chrome.goto(baseURL + '/search')
 
                 // Update the input value
@@ -616,7 +616,7 @@ describe('e2e test suite', () => {
                 })
             })
         } else {
-            it('renders results for sourcegraph/go-diff (w/ search group)', async () => {
+            it.skip('renders results for sourcegraph/go-diff (w/ search group)', async () => {
                 await chrome.goto(baseURL + '/search')
 
                 // Update the input value
