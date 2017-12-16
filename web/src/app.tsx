@@ -191,6 +191,7 @@ class OnboardingRedirector extends React.Component<{}, {}> {
                                         style={{ width: '100%', padding: 5 }}
                                         placeholder="Admin email (optional)"
                                         type="email"
+                                        autoFocus={true}
                                     />
                                 </div>
                                 <div style={{ margin: '9px 0 15px 0' }}>
