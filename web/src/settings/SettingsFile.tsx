@@ -2,7 +2,6 @@ import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import PencilIcon from '@sourcegraph/icons/lib/Pencil'
 import * as React from 'react'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
@@ -23,12 +22,10 @@ interface Props {
      * if any.
      */
     commitError?: Error
-    isLightTheme: boolean
 }
 
 interface State {
-    editing: boolean
-    modifiedContents?: string
+    contents?: string
     saving: boolean
 
     /**
@@ -42,13 +39,15 @@ interface State {
 const emptySettings = '{\n  // add configuration here\n}'
 
 export class SettingsFile extends React.PureComponent<Props, State> {
-    public state: State = { editing: false, saving: false }
+    public state: State = { saving: false }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
+
+        this.state.contents = this.getPropsSettingsContentsOrEmpty()
 
         // We are finished saving when we receive the new settings ID and it's
         // higher than the one we saved on top of.
@@ -73,12 +72,11 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             )
         )
         this.subscriptions.add(
-            refreshedAfterSave.subscribe(() =>
+            refreshedAfterSave.subscribe(({ settings }) =>
                 this.setState({
-                    editing: false,
                     saving: false,
                     editingLastKnownSettingsID: undefined,
-                    modifiedContents: undefined,
+                    contents: this.getPropsSettingsContentsOrEmpty(settings),
                 })
             )
         )
@@ -93,33 +91,34 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const dirty =
+            this.state.contents !== undefined && this.state.contents !== this.getPropsSettingsContentsOrEmpty()
+        const contents =
+            this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
+
         return (
             <div className="settings-file">
                 <h3>Configuration</h3>
                 <div className="settings-file__actions">
+                    <button
+                        disabled={this.state.saving || !dirty}
+                        className="btn btn-sm btn-link settings-file__action"
+                        onClick={this.save}
+                    >
+                        <CheckmarkIcon className="icon-inline" /> Save
+                    </button>
+                    <button
+                        disabled={this.state.saving || !dirty}
+                        className="btn btn-sm btn-link settings-file__action"
+                        onClick={this.discard}
+                    >
+                        <CloseIcon className="icon-inline" /> Discard
+                    </button>
                     {this.state.saving && (
                         <span className="settings-file__action">
                             <Loader className="icon-inline" /> Saving...
                         </span>
                     )}
-                    {!this.state.saving &&
-                        !this.state.editing && (
-                            <button className="btn btn-sm btn-link settings-file__action" onClick={this.edit}>
-                                <PencilIcon className="icon-inline" /> Edit
-                            </button>
-                        )}
-                    {!this.state.saving &&
-                        this.state.editing && (
-                            <button className="btn btn-sm btn-link settings-file__action" onClick={this.save}>
-                                <CheckmarkIcon className="icon-inline" /> Save
-                            </button>
-                        )}
-                    {!this.state.saving &&
-                        this.state.editing && (
-                            <button className="btn btn-sm btn-link settings-file__action" onClick={this.discard}>
-                                <CloseIcon className="icon-inline" /> Discard
-                            </button>
-                        )}
                 </div>
                 {this.props.commitError && (
                     <div className="settings-file__error">
@@ -127,56 +126,33 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         {this.props.commitError.message}
                     </div>
                 )}
-                {this.state.editing && (
-                    <code>
-                        <textarea
-                            className="settings-file__contents settings-file__contents-editor form-control"
-                            value={this.state.modifiedContents}
-                            onChange={this.onTextareaChange}
-                            disabled={this.state.saving}
-                            spellCheck={false}
-                        />
-                    </code>
-                )}
-                {!this.state.editing &&
-                    (this.props.settings ? (
-                        <code
-                            className="settings-file__contents"
-                            dangerouslySetInnerHTML={{ __html: this.props.settings.configuration.highlighted }}
-                        />
-                    ) : (
-                        <code className="settings-file__contents">{emptySettings}</code>
-                    ))}
+                <code>
+                    <textarea
+                        className="settings-file__contents form-control"
+                        value={contents}
+                        onChange={this.onTextareaChange}
+                        disabled={this.state.saving}
+                        spellCheck={false}
+                    />
+                </code>
             </div>
         )
     }
 
-    private getPropsSettingsContentsOrEmpty(): string {
-        return this.props.settings ? this.props.settings.configuration.contents : emptySettings
+    private getPropsSettingsContentsOrEmpty(settings = this.props.settings): string {
+        return settings ? settings.configuration.contents : emptySettings
     }
 
     private getPropsSettingsID(): number | null {
         return this.props.settings ? this.props.settings.id : null
     }
 
-    private edit = () => {
-        eventLogger.log('SettingsFileEdit')
-        this.setState({
-            editing: true,
-            modifiedContents: this.getPropsSettingsContentsOrEmpty(),
-            editingLastKnownSettingsID: this.getPropsSettingsID(),
-        })
-    }
-
     private discard = () => {
-        if (
-            this.getPropsSettingsContentsOrEmpty() === this.state.modifiedContents ||
-            window.confirm('Really discard edits?')
-        ) {
+        if (this.getPropsSettingsContentsOrEmpty() === this.state.contents || window.confirm('Really discard edits?')) {
             eventLogger.log('SettingsFileDiscard')
             this.setState({
-                editing: false,
-                modifiedContents: undefined,
+                contents: undefined,
+                editingLastKnownSettingsID: undefined,
             })
         } else {
             eventLogger.log('SettingsFileDiscardCanceled')
@@ -184,13 +160,17 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private onTextareaChange: React.ChangeEventHandler<HTMLTextAreaElement> = event => {
-        this.setState({ modifiedContents: event.target.value })
+        const contents = event.target.value
+        if (contents !== this.getPropsSettingsContentsOrEmpty()) {
+            this.setState({ editingLastKnownSettingsID: this.getPropsSettingsID() })
+        }
+        this.setState({ contents })
     }
 
     private save = () => {
         eventLogger.log('SettingsFileSaved')
         this.setState({ saving: true }, () => {
-            this.props.onDidCommit(this.getPropsSettingsID(), this.state.modifiedContents!)
+            this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)
         })
     }
 }

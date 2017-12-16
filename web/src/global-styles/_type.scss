@@ -28,7 +28,7 @@ small {
 
 a {
     &,
-    &:not([href]):not([tabindex]) {
+    &:not([href]):not([tabindex]):not([disabled]) {
         outline: 0;
         color: #93a9c8;
         text-decoration: none;

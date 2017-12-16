@@ -10,7 +10,6 @@ interface Props {
     savedQuery: GQL.ISavedQuery
     onDidUpdate: () => void
     onDidCancel: () => void
-    isLightTheme: boolean
 }
 
 export const SavedQueryUpdateForm: React.StatelessComponent<Props> = props => (
@@ -36,7 +35,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
     if (props.savedQuery.subject.id !== fields.subject) {
         return createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.scopeQuery).pipe(
             mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.index)),
-            mergeMap(() => fetchCurrentUser(props.isLightTheme).pipe(concat([null])))
+            mergeMap(() => fetchCurrentUser().pipe(concat([null])))
         )
     }
 

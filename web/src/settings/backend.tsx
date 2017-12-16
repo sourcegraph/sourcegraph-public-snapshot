@@ -46,7 +46,7 @@ function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
  *
  * @return Observable that emits the org or `null` if it doesn't exist
  */
-export function fetchOrg(id: string, isLightTheme: boolean): Observable<GQL.IOrg | null> {
+export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
     return queryGraphQL(
         `
         query Org($id: ID!) {
@@ -59,7 +59,6 @@ export function fetchOrg(id: string, isLightTheme: boolean): Observable<GQL.IOrg
                     id
                     configuration {
                         contents
-                        highlighted(isLightTheme: $isLightTheme)
                     }
                 }
                 members {
@@ -79,7 +78,7 @@ export function fetchOrg(id: string, isLightTheme: boolean): Observable<GQL.IOrg
             }
         }
     `,
-        { id, isLightTheme }
+        { id }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.org) {

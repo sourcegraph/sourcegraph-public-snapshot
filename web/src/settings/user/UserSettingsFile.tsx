@@ -7,7 +7,6 @@ import { SettingsFile } from '../SettingsFile'
 interface Props {
     userInEditorBeta: boolean
     settings: GQL.ISettings | null
-    isLightTheme: boolean
 }
 
 interface State {
@@ -20,11 +19,7 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-file-container">
-                <SettingsFile
-                    settings={this.props.settings}
-                    onDidCommit={this.onDidCommit}
-                    isLightTheme={this.props.isLightTheme}
-                />
+                <SettingsFile settings={this.props.settings} onDidCommit={this.onDidCommit} />
                 <small className="form-text">
                     Documentation:{' '}
                     <a target="_blank" href="https://about.sourcegraph.com/docs/search#scope">
@@ -43,7 +38,7 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
 
     private onDidCommit = (lastKnownSettingsID: number | null, contents: string): void => {
         updateUserSettings(lastKnownSettingsID, contents)
-            .pipe(switchMap(() => fetchCurrentUser(this.props.isLightTheme)), concat([null]))
+            .pipe(switchMap(fetchCurrentUser), concat([null]))
             .subscribe(
                 () => this.setState({ commitError: undefined }),
                 err => {

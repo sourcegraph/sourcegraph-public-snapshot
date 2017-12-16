@@ -13,7 +13,6 @@ import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 
 interface Props {
     location: H.Location
-    isLightTheme: boolean
 }
 
 interface State {
@@ -104,12 +103,7 @@ export class SavedQueries extends React.Component<Props, State> {
                 {!this.state.creating &&
                     this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
                 {this.state.savedQueries.map((savedQuery, i) => (
-                    <SavedQuery
-                        key={i}
-                        savedQuery={savedQuery}
-                        isLightTheme={this.props.isLightTheme}
-                        onDidDuplicate={this.onDidDuplicateSavedQuery}
-                    />
+                    <SavedQuery key={i} savedQuery={savedQuery} onDidDuplicate={this.onDidDuplicateSavedQuery} />
                 ))}
             </div>
         )

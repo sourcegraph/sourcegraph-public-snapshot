@@ -7,7 +7,6 @@
 .settings-file {
     &__actions {
         display: flex;
-        justify-content: flex-end;
     }
 
     &__action {
@@ -32,12 +31,10 @@
         border-radius: 2px;
         padding: 0.5rem 1rem;
 
-        &-editor {
-            background-color: #0e121b;
-            height: 15rem;
-            overflow-y: auto;
-            color: $color-text;
-        }
+        background-color: #0e121b;
+        height: 20rem;
+        overflow-y: auto;
+        color: $color-text;
     }
 }
 
@@ -45,11 +42,8 @@
     .settings-file {
         &__contents {
             border-color: $color-light-border;
-
-            &-editor {
-                background-color: inherit;
-                color: inherit;
-            }
+            background-color: inherit;
+            color: inherit;
         }
     }
 }
