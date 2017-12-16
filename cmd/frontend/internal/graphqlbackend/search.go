@@ -459,12 +459,12 @@ var mockSearchFilesForRepo func(matcher matcher, repoURI string, limit int) ([]*
 
 // searchTreeForRepo searches the specified repository for files whose name matches
 // the matcher
-func searchTreeForRepo(ctx context.Context, matcher matcher, repoPath, rev string, limit int) (res []*searchResultResolver, err error) {
+func searchTreeForRepo(ctx context.Context, matcher matcher, repoURI, rev string, limit int) (res []*searchResultResolver, err error) {
 	if mockSearchFilesForRepo != nil {
-		return mockSearchFilesForRepo(matcher, repoPath, limit)
+		return mockSearchFilesForRepo(matcher, repoURI, limit)
 	}
 
-	repo, err := backend.Repos.GetByURI(ctx, repoPath)
+	repo, err := backend.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +481,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoPath, rev strin
 	}
 	commitResolver := commitStateResolver.Commit()
 	if commitResolver == nil {
-		return nil, fmt.Errorf("unable to resolve commit %q for repo %s", rev, repoPath)
+		return nil, fmt.Errorf("unable to resolve commit %q for repo %s", rev, repoURI)
 	}
 	treeResolver, err := commitResolver.Tree(ctx, &struct {
 		Path      string
