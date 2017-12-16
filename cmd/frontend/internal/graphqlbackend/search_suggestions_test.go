@@ -136,7 +136,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
 		defer func() { mockSearchRepos = nil }()
-		mockSearchFilesForRepoURI = func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			if want := ""; matcher.query != want {
@@ -156,7 +156,7 @@ func TestSearchSuggestions(t *testing.T) {
 			t.Errorf("got %q, want %q or %q", repoURI, "foo-repo1", "repo3")
 			return nil, nil
 		}
-		defer func() { mockSearchFilesForRepoURI = nil }()
+		defer func() { mockSearchFilesForRepo = nil }()
 		calledResolveRepoGroups := false
 		defer func() { mockResolveRepoGroups = nil }()
 		mockResolveRepoGroups = func() (map[string][]*sourcegraph.Repo, error) {
@@ -201,7 +201,7 @@ func TestSearchSuggestions(t *testing.T) {
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
-		mockSearchFilesForRepoURI = func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error) {
 			calledSearchFiles = true
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
@@ -213,7 +213,7 @@ func TestSearchSuggestions(t *testing.T) {
 				{result: &fileResolver{path: "dir/file", commit: commitSpec{RepoID: 1}}, score: 1},
 			}, nil
 		}
-		defer func() { mockSearchFilesForRepoURI = nil }()
+		defer func() { mockSearchFilesForRepo = nil }()
 		testSuggestions(t, "repo:foo", "", []string{"repo:foo-repo", "file:dir/file"})
 		if !calledReposList {
 			t.Error("!calledReposList")
@@ -236,7 +236,7 @@ func TestSearchSuggestions(t *testing.T) {
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
-		mockSearchFilesForRepoURI = func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoURI string, limit int) ([]*searchResultResolver, error) {
 			calledSearchFiles = true
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
@@ -248,7 +248,7 @@ func TestSearchSuggestions(t *testing.T) {
 				{result: &fileResolver{path: "dir/bar-file", commit: commitSpec{RepoID: 1}}, score: 1},
 			}, nil
 		}
-		defer func() { mockSearchFilesForRepoURI = nil }()
+		defer func() { mockSearchFilesForRepo = nil }()
 		testSuggestions(t, "repo:foo file:bar", "", []string{"file:dir/bar-file"})
 		if !calledReposList {
 			t.Error("!calledReposList")
