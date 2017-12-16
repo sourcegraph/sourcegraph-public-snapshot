@@ -16,7 +16,7 @@ export const SavedQueryCreateForm: React.StatelessComponent<Props> = props => (
         title="Add a new saved query"
         submitLabel="Create"
         cancelLabel="Cancel"
-        defaultValues={props.subject ? { subject: props.subject.gqlid } : undefined}
+        defaultValues={props.subject ? { subject: props.subject.id } : undefined}
         // tslint:disable-next-line:jsx-no-lambda
         onSubmit={(fields: SavedQueryFields): Observable<void> =>
             createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.scopeQuery) as Observable<

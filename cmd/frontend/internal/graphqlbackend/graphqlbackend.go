@@ -90,13 +90,10 @@ func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
 	return n, ok
 }
 
-// TODO(sqs): add this back when the migration described in
-// 2ac372aa2773080dc3d077beb056e9513e64bf67 is done.
-//
-// func (r *nodeResolver) ToUser() (*userResolver, bool) {
-// 	n, ok := r.node.(*userResolver)
-// 	return n, ok
-// }
+func (r *nodeResolver) ToUser() (*userResolver, bool) {
+	n, ok := r.node.(*userResolver)
+	return n, ok
+}
 
 func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
 	n, ok := r.node.(*orgResolver)
@@ -127,47 +124,13 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "Repository":
 		return repositoryByID(ctx, id)
-
-	// TODO(sqs): add user back when the migration described in
-	// commit 2ac372aa2773080dc3d077beb056e9513e64bf67 is done.
-	//
-	// case "User":
-	// 		return userByID(ctx, id)
-
+	case "User":
+		return userByID(ctx, id)
 	case "Org":
 		return orgByID(ctx, id)
 	case "Commit":
 		return commitByID(ctx, id)
 	default:
-		return nil, errors.New("invalid id")
-	}
-}
-
-// TODO(sqs): a temporary type until we execute the migration described in
-// 2ac372aa2773080dc3d077beb056e9513e64bf67.
-type gqlidNode interface {
-	GQLID() graphql.ID
-}
-
-// TODO(sqs): a temporary helper until we execute the migration described in
-// 2ac372aa2773080dc3d077beb056e9513e64bf67.
-func gqlidNodeByID(ctx context.Context, id graphql.ID) (gqlidNode, error) {
-	switch relay.UnmarshalKind(id) {
-	case "User":
-		return userByID(ctx, id)
-	case "Org":
-		return orgByID(ctx, id)
-	default:
-		// Treat other unrecognized IDs as User IDs if they match the user's
-		// auth ID. This is because they could be anything, such as "auth0|asdf"
-		// or https://accounts.google.com:1234 or anything else from the authn
-		// provider.
-		if user, err := currentUser(ctx); err == nil && user != nil {
-			if user.Auth0ID() == string(id) {
-				return user, nil
-			}
-		}
-
 		return nil, errors.New("invalid id")
 	}
 }

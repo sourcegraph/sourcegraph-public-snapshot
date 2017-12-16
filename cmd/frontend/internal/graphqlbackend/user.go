@@ -41,17 +41,7 @@ func userByIDInt32(ctx context.Context, id int32) (*userResolver, error) {
 	return &userResolver{user: user}, nil
 }
 
-// deprecated use Auth0ID
-func (r *userResolver) ID() string {
-	// TODO(sqs): can't be changed to return a different value until all editor
-	// users have upgraded to a version that incorporates the use-auth0id-field
-	// branch changes in the src repo.
-	//
-	// log.Println("use of deprecated User.id field")
-	return r.Auth0ID()
-}
-
-func (r *userResolver) GQLID() graphql.ID {
+func (r *userResolver) ID() graphql.ID {
 	return relay.MarshalID("User", r.user.ID)
 }
 
