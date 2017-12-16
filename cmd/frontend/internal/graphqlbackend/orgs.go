@@ -56,10 +56,6 @@ func (o *orgResolver) ID() graphql.ID {
 	return relay.MarshalID("Org", o.org.ID)
 }
 
-func (o *orgResolver) GQLID() graphql.ID {
-	return o.ID()
-}
-
 func (o *orgResolver) OrgID() int32 {
 	return o.org.ID
 }

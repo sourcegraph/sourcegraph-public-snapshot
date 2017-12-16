@@ -25,7 +25,7 @@ type configurationSubject struct {
 // configurationSubjectByID fetches the configuration subject with the given ID. If the ID
 // refers to a node that is not a valid configuration subject, an error is returned.
 func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configurationSubject, error) {
-	resolver, err := gqlidNodeByID(ctx, id)
+	resolver, err := nodeByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +67,12 @@ func (s *configurationSubject) toSubject() sourcegraph.ConfigurationSubject {
 	}
 }
 
-func (s *configurationSubject) GQLID() graphql.ID {
+func (s *configurationSubject) ID() graphql.ID {
 	switch {
 	case s.org != nil:
-		return s.org.GQLID()
+		return s.org.ID()
 	case s.user != nil:
-		return s.user.GQLID()
+		return s.user.ID()
 	}
 	panic("no configuration subject")
 }

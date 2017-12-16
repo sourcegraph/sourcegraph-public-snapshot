@@ -744,11 +744,9 @@ type Installation {
   avatarURL: String!
 }
 
-type User implements ConfigurationSubject {
-  id: String! @deprecated(reason: "use auth0ID instead")
-  # The unique ID for the user. TODO(sqs): This will be renamed to id when
-  # the migration described in commit 2ac372aa2773080dc3d077beb056e9513e64bf67 is done.
-  gqlid: ID!
+type User implements Node, ConfigurationSubject {
+  # The unique ID for the user.
+  id: ID!
   auth0ID: String!
   sourcegraphID: Int
   email: String!
@@ -806,7 +804,6 @@ type CompanyCategory {
 
 type Org implements Node, ConfigurationSubject {
   id: ID!
-  gqlid: ID! @deprecated(reason: "use id instead")
   orgID: Int!
   name: String!
   displayName: String
@@ -859,8 +856,7 @@ type ThreadConnection {
 
 # ConfigurationSubject is something that can have configuration.
 interface ConfigurationSubject {
-  # TODO(sqs): this will be renamed to id; see User.gqlid for more information.
-  gqlid: ID!
+  id: ID!
   latestSettings: Settings
 }
 
