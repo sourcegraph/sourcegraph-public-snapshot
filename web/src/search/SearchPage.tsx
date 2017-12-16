@@ -8,9 +8,9 @@ import { submitSearch } from './helpers'
 import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
 import { ScopeLabel } from './ScopeLabel'
-import { SearchHelp } from './SearchHelp'
 import { SearchButton } from './SearchButton'
 import { SearchFields } from './SearchFields'
+import { SearchHelp } from './SearchHelp'
 import { SearchScope } from './SearchScope'
 
 interface Props {
