@@ -345,7 +345,7 @@ type CommitSearchResult {
 type DiffSearchResult {
   # The diff that matched the search query.
   diff: Diff!
-  # The matching portion of the diff. TODO(sqs): what format?
+  # The matching portion of the diff.
   preview: HighlightedString!
 }
 
