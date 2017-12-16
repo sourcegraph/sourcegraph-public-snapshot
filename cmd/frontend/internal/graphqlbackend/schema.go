@@ -883,16 +883,12 @@ type Settings {
   author: User!
   createdAt: String!
   contents: String! @deprecated(reason: "use configuration.contents instead")
-  highlighted: String!
-    @deprecated(reason: "use configuration.highlighted instead")
 }
 
 # Configuration contains settings from (possibly) multiple settings files.
 type Configuration {
   # The raw JSON contents, encoded as a string.
   contents: String!
-  # The contents as highlighted HTML.
-  highlighted(isLightTheme: Boolean!): String!
   # Error and warning messages about the configuration.
   messages: [String!]!
 }

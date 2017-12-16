@@ -56,13 +56,13 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
                         <Route
                             path={this.props.match.url}
                             // tslint:disable-next-line
-                            render={props => <UserProfilePage {...props} isLightTheme={this.props.isLightTheme} />}
+                            render={props => <UserProfilePage {...props} />}
                             exact={true}
                         />
                         <Route
                             path={`${this.props.match.url}/accept-invite`}
                             // tslint:disable-next-line
-                            render={props => <AcceptInvitePage {...props} isLightTheme={this.props.isLightTheme} />}
+                            render={props => <AcceptInvitePage {...props} />}
                             exact={true}
                         />
                         <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
@@ -70,7 +70,7 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
                         <Route
                             path={`${this.props.match.url}/orgs/:orgName`}
                             // tslint:disable-next-line
-                            render={props => <Org {...props} isLightTheme={this.props.isLightTheme} />}
+                            render={props => <Org {...props} />}
                             exact={true}
                         />
                         <Route path={`${this.props.match.url}/admin`} component={OrgAdmin} exact={true} />

@@ -243,7 +243,7 @@ class App extends React.Component<{}, AppState> {
     constructor(props: {}) {
         super(props)
         // Fetch current user data
-        fetchCurrentUser(this.state.isLightTheme).subscribe(undefined, error => {
+        fetchCurrentUser().subscribe(undefined, error => {
             console.error(error)
             this.setState({ error })
         })
@@ -251,7 +251,7 @@ class App extends React.Component<{}, AppState> {
 
     public componentDidUpdate(): void {
         localStorage.setItem('light-theme', this.state.isLightTheme + '')
-        fetchCurrentUser(this.state.isLightTheme).subscribe(undefined, error => {
+        fetchCurrentUser().subscribe(undefined, error => {
             console.error(error)
             this.setState({ error })
         })

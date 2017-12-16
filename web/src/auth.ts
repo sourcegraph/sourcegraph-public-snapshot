@@ -46,9 +46,8 @@ export const configurationGQL = `
 /**
  * fetchCurrentUser can be called to fetch the current user, orgs, and config
  * state from the remote. Emits no items, completes when done.
- * When not specified, we do not use the user data for displaying the highlighted result
  */
-export function fetchCurrentUser(isLightTheme?: boolean): Observable<never> {
+export function fetchCurrentUser(): Observable<never> {
     return queryGraphQL(
         `
         query CurrentAuthState {
@@ -65,7 +64,6 @@ export function fetchCurrentUser(isLightTheme?: boolean): Observable<never> {
                     id
                     configuration {
                         contents
-                        highlighted(isLightTheme: $isLightTheme)
                     }
                 }
                 orgs {
@@ -82,8 +80,7 @@ export function fetchCurrentUser(isLightTheme?: boolean): Observable<never> {
             }
             ${configurationGQL}
         }
-    `,
-        { isLightTheme }
+    `
     ).pipe(
         tap(({ data, errors }) => {
             if (!data) {

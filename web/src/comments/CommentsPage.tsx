@@ -195,7 +195,6 @@ export const CommentsPage = reactive<Props>(props => {
                                             (highlightLastComment && index === sharedItem.thread.comments.length - 1) ||
                                             false
                                         }
-                                        isLightTheme={isLightTheme}
                                     />
                                 ))}
                             {sharedItem &&

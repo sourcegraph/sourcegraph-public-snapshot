@@ -13,8 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 )
 
 type configurationSubject struct {
@@ -105,23 +103,6 @@ type configurationResolver struct {
 }
 
 func (r *configurationResolver) Contents() string { return r.contents }
-
-func (r *configurationResolver) Highlighted(ctx context.Context, args *struct {
-	IsLightTheme bool
-}) (string, error) {
-	html, aborted, err := highlight.Code(ctx, r.contents, "json", false, args.IsLightTheme)
-	if err != nil {
-		return "", err
-	}
-	if aborted {
-		// Configuration should be small enough so the syntax highlighting
-		// completes before the automatic timeout. If it doesn't, something
-		// seriously wrong has happened.
-		return "", errors.New("settings syntax highlighting aborted")
-	}
-
-	return string(html), nil
-}
 
 func (r *configurationResolver) Messages() []string {
 	if r.messages == nil {

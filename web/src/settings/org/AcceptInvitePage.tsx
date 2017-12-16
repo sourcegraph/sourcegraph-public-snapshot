@@ -25,7 +25,6 @@ import { acceptUserInvite } from '../backend'
 
 export interface Props {
     location: H.Location
-    isLightTheme: boolean
 }
 
 interface State {
@@ -48,7 +47,6 @@ interface TokenPayload {
 export const AcceptInvitePage = reactive<Props>(props => {
     const submitEvents = new Subject<React.FormEvent<HTMLFormElement>>()
     const nextSubmitEvent = (event: React.FormEvent<HTMLFormElement>) => submitEvents.next(event)
-    const lightThemeChanges = props.pipe(map(props => props.isLightTheme), distinctUntilChanged())
 
     eventLogger.logViewEvent('AcceptInvite')
 
@@ -87,8 +85,8 @@ export const AcceptInvitePage = reactive<Props>(props => {
                 // Feedback is done through CSS
                 filter(event => event.currentTarget.checkValidity()),
                 // Get latest state values
-                withLatestFrom(inviteToken, tokenPayload, lightThemeChanges),
-                mergeMap(([, inviteToken, tokenPayload, isLightTheme]) =>
+                withLatestFrom(inviteToken, tokenPayload),
+                mergeMap(([, inviteToken, tokenPayload]) =>
                     // Show loader
                     of<Update>(state => ({ ...state, loading: true, email: tokenPayload.email })).pipe(
                         concat(
@@ -107,7 +105,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                                 }),
                                 mergeMap(status =>
                                     // Reload user
-                                    fetchCurrentUser(isLightTheme)
+                                    fetchCurrentUser()
                                         // Redirect
                                         .pipe(
                                             concat([

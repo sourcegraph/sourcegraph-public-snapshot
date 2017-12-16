@@ -22,7 +22,6 @@ interface Props {
     onDidUpdate?: () => void
     onDidDuplicate?: () => void
     onDidDelete?: () => void
-    isLightTheme: boolean
 }
 
 interface State {
@@ -156,7 +155,6 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             savedQuery={this.props.savedQuery}
                             onDidUpdate={this.onDidUpdateSavedQuery}
                             onDidCancel={this.toggleEditing}
-                            isLightTheme={this.props.isLightTheme}
                         />
                     </div>
                 )}
