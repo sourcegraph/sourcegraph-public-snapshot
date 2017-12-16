@@ -43,7 +43,7 @@ func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
 			return nil, err
 		}
 	}
-	return &userResolver{m.user, nil}, nil
+	return &userResolver{m.user}, nil
 }
 
 func (m *orgMemberResolver) CreatedAt() string {

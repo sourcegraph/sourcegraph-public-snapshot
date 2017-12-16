@@ -87,12 +87,14 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		}
 	}
 	var userCreateErr error
-	if dbUser == nil && username != "" {
-		// We've not created a row in the users table for this user; add one.
-		// If there is an error, we can continue to create the user session and redirect the user, but
-		// we should include the error message to the client so they know e.g. that the username they've
-		// requested is taken.
+	if dbUser == nil {
+		// Create the user in our DB if the user just signed up via Auth0. There is a TOCTTOU
+		// bug here; their username may no longer be available. Because this is a rare case and
+		// we are removing Auth0 soon, we ignore it.
 		dbUser, userCreateErr = store.Users.Create(r.Context(), info.UserID, info.Email, username, displayName, "", &info.Picture)
+		if userCreateErr != nil {
+			return err
+		}
 	}
 
 	actor := &actor.Actor{
@@ -121,16 +123,6 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	returnTo := r.URL.Query().Get("returnTo")
 	if returnTo == "" {
 		returnTo = "/"
-	}
-	if dbUser == nil {
-		returnTo = "/settings?backfill=true&returnTo=" + returnTo
-		if userCreateErr != nil {
-			errorCode := "err_unknown"
-			if cerr, ok := userCreateErr.(store.ErrCannotCreateUser); ok {
-				errorCode = cerr.Code()
-			}
-			returnTo = returnTo + "&error=" + errorCode
-		}
 	}
 
 	userToken := r.URL.Query().Get("token")

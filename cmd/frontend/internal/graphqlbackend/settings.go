@@ -42,7 +42,7 @@ func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 			return nil, err
 		}
 	}
-	return &userResolver{o.user, nil}, nil
+	return &userResolver{o.user}, nil
 }
 
 func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {

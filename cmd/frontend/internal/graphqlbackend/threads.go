@@ -155,7 +155,7 @@ func (t *threadResolver) Author(ctx context.Context) (*userResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &userResolver{actor: actor.FromContext(ctx), user: user}, nil
+	return &userResolver{user: user}, nil
 }
 
 func (t *threadResolver) Lines() *threadLineResolver {

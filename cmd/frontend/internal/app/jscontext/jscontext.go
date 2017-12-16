@@ -71,11 +71,7 @@ type JSContext struct {
 	Version        string            `json:"version"`
 	Features       interface{}       `json:"features"`
 	User           *immutableUser    `json:"user"`
-	// RequireUserFields is a temporary flag which is true for legacy users that must
-	// backfill data (username, and optionally display name) to be added to the users table.
-	// While this flag is true, the client should force the currently logged in user to
-	// provide the backfill data before taking other actions in the application.
-	RequireUserBackfill  bool                       `json:"requireUserBackfill"`
+
 	GitHubToken          *sourcegraph.ExternalToken `json:"gitHubToken"`
 	GitHubAppURL         string                     `json:"gitHubAppURL"`
 	GithubEnterpriseURLs map[string]string          `json:"githubEnterpriseURLs"`
@@ -136,13 +132,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		user = &immutableUser{UID: actor.UID, IsAdmin: actor.IsAdmin()}
 	}
 
-	backfill := false
-	if user != nil && !envvar.DeploymentOnPrem() {
-		_, err := store.Users.GetByAuth0ID(req.Context(), actor.UID)
-		if _, ok := err.(store.ErrUserNotFound); ok {
-			backfill = true
-		}
-	}
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
 	license, licenseStatus := license.Get(TrackingAppID)
 	var showOnboarding = false
@@ -168,7 +157,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Version:              env.Version,
 		Features:             feature.Features,
 		User:                 user,
-		RequireUserBackfill:  backfill,
 		GitHubToken:          gitHubToken,
 		GitHubAppURL:         gitHubAppURL,
 		GithubEnterpriseURLs: githubEnterpriseURLs,

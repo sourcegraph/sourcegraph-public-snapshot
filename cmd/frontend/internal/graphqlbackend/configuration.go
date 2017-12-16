@@ -129,6 +129,9 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 		if err != nil {
 			return nil, err
 		}
+		if user == nil {
+			return nil, nil // actor might be invalid or refer to since-deleted user
+		}
 
 		orgs, err := user.Orgs(ctx)
 		if err != nil {
