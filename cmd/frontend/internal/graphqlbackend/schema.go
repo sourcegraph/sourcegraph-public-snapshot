@@ -153,7 +153,7 @@ type Mutation {
   # example uri: "github.com/gorilla/mux"
   addPhabricatorRepo(callsign: String!, uri: String!, url: String!): EmptyResponse
   logUserEvent(event: UserEvent!): EmptyResponse
-  # All mutations that update configuration setings are under this field.
+  # All mutations that update configuration settings are under this field.
   configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
 }
 
@@ -352,7 +352,7 @@ type CommitSearchResult {
 type DiffSearchResult {
   # The diff that matched the search query.
   diff: Diff!
-  # The matching portion of the diff. TODO(sqs): what format?
+  # The matching portion of the diff.
   preview: HighlightedString!
 }
 
