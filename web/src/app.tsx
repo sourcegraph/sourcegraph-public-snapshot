@@ -151,6 +151,12 @@ class OnboardingRedirector extends React.Component<{}, {}> {
 
     private onSubmit = () => {
         if (this.emailInput && this.telemetryInput) {
+            eventLogger.log('ServerInstallationComplete', {
+                server: {
+                    email: this.emailInput.value,
+                    appID: window.context.trackingAppID,
+                },
+            })
             updateDeploymentConfiguration(this.emailInput.value, this.telemetryInput.checked).subscribe(
                 () => window.location.reload(true),
                 error => {

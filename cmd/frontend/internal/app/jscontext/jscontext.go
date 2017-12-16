@@ -153,6 +153,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 			log15.Error("store.Config.Get failed", "error", err)
 		} else if deploymentConfiguration.TelemetryEnabled {
 			TrackingAppID = deploymentConfiguration.AppID
+		} else {
+			TrackingAppID = ""
 		}
 		showOnboarding = deploymentConfiguration.LastUpdated == ""
 	}

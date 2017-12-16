@@ -38,6 +38,13 @@ func (o *deploymentConfiguration) getConfiguration(ctx context.Context) (*source
 	if err != nil {
 		return nil, err
 	}
+	telemetryDisabled, err := strconv.ParseBool(isDisabled)
+	if err != nil {
+		return nil, err
+	}
+	if telemetryDisabled {
+		configuration.TelemetryEnabled = false
+	}
 	return configuration, nil
 }
 
