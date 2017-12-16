@@ -1,7 +1,9 @@
 package conf
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-import "gopkg.in/inconshreveable/log15.v2"
+import (
+	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+)
 
 var AppSecretKey = []byte(env.Get("SRC_APP_SECRET_KEY", "", "Private key used for symetric encryption of app payloads."))
 

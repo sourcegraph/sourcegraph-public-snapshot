@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"k8s.io/client-go/pkg/util/rand"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/monolith/internal/goreman"
 )
@@ -96,6 +97,20 @@ func main() {
 		// Convert SOURCEGRAPH_CONFIG into env vars
 		if config, ok := os.LookupEnv("SOURCEGRAPH_CONFIG"); ok {
 			setDefaultEnvFromConfig(config)
+		}
+
+		if _, ok := os.LookupEnv("SRC_APP_SECRET_KEY"); !ok {
+			appSecretKeyFile := filepath.Join(configDir, "srcAppSecretKey")
+			appSecretKey, err := ioutil.ReadFile(appSecretKeyFile)
+			if os.IsNotExist(err) {
+				appSecretKey = []byte(rand.String(128))
+				if err := ioutil.WriteFile(appSecretKeyFile, appSecretKey, 0644); err != nil {
+					log.Fatalf("could not write secret key file: %s", err)
+				}
+			} else if err != nil {
+				log.Fatalf("could not read app secret key file: %s", err)
+			}
+			setDefaultEnv("SRC_APP_SECRET_KEY", string(appSecretKey))
 		}
 	}
 
