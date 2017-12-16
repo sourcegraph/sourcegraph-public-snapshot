@@ -70,21 +70,21 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	appendUnique(&c.timedout, other.timedout)
 }
 
-type searchResults2 struct {
+type searchResults struct {
 	results []*searchResult
 	searchResultsCommon
 	alert *searchAlert
 }
 
-func (sr *searchResults2) Results() []*searchResult {
+func (sr *searchResults) Results() []*searchResult {
 	return sr.results
 }
 
-func (sr *searchResults2) ResultCount() int32 {
+func (sr *searchResults) ResultCount() int32 {
 	return int32(len(sr.results))
 }
 
-func (sr *searchResults2) ApproximateResultCount() string {
+func (sr *searchResults) ApproximateResultCount() string {
 	if sr.alert != nil {
 		return "?"
 	}
@@ -94,13 +94,13 @@ func (sr *searchResults2) ApproximateResultCount() string {
 	return strconv.Itoa(len(sr.results))
 }
 
-func (sr *searchResults2) Alert() *searchAlert { return sr.alert }
+func (sr *searchResults) Alert() *searchAlert { return sr.alert }
 
-func (r *searchResolver2) Results(ctx context.Context) (*searchResults2, error) {
+func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
 	return r.doResults(ctx, "")
 }
 
-func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType string) (*searchResults2, error) {
+func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (*searchResults, error) {
 	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -110,14 +110,14 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 		if err != nil {
 			return nil, err
 		}
-		return &searchResults2{alert: alert}, nil
+		return &searchResults{alert: alert}, nil
 	}
 	if overLimit {
 		alert, err := r.alertForOverRepoLimit(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return &searchResults2{alert: alert}, nil
+		return &searchResults{alert: alert}, nil
 	}
 
 	var patternsToCombine []string
@@ -190,7 +190,7 @@ func (r *searchResolver2) doResults(ctx context.Context, forceOnlyResultType str
 	}
 
 	// Run all search funcs.
-	var results searchResults2
+	var results searchResults
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
 		if err != nil {

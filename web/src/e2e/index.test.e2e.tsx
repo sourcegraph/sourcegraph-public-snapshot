@@ -566,10 +566,10 @@ describe('e2e test suite', () => {
             await chrome.goto(
                 baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d'
             )
-            await chrome.wait('.search-results2__header-stats')
+            await chrome.wait('.search-results__header-stats')
             await retry(async () => {
                 const label = await chrome.evaluate<string>(
-                    () => document.querySelector('.search-results2__header-stats')!.textContent
+                    () => document.querySelector('.search-results__header-stats')!.textContent
                 )
                 assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')
             })
@@ -607,10 +607,10 @@ describe('e2e test suite', () => {
                 // Submit the search
                 await chrome.click('button')
 
-                await chrome.wait('.search-results2__header-stats')
+                await chrome.wait('.search-results__header-stats')
                 await retry(async () => {
                     const label = await chrome.evaluate<string>(
-                        () => document.querySelector('.search-results2__header-stats')!.textContent
+                        () => document.querySelector('.search-results__header-stats')!.textContent
                     )
                     assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')
                 })
@@ -634,10 +634,10 @@ describe('e2e test suite', () => {
                 // Submit the search
                 await chrome.click('button')
 
-                await chrome.wait('.search-results2__header-stats')
+                await chrome.wait('.search-results__header-stats')
                 await retry(async () => {
                     const label = await chrome.evaluate<string>(
-                        () => document.querySelector('.search-results2__header-stats')!.textContent
+                        () => document.querySelector('.search-results__header-stats')!.textContent
                     )
                     console.log(label)
                     assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')

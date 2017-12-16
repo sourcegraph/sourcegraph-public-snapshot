@@ -33,7 +33,7 @@ func init() {
 
 const maxQueryLength = 400
 
-type searchArgs2 struct {
+type searchArgs struct {
 	// Query is the search query.
 	Query string
 
@@ -41,8 +41,8 @@ type searchArgs2 struct {
 	ScopeQuery string
 }
 
-// Search2 provides search results and suggestions.
-func (r *schemaResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
+// Search provides search results and suggestions.
+func (r *schemaResolver) Search(args *searchArgs) (*searchResolver, error) {
 	if len(args.Query)+len(args.ScopeQuery) > maxQueryLength {
 		return nil, fmt.Errorf("query exceeds max length (%d)", maxQueryLength)
 	}
@@ -59,7 +59,7 @@ func (r *schemaResolver) Search2(args *searchArgs2) (*searchResolver2, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &searchResolver2{
+	return &searchResolver{
 		root:          r,
 		args:          *args,
 		combinedQuery: *combinedQuery,
@@ -79,9 +79,9 @@ func asString(v *types.Value) string {
 	}
 }
 
-type searchResolver2 struct {
+type searchResolver struct {
 	root *schemaResolver
-	args searchArgs2
+	args searchArgs
 
 	combinedQuery searchquery.Query // the scope and user query combined (most callers should use this)
 	query         searchquery.Query // the user query only
@@ -160,7 +160,7 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver2) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchResultResolver, overLimit bool, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchResultResolver, overLimit bool, err error) {
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
@@ -306,7 +306,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
 }
 
-func (r *searchResolver2) resolveFiles(ctx context.Context, limit int) ([]*searchResultResolver, error) {
+func (r *searchResolver) resolveFiles(ctx context.Context, limit int) ([]*searchResultResolver, error) {
 	repoRevisions, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err

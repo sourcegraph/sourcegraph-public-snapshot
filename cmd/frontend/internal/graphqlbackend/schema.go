@@ -227,8 +227,8 @@ type Query {
   currentUser: User
   isUsernameAvailable(username: String!): Boolean!
   configuration: ConfigurationCascade!
-  search2(query: String = "", scopeQuery: String = ""): Search2
-  searchScopes2: [SearchScope2!]!
+  search(query: String = "", scopeQuery: String = ""): Search
+  searchScopes: [SearchScope!]!
   # All saved queries configured for the current user, merged from all configurations.
   savedQueries: [SavedQuery!]!
   repoGroups: [RepoGroup!]!
@@ -262,14 +262,14 @@ type Query {
   updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 }
 
-type Search2 {
-  results: SearchResults2!
-  suggestions(first: Int): [SearchSuggestion2!]!
+type Search {
+  results: SearchResults!
+  suggestions(first: Int): [SearchSuggestion!]!
 }
 
 union SearchResult = FileMatch | CommitSearchResult
 
-type SearchResults2 {
+type SearchResults {
   results: [SearchResult!]!
   resultCount: Int!
   approximateResultCount: String!
@@ -285,9 +285,9 @@ type SearchResults2 {
   alert: SearchAlert
 }
 
-union SearchSuggestion2 = Repository | File
+union SearchSuggestion = Repository | File
 
-type SearchScope2 {
+type SearchScope {
   name: String!
   value: String!
 }
@@ -297,7 +297,7 @@ type SearchAlert {
   title: String!
   description: String
   # "Did you mean: ____" query proposals
-  proposedQueries: [SearchQuery2Description!]
+  proposedQueries: [SearchQueryDescription!]
 }
 
 # A saved search query, defined in configuration.
@@ -307,15 +307,15 @@ type SavedQuery {
   # The 0-indexed index of this saved query in the subject's configuration.
   index: Int!
   description: String!
-  query: SearchQuery2!
+  query: SearchQuery!
 }
 
-type SearchQuery2Description {
+type SearchQueryDescription {
   description: String
-  query: SearchQuery2!
+  query: SearchQuery!
 }
 
-type SearchQuery2 {
+type SearchQuery {
   query: String!
   scopeQuery: String!
 }

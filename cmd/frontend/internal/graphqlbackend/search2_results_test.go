@@ -10,19 +10,19 @@ import (
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-func TestSearch2Results(t *testing.T) {
+func TestSearchResults(t *testing.T) {
 	listOpts := sourcegraph.ListOptions{PerPage: int32(maxReposToSearch + 1)}
 
-	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
-		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
-		r, err := (&schemaResolver{}).Search2(args)
+	createSearchResolver := func(t *testing.T, query, scopeQuery string) *searchResolver {
+		args := &searchArgs{Query: query, ScopeQuery: scopeQuery}
+		r, err := (&schemaResolver{}).Search(args)
 		if err != nil {
-			t.Fatal("Search2:", err)
+			t.Fatal("Search:", err)
 		}
 		return r
 	}
 	getResults := func(t *testing.T, query string) []string {
-		r := createSearchResolver2(t, query, "")
+		r := createSearchResolver(t, query, "")
 		results, err := r.Results(context.Background())
 		if err != nil {
 			t.Fatal("Results:", err)

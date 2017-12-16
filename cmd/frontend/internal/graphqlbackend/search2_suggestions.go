@@ -33,7 +33,7 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 	}
 }
 
-func (r *searchResolver2) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchResultResolver, error) {
+func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchResultResolver, error) {
 	args.applyDefaultsAndConstraints()
 
 	if len(r.combinedQuery.Syntax.Expr) == 0 {

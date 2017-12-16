@@ -162,7 +162,7 @@ export class SearchResults extends React.Component<Props, State> {
         let alert: {
             title: string
             description?: string | null
-            proposedQueries?: GQL.ISearchQuery2Description[]
+            proposedQueries?: GQL.ISearchQueryDescription[]
         } | null = null
         if (this.state.error) {
             if (this.state.error.message.includes('no query terms or regexp specified')) {
@@ -195,19 +195,19 @@ export class SearchResults extends React.Component<Props, State> {
         }
 
         return (
-            <div className="search-results2">
-                <div className="search-results2__header">
+            <div className="search-results">
+                <div className="search-results__header">
                     {this.state.results.length > 0 && (
                         <small>
                             {this.state.timedout.length > 0 && (
-                                <span className="search-results2__header-notice" title={this.state.timedout.join('\n')}>
+                                <span className="search-results__header-notice" title={this.state.timedout.join('\n')}>
                                     <HourglassIcon className="icon-inline" />
                                     {this.state.timedout.length}{' '}
                                     {pluralize('repository', this.state.timedout.length, 'repositories')} timed out
                                     (reload to view)
                                 </span>
                             )}
-                            <span className="search-results2__header-stats">
+                            <span className="search-results__header-stats">
                                 {numberWithCommas(totalResults)}
                                 {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
                                 {this.state.searchDuration! / 1000} seconds
@@ -219,7 +219,7 @@ export class SearchResults extends React.Component<Props, State> {
                         !this.state.loading &&
                         showDotComMarketing && <ServerBanner />}
                 </div>
-                {this.state.results.length > 0 && <div className="search-results2__header-border-bottom" />}
+                {this.state.results.length > 0 && <div className="search-results__header-border-bottom" />}
                 {this.state.cloning.map((repoPath, i) => (
                     <RepoSearchResult repoPath={repoPath} key={i} icon={Loader} />
                 ))}
@@ -229,7 +229,7 @@ export class SearchResults extends React.Component<Props, State> {
                 {this.state.loading && <Loader className="icon-inline" />}
                 {alert && (
                     <SearchAlert
-                        className="search-results2__alert"
+                        className="search-results__alert"
                         title={alert.title}
                         description={alert.description || undefined}
                         proposedQueries={this.state.alert ? this.state.alert.proposedQueries : undefined}

@@ -76,7 +76,7 @@ export class SearchScope extends React.PureComponent<Props, State> {
                         console.error(err)
                         return []
                     }),
-                    map((scopes: GQL.ISearchScope2[]) => ({ remoteScopes: scopes }))
+                    map((scopes: GQL.ISearchScope[]) => ({ remoteScopes: scopes }))
                 )
                 .subscribe(
                     newState =>
@@ -159,9 +159,9 @@ export class SearchScope extends React.PureComponent<Props, State> {
         const scopes = this.getScopes()
 
         return (
-            <div className="search-scope2">
+            <div className="search-scope">
                 <select
-                    className="search-scope2__select form-control"
+                    className="search-scope__select form-control"
                     onChange={this.onChange}
                     value={this.props.value}
                     ref={e => (this.selectElement = e)}

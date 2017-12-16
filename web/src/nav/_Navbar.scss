@@ -53,7 +53,7 @@
         align-self: flex-start;
     }
 
-    &:not(.navbar-search2) {
+    &:not(.navbar-search) {
         height: 3.55rem; // +.05 to avoid the search box leaking
         .navbar__logo {
             width: 1.5rem;
@@ -65,7 +65,7 @@
         }
     }
 
-    &.navbar-search2 {
+    &.navbar-search {
         height: 4.35rem; // +.05 to avoid the search box leaking
         .navbar__logo {
             width: 2rem;

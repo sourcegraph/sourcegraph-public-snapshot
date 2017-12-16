@@ -13,19 +13,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-func TestSearch2Suggestions(t *testing.T) {
+func TestSearchSuggestions(t *testing.T) {
 	listOpts := sourcegraph.ListOptions{PerPage: int32(maxReposToSearch + 1)}
 
-	createSearchResolver2 := func(t *testing.T, query, scopeQuery string) *searchResolver2 {
-		args := &searchArgs2{Query: query, ScopeQuery: scopeQuery}
-		r, err := (&schemaResolver{}).Search2(args)
+	createSearchResolver := func(t *testing.T, query, scopeQuery string) *searchResolver {
+		args := &searchArgs{Query: query, ScopeQuery: scopeQuery}
+		r, err := (&schemaResolver{}).Search(args)
 		if err != nil {
-			t.Fatal("Search2:", err)
+			t.Fatal("Search:", err)
 		}
 		return r
 	}
 	getSuggestions := func(t *testing.T, query, scopeQuery string) []string {
-		r := createSearchResolver2(t, query, scopeQuery)
+		r := createSearchResolver(t, query, scopeQuery)
 		results, err := r.Suggestions(context.Background(), &searchSuggestionsArgs{})
 		if err != nil {
 			t.Fatal("Suggestions:", err)
@@ -93,8 +93,8 @@ func TestSearch2Suggestions(t *testing.T) {
 	})
 
 	t.Run("single term invalid regex", func(t *testing.T) {
-		args := &searchArgs2{Query: "foo(", ScopeQuery: ""}
-		_, err := (&schemaResolver{}).Search2(args)
+		args := &searchArgs{Query: "foo(", ScopeQuery: ""}
+		_, err := (&schemaResolver{}).Search(args)
 		if err == nil {
 			t.Fatal("err == nil")
 		} else if want := "error parsing regexp"; !strings.Contains(err.Error(), want) {

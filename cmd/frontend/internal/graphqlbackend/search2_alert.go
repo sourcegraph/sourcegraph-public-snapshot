@@ -35,7 +35,7 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
-func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
+func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
 	repoFilters, minusRepoFilters := r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
 	repoGroupFilters, _ := r.combinedQuery.StringValues(searchquery.FieldRepoGroup)
 
@@ -159,7 +159,7 @@ func (r *searchResolver2) alertForNoResolvedRepos(ctx context.Context) (*searchA
 	return &a, nil
 }
 
-func (r *searchResolver2) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
+func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
 	alert := &searchAlert{
 		title:       "Too many matching repositories",
 		description: "Narrow your search with a repo: filter to see results.",
@@ -259,7 +259,7 @@ outer:
 	return alert, nil
 }
 
-func (r *searchResolver2) alertForMissingRepoRevs(missingRepoRevs []*repositoryRevisions) *searchAlert {
+func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*repositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].repo, missingRepoRevs[0].revSpecsOrDefaultBranch()[0])
@@ -276,7 +276,7 @@ func (r *searchResolver2) alertForMissingRepoRevs(missingRepoRevs []*repositoryR
 	}
 }
 
-func omitQueryFields(r *searchResolver2, field string) searchQuery {
+func omitQueryFields(r *searchResolver, field string) searchQuery {
 	return searchQuery{
 		query:      syntax.ExprString(omitQueryExprWithField(&r.query, field)),
 		scopeQuery: syntax.ExprString(omitQueryExprWithField(&r.scopeQuery, field)),

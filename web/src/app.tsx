@@ -15,7 +15,7 @@ import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { updateDeploymentConfiguration } from './search2/backend'
 import { parseSearchURLQuery } from './search2/index'
-import { SearchPage as SearchPage2 } from './search2/SearchPage'
+import { SearchPage } from './search2/SearchPage'
 import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps extends RouteComponentProps<any> {
@@ -94,7 +94,7 @@ const SearchRouter = (props: SearchRouterProps): JSX.Element | null => {
     if (options) {
         return <Layout {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
     }
-    return <SearchPage2 {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
+    return <SearchPage {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
 }
 
 interface BackfillRedirectorProps extends RouteComponentProps<{}> {
@@ -169,9 +169,9 @@ class OnboardingRedirector extends React.Component<{}, {}> {
 
     public render(): JSX.Element {
         return (
-            <div className="search-page2__onboarding-container">
-                <div className="search-page2__onboarding-details-container">
-                    <div className="search-page2__onboarding-details">
+            <div className="search-page__onboarding-container">
+                <div className="search-page__onboarding-details-container">
+                    <div className="search-page__onboarding-details">
                         <div style={{ padding: 25, textAlign: 'left' }}>
                             <img
                                 style={{ maxWidth: '90%' }}

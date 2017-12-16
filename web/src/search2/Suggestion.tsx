@@ -29,7 +29,7 @@ export interface Suggestion {
     urlLabel: string
 }
 
-export function createSuggestion(item: GQL.SearchSuggestion2): Suggestion {
+export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
     switch (item.__typename) {
         case 'Repository': {
             return {

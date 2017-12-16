@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { buildSearchURLQuery } from './index'
 
 interface Props {
-    query: GQL.ISearchQuery2
+    query: GQL.ISearchQuery
 
     /**
      * Called when the user mouseups on the component. This captures normal

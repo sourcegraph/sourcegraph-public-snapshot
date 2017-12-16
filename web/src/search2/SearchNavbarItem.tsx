@@ -9,7 +9,7 @@ import { submitSearch } from './helpers'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { QueryInput } from './QueryInput'
 import { ScopeLabel } from './ScopeLabel'
-import { Search2Help } from './Search2Help'
+import { SearchHelp } from './Search2Help'
 import { SearchButton } from './SearchButton'
 import { SearchScope } from './SearchScope'
 
@@ -83,8 +83,8 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         const autoFocus = this.props.location.pathname === '/search'
 
         return (
-            <form className="search2 search-navbar-item2" onSubmit={this.onSubmit}>
-                <div className="search-navbar-item2__row">
+            <form className="search search--navbar-item" onSubmit={this.onSubmit}>
+                <div className="search--navbar-item__row">
                     <QueryInput
                         {...this.props}
                         value={this.state.userQuery}
@@ -93,9 +93,9 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                         autoFocus={autoFocus ? 'cursor-at-end' : undefined}
                     />
                     <SearchButton />
-                    <Search2Help />
+                    <SearchHelp />
                 </div>
-                <div className="search-navbar-item2__row">
+                <div className="search--navbar-item__row">
                     <SearchScope
                         location={this.props.location}
                         value={this.state.scopeQuery}
