@@ -8,9 +8,9 @@ import { submitSearch } from './helpers'
 import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
 import { ScopeLabel } from './ScopeLabel'
-import { Search2Help } from './Search2Help'
 import { SearchButton } from './SearchButton'
 import { SearchFields } from './SearchFields'
+import { SearchHelp } from './SearchHelp'
 import { SearchScope } from './SearchScope'
 
 interface Props {
@@ -52,7 +52,7 @@ export class SearchPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="search-page2">
+            <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
                 <NavLinks
                     location={this.props.location}
@@ -60,15 +60,15 @@ export class SearchPage extends React.Component<Props, State> {
                     isLightTheme={this.props.isLightTheme}
                 />
                 <img
-                    className="search-page2__logo"
+                    className="search-page__logo"
                     src={
                         `${window.context.assetsRoot}/img/ui2/sourcegraph` +
                         (this.props.isLightTheme ? '-light' : '') +
                         '-head-logo.svg'
                     }
                 />
-                <form className="search2 search-page2__container" onSubmit={this.onSubmit}>
-                    <div className="search-page2__input-container">
+                <form className="search search-page__container" onSubmit={this.onSubmit}>
+                    <div className="search-page__input-container">
                         <QueryInput
                             {...this.props}
                             value={this.state.userQuery}
@@ -84,9 +84,9 @@ export class SearchPage extends React.Component<Props, State> {
                         />
                         <SearchButton />
                     </div>
-                    <div className="search-page2__input-sub-container">
+                    <div className="search-page__input-sub-container">
                         <ScopeLabel scopeQuery={this.state.scopeQuery} />
-                        <Search2Help />
+                        <SearchHelp />
                     </div>
                     <SearchFields onFieldsQueryChange={this.onFieldsQueryChange} />
                 </form>

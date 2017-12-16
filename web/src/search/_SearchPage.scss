@@ -1,6 +1,6 @@
 @import './SearchFields';
 
-.search-page2 {
+.search-page {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -45,7 +45,7 @@
         width: 100%;
     }
 
-    .search2-help {
+    .search-help {
         margin-top: 0.25rem;
         margin-right: 0.25rem;
     }
@@ -73,7 +73,7 @@
 }
 
 .theme-light {
-    .search-page2 {
+    .search-page {
         &__sign-in {
             color: $color-light-text-4;
         }

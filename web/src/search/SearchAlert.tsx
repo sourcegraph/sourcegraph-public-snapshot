@@ -6,7 +6,7 @@ interface Props {
     className: string
     title: string
     description?: string
-    proposedQueries?: GQL.ISearchQuery2Description[]
+    proposedQueries?: GQL.ISearchQueryDescription[]
 
     location: H.Location
 }

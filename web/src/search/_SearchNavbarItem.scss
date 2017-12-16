@@ -1,6 +1,6 @@
 @import './SearchHelp';
 
-.search-navbar-item2 {
+.search--navbar-item {
     padding: 0.25rem 0.5rem;
     max-width: 36rem;
 
@@ -14,11 +14,11 @@
     }
 
     .query-input2__input,
-    .search-scope2__select {
+    .search-scope__select {
         @extend .form-control-sm;
     }
 
-    .search-button2__label {
+    .search-button__label {
         display: none;
     }
 

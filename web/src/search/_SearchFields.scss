@@ -1,4 +1,4 @@
-.search-fields2 {
+.search-fields {
     border-radius: 0.25rem;
     width: 100%;
     margin-top: 1rem;
@@ -71,7 +71,7 @@
 }
 
 .theme-light {
-    .search-fields2 {
+    .search-fields {
         &__header {
             border-color: $color-light-border;
         }

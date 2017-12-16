@@ -4,7 +4,7 @@
 @import './SearchAlert';
 @import '../marketing/Banner';
 
-.search-results2 {
+.search-results {
     width: 100%;
     padding: 0.5rem 5rem;
 
@@ -36,7 +36,7 @@
 }
 
 .theme-light {
-    .search-results2 {
+    .search-results {
         &__header {
             color: $color-light-text-2;
         }

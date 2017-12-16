@@ -7,13 +7,13 @@ import { mutateConfigurationGraphQL } from '../configuration/backend'
 import { currentConfiguration } from '../settings/configuration'
 import { SearchOptions } from './index'
 
-export function searchText(options: SearchOptions): Observable<GQL.ISearchResults2> {
+export function searchText(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
-        `query Search2(
+        `query Search(
             $query: String!,
             $scopeQuery: String!,
         ) {
-            search2(query: $query, scopeQuery: $scopeQuery) {
+            search(query: $query, scopeQuery: $scopeQuery) {
                 results {
                     limitHit
                     missing
@@ -93,21 +93,21 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
         { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.search2 || !data.search2.results) {
+            if (!data || !data.search || !data.search.results) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.search2.results
+            return data.search.results
         })
     )
 }
 
-export function fetchSearchResultCount(options: SearchOptions): Observable<GQL.ISearchResults2> {
+export function fetchSearchResultCount(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
         `query SearchResultsCount(
             $query: String!,
             $scopeQuery: String!,
         ) {
-            search2(query: $query, scopeQuery: $scopeQuery) {
+            search(query: $query, scopeQuery: $scopeQuery) {
                 results {
                     limitHit
                     missing
@@ -120,21 +120,21 @@ export function fetchSearchResultCount(options: SearchOptions): Observable<GQL.I
         { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.search2 || !data.search2.results) {
+            if (!data || !data.search || !data.search.results) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.search2.results
+            return data.search.results
         })
     )
 }
 
-export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchSuggestion2> {
+export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchSuggestion> {
     return queryGraphQL(
-        `query Search2(
+        `query Search(
             $query: String!,
             $scopeQuery: String!,
         ) {
-            search2(query: $query, scopeQuery: $scopeQuery) {
+            search(query: $query, scopeQuery: $scopeQuery) {
                 suggestions {
                     ... on Repository {
                         __typename
@@ -154,28 +154,28 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
         { query: options.query, scopeQuery: options.scopeQuery || '' }
     ).pipe(
         mergeMap(({ data, errors }) => {
-            if (!data || !data.search2 || !data.search2.suggestions) {
+            if (!data || !data.search || !data.search.suggestions) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.search2.suggestions
+            return data.search.suggestions
         })
     )
 }
 
-export function fetchSearchScopes(): Observable<GQL.ISearchScope2[]> {
+export function fetchSearchScopes(): Observable<GQL.ISearchScope[]> {
     return queryGraphQL(`
-        query SearchScopes2 {
-            searchScopes2 {
+        query SearchScopes {
+            searchScopes {
                 name
                 value
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.searchScopes2) {
+            if (!data || !data.searchScopes) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.searchScopes2
+            return data.searchScopes
         })
     )
 }
