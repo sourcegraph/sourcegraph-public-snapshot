@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	graphql "github.com/neelance/graphql-go"
+	"github.com/neelance/graphql-go/relay"
 	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -48,6 +49,55 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		return nil, errors.New("bad configuration subject type")
 	}
 
+}
+
+func idToConfigurationSubject(id graphql.ID) (sourcegraph.ConfigurationSubject, error) {
+	switch relay.UnmarshalKind(id) {
+	case "User":
+		userID, err := unmarshalUserID(id)
+		return sourcegraph.ConfigurationSubject{User: &userID}, err
+	case "Org":
+		orgID, err := unmarshalOrgID(id)
+		return sourcegraph.ConfigurationSubject{User: &orgID}, err
+	default:
+		return sourcegraph.ConfigurationSubject{}, errors.New("bad configuration subject type")
+	}
+}
+
+func configurationSubjectID(subject sourcegraph.ConfigurationSubject) (graphql.ID, error) {
+	switch {
+	case subject.User != nil:
+		return marshalUserID(*subject.User), nil
+	case subject.Org != nil:
+		return marshalOrgID(*subject.Org), nil
+	default:
+		return "", errors.New("bad configuration subject type")
+	}
+}
+
+func configurationSubjectsEqual(a, b sourcegraph.ConfigurationSubject) bool {
+	switch {
+	case a.User != nil && b.User != nil:
+		return *a.User == *b.User
+	case a.Org != nil && b.Org != nil:
+		return *a.Org == *b.Org
+	}
+	return false
+}
+
+// checkArgHasSameSubject ensures that the subject encoded in args.ID (or similar resolver
+// field) is the same as that passed to the configurationMutationResolver. If they are different,
+// it returns an error.
+//
+// 🚨 SECURITY: It is used when a mutation field inside the configurationMutation also accepts an
+// ID field that encodes the configuration subject. In that case, it's important to check that the
+// subjects are equal to prevent a user from bypassing the permission check to write to the
+// configuration of the second ID's subject.
+func (r *configurationMutationResolver) checkArgHasSameSubject(argSubject sourcegraph.ConfigurationSubject) error {
+	if !configurationSubjectsEqual(r.subject.toSubject(), argSubject) {
+		return fmt.Errorf("configuration subject mismatch: %s != %s", r.subject.toSubject(), argSubject)
+	}
+	return nil
 }
 
 func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
@@ -122,7 +172,13 @@ func (r *configurationCascadeResolver) Defaults() *configurationResolver {
 	}
 }
 
+var mockConfigurationCascadeSubjects func() ([]*configurationSubject, error)
+
 func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configurationSubject, error) {
+	if mockConfigurationCascadeSubjects != nil {
+		return mockConfigurationCascadeSubjects()
+	}
+
 	var subjects []*configurationSubject
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
 		user, err := currentUser(ctx)

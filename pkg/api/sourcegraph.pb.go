@@ -504,6 +504,17 @@ type ConfigurationSubject struct {
 	User *int32 // the user's ID
 }
 
+func (s ConfigurationSubject) String() string {
+	switch {
+	case s.Org != nil:
+		return fmt.Sprintf("org %d", *s.Org)
+	case s.User != nil:
+		return fmt.Sprintf("user %d", *s.User)
+	default:
+		return "unknown configuration subject"
+	}
+}
+
 // Settings contains configuration settings for a subject.
 type Settings struct {
 	ID            int32 `json:"ID"`

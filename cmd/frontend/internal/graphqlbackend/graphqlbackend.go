@@ -130,6 +130,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return orgByID(ctx, id)
 	case "Commit":
 		return commitByID(ctx, id)
+	case "SavedQuery":
+		return savedQueryByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

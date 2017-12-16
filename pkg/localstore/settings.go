@@ -13,6 +13,10 @@ import (
 type settings struct{}
 
 func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	if Mocks.Settings.CreateIfUpToDate != nil {
+		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorAuth0ID, contents)
+	}
+
 	s := sourcegraph.Settings{
 		Subject:       subject,
 		AuthorAuth0ID: authorAuth0ID,
@@ -55,6 +59,10 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.Con
 }
 
 func (o *settings) GetLatest(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
+	if Mocks.Settings.GetLatest != nil {
+		return Mocks.Settings.GetLatest(ctx, subject)
+	}
+
 	return o.getLatest(ctx, globalDB, subject)
 }
 
