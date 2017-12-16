@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { SearchNavbarItem } from '../search2/SearchNavbarItem'
+import { SearchNavbarItem } from '../search/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 
 interface Props {

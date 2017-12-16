@@ -336,15 +336,15 @@ body {
     }
 }
 
-@import './search2/QueryButton';
-@import './search2/SavedQueries';
-@import './search2/SearchNavbarItem';
-@import './search2/SearchPage';
-@import './search2/SearchResults';
-@import './search2/QueryInput';
-@import './search2/SearchScope';
-@import './search2/ScopeLabel';
-@import './search2/SearchButton';
+@import './search/QueryButton';
+@import './search/SavedQueries';
+@import './search/SearchNavbarItem';
+@import './search/SearchPage';
+@import './search/SearchResults';
+@import './search/QueryInput';
+@import './search/SearchScope';
+@import './search/ScopeLabel';
+@import './search/SearchButton';
 @import './tree/Tree';
 @import './nav/Navbar';
 @import './nav/NavLinks';

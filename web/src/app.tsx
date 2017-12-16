@@ -13,9 +13,9 @@ import { HeroPage } from './components/HeroPage'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
-import { updateDeploymentConfiguration } from './search2/backend'
-import { parseSearchURLQuery } from './search2/index'
-import { SearchPage } from './search2/SearchPage'
+import { updateDeploymentConfiguration } from './search/backend'
+import { parseSearchURLQuery } from './search/index'
+import { SearchPage } from './search/SearchPage'
 import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps extends RouteComponentProps<any> {
