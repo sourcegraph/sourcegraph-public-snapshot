@@ -421,6 +421,9 @@ type matcher struct {
 
 // searchTree searches the specified repositories for files and dirs whose name matches the matcher.
 func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisions, limit int) ([]*searchResultResolver, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	var (
 		resMu sync.Mutex
 		res   []*searchResultResolver
