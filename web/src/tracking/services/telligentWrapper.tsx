@@ -102,6 +102,7 @@ class TelligentWrapper {
             env,
             configUseCookies: true,
             useCookies: true,
+            trackUrls: !window.context.onPrem,
             /**
              * NOTE: do not use window.location.hostname (which includes subdomains) as the cookieDomain
              * on sourcegraph.com subdomains (such as about.sourcegraph.com). Subdomains should be removed
