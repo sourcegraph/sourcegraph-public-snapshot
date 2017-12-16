@@ -3,8 +3,8 @@ import { Banner } from './Banner'
 
 export const ServerBanner = () => (
     <Banner
-        title="Search over your private and internal code."
-        ctaLink="https://about.sourcegraph.com/trial"
+        title="Search your private and internal code."
+        ctaLink="https://about.sourcegraph.com"
         ctaText="Install Sourcegraph Server"
     />
 )
