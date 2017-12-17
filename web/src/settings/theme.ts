@@ -15,6 +15,11 @@ export function getColorTheme(): ColorTheme {
     return window.localStorage.getItem('light-theme') === 'true' ? 'light' : 'dark'
 }
 
+const colorThemeUpdates = new ReplaySubject<ColorTheme>(1)
+
+// Populate with initial value.
+colorThemeUpdates.next(getColorTheme())
+
 /**
  * Sets the active color theme.
  */
@@ -24,11 +29,6 @@ export function setColorTheme(theme: ColorTheme): void {
     colorThemeUpdates.next(theme)
     eventLogger.log(theme === 'light' ? 'LightThemeClicked' : 'DarkThemeClicked')
 }
-
-const colorThemeUpdates = new ReplaySubject<ColorTheme>(1)
-
-// Populate with initial value.
-colorThemeUpdates.next(getColorTheme())
 
 /**
  * Represents the latest state of the color theme setting.

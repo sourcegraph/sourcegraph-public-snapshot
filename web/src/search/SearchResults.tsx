@@ -28,7 +28,6 @@ import { SearchAlert } from './SearchAlert'
 
 interface Props {
     location: H.Location
-    isLightTheme: boolean
 }
 
 interface State {
@@ -262,7 +261,6 @@ export class SearchResults extends React.Component<Props, State> {
                         onSelect={this.logEvent}
                         expanded={false}
                         showAllMatches={false}
-                        isLightTheme={this.props.isLightTheme}
                     />
                 )
             case 'CommitSearchResult':

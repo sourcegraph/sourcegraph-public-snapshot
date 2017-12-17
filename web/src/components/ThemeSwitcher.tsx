@@ -1,28 +1,39 @@
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SunIcon from '@sourcegraph/icons/lib/Sun'
 import * as React from 'react'
+import { Subscription } from 'rxjs/Subscription'
+import { colorTheme, getColorTheme, setColorTheme } from '../settings/theme'
 
-interface Props {
-    onToggleTheme: () => void
+interface Props {}
+
+interface State {
     isLightTheme: boolean
 }
 
-interface State {}
-
 export class ThemeSwitcher extends React.Component<Props, State> {
-    public state: State = {}
+    public state: State = { isLightTheme: getColorTheme() === 'light' }
+
+    private subscriptions = new Subscription()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     public render(): JSX.Element | null {
         return (
             <div
                 className="theme-switcher theme-switcher__nav-bar"
-                onClick={this.props.onToggleTheme}
+                onClick={this.toggleTheme}
                 title="Switch color theme"
             >
                 <div
                     className={
                         'theme-switcher__button' +
-                        (this.props.isLightTheme
+                        (this.state.isLightTheme
                             ? ' theme-switcher__button--selected theme-switcher__button--left'
                             : '')
                     }
@@ -34,7 +45,7 @@ export class ThemeSwitcher extends React.Component<Props, State> {
                 <div
                     className={
                         'theme-switcher__button' +
-                        (!this.props.isLightTheme
+                        (!this.state.isLightTheme
                             ? ' theme-switcher__button--selected theme-switcher__button--right'
                             : '')
                     }
@@ -46,4 +57,6 @@ export class ThemeSwitcher extends React.Component<Props, State> {
             </div>
         )
     }
+
+    private toggleTheme = () => setColorTheme(getColorTheme() === 'light' ? 'dark' : 'light')
 }

@@ -31,7 +31,6 @@ import { fetchExternalReferences } from './backend'
 interface Props extends AbsoluteRepoFilePosition {
     location: H.Location
     history: H.History
-    isLightTheme: boolean
 }
 
 interface State {
@@ -236,7 +235,6 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                                         icon={RepoIcon}
                                         onSelect={this.logLocalSelection}
                                         showAllMatches={true}
-                                        isLightTheme={this.props.isLightTheme}
                                     />
                                 ))}
                         />
@@ -253,7 +251,6 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                                     icon={GlobeIcon}
                                     onSelect={this.logExternalSelection}
                                     showAllMatches={true}
-                                    isLightTheme={this.props.isLightTheme}
                                 />
                             ))}
                         />

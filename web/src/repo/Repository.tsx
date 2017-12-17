@@ -20,6 +20,7 @@ import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/Browse
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ReferencesWidget } from '../references/ReferencesWidget'
+import { colorTheme, getColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { TreeHeader } from '../tree/TreeHeader'
@@ -39,7 +40,6 @@ export interface Props {
     filePath?: string
     location: H.Location
     history: H.History
-    isLightTheme: boolean
     phabricator?: PhabricatorRepo
     isDirectory: boolean
 }
@@ -133,16 +133,17 @@ export class Repository extends React.PureComponent<Props, State> {
                 })
         )
 
+        this.subscriptions.add(colorTheme.subscribe(v => console.log('ColorTheme', v)))
+
         // Transitions to routes with file should update file contents
         this.subscriptions.add(
             merge(
-                this.componentUpdates.pipe(
-                    map(props => ({ ...props, showHighlightingAnyway: false })),
-                    distinctUntilChanged(isEqual)
-                ),
-                this.showAnywayButtonClicks.pipe(map(() => ({ ...this.props, showHighlightingAnyway: true })))
+                this.componentUpdates.pipe(map(props => ({ ...props, showHighlightingAnyway: false }))),
+                this.showAnywayButtonClicks.pipe(map(() => ({ ...this.props, showHighlightingAnyway: true }))),
+                colorTheme
             )
                 .pipe(
+                    distinctUntilChanged(isEqual),
                     filter(props => !props.isDirectory && Boolean(props.filePath)),
                     switchMap(props =>
                         fetchHighlightedFile({
@@ -150,7 +151,7 @@ export class Repository extends React.PureComponent<Props, State> {
                             commitID: props.commitID,
                             filePath: props.filePath!,
                             disableTimeout: props.showHighlightingAnyway,
-                            isLightTheme: props.isLightTheme,
+                            isLightTheme: getColorTheme() === 'light',
                         }).pipe(
                             catchError(err => {
                                 this.setState({
@@ -318,7 +319,6 @@ export class Repository extends React.PureComponent<Props, State> {
                                         ...this.props,
                                         filePath: this.props.filePath!,
                                         position: this.state.position!,
-                                        isLightTheme: this.props.isLightTheme,
                                     }}
                                 />
                             )}

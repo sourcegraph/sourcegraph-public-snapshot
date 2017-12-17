@@ -1,7 +1,9 @@
 import * as H from 'history'
 import * as React from 'react'
+import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { NavLinks } from '../nav/NavLinks'
+import { colorTheme, getColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { limitString } from '../util'
 import { submitSearch } from './helpers'
@@ -16,8 +18,6 @@ import { SearchScope } from './SearchScope'
 interface Props {
     location: H.Location
     history: H.History
-    onToggleTheme: () => void
-    isLightTheme: boolean
 }
 
 interface State {
@@ -29,12 +29,16 @@ interface State {
 
     /** The query value derived from the search fields */
     fieldsQuery: string
+
+    isLightTheme: boolean
 }
 
 /**
  * The search page
  */
 export class SearchPage extends React.Component<Props, State> {
+    private subscriptions = new Subscription()
+
     constructor(props: Props) {
         super(props)
 
@@ -43,27 +47,29 @@ export class SearchPage extends React.Component<Props, State> {
             userQuery: '',
             scopeQuery: searchOptions ? searchOptions.scopeQuery : undefined,
             fieldsQuery: '',
+            isLightTheme: getColorTheme() === 'light',
         }
     }
 
     public componentDidMount(): void {
+        this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
         eventLogger.logViewEvent('Home')
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
-                <NavLinks
-                    location={this.props.location}
-                    onToggleTheme={this.props.onToggleTheme}
-                    isLightTheme={this.props.isLightTheme}
-                />
+                <NavLinks location={this.props.location} />
                 <img
                     className="search-page__logo"
                     src={
                         `${window.context.assetsRoot}/img/ui2/sourcegraph` +
-                        (this.props.isLightTheme ? '-light' : '') +
+                        (this.state.isLightTheme ? '-light' : '') +
                         '-head-logo.svg'
                     }
                 />
@@ -109,10 +115,7 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.fieldsQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, {
-            query,
-            scopeQuery: this.state.scopeQuery,
-        })
+        submitSearch(this.props.history, { query, scopeQuery: this.state.scopeQuery })
     }
 
     private getPageTitle(): string | undefined {

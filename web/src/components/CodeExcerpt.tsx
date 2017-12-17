@@ -1,13 +1,14 @@
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
+import { Subscription } from 'rxjs/Subscription'
 import { AbsoluteRepoFile } from '../repo'
 import { fetchHighlightedFileLines } from '../repo/backend'
+import { colorTheme, getColorTheme } from '../settings/theme'
 import { highlightNode } from '../util/dom'
 
 interface Props extends AbsoluteRepoFile {
     // How many extra lines to show in the excerpt before/after the ref.
     previewWindowExtraLines?: number
-    isLightTheme: boolean
     line: number
     highlightRanges: HighlightRange[]
 }
@@ -25,15 +26,25 @@ interface HighlightRange {
 
 interface State {
     blobLines?: string[]
+    isLightTheme: boolean
 }
 
 export class CodeExcerpt extends React.PureComponent<Props, State> {
     private tableContainerElement: HTMLElement | null
     private isVisible = false
+    private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
-        this.state = {}
+        this.state = { isLightTheme: getColorTheme() === 'light' }
+    }
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            colorTheme.subscribe(theme =>
+                this.setState({ isLightTheme: theme === 'light' }, () => this.fetchContents(this.props))
+            )
+        )
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -55,6 +66,10 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 }
             }
         }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public getPreviewWindowLines(): number[] {
@@ -126,7 +141,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             commitID: props.commitID,
             filePath: props.filePath,
             disableTimeout: true,
-            isLightTheme: props.isLightTheme,
+            isLightTheme: this.state.isLightTheme,
         }).subscribe(
             lines => {
                 this.setState({ blobLines: lines })

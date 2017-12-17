@@ -23,8 +23,6 @@ interface SettingsPageProps {
     history: H.History
     location: H.Location
     match: match<{}>
-    onToggleTheme: () => void
-    isLightTheme: boolean
 }
 
 /**
@@ -43,12 +41,7 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
         }
         return (
             <div className="settings-page">
-                <SettingsSidebar
-                    history={this.props.history}
-                    location={this.props.location}
-                    onToggleTheme={this.props.onToggleTheme}
-                    isLightTheme={this.props.isLightTheme}
-                />
+                <SettingsSidebar history={this.props.history} location={this.props.location} />
                 <div className="settings-page__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}

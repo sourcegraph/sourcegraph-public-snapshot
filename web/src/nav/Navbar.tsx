@@ -7,8 +7,6 @@ import { NavLinks } from './NavLinks'
 interface Props {
     history: H.History
     location: H.Location
-    onToggleTheme: () => void
-    isLightTheme: boolean
 }
 
 interface State {}
@@ -27,11 +25,7 @@ export class Navbar extends React.Component<Props, State> {
                 <div className="navbar__search-box-container">
                     <SearchNavbarItem history={this.props.history} location={this.props.location} />
                 </div>
-                <NavLinks
-                    location={this.props.location}
-                    onToggleTheme={this.props.onToggleTheme}
-                    isLightTheme={this.props.isLightTheme}
-                />
+                <NavLinks location={this.props.location} />
             </div>
         )
     }

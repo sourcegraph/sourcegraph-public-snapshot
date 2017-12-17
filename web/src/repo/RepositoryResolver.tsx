@@ -29,7 +29,6 @@ interface Props {
     history: H.History
     match: match<{ repoRev: string; filePath?: string }>
     isDirectory: boolean
-    isLightTheme: boolean
 }
 
 interface State {
@@ -184,7 +183,6 @@ export class RepositoryResolver extends React.Component<Props, State> {
                 defaultBranch={this.state.defaultBranch}
                 location={this.props.location}
                 history={this.props.history}
-                isLightTheme={this.props.isLightTheme}
                 isDirectory={this.props.isDirectory}
                 phabricator={this.state.phabricator}
             />
