@@ -569,6 +569,14 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev str
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
+	// Avoid logspam in postgres for violating the constraint. So we first
+	// check if the repo exists.
+	if _, err := s.getByURI(ctx, uri); err == nil {
+		return nil
+	} else if err != ErrRepoNotFound {
+		return err
+	}
+
 	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, language, blocked) VALUES ($1, $2, $3, $4, $5, '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
