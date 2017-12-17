@@ -16,6 +16,7 @@ import { routes } from './routes'
 import { parseSearchURLQuery } from './search/index'
 import { SearchPage } from './search/SearchPage'
 import { InitializePage } from './settings/InitializePage'
+import { getColorTheme, setColorTheme } from './settings/theme'
 import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps extends RouteComponentProps<any> {
@@ -127,7 +128,7 @@ interface AppState {
  */
 class App extends React.Component<{}, AppState> {
     public state: AppState = {
-        isLightTheme: localStorage.getItem('light-theme') === 'true',
+        isLightTheme: getColorTheme() === 'light',
     }
 
     constructor(props: {}) {
@@ -140,7 +141,7 @@ class App extends React.Component<{}, AppState> {
     }
 
     public componentDidUpdate(): void {
-        localStorage.setItem('light-theme', this.state.isLightTheme + '')
+        setColorTheme(this.state.isLightTheme ? 'light' : 'dark')
         fetchCurrentUser().subscribe(undefined, error => {
             console.error(error)
             this.setState({ error })
