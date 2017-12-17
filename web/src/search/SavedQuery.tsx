@@ -93,7 +93,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             this.deleteRequested
                 .pipe(
                     withLatestFrom(propsChanges),
-                    switchMap(([, props]) => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.index))
+                    switchMap(([, props]) => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id))
                 )
                 .subscribe(() => props.onDidDelete && props.onDidDelete(), err => console.error(err))
         )

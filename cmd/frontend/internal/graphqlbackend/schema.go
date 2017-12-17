@@ -188,15 +188,15 @@ type ConfigurationMutation {
     query: String!
     scopeQuery: String!
   ): SavedQuery!
-  # Update the saved query at the given index in the configuration.
+  # Update the saved query with the given ID in the configuration.
   updateSavedQuery(
-    index: Int!
+    id: ID!
     description: String
     query: String
     scopeQuery: String
   ): SavedQuery!
-  # Delete the saved query at the given index in the configuration.
-  deleteSavedQuery(index: Int!): EmptyResponse
+  # Delete the saved query with the given ID in the configuration.
+  deleteSavedQuery(id: ID!): EmptyResponse
 }
 
 # Input to ConfigurationMutation.updateConfiguration. If multiple fields are specified,
@@ -302,8 +302,13 @@ type SearchAlert {
 
 # A saved search query, defined in configuration.
 type SavedQuery {
+  # The unique ID of the saved query.
+  id: ID!
   # The subject whose configuration this saved query was defined in.
   subject: ConfigurationSubject!
+  # The unique key of this saved query (unique only among all other saved
+  # queries of the same subject).
+  key: String
   # The 0-indexed index of this saved query in the subject's configuration.
   index: Int!
   description: String!

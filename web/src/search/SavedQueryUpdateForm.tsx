@@ -34,7 +34,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
     // delete it on the old subject.
     if (props.savedQuery.subject.id !== fields.subject) {
         return createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.scopeQuery).pipe(
-            mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.index)),
+            mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id)),
             mergeMap(() => fetchCurrentUser().pipe(concat([null])))
         )
     }
@@ -42,7 +42,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
     // Otherwise, it's just a simple update.
     return updateSavedQuery(
         props.savedQuery.subject,
-        props.savedQuery.index,
+        props.savedQuery.id,
         fields.description,
         fields.query,
         fields.scopeQuery

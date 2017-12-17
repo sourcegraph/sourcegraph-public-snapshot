@@ -13,6 +13,7 @@ type MockStores struct {
 	OrgMembers  MockOrgMembers
 	Threads     MockThreads
 	Comments    MockComments
+	Settings    MockSettings
 	SharedItems MockSharedItems
 	Users       MockUsers
 }

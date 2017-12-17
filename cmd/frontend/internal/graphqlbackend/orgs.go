@@ -28,8 +28,8 @@ func (r *schemaResolver) Org(ctx context.Context, args *struct {
 }
 
 func orgByID(ctx context.Context, id graphql.ID) (*orgResolver, error) {
-	var orgID int32
-	if err := relay.UnmarshalSpec(id, &orgID); err != nil {
+	orgID, err := unmarshalOrgID(id)
+	if err != nil {
 		return nil, err
 	}
 	return orgByIDInt32(ctx, orgID)
@@ -52,8 +52,13 @@ type orgResolver struct {
 	org *sourcegraph.Org
 }
 
-func (o *orgResolver) ID() graphql.ID {
-	return relay.MarshalID("Org", o.org.ID)
+func (o *orgResolver) ID() graphql.ID { return marshalOrgID(o.org.ID) }
+
+func marshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
+
+func unmarshalOrgID(id graphql.ID) (orgID int32, err error) {
+	err = relay.UnmarshalSpec(id, &orgID)
+	return
 }
 
 func (o *orgResolver) OrgID() int32 {

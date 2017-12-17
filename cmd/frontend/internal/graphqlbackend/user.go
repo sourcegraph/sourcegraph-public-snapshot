@@ -20,8 +20,8 @@ type userResolver struct {
 }
 
 func userByID(ctx context.Context, id graphql.ID) (*userResolver, error) {
-	var userID int32
-	if err := relay.UnmarshalSpec(id, &userID); err != nil {
+	userID, err := unmarshalUserID(id)
+	if err != nil {
 		return nil, err
 	}
 	return userByIDInt32(ctx, userID)
@@ -35,8 +35,13 @@ func userByIDInt32(ctx context.Context, id int32) (*userResolver, error) {
 	return &userResolver{user: user}, nil
 }
 
-func (r *userResolver) ID() graphql.ID {
-	return relay.MarshalID("User", r.user.ID)
+func (r *userResolver) ID() graphql.ID { return marshalUserID(r.user.ID) }
+
+func marshalUserID(id int32) graphql.ID { return relay.MarshalID("User", id) }
+
+func unmarshalUserID(id graphql.ID) (userID int32, err error) {
+	err = relay.UnmarshalSpec(id, &userID)
+	return
 }
 
 func (r *userResolver) Auth0ID() string { return r.user.Auth0ID }

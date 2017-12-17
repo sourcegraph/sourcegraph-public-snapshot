@@ -199,6 +199,7 @@ export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
 }
 
 const gqlSavedQuery = `
+    id
     subject {
         ... on Org { id }
         ... on User { id }
@@ -212,6 +213,7 @@ const gqlSavedQuery = `
 `
 
 interface ISavedQuery {
+    id: string
     description: string
     query?: string
     scopeQuery?: string
@@ -299,21 +301,21 @@ export function createSavedQuery(
 
 export function updateSavedQuery(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
-    index: number,
+    id: GQLID,
     description: string,
     query: string,
     scopeQuery: string
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
-        `mutation UpdateSavedQuery($subject: ID!, $lastID: Int, $index: Int!, $description: String, $query: String, $scopeQuery: String) {
+        `mutation UpdateSavedQuery($subject: ID!, $lastID: Int, $id: ID!, $description: String, $query: String, $scopeQuery: String) {
             configurationMutation(input: {subject: $subject, lastID: $lastID}) {
-                updateSavedQuery(index: $index, description: $description, query: $query, scopeQuery: $scopeQuery) {
+                updateSavedQuery(id: $id, description: $description, query: $query, scopeQuery: $scopeQuery) {
                     ${gqlSavedQuery}
                 }
             }
         }`,
-        { index, description, query, scopeQuery }
+        { id, description, query, scopeQuery }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {
@@ -326,18 +328,18 @@ export function updateSavedQuery(
 
 export function deleteSavedQuery(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
-    index: number
+    id: GQLID
 ): Observable<void> {
     return mutateConfigurationGraphQL(
         subject,
-        `mutation DeleteSavedQuery($subject: ID!, $lastID: Int, $index: Int!) {
+        `mutation DeleteSavedQuery($subject: ID!, $lastID: Int, $id: ID!) {
             configurationMutation(input: {subject: $subject, lastID: $lastID}) {
-                deleteSavedQuery(index: $index) {
+                deleteSavedQuery(id: $id) {
                     alwaysNil
                 }
             }
         }`,
-        { index }
+        { id }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.deleteSavedQuery) {
