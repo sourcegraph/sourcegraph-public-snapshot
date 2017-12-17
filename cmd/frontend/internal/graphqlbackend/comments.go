@@ -56,7 +56,7 @@ func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &userResolver{user, actor.FromContext(ctx)}, nil
+	return &userResolver{user}, nil
 }
 
 func (s *schemaResolver) AddCommentToThreadShared(ctx context.Context, args *struct {

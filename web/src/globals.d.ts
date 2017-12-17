@@ -43,13 +43,7 @@ interface SourcegraphContext {
 
     /** The currently logged in user or null if the user is not signed in/authenticated */
     readonly user: ImmutableUser | null
-    /**
-     * requireUserBackfill is a temporary flag which is true for legacy users that must
-     * backfill data (username, and optionally display name) to be added to the users table.
-     * While this flag is true, the client should force the currently logged in user to
-     * provide the backfill data before taking other actions in the application.
-     */
-    requireUserBackfill: boolean
+
     sentryDSN: string
     intercomHash: string
 

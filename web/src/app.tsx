@@ -7,7 +7,7 @@ import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { BrowserRouter, Redirect } from 'react-router-dom'
+import { BrowserRouter } from 'react-router-dom'
 import { fetchCurrentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { updateUserSessionStores } from './marketing/util'
@@ -80,16 +80,11 @@ class Layout extends React.Component<LayoutProps> {
     }
 }
 
-interface SearchRouterProps extends RouteComponentProps<{}> {
-    onToggleTheme: () => void
-    isLightTheme: boolean
-}
-
 /**
  * handles rendering Search or SearchResults components based on whether or not
  * the search query (e.g. '?q=foo') is in URL.
  */
-const SearchRouter = (props: SearchRouterProps): JSX.Element | null => {
+const SearchRouter = (props: LayoutProps): JSX.Element | null => {
     const options = parseSearchURLQuery(props.location.search)
     if (options) {
         return <Layout {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
@@ -97,23 +92,8 @@ const SearchRouter = (props: SearchRouterProps): JSX.Element | null => {
     return <SearchPage {...props} onToggleTheme={props.onToggleTheme} isLightTheme={props.isLightTheme} />
 }
 
-interface BackfillRedirectorProps extends RouteComponentProps<{}> {
-    onToggleTheme: () => void
-    isLightTheme: boolean
-}
-
-interface BackfillRedirectorProps extends RouteComponentProps<{}> {
-    onToggleTheme: () => void
-    isLightTheme: boolean
-}
-
-/**
- * handles rendering Search or SearchResults components based on whether or not
- * the search query (e.g. '?q=foo') is in URL.
- */
-
-class BackfillRedirector extends React.Component<BackfillRedirectorProps, { returnTo: string }> {
-    constructor(props: BackfillRedirectorProps) {
+class BackfillRedirector extends React.Component<LayoutProps, { returnTo: string }> {
+    constructor(props: LayoutProps) {
         super(props)
         const searchParams = new URLSearchParams(this.props.location.search)
         this.state = {
@@ -125,17 +105,6 @@ class BackfillRedirector extends React.Component<BackfillRedirectorProps, { retu
     private renderLayout = (props: RouteComponentProps<any>) => <Layout {...this.props} {...props} />
 
     public render(): JSX.Element {
-        const searchParams = new URLSearchParams(this.props.location.search)
-
-        const redirectToBackfill =
-            window.context.user &&
-            window.context.requireUserBackfill &&
-            this.props.location.pathname !== '/settings' &&
-            searchParams.get('backfill') !== 'true'
-
-        if (redirectToBackfill) {
-            return <Redirect to={`/settings?backfill=true&returnTo=${encodeURIComponent(this.state.returnTo)}`} />
-        }
         return (
             <Switch>
                 <Route path="/search" exact={true} render={this.renderSearchRouter} />

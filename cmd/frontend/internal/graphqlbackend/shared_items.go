@@ -19,7 +19,7 @@ func (s *sharedItemResolver) Author(ctx context.Context) (*userResolver, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &userResolver{user, actor.FromContext(ctx)}, nil
+	return &userResolver{user}, nil
 }
 
 func (s *sharedItemResolver) Public(ctx context.Context) bool {

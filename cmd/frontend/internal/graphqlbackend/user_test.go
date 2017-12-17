@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/neelance/graphql-go/gqltesting"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -42,7 +41,7 @@ func TestNode_User(t *testing.T) {
 func TestUsers_Activity(t *testing.T) {
 	ctx := context.Background()
 	store.Mocks.Users.MockGetByAuth0ID_Return(t, &sourcegraph.User{}, nil)
-	u := &userResolver{user: &sourcegraph.User{}, actor: actor.FromContext(ctx)}
+	u := &userResolver{user: &sourcegraph.User{}}
 	_, err := u.Activity(ctx)
 	if err == nil {
 		t.Errorf("Non-admin can access endpoint")

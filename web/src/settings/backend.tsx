@@ -138,68 +138,6 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
     )
 }
 
-export interface CreateUserOptions {
-    /** The user's username */
-    username: string
-    /** The user's display name */
-    displayName: string
-}
-
-/**
- * Sends a GraphQL mutation to create a user and returns an Observable that emits the new user, then completes
- */
-export function createUser(options: CreateUserOptions): Observable<GQL.IUser> {
-    return currentUser.pipe(
-        take(1),
-        mergeMap(user => {
-            // This API is for user data backfill. You must be an authenticated user
-            // to write a row to the users db; we use the authenticated actor to
-            // fill auth0_id and email columns.
-            if (!user) {
-                throw new Error('User must be signed in.')
-            }
-
-            const variables = {
-                ...options,
-                avatarUrl: user.avatarURL,
-            }
-            return mutateGraphQL(
-                `
-                mutation createUser(
-                    $username: String!,
-                    $displayName: String!,
-                    $avatarURL: String
-                ) {
-                    createUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
-                        auth0ID
-                        sourcegraphID
-                        username
-                    }
-                }
-            `,
-                variables
-            )
-        }),
-        map(({ data, errors }) => {
-            if (!data || !data.createUser) {
-                eventLogger.log('NewUserFailed')
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            eventLogger.log('NewUserCreated', {
-                auth: {
-                    user: {
-                        id: data.createUser.sourcegraphID,
-                        auth0_id: data.createUser.auth0ID,
-                        username: data.createUser.username,
-                        display_name: options.displayName,
-                    },
-                },
-            })
-            return data.createUser
-        })
-    )
-}
-
 export interface UpdateUserOptions {
     username: string
     /** The user's display name */

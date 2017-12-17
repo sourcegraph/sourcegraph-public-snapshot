@@ -12,7 +12,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser, fetchCurrentUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createUser, updateUser } from '../backend'
+import { updateUser } from '../backend'
 import { VALID_USERNAME_REGEXP } from '../validation'
 import { UserAvatar } from './UserAvatar'
 import { UserSettingsFile } from './UserSettingsFile'
@@ -68,22 +68,11 @@ export class UserProfilePage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     tap(() => this.setState({ loading: true })),
-                    mergeMap(
-                        event =>
-                            this.requireBackfill()
-                                ? createUser({
-                                      username: this.state.username,
-                                      displayName: this.state.displayName || this.state.username,
-                                  }).pipe(
-                                      tap(() => {
-                                          window.context.requireUserBackfill = false
-                                      }),
-                                      catchError(this.handleError)
-                                  )
-                                : updateUser({
-                                      username: this.state.username,
-                                      displayName: this.state.displayName,
-                                  }).pipe(catchError(this.handleError))
+                    mergeMap(event =>
+                        updateUser({
+                            username: this.state.username,
+                            displayName: this.state.displayName,
+                        }).pipe(catchError(this.handleError))
                     ),
                     tap(() => this.setState({ loading: false, error: undefined, saved: true })),
                     mergeMap(() => fetchCurrentUser().pipe(concat([null])))
@@ -114,9 +103,6 @@ export class UserProfilePage extends React.Component<Props, State> {
             <div className="user-profile-page">
                 <PageTitle title="Profile" />
                 <h2>Your profile</h2>
-                {this.requireBackfill() && (
-                    <p className="alert alert-danger">Please complete your profile to continue using Sourcegraph.</p>
-                )}
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.saved && <p className="alert alert-success">Profile saved!</p>}
                 <form className="user-profile-page__form" onSubmit={this.handleSubmit}>
@@ -181,15 +167,14 @@ export class UserProfilePage extends React.Component<Props, State> {
                     )}
                 </form>
 
-                {!this.requireBackfill() &&
-                    this.state.user && (
-                        <UserSettingsFile
-                            settings={this.state.user.latestSettings}
-                            userInEditorBeta={
-                                this.state.user.tags && this.state.user.tags.some(tag => tag.name === 'editor-beta')
-                            }
-                        />
-                    )}
+                {this.state.user && (
+                    <UserSettingsFile
+                        settings={this.state.user.latestSettings}
+                        userInEditorBeta={
+                            this.state.user.tags && this.state.user.tags.some(tag => tag.name === 'editor-beta')
+                        }
+                    />
+                )}
             </div>
         )
     }
@@ -200,10 +185,6 @@ export class UserProfilePage extends React.Component<Props, State> {
 
     private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({ displayName: e.target.value })
-    }
-
-    private requireBackfill(): boolean {
-        return new URLSearchParams(this.props.location.search).get('backfill') !== null
     }
 
     private getRedirectError(): string | undefined {
