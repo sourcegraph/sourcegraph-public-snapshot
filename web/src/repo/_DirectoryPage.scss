@@ -29,6 +29,10 @@
         border: none !important;
     }
 
+    &__row {
+        height: 2.5rem;
+    }
+
     &__commit-message-cell {
         color: $color-secondary;
         opacity: 0.75;
