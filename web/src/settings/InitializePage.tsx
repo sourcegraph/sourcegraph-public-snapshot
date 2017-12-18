@@ -30,55 +30,36 @@ export class InitializePage extends React.Component<{}, {}> {
 
     public render(): JSX.Element {
         return (
-            <div className="search-page__onboarding-container">
-                <div className="search-page__onboarding-details-container">
-                    <div className="search-page__onboarding-details">
-                        <div style={{ padding: 25, textAlign: 'left' }}>
-                            <img
-                                style={{ maxWidth: '90%' }}
-                                src={`${window.context.assetsRoot}/img/` + 'ui2/sourcegraph-light-head-logo.svg'}
+            <div className="initialize-page theme-light">
+                <div className="initialize-page__content">
+                    <img
+                        className="initialize-page__logo"
+                        src={`${window.context.assetsRoot}/img/ui2/sourcegraph-light-head-logo.svg`}
+                    />
+                    <form onSubmit={this.onSubmit}>
+                        <h2 className="initialize-page__header">Welcome to Sourcegraph Server!</h2>
+                        <input
+                            className="form-control initialize-page__input-email initialize-page__control"
+                            ref={e => (this.emailInput = e)}
+                            placeholder="Admin email (optional)"
+                            type="email"
+                            autoFocus={true}
+                        />
+                        <label className="initialize-page__label initialize-page__control">
+                            <input
+                                className="initialize-page__input-telemetry"
+                                ref={e => (this.telemetryInput = e)}
+                                defaultChecked={true}
+                                type="checkbox"
                             />
-                            <form onSubmit={this.onSubmit}>
-                                <div style={{ textAlign: 'left' }}>
-                                    <h2 style={{ color: 'black', marginBottom: 0, paddingTop: 20 }}>
-                                        Welcome to Sourcegraph Server!
-                                    </h2>
-                                    <div style={{ color: 'black' }}>
-                                        Configure your server with an optional admin email address.
-                                    </div>
-                                </div>
-                                <div style={{ paddingTop: '1rem' }}>
-                                    <input
-                                        ref={e => (this.emailInput = e)}
-                                        style={{ width: '100%', padding: 5 }}
-                                        placeholder="Admin email (optional)"
-                                        type="email"
-                                        autoFocus={true}
-                                    />
-                                </div>
-                                <div style={{ margin: '9px 0 15px 0' }}>
-                                    <label style={{ color: 'black', paddingLeft: 5 }}>
-                                        <input
-                                            ref={e => (this.telemetryInput = e)}
-                                            defaultChecked={true}
-                                            type="checkbox"
-                                        />
-                                        &nbsp; Send product usage data and check for updates (file contents and names
-                                        are never sent)
-                                    </label>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <button
-                                        style={{ maxWidth: 225 }}
-                                        type="submit"
-                                        className="btn btn-primary btn-block"
-                                    >
-                                        Continue
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                            <small>
+                                Send product usage data to Sourcegraph (file contents and names are never sent)
+                            </small>
+                        </label>
+                        <button type="submit" className="btn btn-primary btn-block">
+                            Continue
+                        </button>
+                    </form>
                 </div>
             </div>
         )
