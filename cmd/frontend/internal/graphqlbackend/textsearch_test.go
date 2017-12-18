@@ -6,11 +6,13 @@ import (
 	"reflect"
 	"testing"
 
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestSearchRepos(t *testing.T) {
-	mockSearchRepo = func(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	mockSearchRepo = func(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+		repoName := repo.URI
 		switch repoName {
 		case "foo/one":
 			return []*fileMatch{
@@ -41,7 +43,7 @@ func TestSearchRepos(t *testing.T) {
 			FileMatchLimit: 300,
 			Pattern:        "foo",
 		},
-		repos: []*repositoryRevisions{{repo: "foo/one"}, {repo: "foo/two"}, {repo: "foo/empty"}, {repo: "foo/cloning"}, {repo: "foo/missing"}},
+		repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing"),
 	}
 	results, common, err := searchRepos(context.Background(), args)
 	if err != nil {
@@ -56,4 +58,12 @@ func TestSearchRepos(t *testing.T) {
 	if !reflect.DeepEqual(common.missing, []string{"foo/missing"}) {
 		t.Errorf("unexpected missing: %v", common.missing)
 	}
+}
+
+func makeRepositoryRevisions(repos ...string) []*repositoryRevisions {
+	r := make([]*repositoryRevisions, len(repos))
+	for i, uri := range repos {
+		r[i] = &repositoryRevisions{repo: &sourcegraph.Repo{URI: uri}}
+	}
+	return r
 }

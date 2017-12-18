@@ -19,7 +19,6 @@ import (
 func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
-	calledReposGetByURI := store.Mocks.Repos.MockGetByURI(t, "repo", 1)
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c0")
 	var calledVCSRawLogDiffSearch bool
 	calledRepoVCSOpen := store.Mocks.RepoVCS.MockOpen(t, 1, vcstesting.MockRepository{
@@ -50,7 +49,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := repositoryRevisions{repo: "repo", revs: []revspecOrRefGlob{{revspec: "rev"}}}
+	repoRevs := repositoryRevisions{repo: &sourcegraph.Repo{ID: 1, URI: "repo"}, revs: []revspecOrRefGlob{{revspec: "rev"}}}
 	results, limitHit, err := searchCommitsInRepo(ctx, repoRevs, &patternInfo{Pattern: "p"}, *query, true, vcs.TextSearchOptions{Pattern: "p"}, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -69,9 +68,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	if limitHit {
 		t.Error("limitHit")
-	}
-	if !*calledReposGetByURI {
-		t.Error("!calledReposGetByURI")
 	}
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")

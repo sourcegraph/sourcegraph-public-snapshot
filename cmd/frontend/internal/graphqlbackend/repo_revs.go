@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"errors"
 	"strings"
+
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // revpecOrRefGlob represents either a revspec or a ref glob. Exactly one field is set.
@@ -26,7 +28,7 @@ func (r revspecOrRefGlob) String() string {
 // If no revspecs and no ref globs are specified, then the repository's default branch
 // is used.
 type repositoryRevisions struct {
-	repo string
+	repo *sourcegraph.Repo
 	revs []revspecOrRefGlob
 }
 
@@ -49,13 +51,14 @@ type repositoryRevisions struct {
 // - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
 //   because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
 //   section on the --glob flag)
-func parseRepositoryRevisions(repoAndOptionalRev string) repositoryRevisions {
+func parseRepositoryRevisions(repoAndOptionalRev string) (string, []revspecOrRefGlob) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
-		return repositoryRevisions{repo: repoAndOptionalRev}
+		return repoAndOptionalRev, nil
 	}
 
-	repoRevs := repositoryRevisions{repo: repoAndOptionalRev[:i]}
+	repo := repoAndOptionalRev[:i]
+	var revs []revspecOrRefGlob
 	for _, part := range strings.Split(repoAndOptionalRev[i+1:], ":") {
 		if part == "" {
 			continue
@@ -68,21 +71,21 @@ func parseRepositoryRevisions(repoAndOptionalRev string) repositoryRevisions {
 		} else {
 			rev.revspec = part
 		}
-		repoRevs.revs = append(repoRevs.revs, rev)
+		revs = append(revs, rev)
 	}
-	return repoRevs
+	return repo, revs
 }
 
 func (r *repositoryRevisions) String() string {
 	if len(r.revs) == 0 {
-		return r.repo
+		return r.repo.URI
 	}
 
 	parts := make([]string, len(r.revs))
 	for i, rev := range r.revs {
 		parts[i] = rev.String()
 	}
-	return r.repo + "@" + strings.Join(parts, ":")
+	return r.repo.URI + "@" + strings.Join(parts, ":")
 }
 
 func (r *repositoryRevisions) revspecs() []string {

@@ -23,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -254,17 +253,13 @@ func isBadRequest(err error) bool {
 	return false
 }
 
-var mockSearchRepo func(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+var mockSearchRepo func(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
 
-func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func searchRepo(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if mockSearchRepo != nil {
-		return mockSearchRepo(ctx, repoName, rev, info)
+		return mockSearchRepo(ctx, repo, rev, info)
 	}
 
-	repo, err := localstore.Repos.GetByURI(ctx, repoName)
-	if err != nil {
-		return nil, false, err
-	}
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
 	// the user has permissions to access the repository.
 	commit, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
@@ -279,13 +274,13 @@ func searchRepo(ctx context.Context, repoName, rev string, info *patternInfo) (m
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	matches, limitHit, err = textSearch(ctx, repoName, commit.CommitID, info)
+	matches, limitHit, err = textSearch(ctx, repo.URI, commit.CommitID, info)
 
 	var workspace string
 	if rev != "" {
-		workspace = "git://" + repoName + "?" + rev + "#"
+		workspace = "git://" + repo.URI + "?" + rev + "#"
 	} else {
-		workspace = "git://" + repoName + "#"
+		workspace = "git://" + repo.URI + "#"
 	}
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
@@ -314,16 +309,16 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	common.limitHit = common.limitHit || limitHit
 	if e, ok := searchErr.(vcs.RepoNotExistError); ok {
 		if e.CloneInProgress {
-			common.cloning = append(common.cloning, repoRev.repo)
+			common.cloning = append(common.cloning, repoRev.repo.URI)
 		} else {
-			common.missing = append(common.missing, repoRev.repo)
+			common.missing = append(common.missing, repoRev.repo.URI)
 		}
 	} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
-		common.missing = append(common.missing, repoRev.repo)
+		common.missing = append(common.missing, repoRev.repo.URI)
 	} else if searchErr == vcs.ErrRevisionNotFound && len(repoRev.revs) == 0 {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
 	} else if errors.Cause(searchErr) == context.DeadlineExceeded {
-		common.timedout = append(common.timedout, repoRev.repo)
+		common.timedout = append(common.timedout, repoRev.repo.URI)
 	} else if searchErr != nil {
 		return searchErr
 	}

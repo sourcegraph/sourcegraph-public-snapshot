@@ -87,10 +87,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 }
 
 func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query, diff bool, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
-	repo, err := localstore.Repos.GetByURI(ctx, repoRevs.repo)
-	if err != nil {
-		return nil, false, err
-	}
+	repo := repoRevs.repo
 	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
 	// the user has permissions to access the repository. (It does not actually need to
 	// resolve the rev.)

@@ -225,8 +225,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	// matched repos should be resolved to "rev".
 	includePatternRevs := make([][]revspecOrRefGlob, len(includePatterns))
 	for i, includePattern := range includePatterns {
-		repoRev := parseRepositoryRevisions(includePattern)
-		repoPattern := repoRev.repo // trim "@rev" from pattern
+		repoPattern, revs := parseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {
@@ -239,7 +238,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 		includePatterns[i] = repoPattern
-		includePatternRevs[i] = repoRev.revs
+		includePatternRevs[i] = revs
 	}
 
 	// Support determining which include pattern with a rev (if any) matched
@@ -276,7 +275,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
 	for _, repo := range repos.Repos {
 		repoRev := &repositoryRevisions{
-			repo: repo.URI,
+			repo: repo,
 			revs: getRevsForMatchedRepo(repo.URI),
 		}
 		repoResolver := &repositoryResolver{repo: repo}
@@ -435,7 +434,7 @@ func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisio
 		}
 
 		go func(repoRev repositoryRevisions) {
-			fileResults, err := searchTreeForRepo(ctx, matcher, repoRev.repo, repoRev.revSpecsOrDefaultBranch()[0], limit)
+			fileResults, err := searchTreeForRepo(ctx, matcher, repoRev.repo.URI, repoRev.revSpecsOrDefaultBranch()[0], limit)
 			if err != nil {
 				done <- err
 				return
