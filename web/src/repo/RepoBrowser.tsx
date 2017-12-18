@@ -39,7 +39,7 @@ export class RepoBrowser extends React.PureComponent<{}, State> {
                     <h3>
                         <a
                             className="repo-browser__add-more"
-                            href="https://about.sourcegraph.com/docs/server/install/#configure-sourcegraph-server-to-index-your-code-host"
+                            href="https://about.sourcegraph.com/docs/server/config/repositories"
                         >
                             Add more
                         </a>
