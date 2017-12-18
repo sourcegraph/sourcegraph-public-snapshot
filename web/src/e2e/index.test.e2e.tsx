@@ -596,18 +596,18 @@ describe('e2e test suite', () => {
                 })
             })
         } else {
-            it.skip('renders results for sourcegraph/go-diff (w/ search group)', async () => {
+            it('renders results for sourcegraph/jsonrpc2 (w/ search group)', async () => {
                 await chrome.goto(baseURL + '/search')
 
                 // Update the input value
                 await chrome.wait('input')
-                await chrome.type('diff repo:sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d')
+                await chrome.type('test repo:sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
 
                 // Update the select value
                 await chrome.wait('select')
                 await chrome.evaluate(() => {
                     const select = document.querySelector('select')!
-                    select.value = '-file:(test|spec)'
+                    select.value = 'repogroup:sample file:(test|spec)'
                     select.dispatchEvent(new Event('change', { bubbles: true }))
                 })
 
@@ -619,8 +619,7 @@ describe('e2e test suite', () => {
                     const label = await chrome.evaluate<string>(
                         () => document.querySelector('.search-results__header-stats')!.textContent
                     )
-                    console.log(label)
-                    assert.equal(label.startsWith('361 results in'), true, 'incorrect number of search results')
+                    assert.equal(label.startsWith('65 results in'), true, 'incorrect number of search results')
                 })
             })
         }
