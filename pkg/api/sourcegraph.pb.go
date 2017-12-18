@@ -397,6 +397,7 @@ type User struct {
 	AvatarURL   *string   `json:"avatarURL,omitempty"`
 	CreatedAt   time.Time `json:"createdAt,omitempty"`
 	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
+	Verified    bool      `json:"verified,omitempty"`
 }
 
 // OrgRepo represents a repo that exists on a native client's filesystem, but

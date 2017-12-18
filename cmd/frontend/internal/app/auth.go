@@ -4,13 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 
 	"encoding/base64"
 
+	"github.com/mattbaird/gochimp"
 	"golang.org/x/oauth2"
+	"k8s.io/client-go/pkg/util/rand"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
@@ -19,6 +23,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
 type oauthCookie struct {
@@ -28,6 +33,137 @@ type oauthCookie struct {
 	ReturnToNew string
 }
 
+type credentials struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+}
+
+func nativeAuthID(email string) string {
+	return fmt.Sprintf("native:%s", email)
+}
+
+func serveSignUp(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
+		return
+	}
+	var creds credentials
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, "could not decode request body", http.StatusBadRequest)
+		return
+	}
+
+	displayName := creds.DisplayName
+	if displayName == "" {
+		displayName = creds.Username
+	}
+
+	// Create user
+	emailCode := rand.String(20)
+	usr, err := store.Users.Create(r.Context(), nativeAuthID(creds.Email), creds.Email, creds.Username, displayName, "native", nil, creds.Password, emailCode)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("could not create user %s", creds.Username), http.StatusInternalServerError)
+		return
+	}
+	actor := &actor.Actor{
+		UID:   usr.Auth0ID,
+		Login: usr.Username,
+		Email: usr.Email,
+	}
+
+	// Send verify email
+	q := make(url.Values)
+	q.Set("code", emailCode)
+	verifyLink := globals.AppURL.String() + router.Rel.URLTo(router.VerifyEmail).Path + "?" + q.Encode()
+	notif.SendMandrillTemplate(&notif.EmailConfig{
+		Template:  "verify-email",
+		FromEmail: "noreply@sourcegraph.com",
+		ToEmail:   creds.Email,
+		Subject:   "Verify your email on Sourcegraph Server",
+	}, []gochimp.Var{}, []gochimp.Var{{Name: "VERIFY_URL", Content: verifyLink}})
+
+	// Write the session cookie
+	if session.StartNewSession(w, r, actor, 0); err != nil {
+		http.Error(w, "could not create new user session", http.StatusInternalServerError)
+		return
+	}
+}
+
+// serveSignIn2 serves a native-auth endpoint
+func serveSignIn2(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
+		return
+	}
+	var creds credentials
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, "could not decode request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate user
+	authID := nativeAuthID(creds.Email)
+	usr, err := store.Users.GetByAuth0ID(r.Context(), authID)
+	if err != nil {
+		http.Error(w, "authentication failed", http.StatusUnauthorized)
+		return
+	}
+	actor := &actor.Actor{
+		UID:   usr.Auth0ID,
+		Login: usr.Username,
+		Email: usr.Email,
+	}
+
+	// Write the session cookie
+	if session.StartNewSession(w, r, actor, 0); err != nil {
+		http.Error(w, "could not create new user session", http.StatusInternalServerError)
+		return
+	}
+
+	// Track user data in GCS
+	eventLabel := "CompletedNativeSignIn"
+	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+		go tracking.TrackUser(actor, eventLabel)
+	}
+}
+
+func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	verifyCode := r.URL.Query().Get("code")
+	actr := actor.FromContext(ctx)
+	if !actr.IsAuthenticated() {
+		redirectTo := r.URL.String()
+		q := make(url.Values)
+		q.Set("returnTo", redirectTo)
+		http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
+		return
+	}
+	usr, err := store.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		http.Error(w, "Could not get current user.", http.StatusUnauthorized)
+		return
+	}
+	if usr.Verified {
+		http.Error(w, fmt.Sprintf("User %q already verified", usr.Email), http.StatusBadRequest)
+		return
+	}
+	verified, err := store.Users.ValidateEmail(ctx, usr.ID, verifyCode)
+	if err != nil {
+		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
+		return
+	}
+	if !verified {
+		http.Error(w, "Could not verify user. Code did not match email.", http.StatusUnauthorized)
+		return
+	}
+
+	http.Redirect(w, r, "/settings", http.StatusFound)
+}
+
+// DEPRECATED
 func auth0ConfigWithRedirectURL(redirectURL string) *oauth2.Config {
 	config := *auth0.Config
 	// RedirectURL is checked by Auth0 against a whitelist so it can't be spoofed.
@@ -35,6 +171,7 @@ func auth0ConfigWithRedirectURL(redirectURL string) *oauth2.Config {
 	return &config
 }
 
+// DEPRECATED
 func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	cookie := &oauthCookie{
 		Nonce:       "",                      // the empty default value is not accepted unless impersonating
@@ -91,7 +228,7 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 		// Create the user in our DB if the user just signed up via Auth0. There is a TOCTTOU
 		// bug here; their username may no longer be available. Because this is a rare case and
 		// we are removing Auth0 soon, we ignore it.
-		dbUser, userCreateErr = store.Users.Create(r.Context(), info.UserID, info.Email, username, displayName, "", &info.Picture)
+		dbUser, userCreateErr = store.Users.Create(r.Context(), info.UserID, info.Email, username, displayName, "", &info.Picture, "", "")
 		if userCreateErr != nil {
 			return err
 		}

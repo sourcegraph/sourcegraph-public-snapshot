@@ -52,12 +52,17 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.UI).Handler(ui2.Router())
 
+	// DEPRECATED Auth0 endpoints
 	signInURL := "https://" + auth0.Domain + "/authorize?response_type=code&client_id=" + auth0.Config.ClientID + "&connection=Sourcegraph&redirect_uri=" + globals.AppURL.String() + "/-/auth0/sign-in"
 	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, signInURL, http.StatusSeeOther)
 	})))
-	r.Get(router.SignOut).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignOut)))
 	r.Get(router.Auth0Signin).Handler(traceutil.TraceRoute(errorutil.Handler(ServeAuth0SignIn)))
+
+	r.Get(router.SignUp).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignUp)))
+	r.Get(router.SignIn2).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignIn2)))
+	r.Get(router.SignOut).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignOut)))
+	r.Get(router.VerifyEmail).Handler(traceutil.TraceRoute(http.HandlerFunc(serveVerifyEmail)))
 
 	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate))) // DEPRECATED
 	r.Get(router.GitHubOAuth2Receive).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))   // DEPRECATED
