@@ -1,5 +1,6 @@
 import * as assert from 'assert'
 import { Chromeless } from 'chromeless'
+import retry = require('p-retry')
 
 const chromeLauncher = require('chrome-launcher')
 
@@ -31,21 +32,6 @@ describe('e2e test suite', () => {
             return headlessChrome.kill()
         }
     })
-
-    const retry = async (expression: () => Promise<any>, numRetries = 3): Promise<any> => {
-        while (true) {
-            try {
-                await expression()
-                break
-            } catch (e) {
-                numRetries -= 1
-                if (numRetries <= 0) {
-                    throw e
-                }
-                await new Promise<any>(resolve => setTimeout(resolve, 5000))
-            }
-        }
-    }
 
     const assertWindowLocation = async (location: string, isAbsolute = false): Promise<any> => {
         const url = isAbsolute ? location : baseURL + location
@@ -95,18 +81,16 @@ describe('e2e test suite', () => {
         )
 
         await chrome.wait('.references-widget__badge')
-        await retry(
-            async () =>
-                assert.ok(
-                    parseInt(
-                        await chrome.evaluate<string>(
-                            () => document.querySelector('.references-widget__badge')!.textContent
-                        ),
-                        10
-                    ) > 0, // assert some (local) refs fetched
-                    'expected some local references, got none'
-                ),
-            10 // additional retries since refs fetching can take a while
+        await retry(async () =>
+            assert.ok(
+                parseInt(
+                    await chrome.evaluate<string>(
+                        () => document.querySelector('.references-widget__badge')!.textContent
+                    ),
+                    10
+                ) > 0, // assert some (local) refs fetched
+                'expected some local references, got none'
+            )
         )
     }
 
@@ -121,18 +105,16 @@ describe('e2e test suite', () => {
         )
 
         await chrome.wait('.references-widget__badge')
-        await retry(
-            async () =>
-                assert.ok(
-                    parseInt(
-                        await chrome.evaluate<string>(
-                            () => document.querySelectorAll('.references-widget__badge')[1].textContent // get the external refs count
-                        ),
-                        10
-                    ) > 0, // assert some external refs fetched
-                    'expected some external references, got none'
-                ),
-            10 // additional retries since refs fetching can take a while
+        await retry(async () =>
+            assert.ok(
+                parseInt(
+                    await chrome.evaluate<string>(
+                        () => document.querySelectorAll('.references-widget__badge')[1].textContent // get the external refs count
+                    ),
+                    10
+                ) > 0, // assert some external refs fetched
+                'expected some external references, got none'
+            )
         )
     }
 
