@@ -64,11 +64,6 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	}
 	repo := repos[0]
 
-	err = repoURICache.SetInt(int64(repo.ID), []byte(repo.URI), repoURICacheTTLSeconds)
-	if err != nil {
-		return nil, err
-	}
-
 	if !feature.Features.Sep20Auth {
 		// 🚨 SECURITY: access control check here 🚨
 		if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
@@ -219,6 +214,13 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 		}
 
 		repo.FreezeIndexedRevision = freezeIndexedRevision != nil && *freezeIndexedRevision // FIXME: bad DB schema: nullable boolean
+
+		// This is the only place we read from the DB, so is an appropriate
+		// time to update the URI cache.
+		err = repoURICache.SetInt(int64(repo.ID), []byte(repo.URI), repoURICacheTTLSeconds)
+		if err != nil {
+			return nil, err
+		}
 
 		repos = append(repos, &repo)
 	}
