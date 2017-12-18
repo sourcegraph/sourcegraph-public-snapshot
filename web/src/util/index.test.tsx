@@ -178,6 +178,13 @@ describe('util module', () => {
                 assert.deepEqual(cell.innerHTML, cellInnerHTML) // no changes
             })
 
+            it('handles invalid length', () => {
+                highlightNode(cell, 0, 63, jsdom.window) // length longer than cell.innerText
+                assert.deepEqual(cell.innerHTML, cellInnerHTML) // no changes
+                highlightNode(cell, 22, 53, jsdom.window) // length longer than characters between start and end
+                assert.deepEqual(cell.innerHTML, cellInnerHTML) // no changes
+            })
+
             it('highlights a single node', () => {
                 highlightNode(cell, 0, 1, jsdom.window)
                 // tslint:disable-next-line:max-line-length
@@ -186,9 +193,10 @@ describe('util module', () => {
             })
 
             it('highlights multiple nodes', () => {
-                highlightNode(cell, 0, 14, jsdom.window)
+                highlightNode(cell, 2, 2, jsdom.window)
+                highlightNode(cell, 23, 2, jsdom.window)
                 // tslint:disable-next-line:max-line-length
-                const newCell = `<span style="color:#c0c5ce;"><span><span><span class="selection-highlight">\t</span></span></span></span><span style="color:#fff3bf;"><span><span><span class="selection-highlight">ServeHTTP</span></span></span></span><span style="color:#c0c5ce;"><span><span><span class="selection-highlight">(</span></span></span></span><span style="color:#c0c5ce;"><span><span><span class="selection-highlight">Res</span>ponseWriter</span></span></span><span style="color:#c0c5ce;"><span>,</span></span><span style="color:#c0c5ce;"><span> </span></span><span style="color:#329af0;"><span>*</span></span><span style="color:#c0c5ce;"><span>Request</span></span><span style="color:#c0c5ce;"><span>)</span></span>`
+                const newCell = `<span style="color:#c0c5ce;"><span>\t</span></span><span style="color:#fff3bf;"><span><span>S<span class="selection-highlight">er</span>veHTTP</span></span></span><span style="color:#c0c5ce;"><span>(</span></span><span style="color:#c0c5ce;"><span><span>ResponseWrit<span class="selection-highlight">er</span></span></span></span><span style="color:#c0c5ce;"><span>,</span></span><span style="color:#c0c5ce;"><span> </span></span><span style="color:#329af0;"><span>*</span></span><span style="color:#c0c5ce;"><span>Request</span></span><span style="color:#c0c5ce;"><span>)</span></span>`
                 assert.deepEqual(cell.innerHTML, newCell)
             })
 

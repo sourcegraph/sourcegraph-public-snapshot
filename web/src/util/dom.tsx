@@ -24,9 +24,12 @@ export function highlightNode(node: HTMLElement, start: number, length: number, 
     if (start < 0 || length <= 0 || start >= node.textContent!.length) {
         return
     }
-    if (node.classList.contains('annotated-selection-match')) {
+
+    // return if length is invalid/longer than remaining characters between start and end
+    if (length > node.textContent!.length - start) {
         return
     }
+
     node.classList.add('annotated-selection-match')
     highlightNodeHelper(node, 0, start, length, w)
 }
@@ -43,7 +46,7 @@ interface HighlightResult {
  * @param currNode the current node being walked.
  * @param currOffset the current character position (starts at 0).
  * @param start the offset character where highlting starts.
- * @param lenght the number of characters to highlight.
+ * @param length the number of characters to highlight.
  */
 function highlightNodeHelper(
     currNode: HTMLElement,

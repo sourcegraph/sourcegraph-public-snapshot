@@ -1,14 +1,26 @@
-import * as React from 'react'
+import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
-import { AbsoluteRepoFilePosition } from '../repo'
+import { AbsoluteRepoFile } from '../repo'
 import { fetchHighlightedFileLines } from '../repo/backend'
 import { highlightNode } from '../util/dom'
 
-interface Props extends AbsoluteRepoFilePosition {
+interface Props extends AbsoluteRepoFile {
     // How many extra lines to show in the excerpt before/after the ref.
     previewWindowExtraLines?: number
-    highlightLength: number
     isLightTheme: boolean
+    line: number
+    highlightRanges: HighlightRange[]
+}
+
+interface HighlightRange {
+    /**
+     * The 0-based character offset to start highlighting at
+     */
+    start: number
+    /**
+     * The number of characters to highlight
+     */
+    highlightLength: number
 }
 
 interface State {
@@ -25,10 +37,6 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
-        if (this.props.highlightLength !== nextProps.highlightLength) {
-            // Redraw the component so the matched range highlighting is updated
-            this.setState({ blobLines: undefined })
-        }
         if (this.isVisible) {
             this.fetchContents(nextProps)
         }
@@ -40,15 +48,17 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             for (const row of rows) {
                 const line = row.firstChild as HTMLTableDataCellElement
                 const code = row.lastChild as HTMLTableDataCellElement
-                if (line.getAttribute('data-line') === '' + (this.props.position.line + 1)) {
-                    highlightNode(code, this.props.position.character!, this.props.highlightLength)
+                if (line.getAttribute('data-line') === '' + (this.props.line + 1)) {
+                    for (const range of this.props.highlightRanges) {
+                        highlightNode(code, range.start, range.highlightLength)
+                    }
                 }
             }
         }
     }
 
     public getPreviewWindowLines(): number[] {
-        const targetLine = this.props.position.line
+        const targetLine = this.props.line
         let res = [targetLine]
         for (
             let i = targetLine - this.props.previewWindowExtraLines!;
@@ -128,8 +138,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private makeTableHTML(): string {
-        const start = Math.max(0, this.props.position.line - (this.props.previewWindowExtraLines || 0))
-        const end = this.props.position.line + (this.props.previewWindowExtraLines || 0) + 1
+        const start = Math.max(0, this.props.line - (this.props.previewWindowExtraLines || 0))
+        const end = this.props.line + (this.props.previewWindowExtraLines || 0) + 1
         const lineRange = this.state.blobLines!.slice(start, end)
         return '<table>' + lineRange.join('') + '</table>'
     }

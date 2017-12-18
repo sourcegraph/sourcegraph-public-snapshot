@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
@@ -54,16 +54,11 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
     const rev = parsed.search.substr('?'.length)
     const filePath = parsed.hash.substr('#'.length)
     const items = props.result.lineMatches.map(match => ({
-        range: {
-            start: {
-                character: match.offsetAndLengths[0][0],
-                line: match.lineNumber,
-            },
-            end: {
-                character: match.offsetAndLengths[0][0] + match.offsetAndLengths[0][1],
-                line: match.lineNumber,
-            },
-        },
+        highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
+            start: offsetAndLength[0],
+            highlightLength: offsetAndLength[1],
+        })),
+        line: match.lineNumber,
         uri: props.result.resource,
         repoURI: repoPath,
     }))
@@ -74,14 +69,14 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
         <div className="file-match__list">
             {items
                 .sort((a, b) => {
-                    if (a.range.start.line < b.range.start.line) {
+                    if (a.line < b.line) {
                         return -1
                     }
-                    if (a.range.start.line === b.range.start.line) {
-                        if (a.range.start.character < b.range.start.character) {
+                    if (a.line === b.line) {
+                        if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
                             return -1
                         }
-                        if (a.range.start.character === b.range.start.character) {
+                        if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
                             return 0
                         }
                         return 1
@@ -91,7 +86,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                 .filter((item, i) => allMatches || i < subsetMatches)
                 .map((item, i) => {
                     const uri = new URL(item.uri)
-                    const position = { line: item.range.start.line + 1, character: item.range.start.character + 1 }
+                    const position = { line: item.line + 1, character: item.highlightRanges[0].start + 1 }
                     return (
                         <Link
                             to={toPrettyBlobURL({
@@ -108,10 +103,10 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                                 repoPath={repoPath}
                                 commitID={rev}
                                 filePath={filePath}
-                                position={{ line: item.range.start.line, character: item.range.start.character }}
-                                highlightLength={item.range.end.character - item.range.start.character}
                                 previewWindowExtraLines={1}
                                 isLightTheme={props.isLightTheme}
+                                highlightRanges={item.highlightRanges}
+                                line={item.line}
                             />
                         </Link>
                     )
