@@ -1,5 +1,6 @@
 *.js
 *.css
+*.svg
 !fonts/*.css
 *.map
 

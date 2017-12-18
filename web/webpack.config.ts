@@ -1,3 +1,4 @@
+import * as CopyWebpackPlugin from 'copy-webpack-plugin'
 import * as ExtractTextPlugin from 'extract-text-webpack-plugin'
 import * as path from 'path'
 import * as Tapable from 'tapable'
@@ -44,6 +45,15 @@ plugins.push(
         filename: 'ui/assets/dist/[name].bundle.css',
         allChunks: true,
     })
+)
+
+plugins.push(
+    new CopyWebpackPlugin([
+        {
+            from: 'node_modules/monaco-editor/min/vs',
+            to: 'vs',
+        },
+    ])
 )
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
