@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
@@ -462,7 +461,7 @@ var NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, erro
 	// use gitserver
 	if cloneFromGitserver {
 		repo := cloneURL.Host + cloneURL.Path
-		return vfsutil.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev), nil
+		return vfsutil.ArchiveFileSystem(gitcmd.Open(repo), rev), nil
 	}
 
 	// Fall back to a full git clone for non-github.com repos.

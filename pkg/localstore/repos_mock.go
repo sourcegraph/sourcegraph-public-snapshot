@@ -11,6 +11,7 @@ import (
 
 type MockRepos struct {
 	Get      func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
+	GetURI   func(ctx context.Context, repo int32) (string, error)
 	GetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	List     func(v0 context.Context, v1 *RepoListOp) ([]*sourcegraph.Repo, error)
 	Delete   func(ctx context.Context, repo int32) error
@@ -36,6 +37,19 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (cal
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v (%d) not found", returns.URI, returns.ID)
+		}
+		return returns, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockGetURI(t *testing.T, want int32, returns string) (called *bool) {
+	called = new(bool)
+	s.GetURI = func(ctx context.Context, repo int32) (string, error) {
+		*called = true
+		if repo != want {
+			t.Errorf("got repo %d, want %d", repo, want)
+			return "", legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", want)
 		}
 		return returns, nil
 	}

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -108,8 +107,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	appendCommonDashDashArgs(&onelineArgs)
 
 	// Run `git log` oneline command and read list of matching commits.
-	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
-	onelineCmd.Repo = r.Repo
+	onelineCmd := r.command("git", onelineArgs...)
 	data, complete, err := readUntilTimeout(ctx, onelineCmd)
 	if err != nil {
 		return nil, complete, err
@@ -172,8 +170,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	if !isWhitelistedGitCmd(showArgs) {
 		return nil, false, fmt.Errorf("command failed: %q is not a whitelisted git command", showArgs)
 	}
-	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
-	showCmd.Repo = r.Repo
+	showCmd := r.command("git", showArgs...)
 	var complete2 bool
 	data, complete2, err = readUntilTimeout(ctx, showCmd)
 	if err != nil {
@@ -262,8 +259,7 @@ func (r *Repository) filterAndResolveRefs(ctx context.Context, refs []string) ([
 		}
 		if ref == "HEAD" {
 			if headRefTarget == "" {
-				cmd := gitserver.DefaultClient.Command("git", "rev-parse", "--symbolic-full-name", "HEAD")
-				cmd.Repo = r.Repo
+				cmd := r.command("git", "rev-parse", "--symbolic-full-name", "HEAD")
 				stdout, err := cmd.Output(ctx)
 				if err != nil {
 					return nil, err

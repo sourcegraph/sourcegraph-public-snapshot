@@ -19,13 +19,12 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 		return Mocks.RepoVCS.Open(ctx, repo)
 	}
 
-	// 🚨 SECURITY: repository permissions are checked here 🚨
-	r, err := Repos.Get(ctx, repo)
+	uri, err := Repos.GetURI(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	return gitcmd.Open(r), nil
+	return gitcmd.Open(uri), nil
 }
 
 type MockRepoVCS struct {

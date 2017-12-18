@@ -11,6 +11,7 @@ import (
 
 	"context"
 
+	"github.com/coocood/freecache"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -22,6 +23,14 @@ import (
 
 var autoRepoAdd = conf.Get().AutoRepoAdd
 var publicRepoRedirectEnabled = !conf.Get().DisablePublicRepoRedirects
+
+var (
+	// repoURICache maintains a shortlived cache mapping repo ID to repo
+	// URI. This is a very common operation in production, so it is useful for
+	// performance reasons to keep this cache.
+	repoURICache           = freecache.NewCache(512 * 1024)
+	repoURICacheTTLSeconds = 60
+)
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external sourcegraph server.
 type ErrRepoSeeOther struct {
@@ -55,6 +64,11 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	}
 	repo := repos[0]
 
+	err = repoURICache.SetInt(int64(repo.ID), []byte(repo.URI), repoURICacheTTLSeconds)
+	if err != nil {
+		return nil, err
+	}
+
 	if !feature.Features.Sep20Auth {
 		// 🚨 SECURITY: access control check here 🚨
 		if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
@@ -62,6 +76,29 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 		}
 	}
 	return repo, nil
+}
+
+// GetURI returns the URI for the request repository ID. It fetches data only
+// from the database and NOT from any external sources. It is a more
+// specialized and optimized version of Get, since many callers of Get only
+// want the Repository.URI field.
+func (s *repos) GetURI(ctx context.Context, id int32) (string, error) {
+	if Mocks.Repos.GetURI != nil {
+		return Mocks.Repos.GetURI(ctx, id)
+	}
+
+	uri, err := repoURICache.GetInt(int64(id))
+	if err == nil {
+		return string(uri), nil
+	} else if err != freecache.ErrNotFound {
+		return "", err
+	}
+
+	r, err := s.Get(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	return r.URI, nil
 }
 
 // GetByURI returns metadata for the request repository URI. See the

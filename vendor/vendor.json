@@ -89,6 +89,12 @@
 			"revisionTime": "2017-04-17T19:39:30Z"
 		},
 		{
+			"checksumSHA1": "/OxcqIheVcCe+uKWJ72cQULtl7Q=",
+			"path": "github.com/cespare/xxhash",
+			"revision": "5c37fe3735342a2e0d01c87a907579987c8936cc",
+			"revisionTime": "2017-08-08T05:22:00Z"
+		},
+		{
 			"checksumSHA1": "bbunmFhXYSV2Z6BUmOL5zjpNK/Y=",
 			"path": "github.com/clearbit/clearbit-go/clearbit",
 			"revision": "20ed0925e10da443d180f7b2d5acb275c9c999cc",
@@ -99,6 +105,12 @@
 			"path": "github.com/codahale/hdrhistogram",
 			"revision": "3a0bb77429bd3a61596f5e8a3172445844342120",
 			"revisionTime": "2016-10-10T02:54:55Z"
+		},
+		{
+			"checksumSHA1": "EY+AT5MUGUU/npio6OU211ShCHA=",
+			"path": "github.com/coocood/freecache",
+			"revision": "3e2d56b0a16accf0b3733f0a778322a989058015",
+			"revisionTime": "2017-12-06T05:05:34Z"
 		},
 		{
 			"checksumSHA1": "8o2JlMI+LchFOAR1uGZ3u6cROkY=",

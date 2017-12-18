@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -772,7 +771,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo     *gitcmd.Repository
+		repo     *gitRepository
 		commitID vcs.CommitID
 	}{
 		// TODO(sqs): implement Lstat and symlink handling for git, git
@@ -788,7 +787,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 		var commitID string
 		if test.commitID == "" {
-			commitID = computeCommitHash(test.repo.Repo.URI, true)
+			commitID = computeCommitHash(test.repo.Dir, true)
 		} else {
 			commitID = string(test.commitID)
 		}
@@ -1249,7 +1248,7 @@ func TestOpen(t *testing.T) {
 	t.Parallel()
 
 	dir := initGitRepository(t)
-	gitcmd.Open(&sourcegraph.Repo{URI: dir})
+	gitcmd.Open(dir)
 }
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
@@ -1292,12 +1291,20 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 	}
 }
 
+type gitRepository struct {
+	gitcmd.Repository
+	Dir string
+}
+
 // makeGitRepositoryCmd calls initGitRepository to create a new Git
 // (cmd implementation) repository and run cmds in it, and then
 // returns the repository.
-func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitcmd.Repository {
+func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitRepository {
 	dir := initGitRepository(t, cmds...)
-	return gitcmd.Open(&sourcegraph.Repo{URI: dir})
+	return &gitRepository{
+		Repository: *gitcmd.Open(dir),
+		Dir:        dir,
+	}
 }
 
 func commitsEqual(a, b *vcs.Commit) bool {
