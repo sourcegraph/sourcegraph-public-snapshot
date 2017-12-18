@@ -59,10 +59,8 @@ describe('e2e test suite', () => {
     }
 
     const assertAllHighlightedTokens = async (label: string): Promise<void> => {
-        const highlightedTokens: string[] = JSON.parse(
-            await chrome.evaluate<string>(() =>
-                JSON.stringify(Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent))
-            )
+        const highlightedTokens: string[] = await chrome.evaluate<string[]>(() =>
+            Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent)
         )
         assert.ok(
             highlightedTokens.every(txt => txt === label),
