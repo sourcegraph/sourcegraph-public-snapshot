@@ -64,3 +64,27 @@ export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
         })
     )
 }
+
+/**
+ * Fetches all repositories.
+ *
+ * @return Observable that emits the list of repositories
+ */
+export function fetchAllRepositories(): Observable<GQL.IRepository[]> {
+    return queryGraphQL(`query Repositories {
+        repositories {
+            nodes {
+                id
+                uri
+                createdAt
+            }
+        }
+    }`).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.repositories) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.repositories.nodes
+        })
+    )
+}
