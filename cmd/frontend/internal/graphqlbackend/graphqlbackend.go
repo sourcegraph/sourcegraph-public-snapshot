@@ -184,31 +184,6 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 	return backend.Repos.RefreshIndex(ctx, repo.URI)
 }
 
-func (r *schemaResolver) Repositories(ctx context.Context, args *struct {
-	Query string
-}) ([]*repositoryResolver, error) {
-	opt := &sourcegraph.RepoListOptions{Query: args.Query}
-	opt.PerPage = 10000 // we want every repo
-	return listRepos(ctx, opt)
-}
-
-func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*repositoryResolver, error) {
-	reposList, err := backend.Repos.List(ctx, opt)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var l []*repositoryResolver
-	for _, repo := range reposList.Repos {
-		l = append(l, &repositoryResolver{
-			repo: repo,
-		})
-	}
-
-	return l, nil
-}
-
 func (r *schemaResolver) Users(ctx context.Context) ([]*userResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAdmin() {
