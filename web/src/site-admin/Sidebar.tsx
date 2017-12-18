@@ -51,6 +51,16 @@ export class Sidebar extends React.Component<Props, State> {
                             Configuration
                         </NavLink>
                     </li>
+                    <li className="site-admin-sidebar__item">
+                        <NavLink
+                            to="/site-admin/users"
+                            className="site-admin-sidebar__item-link"
+                            activeClassName="site-admin-sidebar__item--active"
+                            exact={true}
+                        >
+                            Users
+                        </NavLink>
+                    </li>
                 </ul>
             </div>
         )
