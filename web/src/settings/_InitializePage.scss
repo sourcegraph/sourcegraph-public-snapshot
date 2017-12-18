@@ -1,0 +1,36 @@
+.initialize-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    flex: 1 1 auto;
+
+    color: $color-light-text-1;
+
+    &__content {
+        max-width: 25rem;
+        padding: 1.5rem;
+        border: solid 1px $color-light-border;
+    }
+
+    &__logo {
+        padding-bottom: 2rem;
+    }
+
+    &__control {
+        margin-bottom: 1rem;
+    }
+
+    &__input-email {
+        display: block;
+    }
+
+    &__label {
+        display: flex;
+        align-items: center;
+    }
+
+    &__input-telemetry {
+        margin-right: 0.5rem;
+    }
+}

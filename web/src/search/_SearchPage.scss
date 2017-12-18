@@ -49,27 +49,6 @@
         margin-top: 0.25rem;
         margin-right: 0.25rem;
     }
-
-    &__onboarding-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        flex: 1 1 auto;
-    }
-
-    &__onboarding-details-container {
-        width: 25rem;
-        text-align: center;
-    }
-
-    &__onboarding-details {
-        padding-bottom: 0.625rem;
-        border-radius: 2px;
-        border-style: solid;
-        border-width: 1px;
-        border-color: '#cad2e2';
-    }
 }
 
 .theme-light {

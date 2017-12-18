@@ -452,3 +452,20 @@ export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
         })
     )
 }
+
+export function updateDeploymentConfiguration(email: string, telemetryEnabled: boolean): Observable<void> {
+    return queryGraphQL(
+        `query UpdateDeploymentConfiguration($email: String, $enableTelemetry: Boolean) {
+                updateDeploymentConfiguration(email: $email, enableTelemetry: $enableTelemetry) {
+                    alwaysNil
+                }
+            }`,
+        { email, enableTelemetry: telemetryEnabled }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+        })
+    )
+}
