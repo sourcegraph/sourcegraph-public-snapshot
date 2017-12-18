@@ -389,13 +389,15 @@ export const fetchFileCommitInfo = memoizeObservable(
 /**
  * Fetches a list of all repositories.
  */
-export function fetchRepositories(): Observable<GQL.IRepository[]> {
+export function fetchRepositories(): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
         `query fetchRepositories {
                 repositories {
-                    uri
-                    description
-                    private
+                    nodes {
+                        uri
+                        description
+                        private
+                    }
                 }
             }`
     ).pipe(

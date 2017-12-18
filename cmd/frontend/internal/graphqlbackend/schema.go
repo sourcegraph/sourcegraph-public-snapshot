@@ -222,7 +222,8 @@ type Query {
   node(id: ID!): Node
   repository(uri: String!): Repository
   phabricatorRepo(uri: String!): PhabricatorRepo
-  repositories: [Repository!]!
+  # A list of all repositories on this site.
+  repositories: RepositoryConnection!
   symbols(id: String!, mode: String!): [Symbol!]!
   currentUser: User
   isUsernameAvailable(username: String!): Boolean!
@@ -493,6 +494,14 @@ type RefLocation {
   startColumn: Int!
   endLineNumber: Int!
   endColumn: Int!
+}
+
+# A list of repositories.
+type RepositoryConnection {
+	# A list of repositories.
+	nodes: [Repository!]!
+	# The total count of repositories in the connection.
+	totalCount: Int!
 }
 
 type Repository implements Node {

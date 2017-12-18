@@ -16,8 +16,8 @@ export class RepoBrowser extends React.PureComponent<{}, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             fetchRepositories().subscribe(
-                repositories => {
-                    this.setState({ repositories })
+                ({ nodes }) => {
+                    this.setState({ repositories: nodes })
                 },
                 err => console.error(err)
             )
