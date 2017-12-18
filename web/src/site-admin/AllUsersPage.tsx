@@ -37,6 +37,10 @@ export class AllUsersPage extends React.Component<Props, State> {
             <div className="site-admin-detail-list site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
                 <h2>Users</h2>
+                <p>
+                    See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
+                    information about configuring user accounts and authentication.
+                </p>
                 <ul className="site-admin-detail-list__list">
                     {this.state.users &&
                         this.state.users.map(user => (

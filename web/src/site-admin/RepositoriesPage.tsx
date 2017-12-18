@@ -37,6 +37,10 @@ export class RepositoriesPage extends React.Component<Props, State> {
             <div className="site-admin-detail-list site-admin-repos-page">
                 <PageTitle title="Repositories" />
                 <h2>Repositories</h2>
+                <p>
+                    See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
+                    information about adding repositories and integrating with code hosts.
+                </p>
                 <ul className="site-admin-detail-list__list">
                     {this.state.repos &&
                         this.state.repos.map(repo => (
