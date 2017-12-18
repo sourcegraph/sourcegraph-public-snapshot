@@ -616,7 +616,7 @@ describe('e2e test suite', () => {
                 })
             })
         } else {
-            it('renders results for sourcegraph/go-diff (w/ search group)', async () => {
+            it('renders results for sourcegraph/jsonrpc2 (w/ search group)', async () => {
                 await chrome.goto(baseURL + '/search')
 
                 // Update the input value
