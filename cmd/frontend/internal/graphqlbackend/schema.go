@@ -260,6 +260,8 @@ type Query {
     limit: Int
   ): [Dependency!]!
   users: UserConnection
+  # List all organizations.
+  orgs: OrgConnection!
   updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 }
 
@@ -824,12 +826,22 @@ type CompanyCategory {
   subIndustry: String!
 }
 
+# A list of organizations.
+type OrgConnection {
+	# A list of organizations.
+	nodes: [Org!]!
+	# The total count of organizations in the connection.
+	totalCount: Int!
+}
+
 type Org implements Node, ConfigurationSubject {
   id: ID!
   orgID: Int!
   name: String!
   displayName: String
   slackWebhookURL: String
+  # The date when the organization was created, in RFC 3339 format.
+  createdAt: String!
   members: [OrgMember!]!
   latestSettings: Settings
   repos: [OrgRepo!]!
