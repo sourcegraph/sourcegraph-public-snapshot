@@ -30,67 +30,55 @@ func TestDeps(t *testing.T) {
 		Schema: GraphQLSchema,
 		Query: `
 				{
-					root {
-						dependents(lang: "python", name: "wwerkzeug", limit: 10) {
-							name
-						}
+					dependents(lang: "python", name: "wwerkzeug", limit: 10) {
+						name
 					}
 				}
 		`,
 		ExpectedResult: `
 			{
-				"root": {
-					"dependents": [{
-						"name": "wwerkzeug"
-					}]
-				}
+				"dependents": [{
+					"name": "wwerkzeug"
+				}]
 			}
 		`,
 	}, {
 		Schema: GraphQLSchema,
 		Query: `
 				{
-					root {
-						dependents(lang: "python", name: "wwerkzeug", limit: 10) {
-							name
-							repo {
-								uri
-							}
+					dependents(lang: "python", name: "wwerkzeug", limit: 10) {
+						name
+						repo {
+							uri
 						}
 					}
 				}
 		`,
 		ExpectedResult: `
 			{
-				"root": {
-					"dependents": [{
-						"name": "wwerkzeug",
-						"repo": {
-							"uri": "github.com/pallets/fflask"
-						}
-					}]
-				}
+				"dependents": [{
+					"name": "wwerkzeug",
+					"repo": {
+						"uri": "github.com/pallets/fflask"
+					}
+				}]
 			}
 		`,
 	}, {
 		Schema: GraphQLSchema,
 		Query: `
 				{
-					root {
-						dependents(lang: "go", name: "wwerkzeug", limit: 10) {
-							name
-							repo {
-								uri
-							}
+					dependents(lang: "go", name: "wwerkzeug", limit: 10) {
+						name
+						repo {
+							uri
 						}
 					}
 				}
 		`,
 		ExpectedResult: `
 			{
-				"root": {
-					"dependents": []
-				}
+				"dependents": []
 			}
 		`,
 	}})

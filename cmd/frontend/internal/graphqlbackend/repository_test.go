@@ -30,12 +30,10 @@ func TestRepositoryLatestCommit(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					root {
-						repository(uri: "github.com/gorilla/mux") {
-							latest {
-								commit {
-									sha1
-								}
+					repository(uri: "github.com/gorilla/mux") {
+						latest {
+							commit {
+								sha1
 							}
 						}
 					}
@@ -43,12 +41,10 @@ func TestRepositoryLatestCommit(t *testing.T) {
 			`,
 			ExpectedResult: `
 				{
-					"root": {
-						"repository": {
-							"latest": {
-								"commit": {
-									"sha1": "` + exampleCommitSHA1 + `"
-								}
+					"repository": {
+						"latest": {
+							"commit": {
+								"sha1": "` + exampleCommitSHA1 + `"
 							}
 						}
 					}

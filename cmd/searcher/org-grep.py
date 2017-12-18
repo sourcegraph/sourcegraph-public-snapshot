@@ -78,10 +78,8 @@ for r in args.repos:
             'query':
             '''
 query {
-  root {
-    repositories {
-      uri
-    }
+  repositories {
+    uri
   }
 }
 	    ''',
@@ -90,7 +88,7 @@ query {
             },
         }
         r = requests.post(domain + '/.api/graphql', json=graphql)
-        repos.extend(x['uri'] for x in r.json()['data']['root']['repositories']
+        repos.extend(x['uri'] for x in r.json()['data']['repositories']
                      if repo_filter in x['uri'])
     elif r.startswith('github.com/') and r.count('/') == 1:
         org = r[len('github.com/'):]
@@ -118,7 +116,6 @@ for pattern in [args.pattern] + args.patterns:
         $repositories: [RepositoryRevision!]!,
         $isCaseSensitive: Boolean!,
     ) {
-        root {
             searchRepos(
                 repositories: $repositories,
                 query: {
@@ -137,7 +134,6 @@ for pattern in [args.pattern] + args.patterns:
                     }
                 }
             }
-        }
     }
         '''.strip(),
         'variables': {
@@ -171,7 +167,7 @@ for pattern in [args.pattern] + args.patterns:
         sys.stderr.write(str(data.get('error')) + '\n')
         exit(1)
 
-    matches = data['root']['searchRepos']['results']
+    matches = data['searchRepos']['results']
     repoSet = set()
     for fm in matches:
         u = urlparse(fm['resource'])

@@ -35,16 +35,14 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 
 	body := graphqlQuery{
 		Query: `query Workbench($id: String, $mode: String) {
-  root {
-    symbols(id: $id, mode: $mode) {
-      path
-      line
-      character
-      repository {
-        uri
-      }
-    }
-  }
+	symbols(id: $id, mode: $mode) {
+		path
+		line
+		character
+		repository {
+		uri
+		}
+	}
 }`,
 		Variables: map[string]interface{}{
 			"id":   symbolID,
@@ -73,24 +71,22 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 
 	var resp struct {
 		Data struct {
-			Root struct {
-				Symbols []struct {
-					Path       string `json:"path"`
-					Line       int    `json:"line"`
-					Character  int    `json:"character"`
-					Repository struct {
-						URI string `json:"uri"`
-					}
+			Symbols []struct {
+				Path       string `json:"path"`
+				Line       int    `json:"line"`
+				Character  int    `json:"character"`
+				Repository struct {
+					URI string `json:"uri"`
 				}
-			} `json:"root"`
+			}
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(symbolResp.Body).Decode(&resp); err != nil {
 		return err
 	}
 
-	if len(resp.Data.Root.Symbols) > 0 {
-		symbol := resp.Data.Root.Symbols[0]
+	if len(resp.Data.Symbols) > 0 {
+		symbol := resp.Data.Symbols[0]
 		dest := &url.URL{
 			Path:     "/" + path.Join(symbol.Repository.URI, "-/blob", symbol.Path),
 			Fragment: fmt.Sprintf("L%d:%d$references", symbol.Line+1, symbol.Character+1),

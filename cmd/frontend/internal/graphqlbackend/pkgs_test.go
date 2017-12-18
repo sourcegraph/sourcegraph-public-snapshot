@@ -31,72 +31,60 @@ func TestPkgs(t *testing.T) {
 		Schema: GraphQLSchema,
 		Query: `
 				{
-					root {
-						packages(lang: "python", name: "fflask") {
-							lang
-							name
-						}
+					packages(lang: "python", name: "fflask") {
+						lang
+						name
 					}
 				}
 		`,
 		ExpectedResult: `
 			{
-				"root": {
-					"packages": [{
-						"lang": "python",
-						"name": "fflask"
-					}]
-				}
+				"packages": [{
+					"lang": "python",
+					"name": "fflask"
+				}]
 			}
 		`,
 	}, {
 		Schema: GraphQLSchema,
 		Query: `
 				{
-					root {
-						packages(lang: "python", name: "fflask") {
-							lang
-							name
-							repo {
-								uri
-							}
+					packages(lang: "python", name: "fflask") {
+						lang
+						name
+						repo {
+							uri
 						}
 					}
 				}
 		`,
 		ExpectedResult: `
 			{
-				"root": {
-					"packages": [{
-						"lang": "python",
-						"name": "fflask",
-						"repo": {
-							"uri": "github.com/pallets/fflask"
-						}
-					}]
-				}
+				"packages": [{
+					"lang": "python",
+					"name": "fflask",
+					"repo": {
+						"uri": "github.com/pallets/fflask"
+					}
+				}]
 			}
 		`,
 	}, {
 		Schema: GraphQLSchema,
 		Query: `
 				{
-					root {
-						packages(lang: "go", name: "fflask") {
-							lang
-							name
-							repo {
-								uri
-							}
+					packages(lang: "go", name: "fflask") {
+						lang
+						name
+						repo {
+							uri
 						}
 					}
 				}
 		`,
 		ExpectedResult: `
 			{
-				"root": {
-					"packages": []
-				}
+				"packages": []
 			}
 		`,
 	}})

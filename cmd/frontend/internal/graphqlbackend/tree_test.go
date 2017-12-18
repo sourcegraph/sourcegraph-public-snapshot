@@ -46,17 +46,15 @@ func TestTree(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					root {
-						repository(uri: "github.com/gorilla/mux") {
-							commit(rev: "` + exampleCommitSHA1 + `") {
-								commit {
-									tree(path: "/foo") {
-										directories {
-											name
-										}
-										files {
-											name
-										}
+					repository(uri: "github.com/gorilla/mux") {
+						commit(rev: "` + exampleCommitSHA1 + `") {
+							commit {
+								tree(path: "/foo") {
+									directories {
+										name
+									}
+									files {
+										name
 									}
 								}
 							}
@@ -66,18 +64,16 @@ func TestTree(t *testing.T) {
 			`,
 			ExpectedResult: `
 				{
-					"root": {
-						"repository": {
+					"repository": {
+						"commit": {
 							"commit": {
-								"commit": {
-									"tree": {
-										"directories": [
-											{"name": "testDirectory"}
-										],
-										"files": [
-											{"name": "testFile"}
-										]
-									}
+								"tree": {
+									"directories": [
+										{"name": "testDirectory"}
+									],
+									"files": [
+										{"name": "testFile"}
+									]
 								}
 							}
 						}
