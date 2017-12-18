@@ -181,7 +181,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         }
     }
 
-    private handleSubmitAuth0 = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmitAuth0(event: React.FormEvent<HTMLFormElement>): void {
         const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
         const searchParams = new URLSearchParams(this.props.location.search)
         const returnTo = searchParams.get('returnTo')
@@ -270,38 +270,13 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         }
     }
 
-    private handleSubmitNative = (event: React.FormEvent<HTMLFormElement>) => {
-        const redirect = new URL(`${window.context.appURL}/-/sign-in`)
+    private handleSubmitNative(event: React.FormEvent<HTMLFormElement>): void {
         const searchParams = new URLSearchParams(this.props.location.search)
         const returnTo = searchParams.get('returnTo')
-
-        if (returnTo) {
-            // 🚨 SECURITY: important that we do not allow redirects to
-            // arbitrary hosts here.
-            const newURL = new URL(returnTo, window.location.href)
-            redirect.searchParams.set('returnTo', window.context.appURL + newURL.pathname + newURL.search + newURL.hash)
-        }
-        if (this.props.mode === 'signup') {
-            redirect.searchParams.set('username', this.state.username)
-            redirect.searchParams.set('displayName', this.state.displayName || this.state.username)
-        }
-
-        const token = searchParams.get('token')
-        if (token) {
-            redirect.searchParams.set('token', token)
-        }
 
         event.preventDefault()
         if (this.state.loading) {
             return
-        }
-
-        const authCallback = (err: any) => {
-            this.setState({ loading: false })
-            if (err) {
-                console.error('auth error: ', err)
-                this.setState({ errorDescription: err || 'Unknown Error' })
-            }
         }
 
         this.setState({ loading: true })
@@ -320,22 +295,26 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         email: this.state.email,
                         password: this.state.password,
                     }),
-                }).then(resp => {
-                    if (resp.status === 200) {
-                        if (returnTo) {
-                            window.location.replace(returnTo)
+                })
+                    .then(resp => {
+                        if (resp.status === 200) {
+                            if (returnTo) {
+                                window.location.replace(returnTo)
+                            } else {
+                                window.location.replace('/search')
+                            }
+                        } else if (resp.status === 401) {
+                            throw new Error('User or password was incorrect')
                         } else {
-                            window.location.replace('/search')
+                            throw new Error('Unknown Error')
                         }
-                    } else if (resp.status === 401) {
-                        authCallback('User or password was incorrect')
-                    } else {
-                        authCallback('Unknown Error')
-                    }
-                }, authCallback)
+                    })
+                    .catch(err => {
+                        console.error('auth error: ', err)
+                        this.setState({ loading: false, errorDescription: (err && err.message) || 'Unknown Error' })
+                    })
                 break
             case 'signup':
-                // TODO: signup flow
                 this.subscriptions.add(
                     isUsernameAvailable(this.state.username).subscribe(availability => {
                         if (!availability) {
