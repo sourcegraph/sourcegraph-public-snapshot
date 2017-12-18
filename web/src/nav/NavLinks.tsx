@@ -69,7 +69,6 @@ export class NavLinks extends React.Component<Props, State> {
                     </Link>
                 )}
                 {!this.state.user &&
-                    !window.context.onPrem &&
                     this.props.location.pathname !== '/sign-in' && (
                         <Link className="nav-links__link btn btn-primary" to="/sign-in">
                             Sign in
