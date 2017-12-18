@@ -186,7 +186,7 @@ class App extends React.Component<{}, AppState> {
             }
             return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
         }
-        if (window.context.onPrem || window.context.showOnboarding) {
+        if (window.context.onPrem && window.context.showOnboarding) {
             return (
                 <BrowserRouter>
                     <Route path="/" component={InitializePage} />
