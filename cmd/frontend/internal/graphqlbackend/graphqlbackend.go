@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -182,30 +181,6 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 	}()
 
 	return backend.Repos.RefreshIndex(ctx, repo.URI)
-}
-
-func (r *schemaResolver) Users(ctx context.Context) ([]*userResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAdmin() {
-		return nil, errors.New("Must be an admin")
-	}
-	return listUsers(ctx)
-}
-
-func listUsers(ctx context.Context) ([]*userResolver, error) {
-	usersList, err := backend.Users.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var l []*userResolver
-	for _, user := range usersList.Users {
-		l = append(l, &userResolver{
-			user: user,
-		})
-	}
-
-	return l, nil
 }
 
 // Resolves symbols by a global symbol ID (use case for symbol URLs)

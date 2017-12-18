@@ -14,6 +14,10 @@ var Users = &users{}
 type users struct{}
 
 func (s *users) List(ctx context.Context) (res *sourcegraph.UserList, err error) {
+	if Mocks.Users.List != nil {
+		return Mocks.Users.List(ctx)
+	}
+
 	actor := actor.FromContext(ctx)
 	// 🚨 SECURITY:  only admins are allowed to use this endpoint
 	if !actor.IsAdmin() {
