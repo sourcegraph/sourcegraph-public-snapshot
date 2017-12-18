@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { Chromeless } from 'chromeless'
-import retry = require('p-retry')
+import * as retry from 'p-retry'
 
 const chromeLauncher = require('chrome-launcher')
 
