@@ -419,7 +419,7 @@ class TreeLayer extends React.PureComponent<TreeLayerProps, {}> {
         const { currSubpath, store } = this.props
         const nodes = currSubpath === '' ? store.nodes : store.nodeMap.get(currSubpath)!.children
         return (
-            <table style={{ width: '100%' }}>
+            <table className="tree-layer">
                 <tbody>
                     <tr>
                         <td>
@@ -478,7 +478,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
     public render(): JSX.Element | null {
         const { node, store } = this.props
         return (
-            <table className="tile" style={{ width: '100%' }}>
+            <table className="tree-row">
                 <tbody>
                     {node.children.length > 0 && [
                         <tr
@@ -496,6 +496,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                     className="tree__row-contents"
                                     data-tree-directory="true"
                                     data-tree-path={node.filePath}
+                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                     style={treePadding(this.props.depth, true)}
                                 >
                                     <a
@@ -546,6 +547,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                             key={node.filePath}
                             className={'tree__row' + (node.filePath === store.selectedPath ? '--selected' : '')}
                         >
+                            {/* tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling) */}
                             <td style={treePadding(this.props.depth, false)}>
                                 <Link
                                     className="tree__row-contents"

@@ -35,7 +35,7 @@
   "devDependencies": {
     "@sourcegraph/prettierrc": "^2.0.0",
     "@sourcegraph/tsconfig": "^2.0.0",
-    "@sourcegraph/tslint-config": "^9.0.4",
+    "@sourcegraph/tslint-config": "^10.0.0",
     "@types/auth0-js": "^8.6.3",
     "@types/copy-webpack-plugin": "^4.0.1",
     "@types/escape-string-regexp": "0.0.31",
