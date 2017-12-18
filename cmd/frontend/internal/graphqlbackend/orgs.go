@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
@@ -76,6 +77,8 @@ func (o *orgResolver) DisplayName() *string {
 func (o *orgResolver) SlackWebhookURL() *string {
 	return o.org.SlackWebhookURL
 }
+
+func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
 func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error) {
 	sgMembers, err := store.OrgMembers.GetByOrgID(ctx, o.org.ID)

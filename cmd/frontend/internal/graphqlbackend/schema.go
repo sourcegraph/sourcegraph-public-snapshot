@@ -830,6 +830,8 @@ type Org implements Node, ConfigurationSubject {
   name: String!
   displayName: String
   slackWebhookURL: String
+  # The date when the organization was created, in RFC 3339 format.
+  createdAt: String!
   members: [OrgMember!]!
   latestSettings: Settings
   repos: [OrgRepo!]!
