@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/mattbaird/gochimp"
 	"golang.org/x/oauth2"
-	"k8s.io/client-go/pkg/util/rand"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
@@ -62,7 +62,12 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create user
-	emailCode := rand.String(20)
+	emailCodeBytes := make([]byte, 20)
+	if _, err := rand.Read(emailCodeBytes); err != nil {
+		http.Error(w, "could not generate email code", http.StatusInternalServerError)
+		return
+	}
+	emailCode := base64.StdEncoding.EncodeToString(emailCodeBytes)
 	usr, err := store.Users.Create(r.Context(), nativeAuthID(creds.Email), creds.Email, creds.Username, displayName, "native", nil, creds.Password, emailCode)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("could not create user %s", creds.Username), http.StatusInternalServerError)
