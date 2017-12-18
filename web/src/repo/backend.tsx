@@ -386,27 +386,27 @@ export const fetchFileCommitInfo = memoizeObservable(
     makeRepoURI
 )
 
-export const fetchRepositories = memoizeObservable(
-    (ctx: { query: string }): Observable<GQL.IRepository[]> =>
-        queryGraphQL(
-            `query fetchRepositories($query: String) {
-                repositories(query: $query) {
+/**
+ * Fetches a list of all repositories.
+ */
+export function fetchRepositories(): Observable<GQL.IRepository[]> {
+    return queryGraphQL(
+        `query fetchRepositories {
+                repositories {
                     uri
                     description
                     private
                 }
-            }`,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.repositories) {
-                    throw Object.assign(
-                        'Could not fetch repositories: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
-                }
-                return data.repositories
-            })
-        ),
-    ctx => ctx.query
-)
+            }`
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.repositories) {
+                throw Object.assign(
+                    'Could not fetch repositories: ' + new Error((errors || []).map(e => e.message).join('\n')),
+                    { errors }
+                )
+            }
+            return data.repositories
+        })
+    )
+}

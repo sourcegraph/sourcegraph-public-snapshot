@@ -215,7 +215,7 @@ type Query {
   node(id: ID!): Node
   repository(uri: String!): Repository
   phabricatorRepo(uri: String!): PhabricatorRepo
-  repositories(query: String = ""): [Repository!]!
+  repositories: [Repository!]!
   symbols(id: String!, mode: String!): [Symbol!]!
   currentUser: User
   isUsernameAvailable(username: String!): Boolean!

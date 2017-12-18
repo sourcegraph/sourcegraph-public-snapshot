@@ -184,10 +184,8 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 	return backend.Repos.RefreshIndex(ctx, repo.URI)
 }
 
-func (r *schemaResolver) Repositories(ctx context.Context, args *struct {
-	Query string
-}) ([]*repositoryResolver, error) {
-	opt := &sourcegraph.RepoListOptions{Query: args.Query}
+func (r *schemaResolver) Repositories(ctx context.Context) ([]*repositoryResolver, error) {
+	opt := &sourcegraph.RepoListOptions{}
 	opt.PerPage = 10000 // we want every repo
 	return listRepos(ctx, opt)
 }
