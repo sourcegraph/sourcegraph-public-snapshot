@@ -230,7 +230,8 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 				offsetAndLengths[i] = []int{start, end - start}
 			}
 			matches = append(matches, protocol.LineMatch{
-				// making a copy of lineBuf is intentional, the underlying array of b can be overwritten by scanner.
+				// making a copy of lineBuf is intentional.
+				// the underlying slice is rg.buf, which may be overwritten by future calls to Find.
 				Preview:          string(lineBuf),
 				LineNumber:       i,
 				OffsetAndLengths: offsetAndLengths,
