@@ -8,6 +8,7 @@ import { filter } from 'rxjs/operators/filter'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { eventLogger } from '../tracking/eventLogger'
+import { MonacoSettingsEditor } from './MonacoSettingsEditor'
 
 interface Props {
     settings: GQL.ISettings | null
@@ -36,7 +37,11 @@ interface State {
     editingLastKnownSettingsID?: number | null
 }
 
-const emptySettings = '{\n  // add configuration here\n}'
+const useMonacoEditor = () => window.localStorage.getItem('monacoSettingsEditor') !== null
+
+const emptySettings = useMonacoEditor()
+    ? '{\n  // add configuration here (Cmd/Ctrl+Space to see hints)\n}'
+    : '{\n  // add configuration here\n}'
 
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -127,15 +132,24 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         {this.props.commitError.message}
                     </div>
                 )}
-                <code>
-                    <textarea
+                {useMonacoEditor() ? (
+                    <MonacoSettingsEditor
                         className="settings-file__contents form-control"
                         value={contents}
-                        onChange={this.onTextareaChange}
-                        disabled={this.state.saving}
-                        spellCheck={false}
+                        onChange={this.onEditorChange}
+                        readOnly={this.state.saving}
                     />
-                </code>
+                ) : (
+                    <code>
+                        <textarea
+                            className="settings-file__contents form-control"
+                            value={contents}
+                            onChange={this.onTextareaChange}
+                            disabled={this.state.saving}
+                            spellCheck={false}
+                        />
+                    </code>
+                )}
             </div>
         )
     }
@@ -161,11 +175,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private onTextareaChange: React.ChangeEventHandler<HTMLTextAreaElement> = event => {
-        const contents = event.target.value
-        if (contents !== this.getPropsSettingsContentsOrEmpty()) {
+        this.onEditorChange(event.target.value)
+    }
+
+    private onEditorChange = (newValue: string) => {
+        if (newValue !== this.getPropsSettingsContentsOrEmpty()) {
             this.setState({ editingLastKnownSettingsID: this.getPropsSettingsID() })
         }
-        this.setState({ contents })
+        this.setState({ contents: newValue })
     }
 
     private save = () => {
