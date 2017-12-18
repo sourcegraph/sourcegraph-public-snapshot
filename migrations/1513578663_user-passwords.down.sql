@@ -1,0 +1,4 @@
+BEGIN;
+ALTER TABLE users DROP COLUMN email_code;
+ALTER TABLE users DROP COLUMN passwd;
+COMMIT;

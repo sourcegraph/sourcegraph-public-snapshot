@@ -10,6 +10,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"golang.org/x/crypto/bcrypt"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/lib/pq"
@@ -57,7 +58,7 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
-func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string) (newUser *sourcegraph.User, err error) {
+func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
@@ -65,6 +66,21 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 	if avatarURL != nil {
 		avatarURLValue = sql.NullString{String: *avatarURL, Valid: true}
 	}
+
+	var passwd sql.NullString
+	if password == "" {
+		passwd = sql.NullString{Valid: false}
+	} else {
+		// Compute hash of password
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		passwd = sql.NullString{Valid: true, String: string(hash)}
+	}
+
+	dbEmailCode := sql.NullString{String: emailCode}
+	dbEmailCode.Valid = emailCode == ""
 
 	// Wrap in transaction so we can execute hooks below atomically.
 	tx, err := globalDB.BeginTx(ctx, nil)
@@ -84,8 +100,8 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt).Scan(&id)
+		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -273,7 +289,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.email_code is null FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +299,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified)
 		if err != nil {
 			return nil, err
 		}
@@ -297,4 +313,32 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	}
 
 	return users, nil
+}
+
+func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
+	var passwd sql.NullString
+	if err := globalDB.QueryRowContext(ctx, "SELECT passwd FROM users WHERE id=$1", id).Scan(&passwd); err != nil {
+		return false, err
+	}
+	if !passwd.Valid {
+		return false, nil
+	}
+	return bcrypt.CompareHashAndPassword([]byte(passwd.String), []byte(password)) == nil, nil
+}
+
+func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
+	var dbCode sql.NullString
+	if err := globalDB.QueryRowContext(ctx, "SELECT email_code FROM users WHERE id=$1", id).Scan(&dbCode); err != nil {
+		return false, err
+	}
+	if !dbCode.Valid {
+		return false, errors.New("email already verified")
+	}
+	if dbCode.String != userCode {
+		return false, nil
+	}
+	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET email_code=null WHERE id=$1", id); err != nil {
+		return false, err
+	}
+	return true, nil
 }

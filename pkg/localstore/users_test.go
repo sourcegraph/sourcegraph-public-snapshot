@@ -57,7 +57,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	}
 	ctx := testContext()
 
-	user, err := Users.Create(ctx, "authid", "a@a.com", "u", "", "", nil)
+	user, err := Users.Create(ctx, "authid", "a@a.com", "u", "", "", nil, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
