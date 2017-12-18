@@ -88,3 +88,30 @@ export function fetchAllRepositories(): Observable<GQL.IRepository[]> {
         })
     )
 }
+
+/**
+ * Fetches usage analytics for all users.
+ *
+ * @return Observable that emits the list of users and their usage data
+ */
+export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
+    return queryGraphQL(`query Users {
+             users {
+                 nodes {
+                     id
+                     username
+                     activity {
+                         searchQueries
+                         pageViews
+                     }
+                 }
+             }
+         }`).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.users) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.users.nodes
+        })
+    )
+}

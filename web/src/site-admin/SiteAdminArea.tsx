@@ -5,6 +5,7 @@ import { match, Route, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AllUsersPage } from './AllUsersPage'
+import { AnalyticsPage } from './AnalyticsPage'
 import { ConfigurationPage } from './ConfigurationPage'
 import { OrgsPage } from './OrgsPage'
 import { OverviewPage } from './OverviewPage'
@@ -54,6 +55,7 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
                         />
                         <Route path={`${this.props.match.url}/organizations`} component={OrgsPage} exact={true} />
                         <Route path={`${this.props.match.url}/users`} component={AllUsersPage} exact={true} />
+                        <Route path={`${this.props.match.url}/analytics`} component={AnalyticsPage} exact={true} />
                         <Route component={NotFoundPage} />
                     </Switch>
                 </div>

@@ -1,4 +1,3 @@
-import ActivityIcon from '@sourcegraph/icons/lib/Activity'
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import ChartIcon from '@sourcegraph/icons/lib/Chart'
 import CityIcon from '@sourcegraph/icons/lib/City'
@@ -6,6 +5,7 @@ import ColorPaletteIcon from '@sourcegraph/icons/lib/ColorPalette'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
+import ServerIcon from '@sourcegraph/icons/lib/Server'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import SunIcon from '@sourcegraph/icons/lib/Sun'
 import UserIcon from '@sourcegraph/icons/lib/User'
@@ -115,11 +115,11 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             <ul>
                                 <li className="settings-sidebar__item">
                                     <NavLink
-                                        to={`/settings/admin/`}
+                                        to="site-admin"
                                         className="settings-sidebar__item-link"
                                         activeClassName="settings-sidebar__item--active"
                                     >
-                                        <ActivityIcon className="icon-inline settings-sidebar__item-icon" />Admin
+                                        <ServerIcon className="icon-inline settings-sidebar__item-icon" />Admin
                                     </NavLink>
                                 </li>
                             </ul>
