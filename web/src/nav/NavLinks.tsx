@@ -59,6 +59,12 @@ export class NavLinks extends React.Component<Props, State> {
                         Browse
                     </Link>
                 )}
+                {window.context.user &&
+                    window.context.user.IsAdmin && (
+                        <Link to="/site-admin" className="nav-links__link">
+                            Admin
+                        </Link>
+                    )}
                 {this.state.user && (
                     <Link className="nav-links__link" to="/settings">
                         {window.context.onPrem && isGQLUser(this.state.user) ? (

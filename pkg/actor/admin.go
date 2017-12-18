@@ -1,6 +1,8 @@
 package actor
 
 import (
+	"os"
+	"strconv"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -20,6 +22,9 @@ func init() {
 
 // IsAdmin returns true if and only if the actor should be treated as an instance admin.
 func (a *Actor) IsAdmin() bool {
+	if v, _ := strconv.ParseBool(os.Getenv("TMP_UNSAFE_SOURCEGRAPH_ALWAYS_ADMIN")); v {
+		return true
+	}
 	if a == nil {
 		return false
 	}

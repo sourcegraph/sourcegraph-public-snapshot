@@ -11,6 +11,7 @@ import { RepositoryResolver } from './repo/RepositoryResolver'
 import { SavedQueries } from './search/SavedQueries'
 import { SearchResults } from './search/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
+import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { canListAllRepositories } from './util/features'
 
 export interface LayoutRouteProps extends RouteProps {
@@ -74,6 +75,11 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/settings',
         component: SettingsPage,
+        forceNarrowWidth: true,
+    },
+    {
+        path: '/site-admin',
+        component: SiteAdminArea,
         forceNarrowWidth: true,
     },
     {

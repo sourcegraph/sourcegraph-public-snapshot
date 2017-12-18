@@ -169,6 +169,17 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{"org": "sourcegraph"},
 		},
 
+		{
+			path:      "/site-admin",
+			wantRoute: routeSiteAdmin,
+			wantVars:  map[string]string{},
+		},
+		{
+			path:      "/site-admin/config",
+			wantRoute: routeSiteAdmin,
+			wantVars:  map[string]string{},
+		},
+
 		// legacy editor auth
 		{
 			path:      "/editor-auth",

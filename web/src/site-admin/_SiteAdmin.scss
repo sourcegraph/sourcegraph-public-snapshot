@@ -1,0 +1,28 @@
+@import './ConfigurationPage';
+@import './Sidebar';
+
+.site-admin-area {
+    flex: 1 1 auto;
+    display: flex;
+    margin-top: 1rem;
+    line-height: 1.5rem;
+    overflow: hidden;
+    border-radius: 0.25rem;
+
+    &__content {
+        flex: 1 1 auto;
+        padding: 2rem;
+        background-color: #0e121b;
+        overflow-y: auto;
+    }
+}
+
+.theme-light {
+    .site-admin-area {
+        border: 1px solid $color-light-border;
+
+        &__content {
+            background-color: inherit;
+        }
+    }
+}
