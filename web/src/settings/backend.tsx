@@ -342,12 +342,14 @@ export function fetchAllUsers(): Observable<GQL.IUser[] | null> {
         `
             query Users {
                 users {
-                    id
-                    username
-                    displayName
-                    activity {
-                        searchQueries
-                        pageViews
+                    nodes {
+                        id
+                        username
+                        displayName
+                        activity {
+                            searchQueries
+                            pageViews
+                        }
                     }
                 }
             }
@@ -357,7 +359,7 @@ export function fetchAllUsers(): Observable<GQL.IUser[] | null> {
             if (!data || !data.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.users
+            return data.users.nodes
         })
     )
 }

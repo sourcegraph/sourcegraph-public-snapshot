@@ -259,7 +259,7 @@ type Query {
     package: String
     limit: Int
   ): [Dependency!]!
-  users: [User!]!
+  users: UserConnection
   updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 }
 
@@ -756,6 +756,14 @@ type Installation {
   installId: Int!
   type: String!
   avatarURL: String!
+}
+
+# A list of users.
+type UserConnection {
+	# A list of users.
+	nodes: [User!]!
+	# The total count of users in the connection.
+	totalCount: Int!
 }
 
 type User implements Node, ConfigurationSubject {
