@@ -109,7 +109,7 @@ func Work(ctx context.Context, w *workQueue) {
 		}
 
 		if err := index(ctx, w, repoRev.repo, repoRev.rev); err != nil {
-			log15.Error("Indexing failed", "repoRev", repoRev, "error", err)
+			log15.Error("Indexing failed", "repo", repoRev.repo, "rev", repoRev.rev, "error", err)
 		}
 
 		{
@@ -120,60 +120,49 @@ func Work(ctx context.Context, w *workQueue) {
 	}
 }
 
-func index(ctx context.Context, wq *workQueue, repoName string, rev string) error {
-	if rev == "" {
-		rev = "HEAD"
-	}
-	repo, err := sourcegraph.InternalClient.ReposGetByURI(ctx, repoName)
+func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err error) {
+	repo, commit, err := resolveRevision(ctx, repoName, rev)
 	if err != nil {
-		return fmt.Errorf("Repos.GetByURI failed: %s", err)
+		if repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
+			// Avoid infinite loop for always cloning test.
+			return nil
+		}
+		// If clone is in progress, re-enqueue after 5 seconds
+		if _, ok := err.(vcs.RepoNotExistError); ok && err.(vcs.RepoNotExistError).CloneInProgress {
+			go func() {
+				time.Sleep(5 * time.Second)
+				wq.Enqueue(repoName, rev)
+			}()
+			return nil
+		}
+		return err
 	}
 
-	var headCommit vcs.CommitID
-	if len(rev) == 40 {
-		headCommit = vcs.CommitID(rev)
-	} else {
-		headCommit, err = ResolveRevision(ctx, repo, rev)
-		if err != nil {
-			if repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
-				// Avoid infinite loop for always cloning test.
-				return nil
-			}
-			// If clone is in progress, re-enqueue after 5 seconds
-			if _, ok := err.(vcs.RepoNotExistError); ok && err.(vcs.RepoNotExistError).CloneInProgress {
-				go func() {
-					time.Sleep(5 * time.Second)
-					wq.Enqueue(repoName, rev)
-				}()
-				return nil
-			}
-			return fmt.Errorf("ResolveRevision failed: %s", err)
-		}
-		if len(headCommit) != 40 {
-			log15.Error("ResolveRevision returned bad commit", "commit", headCommit)
-		}
+	if repo.IndexedRevision != nil && (repo.FreezeIndexedRevision || *repo.IndexedRevision == commit) {
+		return nil // index is up-to-date
 	}
+
+	defer func(start time.Time) {
+		// Errors are handled in a higher layer
+		if err != nil {
+			return
+		}
+		log15.Info("Indexing finished", "repo", repoName, "rev", rev, "commit", commit, "duration", time.Since(start))
+	}(time.Now())
 
 	inv, err := sourcegraph.InternalClient.ReposGetInventoryUncached(ctx, sourcegraph.RepoRevSpec{
 		Repo:     repo.ID,
-		CommitID: string(headCommit),
+		CommitID: commit,
 	})
 	if err != nil {
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}
 
-	if repo.IndexedRevision != nil && (repo.FreezeIndexedRevision || *repo.IndexedRevision == string(headCommit)) {
-		return nil // index is up-to-date
-	}
-
-	log15.Info("Indexing started", "repo", repoName, "headCommit", headCommit)
-	defer log15.Info("Indexing finished", "repo", repoName, "headCommit", headCommit)
-
 	// Global refs & packages indexing. Neither index forks.
 	if !repo.Fork && LSPEnabled {
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
-		defErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, string(headCommit))
+		defErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, commit)
 		if err != nil {
 			defErr = fmt.Errorf("Defs.RefreshIndex failed: %s", err)
 		}
@@ -181,7 +170,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 		// As part of package indexing, it's fine to index private repositories
 		// because backend.Pkgs.ListPackages is responsible for authentication
 		// checks.
-		pkgErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, string(headCommit))
+		pkgErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, commit)
 		if err != nil {
 			pkgErr = fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
 		}
@@ -194,7 +183,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 		}
 	}
 
-	err = sourcegraph.InternalClient.ReposUpdateIndex(ctx, repo.ID, string(headCommit), inv.PrimaryProgrammingLanguage())
+	err = sourcegraph.InternalClient.ReposUpdateIndex(ctx, repo.ID, commit, inv.PrimaryProgrammingLanguage())
 	if err != nil {
 		return err
 	}
