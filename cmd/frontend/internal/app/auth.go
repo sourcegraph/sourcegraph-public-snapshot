@@ -99,6 +99,8 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 // serveSignIn2 serves a native-auth endpoint
 func serveSignIn2(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -111,8 +113,17 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 
 	// Validate user
 	authID := nativeAuthID(creds.Email)
-	usr, err := store.Users.GetByAuth0ID(r.Context(), authID)
+	usr, err := store.Users.GetByAuth0ID(ctx, authID)
 	if err != nil {
+		http.Error(w, "authentication failed", http.StatusUnauthorized)
+		return
+	}
+	correct, err := store.Users.IsPassword(ctx, usr.ID, creds.Password)
+	if err != nil {
+		http.Error(w, "error checking password", http.StatusInternalServerError)
+		return
+	}
+	if !correct {
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
