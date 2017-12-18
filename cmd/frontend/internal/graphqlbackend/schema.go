@@ -779,6 +779,7 @@ type User implements Node, ConfigurationSubject {
   avatarURL: String
   createdAt: String
   updatedAt: String
+  verified: Boolean!
   # The latest settings for the user.
   latestSettings: Settings
   orgs: [Org!]!
