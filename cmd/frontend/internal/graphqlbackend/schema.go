@@ -260,6 +260,8 @@ type Query {
     limit: Int
   ): [Dependency!]!
   users: UserConnection
+  # List all organizations.
+  orgs: OrgConnection!
   updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 }
 
@@ -822,6 +824,14 @@ type CompanyCategory {
   industryGroup: String!
   industry: String!
   subIndustry: String!
+}
+
+# A list of organizations.
+type OrgConnection {
+	# A list of organizations.
+	nodes: [Org!]!
+	# The total count of organizations in the connection.
+	totalCount: Int!
 }
 
 type Org implements Node, ConfigurationSubject {

@@ -60,6 +60,10 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, erro
 	return orgs[0], nil
 }
 
+func (o *orgs) List(ctx context.Context) ([]*sourcegraph.Org, error) {
+	return o.getBySQL(ctx, "ORDER BY id ASC")
+}
+
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Org, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT id, name, display_name, orgs.slack_webhook_url, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {

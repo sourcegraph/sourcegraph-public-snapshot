@@ -15,12 +15,33 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
+
+func (r *schemaResolver) Orgs(ctx context.Context) (*orgConnectionResolver, error) {
+	orgs, err := backend.Orgs.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var resolvers []*orgResolver
+	for _, org := range orgs {
+		resolvers = append(resolvers, &orgResolver{org: org})
+	}
+	return &orgConnectionResolver{orgs: resolvers}, nil
+}
+
+type orgConnectionResolver struct {
+	orgs []*orgResolver
+}
+
+func (r *orgConnectionResolver) Nodes() []*orgResolver { return r.orgs }
+
+func (r *orgConnectionResolver) TotalCount() int32 { return int32(len(r.orgs)) }
 
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
