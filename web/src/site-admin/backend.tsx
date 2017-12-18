@@ -33,3 +33,34 @@ export function fetchAllUsers(): Observable<GQL.IUser[]> {
         })
     )
 }
+
+/**
+ * Fetches all orgs.
+ *
+ * @return Observable that emits the list of orgs
+ */
+export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
+    return queryGraphQL(`query Orgs {
+        orgs {
+            nodes {
+                id
+                name
+                displayName
+                createdAt
+                latestSettings {
+                    createdAt
+                    configuration { contents }
+                }
+                members { user { username } }
+                tags { name }
+            }
+        }
+    }`).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.orgs) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.orgs.nodes
+        })
+    )
+}

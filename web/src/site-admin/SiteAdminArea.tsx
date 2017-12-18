@@ -6,6 +6,7 @@ import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AllUsersPage } from './AllUsersPage'
 import { ConfigurationPage } from './ConfigurationPage'
+import { OrgsPage } from './OrgsPage'
 import { OverviewPage } from './OverviewPage'
 import { Sidebar } from './Sidebar'
 
@@ -45,6 +46,7 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
                         {/* Render empty page if no page selected. */}
                         <Route path={this.props.match.url} component={OverviewPage} exact={true} />
                         <Route path={`${this.props.match.url}/config`} component={ConfigurationPage} exact={true} />
+                        <Route path={`${this.props.match.url}/organizations`} component={OrgsPage} exact={true} />
                         <Route path={`${this.props.match.url}/users`} component={AllUsersPage} exact={true} />
                         <Route component={NotFoundPage} />
                     </Switch>
