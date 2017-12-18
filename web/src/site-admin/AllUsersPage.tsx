@@ -6,6 +6,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { fetchAllUsers } from './backend'
+import { SettingsInfo } from './util/SettingsInfo'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -60,16 +61,10 @@ export class AllUsersPage extends React.Component<Props, State> {
                                     )}
                                     {user.latestSettings && (
                                         <li>
-                                            Settings:{' '}
-                                            <a
-                                                href={encodeSettingsFile(user.latestSettings.configuration.contents)}
-                                                download={`user-settings-${user.id}.json`}
-                                                target="_blank"
-                                                title={user.latestSettings.configuration.contents}
-                                            >
-                                                download JSON file
-                                            </a>{' '}
-                                            (saved on {format(user.latestSettings.createdAt, 'YYYY-MM-DD')})
+                                            <SettingsInfo
+                                                settings={user.latestSettings}
+                                                filename={`user-settings-${user.id}.json`}
+                                            />
                                         </li>
                                     )}
                                     {user.tags && user.tags.length ? (
@@ -91,8 +86,4 @@ export class AllUsersPage extends React.Component<Props, State> {
             </div>
         )
     }
-}
-
-function encodeSettingsFile(contents: string): string {
-    return `data:application/json;charset=utf-8;base64,${btoa(contents)}`
 }
