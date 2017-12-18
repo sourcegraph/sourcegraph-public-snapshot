@@ -38,8 +38,11 @@ export class OrgsPage extends React.Component<Props, State> {
                 <PageTitle title="Organizations - Admin" />
                 <h2>Organizations</h2>
                 <p>
-                    See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
-                    information about configuring organizations.
+                    See{' '}
+                    <a href="https://about.sourcegraph.com/docs/server/config/tutorial#organizations">
+                        Sourcegraph documentation
+                    </a>{' '}
+                    for information about configuring organizations.
                 </p>
                 <ul className="site-admin-detail-list__list">
                     {this.state.orgs &&
