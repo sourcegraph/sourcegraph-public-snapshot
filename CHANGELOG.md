@@ -17,6 +17,9 @@ Before cutting a new release, please:
 
 
 ## Unreleased
+### Fixed
+- Many performance improvements to search.
+
 ### Changed
 - We optionally read `SOURCEGRAPH_CONFIG` from `$DATA_DIR/config.json`.
 
