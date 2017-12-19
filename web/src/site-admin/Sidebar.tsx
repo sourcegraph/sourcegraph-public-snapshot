@@ -43,7 +43,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                     </li>
                     <li className="site-admin-sidebar__item">
                         <NavLink
-                            to="/site-admin/config"
+                            to="/site-admin/configuration"
                             className="site-admin-sidebar__item-link"
                             activeClassName="site-admin-sidebar__item--active"
                             exact={true}
