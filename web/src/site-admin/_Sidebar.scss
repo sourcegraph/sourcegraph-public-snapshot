@@ -1,0 +1,98 @@
+.site-admin-sidebar {
+    flex: 0 0 auto;
+    width: 15.75rem;
+    background-color: #1c2736;
+    user-select: none;
+
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+
+    &__header {
+        color: #93a9c8;
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        vertical-align: middle;
+        background: #1c2736;
+    }
+
+    &__header-title {
+        flex: 0 1 auto;
+    }
+
+    &__header-icon {
+        flex: 0 0 auto;
+        margin-right: 0.5rem;
+        display: flex;
+    }
+
+    &__items {
+        overflow: hidden;
+        position: relative;
+    }
+
+    &__item {
+        width: 100%;
+        list-style: none;
+        user-select: none;
+        display: flex;
+        flex-direction: column;
+
+        &-link {
+            height: 100%;
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+
+        &-link:hover {
+            background-color: rgba(42, 58, 81, 0.7);
+            text-decoration: none;
+        }
+
+        &--active {
+            background: $color-primary;
+            color: #f2f4f8;
+
+            &:hover {
+                background: $color-primary;
+                color: #f2f4f8;
+                text-decoration: none;
+            }
+        }
+    }
+}
+
+.theme-light {
+    .site-admin-sidebar {
+        background-color: $color-light-bg-1;
+        color: $color-light-text-1;
+        border-right: 1px solid $color-light-border;
+
+        &__header {
+            color: $color-light-text-1;
+            background: $color-light-bg-4;
+        }
+
+        &__item {
+            &-link:hover {
+                background-color: $color-light-bg-2;
+                color: inherit;
+                text-decoration: none;
+            }
+
+            &--active {
+                background-color: $color-primary;
+                color: $color-light-text-4;
+
+                &:hover,
+                &:focus {
+                    background-color: $color-primary;
+                    text-decoration: none;
+                    color: $color-light-text-4;
+                }
+            }
+        }
+    }
+}

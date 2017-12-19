@@ -1,0 +1,29 @@
+@import './DetailList';
+
+.site-admin-overview-page {
+    &__item {
+        align-items: center !important;
+        &-header {
+            font-size: 18px;
+            min-width: 50%;
+            &-link {
+                color: $color-text;
+            }
+            &-icon {
+                margin-right: 0.5rem;
+            }
+        }
+    }
+}
+
+.theme-light {
+    .site-admin-overview-page {
+        &__item {
+            &-header {
+                &-link {
+                    color: $color-light-text-1;
+                }
+            }
+        }
+    }
+}

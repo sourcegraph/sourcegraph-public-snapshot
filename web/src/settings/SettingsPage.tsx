@@ -8,7 +8,6 @@ import { EditorAuthPage } from './EditorAuthPage'
 import { AcceptInvitePage } from './org/AcceptInvitePage'
 import { NewOrg } from './org/NewOrg'
 import { Org } from './org/Org'
-import { OrgAdmin } from './org/OrgAdmin'
 import { SettingsSidebar } from './SettingsSidebar'
 import { UserProfilePage } from './user/UserProfilePage'
 
@@ -73,7 +72,6 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
                             render={props => <Org {...props} />}
                             exact={true}
                         />
-                        <Route path={`${this.props.match.url}/admin`} component={OrgAdmin} exact={true} />
                         <Route component={SettingsNotFoundPage} />
                     </Switch>
                 </div>

@@ -332,38 +332,6 @@ export function removeUserFromOrg(orgID: string, userID: string): Observable<nev
     )
 }
 
-/*
-* Fetches all users. This is only used for Sourcegraph Server purposes.
-*
-* @return Observable that emits the org or `null` if it doesn't exist
-*/
-export function fetchAllUsers(): Observable<GQL.IUser[] | null> {
-    return queryGraphQL(
-        `
-            query Users {
-                users {
-                    nodes {
-                        id
-                        username
-                        displayName
-                        activity {
-                            searchQueries
-                            pageViews
-                        }
-                    }
-                }
-            }
-        `
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.users) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            return data.users.nodes
-        })
-    )
-}
-
 /**
  * Sends a GraphQL mutation to update an org
  *

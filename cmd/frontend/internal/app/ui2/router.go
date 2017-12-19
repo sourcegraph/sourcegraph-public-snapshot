@@ -41,6 +41,7 @@ const (
 	routeSettingsEditorAuth   = "settings.editor-auth"
 	routeSettingsOrgsNew      = "settings.orgs.new"
 	routeSettingsOrgsOrg      = "settings.orgs.org"
+	routeSiteAdmin            = "site-admin"
 	routePasswordReset        = "password-reset"
 	routeBrowseRepos          = "browse"
 
@@ -106,6 +107,7 @@ func newRouter() *mux.Router {
 	r.Path("/settings/editor-auth").Methods("GET").Name(routeSettingsEditorAuth)
 	r.Path("/settings/orgs/new").Methods("GET").Name(routeSettingsOrgsNew)
 	r.Path("/settings/orgs/{org}").Methods("GET").Name(routeSettingsOrgsOrg)
+	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
 	r.Path("/browse").Methods("GET").Name(routeBrowseRepos)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
@@ -155,6 +157,7 @@ func init() {
 		// e.g. "myorganization - Sourcegraph"
 		return fmt.Sprintf("%s - Sourcegraph", mux.Vars(r)["org"])
 	})))
+	router.Get(routeSiteAdmin).Handler(handler(serveBasicPageString("Admin - Sourcegraph")))
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
 	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
 
