@@ -70,7 +70,7 @@ func (err ErrCannotCreateUser) Code() string {
 // verified, the email verification code is set to null in the DB. All other users (including Auth0
 // Auth0 users that were authenticated using the native-auth UI) have a null password and email verification code.
 func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
-	if provider == "native" && (password == "" || emailCode == "") {
+	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
 

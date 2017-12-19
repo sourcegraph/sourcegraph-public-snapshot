@@ -386,6 +386,11 @@ const (
 	InviteError
 )
 
+const (
+	// UserProviderNative is the identity provider identifier that indicates a user identity came from native auth.
+	UserProviderNative = "native"
+)
+
 // User represents a registered user.
 type User struct {
 	ID          int32     `json:"ID,omitempty"`

@@ -43,7 +43,7 @@ type credentials struct {
 }
 
 func nativeAuthID(email string) string {
-	return fmt.Sprintf("native:%s", email)
+	return fmt.Sprintf("%s:%s", sourcegraph.UserProviderNative, email)
 }
 
 // serveSignUp serves the native-auth sign-up endpoint
@@ -70,9 +70,9 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	emailCode := base64.StdEncoding.EncodeToString(emailCodeBytes)
-	usr, err := store.Users.Create(r.Context(), nativeAuthID(creds.Email), creds.Email, creds.Username, displayName, "native", nil, creds.Password, emailCode)
+	usr, err := store.Users.Create(r.Context(), nativeAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, nil, creds.Password, emailCode)
 	if err != nil {
-		httpLogAndError(w, fmt.Sprintf("could not create user %s", creds.Username), http.StatusInternalServerError)
+		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
 		return
 	}
 	actor := &actor.Actor{
@@ -94,7 +94,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 	// Write the session cookie
 	if session.StartNewSession(w, r, actor, 0); err != nil {
-		httpLogAndError(w, "could not create new user session", http.StatusInternalServerError)
+		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 		return
 	}
 }
@@ -104,12 +104,12 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method != "POST" {
-		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
 		return
 	}
 	var creds credentials
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, "could not decode request body", http.StatusBadRequest)
+		http.Error(w, "Could not decode request body", http.StatusBadRequest)
 		return
 	}
 
@@ -117,16 +117,20 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 	authID := nativeAuthID(creds.Email)
 	usr, err := store.Users.GetByAuth0ID(ctx, authID)
 	if err != nil {
-		httpLogAndError(w, "authentication failed", http.StatusUnauthorized)
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
+		return
+	}
+	if usr.Provider != sourcegraph.UserProviderNative {
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
 	correct, err := store.Users.IsPassword(ctx, usr.ID, creds.Password)
 	if err != nil {
-		httpLogAndError(w, "error checking password", http.StatusInternalServerError)
+		httpLogAndError(w, "Error checking password", http.StatusInternalServerError)
 		return
 	}
 	if !correct {
-		httpLogAndError(w, "authentication failed", http.StatusUnauthorized)
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
 		return
 	}
 	actor := &actor.Actor{
@@ -137,7 +141,7 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 
 	// Write the session cookie
 	if session.StartNewSession(w, r, actor, 0); err != nil {
-		httpLogAndError(w, "could not create new user session", http.StatusInternalServerError)
+		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 		return
 	}
 
@@ -163,6 +167,10 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	usr, err := store.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
+		return
+	}
+	if usr.Provider != sourcegraph.UserProviderNative {
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
 	if usr.Verified {
@@ -201,6 +209,10 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "No user found for email", http.StatusBadRequest, "email", creds.Email)
 		return
 	}
+	if usr.Provider != sourcegraph.UserProviderNative {
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
+		return
+	}
 
 	resetCode, err := store.Users.RenewPasswordResetCode(ctx, usr.ID)
 	if err != nil {
@@ -237,6 +249,10 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 	usr, err := store.Users.GetByEmail(ctx, emailAndCode.Email)
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("User with email %s not found", emailAndCode.Email), http.StatusNotFound)
+		return
+	}
+	if usr.Provider != sourcegraph.UserProviderNative {
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
 
