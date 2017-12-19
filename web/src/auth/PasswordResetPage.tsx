@@ -35,7 +35,7 @@ class PasswordResetForm extends React.Component<{}, State> {
         const email = searchParams.get('email')
         if (code && email) {
             return (
-                <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPasswordWithCode}>
+                <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPassword}>
                     {this.state.error !== '' && <p className="password-reset-page__error">{this.state.error}</p>}
                     <p>Enter your new password.</p>
                     <div className="form-group">
@@ -61,7 +61,7 @@ class PasswordResetForm extends React.Component<{}, State> {
             return <p className="password-reset-page__reset-confirm">Password reset email sent.</p>
         }
         return (
-            <form className="password-reset-page__form" onSubmit={this.handleSubmit}>
+            <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPasswordInit}>
                 {this.state.error !== '' && <p className="password-reset-page__error">{this.state.error}</p>}
                 <p>Enter your email address and we will send you a link to reset your password.</p>
                 <div className="form-group">
@@ -90,15 +90,15 @@ class PasswordResetForm extends React.Component<{}, State> {
         this.setState({ password: e.target.value })
     }
 
-    private handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>) => {
         if (window.context.useAuth0) {
-            this.handleSubmitAuth0(e)
+            this.handleSubmitResetPasswordInitAuth0(e)
         } else {
-            this.handleSubmitNative(e)
+            this.handleSubmitResetPasswordInitNative(e)
         }
     }
 
-    private handleSubmitAuth0(e: React.FormEvent<HTMLFormElement>): void {
+    private handleSubmitResetPasswordInitAuth0(e: React.FormEvent<HTMLFormElement>): void {
         e.preventDefault()
 
         webAuth.changePassword(
@@ -117,7 +117,7 @@ class PasswordResetForm extends React.Component<{}, State> {
         )
     }
 
-    private handleSubmitNative(e: React.FormEvent<HTMLFormElement>): void {
+    private handleSubmitResetPasswordInitNative(e: React.FormEvent<HTMLFormElement>): void {
         e.preventDefault()
         fetch('/-/reset-password-init', {
             credentials: 'same-origin',
@@ -142,7 +142,7 @@ class PasswordResetForm extends React.Component<{}, State> {
             })
     }
 
-    private handleSubmitResetPasswordWithCode = (e: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmitResetPassword = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         const searchParams = new URLSearchParams(window.location.search)
