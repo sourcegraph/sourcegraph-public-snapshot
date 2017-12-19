@@ -107,6 +107,9 @@ func main() {
 			appSecretKey, err := ioutil.ReadFile(appSecretKeyFile)
 			if os.IsNotExist(err) {
 				appSecretKey = []byte(rand.String(128))
+				if err := os.MkdirAll(configDir, os.FileMode(0755)); err != nil {
+					log.Fatalf("could not create config directory %s: %s", configDir, err)
+				}
 				if err := ioutil.WriteFile(appSecretKeyFile, appSecretKey, 0644); err != nil {
 					log.Fatalf("could not write secret key file: %s", err)
 				}
