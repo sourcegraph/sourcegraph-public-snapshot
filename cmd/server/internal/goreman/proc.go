@@ -12,7 +12,7 @@ import (
 var wg sync.WaitGroup
 
 // stop specified proc.
-func stopProc(proc string, quit bool) error {
+func stopProc(proc string, kill bool) error {
 	p, ok := procs[proc]
 	if !ok {
 		return errors.New("Unknown proc: " + proc)
@@ -25,22 +25,22 @@ func stopProc(proc string, quit bool) error {
 		return nil
 	}
 
-	p.quit = quit
-	err := terminateProc(proc)
-	if err != nil {
-		return err
+	p.quit = true
+
+	if kill {
+		err := p.cmd.Process.Kill()
+		if err != nil {
+			return err
+		}
+	} else {
+		err := terminateProc(proc)
+		if err != nil {
+			return err
+		}
 	}
 
-	timeout := time.AfterFunc(10*time.Second, func() {
-		p.mu.Lock()
-		defer p.mu.Unlock()
-		if p, ok := procs[proc]; ok && p.cmd != nil {
-			err = p.cmd.Process.Kill()
-		}
-	})
 	p.cond.Wait()
-	timeout.Stop()
-	return err
+	return nil
 }
 
 // start specified proc. if proc is started already, return nil.
@@ -65,15 +65,6 @@ func startProc(proc string) error {
 	return nil
 }
 
-// restart specified proc.
-func restartProc(proc string) error {
-	if _, ok := procs[proc]; !ok {
-		return errors.New("Unknown proc: " + proc)
-	}
-	stopProc(proc, false)
-	return startProc(proc)
-}
-
 // spawn all procs.
 func startProcs() error {
 	for proc := range procs {
@@ -86,8 +77,41 @@ func startProcs() error {
 	}()
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
 	<-sc
-	for proc := range procs {
-		stopProc(proc, true)
+
+	stopped := make(chan struct{})
+	go func() {
+		stopProcs(false)
+		close(stopped)
+	}()
+
+	// New signal chan to avoid built up buffered signals
+	sc2 := make(chan os.Signal, 10)
+	signal.Notify(sc2, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+
+	select {
+	case <-sc2:
+		// Second signal received, do a hard exit
+		stopProcs(true)
+	case <-time.NewTimer(10 * time.Second).C:
+		// 10 seconds has passed, kill
+		stopProcs(true)
+	case <-stopped:
+		// Happy case, just continue
 	}
+
 	return nil
+}
+
+func stopProcs(kill bool) {
+	// TODO we probably need a well defined order for shutting down, since
+	// something may want to finish writing to postgres for example.
+	var wg sync.WaitGroup
+	for proc := range procs {
+		wg.Add(1)
+		go func(proc string) {
+			defer wg.Done()
+			stopProc(proc, kill)
+		}(proc)
+	}
+	wg.Wait()
 }
