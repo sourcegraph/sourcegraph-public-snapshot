@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs/Observable'
 import { from } from 'rxjs/observable/from'
-import { fromPromise } from 'rxjs/observable/fromPromise'
 import { bufferCount } from 'rxjs/operators/bufferCount'
 import { catchError } from 'rxjs/operators/catchError'
 import { concatMap } from 'rxjs/operators/concatMap'
@@ -90,7 +89,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
     // Memoization is not done at the top level (b/c we only support Promise fetching memoization ATM).
     // In this case, memoization is achieved at a lower level since this function simply calls out to
     // other memoized fetchers.
-    fromPromise(fetchXdefinition(ctx)).pipe(
+    fetchXdefinition(ctx).pipe(
         mergeMap(defInfo => {
             if (!defInfo) {
                 return []
@@ -135,15 +134,13 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                                     if (!dependent.workspace) {
                                         return []
                                     }
-                                    return fromPromise(
-                                        fetchXreferences({
-                                            ...dependent.workspace,
-                                            filePath: ctx.filePath,
-                                            query: defInfo.symbol,
-                                            hints: dependent.hints,
-                                            limit: 50,
-                                        })
-                                    ).pipe(
+                                    return fetchXreferences({
+                                        ...dependent.workspace,
+                                        filePath: ctx.filePath,
+                                        query: defInfo.symbol,
+                                        hints: dependent.hints,
+                                        limit: 50,
+                                    }).pipe(
                                         tap(refs => (numRefsFetched += refs.length)),
                                         catchError(e => {
                                             console.error(e)

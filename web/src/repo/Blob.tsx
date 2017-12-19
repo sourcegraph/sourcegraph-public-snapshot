@@ -5,7 +5,6 @@ import omit from 'lodash/omit'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { fromEvent } from 'rxjs/observable/fromEvent'
-import { fromPromise } from 'rxjs/observable/fromPromise'
 import { interval } from 'rxjs/observable/interval'
 import { merge } from 'rxjs/observable/merge'
 import { catchError } from 'rxjs/operators/catchError'
@@ -333,7 +332,6 @@ export class Blob extends React.Component<Props, State> {
                         map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
                         switchMap(({ target, ctx }) => {
                             const tooltip = this.getTooltip(target, ctx)
-                            this.subscriptions.add(tooltip.subscribe(this.logTelemetryOnTooltip, () => undefined))
                             const tooltipWithJ2D: Observable<TooltipData> = tooltip.pipe(
                                 zip(this.getDefinition(ctx)),
                                 map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
@@ -351,6 +349,7 @@ export class Blob extends React.Component<Props, State> {
                         })
                     )
                     .subscribe(data => {
+                        this.logTelemetryOnTooltip(data)
                         if (!this.state.fixedTooltip) {
                             updateTooltip(data, false, this.tooltipActions(data.ctx))
                         }
@@ -493,7 +492,7 @@ export class Blob extends React.Component<Props, State> {
      * tooltip is defined, it will update the target styling.
      */
     private getTooltip(target: HTMLElement, ctx: AbsoluteRepoFilePosition): Observable<TooltipData> {
-        return fromPromise(fetchHover(ctx)).pipe(
+        return fetchHover(ctx).pipe(
             tap(data => {
                 if (isEmptyHover(data)) {
                     // short-cirtuit, no tooltip data
@@ -510,7 +509,7 @@ export class Blob extends React.Component<Props, State> {
      * This Observable will emit exactly one value before it completes.
      */
     private getDefinition(ctx: AbsoluteRepoFilePosition): Observable<string | null> {
-        return fromPromise(fetchJumpURL(ctx))
+        return fetchJumpURL(ctx)
     }
 
     /**
@@ -591,10 +590,14 @@ export class Blob extends React.Component<Props, State> {
     }
 
     private logTelemetryOnTooltip = (data: TooltipData) => {
-        // Only log an event if there is no fixed tooltip docked, we have a
-        // target element, and we have tooltip contents
-        if (!this.state.fixedTooltip && data.target && !isEmpty(data.contents)) {
-            eventLogger.log('SymbolHovered')
+        // Only log an event if there is no fixed tooltip docked, we have a target element
+        if (!this.state.fixedTooltip && data.target) {
+            if (data.loading) {
+                eventLogger.log('SymbolHoveredLoading')
+                // Don't log tooltips with no content
+            } else if (!isEmpty(data.contents)) {
+                eventLogger.log('SymbolHovered', { hoverHasDefUrl: data.defUrl !== undefined })
+            }
         }
     }
 

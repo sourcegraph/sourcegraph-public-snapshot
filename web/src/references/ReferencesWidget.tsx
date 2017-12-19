@@ -8,7 +8,6 @@ import omit from 'lodash/omit'
 import partition from 'lodash/partition'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { fromPromise } from 'rxjs/observable/fromPromise'
 import { merge } from 'rxjs/observable/merge'
 import { bufferTime } from 'rxjs/operators/bufferTime'
 import { catchError } from 'rxjs/operators/catchError'
@@ -62,7 +61,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     distinctUntilChanged(isEqual),
                     switchMap(props =>
                         merge(
-                            fromPromise(fetchReferences(props)).pipe(
+                            fetchReferences(props).pipe(
                                 map(references => ({ references } as State)),
                                 catchError(e => {
                                     console.error(e)
