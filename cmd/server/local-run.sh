@@ -15,6 +15,8 @@ echo "CONFIG_DIR=$CONFIG_DIR"
 echo "DATA_DIR=$DATA_DIR"
 set -ex
 
+type ulimit > /dev/null && ulimit -n 10000 || true
+
 go install -tags dist \
    sourcegraph.com/sourcegraph/sourcegraph/cmd/server
 
