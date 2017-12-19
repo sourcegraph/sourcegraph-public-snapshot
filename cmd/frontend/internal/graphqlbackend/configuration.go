@@ -58,7 +58,7 @@ func idToConfigurationSubject(id graphql.ID) (sourcegraph.ConfigurationSubject, 
 		return sourcegraph.ConfigurationSubject{User: &userID}, err
 	case "Org":
 		orgID, err := unmarshalOrgID(id)
-		return sourcegraph.ConfigurationSubject{User: &orgID}, err
+		return sourcegraph.ConfigurationSubject{Org: &orgID}, err
 	default:
 		return sourcegraph.ConfigurationSubject{}, errors.New("bad configuration subject type")
 	}
