@@ -8,6 +8,9 @@
         display: inline-block;
         text-decoration: none;
         margin-left: 1rem;
+        &-user {
+            font-weight: bold;
+        }
     }
 
     &__border-link {
