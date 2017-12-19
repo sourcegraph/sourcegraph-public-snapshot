@@ -73,6 +73,9 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
+	if provider != sourcegraph.UserProviderNative && (password != "" || emailCode != "") {
+		return nil, errors.New("password and/or email verification code provided for non-native users")
+	}
 
 	createdAt := time.Now()
 	updatedAt := createdAt
@@ -358,6 +361,9 @@ func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (b
 }
 
 func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
+	if _, err := u.GetByID(ctx, id); err != nil {
+		return "", err
+	}
 	var b [40]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return "", err
