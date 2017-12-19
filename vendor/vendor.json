@@ -2917,6 +2917,11 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
+			"checksumSHA1": "aleBYOFgAPpgQ3c3HzjKfAAE9uo=",
+			"path": "regexp",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "tdG6SHGiaP32dzPT1dPFDazTs9g=",
 			"path": "sourcegraph.com/sourcegraph/gen-mocks",
 			"revision": "f796f89ae7a552c8c2ff5bf21c23f1cc78231820",
