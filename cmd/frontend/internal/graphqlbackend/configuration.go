@@ -145,7 +145,7 @@ func (s *configurationSubject) ID() graphql.ID {
 func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
 	case s.site != nil:
-		return s.site.LatestSettings(), nil
+		return s.site.LatestSettings()
 	case s.org != nil:
 		return s.org.LatestSettings(ctx)
 	case s.user != nil:

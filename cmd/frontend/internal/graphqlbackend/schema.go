@@ -851,7 +851,10 @@ type ThreadConnection {
 type Site implements ConfigurationSubject {
   # The site's ID.
   id: ID!
-  # The site's latest settings.
+  # The site's configuration. Only visible to site admins.
+  configuration: String!
+  # The site's latest site-wide settings (which are the lowest-precedence
+  # in the configuration cascade for a user).
   latestSettings: Settings
 }
 

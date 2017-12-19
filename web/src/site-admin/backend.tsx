@@ -115,3 +115,29 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
         })
     )
 }
+
+/**
+ * Fetches the site and its configuration.
+ *
+ * @return Observable that emits the site
+ */
+export function fetchSite(): Observable<GQL.ISite> {
+    return queryGraphQL(`query SiteConfiguration {
+        site {
+            id
+            configuration
+            latestSettings {
+                configuration {
+                    contents
+                }
+            }
+        }
+    }`).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.site) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.site
+        })
+    )
+}
