@@ -25,7 +25,7 @@ export class AllUsersPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminAllUsers')
 
-        this.subscriptions.add(fetchAllUsers().subscribe(users => this.setState({ users: users || undefined })))
+        this.subscriptions.add(fetchAllUsers().subscribe(users => this.setState({ users })))
     }
 
     public componentWillUnmount(): void {
@@ -58,11 +58,8 @@ export class AllUsersPage extends React.Component<Props, State> {
                                     )}
                                     {user.id && <li>ID: {user.id}</li>}
                                     {user.createdAt && <li>Created: {format(user.createdAt, 'YYYY-MM-DD')}</li>}
-                                    {user.orgs && user.orgs.length ? (
-                                        <li>Orgs: {user.orgs.map(org => org.name).join(', ')}</li>
-                                    ) : (
-                                        undefined
-                                    )}
+                                    {user.orgs &&
+                                        user.orgs.length && <li>Orgs: {user.orgs.map(org => org.name).join(', ')}</li>}
                                     {user.latestSettings && (
                                         <li>
                                             <SettingsInfo
@@ -71,11 +68,8 @@ export class AllUsersPage extends React.Component<Props, State> {
                                             />
                                         </li>
                                     )}
-                                    {user.tags && user.tags.length ? (
-                                        <li>Tags: {user.tags.map(tag => tag.name).join(', ')}</li>
-                                    ) : (
-                                        undefined
-                                    )}
+                                    {user.tags &&
+                                        user.tags.length && <li>Tags: {user.tags.map(tag => tag.name).join(', ')}</li>}
                                 </ul>
                             </li>
                         ))}

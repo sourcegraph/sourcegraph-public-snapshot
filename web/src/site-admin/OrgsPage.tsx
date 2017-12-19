@@ -25,7 +25,7 @@ export class OrgsPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminOrgs')
 
-        this.subscriptions.add(fetchAllOrgs().subscribe(orgs => this.setState({ orgs: orgs || undefined })))
+        this.subscriptions.add(fetchAllOrgs().subscribe(orgs => this.setState({ orgs })))
     }
 
     public componentWillUnmount(): void {
@@ -56,16 +56,15 @@ export class OrgsPage extends React.Component<Props, State> {
                                 <ul className="site-admin-detail-list__info">
                                     {org.id && <li>ID: {org.id}</li>}
                                     {org.createdAt && <li>Created: {format(org.createdAt, 'YYYY-MM-DD')}</li>}
-                                    {org.members && org.members.length ? (
-                                        <li>
-                                            Members:{' '}
-                                            <span title={org.members.map(m => m.user.username).join(', ')}>
-                                                {org.members.length} {pluralize('user', org.members.length)}
-                                            </span>
-                                        </li>
-                                    ) : (
-                                        undefined
-                                    )}
+                                    {org.members &&
+                                        org.members.length && (
+                                            <li>
+                                                Members:{' '}
+                                                <span title={org.members.map(m => m.user.username).join(', ')}>
+                                                    {org.members.length} {pluralize('user', org.members.length)}
+                                                </span>
+                                            </li>
+                                        )}
                                     {org.latestSettings && (
                                         <li>
                                             <SettingsInfo
@@ -74,11 +73,8 @@ export class OrgsPage extends React.Component<Props, State> {
                                             />
                                         </li>
                                     )}
-                                    {org.tags && org.tags.length ? (
-                                        <li>Tags: {org.tags.map(tag => tag.name).join(', ')}</li>
-                                    ) : (
-                                        undefined
-                                    )}
+                                    {org.tags &&
+                                        org.tags.length && <li>Tags: {org.tags.map(tag => tag.name).join(', ')}</li>}
                                 </ul>
                             </li>
                         ))}

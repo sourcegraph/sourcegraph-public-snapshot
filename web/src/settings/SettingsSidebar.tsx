@@ -115,7 +115,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             <ul>
                                 <li className="settings-sidebar__item">
                                     <NavLink
-                                        to="site-admin"
+                                        to="/site-admin"
                                         className="settings-sidebar__item-link"
                                         activeClassName="settings-sidebar__item--active"
                                     >

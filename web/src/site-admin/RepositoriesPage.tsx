@@ -25,7 +25,7 @@ export class RepositoriesPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminRepos')
 
-        this.subscriptions.add(fetchAllRepositories().subscribe(repos => this.setState({ repos: repos || undefined })))
+        this.subscriptions.add(fetchAllRepositories().subscribe(repos => this.setState({ repos })))
     }
 
     public componentWillUnmount(): void {
