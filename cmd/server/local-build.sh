@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 
-echo "Building monolith locally. This is for testing purposes only."
+echo "Building server locally. This is for testing purposes only."
 echo
 
 cd $(dirname "${BASH_SOURCE[0]}")/../..
-export GOBIN=$PWD/cmd/monolith/.bin
+export GOBIN=$PWD/cmd/server/.bin
 set -ex
 
 if [[ -z "${SKIP_PRE_BUILD-}" ]]; then
-	./cmd/monolith/pre-build.sh
+	./cmd/server/pre-build.sh
 fi
 
 
 # Keep in sync with build.sh
 go install -tags dist \
-   sourcegraph.com/sourcegraph/sourcegraph/cmd/monolith \
+   sourcegraph.com/sourcegraph/sourcegraph/cmd/server \
    sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend \
    sourcegraph.com/sourcegraph/sourcegraph/cmd/github-proxy \
    sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver \

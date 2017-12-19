@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"k8s.io/client-go/pkg/util/rand"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/monolith/internal/goreman"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 )
 
 //docker:install curl

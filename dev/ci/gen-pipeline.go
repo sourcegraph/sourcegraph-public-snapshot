@@ -245,7 +245,7 @@ func main() {
 			panic(err)
 		}
 		for _, cmd := range cmds {
-			if cmd.Name() == "xlang-java" || cmd.Name() == "monolith" {
+			if cmd.Name() == "xlang-java" || cmd.Name() == "server" {
 				continue // xlang-java currently does not build successfully on CI
 			}
 			addDockerImageStep(cmd.Name(), false)
@@ -256,8 +256,8 @@ func main() {
 			Cmd("./dev/ci/deploy-staging.sh"))
 		pipeline.AddWait()
 
-	case branch == "docker-images/monolith":
-		// Special case monolith to prevent a failing deploy to dogfood/prod
+	case branch == "docker-images/server":
+		// Special case server to prevent a failing deploy to dogfood/prod
 		addDockerImageStep(branch[14:], true)
 
 	case strings.HasPrefix(branch, "docker-images/"):

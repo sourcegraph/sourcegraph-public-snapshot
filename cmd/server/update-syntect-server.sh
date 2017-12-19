@@ -3,8 +3,8 @@
 set -ex
 
 # We upload syntect_server to gcloud with a content based hash. This will be
-# fetched by docker build for monolith. Name is hashed based so that docker
-# does the right thing when we update the version.
+# fetched by docker build for server. Name is hashed based so that docker does
+# the right thing when we update the version.
 
 # Fetch latest syntect_server
 docker pull sourcegraph/syntect_server
