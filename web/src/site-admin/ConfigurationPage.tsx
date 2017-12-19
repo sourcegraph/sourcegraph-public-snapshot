@@ -28,9 +28,7 @@ export class ConfigurationPage extends React.Component<Props> {
                 <p>
                     Configuration is specified as a string of JSON passed in the <code>SOURCEGRAPH_CONFIG</code>{' '}
                     environment variable. See{' '}
-                    <a href="https://about.sourcegraph.com/docs/server/config/">
-                        Sourcegraph configuration documentation
-                    </a>.
+                    <a href="https://about.sourcegraph.com/docs/server/">Sourcegraph configuration documentation</a>.
                 </p>
             </div>
         )

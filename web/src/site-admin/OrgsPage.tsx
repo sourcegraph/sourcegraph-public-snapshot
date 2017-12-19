@@ -39,7 +39,7 @@ export class OrgsPage extends React.Component<Props, State> {
                 <h2>Organizations</h2>
                 <p>
                     See{' '}
-                    <a href="https://about.sourcegraph.com/docs/server/config/tutorial#organizations">
+                    <a href="https://about.sourcegraph.com/docs/server/config/organizations">
                         Sourcegraph documentation
                     </a>{' '}
                     for information about configuring organizations.

@@ -56,12 +56,12 @@ export class OverviewPage extends React.Component<Props, State> {
                                 </Link>
                             </div>
                             <div className="site-admin-detail-list__info site-admin-overview-page__item-info">
-                                <a href="https://about.sourcegraph.com/docs/server/config/tutorial/#add-repositories">
-                                    <DocumentIcon className="icon-inline" /> Documentation: adding repositories
+                                <a href="https://about.sourcegraph.com/docs/server/">
+                                    <DocumentIcon className="icon-inline" /> Quickstart: add repositories to search
                                 </a>
                                 <br />
-                                <a href="https://about.sourcegraph.com/docs/server/config/tutorial/#add-repositories">
-                                    <DocumentIcon className="icon-inline" /> Documentation: syncing with code hosts
+                                <a href="https://about.sourcegraph.com/docs/server/config/repositories">
+                                    <DocumentIcon className="icon-inline" /> Documentation: repositories
                                 </a>
                             </div>
                         </li>
@@ -78,7 +78,7 @@ export class OverviewPage extends React.Component<Props, State> {
                                 </Link>
                             </div>
                             <div className="site-admin-detail-list__info site-admin-overview-page__item-info">
-                                <a href="https://about.sourcegraph.com/docs/server/config/tutorial#organizations">
+                                <a href="https://about.sourcegraph.com/docs/server/config/organizations">
                                     <DocumentIcon className="icon-inline" /> Documentation: organizations
                                 </a>
                             </div>
@@ -93,7 +93,7 @@ export class OverviewPage extends React.Component<Props, State> {
                                 </Link>
                             </div>
                             <div className="site-admin-detail-list__info site-admin-overview-page__item-info">
-                                <a href="https://about.sourcegraph.com/docs/server/config/tutorial#add-authentication">
+                                <a href="https://about.sourcegraph.com/docs/server/config/authentication">
                                     <DocumentIcon className="icon-inline" /> Documentation: users
                                 </a>
                             </div>
