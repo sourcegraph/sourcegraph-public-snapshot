@@ -83,3 +83,35 @@ func TestUsers_NativeAuth(t *testing.T) {
 		t.Fatal("old password still works")
 	}
 }
+
+func TestUsers_NativeAuthPasswordResetRateLimit(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	oldPasswordResetRateLimit := passwordResetRateLimit
+	defer func() {
+		passwordResetRateLimit = oldPasswordResetRateLimit
+	}()
+
+	passwordResetRateLimit = "24 hours"
+	usr, err := Users.Create(ctx, "native:foo@bar.com", "foo@bar.com", "foo", "foo", sourcegraph.UserProviderNative, nil, "right-password", "email-code")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Users.RenewPasswordResetCode(ctx, usr.ID); err != nil {
+		t.Fatalf("unexpected password reset error: %s", err)
+	}
+	if _, err := Users.RenewPasswordResetCode(ctx, usr.ID); err != ErrPasswordResetRateLimit {
+		t.Fatal("expected to hit rate limit")
+	}
+
+	passwordResetRateLimit = "0 hours"
+	if _, err := Users.RenewPasswordResetCode(ctx, usr.ID); err != nil {
+		t.Fatalf("unexpected password reset error: %s", err)
+	}
+	if _, err := Users.RenewPasswordResetCode(ctx, usr.ID); err != nil {
+		t.Fatalf("unexpected password reset error: %s", err)
+	}
+}

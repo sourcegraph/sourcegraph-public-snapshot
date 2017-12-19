@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+
 	"encoding/base64"
 
 	"github.com/mattbaird/gochimp"
@@ -217,7 +219,10 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetCode, err := store.Users.RenewPasswordResetCode(ctx, usr.ID)
-	if err != nil {
+	if err == localstore.ErrPasswordResetRateLimit {
+		httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
+		return
+	} else if err != nil {
 		httpLogAndError(w, "Could not reset password", http.StatusBadRequest, "err", err)
 		return
 	}
@@ -241,7 +246,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 	var params struct {
 		Email    string `json:"email"`
 		Code     string `json:"code"`
-		Password string `json:"password"`
+		Password string `json:"password"` // new password
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		httpLogAndError(w, "Password reset with code: could not decode request body", http.StatusBadGateway, "err", err)

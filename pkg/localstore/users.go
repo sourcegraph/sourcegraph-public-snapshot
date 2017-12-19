@@ -360,6 +360,11 @@ func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (b
 	return true, nil
 }
 
+var (
+	passwordResetRateLimit    = "1 minute"
+	ErrPasswordResetRateLimit = errors.New("password reset rate limit reached")
+)
+
 func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
 	if _, err := u.GetByID(ctx, id); err != nil {
 		return "", err
@@ -369,8 +374,16 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 		return "", err
 	}
 	code := base64.StdEncoding.EncodeToString(b[:])
-	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=$1, passwd_reset_time=now() WHERE id=$2", code, id); err != nil {
+	res, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=$1, passwd_reset_time=now() WHERE id=$2 AND (passwd_reset_time IS NULL OR passwd_reset_time + interval '"+passwordResetRateLimit+"' < now())", code, id)
+	if err != nil {
 		return "", err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return "", err
+	}
+	if affected == 0 {
+		return "", ErrPasswordResetRateLimit
 	}
 
 	return code, nil

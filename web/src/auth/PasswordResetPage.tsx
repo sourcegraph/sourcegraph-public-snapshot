@@ -138,6 +138,8 @@ class PasswordResetForm extends React.Component<{}, State> {
             .then(resp => {
                 if (resp.status === 200) {
                     this.setState({ didReset: true })
+                } else if (resp.status === 429) {
+                    this.setState({ error: 'Too many password reset requests. Try again in a few minutes.' })
                 } else {
                     this.setState({ error: 'Could not reset password: Status code ' + resp.status })
                 }
