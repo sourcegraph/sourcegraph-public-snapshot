@@ -16,6 +16,8 @@ type Config struct {
 	AppID  string `json:"appID" legacyenv:"TRACKING_APP_ID" description:"Application ID to attribute front end user logs to. Providing this value will send usage data back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data)."`
 	AppURL string `json:"appURL" legacyenv:"SRC_APP_URL" description:"Publicly accessible URL to web app (e.g., what you type into your browser)."`
 
+	DisableTelemetry bool `json:"disableTelemetry" legacyenv:"DISABLE_TELEMETRY" description:"Prevent usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data)."`
+
 	TLSCert string `json:"tlsCert" legacyenv:"TLS_CERT" description:"TLS certificate for the web app."`
 	TLSKey  string `json:"tlsKey" legacyenv:"TLS_KEY" description:"TLS key for the web app."`
 
