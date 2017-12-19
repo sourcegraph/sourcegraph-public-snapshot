@@ -8,6 +8,11 @@ echo
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 export GOBIN=$PWD/cmd/server/.bin
 export PATH=$GOBIN:$PATH
+
+export CONFIG_DIR=${CONFIG_DIR:-/tmp/server/etc}
+export DATA_DIR=${DATA_DIR:-/tmp/server/data}
+echo "CONFIG_DIR=$CONFIG_DIR"
+echo "DATA_DIR=$DATA_DIR"
 set -ex
 
 go install -tags dist \
