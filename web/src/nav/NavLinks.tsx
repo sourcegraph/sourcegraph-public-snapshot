@@ -44,15 +44,15 @@ export class NavLinks extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="nav-links">
-                {this.state.user && (
-                    <Link to="/search/queries" className="nav-links__link">
-                        Queries
-                    </Link>
-                )}
                 {showDotComMarketing && (
                     <a href="https://about.sourcegraph.com" className="nav-links__border-link">
                         Install Sourcegraph Server
                     </a>
+                )}
+                {this.state.user && (
+                    <Link to="/search/queries" className="nav-links__link">
+                        Queries
+                    </Link>
                 )}
                 {canListAllRepositories && (
                     <Link to="/browse" className="nav-links__link">
