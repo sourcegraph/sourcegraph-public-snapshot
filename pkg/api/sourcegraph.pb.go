@@ -386,6 +386,11 @@ const (
 	InviteError
 )
 
+const (
+	// UserProviderNative is the identity provider identifier that indicates a user identity came from native auth.
+	UserProviderNative = "native"
+)
+
 // User represents a registered user.
 type User struct {
 	ID          int32     `json:"ID,omitempty"`
@@ -397,6 +402,7 @@ type User struct {
 	AvatarURL   *string   `json:"avatarURL,omitempty"`
 	CreatedAt   time.Time `json:"createdAt,omitempty"`
 	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
+	Verified    bool      `json:"verified,omitempty"`
 }
 
 // OrgRepo represents a repo that exists on a native client's filesystem, but

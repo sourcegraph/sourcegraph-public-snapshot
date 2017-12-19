@@ -13,7 +13,7 @@ func TestUserActivity_LogPageView(t *testing.T) {
 	ctx := testContext()
 
 	// Right here call:
-	user, err := Users.Create(ctx, "auth0idtest", "test@test.com", "test-user", "test-user", "test provider", nil)
+	user, err := Users.Create(ctx, "auth0idtest", "test@test.com", "test-user", "test-user", "test provider", nil, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestUserActivity_LogSearchQuery(t *testing.T) {
 	}
 	ctx := testContext()
 
-	user, err := Users.Create(ctx, "auth0idtest", "test@test.com", "test-user", "test-user", "test provider", nil)
+	user, err := Users.Create(ctx, "auth0idtest", "test@test.com", "test-user", "test-user", "test provider", nil, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}

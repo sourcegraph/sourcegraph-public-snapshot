@@ -174,6 +174,15 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        if (window.context.useAuth0) {
+            // Legacy Auth0 path
+            this.handleSubmitAuth0(event)
+        } else {
+            this.handleSubmitNative(event)
+        }
+    }
+
+    private handleSubmitAuth0(event: React.FormEvent<HTMLFormElement>): void {
         const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
         const searchParams = new URLSearchParams(this.props.location.search)
         const returnTo = searchParams.get('returnTo')
@@ -248,6 +257,107 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                             },
                             authCallback
                         )
+                    })
+                )
+                eventLogger.log('InitiateSignUp', {
+                    signup: {
+                        user_info: {
+                            signup_email: this.state.email,
+                            signup_display_name: this.state.displayName,
+                            signup_username: this.state.username,
+                        },
+                    },
+                })
+        }
+    }
+
+    private handleSubmitNative(event: React.FormEvent<HTMLFormElement>): void {
+        const searchParams = new URLSearchParams(this.props.location.search)
+        const returnTo = searchParams.get('returnTo')
+
+        event.preventDefault()
+        if (this.state.loading) {
+            return
+        }
+
+        this.setState({ loading: true })
+        switch (this.props.mode) {
+            case 'signin':
+                eventLogger.log('InitiateSignIn')
+                fetch('/-/sign-in-2', {
+                    credentials: 'same-origin',
+                    method: 'POST',
+                    headers: {
+                        ...window.context.xhrHeaders,
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: this.state.email,
+                        password: this.state.password,
+                    }),
+                })
+                    .then(resp => {
+                        if (resp.status === 200) {
+                            if (returnTo) {
+                                window.location.replace(returnTo)
+                            } else {
+                                window.location.replace('/search')
+                            }
+                        } else if (resp.status === 401) {
+                            throw new Error('User or password was incorrect')
+                        } else {
+                            throw new Error('Unknown Error')
+                        }
+                    })
+                    .catch(err => {
+                        console.error('auth error: ', err)
+                        this.setState({ loading: false, errorDescription: (err && err.message) || 'Unknown Error' })
+                    })
+                break
+            case 'signup':
+                this.subscriptions.add(
+                    isUsernameAvailable(this.state.username).subscribe(availability => {
+                        if (!availability) {
+                            this.setState({
+                                errorDescription: 'The username you selected is already taken, please try again.',
+                                loading: false,
+                            })
+                            return
+                        } else {
+                            fetch('/-/sign-up', {
+                                credentials: 'same-origin',
+                                method: 'POST',
+                                headers: {
+                                    ...window.context.xhrHeaders,
+                                    Accept: 'application/json',
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    email: this.state.email,
+                                    password: this.state.password,
+                                    username: this.state.username,
+                                    displayName: this.state.displayName,
+                                }),
+                            }).then(
+                                resp => {
+                                    if (resp.status === 200) {
+                                        window.location.reload()
+                                    } else {
+                                        this.setState({
+                                            errorDescription: 'Could not create user',
+                                            loading: false,
+                                        })
+                                    }
+                                },
+                                err => {
+                                    this.setState({
+                                        errorDescription: 'Could not create user',
+                                        loading: false,
+                                    })
+                                }
+                            )
+                        }
                     })
                 )
                 eventLogger.log('InitiateSignUp', {

@@ -19,9 +19,16 @@ const (
 
 	Logout = "logout"
 
+	// DEPRECATED
 	SignIn      = "sign-in"
-	SignOut     = "sign-out"
 	Auth0Signin = "auth0.sign-in"
+
+	SignIn2           = "sign-in2"
+	SignOut           = "sign-out"
+	SignUp            = "sign-up"
+	VerifyEmail       = "verify-email"
+	ResetPasswordInit = "reset-password.init"
+	ResetPassword     = "reset-password"
 
 	GitHubOAuth2Initiate = "github-oauth2.initiate" // DEPRECATED
 	GitHubOAuth2Receive  = "github-oauth2.receive"  // DEPRECATED
@@ -66,9 +73,15 @@ func New() *Router {
 
 	base.Path("/-/logout").Methods("GET").Name(Logout)
 
-	base.Path("/-/sign-in").Methods("GET").Name(SignIn)
+	base.Path("/-/sign-in").Methods("GET").Name(SignIn)                    // DEPRECATED
+	base.Path("/-/auth0/sign-in").Methods("GET", "POST").Name(Auth0Signin) // DEPRECATED
+
+	base.Path("/-/sign-up").Methods("POST").Name(SignUp)
+	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)
+	base.Path("/-/sign-in-2").Methods("POST").Name(SignIn2)
 	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
-	base.Path("/-/auth0/sign-in").Methods("GET", "POST").Name(Auth0Signin)
+	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
+	base.Path("/-/reset-password").Methods("POST").Name(ResetPassword)
 
 	base.Path("/-/github-oauth/initiate").Methods("POST").Name(GitHubOAuth2Initiate)      // DEPRECATED
 	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive) // DEPRECATED

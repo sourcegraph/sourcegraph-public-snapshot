@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
@@ -37,6 +38,8 @@ var TrackingAppID = conf.Get().AppID
 
 var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
 var githubConf = conf.Get().GitHub
+
+var useAuth0 = env.Get("USE_AUTH0", "true", "Whether to use Auth0 for native auth")
 
 // githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs.
 // This can be used for the purposes of generating external GitHub enterprise links.
@@ -88,6 +91,7 @@ type JSContext struct {
 	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
 	ShowOnboarding       bool                       `json:"showOnboarding"`
 	EmailEnabled         bool                       `json:"emailEnabled"`
+	UseAuth0             bool                       `json:"useAuth0"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -148,6 +152,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		showOnboarding = deploymentConfiguration.LastUpdated == ""
 	}
 
+	useAuth0Val, _ := strconv.ParseBool(useAuth0)
+
 	return JSContext{
 		AppURL:               globals.AppURL.String(),
 		XHRHeaders:           headers,
@@ -173,6 +179,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		LicenseStatus:        licenseStatus,
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         notif.EmailIsConfigured(),
+		UseAuth0:             useAuth0Val,
 	}
 }
 

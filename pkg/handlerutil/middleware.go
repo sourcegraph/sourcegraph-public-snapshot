@@ -32,12 +32,8 @@ func NewBasicAuthHandlerWithPassword(handler http.Handler, expectedPassword stri
 
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided
 // handler. It additionally adds support for cross-site request forgery. To make
-// your forms compliant you will have to include a hidden input which contains
-// the CSRFToken that is made available to you in the template via tmpl.Common.
-//
-// Example:
-// 	<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-//
+// your forms compliant you will have to submit the token via the X-Csrf-Token
+// header, which is made available in the client-side context.
 func NewHandlerWithCSRFProtection(handler http.Handler, secure bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := csrf.Protect(

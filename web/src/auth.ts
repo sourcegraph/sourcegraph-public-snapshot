@@ -60,6 +60,7 @@ export function fetchCurrentUser(): Observable<never> {
                 email
                 username
                 displayName
+                verified
                 latestSettings {
                     id
                     configuration {

@@ -130,7 +130,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                         </div>
                     </div>
                     <div className="form-group">
-                        <label>Email</label>
+                        <label>Email {this.state.user && this.state.user.verified ? '✔' : '(unverified)'}</label>
                         <input
                             readOnly={true}
                             type="email"

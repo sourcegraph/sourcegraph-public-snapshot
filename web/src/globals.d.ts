@@ -105,4 +105,9 @@ interface SourcegraphContext {
      * Emails support enabled
      */
     emailEnabled: boolean
+
+    /**
+     * Use Auth0 authentication
+     */
+    useAuth0: boolean
 }

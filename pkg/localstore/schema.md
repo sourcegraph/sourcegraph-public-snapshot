@@ -330,19 +330,23 @@ Foreign-key constraints:
 
 # Table "public.users"
 ```
-    Column    |           Type           |                     Modifiers                      
---------------+--------------------------+----------------------------------------------------
- id           | integer                  | not null default nextval('users_id_seq'::regclass)
- auth_id      | text                     | not null
- email        | citext                   | not null
- username     | citext                   | not null
- display_name | text                     | not null
- avatar_url   | text                     | 
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- deleted_at   | timestamp with time zone | 
- provider     | text                     | not null default ''::text
- invite_quota | integer                  | not null default 15
+      Column       |           Type           |                     Modifiers                      
+-------------------+--------------------------+----------------------------------------------------
+ id                | integer                  | not null default nextval('users_id_seq'::regclass)
+ auth_id           | text                     | not null
+ email             | citext                   | not null
+ username          | citext                   | not null
+ display_name      | text                     | not null
+ avatar_url        | text                     | 
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+ deleted_at        | timestamp with time zone | 
+ provider          | text                     | not null default ''::text
+ invite_quota      | integer                  | not null default 15
+ passwd            | text                     | 
+ email_code        | text                     | 
+ passwd_reset_code | text                     | 
+ passwd_reset_time | timestamp with time zone | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_auth_id_key" UNIQUE CONSTRAINT, btree (auth_id)

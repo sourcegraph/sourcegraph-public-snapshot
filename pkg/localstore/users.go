@@ -2,7 +2,9 @@ package localstore
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"regexp"
@@ -10,6 +12,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"golang.org/x/crypto/bcrypt"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/lib/pq"
@@ -57,7 +60,23 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
-func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string) (newUser *sourcegraph.User, err error) {
+// Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
+// the user:
+// - If the provider is "", the user was authenticated the native-auth UI using Auth0
+// - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
+// - If the provider is something else, the user was authenticated by an SSO provider
+//
+// Native-auth users must also specify a password and email verification code upon creation. When the user's email is
+// verified, the email verification code is set to null in the DB. All other users (including Auth0
+// Auth0 users that were authenticated using the native-auth UI) have a null password and email verification code.
+func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
+	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
+		return nil, errors.New("no password or email code provided for new native-auth user")
+	}
+	if provider != sourcegraph.UserProviderNative && (password != "" || emailCode != "") {
+		return nil, errors.New("password and/or email verification code provided for non-native users")
+	}
+
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
@@ -65,6 +84,20 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 	if avatarURL != nil {
 		avatarURLValue = sql.NullString{String: *avatarURL, Valid: true}
 	}
+
+	var passwd sql.NullString
+	if password == "" {
+		passwd = sql.NullString{Valid: false}
+	} else {
+		// Compute hash of password
+		passwd, err = hashPassword(password)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	dbEmailCode := sql.NullString{String: emailCode}
+	dbEmailCode.Valid = emailCode == ""
 
 	// Wrap in transaction so we can execute hooks below atomically.
 	tx, err := globalDB.BeginTx(ctx, nil)
@@ -84,8 +117,8 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt).Scan(&id)
+		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -273,7 +306,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.email_code is null FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +316,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified)
 		if err != nil {
 			return nil, err
 		}
@@ -297,4 +330,97 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	}
 
 	return users, nil
+}
+
+func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
+	var passwd sql.NullString
+	if err := globalDB.QueryRowContext(ctx, "SELECT passwd FROM users WHERE id=$1", id).Scan(&passwd); err != nil {
+		return false, err
+	}
+	if !passwd.Valid {
+		return false, nil
+	}
+	return bcrypt.CompareHashAndPassword([]byte(passwd.String), []byte(password)) == nil, nil
+}
+
+func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
+	var dbCode sql.NullString
+	if err := globalDB.QueryRowContext(ctx, "SELECT email_code FROM users WHERE id=$1", id).Scan(&dbCode); err != nil {
+		return false, err
+	}
+	if !dbCode.Valid {
+		return false, errors.New("email already verified")
+	}
+	if dbCode.String != userCode {
+		return false, nil
+	}
+	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET email_code=null WHERE id=$1", id); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+var (
+	passwordResetRateLimit    = "1 minute"
+	ErrPasswordResetRateLimit = errors.New("password reset rate limit reached")
+)
+
+func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
+	if _, err := u.GetByID(ctx, id); err != nil {
+		return "", err
+	}
+	var b [40]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", err
+	}
+	code := base64.StdEncoding.EncodeToString(b[:])
+	res, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=$1, passwd_reset_time=now() WHERE id=$2 AND (passwd_reset_time IS NULL OR passwd_reset_time + interval '"+passwordResetRateLimit+"' < now())", code, id)
+	if err != nil {
+		return "", err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return "", err
+	}
+	if affected == 0 {
+		return "", ErrPasswordResetRateLimit
+	}
+
+	return code, nil
+}
+
+func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
+	// 🚨 SECURITY: no empty passwords
+	if newPassword == "" {
+		return false, errors.New("new password was empty")
+	}
+	// 🚨 SECURITY: check resetCode against what's in the DB and that it's not expired
+	r := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
+	var ct int
+	if err := r.Scan(&ct); err != nil {
+		return false, err
+	}
+	if ct > 1 {
+		return false, fmt.Errorf("illegal state: found more than one user matching ID %d", id)
+	}
+	if ct == 0 {
+		return false, nil
+	}
+	passwd, err := hashPassword(newPassword)
+	if err != nil {
+		return false, err
+	}
+	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused
+	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func hashPassword(password string) (sql.NullString, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return sql.NullString{}, err
+	}
+	return sql.NullString{Valid: true, String: string(hash)}, nil
 }

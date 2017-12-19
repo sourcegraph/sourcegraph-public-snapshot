@@ -88,6 +88,8 @@
 // ../../../migrations/1513188842_add_app_config_table.up.sql
 // ../../../migrations/1513188843_rename_threads_file.down.sql
 // ../../../migrations/1513188843_rename_threads_file.up.sql
+// ../../../migrations/1513578663_user-passwords.down.sql
+// ../../../migrations/1513578663_user-passwords.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1915,6 +1917,46 @@ func _1513188843_rename_threads_fileUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1513578663_userPasswordsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x48\x2c\x2e\x2e\x4f\x89\x2f\x4a\x2d\x4e\x2d\x89\x2f\xc9\xcc\x4d\x25\x49\x43\x72\x7e\x0a\x41\x0d\xa9\xb9\x89\x99\x39\x44\xa9\x84\x18\x6d\xcd\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x4a\xaa\x77\xa9\xc1\x00\x00\x00")
+
+func _1513578663_userPasswordsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513578663_userPasswordsDownSql,
+		"1513578663_user-passwords.down.sql",
+	)
+}
+
+func _1513578663_userPasswordsDownSql() (*asset, error) {
+	bytes, err := _1513578663_userPasswordsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513578663_user-passwords.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1513578663_userPasswordsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x48\x2c\x2e\x2e\x4f\x51\x28\x49\xad\x28\x21\xa0\x32\x35\x37\x31\x33\x27\x3e\x39\x3f\x25\x95\x18\xd5\x10\x73\xe3\x8b\x52\x8b\x53\x4b\xc8\xd3\x54\x92\x99\x9b\xaa\x00\x22\x8a\x4b\x12\x73\x0b\x14\xca\x33\x4b\x32\xc0\x5c\x85\xaa\xfc\xbc\x54\x6b\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xa8\x20\x32\x0e\xe5\x00\x00\x00")
+
+func _1513578663_userPasswordsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513578663_userPasswordsUpSql,
+		"1513578663_user-passwords.up.sql",
+	)
+}
+
+func _1513578663_userPasswordsUpSql() (*asset, error) {
+	bytes, err := _1513578663_userPasswordsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513578663_user-passwords.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2055,6 +2097,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1513188842_add_app_config_table.up.sql":                      _1513188842_add_app_config_tableUpSql,
 	"1513188843_rename_threads_file.down.sql":                     _1513188843_rename_threads_fileDownSql,
 	"1513188843_rename_threads_file.up.sql":                       _1513188843_rename_threads_fileUpSql,
+	"1513578663_user-passwords.down.sql":                          _1513578663_userPasswordsDownSql,
+	"1513578663_user-passwords.up.sql":                            _1513578663_userPasswordsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2186,6 +2230,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1513188842_add_app_config_table.up.sql":                      &bintree{_1513188842_add_app_config_tableUpSql, map[string]*bintree{}},
 	"1513188843_rename_threads_file.down.sql":                     &bintree{_1513188843_rename_threads_fileDownSql, map[string]*bintree{}},
 	"1513188843_rename_threads_file.up.sql":                       &bintree{_1513188843_rename_threads_fileUpSql, map[string]*bintree{}},
+	"1513578663_user-passwords.down.sql":                          &bintree{_1513578663_userPasswordsDownSql, map[string]*bintree{}},
+	"1513578663_user-passwords.up.sql":                            &bintree{_1513578663_userPasswordsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
