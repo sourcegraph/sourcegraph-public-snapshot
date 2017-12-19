@@ -17,6 +17,10 @@ Before cutting a new release, please:
 
 
 ## Unreleased
+
+### Added
+- Native authentication: you can now sign up without an SSO provider or Auth0.
+
 ### Fixed
 - Many performance improvements to search.
 
