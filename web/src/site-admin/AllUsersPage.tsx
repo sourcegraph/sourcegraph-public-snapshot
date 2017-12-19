@@ -59,7 +59,9 @@ export class AllUsersPage extends React.Component<Props, State> {
                                     <li>ID: {user.id}</li>
                                     {user.createdAt && <li>Created: {format(user.createdAt, 'YYYY-MM-DD')}</li>}
                                     {user.orgs &&
-                                        user.orgs.length && <li>Orgs: {user.orgs.map(org => org.name).join(', ')}</li>}
+                                        user.orgs.length > 0 && (
+                                            <li>Orgs: {user.orgs.map(org => org.name).join(', ')}</li>
+                                        )}
                                     {user.latestSettings && (
                                         <li>
                                             <SettingsInfo
@@ -69,7 +71,9 @@ export class AllUsersPage extends React.Component<Props, State> {
                                         </li>
                                     )}
                                     {user.tags &&
-                                        user.tags.length && <li>Tags: {user.tags.map(tag => tag.name).join(', ')}</li>}
+                                        user.tags.length > 0 && (
+                                            <li>Tags: {user.tags.map(tag => tag.name).join(', ')}</li>
+                                        )}
                                 </ul>
                             </li>
                         ))}

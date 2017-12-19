@@ -57,7 +57,7 @@ export class OrgsPage extends React.Component<Props, State> {
                                     {org.id && <li>ID: {org.id}</li>}
                                     {org.createdAt && <li>Created: {format(org.createdAt, 'YYYY-MM-DD')}</li>}
                                     {org.members &&
-                                        org.members.length && (
+                                        org.members.length > 0 && (
                                             <li>
                                                 Members:{' '}
                                                 <span title={org.members.map(m => m.user.username).join(', ')}>
@@ -74,7 +74,9 @@ export class OrgsPage extends React.Component<Props, State> {
                                         </li>
                                     )}
                                     {org.tags &&
-                                        org.tags.length && <li>Tags: {org.tags.map(tag => tag.name).join(', ')}</li>}
+                                        org.tags.length > 0 && (
+                                            <li>Tags: {org.tags.map(tag => tag.name).join(', ')}</li>
+                                        )}
                                 </ul>
                             </li>
                         ))}
