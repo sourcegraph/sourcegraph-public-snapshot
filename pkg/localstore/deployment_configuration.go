@@ -2,19 +2,18 @@ package localstore
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type deploymentConfiguration struct{}
 
-var isDisabled = env.Get("DISABLE_TELEMETRY", "false", "disable telemetry")
+var telemetryDisabled = conf.Get().DisableTelemetry
 
 func (o *deploymentConfiguration) Get(ctx context.Context) (*sourcegraph.DeploymentConfiguration, error) {
 	configuration, err := o.getConfiguration(ctx)
@@ -35,10 +34,6 @@ func (o *deploymentConfiguration) getConfiguration(ctx context.Context) (*source
 		&configuration.TelemetryEnabled,
 		&configuration.LastUpdated,
 	)
-	if err != nil {
-		return nil, err
-	}
-	telemetryDisabled, err := strconv.ParseBool(isDisabled)
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +59,6 @@ func (o *deploymentConfiguration) tryInsertNew(ctx context.Context) error {
 		return err
 	}
 	var lastUpdated = ""
-	telemetryDisabled, err := strconv.ParseBool(isDisabled)
-	if err != nil {
-		return err
-	}
 	if telemetryDisabled {
 		lastUpdated = time.Now().String()
 	}
