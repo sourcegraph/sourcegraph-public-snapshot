@@ -3,10 +3,14 @@ import {
     SymbolLocationInformation,
     WorkspaceReferenceParams,
 } from 'javascript-typescript-langserver/lib/request-type'
+import { Observable } from 'rxjs/Observable'
+import { ajax } from 'rxjs/observable/dom/ajax'
+import { ErrorObservable } from 'rxjs/observable/ErrorObservable'
+import { map } from 'rxjs/operators/map'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
-import { memoizeAsync } from '../util/memoize'
+import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 
 interface LSPRequest {
@@ -75,18 +79,19 @@ const isSupported = (path: string): boolean => {
  * @param path File path for determining the mode
  * @return The result of the method call
  */
-const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Promise<any> => {
+const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Observable<any> => {
     if (!isSupported(path)) {
-        return Promise.reject(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
+        return ErrorObservable.create(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }
-    return fetch(`/.api/xlang/${req.method}`, {
+
+    return ajax({
         method: 'POST',
-        body: JSON.stringify(wrapLSPRequest(req, ctx, path)),
+        url: `/.api/xlang/${req.method}`,
         headers: getHeaders(),
-        credentials: 'same-origin',
-    })
-        .then(response => response.json())
-        .then(results => {
+        body: JSON.stringify(wrapLSPRequest(req, ctx, path)),
+    }).pipe(
+        map(({ response }) => response),
+        map(results => {
             for (const result of results) {
                 if (result && result.error) {
                     if (result.error.code === EMODENOTFOUND) {
@@ -95,12 +100,14 @@ const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Promi
                     throw Object.assign(new Error(result.error.message), result.error)
                 }
             }
+
             return results[1].result
         })
+    )
 }
 
-export const fetchHover = memoizeAsync(
-    (pos: AbsoluteRepoFilePosition): Promise<Hover> =>
+export const fetchHover = memoizeObservable(
+    (pos: AbsoluteRepoFilePosition): Observable<Hover> =>
         sendLSPRequest(
             {
                 method: 'textDocument/hover',
@@ -120,8 +127,8 @@ export const fetchHover = memoizeAsync(
     makeRepoURI
 )
 
-export const fetchDefinition = memoizeAsync(
-    (options: AbsoluteRepoFilePosition): Promise<Definition> =>
+export const fetchDefinition = memoizeObservable(
+    (options: AbsoluteRepoFilePosition): Observable<Definition> =>
         sendLSPRequest(
             {
                 method: 'textDocument/definition',
@@ -141,27 +148,29 @@ export const fetchDefinition = memoizeAsync(
     makeRepoURI
 )
 
-export function fetchJumpURL(options: AbsoluteRepoFilePosition): Promise<string | null> {
-    return fetchDefinition(options).then(def => {
-        const defArray = Array.isArray(def) ? def : [def]
-        def = defArray[0]
-        if (!def) {
-            return null
-        }
+export function fetchJumpURL(options: AbsoluteRepoFilePosition): Observable<string | null> {
+    return fetchDefinition(options).pipe(
+        map(def => {
+            const defArray = Array.isArray(def) ? def : [def]
+            def = defArray[0]
+            if (!def) {
+                return null
+            }
 
-        const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
-        uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
-        if (uri.repoPath === options.repoPath && uri.commitID === options.commitID) {
-            // Use pretty rev from the current context for same-repo J2D.
-            uri.rev = options.rev
-            return toPrettyBlobURL(uri)
-        }
-        return toAbsoluteBlobURL(uri)
-    })
+            const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
+            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            if (uri.repoPath === options.repoPath && uri.commitID === options.commitID) {
+                // Use pretty rev from the current context for same-repo J2D.
+                uri.rev = options.rev
+                return toPrettyBlobURL(uri)
+            }
+            return toAbsoluteBlobURL(uri)
+        })
+    )
 }
 
-export const fetchXdefinition = memoizeAsync(
-    (options: AbsoluteRepoFilePosition): Promise<SymbolLocationInformation | undefined> =>
+export const fetchXdefinition = memoizeObservable(
+    (options: AbsoluteRepoFilePosition): Observable<SymbolLocationInformation | undefined> =>
         sendLSPRequest(
             {
                 method: 'textDocument/xdefinition',
@@ -177,12 +186,12 @@ export const fetchXdefinition = memoizeAsync(
             },
             options,
             options.filePath
-        ).then((result: SymbolLocationInformation[]) => result[0]),
+        ).pipe(map((result: SymbolLocationInformation[]) => result[0])),
     makeRepoURI
 )
 
-export const fetchReferences = memoizeAsync(
-    (options: AbsoluteRepoFilePosition): Promise<Location[]> =>
+export const fetchReferences = memoizeObservable(
+    (options: AbsoluteRepoFilePosition): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'textDocument/references',
@@ -213,8 +222,8 @@ interface XReferenceOptions extends WorkspaceReferenceParams, AbsoluteRepoFile {
     limit: number
 }
 
-export const fetchXreferences = memoizeAsync(
-    (options: XReferenceOptions): Promise<Location[]> =>
+export const fetchXreferences = memoizeObservable(
+    (options: XReferenceOptions): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'workspace/xreferences',
@@ -226,6 +235,6 @@ export const fetchXreferences = memoizeAsync(
             },
             { repoPath: options.repoPath, commitID: options.commitID },
             options.filePath
-        ).then((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference)),
+        ).pipe(map((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference))),
     options => makeRepoURI(options) + '___' + options.query + '___' + options.limit
 )
