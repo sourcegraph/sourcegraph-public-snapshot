@@ -116,6 +116,11 @@ class TelligentWrapper {
                 webPage: true,
             },
         })
+
+        // If on-prem, record Sourcegraph Server version
+        if (window.context.onPrem) {
+            this.telligent('addStaticMetadata', 'sgVersion', window.context.version, 'header')
+        }
     }
 
     private inspectTelligentCookie(): string[] | null {
