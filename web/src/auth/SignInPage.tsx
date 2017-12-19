@@ -175,6 +175,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         if (window.context.useAuth0) {
+            // Legacy Auth0 path
             this.handleSubmitAuth0(event)
         } else {
             this.handleSubmitNative(event)

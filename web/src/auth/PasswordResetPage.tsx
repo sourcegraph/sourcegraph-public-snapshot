@@ -34,6 +34,8 @@ class PasswordResetForm extends React.Component<{}, State> {
         const code = searchParams.get('code')
         const email = searchParams.get('email')
         if (code && email) {
+            // If `code` and `email` are provided in the URL, then display a form that reset a user's password
+            // on submission if the code matches the email.
             return (
                 <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPassword}>
                     {this.state.error !== '' && <p className="password-reset-page__error">{this.state.error}</p>}
@@ -57,6 +59,8 @@ class PasswordResetForm extends React.Component<{}, State> {
             )
         }
 
+        // If `code` and `email` aren't provided, assume the user has not initiated the password reset
+        // flow and display a form for the user to enter their email to receive a password reset email.
         if (this.state.didReset) {
             return <p className="password-reset-page__reset-confirm">Password reset email sent.</p>
         }
@@ -92,6 +96,7 @@ class PasswordResetForm extends React.Component<{}, State> {
 
     private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>) => {
         if (window.context.useAuth0) {
+            // Legacy Auth0 path
             this.handleSubmitResetPasswordInitAuth0(e)
         } else {
             this.handleSubmitResetPasswordInitNative(e)
