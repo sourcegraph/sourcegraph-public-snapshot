@@ -262,6 +262,8 @@ type Query {
   # List all organizations.
   orgs: OrgConnection!
   updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
+  # The current site.
+  site: Site!
 }
 
 type Search {
@@ -840,6 +842,17 @@ type OrgRepo {
 type ThreadConnection {
   nodes: [Thread!]!
   totalCount: Int!
+}
+
+# A site is an installation of Sourcegraph that consists of one or more
+# servers that share the same configuration and database.
+#
+# The site is a singleton; the API only ever returns the single global site.
+type Site implements ConfigurationSubject {
+  # The site's ID.
+  id: ID!
+  # The site's latest settings.
+  latestSettings: Settings
 }
 
 # ConfigurationSubject is something that can have configuration.

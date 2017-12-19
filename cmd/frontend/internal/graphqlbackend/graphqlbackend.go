@@ -102,6 +102,11 @@ func (r *nodeResolver) ToCommit() (*commitResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToSite() (*siteResolver, bool) {
+	n, ok := r.node.(*siteResolver)
+	return n, ok
+}
+
 type schemaResolver struct{}
 
 // DEPRECATED
@@ -129,6 +134,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return commitByID(ctx, id)
 	case "SavedQuery":
 		return savedQueryByID(ctx, id)
+	case "Site":
+		return siteByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
