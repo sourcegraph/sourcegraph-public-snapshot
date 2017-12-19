@@ -377,9 +377,11 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 }
 
 func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
+	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
 	}
+	// 🚨 SECURITY: check resetCode against what's in the DB and that it's not expired
 	r := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
 	var ct int
 	if err := r.Scan(&ct); err != nil {
@@ -395,6 +397,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 	if err != nil {
 		return false, err
 	}
+	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused
 	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
 	}

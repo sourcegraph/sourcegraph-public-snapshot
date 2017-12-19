@@ -124,6 +124,7 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
+	// 🚨 SECURITY: check password
 	correct, err := store.Users.IsPassword(ctx, usr.ID, creds.Password)
 	if err != nil {
 		httpLogAndError(w, "Error checking password", http.StatusInternalServerError)
@@ -164,6 +165,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
 		return
 	}
+	// 🚨 SECURITY: require correct authed user to verify email
 	usr, err := store.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
@@ -220,11 +222,11 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resetLink := fmt.Sprintf("%s/password-reset?email=%s&code=%s", globals.AppURL.String(), url.QueryEscape(creds.Email), url.QueryEscape(resetCode))
+	resetLink := fmt.Sprintf("%s/password-reset?email=%s&code=%s", globals.AppURL.String(), url.QueryEscape(usr.Email), url.QueryEscape(resetCode))
 	notif.SendMandrillTemplate(&notif.EmailConfig{
 		Template:  "forgot-password",
 		FromEmail: "noreply@sourcegraph.com",
-		ToEmail:   creds.Email,
+		ToEmail:   usr.Email,
 		Subject:   "Reset your Sourcegraph Server password",
 	}, []gochimp.Var{}, []gochimp.Var{
 		{Name: "SUBJECT", Content: "Reset password"},
@@ -236,19 +238,20 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 // serveResetPassword resets a native-auth password if the correct code is provided
 func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var emailAndCode struct {
+	var params struct {
 		Email    string `json:"email"`
 		Code     string `json:"code"`
 		Password string `json:"password"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&emailAndCode); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		httpLogAndError(w, "Password reset with code: could not decode request body", http.StatusBadGateway, "err", err)
 		return
 	}
 
-	usr, err := store.Users.GetByEmail(ctx, emailAndCode.Email)
+	// 🚨 SECURITY: require correct authed user to verify email
+	usr, err := store.Users.GetByEmail(ctx, params.Email)
 	if err != nil {
-		httpLogAndError(w, fmt.Sprintf("User with email %s not found", emailAndCode.Email), http.StatusNotFound)
+		httpLogAndError(w, fmt.Sprintf("User with email %s not found", params.Email), http.StatusNotFound)
 		return
 	}
 	if usr.Provider != sourcegraph.UserProviderNative {
@@ -256,7 +259,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := store.Users.SetPassword(ctx, usr.ID, emailAndCode.Code, emailAndCode.Password)
+	success, err := store.Users.SetPassword(ctx, usr.ID, params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return
