@@ -2,7 +2,9 @@ package localstore
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"regexp"
@@ -58,7 +60,20 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
+// Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
+// the user:
+// - If the provider is "", the user was authenticated the native-auth UI using Auth0
+// - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
+// - If the provider is something else, the user was authenticated by an SSO provider
+//
+// Native-auth users must also specify a password and email verification code upon creation. When the user's email is
+// verified, the email verification code is set to null in the DB. All other users (including Auth0
+// Auth0 users that were authenticated using the native-auth UI) have a null password and email verification code.
 func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
+	if provider == "native" && (password == "" || emailCode == "") {
+		return nil, errors.New("no password or email code provided for new native-auth user")
+	}
+
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
@@ -72,11 +87,10 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 		passwd = sql.NullString{Valid: false}
 	} else {
 		// Compute hash of password
-		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		passwd, err = hashPassword(password)
 		if err != nil {
 			return nil, err
 		}
-		passwd = sql.NullString{Valid: true, String: string(hash)}
 	}
 
 	dbEmailCode := sql.NullString{String: emailCode}
@@ -341,4 +355,50 @@ func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (b
 		return false, err
 	}
 	return true, nil
+}
+
+func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
+	var b [40]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return "", err
+	}
+	code := base64.StdEncoding.EncodeToString(b[:])
+	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=$1, passwd_reset_time=now() WHERE id=$2", code, id); err != nil {
+		return "", err
+	}
+
+	return code, nil
+}
+
+func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
+	if newPassword == "" {
+		return false, errors.New("new password was empty")
+	}
+	r := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
+	var ct int
+	if err := r.Scan(&ct); err != nil {
+		return false, err
+	}
+	if ct > 1 {
+		return false, fmt.Errorf("illegal state: found more than one user matching ID %d", id)
+	}
+	if ct == 0 {
+		return false, nil
+	}
+	passwd, err := hashPassword(newPassword)
+	if err != nil {
+		return false, err
+	}
+	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func hashPassword(password string) (sql.NullString, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return sql.NullString{}, err
+	}
+	return sql.NullString{Valid: true, String: string(hash)}, nil
 }

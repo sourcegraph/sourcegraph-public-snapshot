@@ -63,6 +63,8 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.SignIn2).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignIn2)))
 	r.Get(router.SignOut).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignOut)))
 	r.Get(router.VerifyEmail).Handler(traceutil.TraceRoute(http.HandlerFunc(serveVerifyEmail)))
+	r.Get(router.ResetPasswordInit).Handler(traceutil.TraceRoute(http.HandlerFunc(serveResetPasswordInit)))
+	r.Get(router.ResetPassword).Handler(traceutil.TraceRoute(http.HandlerFunc(serveResetPassword)))
 
 	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate))) // DEPRECATED
 	r.Get(router.GitHubOAuth2Receive).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))   // DEPRECATED
