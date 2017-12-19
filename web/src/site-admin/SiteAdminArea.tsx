@@ -10,7 +10,7 @@ import { ConfigurationPage } from './ConfigurationPage'
 import { OrgsPage } from './OrgsPage'
 import { OverviewPage } from './OverviewPage'
 import { RepositoriesPage } from './RepositoriesPage'
-import { Sidebar } from './Sidebar'
+import { SiteAdminSidebar } from './Sidebar'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -42,7 +42,7 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
 
         return (
             <div className="site-admin-area">
-                <Sidebar history={this.props.history} location={this.props.location} />
+                <SiteAdminSidebar history={this.props.history} location={this.props.location} />
                 <div className="site-admin-area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}

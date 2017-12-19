@@ -51,7 +51,7 @@ export class RepositoriesPage extends React.Component<Props, State> {
                                     </Link>
                                 </div>
                                 <ul className="site-admin-detail-list__info site-admin-repos-page__repo-info">
-                                    {repo.id && <li>ID: {repo.id}</li>}
+                                    <li>ID: {repo.id}</li>
                                     {repo.createdAt && <li>Created: {format(repo.createdAt, 'YYYY-MM-DD')}</li>}
                                 </ul>
                             </li>

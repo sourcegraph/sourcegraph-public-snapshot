@@ -14,7 +14,7 @@ interface State {}
 /**
  * Sidebar for the site admin area.
  */
-export class Sidebar extends React.Component<Props, State> {
+export class SiteAdminSidebar extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentWillUnmount(): void {

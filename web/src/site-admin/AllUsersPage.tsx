@@ -56,7 +56,7 @@ export class AllUsersPage extends React.Component<Props, State> {
                                             Email: <a href={`mailto:${user.email}`}>{user.email}</a>
                                         </li>
                                     )}
-                                    {user.id && <li>ID: {user.id}</li>}
+                                    <li>ID: {user.id}</li>
                                     {user.createdAt && <li>Created: {format(user.createdAt, 'YYYY-MM-DD')}</li>}
                                     {user.orgs &&
                                         user.orgs.length && <li>Orgs: {user.orgs.map(org => org.name).join(', ')}</li>}
