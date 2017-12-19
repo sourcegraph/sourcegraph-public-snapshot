@@ -189,6 +189,12 @@ func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 
 	list, err := ioutil.ReadDir(s.Dir)
 	if err != nil {
+		if os.IsNotExist(s.Dir) {
+			return EvictStats{
+				CacheSize: 0,
+				Evicted:   0,
+			}, nil
+		}
 		return stats, errors.Wrapf(err, "failed to ReadDir %s", s.Dir)
 	}
 
