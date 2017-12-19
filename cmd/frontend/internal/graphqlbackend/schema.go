@@ -915,7 +915,6 @@ type Settings {
   configuration: Configuration!
   # The subject that these settings are for.
   subject: ConfigurationSubject!
-  author: User!
   createdAt: String!
   contents: String! @deprecated(reason: "use configuration.contents instead")
 }
