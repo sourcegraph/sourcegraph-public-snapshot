@@ -2970,18 +2970,6 @@
 			"revisionTime": "2017-10-31T05:07:03Z"
 		},
 		{
-			"checksumSHA1": "AuvMK+BY/sGI1lQRCUMn7zst2nI=",
-			"path": "sourcegraph.com/sourcegraph/go-template-lint",
-			"revision": "17cde5e36859a47336e707acd943627178ab4349",
-			"revisionTime": "2015-08-28T08:55:01Z"
-		},
-		{
-			"checksumSHA1": "X/uzanbPB0I0gVLJzcDRUaPOQno=",
-			"path": "sourcegraph.com/sourcegraph/go-template-lint/tmplwalk",
-			"revision": "17cde5e36859a47336e707acd943627178ab4349",
-			"revisionTime": "2015-08-28T08:55:01Z"
-		},
-		{
 			"checksumSHA1": "GRBoSaxkWfXT9BIP2M87IePcEn8=",
 			"path": "sourcegraph.com/sqs/pbtypes",
 			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
