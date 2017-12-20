@@ -20,15 +20,7 @@ interface State {
 }
 
 /**
- * A WIP settings editor using the Monaco editor.
- *
- * TODO(sqs):
- *
- * - Decide on how theming should propagate
- *   (https://github.com/sourcegraph/sourcegraph/pull/8543) and propagate it
- *   here, so that the theme updates upon switching.
- * - Use a real, comprehensive JSON schema for our config.
- * - Examine impact on bundle size.
+ * A JSON settings editor using the Monaco editor.
  */
 export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     public state: State = {}

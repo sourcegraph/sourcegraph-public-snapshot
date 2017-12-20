@@ -37,11 +37,7 @@ interface State {
     editingLastKnownSettingsID?: number | null
 }
 
-const useMonacoEditor = () => window.localStorage.getItem('monacoSettingsEditor') !== null
-
-const emptySettings = useMonacoEditor()
-    ? '{\n  // add configuration here (Cmd/Ctrl+Space to see hints)\n}'
-    : '{\n  // add configuration here\n}'
+const emptySettings = '{\n  // add settings here (Cmd/Ctrl+Space to see hints)\n}'
 
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -132,24 +128,13 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         {this.props.commitError.message}
                     </div>
                 )}
-                {useMonacoEditor() ? (
-                    <MonacoSettingsEditor
-                        className="settings-file__contents form-control"
-                        value={contents}
-                        onChange={this.onEditorChange}
-                        readOnly={this.state.saving}
-                    />
-                ) : (
-                    <code>
-                        <textarea
-                            className="settings-file__contents form-control"
-                            value={contents}
-                            onChange={this.onTextareaChange}
-                            disabled={this.state.saving}
-                            spellCheck={false}
-                        />
-                    </code>
-                )}
+
+                <MonacoSettingsEditor
+                    className="settings-file__contents form-control"
+                    value={contents}
+                    onChange={this.onEditorChange}
+                    readOnly={this.state.saving}
+                />
             </div>
         )
     }
@@ -172,10 +157,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         } else {
             eventLogger.log('SettingsFileDiscardCanceled')
         }
-    }
-
-    private onTextareaChange: React.ChangeEventHandler<HTMLTextAreaElement> = event => {
-        this.onEditorChange(event.target.value)
     }
 
     private onEditorChange = (newValue: string) => {
