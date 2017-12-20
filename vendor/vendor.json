@@ -1590,6 +1590,24 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
+			"checksumSHA1": "h544lQpI9sexjka5EAYkDYgmMRo=",
+			"path": "github.com/sqs/generate",
+			"revision": "97c6622742b77ab74382f96670df71d595b4b2e1",
+			"revisionTime": "2017-12-20T06:56:13Z"
+		},
+		{
+			"checksumSHA1": "YRWN2Z/VtKFH4Wn76jM5uvoFdrw=",
+			"path": "github.com/sqs/generate/cmd/schema-generate",
+			"revision": "97c6622742b77ab74382f96670df71d595b4b2e1",
+			"revisionTime": "2017-12-20T06:56:13Z"
+		},
+		{
+			"checksumSHA1": "rHMU8ziPER7d2MleqZbBVxCx+2E=",
+			"path": "github.com/sqs/generate/jsonschema",
+			"revision": "97c6622742b77ab74382f96670df71d595b4b2e1",
+			"revisionTime": "2017-12-20T06:56:13Z"
+		},
+		{
 			"checksumSHA1": "HyGWC5GcN1hMtlPd7b00/Zna7rg=",
 			"path": "github.com/sqs/httpgzip",
 			"revision": "24daaf0b61ae4930e4ba3ff3eb49a5b9867cdaf6",
