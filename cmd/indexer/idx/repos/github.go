@@ -15,12 +15,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-github/github"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/config"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 // configAndClient binds together a GitHub config and the authenticated GitHub client created from that config.
@@ -28,14 +28,14 @@ import (
 // This data structure would probably be obviated by better separation of responsibility between the
 // different packages involved in indexing.
 type configAndClient struct {
-	config config.GitHubConfig
+	config schema.Github
 	client *github.Client
 }
 
 var (
 	updateIntervalEnv = env.Get("REPOSITORY_SYNC_PERIOD", "60", "The number of seconds to wait in-between syncing repositories with the code host")
 
-	githubConf = conf.Get().GitHub
+	githubConf = conf.Get().Github
 
 	// GitHub.com config
 	//
@@ -77,18 +77,18 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 	// TODO: remove.
 	if len(configs) == 0 {
 		if gheURL != "" {
-			configs = append(configs, config.GitHubConfig{URL: gheURL, Certificate: gheCert, Token: gheAccessToken})
+			configs = append(configs, schema.Github{Url: gheURL, Certificate: gheCert, Token: gheAccessToken})
 		}
 		if ghcAccessToken != "" {
-			configs = append(configs, config.GitHubConfig{URL: "https://github.com", Token: ghcAccessToken})
+			configs = append(configs, schema.Github{Url: "https://github.com", Token: ghcAccessToken})
 		}
 	}
 
 	var clients []configAndClient
 	for _, c := range configs {
-		u, err := url.Parse(c.URL)
+		u, err := url.Parse(c.Url)
 		if err != nil {
-			return fmt.Errorf("error processing GitHub config URL %s: %s", c.URL, err)
+			return fmt.Errorf("error processing GitHub config URL %s: %s", c.Url, err)
 		}
 		if u.Hostname() == "github.com" {
 			config := &githubutil.Config{Context: ctx}
@@ -100,7 +100,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 			}
 			clients = append(clients, cc)
 		} else {
-			cl, err := githubEnterpriseClient(ctx, c.URL, c.Certificate, c.Token)
+			cl, err := githubEnterpriseClient(ctx, c.Url, c.Certificate, c.Token)
 			if err != nil {
 				return err
 			}

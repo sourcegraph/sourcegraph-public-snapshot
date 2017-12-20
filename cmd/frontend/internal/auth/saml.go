@@ -23,9 +23,9 @@ import (
 
 var (
 	// SAML App creation vars
-	samlSPCert         = conf.Get().SAMLSPCert
-	samlSPKey          = conf.Get().SAMLSPKey
-	samlIDPMetadataURL = conf.Get().SAMLIDProviderMetadataURL
+	samlSPCert         = conf.Get().SamlSPCert
+	samlSPKey          = conf.Get().SamlSPKey
+	samlIDPMetadataURL = conf.Get().SamlIDProviderMetadataURL
 
 	idpMetadataURL *url.URL
 )

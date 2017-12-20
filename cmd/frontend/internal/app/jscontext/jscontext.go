@@ -37,7 +37,7 @@ var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex 
 var TrackingAppID = conf.Get().AppID
 
 var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
-var githubConf = conf.Get().GitHub
+var githubConf = conf.Get().Github
 
 var useAuth0 = env.Get("USE_AUTH0", "true", "Whether to use Auth0 for native auth")
 
@@ -47,11 +47,11 @@ var githubEnterpriseURLs = make(map[string]string)
 
 func init() {
 	for _, c := range githubConf {
-		gheURL, err := url.Parse(c.URL)
+		gheURL, err := url.Parse(c.Url)
 		if err != nil {
 			log15.Error("error parsing GitHub config", "error", err)
 		}
-		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.URL, "/")
+		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
 	}
 }
 

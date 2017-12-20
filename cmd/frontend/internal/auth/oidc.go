@@ -32,12 +32,12 @@ const (
 )
 
 var (
-	oidcIDProvider   = conf.Get().OIDCProvider
-	oidcClientID     = conf.Get().OIDCClientID
-	oidcClientSecret = conf.Get().OIDCClientSecret
-	oidcEmailDomain  = conf.Get().OIDCEmailDomain
+	oidcIDProvider   = conf.Get().OidcProvider
+	oidcClientID     = conf.Get().OidcClientID
+	oidcClientSecret = conf.Get().OidcClientSecret
+	oidcEmailDomain  = conf.Get().OidcEmailDomain
 	// 🚨 SECURITY oidcOverrideToken is for testing purposes only
-	oidcOverrideToken = conf.Get().OIDCOverrideToken
+	oidcOverrideToken = conf.Get().OidcOverrideToken
 )
 
 type UserClaims struct {

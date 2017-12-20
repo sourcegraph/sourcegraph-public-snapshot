@@ -60,9 +60,9 @@ var (
 
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 
-	tlsCert     = conf.Get().TLSCert
+	tlsCert     = conf.Get().TlsCert
 	tlsCertFile = env.Get("TLS_CERT_FILE", "", "certificate file for TLS (overrides TLS_CERT)")
-	tlsKey      = conf.Get().TLSKey
+	tlsKey      = conf.Get().TlsKey
 	tlsKeyFile  = env.Get("TLS_KEY_FILE", "", "key file for TLS (overrides TLS_KEY)")
 
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
