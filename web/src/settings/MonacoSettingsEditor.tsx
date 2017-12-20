@@ -5,12 +5,17 @@ import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { colorTheme } from './theme'
 
 interface Props {
     className: string
     value: string | undefined
     onChange: (newValue: string) => void
     readOnly: boolean
+}
+
+interface State {
+    isLightTheme?: boolean
 }
 
 /**
@@ -24,7 +29,9 @@ interface Props {
  * - Use a real, comprehensive JSON schema for our config.
  * - Examine impact on bundle size.
  */
-export class MonacoSettingsEditor extends React.PureComponent<Props> {
+export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
+    public state: State = {}
+
     private monaco: typeof monaco | null
     private editor: monaco.editor.ICodeEditor
 
@@ -43,6 +50,18 @@ export class MonacoSettingsEditor extends React.PureComponent<Props> {
                         this.editor.updateOptions({ readOnly })
                     }
                 })
+        )
+    }
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            colorTheme.subscribe(theme => {
+                this.setState({ isLightTheme: theme === 'light' }, () => {
+                    if (this.monaco) {
+                        this.monaco.editor.setTheme(this.monacoTheme())
+                    }
+                })
+            })
         )
     }
 
@@ -84,7 +103,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props> {
         )
     }
 
-    private monacoTheme(isLightTheme = window.localStorage.getItem('light-theme') === 'true'): string {
+    private monacoTheme(isLightTheme = this.state.isLightTheme): string {
         // TODO(sqs): the theme is not updated after switching until you reload the page
         return isLightTheme ? 'vs' : 'sourcegraph-dark'
     }
