@@ -29,8 +29,6 @@ func init() {
 	if err := initConfig(); err != nil {
 		log.Fatalf("failed to read configuration from environment: %s", err)
 	}
-
-	validate()
 }
 
 // initConfig initializes configuration by reading from environment variables. It attempts to read values first from an
@@ -101,13 +99,13 @@ func initConfig() error {
 	return nil
 }
 
-// validate validates the site configuration against its JSON schema.
+// Validate validates the site configuration against its JSON schema.
 //
 // TODO(sqs): it only validates the SOURCEGRAPH_CONFIG value, not the merged
 // config from all env vars. This env var is only used in cmd/server, but it
 // is passed onto frontend, so frontend can print useful validation messages
 // about it.
-func validate() {
+func Validate() {
 	input := os.Getenv("SOURCEGRAPH_CONFIG")
 	if input == "" {
 		return

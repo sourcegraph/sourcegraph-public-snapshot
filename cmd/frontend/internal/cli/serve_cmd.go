@@ -130,6 +130,8 @@ func Main() error {
 		}
 	}
 
+	conf.Validate()
+
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
