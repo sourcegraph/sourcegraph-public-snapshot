@@ -17,6 +17,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/config"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
@@ -140,7 +141,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 		// adding random calls here.
 
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
-		orgs, errs := conf.Get().AuthUserOrgMap.OrgsForAllUsersToJoin()
+		orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
 		for _, err := range errs {
 			log15.Warn(err.Error())
 		}
@@ -160,6 +161,21 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 	}, nil
+}
+
+// orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
+// is a list of errors encountered while generating this list. Note that even if errors are returned, the first
+// return value is still valid.
+func orgsForAllUsersToJoin(m config.UserOrgMap) ([]string, []error) {
+	var errors []error
+	for userPattern, orgs := range m {
+		if userPattern != "*" {
+			errors = append(errors, fmt.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
+			continue
+		}
+		return orgs, errors
+	}
+	return nil, errors
 }
 
 func (u *users) Update(ctx context.Context, id int32, username *string, displayName *string, avatarURL *string) (*sourcegraph.User, error) {

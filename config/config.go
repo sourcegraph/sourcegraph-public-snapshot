@@ -3,8 +3,6 @@
 // therefore it should avoid any business logic or third-party dependencies.
 package config
 
-import "fmt"
-
 // Config is the app-level configuration for Sourcegraph Server.
 // The external README generator (which lives in the infrastructre repository) uses this struct to
 // list configuration parameters, using the `json` and `description` tags.
@@ -106,18 +104,3 @@ type SearchScope struct {
 
 // UserOrgMap is a map from user pattern to a list of org names.
 type UserOrgMap map[string][]string
-
-// OrgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
-// is a list of errors encountered while generating this list. Note that even if errors are returned, the first
-// return value is still valid.
-func (m UserOrgMap) OrgsForAllUsersToJoin() ([]string, []error) {
-	var errors []error
-	for userPattern, orgs := range m {
-		if userPattern != "*" {
-			errors = append(errors, fmt.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
-			continue
-		}
-		return orgs, errors
-	}
-	return nil, errors
-}
