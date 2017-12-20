@@ -39,7 +39,6 @@ var legacyEnvToFieldName = map[string]string{
 	"OidcOverrideToken":              "OIDC_OVERRIDE_TOKEN",
 	"OidcProvider":                   "OIDC_OP",
 	"Phabricator":                    "PHABRICATOR_CONFIG",
-	"PhabricatorURL":                 "PHABRICATOR_URL",
 	"PrivateArtifactRepoID":          "PRIVATE_ARTIFACT_REPO_ID",
 	"PrivateArtifactRepoPassword":    "PRIVATE_ARTIFACT_REPO_PASSWORD",
 	"PrivateArtifactRepoURL":         "PRIVATE_ARTIFACT_REPO_URL",

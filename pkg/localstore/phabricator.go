@@ -2,47 +2,15 @@ package localstore
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type phabricator struct{}
 
 type errPhabricatorRepoNotFound struct {
 	args []interface{}
-}
-
-// DEPRECATED: use PHABRICATOR_CONFIG instead
-// This environment variable determines the value to use to backfill an empty 'url' column.
-var phabricatorURL = conf.Get().PhabricatorURL
-
-func (p *phabricator) BackfillURL() error {
-	// If this exceeds the timeout (e.g., DB lock), there are probably other problems
-	// occurring, but it will help debugging if we fail faster and log an error in that case.
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	repos, err := p.getBySQL(ctx, "WHERE url=$1", "")
-	if err != nil {
-		return err
-	}
-
-	if len(repos) != 0 && phabricatorURL == "" {
-		return errors.New("cannot backfill phabricator_repos table without setting PHABRICATOR_URL environment")
-	}
-
-	for _, repo := range repos {
-		_, err = globalDB.ExecContext(ctx, "UPDATE phabricator_repos SET url=$1 WHERE uri=$2", phabricatorURL, repo.URI)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (err errPhabricatorRepoNotFound) Error() string {
