@@ -19,9 +19,8 @@ type Inventory struct {
 
 // Constants that can be values in the Inventory.Languages slice.
 const (
-	LangGo         = "Go"
-	LangJava       = "Java"
-	LangTypeScript = "TypeScript"
+	LangGo   = "Go"
+	LangJava = "Java"
 )
 
 // Lang represents a programming language used in a directory tree.

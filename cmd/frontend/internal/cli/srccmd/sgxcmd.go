@@ -8,12 +8,6 @@ import (
 	"github.com/kardianos/osext"
 )
 
-// Name is the command name that should be used when suggesting that the user
-// run the src command. It should not ever be used to invoke the command,
-// instead always use Path for that (the binary is not always on the users
-// path).
-const Name = "src"
-
 // Path is the path at which the binary can be found for execution purposes.
 // There is no guarantee that the binary will be on the system's path, so you
 // must always use this path instead for executing the command.

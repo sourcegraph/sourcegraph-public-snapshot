@@ -30,7 +30,6 @@ const (
 	ResetPasswordInit = "reset-password.init"
 	ResetPassword     = "reset-password"
 
-	OldDefRedirect   = "old-def-redirect"
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
 

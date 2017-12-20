@@ -23,27 +23,6 @@ type ErrorHandler func(http.ResponseWriter, *http.Request, error) error
 
 var errorHandlers = map[reflect.Type]ErrorHandler{}
 
-// RegisterErrorHandlerForType registers an error handler that
-// HandleError delegates to, for all errors (returned by app handlers)
-// of the same type as errorVal.
-//
-// For example, to delegate to handleFooError for all errors returned
-// by app handlers of type "*foo", call
-// RegisterErrorHandlerForType(&foo{}, handleFooError).
-//
-// These error handlers are matched BEFORE those registered with
-// RegisterErrorHandler are matched.
-//
-// It should only be called at init time. It panics if there is
-// already a handler registered for the type.
-func RegisterErrorHandlerForType(errorVal interface{}, handler ErrorHandler) {
-	t := reflect.TypeOf(errorVal)
-	if _, present := errorHandlers[t]; present {
-		return
-	}
-	errorHandlers[t] = handler
-}
-
 // UnauthorizedErrorHandler is the error handler that is called when
 // an app handler returns an "unauthenticated" error (i.e.,
 // legacyerr.ErrCode(err) == legacyerr.Unauthenticated).

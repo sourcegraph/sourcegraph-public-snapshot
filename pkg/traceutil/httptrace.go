@@ -119,22 +119,6 @@ func TraceUser(ctx context.Context, user string) {
 	}
 }
 
-// TraceRouteFallback is TraceRoute, except if a routename has not been set it
-// will use the name specified as fallback. This should be used in cases where
-// we would route unknown.
-func TraceRouteFallback(fallback string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		if p, ok := r.Context().Value(routeNameKey).(*string); ok {
-			if routeName := mux.CurrentRoute(r).GetName(); routeName != "" {
-				*p = routeName
-			} else {
-				*p = fallback
-			}
-		}
-		next.ServeHTTP(rw, r)
-	})
-}
-
 // SetRouteName manually sets the name for the route. This should only be used
 // for non-mux routed routes (ie middlewares).
 func SetRouteName(r *http.Request, routeName string) {

@@ -93,14 +93,6 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	return res, nil
 }
 
-func repoSpecsToInts(v []sourcegraph.RepoSpec) (r []int32) {
-	r = make([]int32, len(v))
-	for i, v := range v {
-		r[i] = v.ID
-	}
-	return
-}
-
 func intsToRepoSpecs(v []int32) (r []sourcegraph.RepoSpec) {
 	r = make([]sourcegraph.RepoSpec, len(v))
 	for i, v := range v {

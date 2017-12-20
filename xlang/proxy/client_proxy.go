@@ -780,8 +780,6 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 	}
 }
 
-var requestOriginatedFromProxy = &jsonrpc2.ID{Str: "special value; never used directly"}
-
 // callServer sends the LSP request to the server chosen based on the
 // client's context and the file URI specified (e.g., for a ".go"
 // file, it will choose a Go lang/build server). It rewrites any file

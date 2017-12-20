@@ -56,5 +56,4 @@ const (
 	FailedPrecondition
 	Unimplemented
 	Internal
-	Unavailable
 )

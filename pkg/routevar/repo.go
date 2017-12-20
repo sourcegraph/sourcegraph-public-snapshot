@@ -1,7 +1,6 @@
 package routevar
 
 import (
-	"path"
 	"regexp"
 	"strings"
 )
@@ -14,13 +13,6 @@ import (
 type RepoRev struct {
 	Repo string // a repo path
 	Rev  string // a VCS revision specifier (branch, "master~7", commit ID, etc.)
-}
-
-// A TreeEntry specifies a tree/blob by path in a repo at a
-// revision. It allows for a non-absolute commit ID.
-type TreeEntry struct {
-	RepoRev
-	Path string // path to the VCS tree/blob
 }
 
 var (
@@ -42,16 +34,9 @@ const (
 	// specifier (e.g., "master" or "my/branch~1", or a full 40-char
 	// commit ID).
 	RevPattern = `(?P<rev>(?:` + pathComponentNotDelim + `/)*` + pathComponentNotDelim + `)`
-
-	// CommitPattern is the regexp pattern that matches absolute
-	// (40-character) hexidecimal commit IDs.
-	CommitPattern = `(?P<commit>[[:xdigit:]]{40})`
 )
 
-var (
-	repoPattern = regexp.MustCompile("^" + RepoPattern + "$")
-	revPattern  = regexp.MustCompile("^" + RevPattern + "$")
-)
+var repoPattern = regexp.MustCompile("^" + RepoPattern + "$")
 
 // ParseRepo parses a RepoSpec string. If spec is invalid, an
 // InvalidError is returned.
@@ -100,19 +85,5 @@ func RepoRevRouteVars(s RepoRev) map[string]string {
 		rev = "@" + s.Rev
 	}
 	m["Rev"] = rev
-	return m
-}
-
-func ToTreeEntry(routeVars map[string]string) TreeEntry {
-	rr := ToRepoRev(routeVars)
-	return TreeEntry{
-		RepoRev: rr,
-		Path:    path.Clean(strings.TrimPrefix(routeVars["Path"], "/")),
-	}
-}
-
-func TreeEntryRouteVars(s TreeEntry) map[string]string {
-	m := RepoRevRouteVars(s.RepoRev)
-	m["Path"] = s.Path
 	return m
 }

@@ -19,8 +19,7 @@ type parser struct {
 
 // context holds settings active within a given scope during parsing.
 type context struct {
-	field    string // name of the field currently in scope (or "")
-	fieldPos int
+	field string // name of the field currently in scope (or "")
 }
 
 // Parse parses the query and returns its parse tree. Returned errors are of

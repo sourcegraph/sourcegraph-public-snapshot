@@ -33,8 +33,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoShield).Handler(traceutil.TraceRoute(handler(serveRepoShield)))
 
-	m.Get(apirouter.SubmitForm).Handler(traceutil.TraceRoute(handler(serveSubmitForm)))
-
 	m.Get(apirouter.Telemetry).Handler(traceutil.TraceRoute(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "https"

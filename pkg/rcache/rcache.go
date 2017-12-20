@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	maxClients = 32
-
 	// dataVersion is used for releases that change type struture for
 	// data that may already be cached. Increasing this number will
 	// change the key prefix that is used for all hash keys,

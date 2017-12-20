@@ -2,9 +2,7 @@ package actor
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -51,12 +49,6 @@ func (a *Actor) IsAuthenticated() bool {
 	return a.UID != ""
 }
 
-func (a *Actor) UserSpec() *sourcegraph.UserSpec {
-	return &sourcegraph.UserSpec{
-		UID: a.UID,
-	}
-}
-
 func (a *Actor) AuthInfo() *sourcegraph.AuthInfo {
 	return &sourcegraph.AuthInfo{
 		UID:   a.UID,
@@ -83,39 +75,4 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 		traceutil.TraceUser(ctx, a.Login)
 	}
 	return context.WithValue(ctx, actorKey, a)
-}
-
-func WithoutActor(ctx context.Context) context.Context {
-	return context.WithValue(ctx, actorKey, nil)
-}
-
-const HeaderKey = "X-Actor"
-
-// SetTrustedHeader overwrites the entire "X-Actor" header with the actor
-// in the context. The actor header may container sensitive information, and as
-// such should NEVER be sent to a foreign service. It should not be sent back
-// to the client.
-func SetTrustedHeader(ctx context.Context, h http.Header) {
-	// Remove any existing X-Actor header value that could be provided by an
-	// attacker.
-	h.Del(HeaderKey)
-
-	// Marshal and store our actor in the header.
-	d, err := json.Marshal(FromContext(ctx))
-	if err != nil {
-		panic(err)
-	}
-	h.Set(HeaderKey, string(d))
-}
-
-// TrustedActorMiddleware is an http.Handler middleware that reads the already
-// authenticated actor directly from the "X-Actor" header and sets it in the
-// context. No authentication is performed, and thus the HTTP handler should
-// NEVER be accessible by a user with control over the "X-Actor" header value.
-func TrustedActorMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var a Actor
-		_ = json.Unmarshal([]byte(r.Header.Get(HeaderKey)), &a)
-		next.ServeHTTP(w, r.WithContext(WithActor(r.Context(), &a)))
-	})
 }

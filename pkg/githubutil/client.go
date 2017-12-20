@@ -3,11 +3,9 @@ package githubutil
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"time"
@@ -204,27 +202,4 @@ func init() {
 		log.Fatal(err)
 	}
 	Default.BaseURL = url
-}
-
-func NewTestClientServer() (client *github.Client, config *Config, mux *http.ServeMux) {
-	mux = http.NewServeMux()
-	server := httptest.NewServer(mux)
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		zero := 0
-		result := github.RepositoriesSearchResult{
-			Total:        &zero,
-			Repositories: []github.Repository{},
-		}
-		w.Header().Set("content-type", "application/json; charset=utf-8")
-		json.NewEncoder(w).Encode(result)
-	})
-
-	var err error
-	client = github.NewClient(nil)
-	client.BaseURL, err = url.Parse(server.URL)
-	if err != nil {
-		log.Panicf("Could not create new test client: %v", err)
-	}
-	config = &Config{BaseURL: client.BaseURL}
-	return
 }

@@ -25,9 +25,6 @@ var (
 	// mutexDelay is how long to sleep between attempts to lock. We use
 	// the default delay.
 	mutexDelay = 512 * time.Millisecond
-	// mutexPrefix allows us to run concurrent tests which try to lock the
-	// same resources.
-	mutexPrefix = "mutex"
 )
 
 // TryAcquireMutex tries to Lock a distributed mutex. If the mutex is already

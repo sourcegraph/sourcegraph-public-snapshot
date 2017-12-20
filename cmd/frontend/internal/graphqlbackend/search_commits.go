@@ -33,14 +33,6 @@ func mustParseDuration(s string) time.Duration {
 	return d
 }
 
-type diffSearchResult struct {
-	diff    *diff
-	preview *highlightedString
-}
-
-func (r *diffSearchResult) Diff() *diff                 { return r.diff }
-func (r *diffSearchResult) Preview() *highlightedString { return r.preview }
-
 type commitSearchResult struct {
 	commit         *commitInfoResolver
 	refs           []*gitRefResolver
