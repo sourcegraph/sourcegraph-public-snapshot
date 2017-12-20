@@ -20,6 +20,7 @@ Before cutting a new release, please:
 
 ### Added
 - Native authentication: you can now sign up without an SSO provider or Auth0.
+- Faster default branch code search via indexing.
 
 ### Fixed
 - Many performance improvements to search.

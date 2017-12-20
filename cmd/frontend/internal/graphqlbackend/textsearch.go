@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
 
 // A light wrapper around the search service. We implement the service here so
@@ -323,6 +325,92 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	return nil
 }
 
+func zoektSearchHEAD(ctx context.Context, args *repoSearchArgs) ([]*fileMatch, error) {
+	// Convert sourcegraph pattern into zoekt query
+	pattern := args.query.Pattern
+	if !args.query.IsRegExp {
+		pattern = regexp.QuoteMeta(pattern)
+	}
+	pattern = strconv.Quote(pattern)
+	query := []string{pattern}
+
+	// zoekt guesses case sensitivity if we don't specify
+	if args.query.IsCaseSensitive {
+		query = append(query, "case:yes")
+	} else {
+		query = append(query, "case:no")
+	}
+
+	// zoekt also uses regular expressions for file paths
+	// TODO PathPatternsAreCaseSensitive
+	// TODO whitespace in file path patterns?
+	if !args.query.PathPatternsAreRegExps {
+		return nil, errors.New("zoekt only supports regex path patterns")
+	}
+	for _, p := range args.query.IncludePatterns {
+		query = append(query, "f:"+p)
+	}
+	if args.query.ExcludePattern != nil {
+		query = append(query, "-f:"+*args.query.ExcludePattern)
+	}
+
+	// Tell zoekt which repos to search
+	var restrict []zoekt.SearchRequestRestriction
+	for _, repoRev := range args.repos {
+		// We search HEAD using zoekt
+		if repoRev.revSpecsOrDefaultBranch()[0] != "" {
+			continue
+		}
+		// TODO Repo is a substring match, so we can match more
+		restrict = append(restrict, zoekt.SearchRequestRestriction{
+			Repo:     repoRev.repo.URI,
+			Branches: []string{""}, // "" matches all indexed branches
+		})
+	}
+
+	if len(restrict) == 0 {
+		return nil, nil
+	}
+
+	zoektCl := &zoekt.Client{Host: zoektHost}
+	resp, err := zoektCl.Search(ctx, zoekt.SearchRequest{
+		Query:    strings.Join(query, " "),
+		Restrict: restrict,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if resp.Error != nil {
+		return nil, errors.Errorf("zoekt search failed: %s", *resp.Error)
+	}
+
+	if len(resp.Files) == 0 {
+		return nil, nil
+	}
+
+	matches := make([]*fileMatch, len(resp.Files))
+	for i, file := range resp.Files {
+		lines := make([]*lineMatch, len(file.Lines))
+		for j, l := range file.Lines {
+			offsets := make([][]int32, len(l.Matches))
+			for k, m := range l.Matches {
+				offsets[k] = []int32{int32(m.Start), int32(m.End)}
+			}
+			lines[j] = &lineMatch{
+				JPreview:          l.Line,
+				JLineNumber:       int32(l.LineNumber),
+				JOffsetAndLengths: offsets,
+			}
+		}
+		matches[i] = &fileMatch{
+			JPath:        file.FileName,
+			JLineMatches: lines,
+			uri:          fmt.Sprintf("git://%s#%s", file.Repo, file.FileName),
+		}
+	}
+	return matches, nil
+}
+
 var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
 // searchRepos searches a set of repos for a pattern.
@@ -348,6 +436,11 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 	for _, repoRev := range args.repos {
 		if len(repoRev.revs) >= 2 {
 			return nil, nil, errMultipleRevsNotSupported
+		}
+
+		// We search HEAD using zoekt
+		if zoektHost != "" && repoRev.revSpecsOrDefaultBranch()[0] == "" {
+			continue
 		}
 
 		wg.Add(1)
@@ -377,6 +470,28 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 			}
 		}(*repoRev)
 	}
+
+	if zoektHost != "" {
+		wg.Add(1)
+		go func() {
+			// TODO limitHit, handleRepoSearchResult
+			defer wg.Done()
+			matches, searchErr := zoektSearchHEAD(ctx, args)
+			mu.Lock()
+			defer mu.Unlock()
+			if searchErr != nil && err == nil {
+				err = searchErr
+			}
+			if len(matches) > 0 {
+				sort.Slice(matches, func(i, j int) bool {
+					a, b := matches[i].uri, matches[j].uri
+					return a > b
+				})
+				unflattened = append(unflattened, matches)
+			}
+		}()
+	}
+
 	wg.Wait()
 	if err != nil {
 		return nil, nil, err
@@ -427,6 +542,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 	return fileMatchesToSearchResults(flattened), common, nil
 }
 
+var zoektHost = env.Get("ZOEKT_HOST", "", "host:port of the zoekt instance")
 var searcherURLs *endpoint.Map
 
 func init() {
