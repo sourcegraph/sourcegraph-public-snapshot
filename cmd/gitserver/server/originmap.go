@@ -72,11 +72,17 @@ func init() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		var auth string
-		if c.Token != "" {
-			auth = c.Token + "@"
+		// Clone via SSH if this GitHub Enterprise has a self-signed certificate provided.
+		// Otherwise git will run into issues with cloning over HTTPS using an invalid certificate.
+		if c.Certificate != "" {
+			originMap = append(originMap, prefixAndOrgin{Prefix: ghURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", ghURL.Hostname())})
+		} else {
+			var auth string
+			if c.Token != "" {
+				auth = c.Token + "@"
+			}
+			originMap = append(originMap, prefixAndOrgin{Prefix: ghURL.Hostname() + "/", Origin: fmt.Sprintf("%s://%s%s/%%.git", ghURL.Scheme, auth, ghURL.Hostname())})
 		}
-		originMap = append(originMap, prefixAndOrgin{Prefix: ghURL.Hostname() + "/", Origin: fmt.Sprintf("%s://%s%s/%%.git", ghURL.Scheme, auth, ghURL.Hostname())})
 	}
 
 	addGitHubDefaults()

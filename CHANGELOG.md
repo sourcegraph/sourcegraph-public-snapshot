@@ -26,6 +26,8 @@ Before cutting a new release, please:
 
 ### Changed
 - We optionally read `SOURCEGRAPH_CONFIG` from `$DATA_DIR/config.json`.
+- SSH key required to clone repos from GitHub Enterprise when using a self-signed certificate.
+
 
 ## 0.3 - 13 December 2017
 
