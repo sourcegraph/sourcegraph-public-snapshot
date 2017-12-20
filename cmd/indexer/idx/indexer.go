@@ -123,7 +123,7 @@ func Work(ctx context.Context, w *workQueue) {
 func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err error) {
 	repo, commit, err := resolveRevision(ctx, repoName, rev)
 	if err != nil {
-		if repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
+		if repo != nil && repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
 			// Avoid infinite loop for always cloning test.
 			return nil
 		}
