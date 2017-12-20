@@ -17,7 +17,6 @@ import (
 
 	"github.com/lib/pq"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/config"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
@@ -166,9 +165,9 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
 // is a list of errors encountered while generating this list. Note that even if errors are returned, the first
 // return value is still valid.
-func orgsForAllUsersToJoin(m config.UserOrgMap) ([]string, []error) {
+func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
 	var errors []error
-	for userPattern, orgs := range m {
+	for userPattern, orgs := range userOrgMap {
 		if userPattern != "*" {
 			errors = append(errors, fmt.Errorf("unsupported auth.userOrgMap user pattern %q (only \"*\" is supported)", userPattern))
 			continue

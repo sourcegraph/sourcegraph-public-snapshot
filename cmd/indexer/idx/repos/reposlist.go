@@ -7,10 +7,10 @@ import (
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/config"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -54,7 +54,7 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 	}
 }
 
-func updateRepo(ctx context.Context, repoConf config.RepoListConfig) error {
+func updateRepo(ctx context.Context, repoConf schema.ReposList) error {
 	repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, repoConf.Path, "", false, false)
 	if err != nil {
 		return err

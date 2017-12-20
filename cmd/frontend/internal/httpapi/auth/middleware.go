@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var ssoUserHeader = conf.Get().SSOUserHeader
+var ssoUserHeader = conf.Get().SsoUserHeader
 
 // AuthorizationMiddleware authenticates the user based on the "Authorization" header.
 func AuthorizationMiddleware(next http.Handler) http.Handler {

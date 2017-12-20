@@ -6,7 +6,6 @@ import (
 	"math"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -24,7 +23,7 @@ import (
 )
 
 var (
-	maxReposToSearch, _ = strconv.Atoi(conf.Get().MaxReposToSearch)
+	maxReposToSearch = conf.Get().MaxReposToSearch
 )
 
 func init() {

@@ -28,7 +28,7 @@ type originMapping struct {
 
 var originMapEnv = conf.Get().GitOriginMap
 var gitoliteHostsEnv = conf.Get().GitoliteHosts
-var githubConf = conf.Get().GitHub
+var githubConf = conf.Get().Github
 var reposListConf = conf.Get().ReposList
 
 // DEPRECATED in favor of GITHUB_CONFIG:
@@ -57,7 +57,7 @@ func init() {
 
 	// Add origin map for repos.list configuration.
 	for _, c := range reposListConf {
-		reposListOriginMap[c.Path] = c.URL
+		reposListOriginMap[c.Path] = c.Url
 	}
 
 	// Add origin map for GitHub Enterprise instance of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
@@ -73,7 +73,7 @@ func init() {
 
 	// Add origin map for GitHub Enterprise instances of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
 	for _, c := range githubConf {
-		ghURL, err := url.Parse(c.URL)
+		ghURL, err := url.Parse(c.Url)
 		if err != nil {
 			log.Fatal(err)
 		}
