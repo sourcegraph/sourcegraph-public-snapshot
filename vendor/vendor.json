@@ -1572,12 +1572,6 @@
 			"revisionTime": "2017-08-08T06:49:59Z"
 		},
 		{
-			"checksumSHA1": "L6QPpAO5USnGF3FJvFDr9P84Rw4=",
-			"path": "github.com/sqs/rego",
-			"revision": "cd7aca0c2e5a4eb4407d5b72089e603a47131ddb",
-			"revisionTime": "2017-09-27T21:03:10Z"
-		},
-		{
 			"checksumSHA1": "EXXAM9hs2jsOgED5aJBfAe5HWvI=",
 			"path": "github.com/temoto/robotstxt-go",
 			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",

@@ -4,7 +4,8 @@ searcher: .bin/searcher
 github-proxy: .bin/github-proxy
 lsp-proxy: .bin/lsp-proxy -prof-http=:6061
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062
-frontend: vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="dev" -extra-watches='cmd/frontend/internal/graphqlbackend/schema.graphql' sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend
+frontend: .bin/frontend
+watch-frontend: $PWD/web/node_modules/.bin/chokidar "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" -c "./dev/go-install.sh && $GOREMAN run restart frontend"
 web: sh -c "npm --prefix ./web install && npm --prefix ./web run watch"
 syntect_server: ./dev/syntect_server
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest

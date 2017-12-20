@@ -4,8 +4,6 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-GOBIN="$PWD"/vendor/.bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sqs/rego sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
-
 export AUTH0_CLIENT_ID=onW9hT0c7biVUqqNNuggQtMLvxUWHWRC
 export AUTH0_CLIENT_SECRET=cpse5jYzcduFkQY79eDYXSwI6xVUO0bIvc4BP6WpojdSiEEG6MwGrt8hj_uX3p5a
 export AUTH0_DOMAIN=sourcegraph-dev.auth0.com
@@ -48,9 +46,20 @@ export LICENSE_KEY=${LICENSE_KEY:-24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae
 export NODE_ENV=development
 
 mkdir -p .bin
-env GOBIN=$PWD/.bin go install -tags="dev" -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher}
+export GOBIN=$PWD/.bin
+
+# Make sure chokidar-cli is installed
+if ! [ -x "$(command -v $PWD/web/node_modules/.bin/chokidar)" ]; then
+  echo 'Installing chokidar...'
+  npm --prefix ./web install
+fi
+
+go get sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
+
+$PWD/dev/go-install.sh
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
 
-exec "$PWD"/vendor/.bin/goreman -f dev/Procfile start
+export GOREMAN="$GOBIN/goreman -f dev/Procfile"
+exec $GOREMAN start
