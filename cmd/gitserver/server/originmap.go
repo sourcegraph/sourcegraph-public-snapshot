@@ -26,9 +26,6 @@ var gitoliteHostsEnv = conf.Get().GitoliteHosts
 var githubConf = conf.Get().Github
 var reposListConf = conf.Get().ReposList
 
-// DEPRECATED in favor of GITHUB_CONFIG:
-var githubEnterpriseURLEnv = conf.Get().GithubEnterpriseURL
-
 var originMap []prefixAndOrgin
 var gitoliteHostMap []prefixAndOrgin
 
@@ -53,17 +50,6 @@ func init() {
 	// Add origin map for repos.list configuration.
 	for _, c := range reposListConf {
 		reposListOriginMap[c.Path] = c.Url
-	}
-
-	// Add origin map for GitHub Enterprise instance of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
-	//
-	// TODO: remove after removing deprecated GITHUB_ENERPRISE config.
-	if githubEnterpriseURLEnv != "" {
-		gheURL, err := url.Parse(githubEnterpriseURLEnv)
-		if err != nil {
-			log.Fatal(err)
-		}
-		originMap = append(originMap, prefixAndOrgin{Prefix: gheURL.Hostname() + "/", Origin: fmt.Sprintf("git@%s:%%.git", gheURL.Hostname())})
 	}
 
 	// Add origin map for GitHub Enterprise instances of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"

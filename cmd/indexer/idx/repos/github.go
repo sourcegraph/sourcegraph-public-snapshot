@@ -5,10 +5,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +15,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
@@ -33,57 +30,18 @@ type configAndClient struct {
 }
 
 var (
-	updateIntervalEnv = env.Get("REPOSITORY_SYNC_PERIOD", "60", "The number of seconds to wait in-between syncing repositories with the code host")
-
-	githubConf = conf.Get().Github
-
-	// GitHub.com config
-	//
-	// DEPRECATED (use GITHUB_CONFIG instead).
-	ghcAccessToken = conf.Get().GithubPersonalAccessToken
-
-	// GitHub Enterprise config
-	//
-	// DEPRECATED (use GITHUB_CONFIG instead).
-	gheURL         = conf.Get().GithubEnterpriseURL
-	gheCert        = conf.Get().GithubEnterpriseCert
-	gheAccessToken = conf.Get().GithubEnterpriseAccessToken
-	gheParsedURL   *url.URL
+	updateIntervalConf = conf.Get().RepoListUpdateInterval
+	githubConf         = conf.Get().Github
 )
-
-func init() {
-	var err error
-	gheParsedURL, err = url.Parse(gheURL)
-	if err != nil {
-		log.Fatalf("Couldn't parse GitHub Enterprise URL: %s", err)
-	}
-}
 
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the GitHub Enterprise instance to Sourcegraph
 func RunGitHubRepositorySyncWorker(ctx context.Context) error {
-	updateIntervalParsed, err := strconv.Atoi(updateIntervalEnv)
-	if err != nil {
-		return err
+	if updateIntervalConf == 0 {
+		return errors.New("Update interval is 0 (set repoListUpdateInterval to a non-zero value or omit it)")
 	}
-	if updateIntervalParsed == 0 {
-		return errors.New("Update interval is 0 (set REPOSITORY_SYNC_PERIOD to a non-zero value or omit it)")
-	}
-	updateInterval := time.Duration(updateIntervalParsed) * time.Second
+	updateInterval := time.Duration(updateIntervalConf) * time.Second
 
 	configs := githubConf
-
-	// For backwards compatibility, add configs for the deprecated GitHub config env variables.
-	//
-	// TODO: remove.
-	if len(configs) == 0 {
-		if gheURL != "" {
-			configs = append(configs, schema.Github{Url: gheURL, Certificate: gheCert, Token: gheAccessToken})
-		}
-		if ghcAccessToken != "" {
-			configs = append(configs, schema.Github{Url: "https://github.com", Token: ghcAccessToken})
-		}
-	}
-
 	var clients []configAndClient
 	for _, c := range configs {
 		u, err := url.Parse(c.Url)
@@ -132,7 +90,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 
 			// update implicit repositories (repositories owned by an organization to which the user who created
 			// the personal access token belongs)
-			err = updateForClient(ctx, c.client)
+			err := updateForClient(ctx, c.client)
 			if err != nil {
 				log15.Error("Could not update repositories", "error", err)
 			}

@@ -7,13 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -65,19 +65,16 @@ type phabAPIResponse struct {
 }
 
 var (
-	phabConf = env.Get("PHABRICATOR_CONFIG", "", "A JSON array of Phabricator host configuration values.")
+	phabConf               = env.Get("PHABRICATOR_CONFIG", "", "A JSON array of Phabricator host configuration values.")
+	repoUpdateIntervalConf = conf.Get().RepoListUpdateInterval
 )
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) error {
-	updateIntervalParsed, err := strconv.Atoi(updateIntervalEnv)
-	if err != nil {
-		return err
+	if repoUpdateIntervalConf == 0 {
+		return errors.New("Update interval is 0 (set repoListUpdateInterval to a non-zero value or omit it)")
 	}
-	if updateIntervalParsed == 0 {
-		return errors.New("Update interval is 0 (set REPOSITORY_SYNC_PERIOD to a non-zero value or omit it)")
-	}
-	updateInterval := time.Duration(updateIntervalParsed) * time.Second
+	updateInterval := time.Duration(repoUpdateIntervalConf) * time.Second
 
 	configs := []phabConfig{}
 	if phabConf != "" {
