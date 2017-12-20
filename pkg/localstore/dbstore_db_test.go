@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
@@ -34,7 +33,6 @@ func TestMigrations(t *testing.T) {
 func testContext() context.Context {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test"})
-	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 
 	Mocks = MockStores{}
 

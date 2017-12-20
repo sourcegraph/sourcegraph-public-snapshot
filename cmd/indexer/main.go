@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer/idx"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer/idx/repos"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -49,8 +48,7 @@ func main() {
 		}
 	}
 
-	// SECURITY: This is only safe because the indexer runs in isolation and does not expose any data to the outside world
-	ctx := accesscontrol.WithInsecureSkip(context.Background(), true)
+	ctx := context.Background()
 
 	go func() {
 		c := make(chan os.Signal, 1)

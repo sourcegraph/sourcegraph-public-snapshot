@@ -5,7 +5,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -27,7 +26,6 @@ func testContext() context.Context {
 
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test"})
-	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 
 	return ctx

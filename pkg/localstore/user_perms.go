@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
@@ -18,10 +17,6 @@ var ErrRepoNotFound = legacyerr.Errorf(legacyerr.NotFound, "repo not found")
 // the given repository with repoURI. The access check is performed by delegating
 // the access check to external providers as necessary, based on the host of repoURI.
 func verifyUserHasRepoURIAccess(ctx context.Context, repoURI string) bool {
-	if accesscontrol.Skip(ctx) {
-		return true
-	}
-
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
@@ -56,10 +51,6 @@ func verifyUserHasRepoURIAccess(ctx context.Context, repoURI string) bool {
 // determining the list of allowed repositories, the second return
 // value will be non-nil error.
 func verifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sourcegraph.Repo) (allowed []*sourcegraph.Repo, err error) {
-	if accesscontrol.Skip(ctx) {
-		return repos, nil
-	}
-
 	hasPrivate := false
 	for _, repo := range repos {
 		if repo.Private {
