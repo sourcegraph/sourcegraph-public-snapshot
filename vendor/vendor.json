@@ -1699,6 +1699,24 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
+			"checksumSHA1": "B9K+5clCq0PU8n8/utbKT0QjQyU=",
+			"path": "github.com/xeipuuv/gojsonpointer",
+			"revision": "6fe8760cad3569743d51ddbb243b26f8456742dc",
+			"revisionTime": "2017-02-25T23:34:18Z"
+		},
+		{
+			"checksumSHA1": "pSoUW+qY6LwIJ5lFwGohPU5HUpg=",
+			"path": "github.com/xeipuuv/gojsonreference",
+			"revision": "e02fc20de94c78484cd5ffb007f8af96be030a45",
+			"revisionTime": "2015-08-08T06:50:54Z"
+		},
+		{
+			"checksumSHA1": "wrBUTFFexM4Kz27RheBx34WhNwk=",
+			"path": "github.com/xeipuuv/gojsonschema",
+			"revision": "212d8a0df7acfab8bdd190a7a69f0ab7376edcc8",
+			"revisionTime": "2017-10-25T06:06:43Z"
+		},
+		{
 			"checksumSHA1": "pLfK99osX/k7gfcRMO6Rvxolfl0=",
 			"path": "github.com/zenazn/goji/web",
 			"revision": "c05078ca81941f8e801bba3ddc0e6b86b7fdc893",
