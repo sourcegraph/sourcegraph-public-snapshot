@@ -70,7 +70,7 @@ type Config struct {
 	MaxReposToSearch string `json:"maxReposToSearch" legacyenv:"MAX_REPOS_TO_SEARCH" description:"The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value 0 means unlimited."`
 	AdminUsernames   string `json:"adminUsernames" legacyenv:"ADMIN_USERNAMES" description:"Space-separated list of usernames that indicates which users will be treated as instance admins"`
 
-	Auth Auth `json:"auth"`
+	AuthUserOrgMap UserOrgMap `json:"auth.userOrgMap" description:"Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form <tt>{\"*\": [\"org1\", \"org2\"]}</tt>, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is <tt>\"*\"</tt>."`
 
 	// The following fields are not actually read in this repository, but are used in xlang-java
 
@@ -79,10 +79,6 @@ type Config struct {
 	PrivateArtifactRepoURL         string `json:"privateArtifactRepoURL" legacyenv:"PRIVATE_ARTIFACT_REPO_URL" description:"Java: The URL that corresponds to privateArtifactRepoID (e.g., http://my.artifactory.local/artifactory/root)."`
 	PrivateArtifactRepoUsername    string `json:"privateArtifactRepoUsername" legacyenv:"PRIVATE_ARTIFACT_REPO_USERNAME" description:"Java: The username to authenticate to the private Artifactory."`
 	PrivateArtifactRepoPassword    string `json:"privateArtifactRepoPassword" legacyenv:"PRIVATE_ARTIFACT_REPO_PASSWORD" description:"Java: The password to authenticate to the private Artifactory."`
-}
-
-type Auth struct {
-	UserOrgMap UserOrgMap `json:"userOrgMap" description:"Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form <tt>{\"*\": [\"org1\", \"org2\"]}</tt>, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is <tt>\"*\"</tt>."`
 }
 
 type GitHubConfig struct {
