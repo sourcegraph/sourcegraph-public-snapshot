@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import SettingsSchemaJSON from './settings.schema.json'
 import { colorTheme } from './theme'
 
 interface Props {
@@ -124,38 +125,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             schemas: [
                 {
                     fileMatch: ['*'],
-                    uri: 'http://example.com/sourcegraph-config-schema.json',
-                    schema: {
-                        type: 'object',
-                        properties: {
-                            'search.savedQueries': {
-                                description: 'Saved search queries',
-                                type: 'array',
-                                items: {
-                                    type: 'object',
-                                    properties: {
-                                        key: {
-                                            type: 'string',
-                                            description: 'Unique key for this query in this file',
-                                        },
-                                        description: {
-                                            type: 'string',
-                                            description: 'Description of this saved query',
-                                        },
-                                        query: {
-                                            type: 'string',
-                                            description: 'Query string',
-                                        },
-                                        scopeQuery: {
-                                            type: 'string',
-                                            description: 'Scope query string',
-                                        },
-                                    },
-                                    required: ['key', 'description', 'query'],
-                                },
-                            },
-                        },
-                    },
+                    uri: 'https://sourcegraph.com/v1/settings.schema.json#',
+                    schema: SettingsSchemaJSON,
                 },
             ],
         })

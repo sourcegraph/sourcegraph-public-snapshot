@@ -23,10 +23,24 @@ type ReposList struct {
 	Url  string `json:"url,omitempty"`
 }
 
+// SearchSavedQueries
+type SearchSavedQueries struct {
+	Description string `json:"description"`
+	Key         string `json:"key"`
+	Query       string `json:"query"`
+	ScopeQuery  string `json:"scopeQuery,omitempty"`
+}
+
 // SearchScope
 type SearchScope struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
+}
+
+// Settings Configuration settings for users and organizations on Sourcegraph Server.
+type Settings struct {
+	SearchSavedQueries []SearchSavedQueries `json:"search.savedQueries,omitempty"`
+	SearchScopes       []SearchScope        `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration Configuration for a Sourcegraph Server site.
@@ -77,6 +91,7 @@ type SiteConfiguration struct {
 	SamlSPCert                     string              `json:"samlSPCert,omitempty"`
 	SamlSPKey                      string              `json:"samlSPKey,omitempty"`
 	SearchScopes                   []SearchScope       `json:"searchScopes,omitempty"`
+	Settings                       *Settings           `json:"settings,omitempty"`
 	SsoUserHeader                  string              `json:"ssoUserHeader,omitempty"`
 	TlsCert                        string              `json:"tlsCert,omitempty"`
 	TlsKey                         string              `json:"tlsKey,omitempty"`

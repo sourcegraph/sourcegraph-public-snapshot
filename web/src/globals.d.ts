@@ -111,3 +111,8 @@ interface SourcegraphContext {
      */
     useAuth0: boolean
 }
+
+declare module '*.json' {
+    const value: any
+    export default value
+}
