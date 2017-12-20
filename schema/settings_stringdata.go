@@ -7,8 +7,7 @@ const SettingsSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "https://sourcegraph.com/v1/settings.schema.json#",
   "title": "Settings",
-  "description":
-    "Configuration settings for users and organizations on Sourcegraph Server.",
+  "description": "Configuration settings for users and organizations on Sourcegraph Server.",
   "type": "object",
   "properties": {
     "search.savedQueries": {
