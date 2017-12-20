@@ -2,15 +2,13 @@ package conf
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
-	"reflect"
-	"strconv"
-	"strings"
 
+	"github.com/sourcegraph/jsonx"
 	"github.com/xeipuuv/gojsonschema"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -31,72 +29,45 @@ func init() {
 	}
 }
 
-// initConfig initializes configuration by reading from environment variables. It attempts to read values first from an
-// environment variable with the same name as the field's JSON tag and, if that doesn't exist, falls back to reading
-// from the environment variable given by the legacy env map. If the field type is a string, the
-// value of the environment variable is stored directly. If the field type is an array, struct, bool, or other non-string
-// type, the environment variable is unmarshalled into that type.
 func initConfig() error {
-	configType := reflect.TypeOf(cfg)
-	configVal := reflect.ValueOf(&cfg)
-
-	for i := 0; i < configType.NumField(); i++ {
-		typeField := configType.Field(i)
-
-		var envVal string
-		// Read from environment variable with the same name as the JSON tag
-		jsonName := typeField.Tag.Get("json")
-		jsonName = strings.TrimSuffix(jsonName, ",omitempty")
-		if jsonName == "" && typeField.Name != "PublicRepoRedirects" {
-			return fmt.Errorf("missing JSON struct tag for config field %s", typeField.Name)
+	// SOURCEGRAPH_CONFIG takes lowest precedence.
+	if v := os.Getenv("SOURCEGRAPH_CONFIG"); v != "" {
+		if err := jsonxUnmarshal(v, &cfg); err != nil {
+			return err
 		}
-		envVal = os.Getenv(jsonName)
-
-		if envVal == "" {
-			// Fall back to reading from legacy environment variable
-			if legacyEnvName := legacyEnvToFieldName[typeField.Name]; legacyEnvName != "" {
-				envVal = os.Getenv(legacyEnvName)
-			}
-		}
-
-		// Set config value
-		if envVal != "" {
-			valField := configVal.Elem().FieldByName(typeField.Name)
-			switch valField.Kind() {
-			case reflect.String:
-				valField.SetString(envVal)
-			case reflect.Bool:
-				valBool, err := strconv.ParseBool(envVal)
-				if err != nil {
-					return fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
-				}
-				valField.SetBool(valBool)
-			case reflect.Int:
-				valInt, err := strconv.Atoi(envVal)
-				if err != nil {
-					return fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
-				}
-				valField.SetInt(int64(valInt))
-			case reflect.Slice:
-				fallthrough
-			case reflect.Struct:
-				if err := json.Unmarshal([]byte(envVal), valField.Addr().Interface()); err != nil {
-					return fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
-				}
-			default:
-				return fmt.Errorf("unhandled config field type: %s", valField.Kind())
-			}
-		}
-
 	}
-	// Special case for PUBLIC_REPO_REDIRECTS
-	if prd := os.Getenv("PUBLIC_REPO_REDIRECTS"); prd != "" {
-		if publicRepoRedirects, err := strconv.ParseBool(prd); err == nil {
-			cfg.DisablePublicRepoRedirects = !publicRepoRedirects
+
+	// Env var config takes highest precedence but is deprecated.
+	if v, err := configFromLegacyEnvVars(); err != nil {
+		return err
+	} else if len(v) > 0 && string(v) != "{}" {
+		log.Printf("Deprecation warning: Add the following config to SOURCEGRAPH_CONFIG instead of passing via other env vars: %s", v)
+		if err := json.Unmarshal(v, &cfg); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+// jsonxUnmarshal unmarshals the JSON using a fault tolerant parser. If any
+// unrecoverable faults are found an error is returned
+func jsonxUnmarshal(text string, v interface{}) error {
+	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(errs) > 0 {
+		return errors.New("failed to parse json")
+	}
+	return json.Unmarshal(data, v)
+}
+
+// normalizeJSON converts JSON with comments, trailing commas, and some types of syntax errors into
+// standard JSON.
+func normalizeJSON(input string) []byte {
+	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(output) == 0 {
+		return []byte("{}")
+	}
+	return output
 }
 
 // Validate validates the site configuration against its JSON schema.
@@ -113,7 +84,7 @@ func Validate() {
 
 	res, err := gojsonschema.Validate(
 		gojsonschema.NewStringLoader(schema.SiteSchemaJSON),
-		gojsonschema.NewStringLoader(input),
+		gojsonschema.NewBytesLoader(normalizeJSON(input)),
 	)
 	if err != nil {
 		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
