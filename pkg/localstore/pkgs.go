@@ -17,7 +17,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -31,9 +30,6 @@ type pkgs struct{}
 
 // RefreshIndex refreshes the packages index for the specified repo@commit.
 func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)) error {
-	// 🚨 SECURITY: Do not remove this call. It prevents us from leaking 🚨
-	// whether or not a private repo exists based on measuring the time
-	// RefreshIndex takes.
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
@@ -272,18 +268,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		return nil, errors.Wrap(err, "rows error")
 	}
 
-	if !feature.Features.Sep20Auth {
-		for _, pkg := range rawPkgs {
-			// 🚨 SECURITY: repository permissions are checked here 🚨
-			if _, err := Repos.Get(ctx, pkg.RepoID); err == nil {
-				pks = append(pks, pkg)
-			}
-		}
-	} else {
-		pks = rawPkgs
-	}
-
-	return pks, nil
+	return rawPkgs, nil
 }
 
 func (p *pkgs) Delete(ctx context.Context, repo int32) error {

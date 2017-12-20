@@ -17,15 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
-// Limits to the number of errors we can recieve from external GitHub
-// requests before giving up on fetching more data
-//
-// If GitHub returns an error on a fetch, we want to continue to try
-// with the next item (unless it was a rate limit error, which is
-// hanleded separately). Only after a sufficient number of unexplained
-// errors do we want to give up
-var maxOrgMemberErrors = 1
-
 // TrackUser handles user data logging during auth flows
 //
 // Specifically, updating user data properties in HubSpot

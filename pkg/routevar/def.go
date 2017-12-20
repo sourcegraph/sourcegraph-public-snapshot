@@ -1,7 +1,5 @@
 package routevar
 
-import "strings"
-
 // DefAtRev refers to a def at a non-absolute commit ID (unlike
 // DefSpec/DefKey, which require the CommitID field to have an
 // absolute commit ID).
@@ -16,13 +14,6 @@ const Def = "{UnitType}/{Unit:.+?}/-/{Path:.*?}"
 func defURLPathToKeyPath(s string) string {
 	if s == "_._" {
 		return "."
-	}
-	return s
-}
-
-func DefKeyPathToURLPath(s string) string {
-	if s == "." {
-		return "_._"
 	}
 	return s
 }
@@ -42,14 +33,4 @@ func ToDefAtRev(routeVars map[string]string) DefAtRev {
 		Unit:     defURLPathToKeyPath(routeVars["Unit"]),
 		Path:     defURLPathToKeyPath(pathUnescape(routeVars["Path"])),
 	}
-}
-
-// pathEscape is a limited version of url.QueryEscape that only escapes '?'.
-func pathEscape(p string) string {
-	return strings.Replace(p, "?", "%3F", -1)
-}
-
-// pathUnescape is a limited version of url.QueryEscape that only unescapes '?'.
-func pathUnescape(p string) string {
-	return strings.Replace(p, "%3F", "?", -1)
 }

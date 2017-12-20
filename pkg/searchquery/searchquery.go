@@ -25,7 +25,6 @@ const (
 )
 
 var (
-	regexpFieldType          = types.FieldType{Literal: types.RegexpType, Quoted: types.RegexpType}
 	regexpNegatableFieldType = types.FieldType{Literal: types.RegexpType, Quoted: types.RegexpType, Negatable: true}
 	stringFieldType          = types.FieldType{Literal: types.StringType, Quoted: types.StringType}
 

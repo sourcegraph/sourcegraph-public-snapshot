@@ -30,9 +30,6 @@ var defaultEnv = map[string]string{
 	// We disable google analytics, etc
 	"SRC_APP_DISABLE_SUPPORT_SERVICES": "true",
 
-	// Sourcegraph penance
-	"SG_FEATURE_SEP20AUTH": "true",
-
 	// We adjust behaviour for on-prem vs prod
 	"DEPLOYMENT_ON_PREM": "true",
 

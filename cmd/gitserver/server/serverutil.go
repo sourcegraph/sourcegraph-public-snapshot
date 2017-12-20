@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -48,58 +47,6 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, repoURI string) ([]byte, error
 	cmd.Stderr = &b
 	err, _ := runCommand(cmd)
 	return b.Bytes(), err
-}
-
-// makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the
-// private key. You should remove the sshWrapper, sshWrapperDir and
-// the keyFile after using them.
-func (s *Server) makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, keyFile string, err error) {
-	var otherOpt string
-	if s.InsecureSkipCheckVerifySSH {
-		otherOpt = "-o StrictHostKeyChecking=no"
-	}
-
-	kf, err := ioutil.TempFile("", "go-vcs-gitcmd-key")
-	if err != nil {
-		return "", "", "", err
-	}
-	keyFile = kf.Name()
-	err = util.WriteFileWithPermissions(keyFile, privKey, 0600)
-	if err != nil {
-		return "", "", keyFile, err
-	}
-
-	tmpFile, tmpFileDir, err := gitSSHWrapper(keyFile, otherOpt)
-	return tmpFile, tmpFileDir, keyFile, err
-}
-
-// gitSSHWrapper makes system-dependent SSH wrapper.
-func gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, tempDir string, err error) {
-	// TODO(sqs): encrypt and store the key in the env so that
-	// attackers can't decrypt if they have disk access after our
-	// process dies
-
-	var script string
-
-	if runtime.GOOS == "windows" {
-		script = `
-	@echo off
-	ssh -o ControlMaster=no -o ControlPath=none ` + otherOpt + ` -i ` + filepath.ToSlash(keyFile) + ` "%@"
-`
-	} else {
-		script = `
-	#!/bin/sh
-	exec /usr/bin/ssh -o ControlMaster=no -o ControlPath=none ` + otherOpt + ` -i ` + filepath.ToSlash(keyFile) + ` "$@"
-`
-	}
-
-	sshWrapperName, tempDir, err := util.ScriptFile("go-vcs-gitcmd")
-	if err != nil {
-		return sshWrapperName, tempDir, err
-	}
-
-	err = util.WriteFileWithPermissions(sshWrapperName, []byte(script), 0500)
-	return sshWrapperName, tempDir, err
 }
 
 // makeGitPassHelper writes a git credential helper that supplies username and password over stdout.

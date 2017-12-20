@@ -26,10 +26,6 @@ func (rb *ResponseBuffer) Header() http.Header {
 	return rb.header
 }
 
-func (rb *ResponseBuffer) ContentLength() int {
-	return rb.buf.Len()
-}
-
 func (rb *ResponseBuffer) WriteTo(w http.ResponseWriter) error {
 	for k, v := range rb.header {
 		if http.CanonicalHeaderKey(k) == "Content-Length" {

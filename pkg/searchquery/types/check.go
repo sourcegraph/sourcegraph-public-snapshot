@@ -86,7 +86,6 @@ func (c *Config) checkExpr(expr *syntax.Expr) (field string, fieldType FieldType
 
 	// Resolve value.
 	value = &Value{syntax: expr}
-	const stringLikeTypes = StringType | RegexpType
 	switch expr.ValueType {
 	case syntax.TokenLiteral:
 		if err := setValue(value, expr.Value, fieldType.Literal); err != nil {

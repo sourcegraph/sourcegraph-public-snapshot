@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/keegancsmith/sqlhooks"
@@ -39,12 +38,6 @@ func Open(dataSource string) (*sql.DB, error) {
 		return nil, fmt.Errorf("PostgresQL timezone must be UTC, but it is set to %q. (Set it by specifying `timezone = 'UTC'` in postgresql.conf and then restart PostgreSQL.)", tz)
 	}
 	return db, nil
-}
-
-// IsAlreadyExistsError returns true if err is a PostgreSQL error that
-// something "already exists" (such as a table).
-func IsAlreadyExistsError(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "already exists")
 }
 
 type hook struct{}

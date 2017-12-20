@@ -26,10 +26,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const (
-	oidcStateCookieName   = "sg-oidc-state"
-	oidcSessionCookieName = "sg-oidc-session"
-)
+const oidcStateCookieName = "sg-oidc-state"
 
 var (
 	oidcIDProvider   = conf.Get().OidcProvider
@@ -315,19 +312,6 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	}
 
 	return actor.FromUser(usr), nil
-}
-
-// oidcSession is the session information for a user session started via OIDC authentication.
-// It has no connection whatsoever with the OIDC spec. It is just the information we choose
-// to capture in the app session after OIDC authentication.
-type oidcSession struct {
-	// Issuer is the issue from the OIDC ID Token
-	Issuer string
-
-	// Subject is the subject from the OIDC ID Token
-	Subject string
-
-	Expiry time.Time
 }
 
 func ssoErrMsg(err string, description interface{}) string {

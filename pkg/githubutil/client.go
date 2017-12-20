@@ -3,16 +3,14 @@ package githubutil
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 
@@ -22,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/httpcache"
-	"golang.org/x/oauth2"
 )
 
 var gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degredation"))
@@ -111,18 +108,6 @@ func (c *Config) AuthedClient(token string) *github.Client {
 
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: t})
 	return c.client(oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})))
-}
-
-func ClearCacheForCurrentUser(ctx context.Context) {
-	a := actor.FromContext(ctx)
-	if a.GitHubToken == "" {
-		return
-	}
-
-	namespace := cacheNamespaceForToken(a.GitHubToken)
-	for _, key := range httputil.Cache.Keys(namespace + ":*") {
-		httputil.Cache.Delete(key)
-	}
 }
 
 func cacheNamespaceForToken(token string) string {
@@ -217,27 +202,4 @@ func init() {
 		log.Fatal(err)
 	}
 	Default.BaseURL = url
-}
-
-func NewTestClientServer() (client *github.Client, config *Config, mux *http.ServeMux) {
-	mux = http.NewServeMux()
-	server := httptest.NewServer(mux)
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		zero := 0
-		result := github.RepositoriesSearchResult{
-			Total:        &zero,
-			Repositories: []github.Repository{},
-		}
-		w.Header().Set("content-type", "application/json; charset=utf-8")
-		json.NewEncoder(w).Encode(result)
-	})
-
-	var err error
-	client = github.NewClient(nil)
-	client.BaseURL, err = url.Parse(server.URL)
-	if err != nil {
-		log.Panicf("Could not create new test client: %v", err)
-	}
-	config = &Config{BaseURL: client.BaseURL}
-	return
 }

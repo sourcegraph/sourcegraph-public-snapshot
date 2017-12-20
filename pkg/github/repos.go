@@ -9,11 +9,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
-	gogithub "github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -67,13 +64,6 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 	}
 
-	// specialCasePrivate indicates whether we need special handling
-	// for private repos. After Sep 20, all repos may be treated identically
-	// for caching purposes (there should be no distinction between "public" and "private").
-	// It is still possible in an on-prem server to have private GitHub repos in the cache.
-	// In this world, the "public repo cache" contains repos which are public to the cluster.
-	specialCasePrivate := !feature.Features.Sep20Auth
-
 	if cached := getFromPublicCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
@@ -94,58 +84,11 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return nil, err
 	}
 
-	addRepoToCache := func() {
-		remoteRepoCopy := *remoteRepo
-		addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
-		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
-	}
-	if specialCasePrivate {
-		// We are only allowed to cache public repos.
-		if !remoteRepo.Private {
-			addRepoToCache()
-		} else {
-			reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
-		}
-	} else {
-		// No special casing; always add resolved repos to the cache.
-		addRepoToCache()
-	}
+	remoteRepoCopy := *remoteRepo
+	addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
+	reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
+
 	return remoteRepo, nil
-}
-
-var SearchRepoMock func(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error)
-
-func MockSearch_Return(returns []*sourcegraph.Repo) (called *bool) {
-	called = new(bool)
-	SearchRepoMock = func(ctx context.Context, query string, op *gogithub.SearchOptions) ([]*sourcegraph.Repo, error) {
-		*called = true
-		return returns, nil
-	}
-	return
-}
-
-func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
-	if SearchRepoMock != nil {
-		return SearchRepoMock(ctx, query, op)
-	}
-
-	res, _, err := UnauthedClient(ctx).Search.Repositories(ctx, query, op)
-	if err != nil {
-		return nil, err
-	}
-	repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
-	for _, ghrepo := range res.Repositories {
-		if !feature.Features.Sep20Auth {
-			// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
-			// have access to within one of their installations. Filter out all private
-			// repos (private repos can be obtained with ListAllGitHubRepos)
-			if *ghrepo.Private {
-				continue
-			}
-		}
-		repos = append(repos, ToRepo(&ghrepo))
-	}
-	return repos, nil
 }
 
 // getFromPublicCache attempts to get a response from the redis cache.
@@ -227,134 +170,4 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		repo.PushedAt = &ghrepo.PushedAt.Time
 	}
 	return &repo
-}
-
-var ListAccessibleReposMock func(ctx context.Context) ([]*sourcegraph.Repo, error)
-
-func MockListAccessibleRepos_Return(returns []*sourcegraph.Repo) (called *bool) {
-	called = new(bool)
-	ListAccessibleReposMock = func(ctx context.Context) ([]*sourcegraph.Repo, error) {
-		*called = true
-		return returns, nil
-	}
-	return
-}
-
-// ListAccessibleRepos lists repos that are accessible to the authenticated
-// user.
-//
-// See https://developer.github.com/v3/repos/#list-your-repositories
-// for more information.
-func ListAccessibleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
-	if ListAccessibleReposMock != nil {
-		return ListAccessibleReposMock(ctx)
-	}
-	// Note: When GitHubApps is enabled a list of all repositories that are
-	// accessible to a user via their installations are returned. This API does not
-	// support RepositoryListOptions.
-	installs, err := ListAllAccessibleInstallations(ctx)
-	if err != nil {
-		return nil, err
-	}
-	repos := []*sourcegraph.Repo{}
-	for _, ins := range installs {
-		ghRepos, err := ListAllAccessibleReposForInstallation(ctx, *ins.ID)
-		if err != nil {
-			return nil, err
-		}
-		for _, r := range ghRepos {
-			repos = append(repos, ToRepo(r))
-		}
-	}
-	return repos, nil
-}
-
-func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
-	var ghRepos []*gogithub.StarredRepository
-	var resp *gogithub.Response
-	var err error
-	// We can't get access to private starred repo's with the API. This only returns public starred repos.
-	ghRepos, resp, err = UnauthedClient(ctx).Activity.ListStarred(ctx, actor.FromContext(ctx).Login, opt)
-	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
-	}
-	var repos []*sourcegraph.Repo
-	for _, ghRepo := range ghRepos {
-		repos = append(repos, ToRepo(ghRepo.Repository))
-	}
-	return repos, nil
-}
-
-// TODO(john): the name of this method is now misleading. Before Sep 20,
-// this will *only* list public repos. After Sep 20, this method may list
-// private repos if the github-proxy uses a personal access token which can
-// access private repos. Rename "ListReposForUser".
-func ListPublicReposForUser(ctx context.Context, login string) ([]*sourcegraph.Repo, error) {
-	if ListPublicReposMock != nil {
-		return ListPublicReposMock(ctx, login)
-	}
-
-	beforeSep20 := !feature.Features.Sep20Auth
-	var user string
-	if beforeSep20 {
-		// List only repos owned by the specified user.
-		user = login
-	}
-	// Else, when user is empty, the GitHub API will list all repos visible to
-	// the "currently authed user" (including public, private, & org repos
-	// not owned by the user). The github-proxy will only make an authenticated
-	// request if a personal access token is provided.
-
-	ghRepos, _, err := UnauthedClient(ctx).Repositories.List(ctx, user, nil)
-	if err != nil {
-		return nil, err
-	}
-	repos := []*sourcegraph.Repo{}
-	for _, r := range ghRepos {
-		repos = append(repos, ToRepo(r))
-	}
-	return repos, nil
-}
-
-var ListPublicReposMock func(ctx context.Context, login string) ([]*sourcegraph.Repo, error)
-
-func MockListPublicRepos_Return(returns []*sourcegraph.Repo) (called *bool) {
-	called = new(bool)
-	ListPublicReposMock = func(ctx context.Context, login string) ([]*sourcegraph.Repo, error) {
-		*called = true
-		return returns, nil
-	}
-	return
-}
-
-// ListAllGitHubRepos lists all GitHub repositories that fit the
-// criteria that are accessible to the currently authenticated user.
-// It's a convenience wrapper around Repos.ListAccessible, since there
-// are a few places where we want a list of *all* repositories
-// accessible to a user.
-func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
-	const perPage = 100
-	const maxPage = 1000
-	op := *op_
-	op.PerPage = perPage
-
-	if !HasAuthedUser(ctx) {
-		return nil, nil
-	}
-	var allRepos []*sourcegraph.Repo
-	for page := 1; page <= maxPage; page++ {
-		op.Page = page
-		repos, err := ListAccessibleRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		allRepos = append(allRepos, repos...)
-		if len(repos) < perPage {
-			break
-		}
-	}
-	return allRepos, nil
 }

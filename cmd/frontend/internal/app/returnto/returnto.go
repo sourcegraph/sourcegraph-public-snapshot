@@ -31,9 +31,6 @@ import (
 // ParamName is the URL query param name for the "return-to" URL.
 const ParamName = "return-to"
 
-// NewUserReturnTo is the URL query param name for the "new-user-return-to" URL.
-const NewUserReturnTo = "new-user-return-to"
-
 // URLFromRequest determines the proper return-to URL to use from the
 // given request. It uses the URL passed in the "return-to" URL query
 // parameter. If it's empty, the URL path "/" is returned. If it is

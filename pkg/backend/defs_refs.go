@@ -93,14 +93,6 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	return res, nil
 }
 
-func repoSpecsToInts(v []sourcegraph.RepoSpec) (r []int32) {
-	r = make([]int32, len(v))
-	for i, v := range v {
-		r[i] = v.ID
-	}
-	return
-}
-
 func intsToRepoSpecs(v []int32) (r []sourcegraph.RepoSpec) {
 	r = make([]sourcegraph.RepoSpec, len(v))
 	for i, v := range v {
@@ -158,14 +150,13 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []sourcegr
 }
 
 // Dependencies returns the dependency references for the given repoID. I.e., the repo's dependencies.
-func (s *defs) Dependencies(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error) {
+func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*sourcegraph.DependencyReference, error) {
 	if Mocks.Defs.Dependencies != nil {
-		return Mocks.Defs.Dependencies(ctx, repoID, excludePrivate)
+		return Mocks.Defs.Dependencies(ctx, repoID)
 	}
 
 	return localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
-		Repo:           repoID,
-		ExcludePrivate: excludePrivate,
+		Repo: repoID,
 	})
 }
 
@@ -185,22 +176,6 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	span.SetTag("line", op.Line)
 	span.SetTag("character", op.Character)
 
-	// 🚨 SECURITY: We first must call textDocument/xdefinition on a ref 🚨
-	// to figure out what to query the global deps database for. The
-	// ref might exist in a private repo, so we MUST check that the
-	// user has access to that private repo first prior to calling it
-	// in xlang (xlang has unlimited, unchecked access to gitserver).
-	//
-	// For example, if a user is browsing a private repository but
-	// looking for references to a public repository's symbol
-	// (fmt.Println), we support that, but we DO NOT support looking
-	// for references to a private repository's symbol ever (in fact,
-	// they are not even indexed by the global deps database).
-	//
-	// 🚨 SECURITY: repository permissions are checked here 🚨
-	//
-	// The Repos.Get call here is responsible for ensuring the user has access
-	// to the repository.
 	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
 	if err != nil {
 		return nil, err
@@ -275,5 +250,5 @@ type MockDefs struct {
 	ListTotalRefs        func(ctx context.Context, source string) (res []sourcegraph.RepoSpec, err error)
 	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
 	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
-	Dependencies         func(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error)
+	Dependencies         func(ctx context.Context, repoID int32) ([]*sourcegraph.DependencyReference, error)
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -23,11 +22,6 @@ import (
 var Repos = &repos{}
 
 type repos struct{}
-
-// e2eUserPrefix is prefixed to all e2etest user account logins to
-// ensure they can be filtered out of different systems easily and do
-// not conflict with real user accounts.
-const e2eUserPrefix = "e2etestuserx4FF3"
 
 func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *sourcegraph.Repo, err error) {
 	if Mocks.Repos.Get != nil {
@@ -72,11 +66,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
 	return localstore.Repos.TryInsertNew(ctx, uri, description, fork, private)
 }
-
-// ghRepoQueryMatcher matches search queries that look like they refer
-// to GitHub repositories. Examples include "github.com/gorilla/mux", "gorilla/mux", "gorilla mux",
-// "gorilla / mux"
-var ghRepoQueryMatcher = regexp.MustCompile(`^(?:github.com/)?([^/\s]+)[/\s]+([^/\s]+)$`)
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res *sourcegraph.RepoList, err error) {
 	if Mocks.Repos.List != nil {

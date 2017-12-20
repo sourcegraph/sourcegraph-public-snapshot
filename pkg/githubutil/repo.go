@@ -31,7 +31,3 @@ func SplitRepoURI(uri string) (owner, repo string, err error) {
 
 	return owner, repo, nil
 }
-
-func RepoURI(ghowner, ghname string) string {
-	return fmt.Sprintf("github.com/%s/%s", ghowner, ghname)
-}

@@ -226,7 +226,6 @@ type Query {
   # All saved queries configured for the current user, merged from all configurations.
   savedQueries: [SavedQuery!]!
   repoGroups: [RepoGroup!]!
-  revealCustomerCompany(ip: String!): CompanyProfile
   org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
   sharedItem(ulid: String!): SharedItem
   packages(
@@ -745,14 +744,6 @@ type Hunk {
   message: String!
 }
 
-type Installation {
-  login: String!
-  githubId: Int!
-  installId: Int!
-  type: String!
-  avatarURL: String!
-}
-
 # A list of users.
 type UserConnection {
 	# A list of users.
@@ -780,44 +771,6 @@ type User implements Node, ConfigurationSubject {
   hasSourcegraphUser: Boolean!
   tags: [UserTag!]!
   activity: UserActivity!
-}
-
-type CompanyProfile {
-  ip: String!
-  domain: String!
-  fuzzy: Boolean!
-  company: CompanyInfo!
-}
-
-type CompanyInfo {
-  id: String!
-  name: String!
-  legalName: String!
-  domain: String!
-  domainAliases: [String!]!
-  url: String!
-  site: SiteDetails!
-  category: CompanyCategory!
-  tags: [String!]!
-  description: String!
-  foundedYear: String!
-  location: String!
-  logo: String!
-  tech: [String!]!
-}
-
-type SiteDetails {
-  url: String!
-  title: String!
-  phoneNumbers: [String!]!
-  emailAddresses: [String!]!
-}
-
-type CompanyCategory {
-  sector: String!
-  industryGroup: String!
-  industry: String!
-  subIndustry: String!
 }
 
 # A list of organizations.

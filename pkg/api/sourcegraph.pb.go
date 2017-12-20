@@ -97,41 +97,10 @@ type Repo struct {
 	FreezeIndexedRevision bool `json:"FreezeIndexedRevision,omitempty"`
 }
 
-// GitHubRepoWithDetails represents a GitHub source code repository with additional context
-// These types are used for data logging/capturing when a GitHub user signs in to Sourcegraph
-type GitHubRepoWithDetails struct {
-	URI         string                `json:"URI,omitempty"`
-	Fork        bool                  `json:"Fork,omitempty"`
-	Private     bool                  `json:"Private,omitempty"`
-	CreatedAt   *time.Time            `json:"CreatedAt,omitempty"`
-	PushedAt    *time.Time            `json:"PushedAt,omitempty"`
-	Languages   []*GitHubRepoLanguage `json:"Languages,omitempty"`
-	CommitTimes []*time.Time          `json:"Commits,omitempty"`
-	// ErrorFetchingDetails is provided if tracker code receives error
-	// responses from GitHub while fetching language or commit details from
-	// https://api.github.com/repos/org/name/[languages|commits] URLs
-	ErrorFetchingDetails bool `json:"error_fetching_details,omitempty"`
-	Skipped              bool `json:"skipped,omitempty"`
-}
-
-type GitHubRepoLanguage struct {
-	Language string `json:"Language,omitempty"`
-	Count    int    `json:"Count,omitempty"`
-}
-
 type Contributor struct {
 	Login         string `json:"Login,omitempty"`
 	AvatarURL     string `json:"AvatarURL,omitempty"`
 	Contributions int    `json:"Contributions,omitempty"`
-}
-
-// RepoPermissions describes the actions that a user may perform on a
-// repo. Currently, the definition of these permissions directly maps
-// to GitHub permissions, except for "Pull", which means read access.
-type RepoPermissions struct {
-	Pull  bool `json:"Pull,omitempty"`
-	Push  bool `json:"Push,omitempty"`
-	Admin bool `json:"Admin,omitempty"`
 }
 
 // RepoListOptions specifies the options for listing repositories.
@@ -149,11 +118,6 @@ type RepoListOptions struct {
 	ExcludePattern string
 	// ListOptions controls pagination.
 	ListOptions `json:""`
-}
-
-// RepoWebhookOptions is used for enable repository webhook.
-type RepoWebhookOptions struct {
-	URI string `json:"URI,omitempty"`
 }
 
 // RepoRevSpec specifies a repository at a specific commit.
@@ -174,10 +138,6 @@ type RepoSpec struct {
 
 type RepoList struct {
 	Repos []*Repo `json:"Repos,omitempty"`
-}
-
-type GitHubReposWithDetailsList struct {
-	ReposWithDetails []*GitHubRepoWithDetails `json:"ReposWithDetails,omitempty"`
 }
 
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
@@ -237,14 +197,6 @@ type CommitterList struct {
 type UserSpec struct {
 	// UID is a user's UID.
 	UID string `json:"UID,omitempty"`
-}
-
-// SubmitFormResponse is a response to a user submitting a form (such
-// as, e.g., a beta signup form).
-type SubmitFormResponse struct {
-	// EmailAddress is the email address of the user that submitted the
-	// form
-	EmailAddress string `json:"EmailAddress,omitempty"`
 }
 
 // AuthInfo describes the currently authenticated client and/or user
@@ -315,57 +267,6 @@ type UserEvent struct {
 	Version string `json:"Version,omitempty"`
 	// URL holds the http request url.
 	URL string `json:"URL,omitempty"`
-}
-
-// Event is any action logged on a Sourcegraph instance.
-type Event struct {
-	// Type specifies the action type, eg. "AccountCreate" or "AddRepo".
-	Type string `json:"Type,omitempty"`
-	// UserID is the unique identifier of a user on a Sourcegraph instance.
-	// It is constructed as "login@short-client-id", where short-client-id
-	// is the first 6 characters of this sourcegraph instance's public key
-	// fingerprint (i.e. it's ClientID).
-	UserID string `json:"UserID,omitempty"`
-	// DeviceID is the unique identifier of an anonymous user on a Sourcegraph
-	// instance.
-	DeviceID string `json:"DeviceID,omitempty"`
-	// Timestamp records the instant when this event was logged.
-	Timestamp *time.Time `json:"Timestamp,omitempty"`
-	// UserProperties holds metadata relating to user who performed this
-	// action, eg. "Email".
-	UserProperties map[string]string `json:"UserProperties,omitempty"`
-	// EventProperties holds metadata relating to the action logged by
-	// this event, eg. for "AddRepo" event, a property is "Source" which
-	// specifies if the repo is local or mirrored.
-	EventProperties map[string]string `json:"EventProperties,omitempty"`
-}
-
-// EventList is a list of logged Sourcegraph events.
-type EventList struct {
-	// Events holds the list of events.
-	Events []*Event `json:"Events,omitempty"`
-	// Version holds the release version of the Sourcegraph binary.
-	Version string `json:"Version,omitempty"`
-	// AppURL holds the base URL of the Sourcegraph app.
-	AppURL string `json:"AppURL,omitempty"`
-}
-
-// OrgsList is a list of GitHub organizations for a given user
-type OrgsList struct {
-	Orgs []*GitHubOrg `json:"Orgs,omitempty"`
-}
-
-// GitHubOrg holds the result of an org for Orgs.ListOrgs
-type GitHubOrg struct {
-	Login         string `json:"Login"`
-	ID            int32  `json:"ID"`
-	AvatarURL     string `json:"AvatarURL,omitempty"`
-	Name          string `json:"Name,omitempty"`
-	Blog          string `json:"Blog,omitempty"`
-	Location      string `json:"Location,omitempty"`
-	Email         string `json:"Email,omitempty"`
-	Description   string `json:"Description,omitempty"`
-	Collaborators int32  `json:"Collaborators,omitempty"`
 }
 
 // UserInvite holds the result of an invite for Orgs.InviteUser

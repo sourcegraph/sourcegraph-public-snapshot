@@ -1,18 +1,9 @@
 package localstore
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 )
-
-func testContextNoDB() context.Context {
-	ctx := context.Background()
-	ctx = accesscontrol.WithInsecureSkip(ctx, true)
-	return ctx
-}
 
 func jsonEqual(t *testing.T, a, b interface{}) bool {
 	return asJSON(t, a) == asJSON(t, b)

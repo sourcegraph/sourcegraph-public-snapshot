@@ -27,21 +27,8 @@ func resetCache(t *testing.T) {
 	reposGithubPublicCache = rcache.NewWithTTL(testGHCachePrefix, 1000)
 }
 
-// TestRepos_Get_existing_public tests the behavior of Repos.Get when called on a
-// repo that exists (i.e., successful outcome, cache hit).
-func TestRepos_Get_existing_public(t *testing.T) {
-	testRepos_Get(t, false)
-}
-
-// TestRepos_Get_existing_private tests the behavior of Repos.Get when called on a
-// repo that exists (i.e., successful outcome, cache miss).
-func TestRepos_Get_existing_private(t *testing.T) {
-	testRepos_Get(t, true)
-}
-
-// TestRepos_Get_nocache tests the behavior of Repos.Get when called on a
-// repo that is private (i.e., it shouldn't be cached).
-func testRepos_Get(t *testing.T, private bool) {
+// TestRepos_Get_nocache tests the behavior of Repos.Get.
+func TestRepos_Get(t *testing.T) {
 	resetCache(t)
 
 	var calledGet bool
@@ -53,7 +40,6 @@ func testRepos_Get(t *testing.T, private bool) {
 			FullName: github.String("owner/repo"),
 			Owner:    &github.User{ID: github.Int(1)},
 			CloneURL: github.String("https://github.com/owner/repo.git"),
-			Private:  github.Bool(private),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -73,10 +59,10 @@ func testRepos_Get(t *testing.T, private bool) {
 		t.Error("repo == nil")
 	}
 	if !calledGet {
-		t.Error("!calledGet")
+		t.Error("!calledGet, expected to miss cache")
 	}
 
-	// Test that repo is not cached and fetched from client on second request.
+	// Test that repo is cached (and therefore NOT fetched) from client on second request.
 	calledGet = false
 	repo, err = GetRepo(context.Background(), "github.com/owner/repo")
 	if err != nil {
@@ -85,10 +71,7 @@ func testRepos_Get(t *testing.T, private bool) {
 	if repo == nil {
 		t.Error("repo == nil")
 	}
-	if private && !calledGet {
-		t.Error("!calledGet, expected to miss cache")
-	}
-	if !private && calledGet {
+	if calledGet {
 		t.Error("calledGet, expected to hit cache")
 	}
 }
@@ -195,7 +178,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 
 	authedGet := func() bool {
 		calledGet = false
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test"})
 		_, err := GetRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)

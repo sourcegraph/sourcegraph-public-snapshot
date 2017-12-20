@@ -170,7 +170,6 @@ func Main() error {
 
 	localstore.ConnectToDB("")
 
-	app.Init()
 	go bg.ApplyUserOrgMap(context.Background())
 
 	// This is a temporary backfill which dynamically sets a column value in the db

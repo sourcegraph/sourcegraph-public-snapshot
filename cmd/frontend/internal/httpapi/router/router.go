@@ -2,9 +2,6 @@
 package router
 
 import (
-	"fmt"
-	"net/url"
-
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
@@ -14,11 +11,8 @@ const (
 	XLang   = "xlang"
 	LSP     = "lsp"
 
-	GlobalSearch     = "global.search"
-	RepoShield       = "repo.shield"
-	BetaSubscription = "beta-subscription"
-	SubmitForm       = "submit-form"
-	Telemetry        = "telemetry"
+	RepoShield = "repo.shield"
+	Telemetry  = "telemetry"
 
 	DefsRefreshIndex           = "internal.defs.refresh-index"
 	ReposGetByURI              = "internal.repos.get-by-uri"
@@ -42,9 +36,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/graphql").Methods("GET", "POST").Name(GraphQL)
 	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 	base.Path("/lsp").Methods("GET").Name(LSP)
-
-	base.Path("/beta-subscription").Methods("POST").Name(BetaSubscription)
-	base.Path("/submit-form").Methods("POST").Name(SubmitForm)
 
 	base.Path("/telemetry/{TelemetryPath:.*}").Methods("POST").Name(Telemetry)
 
@@ -77,30 +68,4 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/{RepoURI:.*}").Methods("GET").Name(ReposGetByURI)
 
 	return base
-}
-
-var rel = New(nil)
-
-// URL generates a relative URL for the given route, route variables,
-// and querystring options. The returned URL will contain only path
-// and querystring components (and will not be an absolute URL).
-func URL(route string, routeVars map[string]string) (*url.URL, error) {
-	rt := rel.Get(route)
-	if rt == nil {
-		return nil, fmt.Errorf("no API route named %q", route)
-	}
-
-	routeVarsList := make([]string, 2*len(routeVars))
-	i := 0
-	for name, val := range routeVars {
-		routeVarsList[i*2] = name
-		routeVarsList[i*2+1] = val
-		i++
-	}
-	url, err := rt.URL(routeVarsList...)
-	if err != nil {
-		return nil, err
-	}
-
-	return url, nil
 }

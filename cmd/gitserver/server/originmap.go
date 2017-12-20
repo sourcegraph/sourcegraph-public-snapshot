@@ -21,11 +21,6 @@ type prefixAndOrgin struct {
 	Origin string
 }
 
-type originMapping struct {
-	URI    string
-	Origin string
-}
-
 var originMapEnv = conf.Get().GitOriginMap
 var gitoliteHostsEnv = conf.Get().GitoliteHosts
 var githubConf = conf.Get().Github
