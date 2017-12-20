@@ -30,13 +30,6 @@ const (
 	ResetPasswordInit = "reset-password.init"
 	ResetPassword     = "reset-password"
 
-	GitHubOAuth2Initiate = "github-oauth2.initiate" // DEPRECATED
-	GitHubOAuth2Receive  = "github-oauth2.receive"  // DEPRECATED
-	GitHubAppInstalled   = "github.app-installed"   // DEPRECATED
-
-	GoogleOAuth2Initiate = "google-oauth2.initiate"
-	GoogleOAuth2Receive  = "google-oauth2.receive"
-
 	OldDefRedirect   = "old-def-redirect"
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
@@ -82,13 +75,6 @@ func New() *Router {
 	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
 	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
 	base.Path("/-/reset-password").Methods("POST").Name(ResetPassword)
-
-	base.Path("/-/github-oauth/initiate").Methods("POST").Name(GitHubOAuth2Initiate)      // DEPRECATED
-	base.Path("/-/github-oauth/receive").Methods("GET", "POST").Name(GitHubOAuth2Receive) // DEPRECATED
-	base.Path("/-/github-app-installed").Methods("GET").Name(GitHubAppInstalled)          // DEPRECATED
-
-	base.Path("/-/google-oauth/initiate").Methods("POST").Name(GoogleOAuth2Initiate)
-	base.Path("/-/google-oauth/receive").Methods("GET", "POST").Name(GoogleOAuth2Receive)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)

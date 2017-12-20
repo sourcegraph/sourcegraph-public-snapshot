@@ -215,8 +215,6 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
-	// the user has permissions to access the repository.
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
 		Rev:  "",
@@ -374,7 +372,7 @@ func (r *schemaResolver) Dependents(ctx context.Context, args *struct {
 		packag:  args.Package,
 	}.toPkgQuery()
 
-	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, ExcludePrivate: true, Limit: int(limit)})
+	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, Limit: int(limit)})
 	if err != nil {
 		return nil, err
 	}

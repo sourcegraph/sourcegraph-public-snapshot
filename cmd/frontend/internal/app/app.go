@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/oauth2client"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/redirects"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui2"
@@ -14,7 +13,6 @@ import (
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -65,13 +63,6 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.VerifyEmail).Handler(traceutil.TraceRoute(http.HandlerFunc(serveVerifyEmail)))
 	r.Get(router.ResetPasswordInit).Handler(traceutil.TraceRoute(http.HandlerFunc(serveResetPasswordInit)))
 	r.Get(router.ResetPassword).Handler(traceutil.TraceRoute(http.HandlerFunc(serveResetPassword)))
-
-	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate))) // DEPRECATED
-	r.Get(router.GitHubOAuth2Receive).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))   // DEPRECATED
-	r.Get(router.GitHubAppInstalled).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		githubutil.ClearCacheForCurrentUser(r.Context())
-		http.Redirect(w, r, "/", 301)
-	})))
 
 	r.Get(router.GDDORefs).Handler(traceutil.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(traceutil.TraceRoute(errorutil.Handler(serveEditor)))

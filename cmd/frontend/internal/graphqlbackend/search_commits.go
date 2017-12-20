@@ -12,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -88,12 +86,6 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 
 func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query, diff bool, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
 	repo := repoRevs.repo
-	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
-	// the user has permissions to access the repository. (It does not actually need to
-	// resolve the rev.)
-	if _, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID}); err != nil {
-		return nil, false, err
-	}
 
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {

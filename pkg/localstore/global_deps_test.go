@@ -156,7 +156,6 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	}
 }
 
-// 🚨 SECURITY: This test is critical for testing security 🚨
 func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -198,7 +197,6 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	// 🚨 SECURITY: This is critical for testing security 🚨
 	calledReposGetByURI := false
 	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledReposGetByURI = true
@@ -241,7 +239,6 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	}
 }
 
-// 🚨 SECURITY: This test is critical for testing security 🚨
 func TestGlobalDeps_Dependencies(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -261,25 +258,6 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		repoIDs[i] = rp.ID
 	}
 
-	mockListUserPrivateRepoIDs = func(ctx context.Context) ([]int32, error) {
-		return repoIDs, nil
-	}
-
-	// 🚨 SECURITY: This is critical for testing security 🚨
-	calledReposGet := false
-	Mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
-		calledReposGet = true
-		for i := 0; i < 4; i++ {
-			if repoIDs[i] == repo {
-				return &sourcegraph.Repo{ID: repo}, nil
-			}
-		}
-		if repoIDs[4] == repo {
-			return nil, errors.New("unauthorized")
-		}
-		return nil, errors.New("not found")
-	}
-
 	inputRefs := map[int32][]lspext.DependencyReference{
 		repoIDs[0]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true}}},
 		repoIDs[1]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true}}},
@@ -297,7 +275,6 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 
 	{ // Test case 1
-		calledReposGet = false
 		wantRefs := []*sourcegraph.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true},
 			RepoID:  repoIDs[0],
@@ -315,12 +292,8 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
-		if !calledReposGet {
-			t.Fatalf("!calledReposGet")
-		}
 	}
 	{ // Test case 2
-		calledReposGet = false
 		wantRefs := []*sourcegraph.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true},
 			RepoID:  repoIDs[1],
@@ -338,19 +311,20 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
-		if !calledReposGet {
-			t.Fatalf("!calledReposGet")
-		}
 	}
-	{ // Test case 3, permissions: filter out unauthorized repository from results
-		calledReposGet = false
+	{ // Test case 3
 		wantRefs := []*sourcegraph.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
 			RepoID:  repoIDs[2],
 		}, {
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
 			RepoID:  repoIDs[3],
-		}}
+		},
+			{
+				DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
+				RepoID:  repoIDs[4],
+			},
+		}
 		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 			Language: "go",
 			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep4"},
@@ -363,9 +337,6 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		sort.Sort(sortDepRefs(gotRefs))
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
-		}
-		if !calledReposGet {
-			t.Fatalf("!calledReposGet")
 		}
 	}
 }

@@ -23,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -36,7 +35,6 @@ var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex 
 // TrackingAppID is used by the Telligent data pipeline
 var TrackingAppID = conf.Get().AppID
 
-var gitHubAppURL = env.Get("SRC_GITHUB_APP_URL", "", "URL for the GitHub app landing page users are taken to after being prompted to install the Sourcegraph GitHub app.")
 var githubConf = conf.Get().Github
 
 var useAuth0 = env.Get("USE_AUTH0", "true", "Whether to use Auth0 for native auth")
@@ -75,23 +73,21 @@ type JSContext struct {
 	Features       interface{}       `json:"features"`
 	User           *immutableUser    `json:"user"`
 
-	GitHubToken          *sourcegraph.ExternalToken `json:"gitHubToken"`
-	GitHubAppURL         string                     `json:"gitHubAppURL"`
-	GithubEnterpriseURLs map[string]string          `json:"githubEnterpriseURLs"`
-	SentryDSN            string                     `json:"sentryDSN"`
-	IntercomHash         string                     `json:"intercomHash"`
-	TrackingAppID        string                     `json:"trackingAppID"`
-	Debug                bool                       `json:"debug"`
-	OnPrem               bool                       `json:"onPrem"`
-	RepoHomeRegexFilter  string                     `json:"repoHomeRegexFilter"`
-	SessionID            string                     `json:"sessionID"`
-	Auth0Domain          string                     `json:"auth0Domain"`
-	Auth0ClientID        string                     `json:"auth0ClientID"`
-	License              *license.License           `json:"license"`
-	LicenseStatus        license.LicenseStatus      `json:"licenseStatus"`
-	ShowOnboarding       bool                       `json:"showOnboarding"`
-	EmailEnabled         bool                       `json:"emailEnabled"`
-	UseAuth0             bool                       `json:"useAuth0"`
+	GithubEnterpriseURLs map[string]string     `json:"githubEnterpriseURLs"`
+	SentryDSN            string                `json:"sentryDSN"`
+	IntercomHash         string                `json:"intercomHash"`
+	TrackingAppID        string                `json:"trackingAppID"`
+	Debug                bool                  `json:"debug"`
+	OnPrem               bool                  `json:"onPrem"`
+	RepoHomeRegexFilter  string                `json:"repoHomeRegexFilter"`
+	SessionID            string                `json:"sessionID"`
+	Auth0Domain          string                `json:"auth0Domain"`
+	Auth0ClientID        string                `json:"auth0ClientID"`
+	License              *license.License      `json:"license"`
+	LicenseStatus        license.LicenseStatus `json:"licenseStatus"`
+	ShowOnboarding       bool                  `json:"showOnboarding"`
+	EmailEnabled         bool                  `json:"emailEnabled"`
+	UseAuth0             bool                  `json:"useAuth0"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -123,13 +119,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	csrfToken := csrf.Token(req)
 	headers["X-Csrf-Token"] = csrfToken
-
-	var gitHubToken *sourcegraph.ExternalToken
-	if actor.GitHubConnected {
-		gitHubToken = &sourcegraph.ExternalToken{
-			Scope: strings.Join(actor.GitHubScopes, ","), // the UI only cares about the scope
-		}
-	}
 
 	var user *immutableUser
 	if actor.UID != "" && actor != nil {
@@ -163,8 +152,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Version:              env.Version,
 		Features:             feature.Features,
 		User:                 user,
-		GitHubToken:          gitHubToken,
-		GitHubAppURL:         gitHubAppURL,
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
 		IntercomHash:         intercomHMAC(actor.UID),

@@ -35,23 +35,6 @@ type Actor struct {
 
 	// AvatarURL is the URL to an avatar image for the user, if it is known.
 	AvatarURL string
-
-	// GitHubConnected indicates if the actor has a GitHub account connected.
-	//
-	// DEPRECATED
-	GitHubConnected bool
-
-	// GitHubScopes is the list of allowed GitHub API scopes we currently have for the actor.
-	//
-	// DEPRECATED
-	GitHubScopes []string
-
-	// GitHubToken is the token for the GitHub API for this actor.
-	// FIXME: It is not nice to store this here, but currently our codebase expects it to be quickly
-	// avaialble everywhere.
-	//
-	// DEPRECATED
-	GitHubToken string
 }
 
 // FromUser returns an actor corresponding to a user

@@ -111,7 +111,7 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 	if err != nil {
 		return err
 	}
-	deps, err := backend.Defs.Dependencies(r.Context(), args.RepoID, false)
+	deps, err := backend.Defs.Dependencies(r.Context(), args.RepoID)
 	if err != nil {
 		return fmt.Errorf("Defs.DependencyReferences failed: %s", err)
 	}

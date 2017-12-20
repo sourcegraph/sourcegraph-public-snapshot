@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 
@@ -22,7 +22,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/httpcache"
-	"golang.org/x/oauth2"
 )
 
 var gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degredation"))
@@ -111,18 +110,6 @@ func (c *Config) AuthedClient(token string) *github.Client {
 
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: t})
 	return c.client(oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})))
-}
-
-func ClearCacheForCurrentUser(ctx context.Context) {
-	a := actor.FromContext(ctx)
-	if a.GitHubToken == "" {
-		return
-	}
-
-	namespace := cacheNamespaceForToken(a.GitHubToken)
-	for _, key := range httputil.Cache.Keys(namespace + ":*") {
-		httputil.Cache.Delete(key)
-	}
 }
 
 func cacheNamespaceForToken(token string) string {

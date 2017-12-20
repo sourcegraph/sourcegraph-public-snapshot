@@ -6,19 +6,13 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
-	"strconv"
 
-	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 )
-
-var ghAppID, _ = strconv.Atoi(env.Get("SRC_GITHUB_APP_ID", "", "Integration ID for the Sourcegraph GitHub app."))
-var ghAppKey = env.Get("SRC_GITHUB_APP_PRIVATE_KEY", "", "The private key for the Sourcegraph GitHub app.")
 
 var (
 	abuseDetectionMechanismCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -51,22 +45,6 @@ func Client(ctx context.Context) *github.Client {
 
 	ghConf := githubConf(ctx)
 	return ghConf.UnauthedClient()
-}
-
-func InstallationClient(ctx context.Context, installationID int) (*github.Client, error) {
-	if MockRoundTripper != nil {
-		return github.NewClient(&http.Client{
-			Transport: MockRoundTripper,
-		}), nil
-	}
-
-	tr := http.DefaultTransport
-	itr, err := ghinstallation.New(tr, ghAppID, installationID, []byte(ghAppKey))
-	if err != nil {
-		return nil, err
-	}
-
-	return github.NewClient(&http.Client{Transport: itr}), nil
 }
 
 // UnauthedClient returns a github.Client that is unauthenticated

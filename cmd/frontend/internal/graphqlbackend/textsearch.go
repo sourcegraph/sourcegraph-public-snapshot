@@ -260,8 +260,6 @@ func searchRepo(ctx context.Context, repo *sourcegraph.Repo, rev string, info *p
 		return mockSearchRepo(ctx, repo, rev, info)
 	}
 
-	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
-	// the user has permissions to access the repository.
 	commit, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
 		Rev:  rev,

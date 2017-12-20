@@ -93,8 +93,6 @@ type gitObjectResolver struct {
 }
 
 func (o *gitObjectResolver) OID(ctx context.Context) (gitObjectID, error) {
-	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
-	// the user has permissions to access the repository.
 	resolvedRev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: o.repo.repo.ID, Rev: o.revspec})
 	if err != nil {
 		return "", err

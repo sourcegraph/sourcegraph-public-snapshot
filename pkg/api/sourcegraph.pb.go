@@ -97,23 +97,6 @@ type Repo struct {
 	FreezeIndexedRevision bool `json:"FreezeIndexedRevision,omitempty"`
 }
 
-// GitHubRepoWithDetails represents a GitHub source code repository with additional context
-// These types are used for data logging/capturing when a GitHub user signs in to Sourcegraph
-type GitHubRepoWithDetails struct {
-	URI         string                `json:"URI,omitempty"`
-	Fork        bool                  `json:"Fork,omitempty"`
-	Private     bool                  `json:"Private,omitempty"`
-	CreatedAt   *time.Time            `json:"CreatedAt,omitempty"`
-	PushedAt    *time.Time            `json:"PushedAt,omitempty"`
-	Languages   []*GitHubRepoLanguage `json:"Languages,omitempty"`
-	CommitTimes []*time.Time          `json:"Commits,omitempty"`
-	// ErrorFetchingDetails is provided if tracker code receives error
-	// responses from GitHub while fetching language or commit details from
-	// https://api.github.com/repos/org/name/[languages|commits] URLs
-	ErrorFetchingDetails bool `json:"error_fetching_details,omitempty"`
-	Skipped              bool `json:"skipped,omitempty"`
-}
-
 type GitHubRepoLanguage struct {
 	Language string `json:"Language,omitempty"`
 	Count    int    `json:"Count,omitempty"`
@@ -123,15 +106,6 @@ type Contributor struct {
 	Login         string `json:"Login,omitempty"`
 	AvatarURL     string `json:"AvatarURL,omitempty"`
 	Contributions int    `json:"Contributions,omitempty"`
-}
-
-// RepoPermissions describes the actions that a user may perform on a
-// repo. Currently, the definition of these permissions directly maps
-// to GitHub permissions, except for "Pull", which means read access.
-type RepoPermissions struct {
-	Pull  bool `json:"Pull,omitempty"`
-	Push  bool `json:"Push,omitempty"`
-	Admin bool `json:"Admin,omitempty"`
 }
 
 // RepoListOptions specifies the options for listing repositories.
@@ -174,10 +148,6 @@ type RepoSpec struct {
 
 type RepoList struct {
 	Repos []*Repo `json:"Repos,omitempty"`
-}
-
-type GitHubReposWithDetailsList struct {
-	ReposWithDetails []*GitHubRepoWithDetails `json:"ReposWithDetails,omitempty"`
 }
 
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.

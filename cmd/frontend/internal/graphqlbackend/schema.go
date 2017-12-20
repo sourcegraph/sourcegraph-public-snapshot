@@ -752,14 +752,6 @@ type Hunk {
   message: String!
 }
 
-type Installation {
-  login: String!
-  githubId: Int!
-  installId: Int!
-  type: String!
-  avatarURL: String!
-}
-
 # A list of users.
 type UserConnection {
 	# A list of users.

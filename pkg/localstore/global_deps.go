@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -15,12 +14,9 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	gogithub "github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -58,9 +54,6 @@ var globalDepEnabledLangs = map[string]struct{}{
 
 // RefreshIndex refreshes the global deps index for the specified repo@commit.
 func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)) error {
-	// 🚨 SECURITY: Do not remove this call. It prevents us from leaking 🚨
-	// whether or not a private repo exists based on measuring the time
-	// RefreshIndex takes.
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
@@ -454,43 +447,9 @@ type DependenciesOptions struct {
 	// by repo. It should be used mutually exclusively with DepData.
 	Repo int32
 
-	// ExcludePrivate excludes private repo IDs from being included in the result set
-	ExcludePrivate bool
-
 	// Limit limits the number of returned dependency references to the
 	// specified number.
 	Limit int
-}
-
-var mockListUserPrivateRepoIDs func(ctx context.Context) ([]int32, error)
-
-// listUserPrivateRepoIDs lists all of the private repository IDs that the user
-// in ctx has access to.
-//
-// 🚨 SECURITY: This function MUST return ONLY the private repositories accessible 🚨
-// by the user in ctx. Doing anything otherwise would introduce security holes.
-func listUserPrivateRepoIDs(ctx context.Context) (accessible []int32, err error) {
-	if mockListUserPrivateRepoIDs != nil {
-		return mockListUserPrivateRepoIDs(ctx)
-	}
-	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "listUserPrivateRepoIDs")
-	ghRepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Visibility: "private"})
-	if err != nil {
-		return nil, err
-	}
-	for _, r := range ghRepos {
-		// Because r describes a remote repository, it has no valid ID field.
-		// We must fetch it from the DB.
-		r, err = Repos.GetByURI(ctx, r.URI)
-		if err != nil {
-			if legacyerr.ErrCode(err) == legacyerr.NotFound {
-				continue // ignore repos that are not yet cloned
-			}
-			return nil, err
-		}
-		accessible = append(accessible, r.ID)
-	}
-	return accessible, nil
 }
 
 func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
@@ -498,18 +457,10 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 		return Mocks.GlobalDeps.Dependencies(ctx, op)
 	}
 
-	var privateRepoIDs []int32
-	if !op.ExcludePrivate {
-		privateRepoIDs, err = listUserPrivateRepoIDs(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Note: using global_dep_private first so those results always show up
 	// first, as the user will always be more interested in their private code.
 	for _, table := range []string{"global_dep_private", "global_dep"} {
-		v, err := g.queryDependencies(ctx, table, op, privateRepoIDs)
+		v, err := g.queryDependencies(ctx, table, op)
 		if err != nil {
 			return nil, err
 		}
@@ -522,7 +473,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 // queryDependencies is invoked first for `global_dep_private` (private repos)
 // and then for `global_dep` (public repos). See the globalDeps type docstring
 // for more concrete information.
-func (g *globalDeps) queryDependencies(ctx context.Context, table string, op DependenciesOptions, privateRepoIDs []int32) (refs []*sourcegraph.DependencyReference, err error) {
+func (g *globalDeps) queryDependencies(ctx context.Context, table string, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.Dependencies")
 	defer func() {
 		if err != nil {
@@ -556,24 +507,6 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	}
 	if op.Repo != 0 {
 		whereConds = append(whereConds, `repo_id = `+arg(op.Repo))
-	}
-
-	switch table {
-	case "global_dep_private":
-		// Important: without this check we would produce a query like
-		// `repo_id IN ()` which is illegal / a syntax error in SQL.
-		if len(privateRepoIDs) == 0 {
-			return nil, nil
-		}
-		var privateRepoStrings []string
-		for _, repoID := range privateRepoIDs {
-			privateRepoStrings = append(privateRepoStrings, strconv.Itoa(int(repoID)))
-		}
-		privateRepos := strings.Join(privateRepoStrings, ", ")
-		whereConds = append(whereConds, `repo_id IN (`+privateRepos+`)`)
-	case "global_dep":
-	default:
-		panic(fmt.Sprintf("Defs.Dependencies: unexpected table %q", table))
 	}
 
 	selectSQL := `SELECT dep_data, repo_id, hints`
