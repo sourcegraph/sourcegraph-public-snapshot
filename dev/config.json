@@ -1,0 +1,33 @@
+// The Sourcegraph site configuration for development servers.
+{
+  "autoRepoAdd": true,
+  "disablePublicRepoRedirects": true,
+  "licenseKey": "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
+  "phabricator": [
+    {
+      "url": "http://phabricator.sgdev.org",
+      // Uncomment one or the other of these configs depending on your testing needs.
+      // Both "token" and "repos" are optional but you need to have at least one set.
+      "repos": [
+        {
+          "path": "gitolite.sgdev.org/testing",
+          "callsign": "TEST"
+        }
+      ],
+      // "token": "api-agswx2nwodkweitoo3t5l4dcc5xu"
+    }
+  ],
+  // "gitoliteHosts": "gitolite.sgdev.org/!git@gitolite.sgdev.org",
+  "corsOrigin": "https://github.com http://phabricator.sgdev.org",
+  "github": [
+    {
+      "url": "http://ghe.sgdev.org",
+      "token": "23993bbf8e0fee068b8f70db05fc445d5a7a83da"
+    }
+  ],
+  "githubClientID": "6f2a43bd8877ff5fd1d5",
+  "githubClientSecret": "c5ff37d80e3736924cbbdf2922a50cac31963e43",
+  "lightstepProject": "sourcegraph-dev",
+  "lightstepAccessToken": "d60b0b2477a7ccb05d7783917f648816",
+  "repoListUpdateInterval": 600
+}
