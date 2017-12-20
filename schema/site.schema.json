@@ -4,6 +4,7 @@
   "title": "Site configuration",
   "description": "Configuration for a Sourcegraph Server site.",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "auth.userOrgMap": {
       "description":
