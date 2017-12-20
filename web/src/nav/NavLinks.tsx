@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { UserAvatar } from '../settings/user/UserAvatar'
+import { eventLogger } from '../tracking/eventLogger'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
 interface Props {
@@ -41,11 +42,21 @@ export class NavLinks extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
+    private onClickInstall = (): void => {
+        eventLogger.log('InstallSourcegraphServerCTAClicked', {
+            location_on_page: 'Navbar',
+        })
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className="nav-links">
                 {showDotComMarketing && (
-                    <a href="https://about.sourcegraph.com" className="nav-links__border-link">
+                    <a
+                        href="https://about.sourcegraph.com"
+                        className="nav-links__border-link"
+                        onClick={this.onClickInstall}
+                    >
                         Install Sourcegraph Server
                     </a>
                 )}
