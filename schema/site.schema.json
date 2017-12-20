@@ -239,7 +239,8 @@
       "type": "array",
       "items": {
         "type": "object",
-        "$ref": "#/definitions/SearchScope"
+        "$ref":
+          "https://sourcegraph.com/v1/settings.schema.json#/definitions/SearchScope"
       }
     },
     "htmlHeadTop": {
@@ -304,22 +305,12 @@
       "description":
         "Java: The password to authenticate to the private Artifactory.",
       "type": "string"
-    }
-  },
-  "definitions": {
-    "SearchScope": {
+    },
+    "settings": {
+      "description":
+        "Site settings. Organization and user settings override site settings.",
       "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The human-readable name for this search scope"
-        },
-        "value": {
-          "type": "string",
-          "description": "The query string of this search scope"
-        }
-      },
-      "required": ["name", "value"]
+      "$ref": "https://sourcegraph.com/v1/settings.schema.json#"
     }
   }
 }
