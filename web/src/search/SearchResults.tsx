@@ -6,6 +6,7 @@ import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
@@ -130,8 +131,10 @@ export class SearchResults extends React.Component<Props, State> {
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    tap(props => {
-                        const searchOptions = parseSearchURLQuery(props.location.search)
+                    map(props => props.location),
+                    distinctUntilChanged(),
+                    tap(location => {
+                        const searchOptions = parseSearchURLQuery(location.search)
                         setTimeout(() => this.searchRequested.next(searchOptions))
                     }),
                     map(() => ({
