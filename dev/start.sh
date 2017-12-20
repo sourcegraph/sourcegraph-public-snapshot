@@ -36,8 +36,6 @@ export SRC_INDEXER=127.0.0.1:3179
 export SRC_SYNTECT_SERVER=http://localhost:3700
 export SRC_FRONTEND_INTERNAL=localhost:3090
 
-export SG_FEATURE_SEP20AUTH=true # TODO: Deprecated. Remove.
-
 export PHABRICATOR_URL="http://phabricator.sgdev.org"
 export GITOLITE_HOSTS="gitolite.sgdev.org/!git@gitolite.sgdev.org"
 export CORS_ORIGIN="https://github.com http://phabricator.sgdev.org"

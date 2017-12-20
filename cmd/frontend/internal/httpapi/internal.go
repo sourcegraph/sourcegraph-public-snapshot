@@ -11,7 +11,6 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -112,8 +111,7 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 	if err != nil {
 		return err
 	}
-	excludePrivate := !feature.Features.Sep20Auth
-	deps, err := backend.Defs.Dependencies(r.Context(), args.RepoID, excludePrivate)
+	deps, err := backend.Defs.Dependencies(r.Context(), args.RepoID, false)
 	if err != nil {
 		return fmt.Errorf("Defs.DependencyReferences failed: %s", err)
 	}

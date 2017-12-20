@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -67,13 +66,6 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 	}
 
-	// specialCasePrivate indicates whether we need special handling
-	// for private repos. After Sep 20, all repos may be treated identically
-	// for caching purposes (there should be no distinction between "public" and "private").
-	// It is still possible in an on-prem server to have private GitHub repos in the cache.
-	// In this world, the "public repo cache" contains repos which are public to the cluster.
-	specialCasePrivate := !feature.Features.Sep20Auth
-
 	if cached := getFromPublicCache(ctx, repo); cached != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
@@ -94,22 +86,10 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return nil, err
 	}
 
-	addRepoToCache := func() {
-		remoteRepoCopy := *remoteRepo
-		addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
-		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
-	}
-	if specialCasePrivate {
-		// We are only allowed to cache public repos.
-		if !remoteRepo.Private {
-			addRepoToCache()
-		} else {
-			reposGithubPublicCacheCounter.WithLabelValues("private").Inc()
-		}
-	} else {
-		// No special casing; always add resolved repos to the cache.
-		addRepoToCache()
-	}
+	remoteRepoCopy := *remoteRepo
+	addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
+	reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
+
 	return remoteRepo, nil
 }
 
@@ -135,14 +115,6 @@ func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]
 	}
 	repos := make([]*sourcegraph.Repo, 0, len(res.Repositories))
 	for _, ghrepo := range res.Repositories {
-		if !feature.Features.Sep20Auth {
-			// 🚨 SECURITY: these search results may contain repos that a user shouldn't 🚨
-			// have access to within one of their installations. Filter out all private
-			// repos (private repos can be obtained with ListAllGitHubRepos)
-			if *ghrepo.Private {
-				continue
-			}
-		}
 		repos = append(repos, ToRepo(&ghrepo))
 	}
 	return repos, nil
@@ -288,27 +260,17 @@ func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOpti
 	return repos, nil
 }
 
-// TODO(john): the name of this method is now misleading. Before Sep 20,
-// this will *only* list public repos. After Sep 20, this method may list
-// private repos if the github-proxy uses a personal access token which can
-// access private repos. Rename "ListReposForUser".
-func ListPublicReposForUser(ctx context.Context, login string) ([]*sourcegraph.Repo, error) {
+func ListReposForUser(ctx context.Context, login string) ([]*sourcegraph.Repo, error) {
 	if ListPublicReposMock != nil {
 		return ListPublicReposMock(ctx, login)
 	}
 
-	beforeSep20 := !feature.Features.Sep20Auth
-	var user string
-	if beforeSep20 {
-		// List only repos owned by the specified user.
-		user = login
-	}
 	// Else, when user is empty, the GitHub API will list all repos visible to
 	// the "currently authed user" (including public, private, & org repos
 	// not owned by the user). The github-proxy will only make an authenticated
 	// request if a personal access token is provided.
 
-	ghRepos, _, err := UnauthedClient(ctx).Repositories.List(ctx, user, nil)
+	ghRepos, _, err := UnauthedClient(ctx).Repositories.List(ctx, login, nil)
 	if err != nil {
 		return nil, err
 	}
