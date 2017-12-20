@@ -91,9 +91,12 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.ReposUpdateIndex).Handler(traceutil.TraceRoute(handler(serveReposUpdateIndex)))
 	m.Get(apirouter.ReposUnindexedDependencies).Handler(traceutil.TraceRoute(handler(serveReposUnindexedDependencies)))
 	m.Get(apirouter.ReposInventoryUncached).Handler(traceutil.TraceRoute(handler(serveReposInventoryUncached)))
+	m.Get(apirouter.ReposList).Handler(traceutil.TraceRoute(handler(serveReposList)))
 	m.Get(apirouter.ReposGetByURI).Handler(traceutil.TraceRoute(handler(serveReposGetByURI)))
 	m.Get(apirouter.DefsRefreshIndex).Handler(traceutil.TraceRoute(handler(serveDefsRefreshIndex)))
 	m.Get(apirouter.GitoliteUpdateRepos).Handler(traceutil.TraceRoute(handler(serveGitoliteUpdateRepos)))
+	m.Get(apirouter.GitInfoRefs).Handler(traceutil.TraceRoute(handler(serveGitInfoRefs)))
+	m.Get(apirouter.GitUploadPack).Handler(traceutil.TraceRoute(handler(serveGitUploadPack)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

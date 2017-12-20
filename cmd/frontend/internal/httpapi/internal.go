@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -155,6 +157,25 @@ func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveReposList(w http.ResponseWriter, r *http.Request) error {
+	var opt sourcegraph.RepoListOptions
+	err := json.NewDecoder(r.Body).Decode(&opt)
+	if err != nil {
+		return err
+	}
+	res, err := backend.Repos.List(r.Context(), &opt)
+	if err != nil {
+		return err
+	}
+	data, err := json.Marshal(res)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+	return nil
+}
+
 func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	var args sourcegraph.DefsRefreshIndexRequest
 	err := json.NewDecoder(r.Body).Decode(&args)
@@ -168,6 +189,51 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusNoContent)
 	w.Write([]byte("OK"))
 	return nil
+}
+
+func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
+	service := r.URL.Query().Get("service")
+	if service != "git-upload-pack" {
+		return errors.New("only support service git-upload-pack")
+	}
+
+	uri, _ := mux.Vars(r)["RepoURI"]
+	repo, err := backend.Repos.GetByURI(r.Context(), uri)
+	if err != nil {
+		return err
+	}
+
+	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
+	cmd.Repo = repo
+	refs, err := cmd.Output(r.Context())
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-upload-pack-advertisement"))
+	w.WriteHeader(http.StatusOK)
+	w.Write(packetWrite("# service=git-upload-pack\n"))
+	w.Write([]byte("0000"))
+	w.Write(refs)
+	return nil
+}
+
+func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
+	uri, _ := mux.Vars(r)["RepoURI"]
+	repo, err := backend.Repos.GetByURI(r.Context(), uri)
+	if err != nil {
+		return err
+	}
+
+	gitserver.DefaultClient.UploadPack(repo.URI, w, r)
+	return nil
+}
+
+func packetWrite(str string) []byte {
+	s := strconv.FormatInt(int64(len(str)+4), 16)
+	if len(s)%4 != 0 {
+		s = strings.Repeat("0", 4-len(s)%4) + s
+	}
+	return []byte(s + str)
 }
 
 // depReferenceToPkgQuery maps from a DependencyReference to a package descriptor query that

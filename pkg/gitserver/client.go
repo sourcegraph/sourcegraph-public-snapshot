@@ -11,6 +11,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -259,4 +261,23 @@ func (c *Client) httpPost(ctx context.Context, addr string, method string, paylo
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
 	return http.DefaultClient.Do(req)
+}
+
+func (c *Client) UploadPack(repoURI string, w http.ResponseWriter, r *http.Request) {
+	repoURI = protocol.NormalizeRepo(repoURI)
+	sum := md5.Sum([]byte(repoURI))
+	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.Addrs))
+	addr := c.Addrs[serverIndex]
+
+	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(repoURI))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	(&httputil.ReverseProxy{
+		Director: func(r *http.Request) {
+			r.URL = u
+		},
+	}).ServeHTTP(w, r)
 }

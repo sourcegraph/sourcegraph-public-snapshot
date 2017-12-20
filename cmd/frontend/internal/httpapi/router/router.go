@@ -15,11 +15,14 @@ const (
 	Telemetry  = "telemetry"
 
 	DefsRefreshIndex           = "internal.defs.refresh-index"
+	GitInfoRefs                = "internal.git.info-refs"
+	GitUploadPack              = "internal.git.upload-pack"
 	GitoliteUpdateRepos        = "internal.gitolite.update-repos"
 	PhabricatorRepoCreate      = "internal.phabricator.repo.create"
 	ReposCreateIfNotExists     = "internal.repos.create-if-not-exists"
 	ReposGetByURI              = "internal.repos.get-by-uri"
 	ReposInventoryUncached     = "internal.repos.inventory-uncached"
+	ReposList                  = "internal.repos.list"
 	ReposUnindexedDependencies = "internal.repos.unindexed-dependencies"
 	ReposUpdateIndex           = "internal.repos.update-index"
 )
@@ -59,10 +62,13 @@ func NewInternal(base *mux.Router) *mux.Router {
 	// Internal API endpoints should only be served on the internal Handler
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
 	base.Path("/gitolite/update-repos").Methods("POST").Name(GitoliteUpdateRepos)
+	base.Path("/git/{RepoURI:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
+	base.Path("/git/{RepoURI:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
 	base.Path("/repos/get-by-uri").Methods("POST").Name(ReposGetByURI)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
+	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/unindexed-dependencies").Methods("POST").Name(ReposUnindexedDependencies)
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/{RepoURI:.*}").Methods("GET").Name(ReposGetByURI)
