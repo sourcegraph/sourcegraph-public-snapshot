@@ -15,13 +15,13 @@ const (
 	Telemetry  = "telemetry"
 
 	DefsRefreshIndex           = "internal.defs.refresh-index"
-	ReposGetByURI              = "internal.repos.get-by-uri"
-	ReposCreateIfNotExists     = "internal.repos.create-if-not-exists"
-	ReposUpdateIndex           = "internal.repos.update-index"
-	ReposUnindexedDependencies = "internal.repos.unindexed-dependencies"
-	ReposInventoryUncached     = "internal.repos.inventory-uncached"
-	PhabricatorRepoCreate      = "internal.phabricator.repo.create"
 	GitoliteUpdateRepos        = "internal.gitolite.update-repos"
+	PhabricatorRepoCreate      = "internal.phabricator.repo.create"
+	ReposCreateIfNotExists     = "internal.repos.create-if-not-exists"
+	ReposGetByURI              = "internal.repos.get-by-uri"
+	ReposInventoryUncached     = "internal.repos.inventory-uncached"
+	ReposUnindexedDependencies = "internal.repos.unindexed-dependencies"
+	ReposUpdateIndex           = "internal.repos.update-index"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -60,11 +60,11 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
 	base.Path("/gitolite/update-repos").Methods("POST").Name(GitoliteUpdateRepos)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
-	base.Path("/repos/get-by-uri").Methods("POST").Name(ReposGetByURI)
-	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
-	base.Path("/repos/unindexed-dependencies").Methods("POST").Name(ReposUnindexedDependencies)
+	base.Path("/repos/get-by-uri").Methods("POST").Name(ReposGetByURI)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
+	base.Path("/repos/unindexed-dependencies").Methods("POST").Name(ReposUnindexedDependencies)
+	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/{RepoURI:.*}").Methods("GET").Name(ReposGetByURI)
 
 	return base
