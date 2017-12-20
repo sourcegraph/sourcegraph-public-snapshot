@@ -114,6 +114,9 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)
 	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
 		email := r.Header.Get("X-Saml-Email")
+		if email == "" && mightBeEmail(subject) {
+			email = subject
+		}
 		login := r.Header.Get("X-Saml-Login")
 		if login == "" {
 			login = r.Header.Get("X-Saml-Uid")
@@ -152,4 +155,8 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 
 func samlToAuthID(idpID, subject string) string {
 	return fmt.Sprintf("%s:%s", idpID, subject)
+}
+
+func mightBeEmail(s string) bool {
+	return strings.Count(s, "@") == 1
 }
