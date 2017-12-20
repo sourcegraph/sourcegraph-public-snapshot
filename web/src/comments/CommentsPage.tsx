@@ -12,10 +12,12 @@ import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { scan } from 'rxjs/operators/scan'
+import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoNav } from '../repo/RepoNav'
+import { colorTheme, ColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { toEditorURL } from '../util/url'
 import { EPERMISSIONDENIED, fetchSharedItem } from './backend'
@@ -32,7 +34,6 @@ interface Props {
     match: match<{ ulid: string }>
     location: H.Location
     history: H.History
-    isLightTheme: boolean
 }
 
 interface State {
@@ -41,7 +42,7 @@ interface State {
     ulid: string
     location: H.Location
     history: H.History
-    isLightTheme: boolean
+    colorTheme: ColorTheme
     error?: any
 }
 
@@ -58,18 +59,20 @@ export const CommentsPage = reactive<Props>(props => {
 
     return merge(
         props.pipe(
-            map(({ location, history, isLightTheme }): Update => state => ({
+            withLatestFrom(colorTheme),
+            map(([{ location, history }, colorTheme]): Update => state => ({
                 ...state,
                 location,
                 history,
-                isLightTheme,
+                colorTheme,
             }))
         ),
         props.pipe(
-            map(props => ({ ulid: props.match.params.ulid, isLightTheme: props.isLightTheme })),
+            map(props => props.match.params.ulid),
             distinctUntilChanged(),
-            mergeMap(({ ulid, isLightTheme }) =>
-                fetchSharedItem(ulid, isLightTheme).pipe(
+            withLatestFrom(colorTheme),
+            mergeMap(([ulid, colorTheme]) =>
+                fetchSharedItem(ulid, colorTheme === 'light').pipe(
                     map((sharedItem): Update => state => ({ ...state, sharedItem, ulid, highlightLastComment: false })),
                     catchError((error): Update[] => {
                         console.error(error)
@@ -98,7 +101,7 @@ export const CommentsPage = reactive<Props>(props => {
                 ulid,
                 location,
                 history,
-                isLightTheme,
+                colorTheme,
                 error,
             }: State): JSX.Element | null => {
                 if (error) {
@@ -217,7 +220,6 @@ export const CommentsPage = reactive<Props>(props => {
                                         threadID={sharedItem.thread.id}
                                         ulid={ulid}
                                         onThreadUpdated={nextThreadUpdate}
-                                        isLightTheme={isLightTheme}
                                     />
                                 ) : (
                                     <Link className="btn btn-primary comments-page__sign-in" to={signInURL}>
