@@ -98,19 +98,29 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
+        const saveDiscardDisabled = this.state.saving || !dirty
+        let saveDiscardTitle: string | undefined
+        if (this.state.saving) {
+            saveDiscardTitle = 'Saving...'
+        } else if (!dirty) {
+            saveDiscardTitle = 'No changes to save or discard'
+        }
+
         return (
             <div className="settings-file">
                 <h3>Configuration</h3>
                 <div className="settings-file__actions">
                     <button
-                        disabled={this.state.saving || !dirty}
+                        disabled={saveDiscardDisabled}
+                        title={saveDiscardTitle || 'Save changes to settings'}
                         className="btn btn-sm btn-link settings-file__action"
                         onClick={this.save}
                     >
                         <CheckmarkIcon className="icon-inline" /> Save
                     </button>
                     <button
-                        disabled={this.state.saving || !dirty}
+                        disabled={saveDiscardDisabled}
+                        title={saveDiscardTitle || 'Discard changes and revert to saved settings'}
                         className="btn btn-sm btn-link settings-file__action"
                         onClick={this.discard}
                     >
