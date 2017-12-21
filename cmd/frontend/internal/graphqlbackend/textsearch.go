@@ -394,11 +394,11 @@ func zoektSearchHEAD(ctx context.Context, args *repoSearchArgs) ([]*fileMatch, e
 		for j, l := range file.Lines {
 			offsets := make([][]int32, len(l.Matches))
 			for k, m := range l.Matches {
-				offsets[k] = []int32{int32(m.Start), int32(m.End)}
+				offsets[k] = []int32{int32(m.Start), int32(m.End - m.Start)}
 			}
 			lines[j] = &lineMatch{
 				JPreview:          l.Line,
-				JLineNumber:       int32(l.LineNumber),
+				JLineNumber:       int32(l.LineNumber - 1),
 				JOffsetAndLengths: offsets,
 			}
 		}

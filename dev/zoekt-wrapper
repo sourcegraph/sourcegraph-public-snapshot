@@ -13,6 +13,6 @@ if ! [ -x "$(command -v $1)" ]; then
 fi
 
 # Sleep to allow frontend to start :'(
-sleep 5
+[ "$1" != "zoekt-indexserver" ] || sleep 5
 
 exec $@
