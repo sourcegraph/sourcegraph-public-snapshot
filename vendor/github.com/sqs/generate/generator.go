@@ -182,7 +182,7 @@ func getTypeForField(parentTypeKey *url.URL, fieldName string, fieldGoName strin
 		if t, ok := types[ref.String()]; ok {
 			sn := getStructName(ref, t, 1)
 
-			majorType = "object"
+			majorType.Set("object")
 			subType = sn
 		} else {
 			return "", fmt.Errorf("Failed to resolve the reference %s", ref)
@@ -190,7 +190,7 @@ func getTypeForField(parentTypeKey *url.URL, fieldName string, fieldGoName strin
 	}
 
 	// Look up any embedded types.
-	if subType == "" && majorType == "object" {
+	if subType == "" && majorType.Is("object") {
 		if len(fieldSchema.Properties) == 0 && len(fieldSchema.AdditionalProperties) > 0 {
 			if len(fieldSchema.AdditionalProperties) == 1 {
 				sn, _ := getTypeForField(parentTypeKey, fieldName, fieldGoName, fieldSchema.AdditionalProperties[0], types, pointer)
@@ -212,7 +212,7 @@ func getTypeForField(parentTypeKey *url.URL, fieldName string, fieldGoName strin
 	}
 
 	// Find named array references.
-	if majorType == "array" {
+	if majorType.Is("array") {
 		s, _ := getTypeForField(parentTypeKey, fieldName, fieldGoName, fieldSchema.Items, types, false)
 		subType = s
 	}
@@ -238,29 +238,35 @@ func joinURLFragmentPath(base *url.URL, elem string) *url.URL {
 	return &url
 }
 
-func getPrimitiveTypeName(schemaType string, subType string, pointer bool) (name string, err error) {
-	switch schemaType {
-	case "array":
+func getPrimitiveTypeName(schemaType jsonschema.Type, subType string, pointer bool) (name string, err error) {
+	if schemaType.Is("array") {
 		if subType == "" {
 			return "error_creating_array", errors.New("can't create an array of an empty subtype")
 		}
 		return "[]" + subType, nil
-	case "boolean":
+	} else if schemaType.Is("boolean") {
 		return "bool", nil
-	case "integer":
+	} else if schemaType.Is("integer") {
 		return "int", nil
-	case "number":
+	} else if schemaType.Is("number") {
 		return "float64", nil
-	case "null":
+	} else if schemaType.Is("null") {
 		return "nil", nil
-	case "object":
+	} else if schemaType.Is("object") {
 		if pointer {
 			return "*" + subType, nil
 		}
-
 		return subType, nil
-	case "string":
+	} else if schemaType.Is("string") {
 		return "string", nil
+	} else if schemaType.Is([]string{"boolean", "null"}) {
+		return "*bool", nil
+	} else if schemaType.Is([]string{"integer", "null"}) {
+		return "*int", nil
+	} else if schemaType.Is([]string{"number", "null"}) {
+		return "*float64", nil
+	} else if schemaType.Is([]string{"string", "null"}) {
+		return "*string", nil
 	}
 
 	return "undefined", fmt.Errorf("failed to get a primitive type for schemaType %s and subtype %s", schemaType, subType)

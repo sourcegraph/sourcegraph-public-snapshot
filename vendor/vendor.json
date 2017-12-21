@@ -1560,22 +1560,22 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
-			"checksumSHA1": "h544lQpI9sexjka5EAYkDYgmMRo=",
+			"checksumSHA1": "g9IgZh41Ddk5QEkxhaptI2P1Pqo=",
 			"path": "github.com/sqs/generate",
-			"revision": "97c6622742b77ab74382f96670df71d595b4b2e1",
-			"revisionTime": "2017-12-20T06:56:13Z"
+			"revision": "ec69596106a08b16a08f3b75bc62322d6679c972",
+			"revisionTime": "2017-12-21T23:15:47Z"
 		},
 		{
 			"checksumSHA1": "YRWN2Z/VtKFH4Wn76jM5uvoFdrw=",
 			"path": "github.com/sqs/generate/cmd/schema-generate",
-			"revision": "97c6622742b77ab74382f96670df71d595b4b2e1",
-			"revisionTime": "2017-12-20T06:56:13Z"
+			"revision": "ec69596106a08b16a08f3b75bc62322d6679c972",
+			"revisionTime": "2017-12-21T23:15:47Z"
 		},
 		{
-			"checksumSHA1": "rHMU8ziPER7d2MleqZbBVxCx+2E=",
+			"checksumSHA1": "yz8zi2FhrrF44Xyc69FiBL0sjyk=",
 			"path": "github.com/sqs/generate/jsonschema",
-			"revision": "97c6622742b77ab74382f96670df71d595b4b2e1",
-			"revisionTime": "2017-12-20T06:56:13Z"
+			"revision": "ec69596106a08b16a08f3b75bc62322d6679c972",
+			"revisionTime": "2017-12-21T23:15:47Z"
 		},
 		{
 			"checksumSHA1": "HyGWC5GcN1hMtlPd7b00/Zna7rg=",
