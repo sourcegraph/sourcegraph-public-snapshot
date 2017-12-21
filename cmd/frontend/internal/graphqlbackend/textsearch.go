@@ -325,42 +325,42 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	return nil
 }
 
-func zoektSearchHEAD(ctx context.Context, args *repoSearchArgs) ([]*fileMatch, error) {
+func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) ([]*fileMatch, error) {
+	if len(repos) == 0 {
+		return nil, nil
+	}
+
 	// Convert sourcegraph pattern into zoekt query
-	pattern := args.query.Pattern
-	if !args.query.IsRegExp {
+	pattern := query.Pattern
+	if !query.IsRegExp {
 		pattern = regexp.QuoteMeta(pattern)
 	}
 	pattern = strconv.Quote(pattern)
-	query := []string{pattern}
+	q := []string{pattern}
 
 	// zoekt guesses case sensitivity if we don't specify
-	if args.query.IsCaseSensitive {
-		query = append(query, "case:yes")
+	if query.IsCaseSensitive {
+		q = append(q, "case:yes")
 	} else {
-		query = append(query, "case:no")
+		q = append(q, "case:no")
 	}
 
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
-	if !args.query.PathPatternsAreRegExps {
+	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
-	for _, p := range args.query.IncludePatterns {
-		query = append(query, "f:"+p)
+	for _, p := range query.IncludePatterns {
+		q = append(q, "f:"+p)
 	}
-	if args.query.ExcludePattern != nil {
-		query = append(query, "-f:"+*args.query.ExcludePattern)
+	if query.ExcludePattern != nil {
+		q = append(q, "-f:"+*query.ExcludePattern)
 	}
 
 	// Tell zoekt which repos to search
 	var restrict []zoekt.SearchRequestRestriction
-	for _, repoRev := range args.repos {
-		// We search HEAD using zoekt
-		if repoRev.revSpecsOrDefaultBranch()[0] != "" {
-			continue
-		}
+	for _, repoRev := range repos {
 		// TODO Repo is a substring match, so we can match more
 		restrict = append(restrict, zoekt.SearchRequestRestriction{
 			Repo:     repoRev.repo.URI,
@@ -374,7 +374,7 @@ func zoektSearchHEAD(ctx context.Context, args *repoSearchArgs) ([]*fileMatch, e
 
 	zoektCl := &zoekt.Client{Host: zoektHost}
 	resp, err := zoektCl.Search(ctx, zoekt.SearchRequest{
-		Query:    strings.Join(query, " "),
+		Query:    strings.Join(q, " "),
 		Restrict: restrict,
 	})
 	if err != nil {
@@ -411,6 +411,65 @@ func zoektSearchHEAD(ctx context.Context, args *repoSearchArgs) ([]*fileMatch, e
 	return matches, nil
 }
 
+func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (indexed, unindexed []*repositoryRevisions, err error) {
+	if zoektHost == "" {
+		return nil, repos, nil
+	}
+	for _, repoRev := range repos {
+		// We search HEAD using zoekt
+		if repoRev.revSpecsOrDefaultBranch()[0] == "" {
+			indexed = append(indexed, repoRev)
+		} else {
+			unindexed = append(unindexed, repoRev)
+		}
+	}
+
+	// Return early if we don't need to querying zoekt
+	if len(indexed) == 0 {
+		return indexed, unindexed, nil
+	}
+
+	restrict := make([]zoekt.ListRequestRestriction, len(indexed))
+	for i, repoRev := range indexed {
+		restrict[i].Repo = repoRev.repo.URI
+	}
+
+	zoektCl := &zoekt.Client{Host: zoektHost}
+	resp, err := zoektCl.List(ctx, zoekt.ListRequest{
+		Restrict: restrict,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if resp.Error != nil {
+		return nil, nil, errors.Errorf("zoekt list failed: %s", *resp.Error)
+	}
+
+	// If we get back as many repos as we restricted, then we know everything
+	// is indexed
+	if len(resp.Repos) == len(indexed) {
+		return indexed, unindexed, nil
+	}
+
+	// Everything currently in indexed is at HEAD. Filter out repos which
+	// zoekt hasn't indexed yet.
+	set := map[string]bool{}
+	for _, repo := range resp.Repos {
+		set[repo.Name] = true
+	}
+	head := indexed
+	indexed = indexed[:0]
+	for _, repoRev := range head {
+		if set[repoRev.repo.URI] {
+			indexed = append(indexed, repoRev)
+		} else {
+			unindexed = append(unindexed, repoRev)
+		}
+	}
+
+	return indexed, unindexed, nil
+}
+
 var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
 // searchRepos searches a set of repos for a pattern.
@@ -426,21 +485,20 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.repos)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	var (
-		err         error
 		wg          sync.WaitGroup
 		mu          sync.Mutex
 		unflattened [][]*fileMatch
 		common      = &searchResultsCommon{}
 	)
-	for _, repoRev := range args.repos {
+	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) >= 2 {
 			return nil, nil, errMultipleRevsNotSupported
-		}
-
-		// We search HEAD using zoekt
-		if zoektHost != "" && repoRev.revSpecsOrDefaultBranch()[0] == "" {
-			continue
 		}
 
 		wg.Add(1)
@@ -471,26 +529,24 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 		}(*repoRev)
 	}
 
-	if zoektHost != "" {
-		wg.Add(1)
-		go func() {
-			// TODO limitHit, handleRepoSearchResult
-			defer wg.Done()
-			matches, searchErr := zoektSearchHEAD(ctx, args)
-			mu.Lock()
-			defer mu.Unlock()
-			if searchErr != nil && err == nil {
-				err = searchErr
-			}
-			if len(matches) > 0 {
-				sort.Slice(matches, func(i, j int) bool {
-					a, b := matches[i].uri, matches[j].uri
-					return a > b
-				})
-				unflattened = append(unflattened, matches)
-			}
-		}()
-	}
+	wg.Add(1)
+	go func() {
+		// TODO limitHit, handleRepoSearchResult
+		defer wg.Done()
+		matches, searchErr := zoektSearchHEAD(ctx, args.query, zoektRepos)
+		mu.Lock()
+		defer mu.Unlock()
+		if searchErr != nil && err == nil {
+			err = searchErr
+		}
+		if len(matches) > 0 {
+			sort.Slice(matches, func(i, j int) bool {
+				a, b := matches[i].uri, matches[j].uri
+				return a > b
+			})
+			unflattened = append(unflattened, matches)
+		}
+	}()
 
 	wg.Wait()
 	if err != nil {
