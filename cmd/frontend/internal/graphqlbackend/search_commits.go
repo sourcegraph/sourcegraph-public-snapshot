@@ -22,7 +22,7 @@ import (
 
 var (
 	gitLogSearchTimeout       = mustParseDuration(env.Get("GIT_LOG_SEARCH_TIMEOUT", "5s", "maximum duration for type:commit and type:diff queries before incomplete results are returned"))
-	maxGitLogSearchResults, _ = strconv.Atoi(env.Get("GIT_LOG_MAX_RESULTS", "20", "maximum number of results for type:commit and type:diff queries"))
+	maxGitLogSearchResults, _ = strconv.Atoi(env.Get("GIT_LOG_MAX_RESULTS", "10", "maximum number of results for type:commit and type:diff queries"))
 )
 
 func mustParseDuration(s string) time.Duration {

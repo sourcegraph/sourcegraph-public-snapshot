@@ -15,10 +15,10 @@ import (
 // and only hunks that satisfy the query (if onlyMatchingHunks) and path matcher.
 func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHunks bool, pathMatcher pathmatch.PathMatcher) ([]byte, []Highlight, error) {
 	const (
-		maxFiles          = 10
-		maxHunksPerFile   = 20
+		maxFiles          = 5
+		maxHunksPerFile   = 3
 		matchContextLines = 1
-		maxLinesPerHunk   = 20
+		maxLinesPerHunk   = 5
 		maxMatchesPerLine = 100
 		maxCharsPerLine   = 200
 	)
