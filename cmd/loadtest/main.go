@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	FrontendURL      = env.Get("LOAD_TEST_FRONTEND_URL", "http://sourcegraph-frontend-internal:80", "URL to the Sourcegraph frontend to load-test")
+	FrontendHost     = env.Get("LOAD_TEST_FRONTEND_URL", "http://sourcegraph-frontend", "URL to the Sourcegraph frontend host to load test")
+	FrontendPort     = env.Get("loadTestFrontendPort", "30080", "Port that the Sourcegraph frontend is listening on")
 	SearchQueriesEnv = env.Get("loadTestSearches", "[]", "Search queries to use in load testing")
 	QueryPeriodMSEnv = env.Get("loadTestSearchPeriod", "2000", "Period of search query issuance (milliseconds). E.g., a value of 200 corresponds to 200ms or 5 QPS")
 )
@@ -30,8 +31,8 @@ func main() {
 	}
 }
 
-func frontendURL(p string) string {
-	return fmt.Sprintf("%s%s", FrontendURL, p)
+func frontendURL(thePath string) string {
+	return fmt.Sprintf("%s:%s%s", FrontendHost, FrontendPort, thePath)
 }
 
 func run() error {
