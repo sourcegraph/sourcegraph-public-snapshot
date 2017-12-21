@@ -4,8 +4,8 @@ package schema
 
 // ContainerOverrides
 type ContainerOverrides struct {
-	Limits   *ResourceOverride `json:"limits"`
-	Requests *ResourceOverride `json:"requests"`
+	Limits   *ResourceOverride `json:"limits,omitempty"`
+	Requests *ResourceOverride `json:"requests,omitempty"`
 }
 
 // DatacenterOpsConfiguration Configuration for Sourcegraph Datacenter Ops. Defines all config parameters that can be used to change the operational parameters of Sourcegraph Datacenter (e.g., for scaling).
@@ -35,8 +35,8 @@ type DatacenterOpsConfiguration struct {
 
 // DeploymentOverrides
 type DeploymentOverrides struct {
-	Containers *ContainerOverrides `json:"containers"`
-	Replicas   int                 `json:"replicas"`
+	Containers *ContainerOverrides `json:"containers,omitempty"`
+	Replicas   *int                `json:"replicas,omitempty"`
 }
 
 // Github
@@ -69,8 +69,8 @@ type ReposList struct {
 
 // ResourceOverride
 type ResourceOverride struct {
-	Cpu    string `json:"cpu"`
-	Memory string `json:"memory"`
+	Cpu    string `json:"cpu,omitempty"`
+	Memory string `json:"memory,omitempty"`
 }
 
 // SearchSavedQueries
