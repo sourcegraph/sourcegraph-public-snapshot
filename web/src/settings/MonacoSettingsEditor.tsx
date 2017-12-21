@@ -97,7 +97,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 
     private monacoTheme(isLightTheme = this.state.isLightTheme): string {
-        // TODO(sqs): the theme is not updated after switching until you reload the page
         return isLightTheme ? 'vs' : 'sourcegraph-dark'
     }
 
