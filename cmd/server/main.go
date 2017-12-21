@@ -81,7 +81,6 @@ func main() {
 
 		// As a convenience some environment variables can be stored as a file
 		envFiles := map[string]string{
-			"license.sgl": "LICENSE_KEY",
 			"config.json": "SOURCEGRAPH_CONFIG",
 		}
 		for name, key := range envFiles {
