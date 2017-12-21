@@ -15,8 +15,8 @@ import (
 
 var (
 	FrontendURL      = env.Get("LOAD_TEST_FRONTEND_URL", "http://sourcegraph-frontend-internal:80", "URL to the Sourcegraph frontend to load-test")
-	SearchQueriesEnv = env.Get("loadTestSearches", "", "Search queries to use in load testing")
-	QueryPeriodMSEnv = env.Get("loadTestSearchPeriod", "", "Period of search query issuance (milliseconds). E.g., a value of 200 corresponds to 200ms or 5 QPS")
+	SearchQueriesEnv = env.Get("loadTestSearches", "[]", "Search queries to use in load testing")
+	QueryPeriodMSEnv = env.Get("loadTestSearchPeriod", "2000", "Period of search query issuance (milliseconds). E.g., a value of 200 corresponds to 200ms or 5 QPS")
 )
 
 type GQLSearchVars struct {
@@ -43,6 +43,11 @@ func run() error {
 	qps, err := strconv.Atoi(QueryPeriodMSEnv)
 	if err != nil {
 		return err
+	}
+
+	if len(searchQueries) == 0 {
+		log.Printf("No search queries specified. Hanging indefinitely")
+		select {}
 	}
 
 	ticker := time.NewTicker(time.Duration(qps) * time.Millisecond)
