@@ -29,7 +29,7 @@ var legacyEnvToFieldName = map[string]string{
 	"MandrillKey":                    "MANDRILL_KEY",
 	"MaxReposToSearch":               "MAX_REPOS_TO_SEARCH",
 	"NoGoGetDomains":                 "NO_GO_GET_DOMAINS",
-	"OidcClientId":                   "OIDC_CLIENT_ID",
+	"OidcClientID":                   "OIDC_CLIENT_ID",
 	"OidcClientSecret":               "OIDC_CLIENT_SECRET",
 	"OidcEmailDomain":                "OIDC_EMAIL_DOMAIN",
 	"OidcOverrideToken":              "OIDC_OVERRIDE_TOKEN",
