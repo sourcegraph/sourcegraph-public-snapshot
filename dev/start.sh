@@ -48,6 +48,10 @@ export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
 
 export LICENSE_KEY=${LICENSE_KEY:-24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735}
 
+if ! [ -z "${ZOEKT-}" ]; then
+	export ZOEKT_HOST=localhost:6070
+fi
+
 # WebApp
 export NODE_ENV=development
 
