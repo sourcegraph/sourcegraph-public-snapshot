@@ -2,6 +2,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
+import { MonacoSettingsEditor } from '../settings/MonacoSettingsEditor'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite } from './backend'
 
@@ -41,9 +42,13 @@ export class ConfigurationPage extends React.Component<Props, State> {
                 </p>
                 {this.state.site &&
                     this.state.site.latestSettings && (
-                        <pre className="site-admin-configuration-page__config">
-                            <code>{this.state.site.configuration}</code>
-                        </pre>
+                        <MonacoSettingsEditor
+                            className="site-admin-configuration-page__config"
+                            value={this.state.site.configuration}
+                            jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
+                            readOnly={true}
+                            height={700}
+                        />
                     )}
             </div>
         )
