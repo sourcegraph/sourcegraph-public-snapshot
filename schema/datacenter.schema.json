@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://sourcegraph.com/v1/datacenter.schema.json#",
+  "title": "Datacenter ops configuration",
+  "description": "Configuration for Sourcegraph Datacenter Ops. Defines all config parameters that can be used to change the operational parameters of Sourcegraph Datacenter (e.g., for scaling).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "alertmanagerConfig": {
+      "type": "string",
+      "description":
+        "Contents of the alertmanager configuration file, see below."
+    },
+    "alertmanagerURL": {
+      "type": "string",
+      "description":
+        "Publicly accessible URL to alertmanager, used in alert messages."
+    },
+    "authProxyIP": {
+      "type": "string",
+      "description":
+        "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+    },
+    "authProxyPassword": {
+      "type": "string",
+      "description": "Password used by auth-proxy for basic authentication."
+    },
+    "deploymentOverrides": {
+      "description": "Kubernetes configuration overrides",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/DeploymentOverrides"
+      }
+    },
+    "gitoliteIP": {
+      "type": "string",
+      "description":
+        "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+    },
+    "gitserverCount": {
+      "type": "integer",
+      "description":
+        "The number of gitservers to deploy. Not a replica count since it is stateful. Defaults to 1."
+    },
+    "gitserverSSH": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Contents of the ~/.ssh directory used by gitserver."
+    },
+    "httpNodePort": {
+      "type": "integer",
+      "description":
+        "Port exposed on all nodes directing HTTP traffic to sourcegraph-frontend pod."
+    },
+    "httpsNodePort": {
+      "type": "integer",
+      "description":
+        "Port exposed on all nodes directing HTTPS traffic to sourcegraph-frontend pod."
+    },
+    "langGo": {
+      "type": "boolean",
+      "description": "Use Go language server."
+    },
+    "langJava": {
+      "type": "boolean",
+      "description": "Use Java language server."
+    },
+    "langJavaScript": {
+      "type": "boolean",
+      "description": "Use JavaScript language server."
+    },
+    "langPHP": {
+      "type": "boolean",
+      "description": "Use PHP language server."
+    },
+    "langPython": {
+      "type": "boolean",
+      "description": "Use Python language server."
+    },
+    "langSwift": {
+      "type": "boolean",
+      "description": "Use Swift language server."
+    },
+    "langTypeScript": {
+      "type": "boolean",
+      "description": "Use TypeScript language server."
+    },
+    "nodeSSDPath": {
+      "type": "string",
+      "description":
+        "A path to a local SSD drive. If set services which use a local disk cache will have this path bindmounted in."
+    },
+    "phabricatorIP": {
+      "type": "string",
+      "description":
+        "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+    },
+    "storageClass": {
+      "type": "string",
+      "description":
+        "Storage class name to use for Persistent Volume claims. If you set this, you need to ensure a storage class with the same name exists in your cluster."
+    },
+    "useRBAC": {
+      "type": "boolean",
+      "description":
+        "Enable this if RBAC is enabled on your Kubernetes cluster."
+    }
+  },
+  "definitions": {
+    "ContainerOverrides": {
+      "required": ["limits", "requests"],
+      "properties": {
+        "limits": {
+          "$ref": "#/definitions/ResourceOverride"
+        },
+        "requests": {
+          "$ref": "#/definitions/ResourceOverride"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "DeploymentOverrides": {
+      "required": ["replicas", "containers"],
+      "properties": {
+        "containers": {
+          "$ref": "#/definitions/ContainerOverrides",
+          "type": "object"
+        },
+        "replicas": {
+          "type": "integer",
+          "description": "Number of replicas"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ResourceOverride": {
+      "required": ["cpu", "memory"],
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "description": "Number of CPU units"
+        },
+        "memory": {
+          "type": "string",
+          "description": "Amount of memory"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

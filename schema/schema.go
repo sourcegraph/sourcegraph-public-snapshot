@@ -2,6 +2,43 @@
 
 package schema
 
+// ContainerOverrides
+type ContainerOverrides struct {
+	Limits   *ResourceOverride `json:"limits"`
+	Requests *ResourceOverride `json:"requests"`
+}
+
+// DatacenterOpsConfiguration Configuration for Sourcegraph Datacenter Ops. Defines all config parameters that can be used to change the operational parameters of Sourcegraph Datacenter (e.g., for scaling).
+type DatacenterOpsConfiguration struct {
+	AlertmanagerConfig  string                          `json:"alertmanagerConfig,omitempty"`
+	AlertmanagerURL     string                          `json:"alertmanagerURL,omitempty"`
+	AuthProxyIP         string                          `json:"authProxyIP,omitempty"`
+	AuthProxyPassword   string                          `json:"authProxyPassword,omitempty"`
+	DeploymentOverrides map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
+	GitoliteIP          string                          `json:"gitoliteIP,omitempty"`
+	GitserverCount      int                             `json:"gitserverCount,omitempty"`
+	GitserverSSH        map[string]string               `json:"gitserverSSH,omitempty"`
+	HttpNodePort        int                             `json:"httpNodePort,omitempty"`
+	HttpsNodePort       int                             `json:"httpsNodePort,omitempty"`
+	LangGo              bool                            `json:"langGo,omitempty"`
+	LangJava            bool                            `json:"langJava,omitempty"`
+	LangJavaScript      bool                            `json:"langJavaScript,omitempty"`
+	LangPHP             bool                            `json:"langPHP,omitempty"`
+	LangPython          bool                            `json:"langPython,omitempty"`
+	LangSwift           bool                            `json:"langSwift,omitempty"`
+	LangTypeScript      bool                            `json:"langTypeScript,omitempty"`
+	NodeSSDPath         string                          `json:"nodeSSDPath,omitempty"`
+	PhabricatorIP       string                          `json:"phabricatorIP,omitempty"`
+	StorageClass        string                          `json:"storageClass,omitempty"`
+	UseRBAC             bool                            `json:"useRBAC,omitempty"`
+}
+
+// DeploymentOverrides
+type DeploymentOverrides struct {
+	Containers *ContainerOverrides `json:"containers"`
+	Replicas   int                 `json:"replicas"`
+}
+
 // Github
 type Github struct {
 	Certificate string   `json:"certificate,omitempty"`
@@ -28,6 +65,12 @@ type ReposList struct {
 	Path string `json:"path,omitempty"`
 	Type string `json:"type,omitempty"`
 	Url  string `json:"url,omitempty"`
+}
+
+// ResourceOverride
+type ResourceOverride struct {
+	Cpu    string `json:"cpu"`
+	Memory string `json:"memory"`
 }
 
 // SearchSavedQueries
