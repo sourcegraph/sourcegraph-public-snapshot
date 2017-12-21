@@ -1,5 +1,22 @@
 #!/bin/bash
 
+if [ -n "$DELVE_FRONTEND" ]; then
+	export DELVE=1
+	echo 'Launching frontend with delve'
+	export EXEC_FRONTEND='dlv exec --headless --listen=:2345 --log'
+fi
+
+if [ -n "$DELVE_SEARCHER" ]; then
+	export DELVE=1
+	echo 'Launching searcher with delve'
+	export EXEC_SEARCHER='dlv exec --headless --listen=:2346 --log'
+fi
+
+if [ -n "$DELVE" ]; then
+	echo 'Due to a limitation in delve, bebug binaries will not start until you attach a debugger.'
+	echo 'See https://github.com/derekparker/delve/issues/952'
+fi
+
 set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
@@ -56,21 +73,16 @@ fi
 # WebApp
 export NODE_ENV=development
 
-mkdir -p .bin
-export GOBIN=$PWD/.bin
-
 # Make sure chokidar-cli is installed
 if ! [ -x "$(command -v $PWD/web/node_modules/.bin/chokidar)" ]; then
   echo 'Installing chokidar...'
   npm --prefix ./web install
 fi
 
-go get sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
-
-$PWD/dev/go-install.sh
+./dev/go-install.sh
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
 
-export GOREMAN="$GOBIN/goreman -f dev/Procfile"
+export GOREMAN=".bin/goreman -f dev/Procfile"
 exec $GOREMAN start

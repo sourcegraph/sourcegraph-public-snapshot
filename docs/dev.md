@@ -13,7 +13,7 @@ development environment.
 For Linux users or if you don't want to use Homebrew on macOS.
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [Go](https://golang.org/doc/install) (v1.7.0 or higher)
+- [Go](https://golang.org/doc/install) (v1.9.0 or higher)
 - [Node JS](https://nodejs.org/en/download/) (v7.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
@@ -42,13 +42,9 @@ This is a streamlined setup for Mac machines.
 	brew services start redis
     ```
 
-### Optional (but recommended)
+### Sourcegraph Editor
 
-- [Visual Studio Code](https://code.visualstudio.com): this IDE comes with great out-of-the-box
-  features for Go and TypeScript. Recommended extensions:
-  - [Go](https://marketplace.visualstudio.com/items?itemName=lukehoban.Go)
-  - [TSLint](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
-  - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+Download and install [Sourcegraph Editor](https://about.sourcegraph.com/beta/201708/)
 
 ## SSH keys
 
@@ -162,8 +158,11 @@ go test ./util/textutil
 
 ## Debugger
 
-If you use VSCode and have the "Debugger for Chrome" extension, these steps allow you to
-use the interactive visual debugger for our frontend codebase:
+How to debug our code with Sourcegraph Editor or Visual Studio Code.
+
+### TypeScript
+
+Requires "Debugger for Chrome" extension.
 
 - Quit Chrome
 - Launch Chrome (Canary) from the command line with a remote debugging port:
@@ -174,6 +173,22 @@ use the interactive visual debugger for our frontend codebase:
 - Open the Debugger in VSCode: "View" > "Debug"
 - Launch the `(ui) http://localhost:3080/*` debug configuration
 - Set breakpoints, enjoy
+
+### Go
+
+- Install [Delve](https://github.com/derekparker/delve)
+- Start the server with delve enabled for the services you want to debug
+  - e.g. `DELVE_FRONTEND=1 ./dev/start.sh`
+  - Check `./dev/start.sh` for supported configurations (it is easy to add more).
+  - Any binary that delve is attached to will not begin executing until you attach a debugger.
+- Run the appropriate attach task from Sourcegraph Editor.
+  - e.g. "Attach to frontend"
+
+Known issues:
+- At the time of writing there is an issue with homebrew formula so workarounds are required.
+  - Use homebrew and then google any errors you encounter.
+- There doesn't seem to be a clean way to stop debugging (https://github.com/derekparker/delve/issues/1057).
+  - The workaround is to manually kill the process when you are done.
 
 ## govendor
 
