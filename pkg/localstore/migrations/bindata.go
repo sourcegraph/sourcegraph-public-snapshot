@@ -90,6 +90,8 @@
 // ../../../migrations/1513188843_rename_threads_file.up.sql
 // ../../../migrations/1513578663_user-passwords.down.sql
 // ../../../migrations/1513578663_user-passwords.up.sql
+// ../../../migrations/1513800341_update_username_orgname_regex.down.sql
+// ../../../migrations/1513800341_update_username_orgname_regex.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1957,6 +1959,46 @@ func _1513578663_userPasswordsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1513800341_update_username_orgname_regexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\xe2\x74\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x89\xc6\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x70\x71\x3a\xba\xb8\x10\x52\xa5\xe0\xec\xe1\xea\xec\xad\xa0\x01\x12\x57\xa8\x53\x50\x8f\x8b\x4e\xd4\xad\x72\xd4\x8d\x32\xd0\xb5\x8c\xd5\x40\xb0\x63\x74\x63\xab\x0d\x74\x8c\xcd\x6a\x91\xa4\x35\xed\x55\xd4\x35\xd1\x9c\x57\x5a\x9c\x5a\x84\xc5\x7d\x60\xe1\x78\x10\x89\xb0\x1f\xd3\x7d\xd8\x54\xc1\xdc\x07\x13\x25\xd3\x8d\xce\xfe\xbe\xbe\x9e\x21\xd6\x80\x00\x00\x00\xff\xff\x97\xe9\x4d\x9d\x52\x01\x00\x00")
+
+func _1513800341_update_username_orgname_regexDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513800341_update_username_orgname_regexDownSql,
+		"1513800341_update_username_orgname_regex.down.sql",
+	)
+}
+
+func _1513800341_update_username_orgname_regexDownSql() (*asset, error) {
+	bytes, err := _1513800341_update_username_orgname_regexDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513800341_update_username_orgname_regex.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1513800341_update_username_orgname_regexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\xe2\x74\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x89\xc6\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x70\x71\x3a\xba\xb8\x10\x52\xa5\xe0\xec\xe1\xea\xec\xad\xa0\x01\x12\x57\xa8\x53\x50\x8f\x8b\x4e\xd4\xad\x72\xd4\x8d\x32\xd0\xb5\x8c\xd5\xb0\xb7\x42\xe2\xd5\xe8\x6a\xd8\xdb\x22\xf1\x35\x35\xab\x0d\x74\x8c\x2d\x6a\x55\xd4\x35\xd1\xdc\x58\x5a\x9c\x5a\x84\xc5\x91\x60\xe1\x78\x10\x89\x70\x04\xa6\x23\xb1\xa9\x82\x39\x12\x26\x4a\x89\x43\x9d\xfd\x7d\x7d\x3d\x43\xac\x01\x01\x00\x00\xff\xff\x35\xf3\x10\x79\x5c\x01\x00\x00")
+
+func _1513800341_update_username_orgname_regexUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1513800341_update_username_orgname_regexUpSql,
+		"1513800341_update_username_orgname_regex.up.sql",
+	)
+}
+
+func _1513800341_update_username_orgname_regexUpSql() (*asset, error) {
+	bytes, err := _1513800341_update_username_orgname_regexUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1513800341_update_username_orgname_regex.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2099,6 +2141,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1513188843_rename_threads_file.up.sql":                       _1513188843_rename_threads_fileUpSql,
 	"1513578663_user-passwords.down.sql":                          _1513578663_userPasswordsDownSql,
 	"1513578663_user-passwords.up.sql":                            _1513578663_userPasswordsUpSql,
+	"1513800341_update_username_orgname_regex.down.sql":           _1513800341_update_username_orgname_regexDownSql,
+	"1513800341_update_username_orgname_regex.up.sql":             _1513800341_update_username_orgname_regexUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2232,6 +2276,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1513188843_rename_threads_file.up.sql":                       &bintree{_1513188843_rename_threads_fileUpSql, map[string]*bintree{}},
 	"1513578663_user-passwords.down.sql":                          &bintree{_1513578663_userPasswordsDownSql, map[string]*bintree{}},
 	"1513578663_user-passwords.up.sql":                            &bintree{_1513578663_userPasswordsUpSql, map[string]*bintree{}},
+	"1513800341_update_username_orgname_regex.down.sql":           &bintree{_1513800341_update_username_orgname_regexDownSql, map[string]*bintree{}},
+	"1513800341_update_username_orgname_regex.up.sql":             &bintree{_1513800341_update_username_orgname_regexUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -130,7 +130,7 @@ Indexes:
     "org_name_unique" UNIQUE CONSTRAINT, btree (name)
 Check constraints:
     "org_display_name_valid" CHECK (char_length(display_name) <= 64)
-    "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
+    "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "org_tags" CONSTRAINT "org_tags_references_users" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -354,7 +354,7 @@ Indexes:
     "users_username_key" UNIQUE CONSTRAINT, btree (username)
 Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
-    "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,36}[a-zA-Z0-9])?$'::citext)
+    "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
     TABLE "settings" CONSTRAINT "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

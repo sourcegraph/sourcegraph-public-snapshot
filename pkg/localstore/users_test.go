@@ -24,6 +24,8 @@ func TestUsers_MatchUsernameRegex(t *testing.T) {
 		{"long-butnotquitelongenoughtoreachlimit", true},
 
 		{"nick-", false},
+		{"nick--s", false},
+		{"nick--sny", false},
 		{"nick.com", false},
 		{"nick_s", false},
 		{"_", false},
@@ -40,11 +42,11 @@ func TestUsers_MatchUsernameRegex(t *testing.T) {
 		{"--", false},
 		{"-s", false},
 		{"レンフレッド", false},
-		{"veryveryveryveryveryveryveryveryverylong", false},
+		{"veryveryveryveryveryveryveryveryveryyylong", false},
 	}
 
 	for _, test := range tests {
-		matched := MatchUsernameString.MatchString(test.username)
+		matched, _ := MatchUsernameString.MatchString(test.username)
 		if matched != test.isValid {
 			t.Errorf("expected '%v' for username '%s'", test.isValid, test.username)
 		}

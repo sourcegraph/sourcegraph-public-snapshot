@@ -7,9 +7,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"regexp"
 	"time"
 
+	"github.com/dlclark/regexp2"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/crypto/bcrypt"
@@ -27,9 +27,9 @@ import (
 // based on the limitations GitHub places on their usernames. This pattern is
 // canonical, so any frontend or DB username validation should be based on a
 // pattern equivalent to this one.
-const UsernamePattern = `[a-zA-Z0-9]([a-zA-Z0-9-]{0,36}[a-zA-Z0-9])?`
+const UsernamePattern = `[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}`
 
-var MatchUsernameString = regexp.MustCompile("^" + UsernamePattern + "$")
+var MatchUsernameString = regexp2.MustCompile("^"+UsernamePattern+"$", 0)
 
 // users provides access to the `users` table.
 //

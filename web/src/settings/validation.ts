@@ -1,12 +1,12 @@
 /**
  * Regular expression to identify valid organization names.
  */
-export const VALID_ORG_NAME_REGEXP = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/
+export const VALID_ORG_NAME_REGEXP = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i
 
 /**
  * Regular expression to identify valid username.
  */
-export const VALID_USERNAME_REGEXP = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,36}[a-zA-Z0-9])?$/
+export const VALID_USERNAME_REGEXP = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i
 
 /**
  * Regular expression to identify valid password.

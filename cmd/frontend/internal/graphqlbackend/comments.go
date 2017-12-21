@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"html"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 
+	"github.com/dlclark/regexp2"
 	"github.com/mattbaird/gochimp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -344,12 +344,17 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	return emails, nil
 }
 
-var usernameMentionPattern = regexp.MustCompile(`\B@` + store.UsernamePattern)
+var usernameMentionPattern = regexp2.MustCompile(`\B@`+store.UsernamePattern, 0)
 
 // usernamesFromMentions extracts usernames that are mentioned using a @username
 // syntax within a comment. Mentions are normalized to lowercase format.
 func usernamesFromMentions(contents string) []string {
-	matches := usernameMentionPattern.FindAll([]byte(contents), -1)
+	var matches []string
+	m, _ := usernameMentionPattern.FindStringMatch(contents)
+	for m != nil {
+		matches = append(matches, m.String())
+		m, _ = usernameMentionPattern.FindNextMatch(m)
+	}
 	var usernames []string
 	for _, m := range matches {
 		usernames = append(usernames, strings.TrimPrefix(string(m), "@"))
