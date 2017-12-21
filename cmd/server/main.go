@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"os"
@@ -8,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"k8s.io/client-go/pkg/util/rand"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 )
@@ -103,7 +104,7 @@ func main() {
 			appSecretKeyFile := filepath.Join(configDir, "srcAppSecretKey")
 			appSecretKey, err := ioutil.ReadFile(appSecretKeyFile)
 			if os.IsNotExist(err) {
-				appSecretKey = []byte(rand.String(128))
+				appSecretKey := mustCryptoRand()
 				if err := os.MkdirAll(configDir, os.FileMode(0755)); err != nil {
 					log.Fatalf("could not create config directory %s: %s", configDir, err)
 				}
@@ -182,4 +183,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func mustCryptoRand() []byte {
+	var b [80]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		log.Fatalf("could not generate generate random value for SRC_APP_SECRET_KEY: %s", err)
+	}
+	buf := make([]byte, base64.StdEncoding.EncodedLen(len(b)))
+	base64.StdEncoding.Encode(buf, b[:])
+	return buf
 }
