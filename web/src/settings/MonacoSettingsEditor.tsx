@@ -5,14 +5,21 @@ import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import SettingsSchemaJSON from './settings.schema.json'
+import settingsSchemaJSON from './settings.schema.json'
+import siteSchemaJSON from './site.schema.json'
 import { colorTheme } from './theme'
 
 interface Props {
     className: string
     value: string | undefined
-    onChange: (newValue: string) => void
+    onChange?: (newValue: string) => void
     readOnly: boolean
+    height?: number
+
+    /**
+     * The ID of the JSON Schema that describes the document (typically a URI).
+     */
+    jsonSchema: 'https://sourcegraph.com/v1/site.schema.json#' | 'https://sourcegraph.com/v1/settings.schema.json#'
 }
 
 interface State {
@@ -73,7 +80,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         return (
             <MonacoEditor
                 language="json"
-                height={400}
+                height={this.props.height || 400}
                 theme={this.monacoTheme()}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
@@ -90,6 +97,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     renderLineHighlight: 'none',
                     scrollBeyondLastLine: false,
                     quickSuggestionsDelay: 200,
+                    readOnly: this.props.readOnly,
                 }}
                 requireConfig={{ paths: { vs: '/.assets/scripts/vs' }, url: '/.assets/scripts/vs/loader.js' }}
             />
@@ -110,16 +118,17 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     private onDidEditorMount(): void {
         const monaco = this.monaco!
 
+        const schemas: { uri: string; schema: any }[] = [
+            { uri: 'https://sourcegraph.com/v1/site.schema.json#', schema: siteSchemaJSON },
+            { uri: 'https://sourcegraph.com/v1/settings.schema.json#', schema: settingsSchemaJSON },
+        ]
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
             validate: true,
             allowComments: true,
-            schemas: [
-                {
-                    fileMatch: ['*'],
-                    uri: 'https://sourcegraph.com/v1/settings.schema.json#',
-                    schema: SettingsSchemaJSON,
-                },
-            ],
+            schemas: schemas.map(schema => ({
+                ...schema,
+                fileMatch: schema.uri === this.props.jsonSchema ? ['*'] : undefined,
+            })),
         })
 
         monaco.editor.defineTheme('sourcegraph-dark', {
@@ -143,7 +152,9 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     private onDidCreateModel(model: monaco.editor.IModel): void {
         this.disposables.push(
             model.onDidChangeContent(() => {
-                this.props.onChange(model.getValue())
+                if (this.props.onChange) {
+                    this.props.onChange(model.getValue())
+                }
             })
         )
     }

@@ -1,1 +1,12 @@
-// empty
+.site-admin-configuration-page {
+    &__config {
+        margin-top: 2rem;
+    }
+
+    &__alert {
+        margin: 1rem 0;
+        p:last-child {
+            margin-bottom: 0;
+        }
+    }
+}

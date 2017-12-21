@@ -407,12 +407,15 @@ type OrgTag struct {
 // A ConfigurationSubject is something that can have settings. Exactly one
 // field must be non-nil.
 type ConfigurationSubject struct {
-	Org  *int32 // the org's ID
-	User *int32 // the user's ID
+	Site *string // the site's ID
+	Org  *int32  // the org's ID
+	User *int32  // the user's ID
 }
 
 func (s ConfigurationSubject) String() string {
 	switch {
+	case s.Site != nil:
+		return fmt.Sprintf("site %query", *s.Site)
 	case s.Org != nil:
 		return fmt.Sprintf("org %d", *s.Org)
 	case s.User != nil:

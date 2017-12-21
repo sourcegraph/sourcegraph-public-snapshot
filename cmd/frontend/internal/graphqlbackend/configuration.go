@@ -17,6 +17,7 @@ import (
 )
 
 type configurationSubject struct {
+	site *siteResolver
 	org  *orgResolver
 	user *userResolver
 }
@@ -31,6 +32,9 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 
 	actor := actor.FromContext(ctx)
 	switch s := resolver.(type) {
+	case *siteResolver:
+		return &configurationSubject{site: s}, nil
+
 	case *userResolver:
 		// 🚨 SECURITY: A user may only view or modify their own configuration.
 		if actor.UID == "" || s.Auth0ID() == "" || actor.UID != s.Auth0ID() {
@@ -53,6 +57,9 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 
 func idToConfigurationSubject(id graphql.ID) (sourcegraph.ConfigurationSubject, error) {
 	switch relay.UnmarshalKind(id) {
+	case "Site":
+		siteID, err := unmarshalSiteID(id)
+		return sourcegraph.ConfigurationSubject{Site: &siteID}, err
 	case "User":
 		userID, err := unmarshalUserID(id)
 		return sourcegraph.ConfigurationSubject{User: &userID}, err
@@ -66,6 +73,8 @@ func idToConfigurationSubject(id graphql.ID) (sourcegraph.ConfigurationSubject, 
 
 func configurationSubjectID(subject sourcegraph.ConfigurationSubject) (graphql.ID, error) {
 	switch {
+	case subject.Site != nil:
+		return marshalSiteID(*subject.Site), nil
 	case subject.User != nil:
 		return marshalUserID(*subject.User), nil
 	case subject.Org != nil:
@@ -77,6 +86,8 @@ func configurationSubjectID(subject sourcegraph.ConfigurationSubject) (graphql.I
 
 func configurationSubjectsEqual(a, b sourcegraph.ConfigurationSubject) bool {
 	switch {
+	case a.Site != nil && b.Site != nil:
+		return *a.Site == *b.Site
 	case a.User != nil && b.User != nil:
 		return *a.User == *b.User
 	case a.Org != nil && b.Org != nil:
@@ -100,12 +111,16 @@ func (r *configurationMutationResolver) checkArgHasSameSubject(argSubject source
 	return nil
 }
 
+func (s *configurationSubject) ToSite() (*siteResolver, bool) { return s.site, s.site != nil }
+
 func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
 
 func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
 
 func (s *configurationSubject) toSubject() sourcegraph.ConfigurationSubject {
 	switch {
+	case s.site != nil:
+		return sourcegraph.ConfigurationSubject{Site: &s.site.id}
 	case s.org != nil:
 		return sourcegraph.ConfigurationSubject{Org: &s.org.org.ID}
 	case s.user != nil:
@@ -117,6 +132,8 @@ func (s *configurationSubject) toSubject() sourcegraph.ConfigurationSubject {
 
 func (s *configurationSubject) ID() graphql.ID {
 	switch {
+	case s.site != nil:
+		return s.site.ID()
 	case s.org != nil:
 		return s.org.ID()
 	case s.user != nil:
@@ -127,6 +144,8 @@ func (s *configurationSubject) ID() graphql.ID {
 
 func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
+	case s.site != nil:
+		return s.site.LatestSettings()
 	case s.org != nil:
 		return s.org.LatestSettings(ctx)
 	case s.user != nil:
@@ -179,7 +198,10 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 		return mockConfigurationCascadeSubjects()
 	}
 
-	var subjects []*configurationSubject
+	subjects := []*configurationSubject{
+		&configurationSubject{site: singletonSiteResolver},
+	}
+
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
 		user, err := currentUser(ctx)
 		if err != nil {
