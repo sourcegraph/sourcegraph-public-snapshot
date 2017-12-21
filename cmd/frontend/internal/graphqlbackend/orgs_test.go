@@ -15,28 +15,24 @@ func TestOrgs(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					root {
-						orgs {
-							nodes { name }
-							totalCount
-						}
+					orgs {
+						nodes { name }
+						totalCount
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"root": {
-						"orgs": {
-							"nodes": [
-								{
-									"name": "org1"
-								},
-								{
-									"name": "org2"
-								}
-							],
-							"totalCount": 2
-						}
+					"orgs": {
+						"nodes": [
+							{
+								"name": "org1"
+							},
+							{
+								"name": "org2"
+							}
+						],
+						"totalCount": 2
 					}
 				}
 			`,
