@@ -42,25 +42,24 @@ export class ConfigurationPage extends React.Component<Props, State> {
                     <a href="https://about.sourcegraph.com/docs/server/">Sourcegraph configuration documentation</a>.
                 </p>
                 {this.state.editing ? (
-                    <p className="alert alert-danger">
-                        <strong>Configuration editing with JSON validation is enabled (beta)</strong>
-                        <br />
-                        <br />
-                        Applying and saving configuration changes is not yet supported. Your changes will be lost when
-                        you leave this page. You must manually copy the modified configuration and provide it to the
-                        server (via <code>SOURCEGRAPH_CONFIG</code>).
-                        <br />
-                        <br />
-                        Use Cmd/Ctrl+Space for completion, and hover over JSON properties for documentation.
-                    </p>
+                    <div className="alert alert-danger site-admin-configuration-page__alert">
+                        <p>
+                            <strong>Configuration editing with JSON validation is enabled (beta)</strong>
+                        </p>
+                        <p>
+                            Applying and saving configuration changes is not yet supported. Your changes will be lost
+                            when you leave this page. You must manually copy the modified configuration and provide it
+                            to the server (via <code>SOURCEGRAPH_CONFIG</code>).
+                        </p>
+                        <p>Use Cmd/Ctrl+Space for completion, and hover over JSON properties for documentation.</p>
+                    </div>
                 ) : (
-                    <p className="alert alert-primary">
-                        Configuration is read-only. Hover over JSON properties for documentation. <br />
-                        <br />
-                        <a className="site-admin-configuration-page__enable-editing" onClick={this.enableEditing}>
+                    <div className="alert alert-primary site-admin-configuration-page__alert">
+                        <p>Configuration is read-only. Hover over JSON properties for documentation.</p>
+                        <button className="btn btn-primary btn-sm" onClick={this.enableEditing}>
                             Enable editing (beta)
-                        </a>
-                    </p>
+                        </button>
+                    </div>
                 )}
                 {this.state.site &&
                     this.state.site.latestSettings && (
