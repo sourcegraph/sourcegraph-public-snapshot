@@ -17,9 +17,9 @@ interface Props {
     height?: number
 
     /**
-     * The ID of the JSON Schema that describes the document.
+     * The ID of the JSON Schema that describes the document (typically a URI).
      */
-    jsonSchema: string
+    jsonSchema: 'https://sourcegraph.com/v1/site.schema.json#' | 'https://sourcegraph.com/v1/settings.schema.json#'
 }
 
 interface State {
