@@ -25,6 +25,23 @@ type Schema struct {
 	NameCount int      `json:"-" `
 }
 
+// Parse parses a JSON schema from a string.
+func Parse(schema string) (*Schema, error) {
+	s := &Schema{}
+	err := json.Unmarshal([]byte(schema), s)
+
+	if err != nil {
+		return s, err
+	}
+
+	if s.SchemaType == "" {
+		return s, errors.New("JSON schema must have a $schema key")
+	}
+
+	return s, err
+}
+
+// Type represents a JSON Schema type, which can be a string or an array of strings.
 type Type []string
 
 var _ json.Unmarshaler = (*Type)(nil)
@@ -54,10 +71,28 @@ func (t *Type) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Is returns true if the JSON Schema type exactly matches the argument.
 func (t Type) Is(v interface{}) bool {
 	switch v := v.(type) {
 	case string:
 		return len(t) == 1 && t[0] == v
+	case Type:
+		if len(v) != len(t) {
+			return false
+		}
+		vm := make(map[string]struct{})
+		for _, e := range v {
+			vm[e] = struct{}{}
+		}
+		if len(vm) != len(t) {
+			return false
+		}
+		for _, e := range t {
+			if _, in := vm[e]; !in {
+				return false
+			}
+		}
+		return true
 	case []string:
 		if len(v) != len(t) {
 			return false
@@ -80,10 +115,14 @@ func (t Type) Is(v interface{}) bool {
 	}
 }
 
+// Set sets the value of the JSON Schema type
 func (t *Type) Set(s ...string) {
 	*t = s
 }
 
+// Has returns true if the JSON Schema type includes the type specified by the argument.
+// For example, if the JSON Schema type is ["string", "null"] and the argument is "string",
+// this function returns true.
 func (t Type) Has(s string) bool {
 	for _, u := range t {
 		if u == s {
@@ -91,22 +130,6 @@ func (t Type) Has(s string) bool {
 		}
 	}
 	return false
-}
-
-// Parse parses a JSON schema from a string.
-func Parse(schema string) (*Schema, error) {
-	s := &Schema{}
-	err := json.Unmarshal([]byte(schema), s)
-
-	if err != nil {
-		return s, err
-	}
-
-	if s.SchemaType == "" {
-		return s, errors.New("JSON schema must have a $schema key")
-	}
-
-	return s, err
 }
 
 func (ap *AdditionalProperties) UnmarshalJSON(data []byte) error {
