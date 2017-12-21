@@ -14,13 +14,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
-
-type phabConfig struct {
-	URL   string `json:"url"`
-	Token string `json:"token"`
-}
 
 type phabRepo struct {
 	Fields *struct {
@@ -65,7 +60,7 @@ type phabAPIResponse struct {
 }
 
 var (
-	phabConf               = env.Get("PHABRICATOR_CONFIG", "", "A JSON array of Phabricator host configuration values.")
+	phabConf               = conf.Get().Phabricator
 	repoUpdateIntervalConf = conf.Get().RepoListUpdateInterval
 )
 
@@ -76,16 +71,12 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) error {
 	}
 	updateInterval := time.Duration(repoUpdateIntervalConf) * time.Second
 
-	configs := []phabConfig{}
-	if phabConf != "" {
-		err := json.Unmarshal([]byte(phabConf), &configs)
-		if err != nil {
-			return fmt.Errorf("error parsing Phabricator config: %s", err)
-		}
-	}
-
 	for {
-		for _, c := range configs {
+		for _, c := range phabConf {
+			if c.Token == "" {
+				continue
+			}
+
 			after := ""
 			for {
 				res, err := fetchPhabRepos(ctx, c, after)
@@ -109,7 +100,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) error {
 	}
 }
 
-func fetchPhabRepos(ctx context.Context, cfg phabConfig, after string) (*phabRepoLookupResponse, error) {
+func fetchPhabRepos(ctx context.Context, cfg schema.Phabricator, after string) (*phabRepoLookupResponse, error) {
 	form := url.Values{}
 	form.Add("output", "json")
 	form.Add("params[__conduit__]", `{"token": "`+cfg.Token+`"}`)
@@ -117,7 +108,7 @@ func fetchPhabRepos(ctx context.Context, cfg phabConfig, after string) (*phabRep
 	if after != "" {
 		form.Add("params[after]", after)
 	}
-	req, err := http.NewRequest("POST", strings.TrimSuffix(cfg.URL, "/")+"/api/diffusion.repository.search", strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", strings.TrimSuffix(cfg.Url, "/")+"/api/diffusion.repository.search", strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +138,7 @@ func fetchPhabRepos(ctx context.Context, cfg phabConfig, after string) (*phabRep
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, cfg *phabConfig, repos []*phabRepo) error {
+func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phabRepo) error {
 	for _, repo := range repos {
 		if repo.Fields.VCS != "git" {
 			continue
@@ -171,7 +162,7 @@ func updatePhabRepos(ctx context.Context, cfg *phabConfig, repos []*phabRepo) er
 			return nil
 		}
 
-		err := sourcegraph.InternalClient.PhabricatorRepoCreate(ctx, uri, repo.Fields.Callsign, cfg.URL)
+		err := sourcegraph.InternalClient.PhabricatorRepoCreate(ctx, uri, repo.Fields.Callsign, cfg.Url)
 		if err != nil {
 			return err
 		}

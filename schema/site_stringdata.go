@@ -75,6 +75,23 @@ const SiteSchemaJSON = `{
           "token": {
             "description": "API token for the Phabricator instance.",
             "type": "string"
+          },
+          "repos": {
+            "description": "The list of repos available on Phabricator.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "description": "Display path for the url e.g. gitolite/my/repo",
+                  "type": "string"
+                },
+                "callsign": {
+                  "description": "The unique Phabricator identifier for the repo, like 'MUX'.",
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }

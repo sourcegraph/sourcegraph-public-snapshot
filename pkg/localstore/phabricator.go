@@ -5,12 +5,32 @@ import (
 	"fmt"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type phabricator struct{}
 
 type errPhabricatorRepoNotFound struct {
 	args []interface{}
+}
+
+var (
+	phabricatorConfigs = conf.Get().Phabricator
+	phabricatorRepos   map[string]*sourcegraph.PhabricatorRepo
+)
+
+func init() {
+	phabricatorRepos = map[string]*sourcegraph.PhabricatorRepo{}
+
+	for _, config := range phabricatorConfigs {
+		for _, repo := range config.Repos {
+			phabricatorRepos[repo.Path] = &sourcegraph.PhabricatorRepo{
+				URI:      repo.Path,
+				Callsign: repo.Callsign,
+				URL:      config.Url,
+			}
+		}
+	}
 }
 
 func (err errPhabricatorRepoNotFound) Error() string {
@@ -78,5 +98,8 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 }
 
 func (p *phabricator) GetByURI(ctx context.Context, uri string) (*sourcegraph.PhabricatorRepo, error) {
+	if r := phabricatorRepos[uri]; r != nil {
+		return r, nil
+	}
 	return p.getOneBySQL(ctx, "WHERE uri=$1", uri)
 }

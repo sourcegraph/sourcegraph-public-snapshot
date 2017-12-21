@@ -293,10 +293,10 @@ export const fetchPhabricatorRepo = memoizeObservable(
             ctx
         ).pipe(
             map(result => {
-                if (result.errors || !result.data || !result.data.root || !result.data.root.phabricatorRepo) {
+                if (result.errors || !result.data || !result.data.phabricatorRepo) {
                     return null
                 }
-                return result.data.root.phabricatorRepo
+                return result.data.phabricatorRepo
             })
         ),
     makeRepoURI
