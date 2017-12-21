@@ -37,16 +37,15 @@ func init() {
 func trace(ctx context.Context, server, method string, arg interface{}, err *error) (context.Context, func()) {
 	requestGauge.WithLabelValues(server + "." + method).Inc()
 
-	_, ctx = opentracing.StartSpanFromContext(ctx, server+"."+method)
+	span, ctx := opentracing.StartSpanFromContext(ctx, server+"."+method)
+	span.SetTag("Server", server)
+	span.SetTag("Method", method)
+	span.SetTag("Argument", fmt.Sprintf("%#v", arg))
 	start := time.Now()
 
 	done := func() {
 		elapsed := time.Now().Sub(start)
 
-		span := opentracing.SpanFromContext(ctx)
-		span.SetTag("Server", server)
-		span.SetTag("Method", method)
-		span.SetTag("Argument", fmt.Sprintf("%#v", arg))
 		if err != nil && *err != nil {
 			span.SetTag("Error", (*err).Error())
 		}

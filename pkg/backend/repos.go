@@ -9,6 +9,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	otlog "github.com/opentracing/opentracing-go/log"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -73,7 +75,13 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
-	defer done()
+	defer func() {
+		if res != nil {
+			span := opentracing.SpanFromContext(ctx)
+			span.LogFields(otlog.Int("result.len", len(res.Repos)))
+		}
+		done()
+	}()
 
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
 	if opt == nil {
