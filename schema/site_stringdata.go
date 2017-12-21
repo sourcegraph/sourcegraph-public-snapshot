@@ -83,11 +83,13 @@ const SiteSchemaJSON = `{
               "type": "object",
               "properties": {
                 "path": {
-                  "description": "Display path for the url e.g. gitolite/my/repo",
+                  "description":
+                    "Display path for the url e.g. gitolite/my/repo",
                   "type": "string"
                 },
                 "callsign": {
-                  "description": "The unique Phabricator identifier for the repo, like 'MUX'.",
+                  "description":
+                    "The unique Phabricator identifier for the repo, like 'MUX'.",
                   "type": "string"
                 }
               }
