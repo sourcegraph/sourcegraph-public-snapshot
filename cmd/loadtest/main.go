@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,8 +14,9 @@ import (
 )
 
 var (
-	SearchQueriesEnv = env.Get("LOAD_SEARCH_QUERIES", "", "Search queries to use in load testing")
-	QueryPeriodMSEnv = env.Get("LOAD_SEARCH_QUERY_PERIOD", "", "Period of search query issuance (milliseconds). E.g., a value of 200 corresponds to 200ms or 5 QPS")
+	FrontendURL      = env.Get("LOAD_TEST_FRONTEND_URL", "http://sourcegraph-frontend-internal:80", "URL to the Sourcegraph frontend to load-test")
+	SearchQueriesEnv = env.Get("loadTestSearches", "", "Search queries to use in load testing")
+	QueryPeriodMSEnv = env.Get("loadTestSearchPeriod", "", "Period of search query issuance (milliseconds). E.g., a value of 200 corresponds to 200ms or 5 QPS")
 )
 
 type GQLSearchVars struct {
@@ -26,6 +28,10 @@ func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func frontendURL(p string) string {
+	return fmt.Sprintf("%s%s", FrontendURL, p)
 }
 
 func run() error {
@@ -55,7 +61,7 @@ func run() error {
 				if err != nil {
 					return err
 				}
-				resp, err := http.Post("http://localhost:3080/.api/graphql?Search", "application/json", bytes.NewReader(b))
+				resp, err := http.Post(frontendURL("/.api/graphql?Search"), "application/json", bytes.NewReader(b))
 				if err != nil {
 					return err
 				}
