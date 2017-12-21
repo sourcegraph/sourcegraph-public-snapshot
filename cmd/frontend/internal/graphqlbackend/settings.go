@@ -13,6 +13,7 @@ import (
 type settingsResolver struct {
 	subject  *configurationSubject
 	settings *sourcegraph.Settings
+	user     *sourcegraph.User
 }
 
 func (o *settingsResolver) ID() int32 {
@@ -31,6 +32,17 @@ func (o *settingsResolver) Contents() string { return o.settings.Contents }
 
 func (o *settingsResolver) CreatedAt() string {
 	return o.settings.CreatedAt.Format(time.RFC3339) // ISO
+}
+
+func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
+	if o.user == nil {
+		var err error
+		o.user, err = store.Users.GetByAuth0ID(ctx, o.settings.AuthorAuth0ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &userResolver{o.user}, nil
 }
 
 func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {

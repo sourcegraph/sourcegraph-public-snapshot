@@ -74,7 +74,7 @@ func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&configurationSubject{user: r}, settings}, nil
+	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
 }
 
 // HasSourcegraphUser indicates whether the current user has a Sourcegraph user

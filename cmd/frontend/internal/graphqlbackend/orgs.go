@@ -123,7 +123,7 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&configurationSubject{org: o}, settings}, nil
+	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
