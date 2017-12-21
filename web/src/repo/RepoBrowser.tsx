@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
 import { fetchRepositories } from './backend'
 
 interface State {
@@ -14,6 +15,8 @@ export class RepoBrowser extends React.PureComponent<{}, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('Browse')
+
         this.subscriptions.add(
             fetchRepositories().subscribe(
                 ({ nodes }) => {
