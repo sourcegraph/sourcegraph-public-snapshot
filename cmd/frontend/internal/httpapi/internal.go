@@ -43,6 +43,18 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
 		}
+		repo, err := backend.Repos.GetByURI(r.Context(), uri)
+		if err != nil {
+			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+			continue
+		}
+		cmd := gitserver.DefaultClient.Command("git", "fetch")
+		cmd.Repo = repo
+		err = cmd.Run(r.Context())
+		if err != nil {
+			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+			continue
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

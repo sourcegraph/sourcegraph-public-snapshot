@@ -31,12 +31,12 @@ func main() {
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 
 	for {
-		time.Sleep(time.Duration(interval) * time.Minute)
-
 		if err := sourcegraph.InternalClient.GitoliteUpdateRepos(context.Background()); err != nil {
 			log.Println(err)
 			continue
 		}
 		log15.Debug("updated Gitolite repos")
+
+		time.Sleep(time.Duration(interval) * time.Minute)
 	}
 }

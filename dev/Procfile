@@ -1,5 +1,6 @@
 gitserver: .bin/gitserver
 indexer: sh -c "sleep 5 && exec .bin/indexer"
+repo-updater: sh -c "sleep 5 && exec .bin/repo-list-updater"
 searcher: .bin/searcher
 github-proxy: .bin/github-proxy
 lsp-proxy: .bin/lsp-proxy -prof-http=:6061
