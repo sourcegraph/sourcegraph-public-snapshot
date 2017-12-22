@@ -41,6 +41,8 @@ export SRC_SESSION_STORE_REDIS=127.0.0.1:6379
 export SRC_INDEXER=127.0.0.1:3179
 export SRC_SYNTECT_SERVER=http://localhost:3700
 export SRC_FRONTEND_INTERNAL=localhost:3090
+export SRC_PROF_HTTP=
+export NPM_CONFIG_LOGLEVEL=silent
 
 export SOURCEGRAPH_CONFIG="$(cat dev/config.json)"
 

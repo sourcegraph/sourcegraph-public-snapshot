@@ -14,7 +14,7 @@
     "webpack": "webpack --config webpack.config.ts --colors",
     "build-tests": "tsc -p ./tsconfig.test.json",
     "graphql": "cat ../cmd/frontend/internal/graphqlbackend/schema.graphql | gql2ts -o typings/graphqlschema.d.ts && node introspect_schema",
-    "watch-graphql": "chokidar ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql\"",
+    "watch-graphql": "chokidar --silent ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql\"",
     "lint": "npm run tslint && npm run stylelint",
     "tslint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",

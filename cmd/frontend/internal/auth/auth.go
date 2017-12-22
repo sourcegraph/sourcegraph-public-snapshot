@@ -42,7 +42,6 @@ func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, appURL s
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
 		return newSAMLAuthHandler(createCtx, handler, appURL)
 	}
-	log15.Info("SSO disabled")
 	return handler, nil
 }
 

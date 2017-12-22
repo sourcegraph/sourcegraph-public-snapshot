@@ -4,7 +4,7 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-if [[ -z "${OFFLINE-}" ]] && ! docker pull sourcegraph/syntect_server; then
+if [[ -z "${OFFLINE-}" ]] && ! docker pull sourcegraph/syntect_server > /dev/null; then
 	echo
 	echo Unable to pull latest container image for sourcegraph/syntect_server from the server.
 	echo
