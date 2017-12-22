@@ -15,7 +15,7 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
-## Unreleased
+## 2.3.8
 
 ### Added
 
@@ -25,6 +25,7 @@ Before cutting a new release, please:
 ### Fixed
 
 * Many performance improvements to search.
+* Much log spam has been eliminated.
 
 ### Changed
 
