@@ -132,7 +132,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                 collapsedChildren={getChildren(false)}
                 expandedChildren={getChildren(true)}
                 collapseLabel={`Hide ${items.length - subsetMatches} matches`}
-                expandLabel={`Show ${items.length - subsetMatches} matches`}
+                expandLabel={`Show ${items.length - subsetMatches} more matches`}
             />
         )
     }
