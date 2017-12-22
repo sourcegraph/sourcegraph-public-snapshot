@@ -184,8 +184,6 @@ func main() {
 		Cmd("./dev/check/all.sh"))
 
 	pipeline.AddStep(":lipstick:",
-		Env("FORCE_COLOR", "1"),
-		Cmd("cd web"),
 		Cmd("npm install"),
 		Cmd("npm run prettier"))
 

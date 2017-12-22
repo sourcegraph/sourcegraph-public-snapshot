@@ -15,11 +15,10 @@
     "build-tests": "tsc -p ./tsconfig.test.json",
     "graphql": "cat ../cmd/frontend/internal/graphqlbackend/schema.graphql | gql2ts -o typings/graphqlschema.d.ts",
     "watch-graphql": "chokidar ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql\"",
-    "lint": "npm run tslint && npm run stylelint && npm run prettier",
+    "lint": "npm run tslint && npm run stylelint",
     "tslint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
-    "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
-    "prettier": "prettier '**/*.{js?(on),ts?(x)}' --write --list-different"
+    "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
   "license": "MIT",
@@ -33,7 +32,6 @@
     ]
   },
   "devDependencies": {
-    "@sourcegraph/prettierrc": "^2.0.0",
     "@sourcegraph/tsconfig": "^2.0.0",
     "@sourcegraph/tslint-config": "^10.0.0",
     "@types/auth0-js": "^8.6.3",

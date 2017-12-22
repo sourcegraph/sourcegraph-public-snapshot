@@ -1,8 +1,6 @@
 
 # Sourcegraph WebApp
 
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
-
 ## Components
 
  - Try to do one component per file. This makes it easy to encapsulate corresponding styles.

@@ -1,0 +1,12 @@
+.bin/
+*.bundle.*
+pkg/localstore/schema.md
+ui/assets/scripts
+vendor/
+web/out/
+web/package-lock.json
+web/package.json
+web/src/settings/*.schema.json
+web/ts-node-*
+web/typings/graphqlschema.d.ts
+xlang/testdata
