@@ -33,9 +33,9 @@ func main() {
 	for {
 		if err := sourcegraph.InternalClient.GitoliteUpdateRepos(context.Background()); err != nil {
 			log.Println(err)
-			continue
+		} else {
+			log15.Debug("updated Gitolite repos")
 		}
-		log15.Debug("updated Gitolite repos")
 
 		time.Sleep(time.Duration(interval) * time.Minute)
 	}
