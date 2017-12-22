@@ -50,8 +50,10 @@ export SRC_FRONTEND_INTERNAL=localhost:3090
 
 export REPO_LIST_UPDATE_INTERVAL=1
 export PHABRICATOR_URL="http://phabricator.sgdev.org"
-export GITOLITE_HOSTS="gitolite.sgdev.org/!git@gitolite.sgdev.org"
 export CORS_ORIGIN="https://github.com http://phabricator.sgdev.org"
+
+# Uncomment to sync gitolite repositories.
+# export GITOLITE_HOSTS="gitolite.sgdev.org/!git@gitolite.sgdev.org"
 
 # Uncomment one or the other of these configs depending on your testing needs.
 # Both "token" and "repos" are optional but you need to have at least one set.
