@@ -41,10 +41,10 @@ type DeploymentOverrides struct {
 
 // Github
 type Github struct {
+	Url         string   `json:"url,omitempty"`
+	Token       string   `json:"token,omitempty"`
 	Certificate string   `json:"certificate,omitempty"`
 	Repos       []string `json:"repos,omitempty"`
-	Token       string   `json:"token,omitempty"`
-	Url         string   `json:"url,omitempty"`
 }
 
 // Phabricator
