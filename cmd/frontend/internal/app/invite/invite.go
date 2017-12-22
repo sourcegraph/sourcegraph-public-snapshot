@@ -7,8 +7,8 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mattbaird/gochimp"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/conf"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
@@ -23,7 +23,7 @@ func ParseToken(tokenString string) (*TokenPayload, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return 0, fmt.Errorf("invite: unexpected signing method %v", token.Header["alg"])
 		}
-		return conf.AppSecretKey, nil
+		return conf.Get().SecretKey, nil
 	})
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func CreateOrgToken(email string, org *sourcegraph.Org) (string, error) {
 		"orgName": org.Name, // So the accept invite UI can display the name of the org
 		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
 	})
-	return payload.SignedString(conf.AppSecretKey)
+	return payload.SignedString(conf.Get().SecretKey)
 }
 
 func SendEmail(inviteEmail, fromName, orgName, inviteURL string) {

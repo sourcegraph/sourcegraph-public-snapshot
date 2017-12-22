@@ -10,6 +10,7 @@ const SiteSchemaJSON = `{
   "description": "Configuration for a Sourcegraph Server site.",
   "type": "object",
   "additionalProperties": false,
+  "required": ["secretKey"],
   "properties": {
     "auth.userOrgMap": {
       "description":
@@ -267,6 +268,11 @@ const SiteSchemaJSON = `{
     },
     "privateArtifactRepoPassword": {
       "description": "Java: The password to authenticate to the private Artifactory.",
+      "type": "string"
+    },
+    "secretKey": {
+      "description":
+        "A secret key for this site, used for sealing user session data and other security purposes.\n\nThis key must be kept private. Holding this key enables impersonation of this server and its users (e.g., an attacker could use this key to forge session data that causes the server to believe they are a different user).\n\nIf this key is changed, all users are forcibly signed out and must sign back in.",
       "type": "string"
     },
     "settings": {

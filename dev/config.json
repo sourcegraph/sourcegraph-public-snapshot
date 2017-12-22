@@ -29,5 +29,6 @@
   "githubClientSecret": "c5ff37d80e3736924cbbdf2922a50cac31963e43",
   "lightstepProject": "sourcegraph-dev",
   "lightstepAccessToken": "d60b0b2477a7ccb05d7783917f648816",
-  "repoListUpdateInterval": 600
+  "repoListUpdateInterval": 600,
+  "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK"
 }

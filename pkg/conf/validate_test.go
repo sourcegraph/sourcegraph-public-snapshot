@@ -8,12 +8,12 @@ import (
 
 func TestValidate(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte("{}"))
+		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"secretKey":"abc"}`))
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(res.Errors()) != 0 {
-			t.Error(res)
+			t.Errorf("errors: %v", res.Errors())
 		}
 	})
 
