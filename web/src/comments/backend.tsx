@@ -1,7 +1,6 @@
-import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
-import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export const EPERMISSIONDENIED = 'EPERMISSIONDENIED'
 class PermissionDeniedError extends Error {

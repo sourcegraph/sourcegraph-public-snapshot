@@ -1,10 +1,9 @@
-import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
-import { mutateGraphQL, queryGraphQL } from './backend/graphql'
+import { gql, mutateGraphQL, queryGraphQL } from './backend/graphql'
 import { configurationCascade } from './settings/configuration'
 
 /**

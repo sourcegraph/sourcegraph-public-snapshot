@@ -1,4 +1,3 @@
-import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { concat } from 'rxjs/operators/concat'
 import { map } from 'rxjs/operators/map'
@@ -6,7 +5,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
 import { tap } from 'rxjs/operators/tap'
 import { configurationCascadeFragment, currentUser, fetchCurrentUser } from '../auth'
-import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 import { configurationCascade } from './configuration'
 

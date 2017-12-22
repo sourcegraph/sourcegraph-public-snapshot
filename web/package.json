@@ -101,7 +101,6 @@
     "copy-to-clipboard": "^3.0.7",
     "date-fns": "^2.0.0-alpha.7",
     "escape-string-regexp": "^1.0.5",
-    "graphql-tag": "^2.6.1",
     "highlight.js": "^9.12.0",
     "immutable": "^3.8.1",
     "js-base64": "^2.3.2",

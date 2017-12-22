@@ -1,7 +1,6 @@
-import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
-import { queryGraphQL } from '../backend/graphql'
+import { gql, queryGraphQL } from '../backend/graphql'
 import { AbsoluteRepoFilePosition, makeRepoURI } from '../repo'
 import { memoizeObservable } from '../util/memoize'
 
