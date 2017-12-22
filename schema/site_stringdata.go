@@ -240,7 +240,7 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
-        "$ref": "https://sourcegraph.com/v1/settings.schema.json#/definitions/SearchScope"
+        "$ref": "settings.schema.json#/definitions/SearchScope"
       }
     },
     "htmlHeadTop": {
