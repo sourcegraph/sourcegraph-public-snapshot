@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,13 +32,6 @@ var defaultEnv = map[string]string{
 
 	// We adjust behaviour for on-prem vs prod
 	"DEPLOYMENT_ON_PREM": "true",
-
-	// TODO environment variables we need to support related to codehosts
-	// GITHUB_CONFIG
-	// GITOLITE_HOSTS
-	// ORIGIN_MAP
-	// PUBLIC_REPO_REDIRECTS
-	"AUTO_REPO_ADD": "true", // false in server-gen, but until we have a nice way to setup repo cloning this is best
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher to ensure this value isn't larger than the volume for
@@ -74,41 +66,19 @@ func main() {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
 		}
 
-		// As a convenience some environment variables can be stored as a file
-		envFiles := map[string]string{
-			"config.json": "SOURCEGRAPH_CONFIG",
+		// Load the config file, or generate a new one if it doesn't exist.
+		configPath := filepath.Join(configDir, "sourcegraph-config.json")
+		configJSON, configIsWritable, err := readOrGenerateConfig(configPath)
+		if err != nil {
+			log.Fatalf("failed to load config: %s", err)
 		}
-		for name, key := range envFiles {
-			b, err := ioutil.ReadFile(filepath.Join(configDir, name))
-			if err != nil {
-				if os.IsNotExist(err) {
-					continue
-				}
-				log.Fatalf("could not read file %q into environment variable %s: %s", name, key, err)
+		if configIsWritable {
+			if err := os.Setenv("SOURCEGRAPH_CONFIG_FILE", configPath); err != nil {
+				log.Fatal(err)
 			}
-			setDefaultEnv(key, strings.TrimSpace(string(b)))
 		}
-
-		// Convert SOURCEGRAPH_CONFIG into env vars
-		if config, ok := os.LookupEnv("SOURCEGRAPH_CONFIG"); ok {
-			setDefaultEnvFromConfig(config)
-		}
-
-		if _, ok := os.LookupEnv("SRC_APP_SECRET_KEY"); !ok {
-			appSecretKeyFile := filepath.Join(configDir, "srcAppSecretKey")
-			appSecretKey, err := ioutil.ReadFile(appSecretKeyFile)
-			if os.IsNotExist(err) {
-				appSecretKey := mustCryptoRand()
-				if err := os.MkdirAll(configDir, os.FileMode(0755)); err != nil {
-					log.Fatalf("could not create config directory %s: %s", configDir, err)
-				}
-				if err := ioutil.WriteFile(appSecretKeyFile, appSecretKey, 0644); err != nil {
-					log.Fatalf("could not write secret key file: %s", err)
-				}
-			} else if err != nil {
-				log.Fatalf("could not read app secret key file: %s", err)
-			}
-			setDefaultEnv("SRC_APP_SECRET_KEY", string(appSecretKey))
+		if err := os.Setenv("SOURCEGRAPH_CONFIG", configJSON); err != nil {
+			log.Fatal(err)
 		}
 	}
 
