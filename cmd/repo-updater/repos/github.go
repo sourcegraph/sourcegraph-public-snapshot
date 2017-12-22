@@ -30,8 +30,7 @@ type configAndClient struct {
 }
 
 var (
-	updateIntervalConf = conf.Get().RepoListUpdateInterval
-	githubConf         = conf.Get().Github
+	githubConf = conf.Get().Github
 )
 
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the GitHub Enterprise instance to Sourcegraph

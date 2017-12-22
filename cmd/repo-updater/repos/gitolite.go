@@ -1,4 +1,4 @@
-package main
+package repos
 
 import (
 	"context"
@@ -8,18 +8,11 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-var (
-	logLevel = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
-)
-
-func main() {
-	interval := conf.Get().RepoListUpdateInterval
-	if interval == 0 {
-		log.Println("REPO_LIST_UPDATE_INTERVAL not set, not doing any updates")
+// RunRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
+func RunGitoliteRepositorySyncWorker(ctx context.Context) error {
+	if updateIntervalConf == 0 {
 		select {}
 	}
 
@@ -37,6 +30,6 @@ func main() {
 			log15.Debug("updated Gitolite repos")
 		}
 
-		time.Sleep(time.Duration(interval) * time.Minute)
+		time.Sleep(time.Duration(updateIntervalConf) * time.Minute)
 	}
 }

@@ -46,7 +46,7 @@ var defaultEnv = map[string]string{
 	// CACHE_DIR.
 	"SEARCHER_CACHE_SIZE_MB": "100000",
 
-	// Enable our repo-list-updater to run every minute. Currently this is
+	// Enable our repo-updater to run every minute. Currently this is
 	// only used to sync from gitolite.
 	"REPO_LIST_UPDATE_INTERVAL": "1",
 
@@ -165,7 +165,7 @@ func main() {
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,
-		`repo-list-updater: repo-list-updater`,
+		`repo-updater: repo-updater`,
 		`syntect_server: env QUIET=true ROCKET_LIMITS='{json=10485760}' ROCKET_PORT=3700 ROCKET_ADDRESS='"127.0.0.1"' ROCKET_ENV=production syntect_server`,
 	}
 	if line, err := maybeRedisProcFile(); err != nil {
