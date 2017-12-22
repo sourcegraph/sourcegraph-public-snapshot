@@ -49,9 +49,9 @@ type Github struct {
 
 // Phabricator
 type Phabricator struct {
-	Repos []Repos `json:"repos,omitempty"`
-	Token string  `json:"token,omitempty"`
 	Url   string  `json:"url,omitempty"`
+	Token string  `json:"token,omitempty"`
+	Repos []Repos `json:"repos,omitempty"`
 }
 
 // Repos
