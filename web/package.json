@@ -90,7 +90,7 @@
     "ts-node": "^3.3.0",
     "tslint": "^5.8.0",
     "tslint-language-service": "^0.9.6",
-    "typescript": "^2.6.2",
+    "typescript": "^2.7.0-insiders.20171214",
     "webpack": "^3.5.6",
     "webpack-bundle-analyzer": "^2.9.0"
   },
