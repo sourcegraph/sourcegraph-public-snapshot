@@ -14,7 +14,7 @@
     transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
 
     &:disabled {
-        opacity: 0.65;
+        opacity: 0.4;
         cursor: not-allowed;
     }
 }
