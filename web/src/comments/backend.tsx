@@ -10,8 +10,8 @@ class PermissionDeniedError extends Error {
     }
 }
 
-const threadFragment = gql`
-    fragment ThreadFields on Thread {
+const sharedItemThreadFragment = gql`
+    fragment SharedItemThreadFields on SharedItemThread {
         id
         repo {
             id
@@ -67,7 +67,7 @@ export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable
                     }
                     public
                     thread {
-                        ...ThreadFields
+                        ...SharedItemThreadFields
                     }
                     comment {
                         id
@@ -75,7 +75,7 @@ export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable
                     }
                 }
             }
-            ${threadFragment}
+            ${sharedItemThreadFragment}
         `,
         { ulid, isLightTheme }
     ).pipe(
@@ -106,9 +106,9 @@ export function addCommentToThread(
     return mutateGraphQL(
         gql`mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
             addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
-                ...ThreadFields
+                ...SharedItemThreadFields
             }
-            ${threadFragment}
+            ${sharedItemThreadFragment}
         }`,
         { threadID, contents, ulid, isLightTheme }
     ).pipe(
