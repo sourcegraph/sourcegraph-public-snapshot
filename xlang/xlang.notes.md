@@ -10,6 +10,7 @@
 * Deps are fetched on the fly based on whatever the currently viewed source file needs. For Go, this is easy; I use code from gddo.
 
 Changes from current system:
+
 * The Go lang server now uses go/types (go/loader) instead of shelling out to `godef`, etc.
 * The Go lang processor is now called the Go build server, and the Go build and lang servers both speak standard LSP now.
 * Sourcegraph does not need to set up the file system or environment on the build/lang server anymore, beyond sending it LSP messages.
@@ -33,7 +34,7 @@ To dig into the code:
 
 Diagram:
 
-  Web client --> LSP data request in an HTTP POST body --> frontend/internal/httpapi/xlang.go handler --> xlang/client_proxy.go --> xlang/server_proxy.go --> Go build server --> Go lang server
+Web client --> LSP data request in an HTTP POST body --> frontend/internal/httpapi/xlang.go handler --> xlang/client_proxy.go --> xlang/server_proxy.go --> Go build server --> Go lang server
 
 # Architecture
 
@@ -116,7 +117,6 @@ To look up all references to a given def, consult this index. The index is built
 
 Let's walk through this from the user's POV. Suppose you're browsing the github.com/facebook/react repository and want to see global refs to ReactMount.render. You place your cursor on the definition of ReactMount.render and choose "Find External References." The build server knows that your current file is in a workspace that produces an npm package named "react" (because it scans the package.json file), and a quick AST scan of the file lets us produce the querystring `name=render&containerName=ReactMount`.
 
-
 # Design
 
 (The rest of this doc is probably obvious to most people reading it. You can skip it.)
@@ -128,19 +128,19 @@ A repo has many workspaces. For example:
 
 A workspace is identified by:
 
-  repo + rev + (sub)path + config
+repo + rev + (sub)path + config
 
 where:
 
 * repo is a string like "github.com/a/b"
 * rev refers to a revision, such as a branch or commit ID (or, in the future, a scratch area for collaborating WIP changes)
 * subpath is either the root (".") or the path to a subdirectory in the repo (such as "ui" for the Sourcegraph JavaScript UI code)
-* config is 
+* config is
 
 We make a few assumptions to make workspaces immutable and reusable (although in the future we will relax these assumptions):
 
 * users can't change files in the workspace directly; the initial workspace files are taken solely from the repo (e.g., the LSP textDocument/didOpen can't be used to substitute user-supplied contents for a file in the repo)
-* the workspace's language server can only access resources (such as private dependencies) that are available to    anyone who has read access to the repo (i.e., the language server doesn't assume the privileges of the current or initial user)
+* the workspace's language server can only access resources (such as private dependencies) that are available to anyone who has read access to the repo (i.e., the language server doesn't assume the privileges of the current or initial user)
 
 Note: These aren't yet being enforced in the xlang branch!
 
@@ -206,6 +206,7 @@ For now, as described above, we can release a CLI tool for developers to upload 
 * The big thing is that it should not depend on the OS file system. Any files sent via `textDocument/didOpen` should take precedence over files on the file system. And if the rootPath's scheme is `vfs` (not `file`), then it should access the virtual file system on the LSP proxy.
 
   If you truly can't make your server work in-memory, then you can write the `textDocument/didOpen` file contents and the LSP proxy's VFS contents to a temporary directory. (But check with other people first to make sure there isn't a better solution.)
+
 * If you want to emit a cross-repository reference, you can emit an LSP `Location` with a URI of the form `git://github.com/foo/bar?HEAD#path/to/the/file.txt`. The `?HEAD` is there to be explicit that you don't know which commit ID to refer to. (See the rest of this document for how we will do smarter, non-positional cross-repository references. But this kind will work for now, and I don't want anyone to block on stuff we haven't nailed down with Universe yet.)
 
 Otherwise, just speak LSP and it'll work with both Sourcegraph and VS Code!
@@ -231,7 +232,6 @@ Notes:
 1. The Go build/lang server currently runs in-process for simplicity, so you needn't register it. That will change soon.
 1. All you need to provide Sourcegraph is a single entrypoint. If you have separate build and lang servers (see the rest of this doc for the distinction), then you still only give Sourcegraph one entrypoint, since the build server wraps the lang server.
 1. VSCode/Monaco have a concept of "modes," which is basically a language. A mode's ID is a string like `go`, `javascript`, `python`, `typescript`, etc. We will reuse this existing taxonomy.
-
 
 # Further work
 

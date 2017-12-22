@@ -1,6 +1,6 @@
 # Sourcegraph for Sublime [![CircleCI](https://circleci.com/gh/sourcegraph/sourcegraph-sublime.svg?style=svg)](https://circleci.com/gh/sourcegraph/sourcegraph-sublime)
 
-*Sourcegraph for Sublime is in beta mode. If you have feedback or experience issues, please email us at help@sourcegraph.com or file an issue [here](https://github.com/sourcegraph/sourcegraph-sublime/issues).*
+_Sourcegraph for Sublime is in beta mode. If you have feedback or experience issues, please email us at help@sourcegraph.com or file an issue [here](https://github.com/sourcegraph/sourcegraph-sublime/issues)._
 
 ## Overview
 
@@ -30,7 +30,6 @@ Windows:
 cd %APPDATA%\Sublime Text 3\Packages
 git clone https://github.com/sourcegraph/sourcegraph-sublime.git
 ```
-
 
 ## Usage
 

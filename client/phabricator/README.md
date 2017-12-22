@@ -6,9 +6,10 @@ This extension provides tooltips on Phabricator like the tooltips provided by ou
 [Chrome extension for GitHub](https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en).
 
 Tooltips are provided on:
-- diffusion views like https://phabricator.mycompany.com/source/nrepo/browse/master/file.go and https://phabricator.mycompany.com/source/nrepo/change/master/file.go
-- differential pages like https://phabricator.mycompany.com/D1
-- commit views like https://phabricator.mycompany.com/rNREPOf9a34fd4ddd26824e4653d1f473c5709f2c21bd8
+
+* diffusion views like https://phabricator.mycompany.com/source/nrepo/browse/master/file.go and https://phabricator.mycompany.com/source/nrepo/change/master/file.go
+* differential pages like https://phabricator.mycompany.com/D1
+* commit views like https://phabricator.mycompany.com/rNREPOf9a34fd4ddd26824e4653d1f473c5709f2c21bd8
 
 ### How does it work?
 
@@ -20,8 +21,8 @@ the user's Sourcegraph cookie, so users must first sign in to Sourcegraph to rec
 
 ## Requirements
 
-- A Phabricator installation
-- A Sourcegraph Server installation
+* A Phabricator installation
+* A Sourcegraph Server installation
 
 ## Installation
 
@@ -33,10 +34,12 @@ For most users, a manual installation & upgrade workflow is preferred. Follow th
 (which may need to be run with `sudo`):
 
 * Update `/var/www/phabricator/src/applications/base/controller/PhabricatorController.php` to include the following lines at the top of `willBeginExecution()` (this instructs Phabricator to load Sourcegraph's JavaScript and CSS assets):
+
 ```
 require_celerity_resource("sourcegraph");
 require_celerity_resource("sourcegraph-style");
 ```
+
 * Run `./install_bundle.sh $SOURCEGRAPH_SERVER_URL` (this adds the JavaScript and CSS assets to Phabricator's static asset map)
 
 ### Loading assets with automatic updates
@@ -45,11 +48,12 @@ You may configure the extension to load assets dynamically from your Sourcegraph
 your server can automatically update the JavaScript and CSS which gets loaded on Phabricator pages.
 
 * Update `/var/www/phabricator/src/applications/base/controller/PhabricatorController.php` to include the following lines at the top of `willBeginExecution()` (this instructs Phabricator to load Sourcegraph's JavaScript shim):
+
 ```
 require_celerity_resource("sourcegraph");
 ```
-* Run `./install_loader.sh $SOURCEGRAPH_SERVER_URL` (this adds a JavaScript shim to Phabricator's static asset map which loads assets from your Sourcegraph Server)
 
+* Run `./install_loader.sh $SOURCEGRAPH_SERVER_URL` (this adds a JavaScript shim to Phabricator's static asset map which loads assets from your Sourcegraph Server)
 
 ## Development
 

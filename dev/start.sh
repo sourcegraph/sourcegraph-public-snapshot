@@ -74,10 +74,7 @@ fi
 export NODE_ENV=development
 
 # Make sure chokidar-cli is installed
-if ! [ -x "$(command -v $PWD/web/node_modules/.bin/chokidar)" ]; then
-  echo 'Installing chokidar...'
-  npm --prefix ./web install
-fi
+npm install
 
 ./dev/go-install.sh
 

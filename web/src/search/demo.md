@@ -4,11 +4,11 @@ Great code search helps you write better code more quickly. It helps you underst
 
 At Sourcegraph, we think great code search is:
 
-- Fast
-- Up to date with all your code, so you never need to worry about indexing
-- Powerful, with code intelligence and regular expression query support
-- Relevant, with quick filtering and saved scopes
-- Deeply integrated with your editor, your repository's history/blame info, and other tools
+* Fast
+* Up to date with all your code, so you never need to worry about indexing
+* Powerful, with code intelligence and regular expression query support
+* Relevant, with quick filtering and saved scopes
+* Deeply integrated with your editor, your repository's history/blame info, and other tools
 
 We built Sourcegraph's code search to be this great code search for all your organization's code. Let's give it a try.
 

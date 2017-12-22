@@ -10,8 +10,8 @@ Sourcegraph easier.
 
 ### Community and contact information
 
-- [Pull requests](https://github.com/sourcegraph/sourcegraph/pulls)
-- Support and bug report email: [support@sourcegraph.com](mailto:support@sourcegraph.com)
+* [Pull requests](https://github.com/sourcegraph/sourcegraph/pulls)
+* Support and bug report email: [support@sourcegraph.com](mailto:support@sourcegraph.com)
 
 ## Getting started
 
@@ -101,5 +101,5 @@ The format can be described more formally as follows:
 
 The first line is the subject and should be no longer than 70
 characters, the second line is always blank, and other lines should be
-wrapped at 80 characters.  This allows the message to be easier to
+wrapped at 80 characters. This allows the message to be easier to
 read in various git tools.

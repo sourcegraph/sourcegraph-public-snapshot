@@ -2,8 +2,9 @@
 
 The user facing documentation lives in
 [sourcegraph/website](https://github.com/sourcegraph/website). Quick links:
-- https://github.com/sourcegraph/website/blob/master/data/docs/server/docs.md
-- https://about.sourcegraph.com/docs/server/
+
+* https://github.com/sourcegraph/website/blob/master/data/docs/server/docs.md
+* https://about.sourcegraph.com/docs/server/
 
 This file documents information relevant to developers at Sourcegraph.
 

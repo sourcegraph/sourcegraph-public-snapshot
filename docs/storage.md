@@ -76,11 +76,11 @@ if s.Valid {
 
 ## Recommended columns for all tables
 
-- `id` auto increment primary key.
-- `created_at` not null default `now()` set when a row is first inserted and never updated after that.
-- `updated_at` not null default `now()` set when a row is first inserted and updated on every update.
-- `deleted_at` set to a not null timestamp to indicate the row is deleted (called soft deleting). This is preferred over hard deleting data from our db (see discussion section below).
-  - When querying the db, rows with a non-null `deleted_at` should be excluded.
+* `id` auto increment primary key.
+* `created_at` not null default `now()` set when a row is first inserted and never updated after that.
+* `updated_at` not null default `now()` set when a row is first inserted and updated on every update.
+* `deleted_at` set to a not null timestamp to indicate the row is deleted (called soft deleting). This is preferred over hard deleting data from our db (see discussion section below).
+  * When querying the db, rows with a non-null `deleted_at` should be excluded.
 
 The timestamps are useful for forensics if something goes wrong, they do not necessarily need to be used or exposed by our graphql APIs. There is no harm in exposing them though.
 
@@ -98,8 +98,9 @@ CREATE TABLE "widgets" (
 ## Hard vs soft deletes
 
 Definitions:
-- A "hard" delete is when rows are deleted using `DELETE FROM table WHERE ...`
-- A "soft" delete is when rows are deleted using `UPDATE table SET deleted_at = now() WHERE ...`
+
+* A "hard" delete is when rows are deleted using `DELETE FROM table WHERE ...`
+* A "soft" delete is when rows are deleted using `UPDATE table SET deleted_at = now() WHERE ...`
 
 Hard deletes are hard to recover from if something goes wrong (application bug, bad migration, manual query, etc.). This usually involves restoring from a backup and it is hard to target only the data affected by the bad delete.
 
@@ -110,6 +111,7 @@ Soft deletes are easier to recover from once you determine what happened. You ca
 Soft deleting data has implications for unique constraints.
 
 Consider a hypothetical schema:
+
 ```sql
 CREATE TABLE "orgs" (
 	"id" serial NOT NULL PRIMARY KEY

@@ -9,7 +9,7 @@ as you type, in [Emacs](https://www.gnu.org/software/emacs/).
 sourcegraph-mode requires Emacs version 24.3+ and
 [godefinfo](https://github.com/sqs/godefinfo).
 
-``` shell
+```shell
 go get -u github.com/sqs/godefinfo
 # ensure godefinfo is in your $PATH
 godefinfo -v # should print "godefinfo version ___"
@@ -19,7 +19,7 @@ Place `sourcegraph.el` and `sourcegraph-autoloads.el` in any
 directory, add that directory to your load path, and require
 `'sourcegraph-autoloads`:
 
-``` emacs-lisp
+```emacs-lisp
 (add-to-list 'load-path "~/.emacs.d/personal")
 (require 'sourcegraph)
 (add-hook 'go-mode-hook 'sourcegraph-mode)

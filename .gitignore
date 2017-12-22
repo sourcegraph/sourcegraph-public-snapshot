@@ -85,3 +85,5 @@ cmd/indexer/debug
 
 /dev/e2e/log.html
 /.gtm/
+
+node_modules/

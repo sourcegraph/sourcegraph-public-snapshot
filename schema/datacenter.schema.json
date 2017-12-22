@@ -2,24 +2,22 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "https://sourcegraph.com/v1/datacenter.schema.json#",
   "title": "Datacenter ops configuration",
-  "description": "Configuration for Sourcegraph Datacenter Ops. Defines all config parameters that can be used to change the operational parameters of Sourcegraph Datacenter (e.g., for scaling).",
+  "description":
+    "Configuration for Sourcegraph Datacenter Ops. Defines all config parameters that can be used to change the operational parameters of Sourcegraph Datacenter (e.g., for scaling).",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "alertmanagerConfig": {
       "type": "string",
-      "description":
-        "Contents of the alertmanager configuration file, see below."
+      "description": "Contents of the alertmanager configuration file, see below."
     },
     "alertmanagerURL": {
       "type": "string",
-      "description":
-        "Publicly accessible URL to alertmanager, used in alert messages."
+      "description": "Publicly accessible URL to alertmanager, used in alert messages."
     },
     "authProxyIP": {
       "type": "string",
-      "description":
-        "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+      "description": "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
     },
     "authProxyPassword": {
       "type": "string",
@@ -34,13 +32,11 @@
     },
     "gitoliteIP": {
       "type": "string",
-      "description":
-        "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+      "description": "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
     },
     "gitserverCount": {
       "type": "integer",
-      "description":
-        "The number of gitservers to deploy. Not a replica count since it is stateful. Defaults to 1."
+      "description": "The number of gitservers to deploy. Not a replica count since it is stateful. Defaults to 1."
     },
     "gitserverSSH": {
       "type": "object",
@@ -49,13 +45,11 @@
     },
     "httpNodePort": {
       "type": "integer",
-      "description":
-        "Port exposed on all nodes directing HTTP traffic to sourcegraph-frontend pod."
+      "description": "Port exposed on all nodes directing HTTP traffic to sourcegraph-frontend pod."
     },
     "httpsNodePort": {
       "type": "integer",
-      "description":
-        "Port exposed on all nodes directing HTTPS traffic to sourcegraph-frontend pod."
+      "description": "Port exposed on all nodes directing HTTPS traffic to sourcegraph-frontend pod."
     },
     "langGo": {
       "type": "boolean",
@@ -92,8 +86,7 @@
     },
     "phabricatorIP": {
       "type": "string",
-      "description":
-        "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+      "description": "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
     },
     "storageClass": {
       "type": "string",
@@ -102,8 +95,7 @@
     },
     "useRBAC": {
       "type": "boolean",
-      "description":
-        "Enable this if RBAC is enabled on your Kubernetes cluster."
+      "description": "Enable this if RBAC is enabled on your Kubernetes cluster."
     }
   },
   "definitions": {
