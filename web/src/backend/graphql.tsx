@@ -11,7 +11,7 @@ export interface GraphQLDocument {
  * Use this template string tag for all GraphQL queries
  */
 export const gql = (template: TemplateStringsArray, ...substitutions: any[]): GraphQLDocument => ({
-    [graphQLContent]: String.raw(template, ...substitutions),
+    [graphQLContent]: String.raw(template, ...substitutions.map(s => s[graphQLContent] || s)),
 })
 
 /**
