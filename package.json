@@ -6,6 +6,7 @@
   },
   "devDependencies": {
     "@sourcegraph/prettierrc": "^2.1.0",
+    "chokidar-cli": "^1.2.0",
     "prettier": "^1.9.2"
   }
 }
