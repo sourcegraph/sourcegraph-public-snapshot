@@ -28,8 +28,7 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "appURL": {
-      "description":
-        "Publicly accessible URL to web app (e.g., what you type into your browser).",
+      "description": "Publicly accessible URL to web app (e.g., what you type into your browser).",
       "type": "string"
     },
     "disableTelemetry": {
@@ -46,13 +45,11 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "corsOrigin": {
-      "description":
-        "Value for the Access-Control-Allow-Origin header returned with all requests.",
+      "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
       "type": "string"
     },
     "autoRepoAdd": {
-      "description":
-        "Automatically add external public repositories on demand when visited.",
+      "description": "Automatically add external public repositories on demand when visited.",
       "type": "boolean"
     },
     "disablePublicRepoRedirects": {
@@ -68,8 +65,7 @@ const SiteSchemaJSON = `{
         "type": "object",
         "properties": {
           "url": {
-            "description":
-              "URL of a Phabricator instance, such as https://phabricator.example.com",
+            "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
             "type": "string"
           },
           "token": {
@@ -83,13 +79,11 @@ const SiteSchemaJSON = `{
               "type": "object",
               "properties": {
                 "path": {
-                  "description":
-                    "Display path for the url e.g. gitolite/my/repo",
+                  "description": "Display path for the url e.g. gitolite/my/repo",
                   "type": "string"
                 },
                 "callsign": {
-                  "description":
-                    "The unique Phabricator identifier for the repo, like 'MUX'.",
+                  "description": "The unique Phabricator identifier for the repo, like 'MUX'.",
                   "type": "string"
                 }
               }
@@ -99,8 +93,7 @@ const SiteSchemaJSON = `{
       }
     },
     "phabricatorURL": {
-      "description":
-        "(Deprecated: Use Phabricator) URL of Phabricator instance.",
+      "description": "(Deprecated: Use Phabricator) URL of Phabricator instance.",
       "type": "string"
     },
     "github": {
@@ -116,8 +109,7 @@ const SiteSchemaJSON = `{
             "type": "string"
           },
           "token": {
-            "description":
-              "A GitHub personal access token with repo and org scope.",
+            "description": "A GitHub personal access token with repo and org scope.",
             "type": "string"
           },
           "certificate": {
@@ -125,8 +117,7 @@ const SiteSchemaJSON = `{
             "type": "string"
           },
           "repos": {
-            "description":
-              "Optional list of additional repositories to clone (in \"owner/repo\" format).",
+            "description": "Optional list of additional repositories to clone (in \"owner/repo\" format).",
             "type": "array",
             "items": { "type": "string" }
           }
@@ -142,13 +133,11 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "githubPersonalAccessToken": {
-      "description":
-        "(Deprecated: Use GitHub) Personal access token for GitHub. ",
+      "description": "(Deprecated: Use GitHub) Personal access token for GitHub. ",
       "type": "string"
     },
     "githubEnterpriseURL": {
-      "description":
-        "(Deprecated: Use GitHub) URL of GitHub Enterprise instance from which to sync repositories.",
+      "description": "(Deprecated: Use GitHub) URL of GitHub Enterprise instance from which to sync repositories.",
       "type": "string"
     },
     "githubEnterpriseCert": {
@@ -157,13 +146,11 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "githubEnterpriseAccessToken": {
-      "description":
-        "(Deprecated: Use GitHub) Access token to authenticate to GitHub Enterprise API.",
+      "description": "(Deprecated: Use GitHub) Access token to authenticate to GitHub Enterprise API.",
       "type": "string"
     },
     "gitoliteHosts": {
-      "description":
-        "Space separated list of mappings from repo name prefix to gitolite hosts.",
+      "description": "Space separated list of mappings from repo name prefix to gitolite hosts.",
       "type": "string"
     },
     "gitOriginMap": {
@@ -178,28 +165,24 @@ const SiteSchemaJSON = `{
         "type": "object",
         "properties": {
           "type": {
-            "description":
-              "Type of the version control system for this repository, such as \"git\"",
+            "description": "Type of the version control system for this repository, such as \"git\"",
             "type": "string",
             "enum": ["git"],
             "default": "git"
           },
           "url": {
-            "description":
-              "Clone URL for the repository, such as git@example.com:my/repo.git",
+            "description": "Clone URL for the repository, such as git@example.com:my/repo.git",
             "type": "string"
           },
           "path": {
-            "description":
-              "Display path on Sourcegraph for the repository, such as my/repo",
+            "description": "Display path on Sourcegraph for the repository, such as my/repo",
             "type": "string"
           }
         }
       }
     },
     "inactiveRepos": {
-      "description":
-        "Comma-separated list of repos to consider 'inactive' (e.g. while searching).",
+      "description": "Comma-separated list of repos to consider 'inactive' (e.g. while searching).",
       "type": "string"
     },
     "lightstepAccessToken": {
@@ -207,23 +190,19 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "lightstepProject": {
-      "description":
-        "The project id on LightStep, only used for creating links to traces.",
+      "description": "The project id on LightStep, only used for creating links to traces.",
       "type": "string"
     },
     "noGoGetDomains": {
-      "description":
-        "List of domains to NOT perform go get on. Separated by ','.",
+      "description": "List of domains to NOT perform go get on. Separated by ','.",
       "type": "string"
     },
     "repoListUpdateInterval": {
-      "description":
-        "Interval (in minutes) for checking code hosts (e.g. gitolite) for new repositories.",
+      "description": "Interval (in minutes) for checking code hosts (e.g. gitolite) for new repositories.",
       "type": "integer"
     },
     "ssoUserHeader": {
-      "description":
-        "Header injected by an SSO proxy to indicate the logged in user.",
+      "description": "Header injected by an SSO proxy to indicate the logged in user.",
       "type": "string"
     },
     "oidcProvider": {
@@ -236,8 +215,7 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "oidcEmailDomain": {
-      "description":
-        "Whitelisted email domain for logins, e.g. 'mycompany.com'",
+      "description": "Whitelisted email domain for logins, e.g. 'mycompany.com'",
       "type": "string"
     },
     "oidcOverrideToken": {
@@ -245,8 +223,7 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "samlIDProviderMetadataURL": {
-      "description":
-        "SAML Identity Provider metadata URL (for dyanmic configuration of SAML Service Provider)",
+      "description": "SAML Identity Provider metadata URL (for dyanmic configuration of SAML Service Provider)",
       "type": "string"
     },
     "samlSPCert": {
@@ -263,28 +240,23 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
-        "$ref":
-          "https://sourcegraph.com/v1/settings.schema.json#/definitions/SearchScope"
+        "$ref": "https://sourcegraph.com/v1/settings.schema.json#/definitions/SearchScope"
       }
     },
     "htmlHeadTop": {
-      "description":
-        "HTML to inject at the top of the <head> element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the <head> element on each page, for analytics scripts",
       "type": "string"
     },
     "htmlHeadBottom": {
-      "description":
-        "HTML to inject at the bottom of the <head> element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the <head> element on each page, for analytics scripts",
       "type": "string"
     },
     "htmlBodyTop": {
-      "description":
-        "HTML to inject at the top of the <body> element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the <body> element on each page, for analytics scripts",
       "type": "string"
     },
     "htmlBodyBottom": {
-      "description":
-        "HTML to inject at the bottom of the <body> element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the <body> element on each page, for analytics scripts",
       "type": "string"
     },
     "licenseKey": {
@@ -301,8 +273,7 @@ const SiteSchemaJSON = `{
       "type": "integer"
     },
     "adminUsernames": {
-      "description":
-        "Space-separated list of usernames that indicates which users will be treated as instance admins",
+      "description": "Space-separated list of usernames that indicates which users will be treated as instance admins",
       "type": "string"
     },
     "executeGradleOriginalRootPaths": {
@@ -321,18 +292,15 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "privateArtifactRepoUsername": {
-      "description":
-        "Java: The username to authenticate to the private Artifactory.",
+      "description": "Java: The username to authenticate to the private Artifactory.",
       "type": "string"
     },
     "privateArtifactRepoPassword": {
-      "description":
-        "Java: The password to authenticate to the private Artifactory.",
+      "description": "Java: The password to authenticate to the private Artifactory.",
       "type": "string"
     },
     "settings": {
-      "description":
-        "Site settings. Organization and user settings override site settings.",
+      "description": "Site settings. Organization and user settings override site settings.",
       "type": "object",
       "$ref": "https://sourcegraph.com/v1/settings.schema.json#"
     }
