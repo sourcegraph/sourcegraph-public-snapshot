@@ -3,6 +3,7 @@
 pkg/localstore/schema.md
 ui/assets/scripts
 vendor/
+web/graphqlschema.json
 web/out/
 web/package-lock.json
 web/package.json
