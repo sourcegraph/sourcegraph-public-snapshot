@@ -6,7 +6,7 @@ github-proxy: .bin/github-proxy
 lsp-proxy: .bin/lsp-proxy -prof-http=:6061
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062
 frontend: $EXEC_FRONTEND .bin/frontend
-watch-go: $PWD/web/node_modules/.bin/chokidar "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" -c "./dev/go-install.sh && $GOREMAN run restart frontend"
+watch-go: $PWD/web/node_modules/.bin/chokidar --silent "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" -c "./dev/go-install.sh && $GOREMAN run restart frontend"
 web: sh -c "npm --prefix ./web install && npm --prefix ./web run watch"
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-indexserver -data_dir $HOME/.sourcegraph/zoekt -mirror_config ./dev/zoekt-mirror.json -mirror_duration 10m -fetch_interval 1m

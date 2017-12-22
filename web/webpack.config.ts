@@ -73,6 +73,7 @@ const config: webpack.Configuration = {
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
     },
+    stats: 'minimal',
     module: {
         loaders: [
             {
