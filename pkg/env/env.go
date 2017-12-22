@@ -32,8 +32,8 @@ func Get(name string, defaultValue string, description string) string {
 	}
 	descriptions[name] = description
 
-	value := os.Getenv(name)
-	if value == "" {
+	value, ok := os.LookupEnv(name)
+	if !ok {
 		value = defaultValue
 	}
 	return value
