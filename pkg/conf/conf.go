@@ -39,7 +39,9 @@ func initConfig() error {
 	if v, err := configFromLegacyEnvVars(); err != nil {
 		return err
 	} else if len(v) > 0 && string(v) != "{}" {
-		log.Printf("Deprecation warning: Add the following config to SOURCEGRAPH_CONFIG instead of passing via other env vars: %s", v)
+		if os.Getenv("DEBUG") != "" {
+			log.Printf("Deprecation warning: Add the following config to SOURCEGRAPH_CONFIG instead of passing via other env vars: %s", v)
+		}
 		if err := json.Unmarshal(v, &cfg); err != nil {
 			return err
 		}
