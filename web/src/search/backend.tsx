@@ -251,9 +251,10 @@ function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
     return queryGraphQL(gql`
         query SavedQueries {
             savedQueries {
-                ${savedQueryFragment}
+                ...SavedQueryFields
             }
         }
+        ${savedQueryFragment}
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.savedQueries) {
