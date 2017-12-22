@@ -3,12 +3,10 @@ package conf
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/xeipuuv/gojsonschema"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -68,34 +66,4 @@ func normalizeJSON(input string) []byte {
 		return []byte("{}")
 	}
 	return output
-}
-
-// Validate validates the site configuration against its JSON schema.
-//
-// TODO(sqs): it only validates the SOURCEGRAPH_CONFIG value, not the merged
-// config from all env vars. This env var is only used in cmd/server, but it
-// is passed onto frontend, so frontend can print useful validation messages
-// about it.
-func Validate() {
-	input := os.Getenv("SOURCEGRAPH_CONFIG")
-	if input == "" {
-		return
-	}
-
-	res, err := gojsonschema.Validate(
-		gojsonschema.NewStringLoader(schema.SiteSchemaJSON),
-		gojsonschema.NewBytesLoader(normalizeJSON(input)),
-	)
-	if err != nil {
-		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
-		return
-	}
-	if !res.Valid() {
-		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		fmt.Fprintln(os.Stderr, "⚠️ Warning: Invalid Sourcegraph site configuration:")
-		for _, err := range res.Errors() {
-			fmt.Fprintf(os.Stderr, " - %s\n", err.String())
-		}
-		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	}
 }
