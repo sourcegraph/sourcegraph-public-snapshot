@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -20,8 +21,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/neelance/parallel"
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/inconshreveable/log15.v2"
+	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
@@ -37,6 +40,17 @@ var runCommand = func(cmd *exec.Cmd) (error, int) { // mocked by tests
 	return err, exitStatus
 }
 var skipCloneForTests = false // set by tests
+
+var cloneLimiter *parallel.Run
+
+func init() {
+	// Limit the number of concurrent clones to prevent hitting throttle limits by the host.
+	var maxParallelClones = conf.Get().GitMaxConcurrentClones
+	if maxParallelClones == 0 {
+		maxParallelClones = int(math.MaxInt32)
+	}
+	cloneLimiter = parallel.NewRun(maxParallelClones)
+}
 
 // Server is a gitserver server.
 type Server struct {
@@ -241,7 +255,9 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 			if skipCloneForTests {
 				s.releaseCloneLock(dir)
 			} else if !cloneInProgress {
+				cloneLimiter.Acquire()
 				go func() {
+					defer cloneLimiter.Release()
 					// Create a new context because this is in a background goroutine.
 					ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 					defer func() {

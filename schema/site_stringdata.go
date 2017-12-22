@@ -153,6 +153,10 @@ const SiteSchemaJSON = `{
       "description": "Space separated list of mappings from repo name prefix to gitolite hosts.",
       "type": "string"
     },
+    "gitMaxConcurrentClones": {
+      "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
+      "type": "integer"
+    },
     "gitOriginMap": {
       "description":
         "Space separated list of mappings from repo name prefix to origin url, for example \"github.com/!https://github.com/%.git\".",

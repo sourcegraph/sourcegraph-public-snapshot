@@ -28,6 +28,7 @@ var legacyEnvToFieldName = map[string]string{
 	"Github":                         "GITHUB_CONFIG",
 	"GithubClientID":                 "GITHUB_CLIENT_ID",
 	"GithubClientSecret":             "GITHUB_CLIENT_SECRET",
+	"GitMaxConcurrentClones":         "GIT_MAX_CONCURRENT_CLONES",
 	"GitoliteHosts":                  "GITOLITE_HOSTS",
 	"HtmlBodyBottom":                 "HTML_BODY_BOTTOM",
 	"HtmlBodyTop":                    "HTML_BODY_TOP",

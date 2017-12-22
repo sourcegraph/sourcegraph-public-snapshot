@@ -104,6 +104,7 @@ type SiteConfiguration struct {
 	DisablePublicRepoRedirects     bool                `json:"disablePublicRepoRedirects,omitempty"`
 	DisableTelemetry               bool                `json:"disableTelemetry,omitempty"`
 	ExecuteGradleOriginalRootPaths string              `json:"executeGradleOriginalRootPaths,omitempty"`
+	GitMaxConcurrentClones         int                 `json:"gitMaxConcurrentClones,omitempty"`
 	GitOriginMap                   string              `json:"gitOriginMap,omitempty"`
 	Github                         []Github            `json:"github,omitempty"`
 	GithubClientID                 string              `json:"githubClientID,omitempty"`
