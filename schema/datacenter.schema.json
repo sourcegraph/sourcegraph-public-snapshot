@@ -122,8 +122,10 @@
     "DeploymentOverrides": {
       "properties": {
         "containers": {
-          "$ref": "#/definitions/ContainerOverrides",
-          "type": "object"
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ContainerOverrides"
+          }
         },
         "replicas": {
           "type": ["integer", "null"],
