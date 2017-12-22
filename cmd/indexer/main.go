@@ -24,6 +24,7 @@ import (
 var numWorkers = env.Get("NUM_WORKERS", "4", "The maximum number of indexing done in parallel.")
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 var googleAPIKey = env.Get("GOOGLE_CSE_API_TOKEN", "", "API token for issuing Google:github.com search queries")
+var logLevel = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
 
 var queueLength = prometheus.NewGauge(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -39,7 +40,15 @@ func init() {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+
+	// Filter log output by level.
+	lvl, err := log15.LvlFromString(logLevel)
+	if err == nil {
+		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
+	}
+
 	tracer.Init("indexer")
+
 	gitserver.DefaultClient.NoCreds = true
 	if googleAPIKey != "" {
 		if err := idx.Google.SetAPIKey(googleAPIKey); err != nil {
