@@ -1,2 +1,1 @@
-> To review this PR in Sourcegraph Editor: `git checkout $BRANCH && src-insiders
-> --add .`
+> To review this PR in Sourcegraph Editor: `git checkout $BRANCH && src-insiders --add .`

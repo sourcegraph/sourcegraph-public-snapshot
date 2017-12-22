@@ -38,10 +38,7 @@
   "compounds": [
     {
       "name": "Attach to all",
-      "configurations": [
-        "frontend",
-        "searcher"
-      ]
+      "configurations": ["frontend", "searcher"]
     }
   ]
 }

@@ -50,11 +50,9 @@ After the SAML library has verified and decoded the SAML session, we translate t
 
 The Actor structure contains the UID that uniquely identifies the user. For SSO-authenticated users, the UID will begin with the identity provider URL.
 
-
 ### Authz
 
 Currently, there are no authz checks associated with user identity other than the blanket requirement that SSO authentication is required to access any part of the app if it is enabled.
-
 
 ### Authentication HTTP handler structure
 

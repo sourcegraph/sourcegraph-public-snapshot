@@ -15,20 +15,21 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
-
 ## Unreleased
 
 ### Added
-- Native authentication: you can now sign up without an SSO provider or Auth0.
-- Faster default branch code search via indexing.
+
+* Native authentication: you can now sign up without an SSO provider or Auth0.
+* Faster default branch code search via indexing.
 
 ### Fixed
-- Many performance improvements to search.
+
+* Many performance improvements to search.
 
 ### Changed
-- We optionally read `SOURCEGRAPH_CONFIG` from `$DATA_DIR/config.json`.
-- SSH key required to clone repos from GitHub Enterprise when using a self-signed certificate.
 
+* We optionally read `SOURCEGRAPH_CONFIG` from `$DATA_DIR/config.json`.
+* SSH key required to clone repos from GitHub Enterprise when using a self-signed certificate.
 
 ## 0.3 - 13 December 2017
 

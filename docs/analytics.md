@@ -13,11 +13,13 @@ The goal of the `eventLogger` API is to be as simple as possible. If you ever wo
 To log an event on a "Find References" action (e.g. a button being clicked):
 
 1. Add the following import to your file (with the appropriate path):
+
 ```ts
 import { eventLogger } from '../tracking/eventLogger'
 ```
 
 2. Call:
+
 ```ts
 eventLogger.log('FindReferencesButtonClicked')
 ```
@@ -27,6 +29,7 @@ eventLogger.log('FindReferencesButtonClicked')
 You should begin to see events stream into your console as you do actions.
 <BR><BR>
 When you click your new "Find References" button, you should see the following appear in gray in the console:
+
 ```
 EVENT FindReferencesButtonClicked
 ```
@@ -41,15 +44,16 @@ If you want to log custom data with an event, `eventLogger.log` accepts an optio
 
 ```ts
 eventLogger.log('BrowserExtInstallClicked', {
-    marketing: {
-        browser: 'Chrome'
-    }
+	marketing: {
+		browser: 'Chrome',
+	},
 })
 ```
 
 Note that our event logger automatically adds contextual and persistent data to every event — e.g. an identifier for the current user who did the action, the current URL, the current timestamp, etc. Most events can be safely logged without any custom data.
 
 ### Namespacing
+
 You may have noticed in the example above that the `browser` property falls under a `marketing` namespace. This helps prevent identically-named properties used in different contexts from conflicting.
 
 In general, try to re-use existing namespaces where relevant. If you're developing a new product feature/UX, add a new _descriptive_ namespace for it. Ask Dan for help with namespacing if you plan to log custom properties!
@@ -59,6 +63,7 @@ In general, try to re-use existing namespaces where relevant. If you're developi
 You may have seen another category of events in the Sourcegraph codebase — pageviews. Unlike most events, which occur on specific user actions, pageview events should be passively logged every time a user views a page.
 
 They are executed in a similar way, but using the `logViewEvent` method, e.g.:
+
 ```ts
 eventLogger.logViewEvent('SearchResults')
 ```
@@ -82,11 +87,13 @@ Events are sent in real-time, without batching, and make their way through a de-
 These real-time events get loaded into the `telligent.events` table in BigQuery, which contains raw event data.
 
 Every 3 hours, a series of [Sourcegraph-managed ETL jobs](https://github.com/KattMingMing/SGMetricsPipeline) run, enhancing the raw data. These jobs:
+
 * Filter out junk data (from bots, frontend bugs, and more).
 * Analyze all events to stitch together a consistent concept of a user, across sessions, products (e.g. web vs. browser extensions), and devices. This is based on Sourcegraph.com user profiles, where possible.
 * Perform higher-level analyses through data aggregation.
 
 These jobs generate a series of tables that can be accessed and analyzed, including:
+
 * `events_users`: a clone of the raw events table, but with junk data filtered, and user-level properties (i.e., in addition to the event-level properties) appended to each row
 * `users`: a smaller table with a row for each uniquely identified user
 * `sessions`: a table with a row for each user session
