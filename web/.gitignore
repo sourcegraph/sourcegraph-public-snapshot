@@ -4,3 +4,4 @@ out/
 .nyc_output/
 coverage/
 typings/graphqlschema.d.ts
+graphqlschema.json

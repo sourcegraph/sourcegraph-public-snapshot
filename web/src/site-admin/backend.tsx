@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
-import { queryGraphQL } from '../backend/graphql'
+import { gql, queryGraphQL } from '../backend/graphql'
 
 /**
  * Fetches all users.
@@ -8,23 +8,31 @@ import { queryGraphQL } from '../backend/graphql'
  * @return Observable that emits the list of users
  */
 export function fetchAllUsers(): Observable<GQL.IUser[]> {
-    return queryGraphQL(`query Users {
-        users {
-            nodes {
-                id
-                username
-                displayName
-                email
-                createdAt
-                latestSettings {
+    return queryGraphQL(gql`
+        query Users {
+            users {
+                nodes {
+                    id
+                    username
+                    displayName
+                    email
                     createdAt
-                    configuration { contents }
+                    latestSettings {
+                        createdAt
+                        configuration {
+                            contents
+                        }
+                    }
+                    orgs {
+                        name
+                    }
+                    tags {
+                        name
+                    }
                 }
-                orgs { name }
-                tags { name }
             }
         }
-    }`).pipe(
+    `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -40,22 +48,32 @@ export function fetchAllUsers(): Observable<GQL.IUser[]> {
  * @return Observable that emits the list of orgs
  */
 export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
-    return queryGraphQL(`query Orgs {
-        orgs {
-            nodes {
-                id
-                name
-                displayName
-                createdAt
-                latestSettings {
+    return queryGraphQL(gql`
+        query Orgs {
+            orgs {
+                nodes {
+                    id
+                    name
+                    displayName
                     createdAt
-                    configuration { contents }
+                    latestSettings {
+                        createdAt
+                        configuration {
+                            contents
+                        }
+                    }
+                    members {
+                        user {
+                            username
+                        }
+                    }
+                    tags {
+                        name
+                    }
                 }
-                members { user { username } }
-                tags { name }
             }
         }
-    }`).pipe(
+    `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.orgs) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -71,15 +89,17 @@ export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
  * @return Observable that emits the list of repositories
  */
 export function fetchAllRepositories(): Observable<GQL.IRepository[]> {
-    return queryGraphQL(`query Repositories {
-        repositories {
-            nodes {
-                id
-                uri
-                createdAt
+    return queryGraphQL(gql`
+        query Repositories {
+            repositories {
+                nodes {
+                    id
+                    uri
+                    createdAt
+                }
             }
         }
-    }`).pipe(
+    `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.repositories) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -95,18 +115,20 @@ export function fetchAllRepositories(): Observable<GQL.IRepository[]> {
  * @return Observable that emits the list of users and their usage data
  */
 export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
-    return queryGraphQL(`query Users {
-             users {
-                 nodes {
-                     id
-                     username
-                     activity {
-                         searchQueries
-                         pageViews
-                     }
-                 }
-             }
-         }`).pipe(
+    return queryGraphQL(gql`
+        query Users {
+            users {
+                nodes {
+                    id
+                    username
+                    activity {
+                        searchQueries
+                        pageViews
+                    }
+                }
+            }
+        }
+    `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -122,17 +144,19 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
  * @return Observable that emits the site
  */
 export function fetchSite(): Observable<GQL.ISite> {
-    return queryGraphQL(`query SiteConfiguration {
-        site {
-            id
-            configuration
-            latestSettings {
-                configuration {
-                    contents
+    return queryGraphQL(gql`
+        query SiteConfiguration {
+            site {
+                id
+                configuration
+                latestSettings {
+                    configuration {
+                        contents
+                    }
                 }
             }
         }
-    }`).pipe(
+    `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })

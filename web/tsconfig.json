@@ -15,6 +15,11 @@
     "plugins": [
       {
         "name": "tslint-language-service"
+      },
+      {
+        "name": "ts-graphql-plugin",
+        "schema": "graphqlschema.json",
+        "tag": "gql"
       }
     ]
   }

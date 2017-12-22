@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
-import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 export const EPERMISSIONDENIED = 'EPERMISSIONDENIED'
 class PermissionDeniedError extends Error {
@@ -10,43 +10,45 @@ class PermissionDeniedError extends Error {
     }
 }
 
-const gqlThread = `
-    id
-    repo {
+const threadFragment = gql`
+    fragment ThreadFields on Thread {
         id
-        remoteUri
-    }
-    file
-    repoRevision
-    linesRevision
-    branch
-    title
-    startLine
-    endLine
-    startCharacter
-    endCharacter
-    rangeLength
-    createdAt
-    archivedAt
-    lines {
-        htmlBefore(isLightTheme: $isLightTheme)
-        html(isLightTheme: $isLightTheme)
-        htmlAfter(isLightTheme: $isLightTheme)
-        textBefore
-        text
-        textAfter
-        textSelectionRangeStart
-        textSelectionRangeLength
-    }
-    comments {
-        id
-        author{
-            displayName
-            username
-            avatarURL
+        repo {
+            id
+            remoteUri
         }
+        file
+        repoRevision
+        linesRevision
+        branch
+        title
+        startLine
+        endLine
+        startCharacter
+        endCharacter
+        rangeLength
         createdAt
-        richHTML
+        archivedAt
+        lines {
+            htmlBefore(isLightTheme: $isLightTheme)
+            html(isLightTheme: $isLightTheme)
+            htmlAfter(isLightTheme: $isLightTheme)
+            textBefore
+            text
+            textAfter
+            textSelectionRangeStart
+            textSelectionRangeLength
+        }
+        comments {
+            id
+            author {
+                displayName
+                username
+                avatarURL
+            }
+            createdAt
+            richHTML
+        }
     }
 `
 
@@ -57,14 +59,15 @@ const gqlThread = `
  */
 export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable<GQL.ISharedItem | null> {
     return queryGraphQL(
-        `query SharedItem($ulid: String!, $isLightTheme: Boolean!) {
+        gql`
+            query SharedItem($ulid: String!, $isLightTheme: Boolean!) {
                 sharedItem(ulid: $ulid) {
                     author {
                         displayName
                     }
                     public
                     thread {
-                        ${gqlThread}
+                        ...ThreadFields
                     }
                     comment {
                         id
@@ -72,6 +75,7 @@ export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable
                     }
                 }
             }
+            ${threadFragment}
         `,
         { ulid, isLightTheme }
     ).pipe(
@@ -100,10 +104,11 @@ export function addCommentToThread(
     isLightTheme: boolean
 ): Observable<GQL.ISharedItemThread> {
     return mutateGraphQL(
-        `mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
+        gql`mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
             addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
-                ${gqlThread}
+                ...ThreadFields
             }
+            ${threadFragment}
         }`,
         { threadID, contents, ulid, isLightTheme }
     ).pipe(

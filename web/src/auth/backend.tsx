@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
-import { queryGraphQL } from '../backend/graphql'
+import { gql, queryGraphQL } from '../backend/graphql'
 
 export function isUsernameAvailable(username: string): Observable<boolean> {
     return queryGraphQL(
-        `
-        query UsernameAvailability($username: String!) {
-            isUsernameAvailable(username: $username)
-        }
+        gql`
+            query UsernameAvailability($username: String!) {
+                isUsernameAvailable(username: $username)
+            }
         `,
         {
             username,

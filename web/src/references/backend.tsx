@@ -8,7 +8,7 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { Location } from 'vscode-languageserver-types'
-import { queryGraphQL } from '../backend/graphql'
+import { gql, queryGraphQL } from '../backend/graphql'
 import { fetchXdefinition, fetchXreferences } from '../backend/lsp'
 import { AbsoluteRepoFilePosition, makeRepoURI } from '../repo'
 import * as util from '../util'
@@ -18,41 +18,50 @@ export const fetchDependencyReferences = memoizeObservable(
     (ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {
         const mode = util.getModeFromExtension(util.getPathExtension(ctx.filePath))
         return queryGraphQL(
-            `query DependencyReferences($repoPath: String, $commitID: String, $filePath: String, $mode: String, $line: Int, $character: Int) {
-                repository(uri: $repoPath) {
-                    commit(rev: $commitID) {
-                        commit {
-                            file(path: $filePath) {
-                                dependencyReferences(Language: $mode, Line: $line, Character: $character) {
-                                    dependencyReferenceData {
-                                        references {
-                                            dependencyData
-                                            repoId
-                                            hints
-                                        }
-                                        location {
-                                            location
-                                            symbol
-                                        }
-                                    }
-                                    repoData {
-                                        repos {
-                                            id
-                                            uri
-                                            lastIndexedRevOrLatest {
-                                                commit {
-                                                    sha1
-                                                }
+            gql`
+                query DependencyReferences(
+                    $repoPath: String
+                    $commitID: String
+                    $filePath: String
+                    $mode: String
+                    $line: Int
+                    $character: Int
+                ) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                file(path: $filePath) {
+                                    dependencyReferences(Language: $mode, Line: $line, Character: $character) {
+                                        dependencyReferenceData {
+                                            references {
+                                                dependencyData
+                                                repoId
+                                                hints
+                                            }
+                                            location {
+                                                location
+                                                symbol
                                             }
                                         }
-                                        repoIds
+                                        repoData {
+                                            repos {
+                                                id
+                                                uri
+                                                lastIndexedRevOrLatest {
+                                                    commit {
+                                                        sha1
+                                                    }
+                                                }
+                                            }
+                                            repoIds
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }`,
+            `,
             {
                 repoPath: ctx.repoPath,
                 commitID: ctx.commitID,

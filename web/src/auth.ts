@@ -3,7 +3,7 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
-import { mutateGraphQL, queryGraphQL } from './backend/graphql'
+import { gql, mutateGraphQL, queryGraphQL } from './backend/graphql'
 import { configurationCascade } from './settings/configuration'
 
 /**
@@ -20,9 +20,11 @@ import { configurationCascade } from './settings/configuration'
  */
 export const currentUser = new ReplaySubject<GQL.IUser | null>(1)
 
-export const configurationGQL = `
-    configuration {
-        defaults { contents }
+export const configurationCascadeFragment = gql`
+    fragment ConfigurationCascadeFields on ConfigurationCascade {
+        defaults {
+            contents
+        }
         subjects {
             __typename
             ... on Org {
@@ -41,15 +43,15 @@ export const configurationGQL = `
             contents
             messages
         }
-    }`
+    }
+`
 
 /**
  * fetchCurrentUser can be called to fetch the current user, orgs, and config
  * state from the remote. Emits no items, completes when done.
  */
 export function fetchCurrentUser(): Observable<never> {
-    return queryGraphQL(
-        `
+    return queryGraphQL(gql`
         query CurrentAuthState {
             currentUser {
                 __typename
@@ -79,10 +81,12 @@ export function fetchCurrentUser(): Observable<never> {
                     name
                 }
             }
-            ${configurationGQL}
+            configuration {
+                ...ConfigurationCascadeFields
+            }
         }
-    `
-    ).pipe(
+        ${configurationCascadeFragment}
+    `).pipe(
         tap(({ data, errors }) => {
             if (!data) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -96,11 +100,11 @@ export function fetchCurrentUser(): Observable<never> {
 
 export function updateUserSettings(lastKnownSettingsID: number | null, contents: string): Observable<void> {
     return mutateGraphQL(
-        `
-        mutation UpdateUserSettings($lastKnownSettingsID: Int, $contents: String!) {
-            updateUserSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
-        }
-    `,
+        gql`
+            mutation UpdateUserSettings($lastKnownSettingsID: Int, $contents: String!) {
+                updateUserSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
+            }
+        `,
         { lastKnownSettingsID, contents }
     ).pipe(
         map(({ data, errors }) => {

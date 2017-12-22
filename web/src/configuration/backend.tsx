@@ -2,7 +2,7 @@ import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
-import { mutateGraphQL, MutationResult } from '../backend/graphql'
+import { gql, GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
 import { refreshConfiguration } from '../settings/backend'
 import { configurationCascade } from '../settings/configuration'
 
@@ -16,7 +16,7 @@ export function updateConfiguration(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
     input: GQL.IUpdateConfigurationInput
 ): Observable<void> {
-    const subjectID = (subject as GQL.ConfigurationSubject).id
+    const subjectID = subject.id
     if (!subjectID) {
         throw new Error('subject has no id')
     }
@@ -41,15 +41,16 @@ function doUpdateConfiguration(
     input: GQL.IUpdateConfigurationInput
 ): Observable<void> {
     return mutateGraphQL(
-        `
-        mutation UpdateConfiguration(
-            $configurationInput: ConfigurationMutationGroupInput!,
-            $updateInput: UpdateConfigurationInput
-        ) {
-            configurationMutation(input: $configurationInput) {
-                updateConfiguration(input: $updateInput) { }
+        gql`
+            mutation UpdateConfiguration(
+                $configurationInput: ConfigurationMutationGroupInput!,
+                $updateInput: UpdateConfigurationInput
+            ) {
+                configurationMutation(input: $configurationInput) {
+                    updateConfiguration(input: $updateInput) { }
+                }
             }
-        }`,
+        `,
         { configurationInput: configuration, updateInput: input }
     ).pipe(
         mergeMap(({ data, errors }) => {
@@ -71,10 +72,10 @@ function doUpdateConfiguration(
  */
 export function mutateConfigurationGraphQL(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
-    mutation: string,
+    mutation: GraphQLDocument,
     variables: any = {}
 ): Observable<MutationResult> {
-    const subjectID = (subject as GQL.ConfigurationSubject).id
+    const subjectID = subject.id
     if (!subjectID) {
         throw new Error('subject has no id')
     }
