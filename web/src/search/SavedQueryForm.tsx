@@ -198,11 +198,13 @@ export const SavedQueryForm = reactive<Props>(props => {
                         value={subject}
                         ref={e => (subjectInput = e)}
                     >
-                        {subjectOptions.map((subjectOption, i) => (
-                            <option key={i} value={subjectOption.id}>
-                                {configurationSubjectLabel(subjectOption)}
-                            </option>
-                        ))}
+                        {subjectOptions
+                            .filter(subjectOption => subjectOption.__typename !== 'Site')
+                            .map((subjectOption, i) => (
+                                <option key={i} value={subjectOption.id}>
+                                    {configurationSubjectLabel(subjectOption)}
+                                </option>
+                            ))}
                     </select>
                     <div className="saved-query-form__actions">
                         <button
