@@ -2,7 +2,7 @@ import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
-import { gql, GraphQL, mutateGraphQL, MutationResult } from '../backend/graphql'
+import { gql, GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
 import { refreshConfiguration } from '../settings/backend'
 import { configurationCascade } from '../settings/configuration'
 
@@ -72,7 +72,7 @@ function doUpdateConfiguration(
  */
 export function mutateConfigurationGraphQL(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
-    mutation: GraphQL,
+    mutation: GraphQLDocument,
     variables: any = {}
 ): Observable<MutationResult> {
     const subjectID = subject.id

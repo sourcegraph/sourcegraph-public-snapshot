@@ -2,16 +2,16 @@ import { Observable } from 'rxjs/Observable'
 import { ajax } from 'rxjs/observable/dom/ajax'
 import { map } from 'rxjs/operators/map'
 
-export interface GraphQL {
-    /** Don't set this yourself, use the template string tag */
-    __graphQL: string
+const graphQLContent = Symbol('graphQLContent')
+export interface GraphQLDocument {
+    [graphQLContent]: string
 }
 
 /**
  * Use this template string tag for all GraphQL queries
  */
-export const gql = (template: TemplateStringsArray, ...substitutions: any[]): GraphQL => ({
-    __graphQL: String.raw(template, ...substitutions),
+export const gql = (template: TemplateStringsArray, ...substitutions: any[]): GraphQLDocument => ({
+    [graphQLContent]: String.raw(template, ...substitutions),
 })
 
 /**
@@ -37,8 +37,8 @@ export interface MutationResult {
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-function requestGraphQL(request: GraphQL, variables: any = {}): Observable<GQL.IGraphQLResponseRoot> {
-    const nameMatch = request.__graphQL.match(/^\s*(?:query|mutation)\s+(\w+)/)
+function requestGraphQL(request: GraphQLDocument, variables: any = {}): Observable<GQL.IGraphQLResponseRoot> {
+    const nameMatch = request[graphQLContent].match(/^\s*(?:query|mutation)\s+(\w+)/)
     return ajax({
         method: 'POST',
         url: '/.api/graphql' + (nameMatch ? '?' + nameMatch[1] : ''),
@@ -46,7 +46,7 @@ function requestGraphQL(request: GraphQL, variables: any = {}): Observable<GQL.I
             'Content-Type': 'application/json',
             ...window.context.xhrHeaders,
         },
-        body: JSON.stringify({ query: request.__graphQL, variables }),
+        body: JSON.stringify({ query: request[graphQLContent], variables }),
     }).pipe(map(({ response }) => response))
 }
 
@@ -57,7 +57,7 @@ function requestGraphQL(request: GraphQL, variables: any = {}): Observable<GQL.I
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function queryGraphQL(query: GraphQL, variables: any = {}): Observable<QueryResult> {
+export function queryGraphQL(query: GraphQLDocument, variables: any = {}): Observable<QueryResult> {
     return requestGraphQL(query, variables) as Observable<QueryResult>
 }
 
@@ -68,6 +68,6 @@ export function queryGraphQL(query: GraphQL, variables: any = {}): Observable<Qu
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function mutateGraphQL(mutation: GraphQL, variables: any = {}): Observable<MutationResult> {
+export function mutateGraphQL(mutation: GraphQLDocument, variables: any = {}): Observable<MutationResult> {
     return requestGraphQL(mutation, variables) as Observable<MutationResult>
 }

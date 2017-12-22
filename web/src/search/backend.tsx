@@ -2,7 +2,7 @@ import { Observable } from 'rxjs/Observable'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { gql, GraphQL, queryGraphQL } from '../backend/graphql'
+import { gql, GraphQLDocument, queryGraphQL } from '../backend/graphql'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
 import { currentConfiguration } from '../settings/configuration'
 import { SearchOptions } from './index'
@@ -295,7 +295,7 @@ export function updateSavedQuery(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
     id: GQLID,
     description: string,
-    query: GraphQL,
+    query: GraphQLDocument,
     scopeQuery: string
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
