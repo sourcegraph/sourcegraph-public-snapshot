@@ -10,7 +10,7 @@
     "cover": "npm run build-tests && nyc --require source-map-support/register mocha --opts mocha.opts",
     "test-e2e": "npm run build-tests && mocha --opts mocha.opts.e2e",
     "build": "npm run graphql && npm run webpack",
-    "watch": "concurrently --raw \"npm --silent run watch-graphql\" \"npm --silent run webpack -- --watch\"",
+    "watch": "concurrently --raw \"npm run watch-graphql\" \"npm run webpack -- --watch\"",
     "webpack": "webpack --config webpack.config.ts --colors",
     "build-tests": "tsc -p ./tsconfig.test.json",
     "graphql": "cat ../cmd/frontend/internal/graphqlbackend/schema.graphql | gql2ts -o typings/graphqlschema.d.ts && node introspect_schema",
