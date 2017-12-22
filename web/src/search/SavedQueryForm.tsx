@@ -199,7 +199,10 @@ export const SavedQueryForm = reactive<Props>(props => {
                         ref={e => (subjectInput = e)}
                     >
                         {subjectOptions
-                            .filter(subjectOption => subjectOption.__typename !== 'Site')
+                            .filter(
+                                (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
+                                    subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
+                            )
                             .map((subjectOption, i) => (
                                 <option key={i} value={subjectOption.id}>
                                     {configurationSubjectLabel(subjectOption)}
@@ -236,13 +239,11 @@ export const SavedQueryForm = reactive<Props>(props => {
     )
 })
 
-function configurationSubjectLabel(s: GQL.ConfigurationSubject): string {
+function configurationSubjectLabel(s: GQL.IUser | GQL.IOrg): string {
     switch (s.__typename) {
         case 'User':
             return `${s.username} (user settings)`
         case 'Org':
             return `${s.name} (org settings)`
-        default:
-            throw new Error('no configuration subject')
     }
 }
