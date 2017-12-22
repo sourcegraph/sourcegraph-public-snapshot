@@ -48,7 +48,7 @@ export SRC_INDEXER=127.0.0.1:3179
 export SRC_SYNTECT_SERVER=http://localhost:3700
 export SRC_FRONTEND_INTERNAL=localhost:3090
 
-export REPO_LIST_UPDATE_INTERVAL=1
+export REPO_LIST_UPDATE_INTERVAL=600
 export PHABRICATOR_URL="http://phabricator.sgdev.org"
 export CORS_ORIGIN="https://github.com http://phabricator.sgdev.org"
 
