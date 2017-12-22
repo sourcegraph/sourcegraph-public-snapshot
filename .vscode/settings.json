@@ -8,9 +8,7 @@
   },
   "json.schemas": [
     {
-      "fileMatch": [
-        "dev/config.json"
-      ],
+      "fileMatch": ["dev/config.json"],
       "url": "/schema/site.schema.json"
     }
   ]

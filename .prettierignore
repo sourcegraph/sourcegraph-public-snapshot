@@ -10,3 +10,10 @@ web/src/settings/*.schema.json
 web/ts-node-*
 web/typings/graphqlschema.d.ts
 xlang/testdata
+
+# Until https://github.com/prettier/prettier/commit/5c6b93a65425291a87f932d8eb9f5a114875d7af is
+# in the prettier release version we use, disable prettier on these files. The editor extension
+# doesn't autoformat them because they are jsonc not json, so the editor and CLI prettier would
+# be out of sync.
+dev/config.json
+**/.vscode/*.json
