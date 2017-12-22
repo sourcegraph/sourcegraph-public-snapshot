@@ -1,3 +1,4 @@
+import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { from } from 'rxjs/observable/from'
 import { bufferCount } from 'rxjs/operators/bufferCount'
@@ -18,41 +19,50 @@ export const fetchDependencyReferences = memoizeObservable(
     (ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {
         const mode = util.getModeFromExtension(util.getPathExtension(ctx.filePath))
         return queryGraphQL(
-            `query DependencyReferences($repoPath: String, $commitID: String, $filePath: String, $mode: String, $line: Int, $character: Int) {
-                repository(uri: $repoPath) {
-                    commit(rev: $commitID) {
-                        commit {
-                            file(path: $filePath) {
-                                dependencyReferences(Language: $mode, Line: $line, Character: $character) {
-                                    dependencyReferenceData {
-                                        references {
-                                            dependencyData
-                                            repoId
-                                            hints
-                                        }
-                                        location {
-                                            location
-                                            symbol
-                                        }
-                                    }
-                                    repoData {
-                                        repos {
-                                            id
-                                            uri
-                                            lastIndexedRevOrLatest {
-                                                commit {
-                                                    sha1
-                                                }
+            gql`
+                query DependencyReferences(
+                    $repoPath: String
+                    $commitID: String
+                    $filePath: String
+                    $mode: String
+                    $line: Int
+                    $character: Int
+                ) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                file(path: $filePath) {
+                                    dependencyReferences(Language: $mode, Line: $line, Character: $character) {
+                                        dependencyReferenceData {
+                                            references {
+                                                dependencyData
+                                                repoId
+                                                hints
+                                            }
+                                            location {
+                                                location
+                                                symbol
                                             }
                                         }
-                                        repoIds
+                                        repoData {
+                                            repos {
+                                                id
+                                                uri
+                                                lastIndexedRevOrLatest {
+                                                    commit {
+                                                        sha1
+                                                    }
+                                                }
+                                            }
+                                            repoIds
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }`,
+            `,
             {
                 repoPath: ctx.repoPath,
                 commitID: ctx.commitID,

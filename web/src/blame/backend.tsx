@@ -1,3 +1,4 @@
+import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { queryGraphQL } from '../backend/graphql'
@@ -7,32 +8,40 @@ import { memoizeObservable } from '../util/memoize'
 export const fetchBlameFile = memoizeObservable(
     (ctx: AbsoluteRepoFilePosition): Observable<GQL.IHunk[] | null> =>
         queryGraphQL(
-            `query BlameFile($repoPath: String, $commitID: String, $filePath: String, $startLine: Int, $endLine: Int) {
-                repository(uri: $repoPath) {
-                    commit(rev: $commitID) {
-                        commit {
-                            file(path: $filePath) {
-                                blame(startLine: $startLine, endLine: $endLine) {
-                                    startLine
-                                    endLine
-                                    startByte
-                                    endByte
-                                    rev
-                                    author {
-                                        person {
-                                            name
-                                            email
-                                            gravatarHash
+            gql`
+                query BlameFile(
+                    $repoPath: String
+                    $commitID: String
+                    $filePath: String
+                    $startLine: Int
+                    $endLine: Int
+                ) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                file(path: $filePath) {
+                                    blame(startLine: $startLine, endLine: $endLine) {
+                                        startLine
+                                        endLine
+                                        startByte
+                                        endByte
+                                        rev
+                                        author {
+                                            person {
+                                                name
+                                                email
+                                                gravatarHash
+                                            }
+                                            date
                                         }
-                                        date
+                                        message
                                     }
-                                    message
                                 }
                             }
                         }
                     }
                 }
-            }`,
+            `,
             {
                 repoPath: ctx.repoPath,
                 commitID: ctx.commitID,

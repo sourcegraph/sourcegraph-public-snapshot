@@ -1,3 +1,4 @@
+import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
@@ -16,7 +17,7 @@ export function updateConfiguration(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
     input: GQL.IUpdateConfigurationInput
 ): Observable<void> {
-    const subjectID = (subject as GQL.ConfigurationSubject).id
+    const subjectID = subject.id
     if (!subjectID) {
         throw new Error('subject has no id')
     }
@@ -41,15 +42,16 @@ function doUpdateConfiguration(
     input: GQL.IUpdateConfigurationInput
 ): Observable<void> {
     return mutateGraphQL(
-        `
-        mutation UpdateConfiguration(
-            $configurationInput: ConfigurationMutationGroupInput!,
-            $updateInput: UpdateConfigurationInput
-        ) {
-            configurationMutation(input: $configurationInput) {
-                updateConfiguration(input: $updateInput) { }
+        gql`
+            mutation UpdateConfiguration(
+                $configurationInput: ConfigurationMutationGroupInput!,
+                $updateInput: UpdateConfigurationInput
+            ) {
+                configurationMutation(input: $configurationInput) {
+                    updateConfiguration(input: $updateInput) { }
+                }
             }
-        }`,
+        `,
         { configurationInput: configuration, updateInput: input }
     ).pipe(
         mergeMap(({ data, errors }) => {
@@ -74,7 +76,7 @@ export function mutateConfigurationGraphQL(
     mutation: string,
     variables: any = {}
 ): Observable<MutationResult> {
-    const subjectID = (subject as GQL.ConfigurationSubject).id
+    const subjectID = subject.id
     if (!subjectID) {
         throw new Error('subject has no id')
     }

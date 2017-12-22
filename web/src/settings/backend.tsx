@@ -1,10 +1,11 @@
+import gql from 'graphql-tag'
 import { Observable } from 'rxjs/Observable'
 import { concat } from 'rxjs/operators/concat'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
 import { tap } from 'rxjs/operators/tap'
-import { configurationGQL, currentUser, fetchCurrentUser } from '../auth'
+import { configurationCascadeFragment, currentUser, fetchCurrentUser } from '../auth'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 import { configurationCascade } from './configuration'
@@ -25,13 +26,14 @@ export function refreshConfiguration(): Observable<never> {
  * @return Observable that emits the configuration
  */
 function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
-    return queryGraphQL(
-        `
+    return queryGraphQL(gql`
         query Configuration() {
-            ${configurationGQL}
+            configuration {
+                ...ConfigurationCascadeFields
+            }
         }
-    `
-    ).pipe(
+        ${configurationCascadeFragment}
+    `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configuration) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -48,36 +50,36 @@ function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
  */
 export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
     return queryGraphQL(
-        `
-        query Org($id: ID!) {
-            org(id: $id) {
-                id
-                name
-                slackWebhookURL
-                displayName
-                latestSettings {
+        gql`
+            query Org($id: ID!) {
+                org(id: $id) {
                     id
-                    configuration {
-                        contents
-                    }
-                }
-                members {
-                    id
-                    createdAt
-                    user {
-                        auth0ID
-                        username
-                        email
-                        displayName
-                        avatarURL
-                    }
-                }
-                tags {
                     name
+                    slackWebhookURL
+                    displayName
+                    latestSettings {
+                        id
+                        configuration {
+                            contents
+                        }
+                    }
+                    members {
+                        id
+                        createdAt
+                        user {
+                            auth0ID
+                            username
+                            email
+                            displayName
+                            avatarURL
+                        }
+                    }
+                    tags {
+                        name
+                    }
                 }
             }
-        }
-    `,
+        `,
         { id }
     ).pipe(
         map(({ data, errors }) => {
@@ -108,17 +110,14 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
             }
 
             return mutateGraphQL(
-                `
-                mutation createOrg(
-                    $name: String!,
-                    $displayName: String!
-                ) {
-                    createOrg(name: $name, displayName: $displayName) {
-                        id
-                        name
+                gql`
+                    mutation createOrg($name: String!, $displayName: String!) {
+                        createOrg(name: $name, displayName: $displayName) {
+                            id
+                            name
+                        }
                     }
-                }
-            `,
+                `,
                 options
             )
         }),
@@ -162,19 +161,15 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 avatarUrl: options.avatarUrl || user.avatarURL,
             }
             return mutateGraphQL(
-                `
-                mutation updateUser(
-                    $username: String!,
-                    $displayName: String!,
-                    $avatarURL: String
-                ) {
-                    updateUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
-                        auth0ID
-                        sourcegraphID
-                        username
+                gql`
+                    mutation updateUser($username: String!, $displayName: String!, $avatarURL: String) {
+                        updateUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
+                            auth0ID
+                            sourcegraphID
+                            username
+                        }
                     }
-                }
-            `,
+                `,
                 variables
             )
         }),
@@ -219,13 +214,13 @@ export function inviteUser(email: string, orgID: string): Observable<GQL.IInvite
                 orgID,
             }
             return mutateGraphQL(
-                `
-                mutation inviteUser($email: String!, $orgID: ID!) {
-                    inviteUser(email: $email, orgID: $orgID) {
-                        acceptInviteURL
+                gql`
+                    mutation inviteUser($email: String!, $orgID: ID!) {
+                        inviteUser(email: $email, orgID: $orgID) {
+                            acceptInviteURL
+                        }
                     }
-                }
-            `,
+                `,
                 variables
             )
         }),
@@ -269,15 +264,13 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
                 throw new Error('User must be signed in')
             }
             return mutateGraphQL(
-                `
-                mutation AcceptUserInvite {
-                    acceptUserInvite(
-                        inviteToken: $inviteToken
-                    ) {
-                        emailVerified
+                gql`
+                    mutation AcceptUserInvite {
+                        acceptUserInvite(inviteToken: $inviteToken) {
+                            emailVerified
+                        }
                     }
-                }
-            `,
+                `,
                 options
             )
         }),
@@ -300,13 +293,13 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
  */
 export function removeUserFromOrg(orgID: string, userID: string): Observable<never> {
     return mutateGraphQL(
-        `
-        mutation removeUserFromOrg($userID: Int!, $orgID: ID!) {
-            removeUserFromOrg(userID: $userID, orgID: $orgID) {
-                alwaysNil
+        gql`
+            mutation removeUserFromOrg($userID: Int!, $orgID: ID!) {
+                removeUserFromOrg(userID: $userID, orgID: $orgID) {
+                    alwaysNil
+                }
             }
-        }
-    `,
+        `,
         {
             userID,
             orgID,
@@ -354,13 +347,13 @@ export function updateOrg(id: string, displayName: string, slackWebhookURL: stri
                 slackWebhookURL,
             }
             return mutateGraphQL(
-                `
-                mutation updateOrg($id: ID!, $displayName: String, $slackWebhookURL: String) {
-                    updateOrg(id: $id, displayName: $displayName, slackWebhookURL: $slackWebhookURL) {
-                        id
+                gql`
+                    mutation updateOrg($id: ID!, $displayName: String, $slackWebhookURL: String) {
+                        updateOrg(id: $id, displayName: $displayName, slackWebhookURL: $slackWebhookURL) {
+                            id
+                        }
                     }
-                }
-            `,
+                `,
                 variables
             )
         }),
@@ -386,11 +379,11 @@ export function updateOrg(id: string, displayName: string, slackWebhookURL: stri
 
 export function updateOrgSettings(id: string, lastKnownSettingsID: number | null, contents: string): Observable<void> {
     return mutateGraphQL(
-        `
-        mutation UpdateOrgSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
-            updateOrgSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
-        }
-    `,
+        gql`
+            mutation UpdateOrgSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
+                updateOrgSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
+            }
+        `,
         { id, lastKnownSettingsID, contents }
     ).pipe(
         map(({ data, errors }) => {
@@ -407,11 +400,13 @@ export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
         throw new Error('User must be signed in')
     }
     return mutateGraphQL(
-        `mutation logUserEvent {
+        gql`
+            mutation logUserEvent {
                 logUserEvent(event: $event) {
                     alwaysNil
                 }
-            }`,
+            }
+        `,
         { event }
     ).pipe(
         map(({ data, errors }) => {
@@ -425,11 +420,13 @@ export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
 
 export function updateDeploymentConfiguration(email: string, telemetryEnabled: boolean): Observable<void> {
     return queryGraphQL(
-        `query UpdateDeploymentConfiguration($email: String, $enableTelemetry: Boolean) {
+        gql`
+            query UpdateDeploymentConfiguration($email: String, $enableTelemetry: Boolean) {
                 updateDeploymentConfiguration(email: $email, enableTelemetry: $enableTelemetry) {
                     alwaysNil
                 }
-            }`,
+            }
+        `,
         { email, enableTelemetry: telemetryEnabled }
     ).pipe(
         map(({ data, errors }) => {

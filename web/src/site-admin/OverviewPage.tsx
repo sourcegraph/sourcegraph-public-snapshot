@@ -2,6 +2,7 @@ import CityIcon from '@sourcegraph/icons/lib/City'
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import UserIcon from '@sourcegraph/icons/lib/User'
+import gql from 'graphql-tag'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -112,11 +113,19 @@ interface OverviewInfo {
 }
 
 function fetchOverview(): Observable<OverviewInfo> {
-    return queryGraphQL(`query Overview {
-        repositories { totalCount }
-        users { totalCount }
-        orgs { totalCount }
-    }`).pipe(
+    return queryGraphQL(gql`
+        query Overview {
+            repositories {
+                totalCount
+            }
+            users {
+                totalCount
+            }
+            orgs {
+                totalCount
+            }
+        }
+    `).pipe(
         map(({ data, errors }) => {
             if (!data || (!data.repositories || !data.users || !data.orgs)) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
