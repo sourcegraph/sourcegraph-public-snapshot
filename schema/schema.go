@@ -39,8 +39,8 @@ type DeploymentOverrides struct {
 	Replicas   *int                           `json:"replicas,omitempty"`
 }
 
-// Github
-type Github struct {
+// GitHubConnection
+type GitHubConnection struct {
 	Certificate string   `json:"certificate,omitempty"`
 	Repos       []string `json:"repos,omitempty"`
 	Token       string   `json:"token"`
@@ -60,8 +60,8 @@ type Repos struct {
 	Path     string `json:"path"`
 }
 
-// ReposList
-type ReposList struct {
+// Repository
+type Repository struct {
 	Path string `json:"path"`
 	Type string `json:"type,omitempty"`
 	Url  string `json:"url"`
@@ -106,7 +106,7 @@ type SiteConfiguration struct {
 	ExecuteGradleOriginalRootPaths string              `json:"executeGradleOriginalRootPaths,omitempty"`
 	GitMaxConcurrentClones         int                 `json:"gitMaxConcurrentClones,omitempty"`
 	GitOriginMap                   string              `json:"gitOriginMap,omitempty"`
-	Github                         []Github            `json:"github,omitempty"`
+	Github                         []GitHubConnection  `json:"github,omitempty"`
 	GithubClientID                 string              `json:"githubClientID,omitempty"`
 	GithubClientSecret             string              `json:"githubClientSecret,omitempty"`
 	GithubEnterpriseAccessToken    string              `json:"githubEnterpriseAccessToken,omitempty"`
@@ -137,7 +137,7 @@ type SiteConfiguration struct {
 	PrivateArtifactRepoURL         string              `json:"privateArtifactRepoURL,omitempty"`
 	PrivateArtifactRepoUsername    string              `json:"privateArtifactRepoUsername,omitempty"`
 	RepoListUpdateInterval         int                 `json:"repoListUpdateInterval,omitempty"`
-	ReposList                      []ReposList         `json:"repos.list,omitempty"`
+	ReposList                      []Repository        `json:"repos.list,omitempty"`
 	SamlIDProviderMetadataURL      string              `json:"samlIDProviderMetadataURL,omitempty"`
 	SamlSPCert                     string              `json:"samlSPCert,omitempty"`
 	SamlSPKey                      string              `json:"samlSPKey,omitempty"`

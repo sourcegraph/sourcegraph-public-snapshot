@@ -25,7 +25,7 @@ import (
 // This data structure would probably be obviated by better separation of responsibility between the
 // different packages involved in indexing.
 type configAndClient struct {
-	config schema.Github
+	config schema.GitHubConnection
 	client *github.Client
 }
 

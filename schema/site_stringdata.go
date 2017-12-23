@@ -105,28 +105,7 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
-        "additionalProperties": false,
-        "required": ["token"],
-        "properties": {
-          "url": {
-            "description":
-              "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com",
-            "type": "string"
-          },
-          "token": {
-            "description": "A GitHub personal access token with repo and org scope.",
-            "type": "string"
-          },
-          "certificate": {
-            "description": "TLS certificate of a GitHub Enterprise instance.",
-            "type": "string"
-          },
-          "repos": {
-            "description": "Optional list of additional repositories to clone (in \"owner/repo\" format).",
-            "type": "array",
-            "items": { "type": "string" }
-          }
-        }
+        "$ref": "#/definitions/GitHubConnection"
       }
     },
     "githubClientID": {
@@ -172,25 +151,7 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
-        "additionalProperties": false,
-        "required": ["url", "path"],
-        "properties": {
-          "type": {
-            "description": "Type of the version control system for this repository, such as \"git\"",
-            "type": "string",
-            "enum": ["git"],
-            "default": "git"
-          },
-          "url": {
-            "description": "Clone URL for the repository, such as git@example.com:my/repo.git",
-            "type": "string"
-          },
-          "path": {
-            "description": "Display path on Sourcegraph for the repository, such as my/repo",
-            "type": "string",
-            "pattern": "^[\\w_]"
-          }
-        }
+        "$ref": "#/definitions/Repository"
       }
     },
     "inactiveRepos": {
@@ -315,6 +276,58 @@ const SiteSchemaJSON = `{
       "description": "Site settings. Organization and user settings override site settings.",
       "type": "object",
       "$ref": "settings.schema.json#"
+    }
+  },
+  "definitions": {
+    "GitHubConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token"],
+      "properties": {
+        "url": {
+          "description":
+            "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com",
+          "type": "string",
+          "pattern": "^https?://",
+          "format": "uri"
+        },
+        "token": {
+          "description": "A GitHub personal access token with repo and org scope.",
+          "type": "string",
+          "pattern": "^[^<>]+$"
+        },
+        "certificate": {
+          "description": "TLS certificate of a GitHub Enterprise instance.",
+          "type": "string"
+        },
+        "repos": {
+          "description": "Optional list of additional repositories to clone (in \"owner/repo\" format).",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "path"],
+      "properties": {
+        "type": {
+          "description": "Type of the version control system for this repository, such as \"git\"",
+          "type": "string",
+          "enum": ["git"],
+          "default": "git"
+        },
+        "url": {
+          "description": "Clone URL for the repository, such as git@example.com:my/repo.git",
+          "type": "string"
+        },
+        "path": {
+          "description": "Display path on Sourcegraph for the repository, such as my/repo",
+          "type": "string",
+          "pattern": "^[\\w_]"
+        }
+      }
     }
   }
 }
