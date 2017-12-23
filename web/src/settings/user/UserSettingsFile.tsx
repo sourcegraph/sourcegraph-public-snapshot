@@ -1,3 +1,4 @@
+import * as H from 'history'
 import * as React from 'react'
 import { concat } from 'rxjs/operators/concat'
 import { switchMap } from 'rxjs/operators/switchMap'
@@ -7,6 +8,8 @@ import { SettingsFile } from '../SettingsFile'
 interface Props {
     userInEditorBeta: boolean
     settings: GQL.ISettings | null
+
+    history: H.History
 }
 
 interface State {
@@ -19,7 +22,11 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-file-container">
-                <SettingsFile settings={this.props.settings} onDidCommit={this.onDidCommit} />
+                <SettingsFile
+                    settings={this.props.settings}
+                    onDidCommit={this.onDidCommit}
+                    history={this.props.history}
+                />
                 <small className="form-text">
                     Documentation:{' '}
                     <a target="_blank" href="https://about.sourcegraph.com/docs/search#scope">

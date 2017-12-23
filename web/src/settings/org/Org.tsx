@@ -1,5 +1,6 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import * as H from 'history'
 import * as React from 'react'
 import { match, Redirect } from 'react-router'
 import reactive from 'rx-component'
@@ -35,6 +36,7 @@ const OrgNotFound = () => (
 
 export interface Props {
     match: match<{ orgName: string }>
+    history: H.History
 }
 
 interface State {
@@ -42,6 +44,7 @@ interface State {
     user?: GQL.IUser
     /** Whether the user just left the org */
     left: boolean
+    history: H.History
 }
 
 type Update = (s: State) => State
@@ -62,8 +65,8 @@ export const Org = reactive<Props>(props => {
     const nextSettingsCommit = () => settingsCommits.next(void 0)
 
     return merge<Update>(
-        combineLatest(currentUser, orgChanges, settingsCommits.pipe(startWith(void 0))).pipe(
-            mergeMap(([user, orgName]) => {
+        combineLatest(props, currentUser, orgChanges, settingsCommits.pipe(startWith(void 0))).pipe(
+            mergeMap(([{ history }, user, orgName]) => {
                 if (!user) {
                     return [(state: State): State => ({ ...state, user: undefined })]
                 }
@@ -74,7 +77,12 @@ export const Org = reactive<Props>(props => {
                 }
                 // Fetch the org by ID by ID
                 return fetchOrg(org.id).pipe(
-                    map(org => (state: State): State => ({ ...state, user, org: org || undefined }))
+                    map(org => (state: State): State => ({
+                        ...state,
+                        history,
+                        user,
+                        org: org || undefined,
+                    }))
                 )
             })
         ),
@@ -128,7 +136,7 @@ export const Org = reactive<Props>(props => {
         )
     ).pipe(
         scan<Update, State>((state: State, update: Update) => update(state), { left: false } as State),
-        map(({ user, org, left }: State): JSX.Element | null => {
+        map(({ user, org, left, history }: State): JSX.Element | null => {
             // If the current user just left the org, redirect to settings start page
             if (left) {
                 return <Redirect to="/settings" />
@@ -186,6 +194,7 @@ export const Org = reactive<Props>(props => {
                         settings={org.latestSettings}
                         onDidCommit={nextSettingsCommit}
                         orgInEditorBeta={org.tags.some(tag => tag.name === 'editor-beta')}
+                        history={history}
                     />
                 </div>
             )

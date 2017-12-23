@@ -1,3 +1,4 @@
+import * as H from 'history'
 import * as React from 'react'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
@@ -13,6 +14,8 @@ export interface Props {
      * Called when the user saves changes to the settings file's contents.
      */
     onDidCommit: () => void
+
+    history: H.History
 }
 
 interface State {
@@ -29,6 +32,7 @@ export class OrgSettingsFile extends React.PureComponent<Props, State> {
                     settings={this.props.settings}
                     commitError={this.state.commitError}
                     onDidCommit={this.onDidCommit}
+                    history={this.props.history}
                 />
                 <small className="form-text">
                     Documentation:{' '}

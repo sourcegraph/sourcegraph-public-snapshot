@@ -2,6 +2,7 @@ import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
+import * as H from 'history'
 import * as React from 'react'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
@@ -11,6 +12,8 @@ import { eventLogger } from '../tracking/eventLogger'
 import { MonacoSettingsEditor } from './MonacoSettingsEditor'
 
 interface Props {
+    history: H.History
+
     settings: GQL.ISettings | null
 
     /**
@@ -84,6 +87,21 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         )
     }
 
+    public componentDidMount(): void {
+        // Prevent navigation when dirty.
+        this.subscriptions.add(
+            this.props.history.block((location: H.Location, action: H.Action) => {
+                if (action === 'REPLACE') {
+                    return undefined
+                }
+                if (this.state.saving || this.dirty) {
+                    return 'Discard settings changes?'
+                }
+                return undefined // allow navigation
+            })
+        )
+    }
+
     public componentWillReceiveProps(newProps: Props): void {
         this.componentUpdates.next(newProps)
     }
@@ -92,9 +110,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
+    private get dirty(): boolean {
+        return this.state.contents !== undefined && this.state.contents !== this.getPropsSettingsContentsOrEmpty()
+    }
+
     public render(): JSX.Element | null {
-        const dirty =
-            this.state.contents !== undefined && this.state.contents !== this.getPropsSettingsContentsOrEmpty()
+        const dirty = this.dirty
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
