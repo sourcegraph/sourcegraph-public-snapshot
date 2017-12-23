@@ -67,9 +67,9 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			}
 		}(uri, repo)
 
-		if err := run.Wait(); err != nil {
-			log15.Error("Could not update gitolite repos", "error", err)
-		}
+	}
+	if err := run.Wait(); err != nil {
+		log15.Error("Could not update gitolite repos", "error", err)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
