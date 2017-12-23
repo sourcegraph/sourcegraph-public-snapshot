@@ -173,6 +173,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                         userInEditorBeta={
                             this.state.user.tags && this.state.user.tags.some(tag => tag.name === 'editor-beta')
                         }
+                        history={this.props.history}
                     />
                 )}
             </div>
