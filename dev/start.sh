@@ -43,7 +43,11 @@ export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export NPM_CONFIG_LOGLEVEL=silent
 
-export SOURCEGRAPH_CONFIG="$(cat dev/config.json)"
+export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE-"/tmp/sourcegraph-dev-config-$(date +"%s").json"}
+CURRENT_CONFIG_LINK=/tmp/sourcegraph-dev-config-current.json
+rm -rf "$CURRENT_CONFIG_LINK"
+ln -s "$SOURCEGRAPH_CONFIG_FILE" "$CURRENT_CONFIG_LINK"
+cp dev/config.json "$SOURCEGRAPH_CONFIG_FILE"
 
 export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
 export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}

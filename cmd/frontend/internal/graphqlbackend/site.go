@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
@@ -12,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
 )
 
 const singletonSiteID = "site"
@@ -48,19 +51,13 @@ var singletonSiteResolver = &siteResolver{id: singletonSiteID}
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteID(r.id) }
 
-func (r *siteResolver) Configuration(ctx context.Context) (string, error) {
+func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if !actor.FromContext(ctx).IsAdmin() {
-		return "", errors.New("must be admin to view site configuration")
+	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+		return nil, err
 	}
-
-	siteConfigJSON, err := json.MarshalIndent(conf.Get(), "", "  ")
-	if err != nil {
-		return "", err
-	}
-
-	return string(siteConfigJSON), nil
+	return &siteConfigurationResolver{}, nil
 }
 
 func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
@@ -80,4 +77,93 @@ func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 			Subject:   sourcegraph.ConfigurationSubject{Site: &r.id},
 		},
 	}, nil
+}
+
+func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
+	return canReloadSite && actor.FromContext(ctx).IsAdmin()
+}
+
+type siteConfigurationResolver struct{}
+
+func checkCanViewOrUpdateSiteConfiguration(ctx context.Context) error {
+	// checkIsAdmin returns an error if the actor is not an admin. The site configuration
+	// contains secret tokens and credentials, so only admins may view/update it.
+	//
+	// 🚨 SECURITY: checkIsAdmin MUST be called anytime a siteConfigurationResolver struct
+	// value is created. To be extra safe, other *siteConfigurationResolver methods that
+	// edit/return the config should also call checkIsAdmin (in case new code is committed
+	// that, e.g., accidentally constructs a *siteConfigurationResolver without performing
+	// the is-admin check).
+	if !actor.FromContext(ctx).IsAdmin() {
+		return errors.New("must be admin to view/update site configuration")
+	}
+	return nil
+}
+
+func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+		return "", err
+	}
+	return conf.Raw(), nil
+}
+
+func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*string, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+		return nil, err
+	}
+
+	if !conf.IsDirty() {
+		return nil, nil
+	}
+
+	rawContents, err := ioutil.ReadFile(conf.FilePath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			s := "// The site configuration file does not exist."
+			return &s, nil
+		}
+		return nil, err
+	}
+
+	s := string(rawContents)
+	return &s, nil
+}
+
+func (r *siteConfigurationResolver) CanUpdate() bool {
+	// We assume the is-admin check has already been performed before constructing
+	// our receiver, so we just need to check if the file itself is writable, not
+	// the viewer's authorization.
+	//
+	// Also, we disallow updating if the site can't be auto-restarted.
+	return conf.IsWritable() && processrestart.CanRestart()
+}
+
+func (r *siteConfigurationResolver) Source() string {
+	if conf.FilePath() != "" {
+		s := conf.FilePath()
+		if !conf.IsWritable() {
+			s += " (read-only)"
+		}
+		return s
+	}
+	return "SOURCEGRAPH_CONFIG (environment variable)"
+}
+
+func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
+	Input string
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+		return nil, err
+	}
+
+	if _, err := conf.Write(args.Input); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }

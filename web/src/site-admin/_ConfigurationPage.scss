@@ -1,12 +1,23 @@
 .site-admin-configuration-page {
     &__config {
-        margin-top: 2rem;
+        margin-top: 1rem;
+    }
+
+    &__alerts {
+        // Minimize jitter when new alerts suddenly become visible.
+        min-height: 4rem;
     }
 
     &__alert {
-        margin: 1rem 0;
+        margin-top: 0.5rem;
         p:last-child {
             margin-bottom: 0;
+        }
+
+        &-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
     }
 }

@@ -67,8 +67,11 @@ func main() {
 		}
 
 		// Load the config file, or generate a new one if it doesn't exist.
-		configPath := filepath.Join(configDir, "sourcegraph-config.json")
-		configJSON, configIsWritable, err := readOrGenerateConfig(configPath)
+		configPath := os.Getenv("SOURCEGRAPH_CONFIG_FILE")
+		if configPath == "" {
+			configPath = filepath.Join(configDir, "sourcegraph-config.json")
+		}
+		_, configIsWritable, err := readOrGenerateConfig(configPath)
 		if err != nil {
 			log.Fatalf("failed to load config: %s", err)
 		}
@@ -76,9 +79,6 @@ func main() {
 			if err := os.Setenv("SOURCEGRAPH_CONFIG_FILE", configPath); err != nil {
 				log.Fatal(err)
 			}
-		}
-		if err := os.Setenv("SOURCEGRAPH_CONFIG", configJSON); err != nil {
-			log.Fatal(err)
 		}
 	}
 
@@ -113,6 +113,8 @@ func main() {
 
 	// TODO validate known_hosts contains all code hosts in config.
 
+	// Should be kept in sync with package processrestart's goreman_server.go
+	// process list.
 	procfile := []string{
 		`gitserver: gitserver`,
 		`indexer: sh -c "sleep 5 && exec indexer"`, // Sleep to avoid migration race with frontend"
@@ -133,7 +135,12 @@ func main() {
 		procfile = append(procfile, line)
 	}
 
-	err := goreman.Start([]byte(strings.Join(procfile, "\n")))
+	const goremanAddr = "localhost:5005"
+	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
+		log.Fatal(err)
+	}
+
+	err := goreman.Start(goremanAddr, []byte(strings.Join(procfile, "\n")))
 	if err != nil {
 		log.Fatal(err)
 	}

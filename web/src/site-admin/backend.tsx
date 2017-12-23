@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 /**
  * Fetches all users.
@@ -148,11 +148,11 @@ export function fetchSite(): Observable<GQL.ISite> {
         query SiteConfiguration {
             site {
                 id
-                configuration
-                latestSettings {
-                    configuration {
-                        contents
-                    }
+                configuration {
+                    effectiveContents
+                    pendingContents
+                    canUpdate
+                    source
                 }
             }
         }
@@ -162,6 +162,40 @@ export function fetchSite(): Observable<GQL.ISite> {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.site
+        })
+    )
+}
+
+/**
+ * Updates the site's configuration.
+ */
+export function updateSiteConfiguration(input: string): Observable<void> {
+    return mutateGraphQL(
+        gql`
+        mutation UpdateSiteConfiguration($input: String!) {
+        updateSiteConfiguration(input: $input) {}
+    }`,
+        { input }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.updateSiteConfiguration) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.updateSiteConfiguration as any
+        })
+    )
+}
+
+/**
+ * Reloads the site.
+ */
+export function reloadSite(): Observable<void> {
+    return mutateGraphQL(gql`mutation ReloadSite() { reloadSite {} }`).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.reloadSite) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.reloadSite as any
         })
     )
 }

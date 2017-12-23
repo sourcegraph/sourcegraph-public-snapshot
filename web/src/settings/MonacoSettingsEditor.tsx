@@ -13,7 +13,7 @@ interface Props {
     className: string
     value: string | undefined
     onChange?: (newValue: string) => void
-    readOnly: boolean
+    readOnly?: boolean | undefined
     height?: number
 
     /**

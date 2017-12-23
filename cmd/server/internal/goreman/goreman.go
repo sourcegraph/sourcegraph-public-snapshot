@@ -54,9 +54,12 @@ func readProcfile(content []byte) error {
 }
 
 // Start starts up the Procfile.
-func Start(contents []byte) error {
+func Start(rpcAddr string, contents []byte) error {
 	err := readProcfile(contents)
 	if err != nil {
+		return err
+	}
+	if err := startServer(rpcAddr); err != nil {
 		return err
 	}
 	return startProcs()

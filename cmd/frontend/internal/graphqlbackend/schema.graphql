@@ -143,6 +143,11 @@ type Mutation {
 	logUserEvent(event: UserEvent!): EmptyResponse
 	# All mutations that update configuration settings are under this field.
 	configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
+	# Updates the site configuration.
+	updateSiteConfiguration(input: String!): EmptyResponse
+	# Reloads the site by restarting the server. This is not supported for all deployment
+	# types. This may cause downtime.
+	reloadSite: EmptyResponse
 }
 
 # Input for Mutation.configuration, which contains fields that all configuration
@@ -825,10 +830,30 @@ type Site implements ConfigurationSubject {
 	# The site's ID.
 	id: ID!
 	# The site's configuration. Only visible to site admins.
-	configuration: String!
+	configuration: SiteConfiguration!
 	# The site's latest site-wide settings (which are the lowest-precedence
 	# in the configuration cascade for a user).
 	latestSettings: Settings
+	# Whether the viewer can reload the site (with the reloadSite mutation).
+	canReloadSite: Boolean!
+}
+
+# The configuration for a site.
+type SiteConfiguration {
+	# The effective configuration JSON. This will lag behind the pendingContents
+	# if the site configuration was updated but the server has not yet restarted.
+	effectiveContents: String!
+	# The pending configuration JSON, which will become effective after the next
+	# server restart. This is set if the site configuration has been updated since
+	# the server started.
+	pendingContents: String
+	# Whether the viewer can update the site configuration (using the
+	# updateSiteConfiguration mutation).
+	canUpdate: Boolean!
+	# The source of the configuration as a human-readable description,
+	# referring to either the on-disk file path or the SOURCEGRAPH_CONFIG
+	# env var.
+	source: String!
 }
 
 # ConfigurationSubject is something that can have configuration.
