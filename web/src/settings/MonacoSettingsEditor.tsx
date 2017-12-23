@@ -1,3 +1,4 @@
+import * as jsoncFormat from '@sqs/jsonc-parser/lib/format'
 import * as React from 'react'
 import MonacoEditor from 'react-monaco-editor'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
@@ -20,6 +21,8 @@ interface Props {
      * The ID of the JSON Schema that describes the document (typically a URI).
      */
     jsonSchema: 'https://sourcegraph.com/v1/site.schema.json#' | 'https://sourcegraph.com/v1/settings.schema.json#'
+
+    monacoRef?: (monacoValue: typeof monaco | null) => void
 }
 
 interface State {
@@ -118,6 +121,15 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     private onDidEditorMount(): void {
         const monaco = this.monaco!
 
+        if (this.props.monacoRef) {
+            this.props.monacoRef(monaco)
+            this.subscriptions.add(() => {
+                if (this.props.monacoRef) {
+                    this.props.monacoRef(null)
+                }
+            })
+        }
+
         const schemas: { uri: string; schema: any }[] = [
             { uri: 'https://sourcegraph.com/v1/site.schema.json#', schema: siteSchemaJSON },
             { uri: 'https://sourcegraph.com/v1/settings.schema.json#', schema: settingsSchemaJSON },
@@ -159,4 +171,28 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         )
     }
+}
+
+export function isStandaloneCodeEditor(
+    editor: monaco.editor.ICodeEditor
+): editor is monaco.editor.IStandaloneCodeEditor {
+    return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor
+}
+
+export function toMonacoEdits(
+    model: monaco.editor.IModel,
+    edits: jsoncFormat.Edit[]
+): monaco.editor.IIdentifiedSingleEditOperation[] {
+    return edits.map(
+        (edit, i) =>
+            ({
+                identifier: { major: model.getVersionId(), minor: i },
+                range: monaco.Range.fromPositions(
+                    model.getPositionAt(edit.offset),
+                    model.getPositionAt(edit.offset + edit.length)
+                ),
+                forceMoveMarkers: true,
+                text: edit.content,
+            } as monaco.editor.IIdentifiedSingleEditOperation)
+    )
 }
