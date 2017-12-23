@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -65,15 +65,15 @@ func run() error {
 				gqlQuery := GraphQLQuery{Query: gqlSearch, Variables: v}
 				b, err := json.Marshal(gqlQuery)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to marshal query: %s", err)
 				}
 				resp, err := http.Post(frontendURL("/.api/graphql?Search"), "application/json", bytes.NewReader(b))
 				if err != nil {
-					return err
+					return fmt.Errorf("response error: %s", err)
 				}
 				var res GraphQLResponseSearch
 				if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-					return err
+					return fmt.Errorf("could not decode response body: %s", err)
 				}
 				log15.Info("Search results", "query", v.Query, "scopeQuery", v.ScopeQuery, "resultCount", len(res.Data.Search.Results.Results))
 				return nil
