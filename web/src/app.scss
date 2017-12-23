@@ -289,6 +289,12 @@ body {
         color: #f2f4f8;
     }
 
+    &-warning {
+        border: 1px solid #f59f00;
+        background: rgba(230, 119, 0, 0.5);
+        color: #f2f4f8;
+    }
+
     &-danger {
         border: 1px solid #f03e3e;
         background: rgba(201, 42, 42, 0.5);
@@ -331,6 +337,11 @@ body {
 
         &-danger {
             background: rgba(201, 42, 42, 0.75);
+            color: #f2f4f8;
+        }
+
+        &-warning {
+            background: rgba(230, 119, 0, 0.75);
             color: #f2f4f8;
         }
     }
