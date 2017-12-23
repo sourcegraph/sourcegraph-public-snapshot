@@ -43,7 +43,7 @@ type DeploymentOverrides struct {
 type Github struct {
 	Certificate string   `json:"certificate,omitempty"`
 	Repos       []string `json:"repos,omitempty"`
-	Token       string   `json:"token,omitempty"`
+	Token       string   `json:"token"`
 	Url         string   `json:"url,omitempty"`
 }
 
@@ -56,15 +56,15 @@ type Phabricator struct {
 
 // Repos
 type Repos struct {
-	Callsign string `json:"callsign,omitempty"`
-	Path     string `json:"path,omitempty"`
+	Callsign string `json:"callsign"`
+	Path     string `json:"path"`
 }
 
 // ReposList
 type ReposList struct {
-	Path string `json:"path,omitempty"`
+	Path string `json:"path"`
 	Type string `json:"type,omitempty"`
-	Url  string `json:"url,omitempty"`
+	Url  string `json:"url"`
 }
 
 // ResourceOverride

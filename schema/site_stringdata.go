@@ -63,6 +63,7 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "url": {
             "description": "URL of a Phabricator instance, such as https://phabricator.example.com",
@@ -77,6 +78,8 @@ const SiteSchemaJSON = `{
             "type": "array",
             "items": {
               "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "callsign"],
               "properties": {
                 "path": {
                   "description": "Display path for the url e.g. gitolite/my/repo",
@@ -102,6 +105,8 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
+        "required": ["token"],
         "properties": {
           "url": {
             "description":
@@ -167,6 +172,8 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
+        "required": ["url", "path"],
         "properties": {
           "type": {
             "description": "Type of the version control system for this repository, such as \"git\"",
@@ -180,7 +187,8 @@ const SiteSchemaJSON = `{
           },
           "path": {
             "description": "Display path on Sourcegraph for the repository, such as my/repo",
-            "type": "string"
+            "type": "string",
+            "pattern": "^[\\w_]"
           }
         }
       }
@@ -306,7 +314,7 @@ const SiteSchemaJSON = `{
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
       "type": "object",
-      "$ref": "https://sourcegraph.com/v1/settings.schema.json#"
+      "$ref": "settings.schema.json#"
     }
   }
 }
