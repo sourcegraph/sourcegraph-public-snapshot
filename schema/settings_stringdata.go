@@ -41,7 +41,6 @@ const SettingsSchemaJSON = `{
       "description": "Predefined search scopes",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "#/definitions/SearchScope"
       }
     }

@@ -104,7 +104,6 @@ const SiteSchemaJSON = `{
         "JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information.",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "#/definitions/GitHubConnection"
       }
     },
@@ -150,7 +149,6 @@ const SiteSchemaJSON = `{
       "description": "JSON array of configuration for external repositories.",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "#/definitions/Repository"
       }
     },
@@ -212,7 +210,6 @@ const SiteSchemaJSON = `{
         "JSON array of custom search scopes (e.g., [{\"name\":\"Text Files\",\"value\":\"file:\\.txt$\"}])",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "settings.schema.json#/definitions/SearchScope"
       }
     },
@@ -274,7 +271,6 @@ const SiteSchemaJSON = `{
     },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
-      "type": "object",
       "$ref": "settings.schema.json#"
     }
   },
