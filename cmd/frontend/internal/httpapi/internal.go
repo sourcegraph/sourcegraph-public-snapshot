@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -38,6 +39,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	run := parallel.NewRun(16)
 	for _, uri := range list {
 		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, false)
 		if err != nil {
@@ -48,12 +50,25 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 			continue
 		}
-		cmd := gitserver.DefaultClient.Command("git", "fetch")
-		cmd.Repo = repo
-		err = cmd.Run(r.Context())
-		if err != nil {
-			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
-			continue
+
+		run.Acquire()
+		go func(uri string, repo *sourcegraph.Repo) {
+			defer func() {
+				if r := recover(); r != nil {
+					run.Error(fmt.Errorf("recover: %v", r))
+				}
+				run.Release()
+			}()
+			cmd := gitserver.DefaultClient.Command("git", "fetch")
+			cmd.Repo = repo
+			err = cmd.Run(r.Context())
+			if err != nil {
+				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+			}
+		}(uri, repo)
+
+		if err := run.Wait(); err != nil {
+			log15.Error("Could not update gitolite repos", "error", err)
 		}
 	}
 
