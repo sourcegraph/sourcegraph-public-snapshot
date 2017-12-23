@@ -246,6 +246,7 @@ func Main() error {
 	// The internal HTTP handler does not include the SSO or Basic Auth middleware handlers
 	smi := http.NewServeMux()
 	smi.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
+	smi.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
 	var internalHandler http.Handler = smi
 	internalHandler = gcontext.ClearHandler(internalHandler)
 
