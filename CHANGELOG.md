@@ -15,6 +15,12 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
+## 2.3.9
+
+### Fixed
+
+* An issue that prevented creation and deletion of saved queries
+
 ## 2.3.8
 
 ### Added
