@@ -273,14 +273,22 @@ export function createSavedQuery(
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
-        gql`mutation CreateSavedQuery($subject: ID!, $lastID: Int, $description: String!, $query: String!, $scopeQuery: String!) {
-            configurationMutation(input: {subject: $subject, lastID: $lastID}) {
-                createSavedQuery(description: $description, query: $query, scopeQuery: $scopeQuery) {
-                    ...SavedQueryFields
+        gql`
+            mutation CreateSavedQuery(
+                $subject: ID!
+                $lastID: Int
+                $description: String!
+                $query: String!
+                $scopeQuery: String!
+            ) {
+                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                    createSavedQuery(description: $description, query: $query, scopeQuery: $scopeQuery) {
+                        ...SavedQueryFields
+                    }
                 }
             }
             ${savedQueryFragment}
-        }`,
+        `,
         { description, query, scopeQuery }
     ).pipe(
         map(({ data, errors }) => {
@@ -301,14 +309,23 @@ export function updateSavedQuery(
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
-        gql`mutation UpdateSavedQuery($subject: ID!, $lastID: Int, $id: ID!, $description: String, $query: String, $scopeQuery: String) {
-            configurationMutation(input: {subject: $subject, lastID: $lastID}) {
-                updateSavedQuery(id: $id, description: $description, query: $query, scopeQuery: $scopeQuery) {
-                    ...SavedQueryFields
+        gql`
+            mutation UpdateSavedQuery(
+                $subject: ID!
+                $lastID: Int
+                $id: ID!
+                $description: String
+                $query: String
+                $scopeQuery: String
+            ) {
+                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                    updateSavedQuery(id: $id, description: $description, query: $query, scopeQuery: $scopeQuery) {
+                        ...SavedQueryFields
+                    }
                 }
             }
             ${savedQueryFragment}
-        }`,
+        `,
         { id, description, query, scopeQuery }
     ).pipe(
         map(({ data, errors }) => {
