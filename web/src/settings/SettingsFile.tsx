@@ -1,13 +1,10 @@
-import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
-import CloseIcon from '@sourcegraph/icons/lib/Close'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
-import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { SaveToolbar } from '../components/SaveToolbar'
 import { eventLogger } from '../tracking/eventLogger'
 import { MonacoSettingsEditor } from './MonacoSettingsEditor'
 
@@ -119,47 +116,16 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
-        const saveDiscardDisabled = this.state.saving || !dirty
-        let saveDiscardTitle: string | undefined
-        if (this.state.saving) {
-            saveDiscardTitle = 'Saving...'
-        } else if (!dirty) {
-            saveDiscardTitle = 'No changes to save or discard'
-        }
-
         return (
             <div className="settings-file">
                 <h3>Configuration</h3>
-                <div className="settings-file__actions">
-                    <button
-                        disabled={saveDiscardDisabled}
-                        title={saveDiscardTitle || 'Save changes to settings'}
-                        className="btn btn-sm btn-link settings-file__action"
-                        onClick={this.save}
-                    >
-                        <CheckmarkIcon className="icon-inline" /> Save
-                    </button>
-                    <button
-                        disabled={saveDiscardDisabled}
-                        title={saveDiscardTitle || 'Discard changes and revert to saved settings'}
-                        className="btn btn-sm btn-link settings-file__action"
-                        onClick={this.discard}
-                    >
-                        <CloseIcon className="icon-inline" /> Discard
-                    </button>
-                    {this.state.saving && (
-                        <span className="settings-file__action">
-                            <Loader className="icon-inline" /> Saving...
-                        </span>
-                    )}
-                </div>
-                {this.props.commitError && (
-                    <div className="settings-file__error">
-                        <ErrorIcon className="icon-inline settings-file__error-icon" />
-                        {this.props.commitError.message}
-                    </div>
-                )}
-
+                <SaveToolbar
+                    dirty={dirty}
+                    disabled={this.state.saving || !dirty}
+                    saving={this.state.saving}
+                    onSave={this.save}
+                    onDiscard={this.discard}
+                />
                 <MonacoSettingsEditor
                     className="settings-file__contents form-control"
                     value={contents}

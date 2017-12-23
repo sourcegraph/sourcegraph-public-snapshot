@@ -1,0 +1,20 @@
+.save-toolbar {
+    &__actions {
+        display: flex;
+    }
+
+    &__action {
+        display: flex;
+        align-items: center;
+    }
+
+    &__error {
+        color: $color-error;
+        margin: 0.5rem 0;
+
+        &-icon {
+            vertical-align: middle;
+            margin-right: 0.25rem;
+        }
+    }
+}
