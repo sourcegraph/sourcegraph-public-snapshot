@@ -68,7 +68,7 @@ var legacyEnvToFieldName = map[string]string{
 //
 // DEPRECATED: Accepting config from non-SOURCEGRAPH_CONFIG env vars is deprecated. All config
 // should be passed through SOURCEGRAPH_CONFIG.
-func configFromLegacyEnvVars() ([]byte, error) {
+func configFromLegacyEnvVars() (configJSON []byte, envVarNames []string, err error) {
 	var cfg schema.SiteConfiguration
 
 	configType := reflect.TypeOf(cfg)
@@ -82,14 +82,20 @@ func configFromLegacyEnvVars() ([]byte, error) {
 		jsonName := typeField.Tag.Get("json")
 		jsonName = strings.TrimSuffix(jsonName, ",omitempty")
 		if jsonName == "" && typeField.Name != "PublicRepoRedirects" {
-			return nil, fmt.Errorf("missing JSON struct tag for config field %s", typeField.Name)
+			return nil, nil, fmt.Errorf("missing JSON struct tag for config field %s", typeField.Name)
 		}
 		envVal = os.Getenv(jsonName)
+		if envVal != "" {
+			envVarNames = append(envVarNames, jsonName)
+		}
 
 		if envVal == "" {
 			// Fall back to reading from legacy environment variable
 			if legacyEnvName := legacyEnvToFieldName[typeField.Name]; legacyEnvName != "" {
 				envVal = os.Getenv(legacyEnvName)
+				if envVal != "" {
+					envVarNames = append(envVarNames, legacyEnvName)
+				}
 			}
 		}
 
@@ -102,23 +108,23 @@ func configFromLegacyEnvVars() ([]byte, error) {
 			case reflect.Bool:
 				valBool, err := strconv.ParseBool(envVal)
 				if err != nil {
-					return nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
+					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
 				}
 				valField.SetBool(valBool)
 			case reflect.Int:
 				valInt, err := strconv.Atoi(envVal)
 				if err != nil {
-					return nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
+					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
 				}
 				valField.SetInt(int64(valInt))
 			case reflect.Slice:
 				fallthrough
 			case reflect.Struct:
 				if err := json.Unmarshal([]byte(envVal), valField.Addr().Interface()); err != nil {
-					return nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
+					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
 				}
 			default:
-				return nil, fmt.Errorf("unhandled config field type: %s", valField.Kind())
+				return nil, nil, fmt.Errorf("unhandled config field type: %s", valField.Kind())
 			}
 		}
 
@@ -130,5 +136,6 @@ func configFromLegacyEnvVars() ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(cfg)
+	configJSON, err = json.Marshal(cfg)
+	return configJSON, envVarNames, err
 }
