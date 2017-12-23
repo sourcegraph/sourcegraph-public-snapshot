@@ -5,8 +5,8 @@ import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import settingsSchemaJSON from './settings.schema.json'
-import siteSchemaJSON from './site.schema.json'
+import settingsSchemaJSON from '../schema/settings.schema.json'
+import siteSchemaJSON from '../schema/site.schema.json'
 import { colorTheme } from './theme'
 
 interface Props {
