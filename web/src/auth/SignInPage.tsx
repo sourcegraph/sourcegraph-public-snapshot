@@ -23,7 +23,6 @@ interface LoginSignupFormProps {
 interface LoginSignupFormState {
     email: string
     username: string
-    displayName: string
     password: string
     errorDescription: string
     loading: boolean
@@ -37,7 +36,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         this.state = {
             email: props.prefilledEmail || '',
             username: '',
-            displayName: '',
             password: '',
             errorDescription: '',
             loading: false,
@@ -108,18 +106,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                         </small>
                     )}
                 </div>
-                {this.props.mode === 'signup' && (
-                    <div className="form-group">
-                        <input
-                            className="form-control login-signup-form__input"
-                            onChange={this.onDisplayNameFieldChange}
-                            value={this.state.displayName}
-                            type="text"
-                            placeholder="Display name (optional)"
-                            disabled={this.state.loading}
-                        />
-                    </div>
-                )}
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
                         {this.props.mode === 'signin' ? 'Sign In' : 'Sign Up'}
@@ -152,10 +138,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
 
     private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({ username: e.target.value })
-    }
-
-    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({ displayName: e.target.value })
     }
 
     private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,7 +174,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
         }
         if (this.props.mode === 'signup') {
             redirect.searchParams.set('username', this.state.username)
-            redirect.searchParams.set('displayName', this.state.displayName || this.state.username)
         }
         const token = searchParams.get('token')
         if (token) {
@@ -250,7 +231,7 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                                 // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
                                 // user's name in Auth0. That's not an issue per-se, see more at
                                 // https://github.com/auth0/auth0.js/issues/70.
-                                user_metadata: { name: this.state.displayName || this.state.username },
+                                user_metadata: { name: this.state.username },
                             },
                             authCallback
                         )
@@ -260,7 +241,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     signup: {
                         user_info: {
                             signup_email: this.state.email,
-                            signup_display_name: this.state.displayName,
                             signup_username: this.state.username,
                         },
                     },
@@ -334,7 +314,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                                     email: this.state.email,
                                     password: this.state.password,
                                     username: this.state.username,
-                                    displayName: this.state.displayName,
                                 }),
                             }).then(
                                 resp => {
@@ -361,7 +340,6 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                     signup: {
                         user_info: {
                             signup_email: this.state.email,
-                            signup_display_name: this.state.displayName,
                             signup_username: this.state.username,
                         },
                     },
