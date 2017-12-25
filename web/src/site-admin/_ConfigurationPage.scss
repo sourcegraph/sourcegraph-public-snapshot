@@ -1,12 +1,27 @@
 .site-admin-configuration-page {
     &__config {
-        margin-top: 2rem;
+        margin-top: 1rem;
     }
 
     &__alert {
-        margin: 1rem 0;
+        margin: 0.5rem 0 1rem;
         p:last-child {
             margin-bottom: 0;
         }
+
+        &-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+
+    &__editor-actions {
+        display: flex;
+        margin-bottom: 0.5rem;
+    }
+
+    &__editor-action {
+        margin-right: 0.5rem;
     }
 }

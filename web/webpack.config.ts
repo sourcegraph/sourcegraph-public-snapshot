@@ -56,6 +56,8 @@ plugins.push(
     ])
 )
 
+plugins.push(new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/))
+
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
 const config: webpack.Configuration = {
