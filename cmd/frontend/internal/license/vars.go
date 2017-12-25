@@ -17,7 +17,8 @@ import (
 // publicKey is the public key used to verify license keys
 const publicKey = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCi0YsgvNQMN+srcMXZtDAmF31GNurQsbr5yky3fQ4n113qvJOcfrmeA2i74fVKRzcOFdYqISSFrwI7WT946jrrbg4WCbm5vyUzRLlDDj7cQQE1St7QmuAHwdUvAgQWzfQ4Bf4qqi4RNdGtObxU9hc8l3wmqZCkiezWN72nVDdc0hn+JkZ3qTcG+1MLqWuoPISX7/HSWdOJATTJkHkS4nmeROeB4NFplrmxW7S3tWMLEW3prxUr4i7BJhVLxOGO/TkPksgR5G2Wb8jktKHghTbCofZ00COlLejloAH1Pmm4NoO0ORaPij6puxIgB6wJ9Ap3tlYn3a9/c/HdB9Or/Rnf`
 
-// bypassLicenseKey is the license key to use in development to bypass the license requirement
+// bypassLicenseKey is the license key to use in development to bypass all
+// licensing restrictions.
 const bypassLicenseKey = `24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735`
 
 var (
