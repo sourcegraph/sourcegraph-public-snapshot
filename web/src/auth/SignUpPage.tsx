@@ -302,7 +302,13 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
                 <HeroPage
                     icon={UserIcon}
                     title="Sign up for Sourcegraph"
-                    cta={<SignUpForm {...this.props} prefilledEmail={this.state.prefilledEmail} />}
+                    cta={
+                        window.context.site['auth.allowSignup'] ? (
+                            <SignUpForm {...this.props} prefilledEmail={this.state.prefilledEmail} />
+                        ) : (
+                            <p>Signup is not enabled on this server.</p>
+                        )
+                    }
                 />
             </div>
         )

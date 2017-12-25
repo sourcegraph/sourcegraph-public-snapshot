@@ -88,6 +88,8 @@ type JSContext struct {
 	ShowOnboarding       bool                  `json:"showOnboarding"`
 	EmailEnabled         bool                  `json:"emailEnabled"`
 	UseAuth0             bool                  `json:"useAuth0"`
+
+	Site siteConfiguration `json:"site"` // subset of site configuration
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -167,7 +169,16 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         notif.EmailIsConfigured(),
 		UseAuth0:             useAuth0Val,
+		Site: siteConfiguration{
+			AuthAllowSignup: conf.Get().AuthAllowSignup,
+		},
 	}
+}
+
+// siteConfiguration is the subset of the site.schema.json site configuration JSON Schema
+// that is necessary for the web app and is not sensitive/secret.
+type siteConfiguration struct {
+	AuthAllowSignup bool `json:"auth.allowSignup"`
 }
 
 var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
