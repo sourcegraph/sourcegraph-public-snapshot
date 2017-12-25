@@ -23,3 +23,8 @@ export const showDotComMarketing = !window.context.onPrem || window.context.debu
  * here and this is a good enough proxy.
  */
 export const userForgotPassword = !window.context.onPrem
+
+/**
+ * Whether the signup form should show terms and privacy policy links.
+ */
+export const signupTerms = !window.context.onPrem

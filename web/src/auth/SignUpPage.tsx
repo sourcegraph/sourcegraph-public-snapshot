@@ -11,6 +11,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { VALID_USERNAME_REGEXP } from '../settings/validation'
 import { eventLogger } from '../tracking/eventLogger'
+import { signupTerms } from '../util/features'
 import { isUsernameAvailable } from './backend'
 import { EmailInput, getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
@@ -86,16 +87,18 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                         Sign up
                     </button>
                 </div>
-                <small className="form-text signup-form__terms">
-                    By signing up, you agree to our{' '}
-                    <a href="https://about.sourcegraph.com/terms" target="_blank">
-                        Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="https://about.sourcegraph.com/privacy" target="_blank">
-                        Privacy Policy
-                    </a>.
-                </small>
+                {signupTerms && (
+                    <small className="form-text signup-form__terms">
+                        By signing up, you agree to our{' '}
+                        <a href="https://about.sourcegraph.com/terms" target="_blank">
+                            Terms of Service
+                        </a>{' '}
+                        and{' '}
+                        <a href="https://about.sourcegraph.com/privacy" target="_blank">
+                            Privacy Policy
+                        </a>.
+                    </small>
+                )}
                 {this.state.loading && (
                     <div className="signin-signup-form__loader">
                         <Loader className="icon-inline" />
