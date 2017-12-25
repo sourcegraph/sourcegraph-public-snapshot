@@ -35,24 +35,24 @@ export class InitPage extends React.Component<{}, {}> {
         }
 
         return (
-            <div className="initialize-page theme-light">
-                <div className="initialize-page__content">
+            <div className="site-admin-init-page theme-light">
+                <div className="site-admin-init-page__content">
                     <img
-                        className="initialize-page__logo"
+                        className="site-admin-init-page__logo"
                         src={`${window.context.assetsRoot}/img/ui2/sourcegraph-light-head-logo.svg`}
                     />
                     <form onSubmit={this.onSubmit}>
-                        <h2 className="initialize-page__header">Welcome to Sourcegraph Server!</h2>
+                        <h2 className="site-admin-init-page__header">Welcome to Sourcegraph Server!</h2>
                         <input
-                            className="form-control initialize-page__input-email initialize-page__control"
+                            className="form-control site-admin-init-page__input-email site-admin-init-page__control"
                             ref={e => (this.emailInput = e)}
                             placeholder="Admin email (optional)"
                             type="email"
                             autoFocus={true}
                         />
-                        <label className="initialize-page__label initialize-page__control">
+                        <label className="site-admin-init-page__label site-admin-init-page__control">
                             <input
-                                className="initialize-page__input-telemetry"
+                                className="site-admin-init-page__input-telemetry"
                                 ref={e => (this.telemetryInput = e)}
                                 defaultChecked={true}
                                 type="checkbox"
