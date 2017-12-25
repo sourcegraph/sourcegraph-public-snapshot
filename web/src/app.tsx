@@ -6,7 +6,7 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { fetchCurrentUser } from './auth'
@@ -15,7 +15,6 @@ import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
-import { InitializePage } from './settings/InitializePage'
 import { colorTheme, getColorTheme } from './settings/theme'
 
 interface LayoutProps extends RouteComponentProps<any> {
@@ -25,11 +24,15 @@ interface LayoutProps extends RouteComponentProps<any> {
 const Layout: React.SFC<LayoutProps> = props => {
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
-    const hideNavbar = isSearchHomepage
+    const needsSiteInit = window.context.onPrem && window.context.showOnboarding
+    const isSiteInit = props.location.pathname === '/site-admin/init'
+
+    const hideNavbar = isSearchHomepage || isSiteInit
 
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
             {!hideNavbar && <Navbar location={props.location} history={props.history} />}
+            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
                 {routes.map((route, i) => {
                     const isFullWidth = !route.forceNarrowWidth
@@ -130,13 +133,6 @@ class App extends React.Component<{}, AppState> {
                 subtitle = <div className="app__error">{subtitle}</div>
             }
             return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
-        }
-        if (window.context.onPrem && window.context.showOnboarding) {
-            return (
-                <BrowserRouter>
-                    <Route path="/" component={InitializePage} />
-                </BrowserRouter>
-            )
         }
 
         return (

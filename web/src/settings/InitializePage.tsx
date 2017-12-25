@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Redirect } from 'react-router'
 import { eventLogger } from '../tracking/eventLogger'
 import { updateDeploymentConfiguration } from './backend'
 
@@ -20,7 +21,7 @@ export class InitializePage extends React.Component<{}, {}> {
                 },
             })
             updateDeploymentConfiguration(this.emailInput.value, this.telemetryInput.checked).subscribe(
-                () => window.location.reload(true),
+                () => window.location.replace('/'),
                 error => {
                     console.error(error)
                 }
@@ -29,6 +30,10 @@ export class InitializePage extends React.Component<{}, {}> {
     }
 
     public render(): JSX.Element {
+        if (!window.context.onPrem || !window.context.showOnboarding) {
+            return <Redirect to="/search" />
+        }
+
         return (
             <div className="initialize-page theme-light">
                 <div className="initialize-page__content">

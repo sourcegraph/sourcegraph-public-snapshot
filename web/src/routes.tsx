@@ -12,6 +12,7 @@ import { parseSearchURLQuery } from './search'
 import { SavedQueries } from './search/SavedQueries'
 import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
+import { InitializePage } from './settings/InitializePage'
 import { SettingsPage } from './settings/SettingsPage'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { canListAllRepositories } from './util/features'
@@ -73,6 +74,22 @@ export const routes: LayoutRouteProps[] = [
         path: '/settings',
         component: SettingsPage,
         forceNarrowWidth: true,
+    },
+    {
+        path: '/search',
+        component: SearchResults,
+        exact: true,
+    },
+    {
+        path: '/search',
+        component: SearchResults,
+        exact: true,
+    },
+    {
+        path: '/site-admin/init',
+        exact: true,
+        component: InitializePage,
+        forceNarrowWidth: false,
     },
     {
         path: '/site-admin',
