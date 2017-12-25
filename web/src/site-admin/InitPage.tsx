@@ -7,7 +7,7 @@ import { updateDeploymentConfiguration } from './backend'
  * A page that is shown when the Sourcegraph instance has not yet been initialized.
  * Only the person who first accesses the instance will see this.
  */
-export class InitializePage extends React.Component<{}, {}> {
+export class InitPage extends React.Component<{}, {}> {
     private emailInput: HTMLInputElement | null = null
     private telemetryInput: HTMLInputElement | null = null
 
