@@ -20,29 +20,10 @@
     width: 18rem;
     max-width: calc(100vw - 2rem);
 
-    &__modes {
-        margin-bottom: 0.5rem;
-    }
-
     &__mode {
+        margin-bottom: 1rem;
         font-size: inherit;
-        opacity: 0.5;
         cursor: pointer;
-
-        &:hover {
-            color: white;
-            text-decoration: underline;
-            opacity: 1;
-        }
-
-        &--active {
-            color: white;
-            opacity: 1;
-        }
-    }
-
-    &__mode-divider {
-        padding: 0 1rem;
     }
 
     &__error {

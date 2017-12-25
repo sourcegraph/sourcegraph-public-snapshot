@@ -48,20 +48,16 @@ class LoginSignupForm extends React.Component<LoginSignupFormProps, LoginSignupF
                 {this.state.errorDescription !== '' && (
                     <p className="login-signup-form__error">{this.state.errorDescription}</p>
                 )}
-                <div className="login-signup-form__modes">
-                    <span
-                        className={`login-signup-form__mode${this.props.mode === 'signin' ? '--active' : ''}`}
-                        onClick={this.setModeSignIn}
-                    >
-                        Sign in
-                    </span>
-                    <span className="login-signup-form__mode-divider">|</span>
-                    <span
-                        className={`login-signup-form__mode${this.props.mode === 'signup' ? '--active' : ''}`}
-                        onClick={this.setModeSignUp}
-                    >
-                        Sign up
-                    </span>
+                <div className="login-signup-form__mode">
+                    {this.props.mode === 'signin' ? (
+                        <a className="login-signup-form__mode" onClick={this.setModeSignUp}>
+                            Don't have an account? Sign up.
+                        </a>
+                    ) : (
+                        <a className="login-signup-form__mode" onClick={this.setModeSignIn}>
+                            Already have an account? Sign in.
+                        </a>
+                    )}
                 </div>
                 <div className="form-group">
                     <input
@@ -394,7 +390,11 @@ export class SignInPage extends React.Component<SignInPageProps, SignInPageState
                 <PageTitle title={this.props.location.pathname === '/sign-in' ? 'Sign in' : 'Sign up'} />
                 <HeroPage
                     icon={KeyIcon}
-                    title="Welcome to Sourcegraph"
+                    title={
+                        this.props.location.pathname === '/sign-in'
+                            ? 'Sign into Sourcegraph'
+                            : 'Sign up for Sourcegraph'
+                    }
                     cta={
                         <LoginSignupForm
                             {...this.props}
