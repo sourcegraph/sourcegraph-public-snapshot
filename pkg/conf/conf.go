@@ -17,7 +17,7 @@ func Get() schema.SiteConfiguration {
 
 // cfg is initialized to configuration defaults.
 var cfg = schema.SiteConfiguration{
-	MaxReposToSearch: 30,
+	MaxReposToSearch: 50,
 }
 
 func init() {
