@@ -23,7 +23,10 @@ func ParseToken(tokenString string) (*TokenPayload, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return 0, fmt.Errorf("invite: unexpected signing method %v", token.Header["alg"])
 		}
-		return conf.Get().SecretKey, nil
+		if secretKey := conf.Get().SecretKey; secretKey != "" {
+			return secretKey, nil
+		}
+		return nil, errors.New("secret key is not set in site config")
 	})
 	if err != nil {
 		return nil, err

@@ -142,7 +142,7 @@ type SiteConfiguration struct {
 	SamlSPCert                     string              `json:"samlSPCert,omitempty"`
 	SamlSPKey                      string              `json:"samlSPKey,omitempty"`
 	SearchScopes                   []SearchScope       `json:"searchScopes,omitempty"`
-	SecretKey                      string              `json:"secretKey"`
+	SecretKey                      string              `json:"secretKey,omitempty"`
 	Settings                       *Settings           `json:"settings,omitempty"`
 	SsoUserHeader                  string              `json:"ssoUserHeader,omitempty"`
 	TlsCert                        string              `json:"tlsCert,omitempty"`
