@@ -1,0 +1,11 @@
+@import './SignInSignUpPageCommon';
+
+.signup-form {
+    &__terms {
+        a:not(:hover) {
+            color: $color-primary;
+        }
+
+        margin-top: 1rem;
+    }
+}
