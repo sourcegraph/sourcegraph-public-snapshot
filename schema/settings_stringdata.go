@@ -33,6 +33,7 @@ const SettingsSchemaJSON = `{
             "description": "Scope query string"
           }
         },
+        "additionalProperties": false,
         "required": ["key", "description", "query"]
       }
     },
@@ -40,7 +41,6 @@ const SettingsSchemaJSON = `{
       "description": "Predefined search scopes",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "#/definitions/SearchScope"
       }
     }
@@ -48,6 +48,8 @@ const SettingsSchemaJSON = `{
   "definitions": {
     "SearchScope": {
       "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
       "properties": {
         "name": {
           "type": "string",
@@ -57,8 +59,7 @@ const SettingsSchemaJSON = `{
           "type": "string",
           "description": "The query string of this search scope"
         }
-      },
-      "required": ["name", "value"]
+      }
     }
   }
 }

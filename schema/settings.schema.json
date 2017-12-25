@@ -28,6 +28,7 @@
             "description": "Scope query string"
           }
         },
+        "additionalProperties": false,
         "required": ["key", "description", "query"]
       }
     },
@@ -35,7 +36,6 @@
       "description": "Predefined search scopes",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "#/definitions/SearchScope"
       }
     }
@@ -43,6 +43,8 @@
   "definitions": {
     "SearchScope": {
       "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
       "properties": {
         "name": {
           "type": "string",
@@ -52,8 +54,7 @@
           "type": "string",
           "description": "The query string of this search scope"
         }
-      },
-      "required": ["name", "value"]
+      }
     }
   }
 }

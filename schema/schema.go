@@ -39,11 +39,11 @@ type DeploymentOverrides struct {
 	Replicas   *int                           `json:"replicas,omitempty"`
 }
 
-// Github
-type Github struct {
+// GitHubConnection
+type GitHubConnection struct {
 	Certificate string   `json:"certificate,omitempty"`
 	Repos       []string `json:"repos,omitempty"`
-	Token       string   `json:"token,omitempty"`
+	Token       string   `json:"token"`
 	Url         string   `json:"url,omitempty"`
 }
 
@@ -56,15 +56,15 @@ type Phabricator struct {
 
 // Repos
 type Repos struct {
-	Callsign string `json:"callsign,omitempty"`
-	Path     string `json:"path,omitempty"`
+	Callsign string `json:"callsign"`
+	Path     string `json:"path"`
 }
 
-// ReposList
-type ReposList struct {
-	Path string `json:"path,omitempty"`
+// Repository
+type Repository struct {
+	Path string `json:"path"`
 	Type string `json:"type,omitempty"`
-	Url  string `json:"url,omitempty"`
+	Url  string `json:"url"`
 }
 
 // ResourceOverride
@@ -106,7 +106,7 @@ type SiteConfiguration struct {
 	ExecuteGradleOriginalRootPaths string              `json:"executeGradleOriginalRootPaths,omitempty"`
 	GitMaxConcurrentClones         int                 `json:"gitMaxConcurrentClones,omitempty"`
 	GitOriginMap                   string              `json:"gitOriginMap,omitempty"`
-	Github                         []Github            `json:"github,omitempty"`
+	Github                         []GitHubConnection  `json:"github,omitempty"`
 	GithubClientID                 string              `json:"githubClientID,omitempty"`
 	GithubClientSecret             string              `json:"githubClientSecret,omitempty"`
 	GithubEnterpriseAccessToken    string              `json:"githubEnterpriseAccessToken,omitempty"`
@@ -137,7 +137,7 @@ type SiteConfiguration struct {
 	PrivateArtifactRepoURL         string              `json:"privateArtifactRepoURL,omitempty"`
 	PrivateArtifactRepoUsername    string              `json:"privateArtifactRepoUsername,omitempty"`
 	RepoListUpdateInterval         int                 `json:"repoListUpdateInterval,omitempty"`
-	ReposList                      []ReposList         `json:"repos.list,omitempty"`
+	ReposList                      []Repository        `json:"repos.list,omitempty"`
 	SamlIDProviderMetadataURL      string              `json:"samlIDProviderMetadataURL,omitempty"`
 	SamlSPCert                     string              `json:"samlSPCert,omitempty"`
 	SamlSPKey                      string              `json:"samlSPKey,omitempty"`

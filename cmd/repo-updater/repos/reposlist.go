@@ -50,7 +50,7 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 	}
 }
 
-func updateRepo(ctx context.Context, repoConf schema.ReposList) error {
+func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 	repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, repoConf.Path, "", false, false)
 	if err != nil {
 		return err

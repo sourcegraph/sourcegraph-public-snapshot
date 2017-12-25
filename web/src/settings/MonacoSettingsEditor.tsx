@@ -5,8 +5,8 @@ import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import settingsSchemaJSON from './settings.schema.json'
-import siteSchemaJSON from './site.schema.json'
+import settingsSchemaJSON from '../schema/settings.schema.json'
+import siteSchemaJSON from '../schema/site.schema.json'
 import { colorTheme } from './theme'
 
 interface Props {
@@ -121,6 +121,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         const schemas: { uri: string; schema: any }[] = [
             { uri: 'https://sourcegraph.com/v1/site.schema.json#', schema: siteSchemaJSON },
             { uri: 'https://sourcegraph.com/v1/settings.schema.json#', schema: settingsSchemaJSON },
+            { uri: 'settings.schema.json#', schema: settingsSchemaJSON }, // so that relative references work
         ]
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
             validate: true,
