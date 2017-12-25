@@ -9,7 +9,7 @@
     "test": "npm run build-tests && mocha --opts mocha.opts",
     "cover": "npm run build-tests && nyc --require source-map-support/register mocha --opts mocha.opts",
     "test-e2e": "npm run build-tests && mocha --opts mocha.opts.e2e",
-    "build": "npm run graphql && npm run webpack",
+    "build": "npm run graphql && npm run schema && npm run webpack",
     "watch": "concurrently --raw \"npm run watch-graphql\" \"npm run watch-schema\" \"npm run webpack -- --watch\"",
     "webpack": "webpack --config webpack.config.ts --colors",
     "build-tests": "tsc -p ./tsconfig.test.json",
