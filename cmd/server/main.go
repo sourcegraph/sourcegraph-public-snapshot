@@ -50,10 +50,6 @@ var defaultEnv = map[string]string{
 	// only used to sync from gitolite.
 	"REPO_LIST_UPDATE_INTERVAL": "1",
 
-	// We don't want to require users to have a license. So we use the magic
-	// license which bypasses license checks.
-	"LICENSE_KEY": "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
-
 	// Env vars for higher rate limits to api.github.com
 	"GITHUB_BASE_URL":      "http://localhost:3180",
 	"GITHUB_CLIENT_ID":     "a359c6590ebe783800b1",
@@ -65,7 +61,6 @@ var defaultEnv = map[string]string{
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
 	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
-	// * TRACKING_APP_ID can be guessed from LICENSE_KEY https://github.com/sourcegraph/sourcegraph/issues/8377
 }
 
 func main() {
@@ -129,19 +124,9 @@ func main() {
 		setDefaultEnv("REDIS_MASTER_ENDPOINT", redis)
 		setDefaultEnv("SRC_SESSION_STORE_REDIS", redis)
 	}
-	// TODO Most users are using the same LICENSE_KEY, so we need to use
-	// something that can't be guessed across installations (crypto random
-	// number we save?)
-	setDefaultEnv("SRC_APP_SECRET_KEY", os.Getenv("LICENSE_KEY"))
 
 	for k, v := range defaultEnv {
 		setDefaultEnv(k, v)
-	}
-
-	// More convenient to fail now than when the page is loaded if the license
-	// is missing
-	if _, ok := os.LookupEnv("LICENSE_KEY"); !ok {
-		log.Fatal("Please set the environment variable LICENSE_KEY. Please contact sales@sourcegraph.com to obtain a license.")
 	}
 
 	// Now we put things in the right place on the FS
