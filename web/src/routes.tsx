@@ -2,6 +2,7 @@ import * as React from 'react'
 import { RouteProps } from 'react-router'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
+import { SignUpPage } from './auth/SignUpPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { OpenPage } from './open/OpenPage'
@@ -61,7 +62,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/sign-up',
-        component: SignInPage,
+        component: SignUpPage,
         exact: true,
         forceNarrowWidth: true,
     },
