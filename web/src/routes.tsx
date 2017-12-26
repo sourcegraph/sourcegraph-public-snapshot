@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RouteProps } from 'react-router'
+import { RouteComponentProps, RouteProps } from 'react-router'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
@@ -8,9 +8,12 @@ import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { OpenPage } from './open/OpenPage'
 import { RepoBrowser } from './repo/RepoBrowser'
 import { RepositoryResolver } from './repo/RepositoryResolver'
+import { parseSearchURLQuery } from './search'
 import { SavedQueries } from './search/SavedQueries'
+import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
+import { InitPage } from './site-admin/InitPage'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { canListAllRepositories } from './util/features'
 
@@ -33,7 +36,8 @@ export interface LayoutRouteProps extends RouteProps {
 export const routes: LayoutRouteProps[] = [
     {
         path: '/search',
-        component: SearchResults,
+        render: (props: RouteComponentProps<any>) =>
+            parseSearchURLQuery(props.location.search) ? <SearchResults {...props} /> : <SearchPage {...props} />,
         exact: true,
     },
     {
@@ -70,6 +74,22 @@ export const routes: LayoutRouteProps[] = [
         path: '/settings',
         component: SettingsPage,
         forceNarrowWidth: true,
+    },
+    {
+        path: '/search',
+        component: SearchResults,
+        exact: true,
+    },
+    {
+        path: '/search',
+        component: SearchResults,
+        exact: true,
+    },
+    {
+        path: '/site-admin/init',
+        exact: true,
+        component: InitPage,
+        forceNarrowWidth: false,
     },
     {
         path: '/site-admin',

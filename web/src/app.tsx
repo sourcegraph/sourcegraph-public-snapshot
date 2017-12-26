@@ -6,7 +6,7 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { fetchCurrentUser } from './auth'
@@ -14,83 +14,52 @@ import { HeroPage } from './components/HeroPage'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
-import { parseSearchURLQuery } from './search/index'
-import { SearchPage } from './search/SearchPage'
-import { InitializePage } from './settings/InitializePage'
+import { parseSearchURLQuery } from './search'
 import { colorTheme, getColorTheme } from './settings/theme'
 
-/**
- * Defines the layout of all pages that have a navbar
- */
-class Layout extends React.Component<RouteComponentProps<any>> {
-    public render(): JSX.Element | null {
-        return (
-            <div className="layout">
-                <Navbar location={this.props.location} history={this.props.history} />
-                <Switch>
-                    {routes.map((route, i) => {
-                        const isFullWidth = !route.forceNarrowWidth
-                        const Component = route.component
-                        return (
-                            <Route
-                                {...route}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                component={undefined}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={props => (
-                                    <div
-                                        className={[
-                                            'layout__app-router-container',
-                                            `layout__app-router-container--${
-                                                isFullWidth ? 'full-width' : 'restricted'
-                                            }`,
-                                        ].join(' ')}
-                                    >
-                                        {Component && <Component {...props} isFullWidth={isFullWidth} />}
-                                        {route.render && route.render(props)}
-                                    </div>
-                                )}
-                            />
-                        )
-                    })}
-                </Switch>
-            </div>
-        )
-    }
+interface LayoutProps extends RouteComponentProps<any> {
+    isLightTheme: boolean
 }
 
-/**
- * handles rendering Search or SearchResults components based on whether or not
- * the search query (e.g. '?q=foo') is in URL.
- */
-const SearchRouter = (props: RouteComponentProps<any>): JSX.Element | null => {
-    const options = parseSearchURLQuery(props.location.search)
-    if (options) {
-        return <Layout {...props} />
-    }
-    return <SearchPage {...props} />
-}
+const Layout: React.SFC<LayoutProps> = props => {
+    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
-class BackfillRedirector extends React.Component<RouteComponentProps<any>, { returnTo: string }> {
-    constructor(props: RouteComponentProps<any>) {
-        super(props)
-        const searchParams = new URLSearchParams(this.props.location.search)
-        this.state = {
-            returnTo: searchParams.get('returnTo') || window.location.href,
-        }
-    }
+    const needsSiteInit = window.context.onPrem && window.context.showOnboarding
+    const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    private renderSearchRouter = (props: RouteComponentProps<any>) => <SearchRouter {...this.props} {...props} />
-    private renderLayout = (props: RouteComponentProps<any>) => <Layout {...this.props} {...props} />
+    const hideNavbar = isSearchHomepage || isSiteInit
 
-    public render(): JSX.Element {
-        return (
+    return (
+        <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
+            {!hideNavbar && <Navbar location={props.location} history={props.history} />}
+            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
-                <Route path="/search" exact={true} render={this.renderSearchRouter} />
-                <Route render={this.renderLayout} />
+                {routes.map((route, i) => {
+                    const isFullWidth = !route.forceNarrowWidth
+                    const Component = route.component
+                    return (
+                        <Route
+                            {...route}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            component={undefined}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={props => (
+                                <div
+                                    className={[
+                                        'layout__app-router-container',
+                                        `layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`,
+                                    ].join(' ')}
+                                >
+                                    {Component && <Component {...props} isFullWidth={isFullWidth} />}
+                                    {route.render && route.render(props)}
+                                </div>
+                            )}
+                        />
+                    )
+                })}
             </Switch>
-        )
-    }
+        </div>
+    )
 }
 
 interface AppState {
@@ -132,12 +101,6 @@ class App extends React.Component<{}, AppState> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderBackfillRedirector = (props: RouteComponentProps<any>) => (
-        <div className={'theme ' + (this.state.isLightTheme ? 'theme-light' : 'theme-dark')}>
-            <BackfillRedirector {...props} />
-        </div>
-    )
-
     public render(): JSX.Element | null {
         if (this.state.error) {
             return <HeroPage icon={ErrorIcon} title={'Something happened'} subtitle={this.state.error.message} />
@@ -171,20 +134,17 @@ class App extends React.Component<{}, AppState> {
             }
             return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
         }
-        if (window.context.onPrem && window.context.showOnboarding) {
-            return (
-                <BrowserRouter>
-                    <Route path="/" component={InitializePage} />
-                </BrowserRouter>
-            )
-        }
 
         return (
             <BrowserRouter>
-                <Route path="/" component={undefined} render={this.renderBackfillRedirector} />
+                <Route path="/" render={this.renderLayout} />
             </BrowserRouter>
         )
     }
+
+    private renderLayout = (props: RouteComponentProps<any>) => (
+        <Layout {...props} isLightTheme={this.state.isLightTheme} />
+    )
 }
 
 window.addEventListener('DOMContentLoaded', () => {
