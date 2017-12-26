@@ -19,6 +19,9 @@ interface SignUpFormProps {
     location: H.Location
     history: H.History
     prefilledEmail?: string
+    autoFocus?: boolean
+    onDidSignUp?: (email: string) => void
+    buttonLabel?: string
 }
 
 interface SignUpFormState {
@@ -29,7 +32,7 @@ interface SignUpFormState {
     loading: boolean
 }
 
-class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
+export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
     private subscriptions = new Subscription()
 
     constructor(props: SignUpFormProps) {
@@ -56,6 +59,7 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                         required={true}
                         value={this.state.email}
                         disabled={this.state.loading || Boolean(this.props.prefilledEmail)}
+                        autoFocus={this.props.autoFocus}
                     />
                 </div>
                 <div className="form-group">
@@ -81,7 +85,7 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                 </div>
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        {this.state.loading ? <Loader className="icon-inline" /> : 'Sign up'}
+                        {this.state.loading ? <Loader className="icon-inline" /> : this.props.buttonLabel || 'Sign up'}
                     </button>
                 </div>
                 {signupTerms && (
@@ -151,6 +155,10 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
             if (err) {
                 console.error('auth error: ', err)
                 this.setState({ errorDescription: err.description || 'Unknown Error' })
+            } else {
+                if (this.props.onDidSignUp) {
+                    this.props.onDidSignUp(this.state.email)
+                }
             }
         }
         this.subscriptions.add(
@@ -219,6 +227,10 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                     }).then(
                         resp => {
                             if (resp.status === 200) {
+                                if (this.props.onDidSignUp) {
+                                    this.props.onDidSignUp(this.state.email)
+                                }
+
                                 const returnTo = getReturnTo(this.props.location)
                                 if (returnTo) {
                                     window.location.replace(returnTo)
