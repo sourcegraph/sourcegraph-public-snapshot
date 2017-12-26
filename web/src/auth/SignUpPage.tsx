@@ -84,7 +84,7 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                 </div>
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        Sign up
+                        {this.state.loading ? <Loader className="icon-inline" /> : 'Sign up'}
                     </button>
                 </div>
                 {signupTerms && (
@@ -98,11 +98,6 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                             Privacy Policy
                         </a>.
                     </small>
-                )}
-                {this.state.loading && (
-                    <div className="signin-signup-form__loader">
-                        <Loader className="icon-inline" />
-                    </div>
                 )}
             </form>
         )
