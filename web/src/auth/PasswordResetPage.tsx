@@ -3,7 +3,7 @@ import { WebAuth } from 'auth0-js'
 import * as React from 'react'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { VALID_PASSWORD_REGEXP } from '../settings/validation'
+import { PasswordInput } from './SignInSignUpCommon'
 
 const webAuth = new WebAuth({
     domain: window.context.auth0Domain,
@@ -41,14 +41,9 @@ class PasswordResetForm extends React.Component<{}, State> {
                     {this.state.error !== '' && <p className="password-reset-page__error">{this.state.error}</p>}
                     <p>Enter your new password.</p>
                     <div className="form-group">
-                        <input
-                            className="form-control"
+                        <PasswordInput
                             onChange={this.onPasswordFieldChange}
                             value={this.state.password}
-                            type="password"
-                            spellCheck={false}
-                            placeholder="Password"
-                            pattern={VALID_PASSWORD_REGEXP.toString().slice(1, -1)}
                             required={true}
                         />
                     </div>
