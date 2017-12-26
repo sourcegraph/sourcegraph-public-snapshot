@@ -49,9 +49,6 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                 {this.state.errorDescription !== '' && (
                     <p className="signin-signup-form__error">{this.state.errorDescription}</p>
                 )}
-                <Link className="signin-signup-form__mode" to={`/sign-in?${this.props.location.search}`}>
-                    Already have an account? Sign in.
-                </Link>
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"
@@ -299,7 +296,15 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
                     title="Sign up for Sourcegraph"
                     cta={
                         window.context.site['auth.allowSignup'] ? (
-                            <SignUpForm {...this.props} prefilledEmail={this.state.prefilledEmail} />
+                            <div>
+                                <Link
+                                    className="signin-signup-form__mode"
+                                    to={`/sign-in?${this.props.location.search}`}
+                                >
+                                    Already have an account? Sign in.
+                                </Link>
+                                <SignUpForm {...this.props} prefilledEmail={this.state.prefilledEmail} />
+                            </div>
                         ) : (
                             <p>Signup is not enabled on this server.</p>
                         )
