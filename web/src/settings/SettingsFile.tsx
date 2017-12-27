@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { eventLogger } from '../tracking/eventLogger'
 import { MonacoSettingsEditor } from './MonacoSettingsEditor'
+import { map } from 'rxjs/operators/map'
 
 interface Props {
     history: H.History
@@ -46,10 +47,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = {
-            saving: false,
-            contents: this.getPropsSettingsContentsOrEmpty(),
-        }
+        this.state = { saving: false }
+
+        // Reset state upon navigation to a different subject.
+        this.componentUpdates.pipe(map(({ settings }) => settings)).subscribe(() =>
+            this.setState({
+                contents: undefined,
+            })
+        )
 
         // We are finished saving when we receive the new settings ID and it's
         // higher than the one we saved on top of.
@@ -78,7 +83,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 this.setState({
                     saving: false,
                     editingLastKnownSettingsID: undefined,
-                    contents: this.getPropsSettingsContentsOrEmpty(settings),
+                    contents: settings ? settings.configuration.contents : undefined,
                 })
             )
         )
