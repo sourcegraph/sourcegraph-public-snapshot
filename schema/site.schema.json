@@ -238,7 +238,8 @@
       "type": "integer"
     },
     "adminUsernames": {
-      "description": "Space-separated list of usernames that indicates which users will be treated as instance admins",
+      "description":
+        "Space-separated list of usernames that indicates which users will be treated as instance admins\n\nDEPRECATED: On new site installations, admins can designate other users as admins in the site admin area. That is the preferred way to designate admins. This configuration option will be removed in a future version. All users named in this configuration setting will be designated as admins, so if the server has been run with this option once, this setting can be safely removed without loss of admin access to the named users.",
       "type": "string"
     },
     "executeGradleOriginalRootPaths": {

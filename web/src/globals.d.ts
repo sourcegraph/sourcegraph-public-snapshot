@@ -16,10 +16,6 @@ interface Window {
  */
 interface ImmutableUser {
     readonly UID: string
-    /**
-     * IsAdmin defines whether the current user has admin privileges for their org.
-     */
-    readonly IsAdmin: boolean
 }
 
 interface License {

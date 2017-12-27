@@ -7,6 +7,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
 )
 
@@ -18,8 +19,8 @@ var canReloadSite = processrestart.CanRestart()
 func (r *schemaResolver) ReloadSite(ctx context.Context) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Reloading the site is an interruptive action, so only admins
 	// may do it.
-	if !actor.FromContext(ctx).IsAdmin() {
-		return nil, errors.New("must be admin to reload site")
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
 
 	if !canReloadSite {

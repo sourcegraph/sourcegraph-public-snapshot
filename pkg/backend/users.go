@@ -3,8 +3,6 @@ package backend
 import (
 	"context"
 
-	"github.com/pkg/errors"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -18,10 +16,9 @@ func (s *users) List(ctx context.Context) (res *sourcegraph.UserList, err error)
 		return Mocks.Users.List(ctx)
 	}
 
-	actor := actor.FromContext(ctx)
 	// 🚨 SECURITY:  only admins are allowed to use this endpoint
-	if !actor.IsAdmin() {
-		return nil, errors.New("Must be an admin")
+	if err := CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
 	users, err := localstore.Users.List(ctx)
 	if err != nil {

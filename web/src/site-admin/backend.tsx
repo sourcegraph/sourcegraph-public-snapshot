@@ -13,10 +13,12 @@ export function fetchAllUsers(): Observable<GQL.IUser[]> {
             users {
                 nodes {
                     id
+                    auth0ID
                     username
                     displayName
                     email
                     createdAt
+                    siteAdmin
                     latestSettings {
                         createdAt
                         configuration {
@@ -213,6 +215,22 @@ export function updateDeploymentConfiguration(email: string, telemetryEnabled: b
     ).pipe(
         map(({ data, errors }) => {
             if (!data) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+        })
+    )
+}
+
+export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observable<void> {
+    return mutateGraphQL(
+        gql`
+    mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
+        setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) { }
+    }`,
+        { userID, siteAdmin }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
         })

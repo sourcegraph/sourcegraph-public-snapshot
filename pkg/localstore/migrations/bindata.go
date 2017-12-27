@@ -92,6 +92,8 @@
 // ../../../migrations/1513578663_user-passwords.up.sql
 // ../../../migrations/1513800341_update_username_orgname_regex.down.sql
 // ../../../migrations/1513800341_update_username_orgname_regex.up.sql
+// ../../../migrations/1514312401_add_site_admin_column_to_users.down.sql
+// ../../../migrations/1514312401_add_site_admin_column_to_users.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -1999,6 +2001,46 @@ func _1513800341_update_username_orgname_regexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514312401_add_site_admin_column_to_usersDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\xce\x2c\x49\x8d\x4f\x4c\xc9\xcd\xcc\xb3\xe6\x02\x04\x00\x00\xff\xff\x0c\x69\xd8\x5f\x2a\x00\x00\x00")
+
+func _1514312401_add_site_admin_column_to_usersDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514312401_add_site_admin_column_to_usersDownSql,
+		"1514312401_add_site_admin_column_to_users.down.sql",
+	)
+}
+
+func _1514312401_add_site_admin_column_to_usersDownSql() (*asset, error) {
+	bytes, err := _1514312401_add_site_admin_column_to_usersDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514312401_add_site_admin_column_to_users.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514312401_add_site_admin_column_to_usersUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x31\x0a\x80\x30\x0c\x05\xd0\xdd\x53\xfc\x7b\x38\xa5\x36\x4e\x31\x01\x49\x67\x29\x58\xa1\xa0\x0e\x46\xef\xef\x23\x71\x5e\xe1\x94\x84\xf1\x45\x7b\x02\x94\x33\x26\x93\xb2\x28\xa2\xbf\x6d\xab\xfb\xd5\x6f\x24\x33\x61\x52\xa8\x39\xb4\x88\x20\xf3\x4c\x45\x1c\x47\x3d\xa3\x8d\xc3\x1f\x00\x00\xff\xff\xd1\x12\x66\x89\x48\x00\x00\x00")
+
+func _1514312401_add_site_admin_column_to_usersUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514312401_add_site_admin_column_to_usersUpSql,
+		"1514312401_add_site_admin_column_to_users.up.sql",
+	)
+}
+
+func _1514312401_add_site_admin_column_to_usersUpSql() (*asset, error) {
+	bytes, err := _1514312401_add_site_admin_column_to_usersUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514312401_add_site_admin_column_to_users.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2143,6 +2185,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1513578663_user-passwords.up.sql":                            _1513578663_userPasswordsUpSql,
 	"1513800341_update_username_orgname_regex.down.sql":           _1513800341_update_username_orgname_regexDownSql,
 	"1513800341_update_username_orgname_regex.up.sql":             _1513800341_update_username_orgname_regexUpSql,
+	"1514312401_add_site_admin_column_to_users.down.sql":          _1514312401_add_site_admin_column_to_usersDownSql,
+	"1514312401_add_site_admin_column_to_users.up.sql":            _1514312401_add_site_admin_column_to_usersUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2278,6 +2322,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1513578663_user-passwords.up.sql":                            &bintree{_1513578663_userPasswordsUpSql, map[string]*bintree{}},
 	"1513800341_update_username_orgname_regex.down.sql":           &bintree{_1513800341_update_username_orgname_regexDownSql, map[string]*bintree{}},
 	"1513800341_update_username_orgname_regex.up.sql":             &bintree{_1513800341_update_username_orgname_regexUpSql, map[string]*bintree{}},
+	"1514312401_add_site_admin_column_to_users.down.sql":          &bintree{_1514312401_add_site_admin_column_to_usersDownSql, map[string]*bintree{}},
+	"1514312401_add_site_admin_column_to_users.up.sql":            &bintree{_1514312401_add_site_admin_column_to_usersUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

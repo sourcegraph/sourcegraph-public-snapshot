@@ -347,6 +347,7 @@ Foreign-key constraints:
  email_code        | text                     | 
  passwd_reset_code | text                     | 
  passwd_reset_time | timestamp with time zone | 
+ site_admin        | boolean                  | not null default false
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_auth_id_key" UNIQUE CONSTRAINT, btree (auth_id)

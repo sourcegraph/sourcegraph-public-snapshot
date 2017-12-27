@@ -54,8 +54,7 @@ func init() {
 
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
-	UID     string
-	IsAdmin bool
+	UID string
 }
 
 // JSContext is made available to JavaScript code via the
@@ -122,7 +121,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	var user *immutableUser
 	if actor.UID != "" && actor != nil {
-		user = &immutableUser{UID: actor.UID, IsAdmin: actor.IsAdmin()}
+		user = &immutableUser{UID: actor.UID}
 	}
 
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.

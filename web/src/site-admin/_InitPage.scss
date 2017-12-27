@@ -14,6 +14,7 @@
     }
 
     &__logo {
+        width: 100%;
         padding-bottom: 2rem;
     }
 
@@ -21,8 +22,17 @@
         margin-bottom: 1rem;
     }
 
-    &__input-email {
+    .signin-signup-form {
+        width: 100%;
+        max-width: inherit;
+    }
+
+    .signin-signup-form__input {
         display: block;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
     }
 
     &__label {

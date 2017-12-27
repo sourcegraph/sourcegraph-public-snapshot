@@ -168,6 +168,7 @@ func Main() error {
 	localstore.ConnectToDB("")
 
 	go bg.ApplyUserOrgMap(context.Background())
+	go bg.MigrateAdminUsernames(context.Background())
 
 	globals.AppURL, err = configureAppURL()
 	if err != nil {
