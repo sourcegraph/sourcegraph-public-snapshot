@@ -91,6 +91,16 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             Analytics
                         </NavLink>
                     </li>
+                    <li className="site-admin-sidebar__item">
+                        <NavLink
+                            to="/site-admin/telemetry"
+                            className="site-admin-sidebar__item-link"
+                            activeClassName="site-admin-sidebar__item--active"
+                            exact={true}
+                        >
+                            Telemetry
+                        </NavLink>
+                    </li>
                 </ul>
             </div>
         )
