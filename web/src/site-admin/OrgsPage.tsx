@@ -7,6 +7,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { fetchAllOrgs } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
+import { Link } from 'react-router-dom'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -43,6 +44,11 @@ export class OrgsPage extends React.Component<Props, State> {
                         Sourcegraph documentation
                     </a>{' '}
                     for information about configuring organizations.
+                </p>
+                <p>
+                    <Link to="/settings/orgs/new" className="btn btn-primary btn-sm">
+                        Create new organization
+                    </Link>
                 </p>
                 <ul className="site-admin-detail-list__list">
                     {this.state.orgs &&
