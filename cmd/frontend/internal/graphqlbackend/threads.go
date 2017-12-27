@@ -19,6 +19,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
@@ -568,7 +569,7 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 	if err != nil {
 		return err
 	}
-	if !notif.EmailIsConfigured() {
+	if !conf.CanSendEmail() {
 		return nil
 	}
 

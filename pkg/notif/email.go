@@ -1,6 +1,7 @@
 package notif
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -11,28 +12,24 @@ import (
 	"github.com/mattbaird/gochimp"
 )
 
-var mandrillEnabled bool
+var disableSilently bool
 
 var mandrill *gochimp.MandrillAPI
 
-var mandrillKey = conf.Get().MandrillKey
-
 func init() {
-	if mandrillKey != "" {
-		mandrillEnabled = true
-
+	if conf.CanSendEmail() && conf.Get().MandrillKey != "" {
 		var err error
-		mandrill, err = gochimp.NewMandrill(mandrillKey)
+		mandrill, err = gochimp.NewMandrill(conf.Get().MandrillKey)
 		if err != nil {
 			log.Panicf("could not initialize mandrill client: %s", err)
 		}
 	}
 }
 
-// Disable prevents sending of emails, even if the env var is set.
+// DisableSilently prevents sending of emails, even if the env var is set.
 // Use it in tests to ensure that they do not send live notifications.
-func Disable() {
-	mandrillEnabled = false
+func DisableSilently() {
+	disableSilently = true
 }
 
 type EmailConfig struct {
@@ -46,8 +43,12 @@ type EmailConfig struct {
 
 // SendMandrillTemplate sends an email template through mandrill.
 func SendMandrillTemplate(config *EmailConfig, templateContent []gochimp.Var, mergeVars []gochimp.Var) {
-	if !mandrillEnabled {
-		log15.Info("skipped sending email because MANDRILL_KEY is empty", "config", config)
+	if disableSilently {
+		log15.Info("skipped sending email because Mandrill key is empty", "config", config)
+		return
+	}
+	if mandrill == nil {
+		log15.Error("failed to send email because Mandrill key is empty", "config", config)
 		return
 	}
 	go func() {
@@ -65,8 +66,11 @@ func SendMandrillTemplate(config *EmailConfig, templateContent []gochimp.Var, me
 // SendMandrillTemplateBlocking sends an email template through mandrill, but
 // blocks until we have a response from Mandrill
 func SendMandrillTemplateBlocking(config *EmailConfig, templateContent []gochimp.Var, mergeVars []gochimp.Var) ([]gochimp.SendResponse, error) {
-	if !mandrillEnabled {
-		return nil, fmt.Errorf("skipped sending email because MANDRILL_KEY is empty: %#v", config)
+	if disableSilently {
+		return nil, fmt.Errorf("skipped sending email because Mandrill key is empty: %#v", config)
+	}
+	if mandrill == nil {
+		return nil, errors.New("failed to send email because Mandrill key is empty")
 	}
 	return mandrill.MessageSendTemplate(config.Template, templateContent, gochimp.Message{
 		To:          []gochimp.Recipient{{Email: config.ToEmail, Name: config.ToName}},
@@ -77,9 +81,4 @@ func SendMandrillTemplateBlocking(config *EmailConfig, templateContent []gochimp
 		TrackOpens:  true,
 		TrackClicks: true,
 	}, false)
-}
-
-// EmailIsConfigured returns true if the instance has an email configuration
-func EmailIsConfigured() bool {
-	return mandrillEnabled
 }

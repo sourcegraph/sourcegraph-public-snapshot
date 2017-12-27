@@ -87,16 +87,18 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		Email: usr.Email,
 	}
 
-	// Send verify email
-	q := make(url.Values)
-	q.Set("code", emailCode)
-	verifyLink := globals.AppURL.String() + router.Rel.URLTo(router.VerifyEmail).Path + "?" + q.Encode()
-	notif.SendMandrillTemplate(&notif.EmailConfig{
-		Template:  "verify-email",
-		FromEmail: "noreply@sourcegraph.com",
-		ToEmail:   creds.Email,
-		Subject:   "Verify your email on Sourcegraph Server",
-	}, []gochimp.Var{}, []gochimp.Var{{Name: "VERIFY_URL", Content: verifyLink}})
+	if conf.EmailVerificationRequired() {
+		// Send verify email
+		q := make(url.Values)
+		q.Set("code", emailCode)
+		verifyLink := globals.AppURL.String() + router.Rel.URLTo(router.VerifyEmail).Path + "?" + q.Encode()
+		notif.SendMandrillTemplate(&notif.EmailConfig{
+			Template:  "verify-email",
+			FromEmail: "noreply@sourcegraph.com",
+			ToEmail:   creds.Email,
+			Subject:   "Verify your email on Sourcegraph Server",
+		}, []gochimp.Var{}, []gochimp.Var{{Name: "VERIFY_URL", Content: verifyLink}})
+	}
 
 	// Write the session cookie
 	if session.StartNewSession(w, r, actor, 0); err != nil {
@@ -200,6 +202,11 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 // serveResetPasswordInit initiates the native-auth password reset flow by sending a password-reset email.
 func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
+	if !conf.CanSendEmail() {
+		httpLogAndError(w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
+		return
+	}
+
 	ctx := r.Context()
 	var creds credentials
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
