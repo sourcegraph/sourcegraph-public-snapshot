@@ -1,10 +1,8 @@
 import { Observable } from 'rxjs/Observable'
-import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
-import { gql, mutateGraphQL, queryGraphQL } from './backend/graphql'
-import { configurationCascade } from './settings/configuration'
+import { gql, queryGraphQL } from './backend/graphql'
 
 /**
  * Always represents the latest
@@ -19,32 +17,6 @@ import { configurationCascade } from './settings/configuration'
  * all expected to refresh the app.
  */
 export const currentUser = new ReplaySubject<GQL.IUser | null>(1)
-
-export const configurationCascadeFragment = gql`
-    fragment ConfigurationCascadeFields on ConfigurationCascade {
-        defaults {
-            contents
-        }
-        subjects {
-            __typename
-            ... on Org {
-                id
-                name
-            }
-            ... on User {
-                id
-                username
-            }
-            latestSettings {
-                id
-            }
-        }
-        merged {
-            contents
-            messages
-        }
-    }
-`
 
 /**
  * fetchCurrentUser can be called to fetch the current user, orgs, and config
@@ -63,12 +35,6 @@ export function fetchCurrentUser(): Observable<never> {
                 username
                 displayName
                 verified
-                latestSettings {
-                    id
-                    configuration {
-                        contents
-                    }
-                }
                 orgs {
                     id
                     name
@@ -81,37 +47,14 @@ export function fetchCurrentUser(): Observable<never> {
                     name
                 }
             }
-            configuration {
-                ...ConfigurationCascadeFields
-            }
         }
-        ${configurationCascadeFragment}
     `).pipe(
         tap(({ data, errors }) => {
             if (!data) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             currentUser.next(data.currentUser)
-            configurationCascade.next(data.configuration)
         }),
         mergeMap(() => [])
-    )
-}
-
-export function updateUserSettings(lastKnownSettingsID: number | null, contents: string): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation UpdateUserSettings($lastKnownSettingsID: Int, $contents: String!) {
-                updateUserSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
-            }
-        `,
-        { lastKnownSettingsID, contents }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            return
-        })
     )
 }

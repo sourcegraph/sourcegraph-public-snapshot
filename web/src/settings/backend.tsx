@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
 import { tap } from 'rxjs/operators/tap'
-import { configurationCascadeFragment, currentUser, fetchCurrentUser } from '../auth'
+import { currentUser, fetchCurrentUser } from '../auth'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 import { configurationCascade } from './configuration'
@@ -16,6 +16,32 @@ import { configurationCascade } from './configuration'
 export function refreshConfiguration(): Observable<never> {
     return fetchConfiguration().pipe(tap(result => configurationCascade.next(result)), mergeMap(() => []))
 }
+
+const configurationCascadeFragment = gql`
+    fragment ConfigurationCascadeFields on ConfigurationCascade {
+        defaults {
+            contents
+        }
+        subjects {
+            __typename
+            ... on Org {
+                id
+                name
+            }
+            ... on User {
+                id
+                username
+            }
+            latestSettings {
+                id
+            }
+        }
+        merged {
+            contents
+            messages
+        }
+    }
+`
 
 /**
  * Fetches the configuration from the server. Callers should use refreshConfiguration
@@ -38,6 +64,68 @@ function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.configuration
+        })
+    )
+}
+
+const settingsFragment = gql`
+    fragment SettingsFields on Settings {
+        id
+        configuration {
+            contents
+        }
+    }
+`
+
+/**
+ * Fetches the settings for the current user.
+ *
+ * @return Observable that emits the settings or `null` if it doesn't exist
+ */
+export function fetchUserSettings(): Observable<GQL.ISettings | null> {
+    return queryGraphQL(
+        gql`
+            query CurrentUserSettings() {
+                currentUser {
+                    latestSettings {
+                        ...SettingsFields
+                    }
+                }
+            }
+            ${settingsFragment}
+        `
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.currentUser) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.currentUser.latestSettings
+        })
+    )
+}
+
+/**
+ * Updates the settings for the current user.
+ *
+ * @return Observable that emits the newly updated settings
+ */
+export function updateUserSettings(lastKnownSettingsID: number | null, contents: string): Observable<GQL.ISettings> {
+    return mutateGraphQL(
+        gql`
+            mutation UpdateUserSettings($lastKnownSettingsID: Int, $contents: String!) {
+                updateUserSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+                    ...SettingsFields
+                }
+            }
+            ${settingsFragment}
+        `,
+        { lastKnownSettingsID, contents }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0) || !data.updateUserSettings) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.updateUserSettings
         })
     )
 }
