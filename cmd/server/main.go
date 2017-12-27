@@ -47,8 +47,7 @@ var defaultEnv = map[string]string{
 	"GITHUB_CLIENT_ID":     "a359c6590ebe783800b1",
 	"GITHUB_CLIENT_SECRET": "2f8c304d01ad3b23c1f6c0a3b42bd09a8694262f",
 
-	"MANDRILL_KEY": "HUBvkcrqJAJ5ufBK52nEJQ",
-	"USE_AUTH0":    "false",
+	"USE_AUTH0": "false",
 
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
