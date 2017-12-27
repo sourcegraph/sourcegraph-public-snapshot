@@ -58,3 +58,5 @@ export function fetchCurrentUser(): Observable<never> {
         mergeMap(() => [])
     )
 }
+
+fetchCurrentUser().toPromise()

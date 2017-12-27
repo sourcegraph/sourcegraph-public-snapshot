@@ -9,7 +9,6 @@ import { render } from 'react-dom'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
-import { fetchCurrentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
@@ -77,24 +76,8 @@ class App extends React.Component<{}, AppState> {
 
     private subscriptions = new Subscription()
 
-    constructor(props: {}) {
-        super(props)
-        // Fetch current user data
-        fetchCurrentUser().subscribe(undefined, error => {
-            console.error(error)
-            this.setState({ error })
-        })
-    }
-
     public componentDidMount(): void {
         this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
-    }
-
-    public componentDidUpdate(): void {
-        fetchCurrentUser().subscribe(undefined, error => {
-            console.error(error)
-            this.setState({ error })
-        })
     }
 
     public componentWillUnmount(): void {

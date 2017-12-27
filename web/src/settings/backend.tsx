@@ -504,3 +504,5 @@ export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
         })
     )
 }
+
+refreshConfiguration().toPromise()
