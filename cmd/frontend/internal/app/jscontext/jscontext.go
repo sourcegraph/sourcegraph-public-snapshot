@@ -138,7 +138,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		} else {
 			TrackingAppID = ""
 		}
-		showOnboarding = deploymentConfiguration.LastUpdated == ""
+		showOnboarding = deploymentConfiguration == nil || deploymentConfiguration.LastUpdated == ""
 	}
 
 	useAuth0Val, _ := strconv.ParseBool(useAuth0)
