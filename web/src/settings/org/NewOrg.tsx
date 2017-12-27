@@ -86,12 +86,12 @@ export class NewOrg extends React.Component<Props, State> {
                 <PageTitle title="New organization" />
                 <form className="settings-form" onSubmit={this.onSubmit}>
                     <h1>Create a new organization</h1>
-
                     <p>
-                        Create a Sourcegraph organization to bring the discussion to the code. Learn more about{' '}
-                        <a href="https://about.sourcegraph.com/products/editor" target="_blank">
-                            collaboration in Sourcegraph
-                        </a>.
+                        An organization is a set of users with associated configuration. See{' '}
+                        <a href="https://about.sourcegraph.com/docs/server/config/organizations">
+                            Sourcegraph documentation
+                        </a>{' '}
+                        for information about configuring organizations.
                     </p>
                     {this.state.error && <p className="form-text text-error">{upperFirst(this.state.error.message)}</p>}
                     <div className="form-group">
