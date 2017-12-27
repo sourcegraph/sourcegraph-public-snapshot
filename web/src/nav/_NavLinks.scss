@@ -28,4 +28,16 @@
         width: 2rem;
         height: 2rem;
     }
+
+    &__ad {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    @media (max-width: $media-lg) {
+        &__widescreen-only {
+            display: none;
+        }
+    }
 }

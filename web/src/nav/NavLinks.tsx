@@ -47,10 +47,11 @@ export class NavLinks extends React.Component<Props, State> {
                 {showDotComMarketing && (
                     <a
                         href="https://about.sourcegraph.com"
-                        className="nav-links__border-link"
+                        className="nav-links__border-link nav-links__ad"
                         onClick={this.onClickInstall}
+                        title="Install self-hosted Sourcegraph Server to search your own code"
                     >
-                        Install Sourcegraph Server
+                        Install <span className="nav-links__widescreen-only">Sourcegraph Server</span>
                     </a>
                 )}
                 {this.state.user && (
