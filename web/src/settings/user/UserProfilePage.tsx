@@ -28,9 +28,6 @@ interface State {
     displayName: string
 }
 
-/**
- * A landing page for the user to sign in or register, if not authed
- */
 export class UserProfilePage extends React.Component<Props, State> {
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
