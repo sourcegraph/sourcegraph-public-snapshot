@@ -34,6 +34,7 @@ interface Props {
     match: match<{ ulid: string }>
     location: H.Location
     history: H.History
+    user: GQL.IUser | null
 }
 
 interface State {
@@ -44,6 +45,7 @@ interface State {
     history: H.History
     colorTheme: ColorTheme
     error?: any
+    signedIn: boolean
 }
 
 type Update = (s: State) => State
@@ -60,11 +62,12 @@ export const CommentsPage = reactive<Props>(props => {
     return merge(
         props.pipe(
             withLatestFrom(colorTheme),
-            map(([{ location, history }, colorTheme]): Update => state => ({
+            map(([{ location, history, user }, colorTheme]): Update => state => ({
                 ...state,
                 location,
                 history,
                 colorTheme,
+                signedIn: !!user,
             }))
         ),
         props.pipe(
@@ -103,6 +106,7 @@ export const CommentsPage = reactive<Props>(props => {
                 history,
                 colorTheme,
                 error,
+                signedIn,
             }: State): JSX.Element | null => {
                 if (error) {
                     if (error.code === EPERMISSIONDENIED) {
@@ -125,7 +129,6 @@ export const CommentsPage = reactive<Props>(props => {
                 }
 
                 // If not logged in, redirect to sign in
-                const signedIn = window.context.user
                 const newUrl = new URL(window.location.href)
                 newUrl.pathname = '/sign-in'
                 newUrl.searchParams.set('returnTo', window.location.href)

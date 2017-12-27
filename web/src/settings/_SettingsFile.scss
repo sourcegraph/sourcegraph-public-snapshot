@@ -4,6 +4,10 @@
     width: 100%;
     margin-top: 2.5rem;
     line-height: 120%;
+
+    &__error {
+        color: $color-error;
+    }
 }
 
 .settings-file {

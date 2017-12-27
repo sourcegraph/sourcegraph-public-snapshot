@@ -23,6 +23,7 @@ interface SettingsPageProps {
     history: H.History
     location: H.Location
     match: match<{}>
+    user: GQL.IUser | null
 }
 
 /**
@@ -31,7 +32,7 @@ interface SettingsPageProps {
 export class SettingsPage extends React.Component<SettingsPageProps> {
     public render(): JSX.Element | null {
         // If not logged in, redirect to sign in
-        if (!window.context.user) {
+        if (!this.props.user) {
             const currUrl = new URL(window.location.href)
             const newUrl = new URL(window.location.href)
             newUrl.pathname = currUrl.pathname === '/settings/accept-invite' ? '/sign-up' : '/sign-in'
@@ -41,30 +42,19 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
         }
         return (
             <div className="settings-page">
-                <SettingsSidebar history={this.props.history} location={this.props.location} />
+                <SettingsSidebar history={this.props.history} location={this.props.location} user={this.props.user} />
                 <div className="settings-page__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
-                        <Route
-                            path={this.props.match.url}
-                            // tslint:disable-next-line
-                            render={props => <UserProfilePage {...props} />}
-                            exact={true}
-                        />
+                        <Route path={this.props.match.url} component={UserProfilePage} exact={true} />
                         <Route
                             path={`${this.props.match.url}/accept-invite`}
-                            // tslint:disable-next-line
-                            render={props => <AcceptInvitePage {...props} />}
+                            component={AcceptInvitePage}
                             exact={true}
                         />
                         <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
                         <Route path={`${this.props.match.url}/orgs/new`} component={NewOrg} exact={true} />
-                        <Route
-                            path={`${this.props.match.url}/orgs/:orgName`}
-                            // tslint:disable-next-line
-                            render={props => <Org {...props} />}
-                            exact={true}
-                        />
+                        <Route path={`${this.props.match.url}/orgs/:orgName`} component={Org} exact={true} />
                         <Route component={SettingsNotFoundPage} />
                     </Switch>
                 </div>

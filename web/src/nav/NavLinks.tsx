@@ -13,20 +13,15 @@ interface Props {
 }
 
 interface State {
-    user: GQL.IUser | ImmutableUser | null
+    user?: GQL.IUser | null
 }
 
 const isGQLUser = (val: any): val is GQL.IUser => val && typeof val === 'object' && val.__typename === 'User'
 
 export class NavLinks extends React.Component<Props, State> {
-    private subscriptions = new Subscription()
+    public state: State = {}
 
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            user: window.context.user,
-        }
-    }
+    private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -68,8 +63,8 @@ export class NavLinks extends React.Component<Props, State> {
                         Browse
                     </Link>
                 )}
-                {window.context.user &&
-                    window.context.user.IsAdmin && (
+                {this.state.user &&
+                    this.state.user.siteAdmin && (
                         <Link to="/site-admin" className="nav-links__link">
                             Admin
                         </Link>

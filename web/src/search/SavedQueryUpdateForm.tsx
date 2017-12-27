@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { concat } from 'rxjs/operators/concat'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { fetchCurrentUser } from '../auth'
+import { refreshConfiguration } from '../settings/backend'
 import { createSavedQuery, deleteSavedQuery, updateSavedQuery } from './backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
@@ -35,7 +35,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
     if (props.savedQuery.subject.id !== fields.subject) {
         return createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.scopeQuery).pipe(
             mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id)),
-            mergeMap(() => fetchCurrentUser().pipe(concat([null])))
+            mergeMap(() => refreshConfiguration().pipe(concat([null])))
         )
     }
 
