@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,8 +10,8 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
 )
@@ -54,7 +53,7 @@ func (r *siteResolver) ID() graphql.ID { return marshalSiteID(r.id) }
 func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 	return &siteConfigurationResolver{}, nil
@@ -80,30 +79,16 @@ func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 }
 
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
-	return canReloadSite && actor.FromContext(ctx).IsAdmin()
+	err := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	return canReloadSite && err == nil
 }
 
 type siteConfigurationResolver struct{}
 
-func checkCanViewOrUpdateSiteConfiguration(ctx context.Context) error {
-	// checkIsAdmin returns an error if the actor is not an admin. The site configuration
-	// contains secret tokens and credentials, so only admins may view/update it.
-	//
-	// 🚨 SECURITY: checkIsAdmin MUST be called anytime a siteConfigurationResolver struct
-	// value is created. To be extra safe, other *siteConfigurationResolver methods that
-	// edit/return the config should also call checkIsAdmin (in case new code is committed
-	// that, e.g., accidentally constructs a *siteConfigurationResolver without performing
-	// the is-admin check).
-	if !actor.FromContext(ctx).IsAdmin() {
-		return errors.New("must be admin to view/update site configuration")
-	}
-	return nil
-}
-
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return "", err
 	}
 	return conf.Raw(), nil
@@ -112,7 +97,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (stri
 func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*string, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +143,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := checkCanViewOrUpdateSiteConfiguration(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 

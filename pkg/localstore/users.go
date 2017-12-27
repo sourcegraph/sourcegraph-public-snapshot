@@ -276,6 +276,10 @@ func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegrap
 }
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
+	if Mocks.Users.GetByCurrentAuthUser != nil {
+		return Mocks.Users.GetByCurrentAuthUser(ctx)
+	}
+
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")

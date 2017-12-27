@@ -7,6 +7,7 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -173,10 +174,9 @@ func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 }
 
 func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, error) {
-	actor := actor.FromContext(ctx)
 	// 🚨 SECURITY:  only admins are allowed to use this endpoint
-	if !actor.IsAdmin() {
-		return nil, errors.New("Must be an admin")
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
 	if r.user == nil {
 		return nil, errors.New("Could not resolve activity on nil user")
