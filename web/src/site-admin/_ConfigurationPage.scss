@@ -18,10 +18,12 @@
 
     &__editor-actions {
         display: flex;
+        flex-wrap: wrap;
         margin-bottom: 0.5rem;
     }
 
     &__editor-action {
-        margin-right: 0.5rem;
+        margin: 0.25rem 0.5rem 0.25rem 0;
+        flex: 0 auto;
     }
 }
