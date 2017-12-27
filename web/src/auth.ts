@@ -60,4 +60,6 @@ export function refreshCurrentUser(): Observable<never> {
     )
 }
 
-refreshCurrentUser().toPromise()
+refreshCurrentUser()
+    .toPromise()
+    .then(() => void 0, err => console.error(err))

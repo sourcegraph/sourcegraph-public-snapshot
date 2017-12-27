@@ -19,16 +19,20 @@ class EventLogger {
             // Subscribe to the currentUser Subject to send a success response back to the extension
             // right now, and on any future user changes.
             currentUser.subscribe(user => {
-                const detail = {
-                    deviceId: telligent.getTelligentDuid(),
-                    userId: user ? user.email : undefined,
-                }
-                document.dispatchEvent(new CustomEvent('sourcegraph:identify', { detail }))
+                const detail = { deviceId: telligent.getTelligentDuid(), userId: user ? user.email : undefined }
+                document.dispatchEvent(
+                    new CustomEvent('sourcegraph:identify', {
+                        detail,
+                    })
+                )
             })
         })
 
+        // tslint:disable-next-line deprecation
         if (window.context.user) {
             // TODO(dan): update with sourcegraphID from JS Context once available
+            //
+            // tslint:disable-next-line deprecation
             this.updateUser({ auth0ID: window.context.user.UID, sourcegraphID: null, username: null, email: null })
         }
 
@@ -138,6 +142,7 @@ class EventLogger {
     private decorateEventProperties(eventProperties: any): any {
         const props = {
             ...eventProperties,
+            // tslint:disable-next-line deprecation
             is_authed: window.context.user ? 'true' : 'false',
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }

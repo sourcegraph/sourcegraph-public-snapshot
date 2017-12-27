@@ -46,7 +46,7 @@ interface SourcegraphContext {
      * in/authenticated.
      *
      * @deprecated use currentUser in ./auth.ts instead
-     **/
+     */
     readonly user: ImmutableUser | null
 
     sentryDSN: string
