@@ -304,6 +304,7 @@ type User struct {
 	CreatedAt   time.Time `json:"createdAt,omitempty"`
 	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
 	Verified    bool      `json:"verified,omitempty"`
+	SiteAdmin   bool      `json:"siteAdmin,omitempty"`
 }
 
 // OrgRepo represents a repo that exists on a native client's filesystem, but

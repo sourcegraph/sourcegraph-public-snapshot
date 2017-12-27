@@ -21,6 +21,10 @@ Before cutting a new release, please:
 
 * Online site configuration editing and reloading
 
+### Changed
+
+* Site admins are now configured in the site admin area instead of in the `adminUsernames` config key or `ADMIN_USERNAMES` env var. Users specified in those deprecated configs will be designated as site admins in the database upon server startup until those configs are removed in a future release.
+
 ## 2.3.9
 
 ### Fixed

@@ -115,10 +115,14 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 		err = tx.Commit()
 	}()
 
+	// Make this user a site admin if they're the first user.
+	const makeSiteAdminSQLExpr = `(SELECT COUNT(*) FROM users) = 0`
+	var isSiteAdmin bool
+
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
-		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id)
+		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
+		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -159,6 +163,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 		AvatarURL:   avatarURL,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
+		SiteAdmin:   isSiteAdmin,
 	}, nil
 }
 
@@ -216,6 +221,11 @@ func (u *users) Update(ctx context.Context, id int32, username *string, displayN
 	}
 
 	return user, nil
+}
+
+func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
+	_, err := globalDB.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", isSiteAdmin, id)
+	return err
 }
 
 // CheckAndDecrementInviteQuota should be called before the user (identified by userID) is
@@ -321,7 +331,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.email_code is null FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.email_code is null, u.site_admin FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +341,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified)
+		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
