@@ -1,6 +1,7 @@
 package invite
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
@@ -18,15 +19,24 @@ type TokenPayload struct {
 	Email   string
 }
 
+func getSecretKey() ([]byte, error) {
+	encoded := conf.Get().SecretKey
+	if encoded == "" {
+		return nil, errors.New("secret key is not set in site config")
+	}
+	v, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil, errors.New("error base64-decoding secret key")
+	}
+	return v, err
+}
+
 func ParseToken(tokenString string) (*TokenPayload, error) {
 	payload, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return 0, fmt.Errorf("invite: unexpected signing method %v", token.Header["alg"])
 		}
-		if secretKey := conf.Get().SecretKey; secretKey != "" {
-			return secretKey, nil
-		}
-		return nil, errors.New("secret key is not set in site config")
+		return getSecretKey()
 	})
 	if err != nil {
 		return nil, err
@@ -59,7 +69,11 @@ func CreateOrgToken(email string, org *sourcegraph.Org) (string, error) {
 		"orgName": org.Name, // So the accept invite UI can display the name of the org
 		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
 	})
-	return payload.SignedString(conf.Get().SecretKey)
+	key, err := getSecretKey()
+	if err != nil {
+		return "", err
+	}
+	return payload.SignedString(key)
 }
 
 func SendEmail(inviteEmail, fromName, orgName, inviteURL string) {
