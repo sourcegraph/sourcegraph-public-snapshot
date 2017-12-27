@@ -758,6 +758,8 @@ type User implements Node, ConfigurationSubject {
 	createdAt: String
 	updatedAt: String
 	verified: Boolean!
+	# Whether the user is a site admin.
+	siteAdmin: Boolean!
 	# The latest settings for the user.
 	latestSettings: Settings
 	orgs: [Org!]!

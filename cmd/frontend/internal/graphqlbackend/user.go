@@ -87,6 +87,12 @@ func (r *userResolver) Verified() bool {
 	return r.user.Verified
 }
 
+func (r *userResolver) SiteAdmin() bool {
+	// TODO(sqs): temp implementation until https://github.com/sourcegraph/sourcegraph/pull/8698
+	// is merged
+	return (&actor.Actor{Login: r.user.Username}).IsAdmin()
+}
+
 // CreateUser creates a new native auth (non-SSO) user.
 func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	Username    string
