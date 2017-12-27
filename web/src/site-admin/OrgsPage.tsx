@@ -1,13 +1,13 @@
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { fetchAllOrgs } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
-import { Link } from 'react-router-dom'
 
 interface Props extends RouteComponentProps<any> {}
 
