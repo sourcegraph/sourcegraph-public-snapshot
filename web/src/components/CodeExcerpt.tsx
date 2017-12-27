@@ -42,7 +42,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             colorTheme.subscribe(theme =>
-                this.setState({ isLightTheme: theme === 'light' }, () => this.fetchContents(this.props))
+                this.setState({ isLightTheme: theme === 'light' }, () => {
+                    if (this.isVisible) {
+                        this.fetchContents(this.props)
+                    }
+                })
             )
         )
     }
