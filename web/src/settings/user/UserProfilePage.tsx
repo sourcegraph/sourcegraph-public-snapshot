@@ -9,7 +9,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser, fetchCurrentUser } from '../../auth'
+import { currentUser, refreshCurrentUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { updateUser } from '../backend'
@@ -72,7 +72,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                         }).pipe(catchError(this.handleError))
                     ),
                     tap(() => this.setState({ loading: false, error: undefined, saved: true })),
-                    mergeMap(() => fetchCurrentUser().pipe(concat([null])))
+                    mergeMap(() => refreshCurrentUser().pipe(concat([null])))
                 )
                 .subscribe(() => {
                     const searchParams = new URLSearchParams(this.props.location.search)

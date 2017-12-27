@@ -19,10 +19,10 @@ import { gql, queryGraphQL } from './backend/graphql'
 export const currentUser = new ReplaySubject<GQL.IUser | null>(1)
 
 /**
- * fetchCurrentUser can be called to fetch the current user, orgs, and config
+ * refreshCurrentUser can be called to fetch the current user, orgs, and config
  * state from the remote. Emits no items, completes when done.
  */
-export function fetchCurrentUser(): Observable<never> {
+export function refreshCurrentUser(): Observable<never> {
     return queryGraphQL(gql`
         query CurrentAuthState {
             currentUser {
@@ -59,4 +59,4 @@ export function fetchCurrentUser(): Observable<never> {
     )
 }
 
-fetchCurrentUser().toPromise()
+refreshCurrentUser().toPromise()

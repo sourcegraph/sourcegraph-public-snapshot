@@ -18,7 +18,7 @@ import { scan } from 'rxjs/operators/scan'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
-import { fetchCurrentUser } from '../../auth'
+import { refreshCurrentUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { acceptUserInvite } from '../backend'
@@ -105,7 +105,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                                 }),
                                 mergeMap(status =>
                                     // Reload user
-                                    fetchCurrentUser()
+                                    refreshCurrentUser()
                                         // Redirect
                                         .pipe(
                                             concat([
