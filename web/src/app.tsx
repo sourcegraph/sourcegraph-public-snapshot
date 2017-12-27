@@ -9,6 +9,7 @@ import { render } from 'react-dom'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
+import { currentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
@@ -18,6 +19,7 @@ import { colorTheme, getColorTheme } from './settings/theme'
 
 interface LayoutProps extends RouteComponentProps<any> {
     isLightTheme: boolean
+    user: GQL.IUser | null
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -27,6 +29,8 @@ const Layout: React.SFC<LayoutProps> = props => {
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
     const hideNavbar = isSearchHomepage || isSiteInit
+
+    const transferProps = { user: props.user }
 
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
@@ -49,8 +53,8 @@ const Layout: React.SFC<LayoutProps> = props => {
                                         `layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`,
                                     ].join(' ')}
                                 >
-                                    {Component && <Component {...props} isFullWidth={isFullWidth} />}
-                                    {route.render && route.render(props)}
+                                    {Component && <Component {...props} {...transferProps} isFullWidth={isFullWidth} />}
+                                    {route.render && route.render({ ...props, ...transferProps })}
                                 </div>
                             )}
                         />
@@ -63,6 +67,7 @@ const Layout: React.SFC<LayoutProps> = props => {
 
 interface AppState {
     error?: Error
+    user?: GQL.IUser | null
     isLightTheme: boolean
 }
 
@@ -77,6 +82,7 @@ class App extends React.Component<{}, AppState> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
         this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
     }
 
@@ -118,6 +124,10 @@ class App extends React.Component<{}, AppState> {
             return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
         }
 
+        if (this.state.user === undefined) {
+            return null
+        }
+
         return (
             <BrowserRouter>
                 <Route path="/" render={this.renderLayout} />
@@ -125,8 +135,8 @@ class App extends React.Component<{}, AppState> {
         )
     }
 
-    private renderLayout = (props: RouteComponentProps<any>) => (
-        <Layout {...props} isLightTheme={this.state.isLightTheme} />
+    private renderLayout = (props: LayoutProps) => (
+        <Layout {...props} user={this.state.user!} isLightTheme={this.state.isLightTheme} />
     )
 }
 

@@ -23,6 +23,7 @@ import { UserAvatar } from './user/UserAvatar'
 interface Props {
     history: H.History
     location: H.Location
+    user: GQL.IUser | null
 }
 
 interface State {
@@ -106,8 +107,8 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </div>
                         </NavLink>
                     </li>
-                    {window.context.user &&
-                        window.context.user.IsAdmin && (
+                    {this.props.user &&
+                        this.props.user.siteAdmin && (
                             <ul>
                                 <li className="settings-sidebar__item">
                                     <NavLink

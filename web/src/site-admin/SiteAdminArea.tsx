@@ -24,6 +24,7 @@ interface SettingsPageProps {
     history: H.History
     location: H.Location
     match: match<{}>
+    user: GQL.IUser | null
 }
 
 /**
@@ -32,7 +33,7 @@ interface SettingsPageProps {
 export class SiteAdminArea extends React.Component<SettingsPageProps> {
     public render(): JSX.Element | null {
         // If not logged in, redirect to sign in.
-        if (!window.context.user) {
+        if (!this.props.user) {
             const newUrl = new URL(window.location.href)
             newUrl.pathname = '/sign-in'
             // Return to the current page after sign up/in.
@@ -40,27 +41,46 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
             return <Redirect to={newUrl.pathname + newUrl.search} />
         }
 
+        const transferProps = { user: this.props.user }
+
         return (
             <div className="site-admin-area">
                 <SiteAdminSidebar history={this.props.history} location={this.props.location} />
                 <div className="site-admin-area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}
-                        <Route path={this.props.match.url} component={OverviewPage} exact={true} />
+                        <Route path={this.props.match.url} component={OverviewPage} exact={true} {...transferProps} />
                         <Route
                             path={`${this.props.match.url}/configuration`}
                             component={ConfigurationPage}
                             exact={true}
+                            {...transferProps}
                         />
                         <Route
                             path={`${this.props.match.url}/repositories`}
                             component={RepositoriesPage}
                             exact={true}
+                            {...transferProps}
                         />
-                        <Route path={`${this.props.match.url}/organizations`} component={OrgsPage} exact={true} />
-                        <Route path={`${this.props.match.url}/users`} component={AllUsersPage} exact={true} />
-                        <Route path={`${this.props.match.url}/analytics`} component={AnalyticsPage} exact={true} />
-                        <Route component={NotFoundPage} />
+                        <Route
+                            path={`${this.props.match.url}/organizations`}
+                            component={OrgsPage}
+                            exact={true}
+                            {...transferProps}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/users`}
+                            component={AllUsersPage}
+                            exact={true}
+                            {...transferProps}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/analytics`}
+                            component={AnalyticsPage}
+                            exact={true}
+                            {...transferProps}
+                        />
+                        <Route component={NotFoundPage} {...transferProps} />
                     </Switch>
                 </div>
             </div>

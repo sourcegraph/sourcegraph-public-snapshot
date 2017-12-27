@@ -41,7 +41,12 @@ interface SourcegraphContext {
     csrfToken: string
     userAgentIsBot: boolean
 
-    /** The currently logged in user or null if the user is not signed in/authenticated */
+    /**
+     * The currently logged in user or null if the user is not signed
+     * in/authenticated.
+     *
+     * @deprecated use currentUser in ./auth.ts instead
+     **/
     readonly user: ImmutableUser | null
 
     sentryDSN: string
