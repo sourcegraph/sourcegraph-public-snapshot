@@ -24,7 +24,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -70,7 +69,6 @@ type JSContext struct {
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
-	Features       interface{}       `json:"features"`
 	User           *immutableUser    `json:"user"`
 
 	GithubEnterpriseURLs map[string]string     `json:"githubEnterpriseURLs"`
@@ -150,7 +148,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		UserAgentIsBot:       isBot(req.UserAgent()),
 		AssetsRoot:           assets.URL("/").String(),
 		Version:              env.Version,
-		Features:             feature.Features,
 		User:                 user,
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
