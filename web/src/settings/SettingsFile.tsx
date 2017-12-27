@@ -2,12 +2,12 @@ import * as H from 'history'
 import * as React from 'react'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
+import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { eventLogger } from '../tracking/eventLogger'
 import { MonacoSettingsEditor } from './MonacoSettingsEditor'
-import { map } from 'rxjs/operators/map'
 
 interface Props {
     history: H.History
