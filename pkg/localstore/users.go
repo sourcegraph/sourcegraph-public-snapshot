@@ -305,7 +305,7 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames 
 }
 
 func (u *users) List(ctx context.Context) ([]*sourcegraph.User, error) {
-	return u.getBySQL(ctx, "")
+	return u.getBySQL(ctx, "ORDER BY id ASC")
 }
 
 func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
