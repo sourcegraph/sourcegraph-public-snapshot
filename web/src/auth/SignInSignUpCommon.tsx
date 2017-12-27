@@ -1,6 +1,5 @@
 import * as H from 'history'
 import * as React from 'react'
-import { VALID_PASSWORD_REGEXP } from '../settings/validation'
 
 export const PasswordInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input
@@ -8,7 +7,7 @@ export const PasswordInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement
         className={`form-control ${props.className || ''}`}
         type="password"
         placeholder="Password"
-        pattern={VALID_PASSWORD_REGEXP.toString().slice(1, -1)}
+        minLength={window.context.debug ? 1 : 6}
     />
 )
 

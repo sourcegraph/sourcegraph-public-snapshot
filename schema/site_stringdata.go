@@ -273,6 +273,11 @@ const SiteSchemaJSON = `{
       "description": "A secret key for this site, used for generating org invites.",
       "type": "string"
     },
+    "auth.allowSignup": {
+      "description":
+        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.",
+      "type": "boolean"
+    },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
       "$ref": "settings.schema.json#"

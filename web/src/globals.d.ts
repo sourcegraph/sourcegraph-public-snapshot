@@ -115,6 +115,13 @@ interface SourcegraphContext {
      * Use Auth0 authentication
      */
     useAuth0: boolean
+
+    /**
+     * A subset of the site configuration. Not all fields are set.
+     */
+    site: {
+        'auth.allowSignup': boolean
+    }
 }
 
 declare module '*.json' {

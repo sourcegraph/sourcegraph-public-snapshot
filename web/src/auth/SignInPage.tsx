@@ -8,6 +8,7 @@ import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { userForgotPassword } from '../util/features'
 import { EmailInput, getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface SignInFormProps {
@@ -39,9 +40,11 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
                 {this.state.errorDescription !== '' && (
                     <p className="signin-signup-form__error">{this.state.errorDescription}</p>
                 )}
-                <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
-                    Don't have an account? Sign up.
-                </Link>
+                {window.context.site['auth.allowSignup'] && (
+                    <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
+                        Don't have an account? Sign up.
+                    </Link>
+                )}
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"
@@ -59,9 +62,11 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
                         required={true}
                         disabled={this.state.loading}
                     />
-                    <small className="form-text">
-                        <Link to="/password-reset">Forgot password?</Link>
-                    </small>
+                    {userForgotPassword && (
+                        <small className="form-text">
+                            <Link to="/password-reset">Forgot password?</Link>
+                        </small>
+                    )}
                 </div>
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>

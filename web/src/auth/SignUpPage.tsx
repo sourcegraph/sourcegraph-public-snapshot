@@ -11,6 +11,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { VALID_USERNAME_REGEXP } from '../settings/validation'
 import { eventLogger } from '../tracking/eventLogger'
+import { signupTerms } from '../util/features'
 import { isUsernameAvailable } from './backend'
 import { EmailInput, getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
@@ -48,9 +49,6 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                 {this.state.errorDescription !== '' && (
                     <p className="signin-signup-form__error">{this.state.errorDescription}</p>
                 )}
-                <Link className="signin-signup-form__mode" to={`/sign-in?${this.props.location.search}`}>
-                    Already have an account? Sign in.
-                </Link>
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"
@@ -83,23 +81,20 @@ class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
                 </div>
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        Sign up
+                        {this.state.loading ? <Loader className="icon-inline" /> : 'Sign up'}
                     </button>
                 </div>
-                <small className="form-text signup-form__terms">
-                    By signing up, you agree to our{' '}
-                    <a href="https://about.sourcegraph.com/terms" target="_blank">
-                        Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="https://about.sourcegraph.com/privacy" target="_blank">
-                        Privacy Policy
-                    </a>.
-                </small>
-                {this.state.loading && (
-                    <div className="signin-signup-form__loader">
-                        <Loader className="icon-inline" />
-                    </div>
+                {signupTerms && (
+                    <small className="form-text signup-form__terms">
+                        By signing up, you agree to our{' '}
+                        <a href="https://about.sourcegraph.com/terms" target="_blank">
+                            Terms of Service
+                        </a>{' '}
+                        and{' '}
+                        <a href="https://about.sourcegraph.com/privacy" target="_blank">
+                            Privacy Policy
+                        </a>.
+                    </small>
                 )}
             </form>
         )
@@ -299,7 +294,21 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
                 <HeroPage
                     icon={UserIcon}
                     title="Sign up for Sourcegraph"
-                    cta={<SignUpForm {...this.props} prefilledEmail={this.state.prefilledEmail} />}
+                    cta={
+                        window.context.site['auth.allowSignup'] ? (
+                            <div>
+                                <Link
+                                    className="signin-signup-form__mode"
+                                    to={`/sign-in?${this.props.location.search}`}
+                                >
+                                    Already have an account? Sign in.
+                                </Link>
+                                <SignUpForm {...this.props} prefilledEmail={this.state.prefilledEmail} />
+                            </div>
+                        ) : (
+                            <p>Signup is not enabled on this server.</p>
+                        )
+                    }
                 />
             </div>
         )

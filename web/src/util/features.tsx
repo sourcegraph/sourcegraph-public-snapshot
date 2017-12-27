@@ -14,3 +14,17 @@ export const canListAllRepositories = window.context.onPrem || window.context.de
  * that are intended for Sourcegraph.com.
  */
 export const showDotComMarketing = !window.context.onPrem || window.context.debug
+
+/**
+ * Whether the application supports the user "forgot-password" flow.
+ *
+ * TODO(sqs): This actually is determined by whether the user is non-SSO and
+ * the server has Mandrill enabled, but we don't yet have a way of knowing that
+ * here and this is a good enough proxy.
+ */
+export const userForgotPassword = !window.context.onPrem
+
+/**
+ * Whether the signup form should show terms and privacy policy links.
+ */
+export const signupTerms = !window.context.onPrem

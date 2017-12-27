@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"encoding/base64"
@@ -50,6 +51,9 @@ func nativeAuthID(email string) string {
 
 // serveSignUp serves the native-auth sign-up endpoint
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
+	if !conf.Get().AuthAllowSignup {
+		http.Error(w, "signup is not enabled", http.StatusNotFound)
+	}
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -338,6 +342,10 @@ func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 	var userCreateErr error
 	if dbUser == nil {
+		if !conf.Get().AuthAllowSignup {
+			return errors.New("signup is not enabled")
+		}
+
 		// Create the user in our DB if the user just signed up via Auth0. There is a TOCTTOU
 		// bug here; their username may no longer be available. Because this is a rare case and
 		// we are removing Auth0 soon, we ignore it.
