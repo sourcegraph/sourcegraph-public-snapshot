@@ -1,7 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as H from 'history'
 import * as React from 'react'
-import { match, Route, Switch } from 'react-router'
+import { match, Route, RouteProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AllUsersPage } from './AllUsersPage'
@@ -41,7 +41,24 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
             return <Redirect to={newUrl.pathname + newUrl.search} />
         }
 
-        const transferProps = { user: this.props.user }
+        // Transfer the user prop to the routes' components.
+        const RouteWithProps = (props: RouteProps): React.ReactElement<Route> => (
+            <Route
+                {...props}
+                component={undefined}
+                // tslint:disable-next-line:jsx-no-lambda
+                render={props2 => {
+                    const finalProps = { ...props2, user: this.props.user }
+                    if (props.component) {
+                        return React.createElement(props.component, finalProps)
+                    }
+                    if (props.render) {
+                        return props.render(finalProps)
+                    }
+                    return null
+                }}
+            />
+        )
 
         return (
             <div className="site-admin-area">
@@ -49,38 +66,29 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
                 <div className="site-admin-area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}
-                        <Route path={this.props.match.url} component={OverviewPage} exact={true} {...transferProps} />
-                        <Route
+                        <RouteWithProps path={this.props.match.url} component={OverviewPage} exact={true} />
+                        <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
                             component={ConfigurationPage}
                             exact={true}
-                            {...transferProps}
                         />
-                        <Route
+                        <RouteWithProps
                             path={`${this.props.match.url}/repositories`}
                             component={RepositoriesPage}
                             exact={true}
-                            {...transferProps}
                         />
-                        <Route
+                        <RouteWithProps
                             path={`${this.props.match.url}/organizations`}
                             component={OrgsPage}
                             exact={true}
-                            {...transferProps}
                         />
-                        <Route
-                            path={`${this.props.match.url}/users`}
-                            component={AllUsersPage}
-                            exact={true}
-                            {...transferProps}
-                        />
-                        <Route
+                        <RouteWithProps path={`${this.props.match.url}/users`} component={AllUsersPage} exact={true} />
+                        <RouteWithProps
                             path={`${this.props.match.url}/analytics`}
                             component={AnalyticsPage}
                             exact={true}
-                            {...transferProps}
                         />
-                        <Route component={NotFoundPage} {...transferProps} />
+                        <RouteWithProps component={NotFoundPage} />
                     </Switch>
                 </div>
             </div>

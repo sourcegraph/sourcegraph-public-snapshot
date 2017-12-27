@@ -8,7 +8,9 @@ import { pluralize } from '../util/strings'
 import { fetchAllUsers } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<any> {
+    user: GQL.IUser
+}
 
 export interface State {
     users?: GQL.IUser[]
