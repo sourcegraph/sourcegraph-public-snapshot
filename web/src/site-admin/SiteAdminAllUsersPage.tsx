@@ -153,26 +153,13 @@ interface Props extends RouteComponentProps<any> {
 
 export interface State {
     users?: GQL.IUser[]
-
-    /**
-     * Errors that occurred while performing an action on a user.
-     */
-    userErrorDescription: Map<GQLID, string>
-
-    /**
-     * Whether an action is currently being performed on a user.
-     */
-    userLoading: Set<GQLID>
 }
 
 /**
  * A page displaying the users on this site.
  */
 export class SiteAdminAllUsersPage extends React.Component<Props, State> {
-    public state: State = {
-        userErrorDescription: new Map<GQLID, string>(),
-        userLoading: new Set<GQLID>(),
-    }
+    public state: State = {}
 
     private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()
