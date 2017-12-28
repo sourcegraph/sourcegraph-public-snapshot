@@ -14,7 +14,7 @@ export interface State {
 /**
  * A page displaying usage analytics for the site.
  */
-export class AnalyticsPage extends React.Component<Props, State> {
+export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()

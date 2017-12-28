@@ -17,7 +17,7 @@ export interface State {
 /**
  * A page displaying the repositories on this site.
  */
-export class RepositoriesPage extends React.Component<Props, State> {
+export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -34,7 +34,7 @@ export class RepositoriesPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="site-admin-detail-list site-admin-repos-page">
+            <div className="site-admin-detail-list site-admin-repositories-page">
                 <PageTitle title="Repositories" />
                 <h2>Repositories</h2>
                 <p>
@@ -47,13 +47,16 @@ export class RepositoriesPage extends React.Component<Props, State> {
                 <ul className="site-admin-detail-list__list">
                     {this.state.repos &&
                         this.state.repos.map(repo => (
-                            <li key={repo.id} className="site-admin-detail-list__item site-admin-repos-page__repo">
-                                <div className="site-admin-detail-list__header site-admin-repos-page__repo-header">
+                            <li
+                                key={repo.id}
+                                className="site-admin-detail-list__item site-admin-repositories-page__repo"
+                            >
+                                <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
                                     <Link to={`/${repo.uri}`} className="site-admin-detail-list__name">
                                         {repo.uri}
                                     </Link>
                                 </div>
-                                <ul className="site-admin-detail-list__info site-admin-repos-page__repo-info">
+                                <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
                                     <li>ID: {repo.id}</li>
                                     {repo.createdAt && <li>Created: {format(repo.createdAt, 'YYYY-MM-DD')}</li>}
                                 </ul>

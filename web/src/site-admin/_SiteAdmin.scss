@@ -1,10 +1,10 @@
-@import './ConfigurationPage';
-@import './OrgsPage';
-@import './OverviewPage';
-@import './RepositoriesPage';
-@import './Sidebar';
-@import './TelemetryPage';
-@import './UsersPage';
+@import './SiteAdminAllUsersPage';
+@import './SiteAdminConfigurationPage';
+@import './SiteAdminOrgsPage';
+@import './SiteAdminOverviewPage';
+@import './SiteAdminRepositoriesPage';
+@import './SiteAdminSidebar';
+@import './SiteAdminTelemetryPage';
 
 .site-admin-area {
     flex: 1 1 auto;

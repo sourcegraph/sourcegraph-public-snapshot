@@ -37,7 +37,7 @@ const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
 /**
  * A page displaying the site configuration.
  */
-export class ConfigurationPage extends React.Component<Props, State> {
+export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {}
 
     private remoteRefreshes = new Subject<void>()

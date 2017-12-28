@@ -13,8 +13,8 @@ import { SavedQueries } from './search/SavedQueries'
 import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
 import { SettingsPage } from './settings/SettingsPage'
-import { InitPage } from './site-admin/InitPage'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
+import { SiteInitPage } from './site-admin/SiteInitPage'
 import { canListAllRepositories } from './util/features'
 
 export interface LayoutRouteProps extends RouteProps {
@@ -88,7 +88,7 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/site-admin/init',
         exact: true,
-        component: InitPage,
+        component: SiteInitPage,
         forceNarrowWidth: false,
     },
     {

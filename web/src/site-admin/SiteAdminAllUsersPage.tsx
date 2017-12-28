@@ -29,7 +29,7 @@ export interface State {
 /**
  * A page displaying the users on this site.
  */
-export class AllUsersPage extends React.Component<Props, State> {
+export class SiteAdminAllUsersPage extends React.Component<Props, State> {
     public state: State = {
         userErrorDescription: new Map<GQLID, string>(),
         userLoading: new Set<GQLID>(),

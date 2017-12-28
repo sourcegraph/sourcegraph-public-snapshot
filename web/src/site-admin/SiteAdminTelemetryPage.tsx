@@ -18,7 +18,7 @@ export interface State {
 /**
  * A page displaying information about telemetry for the site.
  */
-export class TelemetryPage extends React.Component<Props, State> {
+export class SiteAdminTelemetryPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -44,10 +44,10 @@ export class TelemetryPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="telemetry-page">
+            <div className="site-admin-telemetry-page">
                 <PageTitle title="Telemetry - Admin" />
                 <h2>Telemetry</h2>
-                {this.state.error && <p className="telemetry-page__error">Error: {this.state.error}</p>}
+                {this.state.error && <p className="site-admin-telemetry-page__error">Error: {this.state.error}</p>}
                 {typeof this.state.telemetryEnabled === 'boolean' && (
                     <div>
                         <p>

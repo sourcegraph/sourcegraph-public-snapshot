@@ -23,7 +23,7 @@ interface State {
 /**
  * A page displaying an overview of site admin information.
  */
-export class OverviewPage extends React.Component<Props, State> {
+export class SiteAdminOverviewPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()

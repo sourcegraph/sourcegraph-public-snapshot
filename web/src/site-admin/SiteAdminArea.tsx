@@ -4,14 +4,14 @@ import * as React from 'react'
 import { match, Route, RouteProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
-import { AllUsersPage } from './AllUsersPage'
-import { AnalyticsPage } from './AnalyticsPage'
-import { ConfigurationPage } from './ConfigurationPage'
-import { OrgsPage } from './OrgsPage'
-import { OverviewPage } from './OverviewPage'
-import { RepositoriesPage } from './RepositoriesPage'
-import { SiteAdminSidebar } from './Sidebar'
-import { TelemetryPage } from './TelemetryPage'
+import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
+import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
+import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
+import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
+import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
+import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
+import { SiteAdminSidebar } from './SiteAdminSidebar'
+import { SiteAdminTelemetryPage } from './SiteAdminTelemetryPage'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -67,31 +67,35 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
                 <div className="site-admin-area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}
-                        <RouteWithProps path={this.props.match.url} component={OverviewPage} exact={true} />
+                        <RouteWithProps path={this.props.match.url} component={SiteAdminOverviewPage} exact={true} />
                         <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
-                            component={ConfigurationPage}
+                            component={SiteAdminConfigurationPage}
                             exact={true}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/repositories`}
-                            component={RepositoriesPage}
+                            component={SiteAdminRepositoriesPage}
                             exact={true}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/organizations`}
-                            component={OrgsPage}
+                            component={SiteAdminOrgsPage}
                             exact={true}
                         />
-                        <RouteWithProps path={`${this.props.match.url}/users`} component={AllUsersPage} exact={true} />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/users`}
+                            component={SiteAdminAllUsersPage}
+                            exact={true}
+                        />
                         <RouteWithProps
                             path={`${this.props.match.url}/analytics`}
-                            component={AnalyticsPage}
+                            component={SiteAdminAnalyticsPage}
                             exact={true}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/telemetry`}
-                            component={TelemetryPage}
+                            component={SiteAdminTelemetryPage}
                             exact={true}
                         />
                         <RouteWithProps component={NotFoundPage} />

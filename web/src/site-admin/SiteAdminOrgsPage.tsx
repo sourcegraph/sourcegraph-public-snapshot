@@ -18,7 +18,7 @@ export interface State {
 /**
  * A page displaying the orgs on this site.
  */
-export class OrgsPage extends React.Component<Props, State> {
+export class SiteAdminOrgsPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
