@@ -3,7 +3,6 @@ package httpapi
 import (
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"reflect"
 	"strconv"
 	"time"
@@ -34,14 +33,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoShield).Handler(traceutil.TraceRoute(handler(serveRepoShield)))
 
-	m.Get(apirouter.Telemetry).Handler(traceutil.TraceRoute(&httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.URL.Scheme = "https"
-			req.URL.Host = "sourcegraph-logging.telligentdata.com"
-			req.Host = "sourcegraph-logging.telligentdata.com"
-			req.URL.Path = "/" + mux.Vars(req)["TelemetryPath"]
-		},
-	}))
+	m.Get(apirouter.Telemetry).Handler(traceutil.TraceRoute(telemetryReverseProxy))
 
 	m.Get(apirouter.XLang).Handler(traceutil.TraceRoute(handler(serveXLang)))
 
