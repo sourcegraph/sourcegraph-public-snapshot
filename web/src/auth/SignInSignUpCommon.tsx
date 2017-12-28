@@ -22,8 +22,8 @@ export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> 
 )
 
 /**
- * Returns the sanitized return-to URL, which is the location that a user
- * should be returned to after performing signin or signup to continue
+ * Returns the sanitized return-to relative URL (including only the path, search, and fragment).
+ * This is the location that a user should be returned to after performing signin or signup to continue
  * to the page they intended to view as an authenticated user.
  *
  * 🚨 SECURITY: We must disallow open redirects (to arbitrary hosts).
@@ -33,7 +33,7 @@ export function getReturnTo(location: H.Location): string | null {
     const returnTo = searchParams.get('returnTo')
     if (returnTo) {
         const newURL = new URL(returnTo, window.location.href)
-        return window.context.appURL + newURL.pathname + newURL.search + newURL.hash
+        return newURL.pathname + newURL.search + newURL.hash
     }
     return null
 }
