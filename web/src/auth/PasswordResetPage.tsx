@@ -1,16 +1,8 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
-import { WebAuth } from 'auth0-js'
 import * as React from 'react'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { PasswordInput } from './SignInSignUpCommon'
-
-const webAuth = new WebAuth({
-    domain: window.context.auth0Domain,
-    clientID: window.context.auth0ClientID,
-    redirectUri: `${window.context.appURL}/-/auth0/sign-in`,
-    responseType: 'code',
-})
 
 interface State {
     email: string
@@ -90,34 +82,6 @@ class PasswordResetForm extends React.Component<{}, State> {
     }
 
     private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>) => {
-        if (window.context.useAuth0) {
-            // Legacy Auth0 path
-            this.handleSubmitResetPasswordInitAuth0(e)
-        } else {
-            this.handleSubmitResetPasswordInitNative(e)
-        }
-    }
-
-    private handleSubmitResetPasswordInitAuth0(e: React.FormEvent<HTMLFormElement>): void {
-        e.preventDefault()
-
-        webAuth.changePassword(
-            {
-                connection: 'Sourcegraph',
-                email: this.state.email,
-            },
-            (err, authResult) => {
-                if (err) {
-                    console.error('auth error: ', err)
-                    this.setState({ error: (err as any).description })
-                } else {
-                    this.setState({ didReset: true })
-                }
-            }
-        )
-    }
-
-    private handleSubmitResetPasswordInitNative(e: React.FormEvent<HTMLFormElement>): void {
         e.preventDefault()
         fetch('/-/reset-password-init', {
             credentials: 'same-origin',

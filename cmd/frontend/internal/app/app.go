@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
@@ -50,13 +49,6 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.UI).Handler(ui2.Router())
 
-	// DEPRECATED Auth0 endpoints
-	signInURL := "https://" + auth0.Domain + "/authorize?response_type=code&client_id=" + auth0.Config.ClientID + "&connection=Sourcegraph&redirect_uri=" + globals.AppURL.String() + "/-/auth0/sign-in"
-	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, signInURL, http.StatusSeeOther)
-	})))
-	r.Get(router.Auth0Signin).Handler(traceutil.TraceRoute(errorutil.Handler(ServeAuth0SignIn)))
-
 	r.Get(router.SignUp).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignUp)))
 	r.Get(router.SignIn2).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignIn2)))
 	r.Get(router.SignOut).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignOut)))
@@ -82,11 +74,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	session.DeleteSession(w, r)
-	if auth0.Domain != "" {
-		http.Redirect(w, r, "https://"+auth0.Domain+"/v2/logout?"+globals.AppURL.String(), http.StatusSeeOther)
-	} else {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // DEPRECATED
