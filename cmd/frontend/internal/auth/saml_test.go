@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
@@ -160,10 +161,12 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 
 	// Set SAML global parameters
 	var err error
-	samlSPCert = testSAMLSPCert
-	samlSPKey = testSAMLSPKey
-	samlIDPMetadataURL = idpServer.IDP.MetadataURL.String()
-	idpMetadataURL, err = url.Parse(samlIDPMetadataURL)
+	samlProvider = &schema.SAMLAuthProvider{
+		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
+		ServiceProviderCertificate:  testSAMLSPCert,
+		ServiceProviderPrivateKey:   testSAMLSPKey,
+	}
+	idpMetadataURL, err = url.Parse(samlProvider.IdentityProviderMetadataURL)
 	if err != nil {
 		t.Fatal(err)
 	}

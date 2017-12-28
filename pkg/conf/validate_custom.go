@@ -45,5 +45,23 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		}
 	}
 
+	{
+		hasOldSAML := cfg.SamlIDProviderMetadataURL != "" || cfg.SamlSPCert != "" || cfg.SamlSPKey != ""
+		hasNewSAML := cfg.AuthSaml != nil
+		if hasOldSAML && hasNewSAML {
+			invalid(`both saml* properties and auth.saml are set; preferring properties from the auth.saml object (saml* properties are deprecated)`)
+		} else if hasOldSAML {
+			invalid(`saml* properties are deprecated; use auth.provider == "saml" and the auth.saml object instead`)
+		} else if cfg.AuthProvider == "saml" && !hasOldSAML && !hasNewSAML {
+			invalid(`auth.saml must be configured when auth.provider == "saml"`)
+		}
+		if hasOldSAML && cfg.AuthProvider != "saml" {
+			invalid(`must set auth.provider == "saml" for saml* config to take effect`)
+		}
+		if hasNewSAML && cfg.AuthProvider != "saml" {
+			invalid(`must set auth.provider == "saml" for auth.saml config to take effect`)
+		}
+	}
+
 	return validationErrors, nil
 }

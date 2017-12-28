@@ -82,6 +82,13 @@ type ResourceOverride struct {
 	Memory string `json:"memory,omitempty"`
 }
 
+// SAMLAuthProvider Configures the SAML authentication provider for SSO.
+type SAMLAuthProvider struct {
+	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL"`
+	ServiceProviderCertificate  string `json:"serviceProviderCertificate"`
+	ServiceProviderPrivateKey   string `json:"serviceProviderPrivateKey"`
+}
+
 // SearchSavedQueries
 type SearchSavedQueries struct {
 	Description string `json:"description"`
@@ -110,6 +117,7 @@ type SiteConfiguration struct {
 	AuthAllowSignup                bool                       `json:"auth.allowSignup,omitempty"`
 	AuthOpenIDConnect              *OpenIDConnectAuthProvider `json:"auth.openIDConnect,omitempty"`
 	AuthProvider                   string                     `json:"auth.provider,omitempty"`
+	AuthSaml                       *SAMLAuthProvider          `json:"auth.saml,omitempty"`
 	AuthUserOrgMap                 map[string][]string        `json:"auth.userOrgMap,omitempty"`
 	AutoRepoAdd                    bool                       `json:"autoRepoAdd,omitempty"`
 	CorsOrigin                     string                     `json:"corsOrigin,omitempty"`

@@ -197,15 +197,18 @@
       "type": "string"
     },
     "samlIDProviderMetadataURL": {
-      "description": "SAML Identity Provider metadata URL (for dyanmic configuration of SAML Service Provider)",
+      "description":
+        "SAML Identity Provider metadata URL (for dyanmic configuration of SAML Service Provider)\n\nDEPRECATED: Use auth.provider==\"saml\" and auth.saml's \"identityProviderMetadataURL\" property instead.",
       "type": "string"
     },
     "samlSPCert": {
-      "description": "SAML Service Provider certificate",
+      "description":
+        "SAML Service Provider certificate\n\nDEPRECATED: Use auth.provider==\"saml\" and auth.saml's \"serviceProviderCertificate\" property instead.",
       "type": "string"
     },
     "samlSPKey": {
-      "description": "SAML Service Provider private key",
+      "description":
+        "SAML Service Provider private key\n\nDEPRECATED: Use auth.provider==\"saml\" and auth.saml's \"serviceProviderPrivateKey\" property instead.",
       "type": "string"
     },
     "searchScopes": {
@@ -291,6 +294,9 @@
     },
     "auth.openIDConnect": {
       "$ref": "#/definitions/OpenIDConnectAuthProvider"
+    },
+    "auth.saml": {
+      "$ref": "#/definitions/SAMLAuthProvider"
     },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
@@ -382,6 +388,33 @@
           "description":
             "(For testing and development only) A token used to circumvent the OpenID Connect authentication layer.",
           "type": "string"
+        }
+      }
+    },
+    "SAMLAuthProvider": {
+      "description": "Configures the SAML authentication provider for SSO.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identityProviderMetadataURL", "serviceProviderCertificate", "serviceProviderPrivateKey"],
+      "properties": {
+        "identityProviderMetadataURL": {
+          "description":
+            "SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "serviceProviderCertificate": {
+          "description":
+            "SAML Service Provider certificate in X.509 encoding (begins with \"-----BEGIN CERTIFICATE-----\").",
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
+        },
+        "serviceProviderPrivateKey": {
+          "description":
+            "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
+          "type": "string",
+          "pattern": "^-----BEGIN PRIVATE KEY-----\n"
         }
       }
     }
