@@ -2,16 +2,14 @@ package app
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
-
-	"encoding/base64"
 
 	"github.com/mattbaird/gochimp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -41,10 +39,6 @@ type credentials struct {
 	DisplayName string `json:"displayName"`
 }
 
-func nativeAuthID(email string) string {
-	return fmt.Sprintf("%s:%s", sourcegraph.UserProviderNative, email)
-}
-
 // serveSignUp serves the native-auth sign-up endpoint
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	if !conf.Get().AuthAllowSignup {
@@ -66,13 +60,8 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create user
-	emailCodeBytes := make([]byte, 20)
-	if _, err := rand.Read(emailCodeBytes); err != nil {
-		httpLogAndError(w, "Could not generate email code", http.StatusInternalServerError)
-		return
-	}
-	emailCode := base64.StdEncoding.EncodeToString(emailCodeBytes)
-	usr, err := store.Users.Create(r.Context(), nativeAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, nil, creds.Password, emailCode)
+	emailCode := backend.MakeEmailVerificationCode()
+	usr, err := store.Users.Create(r.Context(), backend.NativeAuthUserAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, nil, creds.Password, emailCode)
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
 		return
@@ -104,7 +93,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserFromNativeOrAuth0(ctx context.Context, email string) (*sourcegraph.User, error) {
-	authID := nativeAuthID(email)
+	authID := backend.NativeAuthUserAuthID(email)
 	usr, err := store.Users.GetByAuth0ID(ctx, authID)
 	if err == nil {
 		return usr, nil
@@ -239,7 +228,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resetCode, err := store.Users.RenewPasswordResetCode(ctx, usr.ID)
+	resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID, creds.Email)
 	if err == localstore.ErrPasswordResetRateLimit {
 		httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
 		return
@@ -248,7 +237,6 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resetLink := fmt.Sprintf("%s/password-reset?email=%s&code=%s", globals.AppURL.String(), url.QueryEscape(usr.Email), url.QueryEscape(resetCode))
 	notif.SendMandrillTemplate(&notif.EmailConfig{
 		Template:  "forgot-password",
 		FromEmail: "noreply@sourcegraph.com",
@@ -257,7 +245,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}, []gochimp.Var{}, []gochimp.Var{
 		{Name: "SUBJECT", Content: "Reset password"},
 		{Name: "LOGIN", Content: usr.Username},
-		{Name: "RESET_LINK", Content: resetLink},
+		{Name: "RESET_LINK", Content: globals.AppURL.ResolveReference(resetURL).String()},
 	})
 }
 
@@ -285,7 +273,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := store.Users.SetPassword(ctx, usr.ID, nativeAuthID(params.Email), params.Code, params.Password)
+	success, err := store.Users.SetPassword(ctx, usr.ID, backend.NativeAuthUserAuthID(params.Email), params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return
