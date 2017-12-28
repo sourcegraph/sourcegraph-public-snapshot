@@ -237,3 +237,23 @@ export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observabl
         })
     )
 }
+
+export function createUserBySiteAdmin(username: string, email: string): Observable<GQL.ICreateUserBySiteAdminResult> {
+    return mutateGraphQL(
+        gql`
+            mutation CreateUserBySiteAdmin($username: String!, $email: String!) {
+                createUserBySiteAdmin(username: $username, email: $email) {
+                    resetPasswordURL
+                }
+            }
+        `,
+        { username, email }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0) || !data.createUserBySiteAdmin) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.createUserBySiteAdmin
+        })
+    )
+}

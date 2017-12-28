@@ -7,6 +7,7 @@ import { HeroPage } from '../components/HeroPage'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
+import { SiteAdminInviteUserPage } from './SiteAdminInviteUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
@@ -95,6 +96,11 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
                         <RouteWithProps
                             path={`${this.props.match.url}/users`}
                             component={SiteAdminAllUsersPage}
+                            exact={true}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/invite-user`}
+                            component={SiteAdminInviteUserPage}
                             exact={true}
                         />
                         <RouteWithProps

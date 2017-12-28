@@ -1,6 +1,7 @@
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -185,6 +186,11 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 <p>
                     See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
                     information about configuring user accounts and authentication.
+                </p>
+                <p>
+                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm">
+                        Invite user
+                    </Link>
                 </p>
                 <ul className="site-admin-detail-list__list">
                     {this.state.users &&

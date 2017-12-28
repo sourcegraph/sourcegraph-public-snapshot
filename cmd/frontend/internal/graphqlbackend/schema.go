@@ -140,6 +140,9 @@ type Mutation {
 		lastKnownSettingsID: Int
 		contents: String!
 	): Settings!
+	# Creates a user account for a new user and generates a reset password link that the user
+	# must visit to sign into the account. Only site admins may perform this mutation.
+	createUserBySiteAdmin(username: String!, email: String!): CreateUserBySiteAdminResult!
 	inviteUser(email: String!, orgID: ID!): InviteUserResult
 	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
 	removeUserFromOrg(userID: String!, orgID: ID!): EmptyResponse
@@ -211,6 +214,12 @@ input UpdateConfigurationInput {
 # The payload for ConfigurationMutation.updateConfiguration.
 type UpdateConfigurationPayload {
 	empty: EmptyResponse
+}
+
+# The result for Mutation.createUserBySiteAdmin.
+type CreateUserBySiteAdminResult {
+	# The reset password URL that the new user must visit to sign into their account.
+	resetPasswordURL: String!
 }
 
 type Query {
