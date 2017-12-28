@@ -21,6 +21,10 @@ const NotFoundPage = () => (
     />
 )
 
+const NotSiteAdminPage = () => (
+    <HeroPage icon={DirectionalSignIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
+)
+
 interface SettingsPageProps {
     history: H.History
     location: H.Location
@@ -40,6 +44,11 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
             // Return to the current page after sign up/in.
             newUrl.searchParams.set('returnTo', window.location.href)
             return <Redirect to={newUrl.pathname + newUrl.search} />
+        }
+
+        // If not site admin, redirect to sign in.
+        if (!this.props.user.siteAdmin) {
+            return <NotSiteAdminPage />
         }
 
         // Transfer the user prop to the routes' components.
