@@ -63,5 +63,23 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		}
 	}
 
+	{
+		hasOldAuthHTTPHeader := cfg.SsoUserHeader != ""
+		hasNewAuthHTTPHeader := cfg.AuthUserIdentityHTTPHeader != ""
+		if hasOldAuthHTTPHeader && hasNewAuthHTTPHeader {
+			invalid(`both ssoUserHeader and auth.userIdentityHTTPHeader are set; preferring the latter (ssoUserHeader is deprecated)`)
+		} else if hasOldAuthHTTPHeader {
+			invalid(`ssoUserHeader is deprecated; use auth.provider == "http-header" and the auth.userIdentityHTTPHeader property instead`)
+		} else if cfg.AuthProvider == "http-header" && !hasOldAuthHTTPHeader && !hasNewAuthHTTPHeader {
+			invalid(`auth.userIdentityHTTPHeader must be configured when auth.provider == "http-header"`)
+		}
+		if hasOldAuthHTTPHeader && cfg.AuthProvider != "http-header" {
+			invalid(`must set auth.provider == "http-header" for ssoUserHeader config to take effect`)
+		}
+		if hasNewAuthHTTPHeader && cfg.AuthProvider != "http-header" {
+			invalid(`must set auth.provider == "http-header" for auth.userIdentityHTTPHeader config to take effect`)
+		}
+	}
+
 	return validationErrors, nil
 }

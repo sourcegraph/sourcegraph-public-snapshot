@@ -168,7 +168,8 @@
       "type": "integer"
     },
     "ssoUserHeader": {
-      "description": "Header injected by an SSO proxy to indicate the logged in user.",
+      "description":
+        "Header injected by an SSO proxy to indicate the logged in user.\n\nDEPRECATED: Use auth.provider==\"http-header\" and auth.userIdentityHTTPHeader instead.",
       "type": "string"
     },
     "oidcProvider": {
@@ -297,6 +298,11 @@
     },
     "auth.saml": {
       "$ref": "#/definitions/SAMLAuthProvider"
+    },
+    "auth.userIdentityHTTPHeader": {
+      "description":
+        "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
+      "type": "string"
     },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",

@@ -118,6 +118,7 @@ type SiteConfiguration struct {
 	AuthOpenIDConnect              *OpenIDConnectAuthProvider `json:"auth.openIDConnect,omitempty"`
 	AuthProvider                   string                     `json:"auth.provider,omitempty"`
 	AuthSaml                       *SAMLAuthProvider          `json:"auth.saml,omitempty"`
+	AuthUserIdentityHTTPHeader     string                     `json:"auth.userIdentityHTTPHeader,omitempty"`
 	AuthUserOrgMap                 map[string][]string        `json:"auth.userOrgMap,omitempty"`
 	AutoRepoAdd                    bool                       `json:"autoRepoAdd,omitempty"`
 	CorsOrigin                     string                     `json:"corsOrigin,omitempty"`
