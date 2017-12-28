@@ -118,6 +118,28 @@ func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*strin
 	return &s, nil
 }
 
+// pendingOrEffectiveContents returns pendingContents if it exists, or else effectiveContents.
+func (r *siteConfigurationResolver) pendingOrEffectiveContents(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: Site admin status is checked in both r.PendingContents and r.EffectiveContents,
+	// so we don't need to check it in this method.
+	pendingContents, err := r.PendingContents(ctx)
+	if err != nil {
+		return "", err
+	}
+	if pendingContents != nil {
+		return *pendingContents, nil
+	}
+	return r.EffectiveContents(ctx)
+}
+
+func (r *siteConfigurationResolver) ExtraValidationErrors(ctx context.Context) ([]string, error) {
+	contents, err := r.pendingOrEffectiveContents(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return conf.ValidateCustom(normalizeJSON(contents))
+}
+
 func (r *siteConfigurationResolver) CanUpdate() bool {
 	// We assume the is-admin check has already been performed before constructing
 	// our receiver, so we just need to check if the file itself is writable, not

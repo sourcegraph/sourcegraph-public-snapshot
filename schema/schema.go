@@ -99,6 +99,7 @@ type SiteConfiguration struct {
 	AppID                          string              `json:"appID,omitempty"`
 	AppURL                         string              `json:"appURL,omitempty"`
 	AuthAllowSignup                bool                `json:"auth.allowSignup,omitempty"`
+	AuthProvider                   string              `json:"auth.provider,omitempty"`
 	AuthUserOrgMap                 map[string][]string `json:"auth.userOrgMap,omitempty"`
 	AutoRepoAdd                    bool                `json:"autoRepoAdd,omitempty"`
 	CorsOrigin                     string              `json:"corsOrigin,omitempty"`
