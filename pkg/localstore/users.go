@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore/auth0tmp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -469,6 +470,24 @@ func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, res
 		}
 	}
 	return true, nil
+}
+
+// RandomizePasswordAndClearPasswordResetRateLimit overwrites a user's password with a hard-to-guess
+// random password and clears the password reset rate limit. It is intended to be used by site admins,
+// who can subsequently generate a new password reset code for the user (in case the user has locked
+// themselves out, or in case the site admin wants to initiate a password reset).
+//
+// A randomized password is used (instead of an empty password) to avoid bugs where an empty password
+// is considered to be no password. The random password is expected to be irretrievable.
+func (u *users) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Context, id int32) error {
+	passwd, err := hashPassword(randstring.NewLen(36))
+	if err != nil {
+		return err
+	}
+	// 🚨 SECURITY: Set the new random password and clear the reset code/expiry, so the old code
+	// can't be reused, and so a new valid reset code can be generated afterward.
+	_, err = globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id)
+	return err
 }
 
 func hashPassword(password string) (sql.NullString, error) {

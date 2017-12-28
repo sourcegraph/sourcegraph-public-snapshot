@@ -41,6 +41,44 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 	}, nil
 }
 
+type randomizeUserPasswordResult struct {
+	resetPasswordURL string
+}
+
+func (r *randomizeUserPasswordResult) ResetPasswordURL() string { return r.resetPasswordURL }
+
+func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, args *struct {
+	User graphql.ID
+}) (*randomizeUserPasswordResult, error) {
+	// 🚨 SECURITY: Only site admins can randomize user passwords.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := unmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := localstore.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	user, err := localstore.Users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	resetURL, err := backend.MakePasswordResetURL(ctx, userID, user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &randomizeUserPasswordResult{
+		resetPasswordURL: globals.AppURL.ResolveReference(resetURL).String(),
+	}, nil
+}
+
 func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
