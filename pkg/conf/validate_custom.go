@@ -23,5 +23,27 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		invalid(fmt.Sprintf("auth.allowSignup requires auth.provider == \"builtin\" or \"auth0\" (got %q)", cfg.AuthProvider))
 	}
 
+	if cfg.AuthProvider == "openidconnect" && cfg.AppURL == "" {
+		invalid(`auth.provider == "openidconnect" requires appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+	}
+
+	{
+		hasOldOIDC := cfg.OidcProvider != "" || cfg.OidcClientID != "" || cfg.OidcClientSecret != "" || cfg.OidcEmailDomain != "" || cfg.OidcOverrideToken != ""
+		hasNewOIDC := cfg.AuthOpenIDConnect != nil
+		if hasOldOIDC && hasNewOIDC {
+			invalid(`both oidc* properties and auth.openIDConnect are set; preferring properties from the auth.openIDConnect object (oidc* properties are deprecated)`)
+		} else if hasOldOIDC {
+			invalid(`oidc* properties are deprecated; use auth.provider == "openidconnect" and the auth.openIDConnect object instead`)
+		} else if cfg.AuthProvider == "openidconnect" && !hasOldOIDC && !hasNewOIDC {
+			invalid(`auth.openIDConnect must be configured when auth.provider == "openidconnect"`)
+		}
+		if hasOldOIDC && cfg.AuthProvider != "openidconnect" {
+			invalid(`must set auth.provider == "openidconnect" for oidc* config to take effect`)
+		}
+		if hasNewOIDC && cfg.AuthProvider != "openidconnect" {
+			invalid(`must set auth.provider == "openidconnect" for auth.openIDConnect config to take effect`)
+		}
+	}
+
 	return validationErrors, nil
 }

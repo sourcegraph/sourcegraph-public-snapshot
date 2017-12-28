@@ -172,20 +172,28 @@
       "type": "string"
     },
     "oidcProvider": {
-      "description": "The URL of the OpenID Connect Provider",
+      "description":
+        "The URL of the OpenID Connect Provider\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"issuer\" property instead.",
       "type": "string"
     },
-    "oidcClientID": { "description": "OIDC Client ID", "type": "string" },
+    "oidcClientID": {
+      "description":
+        "OIDC Client ID\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"clientID\" property instead.",
+      "type": "string"
+    },
     "oidcClientSecret": {
-      "description": "OIDC Client Secret",
+      "description":
+        "OIDC Client Secret\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"clientSecret\" property instead.",
       "type": "string"
     },
     "oidcEmailDomain": {
-      "description": "Whitelisted email domain for logins, e.g. 'mycompany.com'",
+      "description":
+        "Whitelisted email domain for logins, e.g. 'mycompany.com'\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"requireEmailDomain\" property instead.",
       "type": "string"
     },
     "oidcOverrideToken": {
-      "description": "Token to circumvent OIDC layer (testing only)",
+      "description":
+        "Token to circumvent OIDC layer (testing only)\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"overrideToken\" property instead.",
       "type": "string"
     },
     "samlIDProviderMetadataURL": {
@@ -281,6 +289,9 @@
         "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nRequires auth.provider == \"builtin\" or \"auth0\".",
       "type": "boolean"
     },
+    "auth.openIDConnect": {
+      "$ref": "#/definitions/OpenIDConnectAuthProvider"
+    },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
       "$ref": "settings.schema.json#"
@@ -334,6 +345,43 @@
           "description": "Display path on Sourcegraph for the repository, such as my/repo",
           "type": "string",
           "pattern": "^[\\w_]"
+        }
+      }
+    },
+    "OpenIDConnectAuthProvider": {
+      "description": "Configures the OpenID Connect authentication provider for SSO.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "clientID", "clientSecret"],
+      "properties": {
+        "issuer": {
+          "description": "The URL of the OpenID Connect issuer.\n\nFor Google Apps: https://accounts.google.com",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "clientID": {
+          "description":
+            "The client ID for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "clientSecret": {
+          "description":
+            "The client secret for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "requireEmailDomain": {
+          "description":
+            "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
+          "type": "string",
+          "pattern": "^[^<@]"
+        },
+        "overrideToken": {
+          "description":
+            "(For testing and development only) A token used to circumvent the OpenID Connect authentication layer.",
+          "type": "string"
         }
       }
     }

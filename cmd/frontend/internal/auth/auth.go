@@ -34,7 +34,7 @@ func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, appURL s
 	}
 	initialized = true
 
-	if oidcIDProvider != "" {
+	if oidcProvider != nil {
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
 		return newOIDCAuthHandler(createCtx, handler, appURL)
 	}
