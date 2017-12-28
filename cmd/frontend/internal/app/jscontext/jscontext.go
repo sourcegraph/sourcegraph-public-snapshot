@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
-
 	"github.com/gorilla/csrf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -163,7 +161,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		License:              license,
 		LicenseStatus:        licenseStatus,
 		ShowOnboarding:       showOnboarding,
-		EmailEnabled:         notif.EmailIsConfigured(),
+		EmailEnabled:         conf.CanSendEmail(),
 		UseAuth0:             useAuth0Val,
 		Site: siteConfiguration{
 			AuthAllowSignup: conf.Get().AuthAllowSignup,

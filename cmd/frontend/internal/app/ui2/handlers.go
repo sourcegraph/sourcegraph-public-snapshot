@@ -190,7 +190,7 @@ func serveBasicPageWithEmailVerification(title func(c *Common, r *http.Request) 
 				}
 				// 🚨 SECURITY: verify the current actor's email iff it's the same as the email in the token
 				// and the actor came from native authentication (i.e., not an external SSO provider)
-				if payload.Email == actor.Email && actor.Provider == "" {
+				if payload.Email == actor.Email && actor.Provider == "" && conf.EmailVerificationRequired() {
 					err = auth0.VerifyEmail(r.Context(), actor.UID)
 					if err != nil {
 						return err

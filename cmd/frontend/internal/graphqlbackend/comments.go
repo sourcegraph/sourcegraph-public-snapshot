@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
@@ -237,7 +238,7 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 	if err != nil {
 		return nil, err
 	}
-	if !notif.EmailIsConfigured() {
+	if !conf.CanSendEmail() {
 		return &commentResults{emails: []string{}, commentURL: commentURL.String()}, nil
 	}
 

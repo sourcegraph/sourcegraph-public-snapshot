@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -373,7 +374,11 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	inviteURL := globals.AppURL.String() + "/settings/accept-invite?token=" + token
-	invite.SendEmail(args.Email, user.DisplayName, org.Name, inviteURL)
+
+	if conf.CanSendEmail() {
+		// If email is disabled, the frontend will show a link instead.
+		invite.SendEmail(args.Email, user.DisplayName, org.Name, inviteURL)
+	}
 
 	if user, err := currentUser(ctx); err != nil {
 		// errors swallowed because user is only needed for Slack notifications
