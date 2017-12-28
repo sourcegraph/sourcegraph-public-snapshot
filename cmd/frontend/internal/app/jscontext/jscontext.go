@@ -24,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
@@ -84,7 +85,7 @@ type JSContext struct {
 	EmailEnabled         bool                  `json:"emailEnabled"`
 	UseAuth0             bool                  `json:"useAuth0"`
 
-	Site siteConfiguration `json:"site"` // subset of site configuration
+	Site schema.SiteConfiguration `json:"site"` // public subset of site configuration
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -163,16 +164,14 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         conf.CanSendEmail(),
 		UseAuth0:             useAuth0Val,
-		Site: siteConfiguration{
-			AuthAllowSignup: conf.Get().AuthAllowSignup,
-		},
+		Site:                 publicSiteConfiguration,
 	}
 }
 
-// siteConfiguration is the subset of the site.schema.json site configuration JSON Schema
+// publicSiteConfiguration is the subset of the site.schema.json site configuration
 // that is necessary for the web app and is not sensitive/secret.
-type siteConfiguration struct {
-	AuthAllowSignup bool `json:"auth.allowSignup"`
+var publicSiteConfiguration = schema.SiteConfiguration{
+	AuthAllowSignup: conf.Get().AuthAllowSignup,
 }
 
 var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
