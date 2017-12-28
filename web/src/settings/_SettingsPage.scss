@@ -11,7 +11,6 @@
     margin-top: 1rem;
     line-height: 1.5rem;
     overflow: hidden;
-    border-radius: 0.25rem;
 
     &__content {
         flex: 1 1 auto;
@@ -28,5 +27,17 @@
         &__content {
             background-color: inherit;
         }
+    }
+}
+
+@media (max-width: $media-lg) {
+    .settings-page {
+        border-width: 1px 0 0 0 !important;
+    }
+}
+
+@media (min-width: $media-lg) {
+    .settings-page {
+        border-radius: 0.25rem;
     }
 }
