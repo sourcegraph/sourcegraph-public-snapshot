@@ -1,12 +1,151 @@
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { fetchAllUsers, setUserIsSiteAdmin } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
+
+interface UserListItemProps {
+    className: string
+
+    /**
+     * The user to display in this list item.
+     */
+    user: GQL.IUser
+
+    /**
+     * The currently authenticated user.
+     */
+    currentUser: GQL.IUser
+
+    /**
+     * Called when the user is updated by an action in this list item.
+     */
+    onDidUpdate?: () => void
+}
+
+interface UserListItemState {
+    loading: boolean
+    errorDescription?: string
+}
+
+class UserListItem extends React.PureComponent<UserListItemProps, UserListItemState> {
+    public state: UserListItemState = {
+        loading: false,
+    }
+
+    public render(): JSX.Element | null {
+        const actions: JSX.Element[] = []
+        if (this.props.user.auth0ID !== this.props.currentUser.auth0ID) {
+            if (this.props.user.siteAdmin) {
+                actions.push(
+                    <button
+                        key="demote"
+                        className="btn btn-sm"
+                        onClick={this.demoteFromSiteAdmin}
+                        disabled={this.state.loading}
+                    >
+                        Revoke site admin
+                    </button>
+                )
+            } else {
+                actions.push(
+                    <button
+                        key="promote"
+                        className="btn btn-primary btn-sm"
+                        onClick={this.promoteToSiteAdmin}
+                        disabled={this.state.loading}
+                    >
+                        Promote to site admin
+                    </button>
+                )
+            }
+        }
+
+        return (
+            <li className={this.props.className}>
+                <div className="site-admin-detail-list__header">
+                    <span className="site-admin-detail-list__name">{this.props.user.username}</span>
+                    <br />
+                    <span className="site-admin-detail-list__display-name">{this.props.user.displayName}</span>
+                </div>
+                <ul className="site-admin-detail-list__info">
+                    {this.props.user.siteAdmin && (
+                        <li>
+                            <strong>Site admin</strong>
+                        </li>
+                    )}
+                    {this.props.user.email && (
+                        <li>
+                            Email: <a href={`mailto:${this.props.user.email}`}>{this.props.user.email}</a>
+                        </li>
+                    )}
+                    <li>ID: {this.props.user.id}</li>
+                    {this.props.user.createdAt && <li>Created: {format(this.props.user.createdAt, 'YYYY-MM-DD')}</li>}
+                    {this.props.user.orgs &&
+                        this.props.user.orgs.length > 0 && (
+                            <li>Orgs: {this.props.user.orgs.map(org => org.name).join(', ')}</li>
+                        )}
+                    {this.props.user.latestSettings && (
+                        <li>
+                            <SettingsInfo
+                                settings={this.props.user.latestSettings}
+                                filename={`user-settings-${this.props.user.id}.json`}
+                            />
+                        </li>
+                    )}
+                    {this.props.user.tags &&
+                        this.props.user.tags.length > 0 && (
+                            <li>Tags: {this.props.user.tags.map(tag => tag.name).join(', ')}</li>
+                        )}
+                </ul>
+                <div>
+                    {actions}
+                    {this.state.errorDescription && (
+                        <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
+                    )}
+                </div>
+            </li>
+        )
+    }
+
+    private promoteToSiteAdmin = () => this.setSiteAdmin(true)
+    private demoteFromSiteAdmin = () => this.setSiteAdmin(false)
+
+    private setSiteAdmin(siteAdmin: boolean): void {
+        if (
+            !window.confirm(
+                siteAdmin
+                    ? `Really promote user ${this.props.user.username} to site admin?`
+                    : `Really revoke site admin status from user ${this.props.user.username}?`
+            )
+        ) {
+            return
+        }
+
+        this.setState({
+            errorDescription: undefined,
+            loading: true,
+        })
+
+        setUserIsSiteAdmin(this.props.user.id, siteAdmin)
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({ loading: false })
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
+                },
+                err => this.setState({ loading: false, errorDescription: err.message })
+            )
+    }
+}
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser
@@ -35,12 +174,16 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         userLoading: new Set<GQLID>(),
     }
 
+    private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminAllUsers')
 
-        this.subscriptions.add(fetchAllUsers().subscribe(users => this.setState({ users })))
+        this.subscriptions.add(
+            this.userUpdates.pipe(mergeMap(fetchAllUsers)).subscribe(users => this.setState({ users }))
+        )
+        this.userUpdates.next()
     }
 
     public componentWillUnmount(): void {
@@ -48,44 +191,6 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const userActions = new Map<GQLID, JSX.Element[]>()
-        if (this.state.users) {
-            for (const user of this.state.users) {
-                const loading = this.state.userLoading.has(user.id)
-                const actions: JSX.Element[] = []
-                if (user.auth0ID !== this.props.user.auth0ID) {
-                    if (user.siteAdmin) {
-                        actions.push(
-                            <button
-                                key={`revoke${user.id}`}
-                                className="btn btn-sm"
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onClick={() => this.setSiteAdmin(user, false)}
-                                disabled={loading}
-                            >
-                                Revoke site admin
-                            </button>
-                        )
-                    } else {
-                        actions.push(
-                            <button
-                                key={`promote${user.id}`}
-                                className="btn btn-primary btn-sm"
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onClick={() => this.setSiteAdmin(user, true)}
-                                disabled={loading}
-                            >
-                                Promote to site admin
-                            </button>
-                        )
-                    }
-                }
-                if (actions.length > 0) {
-                    userActions.set(user.id, actions)
-                }
-            }
-        }
-
         return (
             <div className="site-admin-detail-list site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
@@ -97,51 +202,13 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 <ul className="site-admin-detail-list__list">
                     {this.state.users &&
                         this.state.users.map(user => (
-                            <li key={user.id} className="site-admin-detail-list__item">
-                                <div className="site-admin-detail-list__header">
-                                    <span className="site-admin-detail-list__name">{user.username}</span>
-                                    <br />
-                                    <span className="site-admin-detail-list__display-name">{user.displayName}</span>
-                                </div>
-                                <ul className="site-admin-detail-list__info">
-                                    {user.siteAdmin && (
-                                        <li>
-                                            <strong>Site admin</strong>
-                                        </li>
-                                    )}
-                                    {user.email && (
-                                        <li>
-                                            Email: <a href={`mailto:${user.email}`}>{user.email}</a>
-                                        </li>
-                                    )}
-                                    <li>ID: {user.id}</li>
-                                    {user.createdAt && <li>Created: {format(user.createdAt, 'YYYY-MM-DD')}</li>}
-                                    {user.orgs &&
-                                        user.orgs.length > 0 && (
-                                            <li>Orgs: {user.orgs.map(org => org.name).join(', ')}</li>
-                                        )}
-                                    {user.latestSettings && (
-                                        <li>
-                                            <SettingsInfo
-                                                settings={user.latestSettings}
-                                                filename={`user-settings-${user.id}.json`}
-                                            />
-                                        </li>
-                                    )}
-                                    {user.tags &&
-                                        user.tags.length > 0 && (
-                                            <li>Tags: {user.tags.map(tag => tag.name).join(', ')}</li>
-                                        )}
-                                </ul>
-                                <div>
-                                    {userActions.get(user.id)}
-                                    {this.state.userErrorDescription.has(user.id) && (
-                                        <p className="site-admin-detail-list__error">
-                                            {this.state.userErrorDescription.get(user.id)}
-                                        </p>
-                                    )}
-                                </div>
-                            </li>
+                            <UserListItem
+                                key={user.id}
+                                className="site-admin-detail-list__item"
+                                user={user}
+                                currentUser={this.props.user}
+                                onDidUpdate={this.onDidUpdateUser}
+                            />
                         ))}
                 </ul>
                 {this.state.users && (
@@ -155,39 +222,5 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         )
     }
 
-    private setSiteAdmin(user: GQL.IUser, siteAdmin: boolean): void {
-        if (
-            !window.confirm(
-                siteAdmin
-                    ? `Really promote user ${user.username} to site admin?`
-                    : `Really revoke site admin status from user ${user.username}?`
-            )
-        ) {
-            return
-        }
-
-        this.state.userErrorDescription.delete(user.id)
-        this.state.userLoading.add(user.id)
-        setUserIsSiteAdmin(user.id, siteAdmin)
-            .toPromise()
-            .then(
-                () => {
-                    this.state.userLoading.delete(user.id)
-                    // Patch state locally.
-                    this.setState({
-                        users: this.state.users!.map(u => {
-                            if (u.id === user.id) {
-                                return { ...u, siteAdmin }
-                            }
-                            return u
-                        }),
-                    })
-                },
-                err => {
-                    this.state.userLoading.delete(user.id)
-                    this.state.userErrorDescription.set(user.id, err.message)
-                    this.forceUpdate()
-                }
-            )
-    }
+    private onDidUpdateUser = () => this.userUpdates.next()
 }
