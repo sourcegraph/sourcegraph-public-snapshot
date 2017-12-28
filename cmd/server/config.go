@@ -65,6 +65,7 @@ func generateConfigFile(path string) (configJSON string, err error) {
 		AutoRepoAdd:     true,
 		SecretKey:       string(mustCryptoRand()),
 		AuthAllowSignup: true,
+		AuthProvider:    "builtin",
 	}
 
 	data, err := json.MarshalIndent(defaultSiteConfig, "", "  ")
