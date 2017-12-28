@@ -8,10 +8,42 @@ import { SiteConfiguration } from '../schema/site.schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite } from './backend'
 
+class TelemetrySample extends React.PureComponent<
+    { children: string; telemetryEnabled: boolean },
+    { expanded: boolean }
+> {
+    public state = { expanded: false }
+
+    public render(): JSX.Element | null {
+        const [firstLine, ...otherLines] = this.props.children.split('\n')
+        return (
+            <div className={`telemetry-sample ${this.state.expanded ? 'telemetry-sample-expanded' : ''}`}>
+                <pre
+                    className={`telemetry-sample__body ${this.state.expanded ? 'telemetry-sample__body-expanded' : ''}`}
+                >
+                    <small>
+                        {firstLine} {!this.props.telemetryEnabled && '(not sent)'}
+                        {'\n'}
+                        {this.state.expanded && otherLines.join('\n')}
+                    </small>
+                </pre>
+                <div className="telemetry-sample__btn-container">
+                    <button className="btn btn-secondary btn-sm telemetry-sample__btn" onClick={this.toggle}>
+                        {this.state.expanded ? 'Hide' : 'Show'}
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    private toggle = () => this.setState({ expanded: !this.state.expanded })
+}
+
 interface Props extends RouteComponentProps<any> {}
 
 export interface State {
     telemetryEnabled?: boolean
+    telemetrySamples?: string[]
     error?: string
 }
 
@@ -27,10 +59,11 @@ export class SiteAdminTelemetryPage extends React.Component<Props, State> {
         eventLogger.logViewEvent('SiteAdminTelemetry')
 
         this.subscriptions.add(
-            fetchSite().subscribe(
+            fetchSite({ telemetrySamples: true }).subscribe(
                 site =>
                     this.setState({
                         telemetryEnabled: getTelemetryEnabled(site.configuration.effectiveContents),
+                        telemetrySamples: site.telemetrySamples,
                         error: undefined,
                     }),
                 error => this.setState({ error: error.message })
@@ -63,6 +96,23 @@ export class SiteAdminTelemetryPage extends React.Component<Props, State> {
                         </p>
                     </div>
                 )}
+                {this.state.telemetrySamples &&
+                    this.state.telemetrySamples.length > 0 && (
+                        <div>
+                            <h3>Samples</h3>
+                            <p>
+                                Inspect recent telemetry samples to see what{' '}
+                                {this.state.telemetryEnabled ? 'is' : 'would be'} sent.{' '}
+                                {!this.state.telemetryEnabled &&
+                                    'Because telemetry is disabled, this information is not being sent.'}
+                            </p>
+                            {this.state.telemetrySamples.map((sample, i) => (
+                                <TelemetrySample key={i} telemetryEnabled={!!this.state.telemetryEnabled}>
+                                    {sample}
+                                </TelemetrySample>
+                            ))}
+                        </div>
+                    )}
             </div>
         )
     }

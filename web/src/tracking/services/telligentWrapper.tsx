@@ -89,11 +89,9 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        if (window.context.disableTelemetry) {
-            return
-        }
-        let telligentUrl = 'sourcegraph-logging.telligentdata.com'
-        // for an on-prem trial, we want to send information directly telligent.
+        let telligentUrl = window.context.sourcegraphDotComMode
+            ? 'sourcegraph-logging.telligentdata.com'
+            : `${window.location.host}/.api/telemetry`
         // for clients like umami, we use a bi-logger
         if (!window.context.sourcegraphDotComMode && window.context.siteID === 'UmamiWeb') {
             telligentUrl = `${window.location.host}`.concat('/.bi-logger')
