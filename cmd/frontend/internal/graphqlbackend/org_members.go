@@ -7,7 +7,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type orgMemberResolver struct {
@@ -65,7 +65,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) 
 		return mockAllEmailsForOrg(ctx, orgID, excludeByUserID)
 	}
 
-	members, err := store.OrgMembers.GetByOrgID(ctx, orgID)
+	members, err := db.OrgMembers.GetByOrgID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) 
 		if _, ok := exclude[m.UserID]; ok {
 			continue
 		}
-		user, err := store.Users.GetByID(ctx, m.UserID)
+		user, err := db.Users.GetByID(ctx, m.UserID)
 		if err != nil {
 			// This shouldn't happen, but we don't want to prevent the notification,
 			// so swallow the error.

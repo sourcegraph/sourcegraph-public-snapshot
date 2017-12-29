@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func TestComments_appendUniqueEmailsFromMentions(t *testing.T) {
@@ -78,7 +78,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 	}
 	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}
 
-	store.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*sourcegraph.User, error) {
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*sourcegraph.User, error) {
 		for _, u := range testUsers {
 			if u.ID == id {
 				return &u, nil
@@ -88,7 +88,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 	}
 
 	// Mock Users.ListByOrg
-	store.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
+	db.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
 		if orgID != testOrg.ID {
 			return nil, fmt.Errorf(`expected to be called with testOrg ID "%d", got "%d"`, testOrg.ID, orgID)
 		}
@@ -271,9 +271,9 @@ func TestComments_Create(t *testing.T) {
 		AuthorEmail: "alice@acme.com",
 	}
 
-	store.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)
-	store.Mocks.Threads.MockGet_Return(t, &thread, nil)
-	called, calledWith := store.Mocks.Comments.MockCreate(t)
+	db.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)
+	db.Mocks.Threads.MockGet_Return(t, &thread, nil)
+	called, calledWith := db.Mocks.Comments.MockCreate(t)
 
 	r := &schemaResolver{}
 	_, err := r.AddCommentToThread(ctx, &struct {
@@ -295,9 +295,9 @@ func TestComments_Create(t *testing.T) {
 func TestComments_CreateAccessDenied(t *testing.T) {
 	ctx := context.Background()
 
-	store.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
-	store.Mocks.OrgRepos.MockGetByID_Return(t, nil, store.ErrRepoNotFound)
-	called, calledWith := store.Mocks.Comments.MockCreate(t)
+	db.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
+	db.Mocks.OrgRepos.MockGetByID_Return(t, nil, db.ErrRepoNotFound)
+	called, calledWith := db.Mocks.Comments.MockCreate(t)
 
 	r := &schemaResolver{}
 	comment, err := r.AddCommentToThread(ctx, &struct {

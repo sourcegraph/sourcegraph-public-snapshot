@@ -22,7 +22,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
@@ -84,7 +84,7 @@ func (o *orgResolver) SlackWebhookURL() *string {
 func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
 func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error) {
-	sgMembers, err := store.OrgMembers.GetByOrgID(ctx, o.org.ID)
+	sgMembers, err := db.OrgMembers.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := store.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{Org: &o.org.ID})
+	settings, err := db.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{Org: &o.org.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	var repos []*sourcegraph.OrgRepo
 	if len(canonicalRemoteIDs) > 0 {
 		var err error
-		repos, err = store.OrgRepos.GetByCanonicalRemoteIDs(ctx, o.org.ID, canonicalRemoteIDs)
+		repos, err = db.OrgRepos.GetByCanonicalRemoteIDs(ctx, o.org.ID, canonicalRemoteIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 }
 
 func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
-	tags, err := store.OrgTags.GetByOrgID(ctx, o.org.ID)
+	tags, err := db.OrgTags.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,8 +156,8 @@ func (o *orgResolver) Repo(ctx context.Context, args *struct {
 }
 
 func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
-	orgRepo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
-	if err == store.ErrRepoNotFound {
+	orgRepo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
+	if err == db.ErrRepoNotFound {
 		// We don't want to create org repos just because an org member queried for threads
 		// and we don't want the client to think this is an error.
 		err = nil
@@ -166,7 +166,7 @@ func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID string) (*so
 }
 
 func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
-	repos, err := store.OrgRepos.GetByOrg(ctx, o.org.ID)
+	repos, err := db.OrgRepos.GetByOrg(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -189,13 +189,13 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 		return nil, errors.New("no current user")
 	}
 
-	newOrg, err := store.Orgs.Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := db.Orgs.Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = store.OrgMembers.Create(ctx, newOrg.ID, *currentUser.SourcegraphID())
+	_, err = db.OrgMembers.Create(ctx, newOrg.ID, *currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
@@ -205,11 +205,11 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 		//
 		// TODO(sqs): perform this transactionally with the other operations above.
 		const editorBetaTag = "editor-beta"
-		tag, err := store.UserTags.GetByUserIDAndTagName(ctx, *currentUser.SourcegraphID(), editorBetaTag)
-		if _, ok := err.(store.ErrUserTagNotFound); !ok && err != nil {
+		tag, err := db.UserTags.GetByUserIDAndTagName(ctx, *currentUser.SourcegraphID(), editorBetaTag)
+		if _, ok := err.(db.ErrUserTagNotFound); !ok && err != nil {
 			return nil, err
 		} else if tag != nil {
-			if _, err = store.OrgTags.Create(ctx, newOrg.ID, editorBetaTag); err != nil {
+			if _, err = db.OrgTags.Create(ctx, newOrg.ID, editorBetaTag); err != nil {
 				return nil, err
 			}
 		}
@@ -236,7 +236,7 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 
 	log15.Info("updating org", "org", args.ID, "display name", args.DisplayName, "webhook URL", args.SlackWebhookURL)
 
-	updatedOrg, err := store.Orgs.Update(ctx, orgID, args.DisplayName, args.SlackWebhookURL)
+	updatedOrg, err := db.Orgs.Update(ctx, orgID, args.DisplayName, args.SlackWebhookURL)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	}
 
 	log15.Info("removing user from org", "user", args.UserID, "org", orgID)
-	return nil, store.OrgMembers.Remove(ctx, orgID, args.UserID)
+	return nil, db.OrgMembers.Remove(ctx, orgID, args.UserID)
 }
 
 type inviteUserResult struct {
@@ -293,19 +293,19 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	// Don't invite the user if they are already a member.
-	invitedUser, err := store.Users.GetByEmail(ctx, args.Email)
+	invitedUser, err := db.Users.GetByEmail(ctx, args.Email)
 	if err != nil {
-		if _, ok := err.(store.ErrUserNotFound); !ok {
+		if _, ok := err.(db.ErrUserNotFound); !ok {
 			return nil, err
 		}
 	}
 
 	if invitedUser != nil {
-		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.ID)
+		_, err = db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.ID)
 		if err == nil {
 			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, orgID)
 		}
-		if _, ok := err.(store.ErrOrgMemberNotFound); !ok {
+		if _, ok := err.(db.ErrOrgMemberNotFound); !ok {
 			return nil, err
 		}
 	}
@@ -324,8 +324,8 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if err := store.Users.CheckAndDecrementInviteQuota(ctx, *currentUser.SourcegraphID()); err != nil {
-			if err == store.ErrInviteQuotaExceeded {
+		if err := db.Users.CheckAndDecrementInviteQuota(ctx, *currentUser.SourcegraphID()); err != nil {
+			if err == db.ErrInviteQuotaExceeded {
 				return nil, fmt.Errorf("%s (contact support to increase the quota)", err)
 			}
 			return nil, err
@@ -341,11 +341,11 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		// If the org has the editor-beta tag, add the editor beta tag to an invited user
 		// if they're already registered.
 		const editorBetaTag = "editor-beta"
-		tag, err := store.OrgTags.GetByOrgIDAndTagName(ctx, org.ID, editorBetaTag)
-		if _, ok := err.(store.ErrOrgTagNotFound); !ok && err != nil {
+		tag, err := db.OrgTags.GetByOrgIDAndTagName(ctx, org.ID, editorBetaTag)
+		if _, ok := err.(db.ErrOrgTagNotFound); !ok && err != nil {
 			return nil, err
 		} else if tag != nil {
-			if _, err = store.UserTags.Create(ctx, invitedUser.ID, editorBetaTag); err != nil {
+			if _, err = db.UserTags.Create(ctx, invitedUser.ID, editorBetaTag); err != nil {
 				return nil, err
 			}
 		}
@@ -399,12 +399,12 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	org, err := store.Orgs.GetByID(ctx, token.OrgID)
+	org, err := db.Orgs.GetByID(ctx, token.OrgID)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = store.OrgMembers.Create(ctx, token.OrgID, *currentUser.SourcegraphID())
+	_, err = db.OrgMembers.Create(ctx, token.OrgID, *currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}

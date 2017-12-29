@@ -18,7 +18,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
@@ -54,7 +54,7 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByID(ctx, c.comment.AuthorUserID)
+	user, err := db.Users.GetByID(ctx, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,12 +91,12 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	Contents string
 	ULID     string
 }) (*threadResolver, error) {
-	thread, err := store.Threads.Get(ctx, args.ThreadID)
+	thread, err := db.Threads.Get(ctx, args.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+	repo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		// 🚨 SECURITY: If the shared item is public, anyone can add comments
 		// as long as the ULID is real. If the shared item is not public, only
 		// org members can.
-		item, err := store.SharedItems.Get(ctx, args.ULID)
+		item, err := db.SharedItems.Get(ctx, args.ULID)
 		if err != nil {
 			return nil, err
 		}
@@ -130,23 +130,23 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		}
 	}
 
-	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
+	org, err := db.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Query all comments so we can send a notification to all participants.
-	comments, err := store.Comments.GetAllForThread(ctx, args.ThreadID)
+	comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, "", actor.Email, user.ID)
+	comment, err := db.Comments.Create(ctx, args.ThreadID, args.Contents, "", actor.Email, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -198,17 +198,17 @@ func (s *schemaResolver) ShareComment(ctx context.Context, args *struct {
 
 // TODO(slimsag): expose the public boolean as a graphql parameter and remove this internal function call
 func (*schemaResolver) shareCommentInternal(ctx context.Context, commentID int32, public bool) (*url.URL, error) {
-	comment, err := store.Comments.GetByID(ctx, commentID)
+	comment, err := db.Comments.GetByID(ctx, commentID)
 	if err != nil {
 		return nil, err
 	}
 
-	thread, err := store.Threads.Get(ctx, comment.ThreadID)
+	thread, err := db.Threads.Get(ctx, comment.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+	repo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -218,12 +218,12 @@ func (*schemaResolver) shareCommentInternal(ctx context.Context, commentID int32
 		return nil, err
 	}
 
-	currentUser, err := store.Users.GetByCurrentAuthUser(ctx)
+	currentUser, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
+	return db.SharedItems.Create(ctx, &sourcegraph.SharedItem{
 		AuthorUserID: currentUser.ID,
 		Public:       public,
 		ThreadID:     &thread.ID,
@@ -315,7 +315,7 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	var participantIDs []int32
 	var mentions []string
 	for i, c := range comments {
-		author, err := store.Users.GetByID(ctx, c.AuthorUserID)
+		author, err := db.Users.GetByID(ctx, c.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -349,7 +349,7 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 		return allEmailsForOrg(ctx, org.ID, exclude)
 	}
 
-	users, err := store.Users.ListByOrg(ctx, org.ID, participantIDs, mentions)
+	users, err := db.Users.ListByOrg(ctx, org.ID, participantIDs, mentions)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +360,7 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	return emails, nil
 }
 
-var usernameMentionPattern = regexp2.MustCompile(`\B@`+store.UsernamePattern, 0)
+var usernameMentionPattern = regexp2.MustCompile(`\B@`+db.UsernamePattern, 0)
 
 // usernamesFromMentions extracts usernames that are mentioned using a @username
 // syntax within a comment. Mentions are normalized to lowercase format.

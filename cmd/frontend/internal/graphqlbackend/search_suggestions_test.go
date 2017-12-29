@@ -9,7 +9,7 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -53,9 +53,9 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
-		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
-			wantFoo := &store.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts} // when treating term as repo: field
-			wantAll := &store.RepoListOp{ListOptions: listOpts}                                   // when treating term as text query
+		db.Mocks.Repos.List = func(_ context.Context, op *db.RepoListOp) ([]*sourcegraph.Repo, error) {
+			wantFoo := &db.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts} // when treating term as repo: field
+			wantAll := &db.RepoListOp{ListOptions: listOpts}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
 				return []*sourcegraph.Repo{{URI: "bar-repo"}}, nil
@@ -67,7 +67,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return nil, nil
 		}
-		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
@@ -105,11 +105,11 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repogroup: and single term", func(t *testing.T) {
 		var mu sync.Mutex
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
-		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op *db.RepoListOp) ([]*sourcegraph.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			wantReposInGroup := &store.RepoListOp{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, ListOptions: listOpts}    // when treating term as repo: field
-			wantFooRepo3 := &store.RepoListOp{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, ListOptions: listOpts} // when treating term as repo: field
+			wantReposInGroup := &db.RepoListOp{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, ListOptions: listOpts}    // when treating term as repo: field
+			wantFooRepo3 := &db.RepoListOp{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, ListOptions: listOpts} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
 				return []*sourcegraph.Repo{{URI: "foo-repo1"}, {URI: "repo3"}}, nil
@@ -120,7 +120,7 @@ func TestSearchSuggestions(t *testing.T) {
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
 		}
-		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
@@ -191,11 +191,11 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
-		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op *db.RepoListOp) ([]*sourcegraph.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (&db.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
@@ -226,11 +226,11 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: and file: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
-		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op *db.RepoListOp) ([]*sourcegraph.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (&store.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (&db.RepoListOp{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil

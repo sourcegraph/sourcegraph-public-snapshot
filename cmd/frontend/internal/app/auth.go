@@ -20,7 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
@@ -61,7 +61,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 	// Create user
 	emailCode := backend.MakeEmailVerificationCode()
-	usr, err := store.Users.Create(r.Context(), backend.NativeAuthUserAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, nil, creds.Password, emailCode)
+	usr, err := db.Users.Create(r.Context(), backend.NativeAuthUserAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, nil, creds.Password, emailCode)
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
 		return
@@ -94,17 +94,17 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 func getUserFromNativeOrAuth0(ctx context.Context, email string) (*sourcegraph.User, error) {
 	authID := backend.NativeAuthUserAuthID(email)
-	usr, err := store.Users.GetByAuthID(ctx, authID)
+	usr, err := db.Users.GetByAuthID(ctx, authID)
 	if err == nil {
 		return usr, nil
 	} else if err != nil {
-		if _, ok := err.(store.ErrUserNotFound); !ok {
+		if _, ok := err.(db.ErrUserNotFound); !ok {
 			return nil, err
 		}
 	}
 
 	// The user might be a legacy auth0 user.
-	return store.Users.GetByEmail(ctx, email)
+	return db.Users.GetByEmail(ctx, email)
 }
 
 // serveSignIn serves a native-auth endpoint
@@ -132,7 +132,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 🚨 SECURITY: check password
-	correct, err := store.Users.IsPassword(ctx, usr.ID, creds.Password)
+	correct, err := db.Users.IsPassword(ctx, usr.ID, creds.Password)
 	if err != nil {
 		httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
 		return
@@ -173,7 +173,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 🚨 SECURITY: require correct authed user to verify email
-	usr, err := store.Users.GetByCurrentAuthUser(ctx)
+	usr, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
 		return
@@ -186,7 +186,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("User %s already verified", usr.Email), http.StatusBadRequest)
 		return
 	}
-	verified, err := store.Users.ValidateEmail(ctx, usr.ID, verifyCode)
+	verified, err := db.Users.ValidateEmail(ctx, usr.ID, verifyCode)
 	if err != nil {
 		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
 		return
@@ -218,7 +218,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr, err := store.Users.GetByEmail(ctx, creds.Email)
+	usr, err := db.Users.GetByEmail(ctx, creds.Email)
 	if err != nil {
 		httpLogAndError(w, "No user found for email", http.StatusBadRequest, "email", creds.Email)
 		return
@@ -263,7 +263,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 🚨 SECURITY: require correct authed user to reset password
-	usr, err := store.Users.GetByEmail(ctx, params.Email)
+	usr, err := db.Users.GetByEmail(ctx, params.Email)
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("User with email %s not found", params.Email), http.StatusNotFound)
 		return
@@ -273,7 +273,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := store.Users.SetPassword(ctx, usr.ID, backend.NativeAuthUserAuthID(params.Email), params.Code, params.Password)
+	success, err := db.Users.SetPassword(ctx, usr.ID, backend.NativeAuthUserAuthID(params.Email), params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return
@@ -291,7 +291,7 @@ func addEditorBetaTag(ctx context.Context, user *sourcegraph.User, tokenString s
 	if err != nil {
 		return nil, err
 	}
-	return store.UserTags.CreateIfNotExists(ctx, user.ID, "editor-beta")
+	return db.UserTags.CreateIfNotExists(ctx, user.ID, "editor-beta")
 }
 
 func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {

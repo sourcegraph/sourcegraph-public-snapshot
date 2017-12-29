@@ -8,7 +8,7 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -27,7 +27,7 @@ func userByID(ctx context.Context, id graphql.ID) (*userResolver, error) {
 }
 
 func userByIDInt32(ctx context.Context, id int32) (*userResolver, error) {
-	user, err := store.Users.GetByID(ctx, id)
+	user, err := db.Users.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (r *userResolver) UpdatedAt() *string {
 }
 
 func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := store.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{User: &r.user.ID})
+	settings, err := db.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{User: &r.user.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -89,12 +89,12 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	DisplayName *string
 	AvatarURL   *string
 }) (*userResolver, error) {
-	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	updatedUser, err := store.Users.Update(ctx, user.ID, args.Username, args.DisplayName, args.AvatarURL)
+	updatedUser, err := db.Users.Update(ctx, user.ID, args.Username, args.DisplayName, args.AvatarURL)
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +103,9 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 }
 
 func currentUser(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if _, ok := err.(store.ErrUserNotFound); ok {
+		if _, ok := err.(db.ErrUserNotFound); ok {
 			return nil, nil
 		}
 		return nil, err
@@ -114,7 +114,7 @@ func currentUser(ctx context.Context) (*userResolver, error) {
 }
 
 func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
-	orgs, err := store.Orgs.GetByUserID(ctx, r.user.ID)
+	orgs, err := db.Orgs.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
 }
 
 func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
-	members, err := store.OrgMembers.GetByUserID(ctx, r.user.ID)
+	members, err := db.OrgMembers.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 	if r.user == nil {
 		return nil, errors.New("Could not resolve tags on nil user")
 	}
-	tags, err := store.UserTags.GetByUserID(ctx, r.user.ID)
+	tags, err := db.UserTags.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,13 +160,13 @@ func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, err
 	if r.user == nil {
 		return nil, errors.New("Could not resolve activity on nil user")
 	}
-	activity, err := store.UserActivity.GetByUserID(ctx, r.user.ID)
+	activity, err := db.UserActivity.GetByUserID(ctx, r.user.ID)
 	if err != nil {
-		if _, ok := err.(store.ErrUserActivityNotFound); !ok {
+		if _, ok := err.(db.ErrUserActivityNotFound); !ok {
 			return nil, err
 		}
 		// If the user does not yet have a row in the UserActivity table, create a row for the user.
-		activity, err = store.UserActivity.CreateIfNotExists(ctx, r.user.ID)
+		activity, err = db.UserActivity.CreateIfNotExists(ctx, r.user.ID)
 		if err != nil {
 			return nil, err
 		}

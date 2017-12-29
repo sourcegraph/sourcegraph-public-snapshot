@@ -20,7 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -120,10 +120,10 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	license, licenseStatus := license.Get(TrackingAppID)
 	var showOnboarding = false
 	if envvar.DeploymentOnPrem() && (license == nil || license.AppID == "") {
-		deploymentConfiguration, err := store.DeploymentConfiguration.Get(req.Context())
+		deploymentConfiguration, err := db.DeploymentConfiguration.Get(req.Context())
 		if err != nil {
 			// errors swallowed because telemetry is optional.
-			log15.Error("store.Config.Get failed", "error", err)
+			log15.Error("db.Config.Get failed", "error", err)
 		} else if deploymentConfiguration.TelemetryEnabled {
 			TrackingAppID = deploymentConfiguration.AppID
 		} else {

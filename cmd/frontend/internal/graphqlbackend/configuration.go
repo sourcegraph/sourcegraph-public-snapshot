@@ -14,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type configurationSubject struct {
@@ -403,7 +403,7 @@ func (r *configurationMutationResolver) doUpdateConfiguration(ctx context.Contex
 
 	// Write mutated settings.
 	actor := actor.FromContext(ctx)
-	updatedSettings, err := store.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, actor.UID, newConfig)
+	updatedSettings, err := db.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, actor.UID, newConfig)
 	if err != nil {
 		return 0, err
 	}
@@ -412,7 +412,7 @@ func (r *configurationMutationResolver) doUpdateConfiguration(ctx context.Contex
 
 func (r *configurationMutationResolver) getCurrentConfig(ctx context.Context) (string, error) {
 	// Get the settings file whose contents to mutate.
-	settings, err := store.Settings.GetLatest(ctx, r.subject.toSubject())
+	settings, err := db.Settings.GetLatest(ctx, r.subject.toSubject())
 	if err != nil {
 		return "", err
 	}
