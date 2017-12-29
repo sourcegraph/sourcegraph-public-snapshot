@@ -5,21 +5,33 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-func (r *schemaResolver) Repositories(ctx context.Context) (*repositoryConnectionResolver, error) {
-	opt := &sourcegraph.RepoListOptions{}
-	opt.PerPage = 10000 // we want every repo
-	repos, err := listRepos(ctx, opt)
-	if err != nil {
-		return nil, err
+func (r *schemaResolver) Repositories(args *struct {
+	First *int32
+}) *repositoryConnectionResolver {
+	var c repositoryConnectionResolver
+
+	if args.First == nil {
+		c.first = defaultFirstValue
+	} else {
+		c.first = *args.First
 	}
-	return &repositoryConnectionResolver{repos: repos}, nil
+
+	return &c
 }
 
-func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*repositoryResolver, error) {
-	reposList, err := backend.Repos.List(ctx, opt)
+type repositoryConnectionResolver struct {
+	first int32
+}
 
+func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {
+	reposList, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: r.first,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -30,14 +42,10 @@ func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*reposi
 			repo: repo,
 		})
 	}
-
 	return l, nil
 }
 
-type repositoryConnectionResolver struct {
-	repos []*repositoryResolver
+func (r *repositoryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	count, err := localstore.Repos.Count(ctx)
+	return int32(count), err
 }
-
-func (r *repositoryConnectionResolver) Nodes() []*repositoryResolver { return r.repos }
-
-func (r *repositoryConnectionResolver) TotalCount() int32 { return int32(len(r.repos)) }

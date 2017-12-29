@@ -90,15 +90,16 @@ export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
  *
  * @return Observable that emits the list of repositories
  */
-export function fetchAllRepositories(): Observable<GQL.IRepository[]> {
+export function fetchAllRepositories(): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(gql`
         query Repositories {
-            repositories {
+            repositories(first: 100) {
                 nodes {
                     id
                     uri
                     createdAt
                 }
+                totalCount
             }
         }
     `).pipe(
@@ -106,7 +107,7 @@ export function fetchAllRepositories(): Observable<GQL.IRepository[]> {
             if (!data || !data.repositories) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.repositories.nodes
+            return data.repositories
         })
     )
 }

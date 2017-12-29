@@ -232,7 +232,10 @@ type Query {
 	repository(uri: String!): Repository
 	phabricatorRepo(uri: String!): PhabricatorRepo
 	# A list of all repositories on this site.
-	repositories: RepositoryConnection!
+	repositories(
+		# Returns the first n repositories from the list.
+		first: Int
+	): RepositoryConnection!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
 	isUsernameAvailable(username: String!): Boolean!
