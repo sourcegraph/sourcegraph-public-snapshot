@@ -53,43 +53,38 @@ func TestComments_emailsToNotify(t *testing.T) {
 	// Mock users
 	nick := sourcegraph.User{
 		ID:       1,
-		AuthID:   "auth|1",
 		Username: "nick",
 		Email:    "nick@sourcegraph.com",
 	}
 	renfred := sourcegraph.User{
 		ID:       2,
-		AuthID:   "auth|2",
 		Username: "renfred",
 		Email:    "renfred@sourcegraph.com",
 	}
 	john := sourcegraph.User{
 		ID:       3,
-		AuthID:   "auth|3",
 		Username: "john",
 		Email:    "john@sourcegraph.com",
 	}
 	sqs := sourcegraph.User{
 		ID:       4,
-		AuthID:   "auth|4",
 		Username: "sqs",
 		Email:    "sqs@sourcegraph.com",
 	}
 	kingy := sourcegraph.User{
 		ID:       5,
-		AuthID:   "auth|5",
 		Username: "kingy",
 		Email:    "kingy@sourcegraph.com",
 	}
 	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}
 
-	store.Mocks.Users.GetByAuthID = func(ctx context.Context, authID string) (*sourcegraph.User, error) {
+	store.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*sourcegraph.User, error) {
 		for _, u := range testUsers {
-			if u.AuthID == authID {
+			if u.ID == id {
 				return &u, nil
 			}
 		}
-		return nil, fmt.Errorf("user with authID %q not found", authID)
+		return nil, fmt.Errorf("user with ID %d not found", id)
 	}
 
 	// Mock Users.ListByOrg
@@ -143,42 +138,42 @@ func TestComments_emailsToNotify(t *testing.T) {
 	// Mock comments
 	one := &sourcegraph.Comment{
 		Contents:     "Yo @renfred",
-		AuthorUserID: nick.AuthID,
+		AuthorUserID: nick.ID,
 		AuthorEmail:  nick.Email,
 	}
 	two := &sourcegraph.Comment{
 		Contents:     "Did you see this comment?",
-		AuthorUserID: nick.AuthID,
+		AuthorUserID: nick.ID,
 		AuthorEmail:  nick.Email,
 	}
 	three := &sourcegraph.Comment{
 		Contents:     "Going to mention myself to test notifications @nick",
-		AuthorUserID: nick.AuthID,
+		AuthorUserID: nick.ID,
 		AuthorEmail:  nick.Email,
 	}
 	four := &sourcegraph.Comment{
 		Contents:     "Dude, I am on vacation. Ask @sqs or @John",
-		AuthorUserID: renfred.AuthID,
+		AuthorUserID: renfred.ID,
 		AuthorEmail:  renfred.Email,
 	}
 	five := &sourcegraph.Comment{
 		Contents:     "Stop bothering Renfred!",
-		AuthorUserID: sqs.AuthID,
+		AuthorUserID: sqs.ID,
 		AuthorEmail:  sqs.Email,
 	}
 	six := &sourcegraph.Comment{
 		Contents:     "Maybe @linus could take a look?",
-		AuthorUserID: nick.AuthID,
+		AuthorUserID: nick.ID,
 		AuthorEmail:  nick.Email,
 	}
 	seven := &sourcegraph.Comment{
 		Contents:     "Feels like yelling into @the-void",
-		AuthorUserID: nick.AuthID,
+		AuthorUserID: nick.ID,
 		AuthorEmail:  nick.Email,
 	}
 	eight := &sourcegraph.Comment{
 		Contents:     "Nevermind. Just going to ask the whole @org",
-		AuthorUserID: nick.AuthID,
+		AuthorUserID: nick.ID,
 		AuthorEmail:  nick.Email,
 	}
 

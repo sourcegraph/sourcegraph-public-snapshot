@@ -54,7 +54,7 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByAuthID(ctx, c.comment.AuthorUserID)
+	user, err := store.Users.GetByID(ctx, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, "", actor.Email, actor.UID)
+	comment, err := store.Comments.Create(ctx, args.ThreadID, args.Contents, "", actor.Email, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +312,7 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	var participantIDs []int32
 	var mentions []string
 	for i, c := range comments {
-		author, err := store.Users.GetByAuthID(ctx, c.AuthorUserID)
+		author, err := store.Users.GetByID(ctx, c.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}

@@ -350,7 +350,7 @@ type Thread struct {
 	CreatedAt         time.Time    `json:"CreatedAt,omitempty"`
 	UpdatedAt         time.Time    `json:"UpdatedAt,omitempty"`
 	ArchivedAt        *time.Time   `json:"ArchivedAt,omitempty"`
-	AuthorUserID      string       `json:"AuthorUserID,omitempty"`
+	AuthorUserID      int32        `json:"AuthorUserID,omitempty"`
 	Lines             *ThreadLines `json:"ThreadLines,omitempty"`
 }
 
@@ -363,7 +363,7 @@ type Comment struct {
 	// TODO(nick): remove author fields and resolve data using author id instead
 	AuthorName   string `json:"AuthorName,omitempty"`
 	AuthorEmail  string `json:"AuthorEmail,omitempty"`
-	AuthorUserID string `json:"AuthorUserID,omitempty"`
+	AuthorUserID int32  `json:"AuthorUserID,omitempty"`
 }
 
 // SharedItem represents a shared thread or comment. Note that a code snippet

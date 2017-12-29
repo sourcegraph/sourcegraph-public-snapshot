@@ -287,7 +287,7 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 		var t sourcegraph.Thread
 		var archivedAt pq.NullTime
 		var rangeLength sql.NullInt64
-		var authorUserID, htmlBefore, html, htmlAfter, textBefore, text, textAfter sql.NullString
+		var htmlBefore, html, htmlAfter, textBefore, text, textAfter sql.NullString
 		var textSelectionRangeStart, textSelectionRangeLength sql.NullInt64
 		err := rows.Scan(
 			&t.ID,
@@ -305,7 +305,7 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 			&t.CreatedAt,
 			&t.UpdatedAt,
 			&archivedAt,
-			&authorUserID,
+			&t.AuthorUserID,
 			&htmlBefore,
 			&html,
 			&htmlAfter,
@@ -327,9 +327,6 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 			t.ArchivedAt = &archivedAt.Time
 		} else {
 			t.ArchivedAt = nil
-		}
-		if authorUserID.Valid {
-			t.AuthorUserID = authorUserID.String
 		}
 		if htmlBefore.Valid && html.Valid && htmlAfter.Valid && textBefore.Valid && text.Valid && textAfter.Valid && textSelectionRangeStart.Valid && textSelectionRangeLength.Valid {
 			t.Lines = &sourcegraph.ThreadLines{

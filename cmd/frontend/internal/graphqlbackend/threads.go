@@ -153,7 +153,7 @@ func (t *threadResolver) CreatedAt() string {
 }
 
 func (t *threadResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByAuthID(ctx, t.thread.AuthorUserID)
+	user, err := store.Users.GetByID(ctx, t.thread.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +385,10 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
+	currentUser, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
 	if err == store.ErrRepoNotFound {
@@ -417,7 +420,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		StartCharacter:    args.StartCharacter,
 		EndCharacter:      args.EndCharacter,
 		RangeLength:       args.RangeLength,
-		AuthorUserID:      actor.UID,
+		AuthorUserID:      *currentUser.SourcegraphID(),
 	}
 	if args.Lines != nil {
 		thread.Lines = &sourcegraph.ThreadLines{
@@ -437,7 +440,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 	}
 
 	if args.Contents != "" {
-		comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", actor.Email, actor.UID)
+		comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", currentUser.Email(), *currentUser.SourcegraphID())
 		if err != nil {
 			return nil, err
 		}
@@ -456,17 +459,14 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		if err != nil {
 			log15.Error("notifyNewComment failed", "error", err)
 		}
-		if uResolver, err := currentUser(ctx); err != nil {
-			// errors swallowed because user is only needed for Slack notifications
-			log15.Error("graphqlbackend.CreateThread: currentUser failed", "error", err)
-		} else if results != nil {
+		if results != nil {
 			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
 			commentURL, err := s.getURL(ctx, newThread.ID, &comment.ID, "slack")
 			if err != nil {
 				log15.Error("graphqlbackend.CreateThread: getURL failed", "error", err)
 			} else {
-				go client.NotifyOnThread(uResolver, org, repo, newThread, comment, results.emails, commentURL.String())
+				go client.NotifyOnThread(currentUser, org, repo, newThread, comment, results.emails, commentURL.String())
 			}
 		}
 	} /* else {
