@@ -125,6 +125,7 @@ Foreign-key constraints:
  updated_at        | timestamp with time zone | not null default now()
  display_name      | text                     | 
  slack_webhook_url | text                     | 
+ deleted_at        | timestamp with time zone | 
 Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
     "org_name_unique" UNIQUE CONSTRAINT, btree (name)

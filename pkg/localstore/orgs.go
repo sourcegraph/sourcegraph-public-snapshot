@@ -16,7 +16,7 @@ type orgs struct{}
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (*orgs) GetByUserID(ctx context.Context, userID string) ([]*sourcegraph.Org, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name, orgs.slack_webhook_url, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1", userID)
+	rows, err := globalDB.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name, orgs.slack_webhook_url, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
 	if err != nil {
 		return []*sourcegraph.Org{}, err
 	}
@@ -50,7 +50,7 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, erro
 	if Mocks.Orgs.GetByID != nil {
 		return Mocks.Orgs.GetByID(ctx, orgID)
 	}
-	orgs, err := o.getBySQL(ctx, "WHERE id=$1 LIMIT 1", orgID)
+	orgs, err := o.getBySQL(ctx, "WHERE deleted_at IS NULL AND id=$1 LIMIT 1", orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, erro
 }
 
 func (o *orgs) List(ctx context.Context) ([]*sourcegraph.Org, error) {
-	return o.getBySQL(ctx, "ORDER BY id ASC")
+	return o.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
 }
 
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Org, error) {
@@ -133,18 +133,18 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName, slackWebhookUR
 
 	if displayName != nil {
 		org.DisplayName = displayName
-		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2", org.DisplayName, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
 			return nil, err
 		}
 	}
 	if slackWebhookURL != nil {
 		org.SlackWebhookURL = slackWebhookURL
-		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url=$1 WHERE id=$2", org.SlackWebhookURL, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url=$1 WHERE id=$2 AND deleted_at IS NULL", org.SlackWebhookURL, id); err != nil {
 			return nil, err
 		}
 	}
 	org.UpdatedAt = time.Now()
-	if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2", org.UpdatedAt, id); err != nil {
+	if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
 		return nil, err
 	}
 

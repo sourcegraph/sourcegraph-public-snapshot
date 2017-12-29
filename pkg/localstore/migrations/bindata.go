@@ -94,6 +94,8 @@
 // ../../../migrations/1513800341_update_username_orgname_regex.up.sql
 // ../../../migrations/1514312401_add_site_admin_column_to_users.down.sql
 // ../../../migrations/1514312401_add_site_admin_column_to_users.up.sql
+// ../../../migrations/1514534085_add_orgs_deleted_at.down.sql
+// ../../../migrations/1514534085_add_orgs_deleted_at.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2041,6 +2043,46 @@ func _1514312401_add_site_admin_column_to_usersUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514534085_add_orgs_deleted_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x49\xcd\x49\x2d\x49\x4d\x89\x4f\x2c\xb1\xe6\x02\x04\x00\x00\xff\xff\x01\x9e\x87\x7a\x29\x00\x00\x00")
+
+func _1514534085_add_orgs_deleted_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514534085_add_orgs_deleted_atDownSql,
+		"1514534085_add_orgs_deleted_at.down.sql",
+	)
+}
+
+func _1514534085_add_orgs_deleted_atDownSql() (*asset, error) {
+	bytes, err := _1514534085_add_orgs_deleted_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514534085_add_orgs_deleted_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514534085_add_orgs_deleted_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x49\xcd\x49\x2d\x49\x4d\x89\x4f\x2c\x51\x08\xf1\xf4\x75\x0d\x0e\x71\xf4\x0d\x50\x08\xf7\x0c\xf1\x00\x73\x15\xa2\xfc\xfd\x5c\xad\xb9\x00\x01\x00\x00\xff\xff\x6f\xff\x7c\xcb\x41\x00\x00\x00")
+
+func _1514534085_add_orgs_deleted_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514534085_add_orgs_deleted_atUpSql,
+		"1514534085_add_orgs_deleted_at.up.sql",
+	)
+}
+
+func _1514534085_add_orgs_deleted_atUpSql() (*asset, error) {
+	bytes, err := _1514534085_add_orgs_deleted_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514534085_add_orgs_deleted_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2187,6 +2229,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1513800341_update_username_orgname_regex.up.sql":             _1513800341_update_username_orgname_regexUpSql,
 	"1514312401_add_site_admin_column_to_users.down.sql":          _1514312401_add_site_admin_column_to_usersDownSql,
 	"1514312401_add_site_admin_column_to_users.up.sql":            _1514312401_add_site_admin_column_to_usersUpSql,
+	"1514534085_add_orgs_deleted_at.down.sql":                     _1514534085_add_orgs_deleted_atDownSql,
+	"1514534085_add_orgs_deleted_at.up.sql":                       _1514534085_add_orgs_deleted_atUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2324,6 +2368,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1513800341_update_username_orgname_regex.up.sql":             &bintree{_1513800341_update_username_orgname_regexUpSql, map[string]*bintree{}},
 	"1514312401_add_site_admin_column_to_users.down.sql":          &bintree{_1514312401_add_site_admin_column_to_usersDownSql, map[string]*bintree{}},
 	"1514312401_add_site_admin_column_to_users.up.sql":            &bintree{_1514312401_add_site_admin_column_to_usersUpSql, map[string]*bintree{}},
+	"1514534085_add_orgs_deleted_at.down.sql":                     &bintree{_1514534085_add_orgs_deleted_atDownSql, map[string]*bintree{}},
+	"1514534085_add_orgs_deleted_at.up.sql":                       &bintree{_1514534085_add_orgs_deleted_atUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
