@@ -1,6 +1,5 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import { WebAuth } from 'auth0-js'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -91,58 +90,6 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        if (window.context.useAuth0) {
-            // Legacy Auth0 path
-            this.handleSubmitAuth0(event)
-        } else {
-            this.handleSubmitNative(event)
-        }
-    }
-
-    private handleSubmitAuth0(event: React.FormEvent<HTMLFormElement>): void {
-        const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
-        const searchParams = new URLSearchParams(this.props.location.search)
-        const returnTo = getReturnTo(this.props.location)
-        if (returnTo) {
-            redirect.searchParams.set('returnTo', returnTo)
-        }
-        const token = searchParams.get('token')
-        if (token) {
-            redirect.searchParams.set('token', token)
-        }
-
-        const webAuth = new WebAuth({
-            domain: window.context.auth0Domain,
-            clientID: window.context.auth0ClientID,
-            redirectUri: redirect.href,
-            responseType: 'code',
-        })
-
-        event.preventDefault()
-        if (this.state.loading) {
-            return
-        }
-        this.setState({ loading: true })
-        const authCallback = (err: any) => {
-            this.setState({ loading: false })
-            if (err) {
-                console.error('auth error: ', err)
-                this.setState({ errorDescription: err.description || 'Unknown Error' })
-            }
-        }
-        eventLogger.log('InitiateSignIn')
-        webAuth.redirect.loginWithCredentials(
-            {
-                connection: 'Sourcegraph',
-                responseType: 'code',
-                username: this.state.email,
-                password: this.state.password,
-            },
-            authCallback
-        )
-    }
-
-    private handleSubmitNative(event: React.FormEvent<HTMLFormElement>): void {
         event.preventDefault()
         if (this.state.loading) {
             return

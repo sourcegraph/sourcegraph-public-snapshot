@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dlclark/regexp2"
@@ -19,6 +20,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore/auth0tmp"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -362,6 +364,20 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 }
 
 func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
+	if conf.AuthProvider() == "auth0" {
+		user, err := u.GetByID(ctx, id)
+		if err != nil {
+			return false, err
+		}
+		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
+		// We need to check those in our own DB.
+		if user.Provider == "auth0" || strings.HasPrefix(user.Auth0ID, "auth0|") {
+			ok, err := auth0tmp.CheckPassword(ctx, user.Email, password)
+			// log15.Info("checking password via auth0", "user", user.Username, "auth0ID", user.Auth0ID, "email", user.Email, "ok", ok, "err", err)
+			return ok, err
+		}
+	}
+
 	var passwd sql.NullString
 	if err := globalDB.QueryRowContext(ctx, "SELECT passwd FROM users WHERE id=$1", id).Scan(&passwd); err != nil {
 		return false, err
@@ -418,7 +434,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
+func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, resetCode string, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -439,9 +455,18 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 	if err != nil {
 		return false, err
 	}
-	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused
+	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused.
 	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
+	}
+	if newAuthID != "" {
+		// Also, this user effectively becomes a builtin (native) auth user since we now store their password, so
+		// update them accordingly.
+		//
+		// TODO(sqs): remove after migration away from auth0
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
+			return false, err
+		}
 	}
 	return true, nil
 }

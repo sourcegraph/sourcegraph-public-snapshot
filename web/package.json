@@ -37,7 +37,6 @@
     "@sourcegraph/prettierrc": "^2.1.0",
     "@sourcegraph/tsconfig": "^2.0.0",
     "@sourcegraph/tslint-config": "^10.0.2",
-    "@types/auth0-js": "^8.6.3",
     "@types/copy-webpack-plugin": "^4.0.1",
     "@types/escape-string-regexp": "0.0.31",
     "@types/extract-text-webpack-plugin": "^3.0.0",
@@ -102,7 +101,6 @@
   "dependencies": {
     "@sourcegraph/icons": "^1.9.0",
     "@sqs/jsonc-parser": "^1.0.1",
-    "auth0-js": "^8.12.0",
     "bootstrap": "^4.0.0-beta",
     "copy-to-clipboard": "^3.0.7",
     "date-fns": "^2.0.0-alpha.7",

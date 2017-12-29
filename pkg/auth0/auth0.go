@@ -1,3 +1,4 @@
+// Package auth0 can be removed when we are fully migrated off of Auth0.
 package auth0
 
 import (

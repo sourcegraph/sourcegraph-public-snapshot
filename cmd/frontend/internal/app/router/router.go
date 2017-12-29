@@ -19,10 +19,6 @@ const (
 
 	Logout = "logout"
 
-	// DEPRECATED
-	SignIn      = "sign-in"
-	Auth0Signin = "auth0.sign-in"
-
 	SignIn2           = "sign-in2"
 	SignOut           = "sign-out"
 	SignUp            = "sign-up"
@@ -64,9 +60,6 @@ func New() *Router {
 	base.Path("/opensearch.xml").Methods("GET").Name(OpenSearch)
 
 	base.Path("/-/logout").Methods("GET").Name(Logout)
-
-	base.Path("/-/sign-in").Methods("GET").Name(SignIn)                    // DEPRECATED
-	base.Path("/-/auth0/sign-in").Methods("GET", "POST").Name(Auth0Signin) // DEPRECATED
 
 	base.Path("/-/sign-up").Methods("POST").Name(SignUp)
 	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)

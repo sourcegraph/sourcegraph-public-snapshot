@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -15,17 +14,14 @@ import (
 	"encoding/base64"
 
 	"github.com/mattbaird/gochimp"
-	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
@@ -107,6 +103,21 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getUserFromNativeOrAuth0(ctx context.Context, email string) (*sourcegraph.User, error) {
+	authID := nativeAuthID(email)
+	usr, err := store.Users.GetByAuth0ID(ctx, authID)
+	if err == nil {
+		return usr, nil
+	} else if err != nil {
+		if _, ok := err.(store.ErrUserNotFound); !ok {
+			return nil, err
+		}
+	}
+
+	// The user might be a legacy auth0 user.
+	return store.Users.GetByEmail(ctx, email)
+}
+
 // serveSignIn2 serves a native-auth endpoint
 func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -122,20 +133,19 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate user
-	authID := nativeAuthID(creds.Email)
-	usr, err := store.Users.GetByAuth0ID(ctx, authID)
+	usr, err := getUserFromNativeOrAuth0(ctx, creds.Email)
 	if err != nil {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
 		return
 	}
-	if usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
 	// 🚨 SECURITY: check password
 	correct, err := store.Users.IsPassword(ctx, usr.ID, creds.Password)
 	if err != nil {
-		httpLogAndError(w, "Error checking password", http.StatusInternalServerError)
+		httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
 		return
 	}
 	if !correct {
@@ -179,7 +189,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
 		return
 	}
-	if usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
@@ -224,7 +234,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "No user found for email", http.StatusBadRequest, "email", creds.Email)
 		return
 	}
-	if usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
@@ -264,18 +274,18 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 🚨 SECURITY: require correct authed user to verify email
+	// 🚨 SECURITY: require correct authed user to reset password
 	usr, err := store.Users.GetByEmail(ctx, params.Email)
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("User with email %s not found", params.Email), http.StatusNotFound)
 		return
 	}
-	if usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
 
-	success, err := store.Users.SetPassword(ctx, usr.ID, params.Code, params.Password)
+	success, err := store.Users.SetPassword(ctx, usr.ID, nativeAuthID(params.Email), params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return
@@ -285,155 +295,6 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Password reset failed", http.StatusUnauthorized)
 		return
 	}
-}
-
-// DEPRECATED
-func auth0ConfigWithRedirectURL(redirectURL string) *oauth2.Config {
-	config := *auth0.Config
-	// RedirectURL is checked by Auth0 against a whitelist so it can't be spoofed.
-	config.RedirectURL = redirectURL
-	return &config
-}
-
-// DEPRECATED
-func ServeAuth0SignIn(w http.ResponseWriter, r *http.Request) (err error) {
-	cookie := &oauthCookie{
-		Nonce:       "",                      // the empty default value is not accepted unless impersonating
-		RedirectURL: globals.AppURL.String(), // impersonation does not allow this to be empty
-		ReturnTo:    "/",
-		ReturnToNew: "/",
-	}
-	if c, err := r.Cookie("oauth"); err == nil {
-		cookieJSON, err := base64.URLEncoding.DecodeString(c.Value)
-		if err != nil {
-			return err
-		}
-		if err := json.Unmarshal(cookieJSON, cookie); err != nil {
-			return err
-		}
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:   "oauth",
-		Path:   "/",
-		MaxAge: -1,
-	})
-
-	code := r.URL.Query().Get("code")
-	token, err := auth0ConfigWithRedirectURL(cookie.RedirectURL).Exchange(r.Context(), code)
-	if err != nil {
-		return err
-	}
-	if !token.Valid() {
-		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("exchanging auth code yielded invalid OAuth2 token")}
-	}
-
-	info := auth0.User{}
-	err = fetchAuth0UserInfo(r.Context(), token, &info)
-	if err != nil {
-		return err
-	}
-
-	username := r.URL.Query().Get("username")
-	displayName := r.URL.Query().Get("displayName")
-	if displayName == "" {
-		displayName = username
-	}
-
-	dbUser, err := store.Users.GetByEmail(r.Context(), info.Email)
-	if err != nil {
-		if _, ok := err.(store.ErrUserNotFound); !ok {
-			// Return all but "user not found" errors;
-			// handle those by creating a db row.
-			return err
-		}
-	}
-	var userCreateErr error
-	if dbUser == nil {
-		if !conf.Get().AuthAllowSignup {
-			return errors.New("signup is not enabled")
-		}
-
-		// Create the user in our DB if the user just signed up via Auth0. There is a TOCTTOU
-		// bug here; their username may no longer be available. Because this is a rare case and
-		// we are removing Auth0 soon, we ignore it.
-		dbUser, userCreateErr = store.Users.Create(r.Context(), info.UserID, info.Email, username, displayName, "", &info.Picture, "", "")
-		if userCreateErr != nil {
-			return err
-		}
-	}
-
-	actor := &actor.Actor{
-		UID:       info.UserID,
-		Login:     username,
-		Email:     info.Email,
-		AvatarURL: info.Picture,
-	}
-
-	// Write the session cookie
-	if err := session.StartNewSession(w, r, actor, 0); err != nil {
-		return err
-	}
-
-	eventLabel := "CompletedAuth0SignIn"
-	if !info.AppMetadata.DidLoginBefore {
-		eventLabel = "SignupCompleted"
-	}
-
-	// Track user data in GCS
-	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(actor, eventLabel)
-	}
-
-	returnTo := r.URL.Query().Get("returnTo")
-	if returnTo == "" {
-		returnTo = "/"
-	}
-
-	userToken := r.URL.Query().Get("token")
-	if dbUser != nil && userToken != "" {
-		// Add editor beta tag for a new user that signs up, if they have been invited to an org.
-		_, err := addEditorBetaTag(r.Context(), dbUser, userToken)
-		if err != nil {
-			return err
-		}
-	}
-
-	if !info.AppMetadata.DidLoginBefore {
-		if err := auth0.SetAppMetadata(r.Context(), info.UserID, "did_login_before", true); err != nil {
-			return err
-		}
-		returnToURL, err := url.Parse(returnTo)
-		if err != nil {
-			return err
-		}
-		q := returnToURL.Query()
-		q.Set("_event", eventLabel)
-		returnToURL.RawQuery = q.Encode()
-		http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
-	} else {
-		// Add tracking info to returnTo URL.
-		returnToURL, err := url.Parse(returnTo)
-		if err != nil {
-			return err
-		}
-		q := returnToURL.Query()
-		q.Set("_event", eventLabel)
-		returnToURL.RawQuery = q.Encode()
-		http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
-	}
-
-	return nil
-}
-
-// fetchAuth0UserInfo fetches Auth0 user info for token into v.
-func fetchAuth0UserInfo(ctx context.Context, token *oauth2.Token, v interface{}) error {
-	auth0Client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))
-	resp, err := auth0Client.Get("https://" + auth0.Domain + "/userinfo")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(&v)
 }
 
 func addEditorBetaTag(ctx context.Context, user *sourcegraph.User, tokenString string) (*sourcegraph.UserTag, error) {

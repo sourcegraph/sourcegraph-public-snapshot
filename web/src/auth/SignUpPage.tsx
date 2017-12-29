@@ -1,6 +1,5 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import UserIcon from '@sourcegraph/icons/lib/User'
-import { WebAuth } from 'auth0-js'
 import * as H from 'history'
 import { Base64 } from 'js-base64'
 import * as React from 'react'
@@ -117,85 +116,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        if (window.context.useAuth0) {
-            // Legacy Auth0 path
-            this.handleSubmitAuth0(event)
-        } else {
-            this.handleSubmitNative(event)
-        }
-    }
-
-    private handleSubmitAuth0(event: React.FormEvent<HTMLFormElement>): void {
-        const redirect = new URL(`${window.context.appURL}/-/auth0/sign-in`)
-        const searchParams = new URLSearchParams(this.props.location.search)
-        const returnTo = getReturnTo(this.props.location)
-        if (returnTo) {
-            redirect.searchParams.set('returnTo', returnTo)
-        }
-        redirect.searchParams.set('username', this.state.username)
-        const token = searchParams.get('token')
-        if (token) {
-            redirect.searchParams.set('token', token)
-        }
-
-        const webAuth = new WebAuth({
-            domain: window.context.auth0Domain,
-            clientID: window.context.auth0ClientID,
-            redirectUri: redirect.href,
-            responseType: 'code',
-        })
-
-        event.preventDefault()
-        if (this.state.loading) {
-            return
-        }
-        this.setState({ loading: true })
-        const authCallback = (err: any) => {
-            this.setState({ loading: false })
-            if (err) {
-                console.error('auth error: ', err)
-                this.setState({ errorDescription: err.description || 'Unknown Error' })
-            } else {
-                if (this.props.onDidSignUp) {
-                    this.props.onDidSignUp(this.state.email)
-                }
-            }
-        }
-        this.subscriptions.add(
-            isUsernameAvailable(this.state.username).subscribe(availability => {
-                if (!availability) {
-                    this.setState({
-                        errorDescription: 'The username you selected is already taken, please try again.',
-                        loading: false,
-                    })
-                    return
-                }
-                webAuth.redirect.signupAndLogin(
-                    {
-                        connection: 'Sourcegraph',
-                        responseType: 'code',
-                        email: this.state.email,
-                        password: this.state.password,
-                        // Setting user_metdata is a "nice-to-have" but doesn't correctly update the
-                        // user's name in Auth0. That's not an issue per-se, see more at
-                        // https://github.com/auth0/auth0.js/issues/70.
-                        user_metadata: { name: this.state.username },
-                    },
-                    authCallback
-                )
-            })
-        )
-        eventLogger.log('InitiateSignUp', {
-            signup: {
-                user_info: {
-                    signup_email: this.state.email,
-                    signup_username: this.state.username,
-                },
-            },
-        })
-    }
-
-    private handleSubmitNative(event: React.FormEvent<HTMLFormElement>): void {
         event.preventDefault()
         if (this.state.loading) {
             return
