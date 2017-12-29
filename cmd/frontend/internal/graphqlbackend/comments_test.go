@@ -79,12 +79,12 @@ func TestComments_emailsToNotify(t *testing.T) {
 	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}
 
 	// Mock Users.ListByOrg
-	store.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, auth0IDs, usernames []string) ([]*sourcegraph.User, error) {
+	store.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, authIDs, usernames []string) ([]*sourcegraph.User, error) {
 		if orgID != testOrg.ID {
 			return nil, fmt.Errorf(`expected to be called with testOrg ID "%d", got "%d"`, testOrg.ID, orgID)
 		}
 		var users []*sourcegraph.User
-		for _, id := range auth0IDs {
+		for _, id := range authIDs {
 			u, ok := map[string]sourcegraph.User{
 				nick.AuthID:    nick,
 				renfred.AuthID: renfred,

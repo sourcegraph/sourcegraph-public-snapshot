@@ -70,7 +70,7 @@ func (err ErrCannotCreateUser) Code() string {
 //
 // Native-auth users must also specify a password and email verification code upon creation. When the user's email is
 // verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
-func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
+func (*users) Create(ctx context.Context, authID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
 	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
@@ -123,7 +123,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id, &isSiteAdmin)
+		authID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -156,7 +156,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 
 	return &sourcegraph.User{
 		ID:          id,
-		AuthID:      auth0ID,
+		AuthID:      authID,
 		Email:       email,
 		Username:    username,
 		DisplayName: displayName,
@@ -290,16 +290,16 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 }
 
 // ListByOrg returns users for a given org. It can also query a list of specific
-// users by either auth0IDs or usernames.
-func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames []string) ([]*sourcegraph.User, error) {
+// users by either authIDs or usernames.
+func (u *users) ListByOrg(ctx context.Context, orgID int32, authIDs, usernames []string) ([]*sourcegraph.User, error) {
 	if Mocks.Users.ListByOrg != nil {
-		return Mocks.Users.ListByOrg(ctx, orgID, auth0IDs, usernames)
+		return Mocks.Users.ListByOrg(ctx, orgID, authIDs, usernames)
 	}
 	conds := []*sqlf.Query{}
 	filters := []*sqlf.Query{}
-	if len(auth0IDs) > 0 {
+	if len(authIDs) > 0 {
 		items := []*sqlf.Query{}
-		for _, id := range auth0IDs {
+		for _, id := range authIDs {
 			items = append(items, sqlf.Sprintf("%s", id))
 		}
 		filters = append(filters, sqlf.Sprintf("u.auth_id IN (%s)", sqlf.Join(items, ",")))

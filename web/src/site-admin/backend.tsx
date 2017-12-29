@@ -13,7 +13,7 @@ export function fetchAllUsers(): Observable<GQL.IUser[]> {
             users {
                 nodes {
                     id
-                    auth0ID
+                    authID
                     username
                     displayName
                     email

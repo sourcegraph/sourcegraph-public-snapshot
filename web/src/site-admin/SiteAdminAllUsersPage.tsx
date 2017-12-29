@@ -43,7 +43,7 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
 
     public render(): JSX.Element | null {
         const actions: JSX.Element[] = []
-        if (this.props.user.auth0ID !== this.props.currentUser.auth0ID) {
+        if (this.props.user.authID !== this.props.currentUser.authID) {
             if (this.props.user.siteAdmin) {
                 actions.push(
                     <button
