@@ -31,5 +31,6 @@
   "lightstepAccessToken": "d60b0b2477a7ccb05d7783917f648816",
   "repoListUpdateInterval": 600,
   "auth.allowSignup": true,
+  "auth.provider": "builtin",
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK"
 }

@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	oidc "github.com/coreos/go-oidc"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -42,10 +43,10 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 	s.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(providerJSON{
-			Issuer:      oidcIDProvider,
-			AuthURL:     oidcIDProvider + "/oauth2/v1/authorize",
-			TokenURL:    oidcIDProvider + "/oauth2/v1/token",
-			UserInfoURL: oidcIDProvider + "/oauth2/v1/userinfo",
+			Issuer:      oidcProvider.Issuer,
+			AuthURL:     oidcProvider.Issuer + "/oauth2/v1/authorize",
+			TokenURL:    oidcProvider.Issuer + "/oauth2/v1/token",
+			UserInfoURL: oidcProvider.Issuer + "/oauth2/v1/userinfo",
 		})
 	})
 	s.HandleFunc("/oauth2/v1/token", func(w http.ResponseWriter, r *http.Request) {
@@ -113,9 +114,11 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 	oidcIDServer := newOIDCIDServer(t, "THECODE")
 	defer oidcIDServer.Close()
 
-	oidcIDProvider = oidcIDServer.URL
-	oidcClientID = "aaaaaaaaaaaaaa"
-	oidcClientSecret = "aaaaaaaaaaaaaaaaaaaaaaaaa"
+	oidcProvider = &schema.OpenIDConnectAuthProvider{
+		Issuer:       oidcIDServer.URL,
+		ClientID:     "aaaaaaaaaaaaaa",
+		ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
+	}
 
 	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect"}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
@@ -130,7 +133,7 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 	}
 
-	testOIDCUserUID := oidcToAuthID(oidcIDProvider, testOIDCUser)
+	testOIDCUserUID := oidcToAuthID(oidcProvider.Issuer, testOIDCUser)
 	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, testOIDCUserUID), appURL)
 	if err != nil {
 		t.Fatal(err)
@@ -169,12 +172,12 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		resp := doRequest("GET", appURL+"/.auth/login", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		locHeader := resp.Header.Get("Location")
-		check(t, strings.HasPrefix(locHeader, oidcIDProvider+"/"), "did not redirect to OIDC Provider")
+		check(t, strings.HasPrefix(locHeader, oidcProvider.Issuer+"/"), "did not redirect to OIDC Provider")
 		idpLoginURL, err := url.Parse(locHeader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		check(t, oidcClientID == idpLoginURL.Query().Get("client_id"), "client id didn't match")
+		check(t, oidcProvider.ClientID == idpLoginURL.Query().Get("client_id"), "client id didn't match")
 		checkEq(t, appURL+"/.auth/callback", idpLoginURL.Query().Get("redirect_uri"), "wrong redirect_uri")
 		checkEq(t, "code", idpLoginURL.Query().Get("response_type"), "response_type was not \"code\"")
 		checkEq(t, "openid profile email", idpLoginURL.Query().Get("scope"), "scope was not \"openid\"")
@@ -231,9 +234,11 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 	oidcIDServer := newOIDCIDServer(t, "THECODE")
 	defer oidcIDServer.Close()
 
-	oidcIDProvider = oidcIDServer.URL
-	oidcClientID = "aaaaaaaaaaaaaa"
-	oidcClientSecret = "aaaaaaaaaaaaaaaaaaaaaaaaa"
+	oidcProvider = &schema.OpenIDConnectAuthProvider{
+		Issuer:       oidcIDServer.URL,
+		ClientID:     "aaaaaaaaaaaaaa",
+		ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
+	}
 
 	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com"}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {

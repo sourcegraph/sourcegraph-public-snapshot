@@ -23,18 +23,18 @@ import (
 
 var (
 	// SAML App creation vars
-	samlSPCert         = conf.Get().SamlSPCert
-	samlSPKey          = conf.Get().SamlSPKey
-	samlIDPMetadataURL = conf.Get().SamlIDProviderMetadataURL
+	samlProvider = conf.AuthSAML()
 
 	idpMetadataURL *url.URL
 )
 
 func init() {
-	var err error
-	idpMetadataURL, err = url.Parse(samlIDPMetadataURL)
-	if err != nil {
-		log.Fatalf("Could not parse the Identity Provider metadata URL: %s", err)
+	if samlProvider != nil {
+		var err error
+		idpMetadataURL, err = url.Parse(samlProvider.IdentityProviderMetadataURL)
+		if err != nil {
+			log.Fatalf("Could not parse the Identity Provider metadata URL: %s", err)
+		}
 	}
 }
 
@@ -43,13 +43,13 @@ func init() {
 //
 // 🚨 SECURITY
 func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
-	if samlIDPMetadataURL == "" {
+	if samlProvider == nil || samlProvider.IdentityProviderMetadataURL == "" {
 		return nil, errors.New("No SAML ID Provider specified")
 	}
-	if samlSPCert == "" {
+	if samlProvider.ServiceProviderCertificate == "" {
 		return nil, errors.New("No SAML Service Provider certificate")
 	}
-	if samlSPKey == "" {
+	if samlProvider.ServiceProviderPrivateKey == "" {
 		return nil, errors.New("No SAML Service Provider private key")
 	}
 
@@ -57,7 +57,7 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	if err != nil {
 		return nil, err
 	}
-	keyPair, err := tls.X509KeyPair([]byte(samlSPCert), []byte(samlSPKey))
+	keyPair, err := tls.X509KeyPair([]byte(samlProvider.ServiceProviderCertificate), []byte(samlProvider.ServiceProviderPrivateKey))
 	if err != nil {
 		return nil, err
 	}

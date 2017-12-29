@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
@@ -34,8 +33,6 @@ var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex 
 var TrackingAppID = conf.Get().AppID
 
 var githubConf = conf.Get().Github
-
-var useAuth0 = env.Get("USE_AUTH0", "true", "Whether to use Auth0 for native auth")
 
 // githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs.
 // This can be used for the purposes of generating external GitHub enterprise links.
@@ -139,8 +136,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		showOnboarding = deploymentConfiguration == nil || deploymentConfiguration.LastUpdated == ""
 	}
 
-	useAuth0Val, _ := strconv.ParseBool(useAuth0)
-
 	return JSContext{
 		AppURL:               globals.AppURL.String(),
 		XHRHeaders:           headers,
@@ -163,7 +158,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		LicenseStatus:        licenseStatus,
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         conf.CanSendEmail(),
-		UseAuth0:             useAuth0Val,
+		UseAuth0:             conf.AuthProvider() == "auth0",
 		Site:                 publicSiteConfiguration,
 	}
 }

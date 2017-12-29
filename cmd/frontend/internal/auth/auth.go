@@ -34,11 +34,11 @@ func NewSSOAuthHandler(createCtx context.Context, handler http.Handler, appURL s
 	}
 	initialized = true
 
-	if oidcIDProvider != "" {
+	if oidcProvider != nil {
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
 		return newOIDCAuthHandler(createCtx, handler, appURL)
 	}
-	if samlIDPMetadataURL != "" {
+	if samlProvider != nil {
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
 		return newSAMLAuthHandler(createCtx, handler, appURL)
 	}

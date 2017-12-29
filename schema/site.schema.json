@@ -168,36 +168,48 @@
       "type": "integer"
     },
     "ssoUserHeader": {
-      "description": "Header injected by an SSO proxy to indicate the logged in user.",
+      "description":
+        "Header injected by an SSO proxy to indicate the logged in user.\n\nDEPRECATED: Use auth.provider==\"http-header\" and auth.userIdentityHTTPHeader instead.",
       "type": "string"
     },
     "oidcProvider": {
-      "description": "The URL of the OpenID Connect Provider",
+      "description":
+        "The URL of the OpenID Connect Provider\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"issuer\" property instead.",
       "type": "string"
     },
-    "oidcClientID": { "description": "OIDC Client ID", "type": "string" },
+    "oidcClientID": {
+      "description":
+        "OIDC Client ID\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"clientID\" property instead.",
+      "type": "string"
+    },
     "oidcClientSecret": {
-      "description": "OIDC Client Secret",
+      "description":
+        "OIDC Client Secret\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"clientSecret\" property instead.",
       "type": "string"
     },
     "oidcEmailDomain": {
-      "description": "Whitelisted email domain for logins, e.g. 'mycompany.com'",
+      "description":
+        "Whitelisted email domain for logins, e.g. 'mycompany.com'\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"requireEmailDomain\" property instead.",
       "type": "string"
     },
     "oidcOverrideToken": {
-      "description": "Token to circumvent OIDC layer (testing only)",
+      "description":
+        "Token to circumvent OIDC layer (testing only)\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"overrideToken\" property instead.",
       "type": "string"
     },
     "samlIDProviderMetadataURL": {
-      "description": "SAML Identity Provider metadata URL (for dyanmic configuration of SAML Service Provider)",
+      "description":
+        "SAML Identity Provider metadata URL (for dyanmic configuration of SAML Service Provider)\n\nDEPRECATED: Use auth.provider==\"saml\" and auth.saml's \"identityProviderMetadataURL\" property instead.",
       "type": "string"
     },
     "samlSPCert": {
-      "description": "SAML Service Provider certificate",
+      "description":
+        "SAML Service Provider certificate\n\nDEPRECATED: Use auth.provider==\"saml\" and auth.saml's \"serviceProviderCertificate\" property instead.",
       "type": "string"
     },
     "samlSPKey": {
-      "description": "SAML Service Provider private key",
+      "description":
+        "SAML Service Provider private key\n\nDEPRECATED: Use auth.provider==\"saml\" and auth.saml's \"serviceProviderPrivateKey\" property instead.",
       "type": "string"
     },
     "searchScopes": {
@@ -269,10 +281,28 @@
       "description": "A secret key for this site, used for generating org invites.",
       "type": "string"
     },
+    "auth.provider": {
+      "description":
+        "The authentication provider to use for identifying and signing in users. Defaults to built-in authentication.",
+      "default": "builtin",
+      "type": "string",
+      "enum": ["builtin", "auth0", "openidconnect", "saml", "http-header"]
+    },
     "auth.allowSignup": {
       "description":
-        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.",
+        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nRequires auth.provider == \"builtin\" or \"auth0\".",
       "type": "boolean"
+    },
+    "auth.openIDConnect": {
+      "$ref": "#/definitions/OpenIDConnectAuthProvider"
+    },
+    "auth.saml": {
+      "$ref": "#/definitions/SAMLAuthProvider"
+    },
+    "auth.userIdentityHTTPHeader": {
+      "description":
+        "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
+      "type": "string"
     },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
@@ -327,6 +357,70 @@
           "description": "Display path on Sourcegraph for the repository, such as my/repo",
           "type": "string",
           "pattern": "^[\\w_]"
+        }
+      }
+    },
+    "OpenIDConnectAuthProvider": {
+      "description": "Configures the OpenID Connect authentication provider for SSO.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "clientID", "clientSecret"],
+      "properties": {
+        "issuer": {
+          "description": "The URL of the OpenID Connect issuer.\n\nFor Google Apps: https://accounts.google.com",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "clientID": {
+          "description":
+            "The client ID for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "clientSecret": {
+          "description":
+            "The client secret for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "requireEmailDomain": {
+          "description":
+            "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
+          "type": "string",
+          "pattern": "^[^<@]"
+        },
+        "overrideToken": {
+          "description":
+            "(For testing and development only) A token used to circumvent the OpenID Connect authentication layer.",
+          "type": "string"
+        }
+      }
+    },
+    "SAMLAuthProvider": {
+      "description": "Configures the SAML authentication provider for SSO.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identityProviderMetadataURL", "serviceProviderCertificate", "serviceProviderPrivateKey"],
+      "properties": {
+        "identityProviderMetadataURL": {
+          "description":
+            "SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "serviceProviderCertificate": {
+          "description":
+            "SAML Service Provider certificate in X.509 encoding (begins with \"-----BEGIN CERTIFICATE-----\").",
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
+        },
+        "serviceProviderPrivateKey": {
+          "description":
+            "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
+          "type": "string",
+          "pattern": "^-----BEGIN PRIVATE KEY-----\n"
         }
       }
     }

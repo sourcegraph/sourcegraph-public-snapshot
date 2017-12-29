@@ -1,6 +1,6 @@
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Edit, FormattingOptions } from '@sqs/jsonc-parser/lib/format'
-import { GitHubConnection, Repository } from '../schema/site.schema'
+import { GitHubConnection, OpenIdConnectAuthProvider, Repository, SamlAuthProvider } from '../schema/site.schema'
 
 /**
  * A helper function that modifies site configuration to configure specific
@@ -44,6 +44,37 @@ const addOtherRepository: ConfigHelper = config => {
     return { edits, selectText: urlPlaceholder }
 }
 
+const addSSOViaGSuite: ConfigHelper = config => {
+    const value: OpenIdConnectAuthProvider = {
+        issuer: 'https://accounts.google.com',
+        clientID: '<see documentation: https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials>',
+        clientSecret: '<see same documentation as clientID>',
+        requireEmailDomain: "<your company's email domain (example: mycompany.com)>",
+    }
+    return {
+        edits: [
+            ...setProperty(config, ['auth.provider'], 'openidconnect', defaultFormattingOptions),
+            ...setProperty(config, ['auth.openIDConnect'], value, defaultFormattingOptions),
+        ],
+        selectText: '"auth.openIDConnect": {',
+    }
+}
+
+const addSSOViaSAML: ConfigHelper = config => {
+    const value: SamlAuthProvider = {
+        identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
+        serviceProviderCertificate: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
+        serviceProviderPrivateKey: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
+    }
+    return {
+        edits: [
+            ...setProperty(config, ['auth.provider'], 'saml', defaultFormattingOptions),
+            ...setProperty(config, ['auth.saml'], value, defaultFormattingOptions),
+        ],
+        selectText: '"auth.saml": {',
+    }
+}
+
 export interface EditorAction {
     id: string
     label: string
@@ -58,4 +89,6 @@ export const editorActions: EditorAction[] = [
         run: addGitHubEnterprise,
     },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
+    { id: 'sourcegraph.site.ssoViaGSuite', label: 'SSO via Google (G Suite)', run: addSSOViaGSuite },
+    { id: 'sourcegraph.site.ssoViaSAML', label: 'SSO via SAML', run: addSSOViaSAML },
 ]

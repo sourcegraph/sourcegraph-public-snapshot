@@ -153,6 +153,7 @@ export function fetchSite(): Observable<GQL.ISite> {
                 configuration {
                     effectiveContents
                     pendingContents
+                    extraValidationErrors
                     canUpdate
                     source
                 }

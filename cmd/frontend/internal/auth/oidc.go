@@ -29,12 +29,7 @@ import (
 const oidcStateCookieName = "sg-oidc-state"
 
 var (
-	oidcIDProvider   = conf.Get().OidcProvider
-	oidcClientID     = conf.Get().OidcClientID
-	oidcClientSecret = conf.Get().OidcClientSecret
-	oidcEmailDomain  = conf.Get().OidcEmailDomain
-	// 🚨 SECURITY oidcOverrideToken is for testing purposes only
-	oidcOverrideToken = conf.Get().OidcOverrideToken
+	oidcProvider = conf.AuthOpenIDConnect()
 )
 
 type UserClaims struct {
@@ -59,10 +54,10 @@ type UserClaims struct {
 // 🚨 SECURITY
 func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
 	// Return an error if the OIDC parameters are unset or missing
-	if oidcIDProvider == "" {
+	if oidcProvider == nil {
 		return nil, errors.New("No OpenID Connect Provider specified")
 	}
-	if oidcClientID == "" || oidcClientSecret == "" {
+	if oidcProvider.ClientID == "" || oidcProvider.ClientSecret == "" {
 		return nil, fmt.Errorf("OIDC Client ID or Client Secret was empty")
 	}
 
@@ -73,7 +68,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	}
 
 	return session.CookieOrSessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if oidcOverrideToken != "" && r.Header.Get("X-Oidc-Override") == oidcOverrideToken {
+		if oidcProvider.OverrideToken != "" && r.Header.Get("X-Oidc-Override") == oidcProvider.OverrideToken {
 			if err := startAnonUserSession(createCtx, w, r); err != nil {
 				http.Error(w, "Error initializing anonymous user", http.StatusInternalServerError)
 				return
@@ -130,18 +125,18 @@ func startAnonUserSession(ctx context.Context, w http.ResponseWriter, r *http.Re
 //
 // 🚨 SECURITY
 func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
-	provider, err := oidc.NewProvider(createCtx, oidcIDProvider)
+	provider, err := oidc.NewProvider(createCtx, oidcProvider.Issuer)
 	if err != nil {
 		return nil, err
 	}
 	oauth2Config := oauth2.Config{
-		ClientID:     oidcClientID,
-		ClientSecret: oidcClientSecret,
+		ClientID:     oidcProvider.ClientID,
+		ClientSecret: oidcProvider.ClientSecret,
 		RedirectURL:  fmt.Sprintf("%s%s/%s", appURL, authURLPrefix, "callback"),
 		Endpoint:     provider.Endpoint(),
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
-	verifier := provider.Verifier(&oidc.Config{ClientID: oidcClientID})
+	verifier := provider.Verifier(&oidc.Config{ClientID: oidcProvider.ClientID})
 
 	r := mux.NewRouter()
 
@@ -239,8 +234,8 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			return
 		}
 
-		if oidcEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+oidcEmailDomain) {
-			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+oidcEmailDomain), http.StatusUnauthorized)
+		if oidcProvider.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+oidcProvider.RequireEmailDomain) {
+			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+oidcProvider.RequireEmailDomain), http.StatusUnauthorized)
 			return
 		}
 
@@ -342,6 +337,6 @@ func (s *authnState) Decode(encoded string) error {
 	return json.Unmarshal(b, s)
 }
 
-func oidcToAuthID(provider, subject string) string {
-	return fmt.Sprintf("%s:%s", provider, subject)
+func oidcToAuthID(issuer, subject string) string {
+	return fmt.Sprintf("%s:%s", issuer, subject)
 }

@@ -20,17 +20,30 @@ func Validate() {
 	if input == "" {
 		return
 	}
+	normalizedInput := normalizeJSON(input)
 
-	res, err := validate([]byte(schema.SiteSchemaJSON), normalizeJSON(input))
+	res, err := validate([]byte(schema.SiteSchemaJSON), normalizedInput)
 	if err != nil {
 		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
 		return
 	}
-	if !res.Valid() {
+	validationErrors := make([]string, len(res.Errors()))
+	for i, e := range res.Errors() {
+		validationErrors[i] = e.String()
+	}
+
+	customValidationErrors, err := ValidateCustom(normalizedInput)
+	if err != nil {
+		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
+		return
+	}
+	validationErrors = append(validationErrors, customValidationErrors...)
+
+	if len(validationErrors) > 0 {
 		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		fmt.Fprintln(os.Stderr, "⚠️ Warning: Invalid Sourcegraph site configuration:")
-		for _, err := range res.Errors() {
-			fmt.Fprintf(os.Stderr, " - %s\n", err.String())
+		for _, verr := range validationErrors {
+			fmt.Fprintf(os.Stderr, " - %s\n", verr)
 		}
 		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}

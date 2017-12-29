@@ -5,8 +5,13 @@
 
     &__alert {
         margin: 0.5rem 0 1rem;
-        p:last-child {
+        p:last-child,
+        ul:last-child {
             margin-bottom: 0;
+        }
+
+        &-item {
+            margin-left: 1rem;
         }
 
         &-flex {
