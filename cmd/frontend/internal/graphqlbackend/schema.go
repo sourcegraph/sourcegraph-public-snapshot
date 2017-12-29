@@ -277,7 +277,7 @@ type Query {
 		package: String
 		limit: Int
 	): [Dependency!]!
-	users: UserConnection
+	users: UserConnection!
 	# List all organizations.
 	orgs: OrgConnection!
 	updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
