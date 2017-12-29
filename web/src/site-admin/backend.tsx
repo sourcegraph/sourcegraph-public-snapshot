@@ -310,3 +310,57 @@ export function deleteOrganization(organization: GQLID): Observable<void> {
         })
     )
 }
+
+/**
+ * Fetches all threads.
+ */
+export function fetchAllThreads(): Observable<GQL.IThreadConnection> {
+    return queryGraphQL(gql`
+        query SiteThreads {
+            site {
+                threads {
+                    nodes {
+                        id
+                        repo {
+                            canonicalRemoteID
+                            org {
+                                name
+                            }
+                        }
+                        repoRevisionPath
+                        branch
+                        repoRevisionPath
+                        repoRevision
+                        title
+                        createdAt
+                        archivedAt
+                        author {
+                            id
+                            username
+                            displayName
+                        }
+                        comments {
+                            id
+                            title
+                            contents
+                            createdAt
+                            author {
+                                id
+                                username
+                                displayName
+                            }
+                        }
+                    }
+                    totalCount
+                }
+            }
+        }
+    `).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.site || !data.site.threads) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.site.threads
+        })
+    )
+}

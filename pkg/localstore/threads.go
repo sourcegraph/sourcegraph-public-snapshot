@@ -242,6 +242,14 @@ func (t *threads) CountByFile(ctx context.Context, orgID *int32, repoIDs []int32
 	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
+func (t *threads) List(ctx context.Context) ([]*sourcegraph.Thread, error) {
+	return t.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
+}
+
+func (t *threads) Count(ctx context.Context) (int32, error) {
+	return t.getCountBySQL(ctx, "WHERE deleted_at IS NULL")
+}
+
 func (t *threads) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int32, error) {
 	var count int32
 	rows := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM threads t "+query, args...)
