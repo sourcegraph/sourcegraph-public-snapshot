@@ -6,7 +6,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -16,7 +16,7 @@ import (
 // * Repo does not exist: vcs.RepoNotExistError
 // * Commit does not exist: vcs.ErrRevisionNotFound
 // * Empty repository: vcs.ErrRevisionNotFound
-// * The user does not have permission: localstore.ErrRepoNotFound
+// * The user does not have permission: db.ErrRepoNotFound
 // * Other unexpected errors.
 func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
 	if Mocks.Repos.ResolveRev != nil {
@@ -30,7 +30,7 @@ func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevO
 	if err != nil {
 		if notExistErr, isNotExist := err.(vcs.RepoNotExistError); isNotExist && !notExistErr.CloneInProgress {
 			// Delete repository if gitserver says it doesn't exist
-			if err := localstore.Repos.Delete(ctx, op.Repo); err != nil {
+			if err := db.Repos.Delete(ctx, op.Repo); err != nil {
 				log15.Warn("svc.local.repos.ResolveRev failed to delete non-existent repository")
 			}
 		}
@@ -43,7 +43,7 @@ func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevO
 // consulting its VCS data). If no rev is specified, the repo's
 // default branch is used.
 func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -68,7 +68,7 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec)
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "Head (revision specifier) is required")
 	}
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCom
 		return nil, err
 	}
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	oidc "github.com/coreos/go-oidc"
@@ -91,7 +91,7 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 	srv := httptest.NewServer(s)
 
 	// Mock user
-	localstore.Mocks.Users.GetByAuthID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
+	db.Mocks.Users.GetByAuthID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
 		if uid == srv.URL+":"+testOIDCUser {
 			return &sourcegraph.User{ID: 123, AuthID: uid, Username: uid}, nil
 		}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func (r *siteResolver) Threads(args *struct {
@@ -25,18 +25,18 @@ func (r *siteThreadConnectionResolver) Nodes(ctx context.Context) ([]*threadReso
 		return nil, err
 	}
 
-	threadsList, err := localstore.Threads.List(ctx)
+	threadsList, err := db.Threads.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var l []*threadResolver
 	for _, thread := range threadsList {
-		orgRepo, err := localstore.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+		orgRepo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 		if err != nil {
 			return nil, err
 		}
-		org, err := localstore.Orgs.GetByID(ctx, orgRepo.OrgID)
+		org, err := db.Orgs.GetByID(ctx, orgRepo.OrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -56,6 +56,6 @@ func (r *siteThreadConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	count, err := localstore.Threads.Count(ctx)
+	count, err := db.Threads.Count(ctx)
 	return int32(count), err
 }

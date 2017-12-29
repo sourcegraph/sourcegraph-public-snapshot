@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func (r *schemaResolver) Users(args *struct {
@@ -45,6 +45,6 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 		return 0, err
 	}
 
-	count, err := localstore.Users.Count(ctx)
+	count, err := db.Users.Count(ctx)
 	return int32(count), err
 }

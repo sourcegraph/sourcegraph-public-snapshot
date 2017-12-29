@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -44,14 +44,14 @@ func TestSearchResults(t *testing.T) {
 
 	t.Run("multiple terms", func(t *testing.T) {
 		var calledReposList bool
-		store.Mocks.Repos.List = func(_ context.Context, op *store.RepoListOp) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op *db.RepoListOp) ([]*sourcegraph.Repo, error) {
 			calledReposList = true
-			if want := (&store.RepoListOp{ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (&db.RepoListOp{ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "repo"}}, nil
 		}
-		store.Mocks.Repos.MockGetByURI(t, "repo", 1)
+		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true

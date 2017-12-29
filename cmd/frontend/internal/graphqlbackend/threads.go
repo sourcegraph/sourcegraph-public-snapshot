@@ -21,7 +21,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
@@ -61,7 +61,7 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 		limit = *t.limit
 	}
 	orgID, repoIDs := t.orgRepoArgs()
-	threads, err := store.Threads.ListByFile(ctx, orgID, repoIDs, t.branch, t.file, limit)
+	threads, err := db.Threads.ListByFile(ctx, orgID, repoIDs, t.branch, t.file, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 
 func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	orgID, repoIDs := t.orgRepoArgs()
-	return store.Threads.CountByFile(ctx, orgID, repoIDs, t.branch, t.file)
+	return db.Threads.CountByFile(ctx, orgID, repoIDs, t.branch, t.file)
 }
 
 type threadResolver struct {
@@ -95,7 +95,7 @@ func (t *threadResolver) ID() int32 {
 func (t *threadResolver) Repo(ctx context.Context) (*orgRepoResolver, error) {
 	var err error
 	if t.repo == nil {
-		t.repo, err = store.OrgRepos.GetByID(ctx, t.thread.OrgRepoID)
+		t.repo, err = db.OrgRepos.GetByID(ctx, t.thread.OrgRepoID)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +153,7 @@ func (t *threadResolver) CreatedAt() string {
 }
 
 func (t *threadResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByID(ctx, t.thread.AuthorUserID)
+	user, err := db.Users.GetByID(ctx, t.thread.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func (t *threadResolver) Title(ctx context.Context) (string, error) {
 }
 
 func (t *threadResolver) Comments(ctx context.Context) ([]*commentResolver, error) {
-	comments, err := store.Comments.GetAllForThread(ctx, t.thread.ID)
+	comments, err := db.Comments.GetAllForThread(ctx, t.thread.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -390,9 +390,9 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		return nil, err
 	}
 
-	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
-	if err == store.ErrRepoNotFound {
-		repo, err = store.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
+	repo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
+	if err == db.ErrRepoNotFound {
+		repo, err = db.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
 			CanonicalRemoteID: args.CanonicalRemoteID,
 			CloneURL:          args.CloneURL,
 			OrgID:             args.OrgID.int32Value,
@@ -402,7 +402,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		return nil, err
 	}
 
-	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
+	org, err := db.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -434,19 +434,19 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 			TextSelectionRangeLength: args.Lines.TextSelectionRangeLength,
 		}
 	}
-	newThread, err := store.Threads.Create(ctx, thread)
+	newThread, err := db.Threads.Create(ctx, thread)
 	if err != nil {
 		return nil, err
 	}
 
 	if args.Contents != "" {
-		comment, err := store.Comments.Create(ctx, newThread.ID, args.Contents, "", currentUser.Email(), *currentUser.SourcegraphID())
+		comment, err := db.Comments.Create(ctx, newThread.ID, args.Contents, "", currentUser.Email(), *currentUser.SourcegraphID())
 		if err != nil {
 			return nil, err
 		}
 		var results *commentResults
 		err = func() error {
-			user, err := store.Users.GetByCurrentAuthUser(ctx)
+			user, err := db.Users.GetByCurrentAuthUser(ctx)
 			if err != nil {
 				return err
 			}
@@ -481,12 +481,12 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	ThreadID int32
 	Archived *bool
 }) (*threadResolver, error) {
-	thread, err := store.Threads.Get(ctx, args.ThreadID)
+	thread, err := db.Threads.Get(ctx, args.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+	repo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -498,23 +498,23 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 
 	actor := actor.FromContext(ctx)
 
-	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
+	org, err := db.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return nil, err
 	}
 
 	wasArchived := thread.ArchivedAt
-	thread, err = store.Threads.Update(ctx, args.ThreadID, repo.ID, args.Archived)
+	thread, err = db.Threads.Update(ctx, args.ThreadID, repo.ID, args.Archived)
 	if err != nil {
 		return nil, err
 	}
 
 	if wasArchived == nil && thread.ArchivedAt != nil {
-		user, err := store.Users.GetByAuthID(ctx, actor.UID)
+		user, err := db.Users.GetByAuthID(ctx, actor.UID)
 		if err != nil {
 			return nil, err
 		}
-		comments, err := store.Comments.GetAllForThread(ctx, args.ThreadID)
+		comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID)
 		if err != nil {
 			return nil, err
 		}
@@ -542,12 +542,12 @@ func (s *schemaResolver) ShareThread(ctx context.Context, args *struct {
 
 // TODO(slimsag): expose the public boolean as a graphql parameter and remove this internal function call
 func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, public bool) (*url.URL, error) {
-	thread, err := store.Threads.Get(ctx, threadID)
+	thread, err := db.Threads.Get(ctx, threadID)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+	repo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -557,12 +557,12 @@ func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, 
 		return nil, err
 	}
 
-	currentUser, err := store.Users.GetByCurrentAuthUser(ctx)
+	currentUser, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
+	return db.SharedItems.Create(ctx, &sourcegraph.SharedItem{
 		AuthorUserID: currentUser.ID,
 		Public:       public,
 		ThreadID:     &threadID,
@@ -583,7 +583,7 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 		first = previousComments[0]
 	}
 
-	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
+	org, err := db.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return err
 	}

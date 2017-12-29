@@ -13,10 +13,10 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -33,7 +33,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	ctx, done := trace(ctx, "Repos", "Get", repoSpec, &err)
 	defer done()
 
-	repo, err := localstore.Repos.Get(ctx, repoSpec.ID)
+	repo, err := db.Repos.Get(ctx, repoSpec.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
 
-	repo, err := localstore.Repos.GetByURI(ctx, uri)
+	repo, err := db.Repos.GetByURI(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 }
 
 func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
-	return localstore.Repos.TryInsertNew(ctx, uri, description, fork, private)
+	return db.Repos.TryInsertNew(ctx, uri, description, fork, private)
 }
 
 func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res *sourcegraph.RepoList, err error) {
@@ -88,7 +88,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 		opt = &sourcegraph.RepoListOptions{}
 	}
 
-	repos, err := localstore.Repos.List(ctx, &localstore.RepoListOp{
+	repos, err := db.Repos.List(ctx, &db.RepoListOp{
 		Query:           opt.Query,
 		IncludePatterns: opt.IncludePatterns,
 		ExcludePattern:  opt.ExcludePattern,
@@ -149,7 +149,7 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 		return Mocks.Repos.GetInventoryUncached(ctx, repoRev)
 	}
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
 	}

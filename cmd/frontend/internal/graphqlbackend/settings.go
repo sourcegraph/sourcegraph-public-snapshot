@@ -8,7 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type settingsResolver struct {
@@ -38,7 +38,7 @@ func (o *settingsResolver) CreatedAt() string {
 func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 	if o.user == nil {
 		var err error
-		o.user, err = store.Users.GetByAuthID(ctx, o.settings.AuthorAuthID)
+		o.user, err = db.Users.GetByAuthID(ctx, o.settings.AuthorAuthID)
 		if err != nil {
 			return nil, err
 		}
@@ -51,12 +51,12 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 	Contents            string
 }) (*settingsResolver, error) {
 	// 🚨 SECURITY: verify that the current user is authenticated.
-	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +84,12 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 
 	actor := actor.FromContext(ctx)
 
-	org, err := store.Orgs.GetByID(ctx, orgID)
+	org, err := db.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	settings, err := store.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}

@@ -6,8 +6,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type orgMemberResolver struct {
@@ -27,7 +26,7 @@ func (m *orgMemberResolver) ID() int32 {
 func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
 	if m.org == nil {
 		var err error
-		m.org, err = localstore.Orgs.GetByID(ctx, m.member.OrgID)
+		m.org, err = db.Orgs.GetByID(ctx, m.member.OrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +37,7 @@ func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
 func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
 	if m.user == nil {
 		var err error
-		m.user, err = localstore.Users.GetByID(ctx, m.member.UserID)
+		m.user, err = db.Users.GetByID(ctx, m.member.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +64,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) 
 		return mockAllEmailsForOrg(ctx, orgID, excludeByUserID)
 	}
 
-	members, err := store.OrgMembers.GetByOrgID(ctx, orgID)
+	members, err := db.OrgMembers.GetByOrgID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +77,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) 
 		if _, ok := exclude[m.UserID]; ok {
 			continue
 		}
-		user, err := store.Users.GetByID(ctx, m.UserID)
+		user, err := db.Users.GetByID(ctx, m.UserID)
 		if err != nil {
 			// This shouldn't happen, but we don't want to prevent the notification,
 			// so swallow the error.

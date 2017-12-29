@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
@@ -79,7 +79,7 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 		return 0, err
 	}
 	totalRefsCacheCounter.WithLabelValues("miss").Inc()
-	res, err = localstore.GlobalDeps.TotalRefs(ctx, source, inv.Languages)
+	res, err = db.GlobalDeps.TotalRefs(ctx, source, inv.Languages)
 	if err != nil {
 		return 0, err
 	}
@@ -134,7 +134,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []sourcegr
 		return nil, err
 	}
 	listTotalRefsCacheCounter.WithLabelValues("miss").Inc()
-	ints, err := localstore.GlobalDeps.ListTotalRefs(ctx, source, inv.Languages)
+	ints, err := db.GlobalDeps.ListTotalRefs(ctx, source, inv.Languages)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*sourcegraph.D
 		return Mocks.Defs.Dependencies(ctx, repoID)
 	}
 
-	return localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
+	return db.GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 		Repo: repoID,
 	})
 }
@@ -216,7 +216,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 			return nil, err
 		}
 
-		depRefs, err = localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
+		depRefs, err = db.GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 			Language: op.Language,
 			DepData:  pkgDescriptor,
 			Limit:    op.Limit,
@@ -242,7 +242,7 @@ func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", map[string]interface{}{"repoURI": repoURI, "commitID": commitID}, &err)
 	defer done()
-	return localstore.GlobalDeps.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
+	return db.GlobalDeps.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
 }
 
 type MockDefs struct {

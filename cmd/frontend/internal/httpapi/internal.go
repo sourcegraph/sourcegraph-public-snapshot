@@ -14,8 +14,8 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
@@ -106,10 +106,10 @@ func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := localstore.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.Revision); err != nil {
+	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.Revision); err != nil {
 		return errors.Wrap(err, "Repos.UpdateIndexedRevision failed")
 	}
-	if err := localstore.Repos.UpdateLanguage(r.Context(), repo.RepoID, repo.Language); err != nil {
+	if err := db.Repos.UpdateLanguage(r.Context(), repo.RepoID, repo.Language); err != nil {
 		return fmt.Errorf("Repos.UpdateLanguage failed: %s", err)
 	}
 	return nil
@@ -121,7 +121,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	phabRepo, err := localstore.Phabricator.CreateIfNotExists(r.Context(), repo.Callsign, repo.URI, repo.URL)
+	phabRepo, err := db.Phabricator.CreateIfNotExists(r.Context(), repo.Callsign, repo.URI, repo.URL)
 	if err != nil {
 		return err
 	}

@@ -16,8 +16,8 @@ import (
 	gfm "github.com/shurcooL/github_flavored_markdown"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -45,7 +45,7 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return "", err
 	}
@@ -67,7 +67,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return false, err
 	}
@@ -81,7 +81,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 }
 
 func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
-	repo, err := localstore.Repos.Get(ctx, r.commit.RepoID)
+	repo, err := db.Repos.Get(ctx, r.commit.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 }
 
 func (r *fileResolver) Commit(ctx context.Context) (*commitResolver, error) {
-	repo, err := localstore.Repos.Get(ctx, r.commit.RepoID)
+	repo, err := db.Repos.Get(ctx, r.commit.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, erro
 }
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*commitInfoResolver, error) {
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
 	StartLine int32
 	EndLine   int32
 }) (string, error) {
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return "", err
 	}
@@ -246,7 +246,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 			continue
 		}
 
-		repo, err := localstore.Repos.Get(ctx, ref.RepoID)
+		repo, err := db.Repos.Get(ctx, ref.RepoID)
 		if err != nil {
 			return nil, err
 		}

@@ -6,7 +6,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 // MigrateAdminUsernames updates the DB rows for the usernames listed in the adminUsernames
@@ -14,9 +14,9 @@ import (
 // adminUsernames config.
 func MigrateAdminUsernames(ctx context.Context) {
 	for _, username := range strings.Fields(conf.Get().AdminUsernames) {
-		user, err := localstore.Users.GetByUsername(ctx, username)
+		user, err := db.Users.GetByUsername(ctx, username)
 		if err == nil {
-			if err := localstore.Users.SetIsSiteAdmin(ctx, user.ID, true); err != nil {
+			if err := db.Users.SetIsSiteAdmin(ctx, user.ID, true); err != nil {
 				log15.Error("error updating user site-admin status (from deprecated adminUsernames config)", "user", user.Username, "userID", user.ID, "err", err)
 			}
 		}

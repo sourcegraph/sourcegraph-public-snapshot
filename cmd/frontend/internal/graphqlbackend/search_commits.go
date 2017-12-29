@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
@@ -79,7 +79,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query, diff bool, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
 	repo := repoRevs.repo
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
 		return nil, false, err
 	}

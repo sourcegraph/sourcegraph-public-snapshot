@@ -7,16 +7,16 @@ import (
 	"github.com/neelance/graphql-go/gqltesting"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func TestUsers(t *testing.T) {
 	resetMocks()
-	localstore.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*sourcegraph.User, error) {
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*sourcegraph.User, error) {
 		return &sourcegraph.User{SiteAdmin: true}, nil
 	}
 	backend.Mocks.Users.MockList(t, "user1", "user2")
-	localstore.Mocks.Users.Count = func(context.Context) (int, error) { return 2, nil }
+	db.Mocks.Users.Count = func(context.Context) (int, error) { return 2, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,

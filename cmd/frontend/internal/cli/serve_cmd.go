@@ -32,10 +32,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -165,7 +165,7 @@ func Main() error {
 		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", profBindAddr))
 	}
 
-	localstore.ConnectToDB("")
+	db.ConnectToDB("")
 
 	go bg.ApplyUserOrgMap(context.Background())
 	go bg.MigrateAdminUsernames(context.Background())
@@ -174,7 +174,7 @@ func Main() error {
 	if err != nil {
 		return err
 	}
-	localstore.AppURL = globals.AppURL
+	db.AppURL = globals.AppURL
 
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))

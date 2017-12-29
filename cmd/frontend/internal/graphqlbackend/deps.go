@@ -5,7 +5,7 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type dependencyResolver struct {
@@ -65,7 +65,7 @@ func (r *dependencyResolver) depDataIntField(name string) *int32 {
 }
 
 func (r *dependencyResolver) Repo(ctx context.Context) (*repositoryResolver, error) {
-	repo, err := localstore.Repos.Get(ctx, r.dep.RepoID)
+	repo, err := db.Repos.Get(ctx, r.dep.RepoID)
 	if err != nil {
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil

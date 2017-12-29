@@ -12,7 +12,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"github.com/neelance/parallel"
@@ -104,7 +104,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if spec, ok := cache[key]; ok {
 				return spec, nil
 			}
-			repo, err := localstore.Repos.GetByURI(ctx, u.Host+u.Path)
+			repo, err := db.Repos.GetByURI(ctx, u.Host+u.Path)
 			if err != nil {
 				return commitSpec{}, err
 			}

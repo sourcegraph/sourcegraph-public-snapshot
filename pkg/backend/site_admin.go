@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.

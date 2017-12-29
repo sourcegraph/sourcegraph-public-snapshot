@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type sharedItemResolver struct {
@@ -15,7 +15,7 @@ type sharedItemResolver struct {
 }
 
 func (s *sharedItemResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByID(ctx, s.authorUserID)
+	user, err := db.Users.GetByID(ctx, s.authorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +37,9 @@ func (s *sharedItemResolver) Comment(ctx context.Context) *commentResolver {
 func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 	ULID string
 }) (*sharedItemResolver, error) {
-	item, err := store.SharedItems.Get(ctx, args.ULID)
+	item, err := db.SharedItems.Get(ctx, args.ULID)
 	if err != nil {
-		if _, ok := err.(store.ErrSharedItemNotFound); ok {
+		if _, ok := err.(db.ErrSharedItemNotFound); ok {
 			// shared item does not exist.
 			return nil, nil
 		}
@@ -48,15 +48,15 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 
 	switch {
 	case item.CommentID != nil:
-		comment, err := store.Comments.GetByID(ctx, *item.CommentID)
+		comment, err := db.Comments.GetByID(ctx, *item.CommentID)
 		if err != nil {
 			return nil, err
 		}
-		thread, err := store.Threads.Get(ctx, comment.ThreadID)
+		thread, err := db.Threads.Get(ctx, comment.ThreadID)
 		if err != nil {
 			return nil, err
 		}
-		orgRepo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+		orgRepo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 			}
 		}
 
-		org, err := store.Orgs.GetByID(ctx, orgRepo.OrgID)
+		org, err := db.Orgs.GetByID(ctx, orgRepo.OrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -79,11 +79,11 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 			&commentResolver{org, orgRepo, thread, comment},
 		}, nil
 	case item.ThreadID != nil:
-		thread, err := store.Threads.Get(ctx, *item.ThreadID)
+		thread, err := db.Threads.Get(ctx, *item.ThreadID)
 		if err != nil {
 			return nil, err
 		}
-		orgRepo, err := store.OrgRepos.GetByID(ctx, thread.OrgRepoID)
+		orgRepo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 			}
 		}
 
-		org, err := store.Orgs.GetByID(ctx, orgRepo.OrgID)
+		org, err := db.Orgs.GetByID(ctx, orgRepo.OrgID)
 		if err != nil {
 			return nil, err
 		}

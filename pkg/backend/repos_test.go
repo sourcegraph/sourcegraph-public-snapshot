@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -23,7 +23,7 @@ func TestReposService_Get(t *testing.T) {
 
 	github.MockGetRepo_Return(ghrepo)
 
-	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
+	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
 
 	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
 	if err != nil {
@@ -49,7 +49,7 @@ func TestReposService_List(t *testing.T) {
 		},
 	}
 
-	calledList := localstore.Mocks.Repos.MockList(t, "r1", "r2")
+	calledList := db.Mocks.Repos.MockList(t, "r1", "r2")
 
 	repos, err := s.List(ctx, nil)
 	if err != nil {

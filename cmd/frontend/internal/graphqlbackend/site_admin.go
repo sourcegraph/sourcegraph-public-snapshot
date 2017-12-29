@@ -8,7 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type createUserResult struct {
@@ -26,7 +26,7 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := localstore.Users.Create(ctx, backend.NativeAuthUserAuthID(args.Email), args.Email, args.Username, "", sourcegraph.UserProviderNative, nil, backend.MakeRandomHardToGuessPassword(), backend.MakeEmailVerificationCode())
+	user, err := db.Users.Create(ctx, backend.NativeAuthUserAuthID(args.Email), args.Email, args.Username, "", sourcegraph.UserProviderNative, nil, backend.MakeRandomHardToGuessPassword(), backend.MakeEmailVerificationCode())
 	if err != nil {
 		return nil, err
 	}
@@ -60,11 +60,11 @@ func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, arg
 		return nil, err
 	}
 
-	if err := localstore.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+	if err := db.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
 		return nil, err
 	}
 
-	user, err := localstore.Users.GetByID(ctx, userID)
+	user, err := db.Users.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, errors.New("unable to delete current user")
 	}
 
-	if err := localstore.Users.Delete(ctx, userID); err != nil {
+	if err := db.Users.Delete(ctx, userID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -119,7 +119,7 @@ func (*schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := localstore.Orgs.Delete(ctx, orgID); err != nil {
+	if err := db.Orgs.Delete(ctx, orgID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -146,7 +146,7 @@ func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := localstore.Users.SetIsSiteAdmin(ctx, userID, args.SiteAdmin); err != nil {
+	if err := db.Users.SetIsSiteAdmin(ctx, userID, args.SiteAdmin); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

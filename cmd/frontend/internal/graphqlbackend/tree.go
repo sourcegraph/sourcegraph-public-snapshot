@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -21,7 +21,7 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, commit.RepoID)
 	if err != nil {
 		return nil, err
 	}
