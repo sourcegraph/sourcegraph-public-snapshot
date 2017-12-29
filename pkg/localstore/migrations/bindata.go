@@ -102,6 +102,8 @@
 // ../../../migrations/1514544774_add_threads_user_fkey.up.sql
 // ../../../migrations/1514545501_add_comments_user_fkey.down.sql
 // ../../../migrations/1514545501_add_comments_user_fkey.up.sql
+// ../../../migrations/1514546912_add_shared_items_user_fkey.down.sql
+// ../../../migrations/1514546912_add_shared_items_user_fkey.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2209,6 +2211,46 @@ func _1514545501_add_comments_user_fkeyUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514546912_add_shared_items_user_fkeyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x51\xd1\x6a\x83\x30\x14\x7d\x9e\x5f\x71\x1f\x5b\x90\x82\xa3\x1d\x0c\xe9\x83\xd5\x6c\x13\x62\x52\x62\x64\x8f\xc1\x36\x01\x65\x5a\x45\x13\xb6\xcf\x1f\x6a\x37\x5a\x6d\x7d\xea\x4b\x38\xb9\xf7\x9e\x73\x4f\x4e\x76\xe8\x3d\x24\xae\xe5\x61\x8e\x18\x70\x6f\x87\x11\xb4\x59\xda\x28\x29\x72\xad\xca\x16\x18\x22\x5e\x84\xc0\xa7\x38\x89\x08\xa4\x46\x67\x55\x23\x4c\xab\x1a\x91\x4b\xe0\x74\x54\x11\x27\xf5\x3d\x23\xe6\x05\xc1\x1d\x25\xad\x7e\xb4\x6b\x25\xfb\xc0\xe3\x23\x4e\x8c\xf8\x68\x78\xbb\x88\x11\x46\x3e\x87\xee\xde\xae\xba\x66\x27\xf1\xc6\x68\x34\x94\xe0\xf3\x03\x31\x74\x6e\xe7\x72\x7b\xa9\xb7\x9a\x1a\x5e\xce\x39\xee\x1b\xb7\x3d\x77\xce\x08\xe5\x40\x12\x8c\x67\x24\x02\x46\xf7\xb7\x15\x86\xb4\x42\x12\x23\xc6\x21\x24\x9c\x5e\x11\x17\xb9\xb4\xc1\x14\xdd\x79\x4d\xb3\x41\x67\x8d\x4a\x65\x0f\x8f\x55\x59\xaa\x93\x1e\x70\xa3\x52\xad\xa4\x48\xb5\x0d\xa6\x96\xff\x58\xaa\x42\xfd\xe1\xda\x1c\x8a\xfc\xb8\xb4\x9e\xce\x19\xde\x5b\x22\xaa\xe2\x11\x8b\x86\x5f\xb9\x7c\x96\x38\x7c\x99\x5a\x38\x1b\x67\xbd\x59\xbf\xbc\x3a\xcf\xae\xd5\x07\x34\x0d\x6e\x3a\xe8\xd3\x28\x0a\xb9\x6b\xfd\x06\x00\x00\xff\xff\x93\xe1\x64\x30\xb4\x02\x00\x00")
+
+func _1514546912_add_shared_items_user_fkeyDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514546912_add_shared_items_user_fkeyDownSql,
+		"1514546912_add_shared_items_user_fkey.down.sql",
+	)
+}
+
+func _1514546912_add_shared_items_user_fkeyDownSql() (*asset, error) {
+	bytes, err := _1514546912_add_shared_items_user_fkeyDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514546912_add_shared_items_user_fkey.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514546912_add_shared_items_user_fkeyUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\x4d\x6b\xf3\x30\x10\x84\xef\xfe\x15\x7b\x8c\xdf\x43\xc0\x2f\x49\xa1\x98\x1e\x14\x79\xd3\x1a\x64\x29\xac\xd6\xf4\x28\x52\x2c\x1a\xd1\x8f\x14\x7f\xfc\xff\xa2\xda\x85\xd6\x49\x53\x7a\xd5\x68\x9e\xd1\x8c\x36\x78\x5b\xea\x3c\x11\x8a\x91\x80\xc5\x46\x21\x74\x87\x7d\xeb\x1b\x17\x7a\xff\xd2\x01\xa1\x16\x15\x82\x34\xaa\xae\x34\xec\x87\xfe\x70\x6c\xdd\xd0\xf9\xd6\x85\x06\xd8\xcc\x4e\xdc\xf1\xb9\xb9\x00\x13\x45\xf1\x03\x29\xbc\xf6\xfe\xd1\xb7\x40\xb8\x45\x42\x2d\xd1\x42\x94\x3a\x58\x84\x26\x05\xa3\xa1\x40\x85\x8c\x40\x68\x99\x4a\xc9\x79\x52\xef\x0a\xc1\x33\xbe\x45\x9e\x81\x6f\x16\x16\x15\x4a\x1e\x69\xcb\xd0\xc0\x96\x4c\x35\xb1\xef\xef\x90\x70\x52\xa2\x2d\xde\xff\xca\x5b\x9e\x96\x4b\xf3\x44\x12\xc6\xe0\xd3\x7a\xee\xe1\x69\x78\x73\xd9\x3a\x5b\xad\x57\x57\xd7\xd9\x7f\x10\x16\x3e\xe3\xff\x8d\xb9\xdf\x5e\x3b\xc6\xcf\x86\x28\x2d\xe8\x5a\xa9\x34\x4f\xa6\xc6\x7f\xf3\x5d\x1a\xff\x43\x38\x3f\x7f\x1c\x4e\x1b\xfe\x0d\x51\x90\xd9\x9d\x27\x8c\x1f\x2f\x4d\x55\x95\x9c\x27\xef\x01\x00\x00\xff\xff\xb5\xd4\x0c\x7f\x55\x02\x00\x00")
+
+func _1514546912_add_shared_items_user_fkeyUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514546912_add_shared_items_user_fkeyUpSql,
+		"1514546912_add_shared_items_user_fkey.up.sql",
+	)
+}
+
+func _1514546912_add_shared_items_user_fkeyUpSql() (*asset, error) {
+	bytes, err := _1514546912_add_shared_items_user_fkeyUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514546912_add_shared_items_user_fkey.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2363,6 +2405,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514544774_add_threads_user_fkey.up.sql":                     _1514544774_add_threads_user_fkeyUpSql,
 	"1514545501_add_comments_user_fkey.down.sql":                  _1514545501_add_comments_user_fkeyDownSql,
 	"1514545501_add_comments_user_fkey.up.sql":                    _1514545501_add_comments_user_fkeyUpSql,
+	"1514546912_add_shared_items_user_fkey.down.sql":              _1514546912_add_shared_items_user_fkeyDownSql,
+	"1514546912_add_shared_items_user_fkey.up.sql":                _1514546912_add_shared_items_user_fkeyUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2508,6 +2552,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514544774_add_threads_user_fkey.up.sql":                     &bintree{_1514544774_add_threads_user_fkeyUpSql, map[string]*bintree{}},
 	"1514545501_add_comments_user_fkey.down.sql":                  &bintree{_1514545501_add_comments_user_fkeyDownSql, map[string]*bintree{}},
 	"1514545501_add_comments_user_fkey.up.sql":                    &bintree{_1514545501_add_comments_user_fkeyUpSql, map[string]*bintree{}},
+	"1514546912_add_shared_items_user_fkey.down.sql":              &bintree{_1514546912_add_shared_items_user_fkeyDownSql, map[string]*bintree{}},
+	"1514546912_add_shared_items_user_fkey.up.sql":                &bintree{_1514546912_add_shared_items_user_fkeyUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

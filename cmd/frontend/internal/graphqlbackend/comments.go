@@ -218,10 +218,13 @@ func (*schemaResolver) shareCommentInternal(ctx context.Context, commentID int32
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
+	currentUser, err := store.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
-		AuthorUserID: actor.UID,
+		AuthorUserID: currentUser.ID,
 		Public:       public,
 		ThreadID:     &thread.ID,
 		CommentID:    &commentID,

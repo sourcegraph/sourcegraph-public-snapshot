@@ -371,7 +371,7 @@ type Comment struct {
 type SharedItem struct {
 	ULID         string `json:"ULID"`
 	Public       bool   `json:"public"`
-	AuthorUserID string `json:"AuthorUserID"`
+	AuthorUserID int32  `json:"AuthorUserID"`
 	ThreadID     *int32 `json:"ThreadID,omitempty"`
 	CommentID    *int32 `json:"CommentID,omitempty"` // optional
 }

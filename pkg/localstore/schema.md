@@ -277,16 +277,35 @@ Foreign-key constraints:
 ----------------+--------------------------+-----------------------------------------------------------
  id             | bigint                   | not null default nextval('shared_items_id_seq'::regclass)
  ulid           | text                     | not null
- author_user_id | text                     | not null
  thread_id      | bigint                   | 
  comment_id     | bigint                   | 
  created_at     | timestamp with time zone | not null default now()
  updated_at     | timestamp with time zone | not null default now()
  deleted_at     | timestamp with time zone | 
  public         | boolean                  | not null default false
+ author_user_id | integer                  | not null
 Indexes:
     "shared_items_pkey" PRIMARY KEY, btree (id)
     "shared_items_ulid_idx" UNIQUE, btree (ulid)
+Foreign-key constraints:
+    "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.shared_items_bkup_1514546912"
+```
+       Column       |           Type           | Modifiers 
+--------------------+--------------------------+-----------
+ id                 | bigint                   | 
+ ulid               | text                     | 
+ author_user_id_old | text                     | 
+ thread_id          | bigint                   | 
+ comment_id         | bigint                   | 
+ created_at         | timestamp with time zone | 
+ updated_at         | timestamp with time zone | 
+ deleted_at         | timestamp with time zone | 
+ public             | boolean                  | 
+ author_user_id     | integer                  | 
 
 ```
 
@@ -430,6 +449,7 @@ Referenced by:
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "shared_items" CONSTRAINT "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "threads" CONSTRAINT "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_activity" CONSTRAINT "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
