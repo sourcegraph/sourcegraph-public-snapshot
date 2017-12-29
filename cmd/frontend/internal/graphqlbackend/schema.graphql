@@ -766,6 +766,7 @@ type User implements Node, ConfigurationSubject {
 	# The unique ID for the user.
 	id: ID!
 	authID: String!
+	auth0ID: String! @deprecated(reason: "use authID instead")
 	sourcegraphID: Int
 	email: String!
 	displayName: String
