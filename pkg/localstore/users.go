@@ -434,7 +434,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
+func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, resetCode string, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -455,9 +455,18 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 	if err != nil {
 		return false, err
 	}
-	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused
+	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused.
 	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
+	}
+	if newAuthID != "" {
+		// Also, this user effectively becomes a builtin (native) auth user since we now store their password, so
+		// update them accordingly.
+		//
+		// TODO(sqs): remove after migration away from auth0
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
+			return false, err
+		}
 	}
 	return true, nil
 }
