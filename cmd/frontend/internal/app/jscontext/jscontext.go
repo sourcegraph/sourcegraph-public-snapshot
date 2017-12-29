@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
@@ -73,10 +74,13 @@ type JSContext struct {
 	OnPrem               bool                  `json:"onPrem"`
 	RepoHomeRegexFilter  string                `json:"repoHomeRegexFilter"`
 	SessionID            string                `json:"sessionID"`
+	Auth0Domain          string                `json:"auth0Domain"`
+	Auth0ClientID        string                `json:"auth0ClientID"`
 	License              *license.License      `json:"license"`
 	LicenseStatus        license.LicenseStatus `json:"licenseStatus"`
 	ShowOnboarding       bool                  `json:"showOnboarding"`
 	EmailEnabled         bool                  `json:"emailEnabled"`
+	UseAuth0             bool                  `json:"useAuth0"`
 
 	Site schema.SiteConfiguration `json:"site"` // public subset of site configuration
 }
@@ -148,10 +152,13 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		TrackingAppID:        TrackingAppID,
 		RepoHomeRegexFilter:  repoHomeRegexFilter,
 		SessionID:            sessionID,
+		Auth0Domain:          auth0.Domain,
+		Auth0ClientID:        auth0.Config.ClientID,
 		License:              license,
 		LicenseStatus:        licenseStatus,
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         conf.CanSendEmail(),
+		UseAuth0:             conf.AuthProvider() == "auth0",
 		Site:                 publicSiteConfiguration,
 	}
 }
