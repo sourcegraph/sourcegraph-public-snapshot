@@ -159,3 +159,18 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName, slackWebhookUR
 
 	return org, nil
 }
+
+func (o *orgs) Delete(ctx context.Context, id int32) error {
+	res, err := globalDB.ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
+	}
+	return nil
+}

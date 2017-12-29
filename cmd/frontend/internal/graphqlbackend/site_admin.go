@@ -106,6 +106,25 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
+func (*schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
+	Organization graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can delete orgs.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	orgID, err := unmarshalOrgID(args.Organization)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := localstore.Orgs.Delete(ctx, orgID); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}
+
 func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool

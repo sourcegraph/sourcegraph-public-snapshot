@@ -294,3 +294,20 @@ export function createUserBySiteAdmin(username: string, email: string): Observab
         })
     )
 }
+
+export function deleteOrganization(organization: GQLID): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) { }
+            }
+        `,
+        { organization }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0) || !data.deleteOrganization) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+        })
+    )
+}

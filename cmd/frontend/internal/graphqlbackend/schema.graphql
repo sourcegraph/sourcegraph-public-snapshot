@@ -131,6 +131,8 @@ type Mutation {
 		lastKnownSettingsID: Int
 		contents: String!
 	): Settings!
+	# Deletes an organization. Only site admins may perform this mutation.
+	deleteOrganization(organization: ID!): EmptyResponse
 	# Creates a user account for a new user and generates a reset password link that the user
 	# must visit to sign into the account. Only site admins may perform this mutation.
 	createUserBySiteAdmin(username: String!, email: String!): CreateUserBySiteAdminResult!

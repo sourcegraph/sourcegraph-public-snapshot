@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
-import { fetchAllOrgs } from './backend'
+import { deleteOrganization, fetchAllOrgs } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
 interface OrgListItemProps {
@@ -69,12 +69,43 @@ class OrgListItem extends React.PureComponent<OrgListItemProps, OrgListItemState
                         )}
                 </ul>
                 <div className="site-admin-detail-list__actions">
+                    <button
+                        key="deleteOrg"
+                        className="btn btn-link btn-sm"
+                        onClick={this.deleteOrg}
+                        disabled={this.state.loading}
+                    >
+                        Delete organization
+                    </button>
                     {this.state.errorDescription && (
                         <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
                     )}
                 </div>
             </li>
         )
+    }
+
+    private deleteOrg = () => {
+        if (!window.confirm(`Really delete the organization ${this.props.org.name}?`)) {
+            return
+        }
+
+        this.setState({
+            errorDescription: undefined,
+            loading: true,
+        })
+
+        deleteOrganization(this.props.org.id)
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({ loading: false })
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
+                },
+                err => this.setState({ loading: false, errorDescription: err.message })
+            )
     }
 }
 
