@@ -65,13 +65,11 @@ func (err ErrCannotCreateUser) Code() string {
 
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
 // the user:
-// - If the provider is "", the user was authenticated the native-auth UI using Auth0
 // - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
 // - If the provider is something else, the user was authenticated by an SSO provider
 //
 // Native-auth users must also specify a password and email verification code upon creation. When the user's email is
-// verified, the email verification code is set to null in the DB. All other users (including Auth0
-// Auth0 users that were authenticated using the native-auth UI) have a null password and email verification code.
+// verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
 func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
 	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
