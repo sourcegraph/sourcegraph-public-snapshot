@@ -320,7 +320,7 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, authIDs, usernames [
 }
 
 func (u *users) List(ctx context.Context) ([]*sourcegraph.User, error) {
-	return u.getBySQL(ctx, "ORDER BY id ASC")
+	return u.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
 }
 
 func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
@@ -378,7 +378,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 	}
 
 	var passwd sql.NullString
-	if err := globalDB.QueryRowContext(ctx, "SELECT passwd FROM users WHERE id=$1", id).Scan(&passwd); err != nil {
+	if err := globalDB.QueryRowContext(ctx, "SELECT passwd FROM users WHERE deleted_at IS NULL AND id=$1", id).Scan(&passwd); err != nil {
 		return false, err
 	}
 	if !passwd.Valid {
@@ -439,7 +439,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, res
 		return false, errors.New("new password was empty")
 	}
 	// 🚨 SECURITY: check resetCode against what's in the DB and that it's not expired
-	r := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
+	r := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NULL AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
 	var ct int
 	if err := r.Scan(&ct); err != nil {
 		return false, err
