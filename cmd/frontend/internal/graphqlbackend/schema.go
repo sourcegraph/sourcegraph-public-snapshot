@@ -97,8 +97,6 @@ input CreateThreadInput {
 scalar JSONString
 
 type Mutation {
-	createUser(username: String!, displayName: String!, avatarURL: String): User!
-		@deprecated(reason: "use createThread2")
 	createThread(
 		orgID: ID!
 		canonicalRemoteID: String!
@@ -114,7 +112,7 @@ type Mutation {
 		rangeLength: Int!
 		contents: String!
 		lines: ThreadLinesInput
-	): Thread!
+	): Thread! @deprecated(reason: "use createThread2")
 	createThread2(input: CreateThreadInput!): Thread!
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	# Update the settings for the currently authenticated user.
@@ -789,7 +787,6 @@ type User implements Node, ConfigurationSubject {
 	latestSettings: Settings
 	orgs: [Org!]!
 	orgMemberships: [OrgMember!]!
-	hasSourcegraphUser: Boolean!
 	tags: [UserTag!]!
 	activity: UserActivity!
 }
