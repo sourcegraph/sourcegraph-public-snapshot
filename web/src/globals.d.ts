@@ -61,11 +61,7 @@ interface SourcegraphContext {
      */
     debug: boolean
 
-    /**
-     * onPrem is defined as the env var DEPLOYMENT_ON_PREM. True if the server is a privately hosted instance, as opposed
-     * to the public sourcegraph.com.
-     */
-    onPrem: boolean
+    sourcegraphDotComMode: boolean
 
     /**
      * trackingAppID, set as "" by default server side, is required for the telligent environment to be set to production.

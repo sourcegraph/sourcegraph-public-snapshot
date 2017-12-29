@@ -60,7 +60,7 @@ export class SearchFields extends React.Component<Props, State> {
                         title="Repositories whose name contains this substring will be included in search results."
                     >
                         {/* GitHub repo: pattern is more useful and always applicable on Sourcegraph.com */}
-                        {window.context.onPrem ? 'repo:my/repo' : 'repo:github.com/org/'}
+                        {window.context.sourcegraphDotComMode ? 'repo:github.com/org/' : 'repo:my/repo'}
                     </div>
                 </div>
                 <div className="search-fields__row">

@@ -48,7 +48,7 @@ class TelligentWrapper {
         // for on-prem usage, we only want to collect high level event context
         // note user identification information is still captured through persistent `user_info`
         // metadata stored in a cookie
-        if (window.context.onPrem && window.context.trackingAppID !== 'UmamiWeb') {
+        if (!window.context.sourcegraphDotComMode && window.context.trackingAppID !== 'UmamiWeb') {
             if (!window.context.trackingAppID) {
                 return
             }
@@ -92,7 +92,7 @@ class TelligentWrapper {
         let telligentUrl = 'sourcegraph-logging.telligentdata.com'
         // for an on-prem trial, we want to send information directly telligent.
         // for clients like umami, we use a bi-logger
-        if (window.context.onPrem && window.context.trackingAppID === 'UmamiWeb') {
+        if (!window.context.sourcegraphDotComMode && window.context.trackingAppID === 'UmamiWeb') {
             telligentUrl = `${window.location.host}`.concat('/.bi-logger')
         }
         this.telligent('newTracker', 'sg', telligentUrl, {
@@ -102,7 +102,7 @@ class TelligentWrapper {
             env,
             configUseCookies: true,
             useCookies: true,
-            trackUrls: !window.context.onPrem,
+            trackUrls: window.context.sourcegraphDotComMode,
             /**
              * NOTE: do not use window.location.hostname (which includes subdomains) as the cookieDomain
              * on sourcegraph.com subdomains (such as about.sourcegraph.com). Subdomains should be removed
@@ -118,7 +118,7 @@ class TelligentWrapper {
         })
 
         // If on-prem, record Sourcegraph Server version
-        if (window.context.onPrem) {
+        if (!window.context.sourcegraphDotComMode) {
             this.telligent('addStaticMetadata', 'sgVersion', window.context.version, 'header')
         }
     }

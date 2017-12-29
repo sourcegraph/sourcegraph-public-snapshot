@@ -9,12 +9,21 @@ import (
 	"reflect"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 
 	"github.com/gorilla/mux"
 )
+
+func init() {
+	// Enable SourcegraphDotComMode
+	globals.AppURL = &url.URL{Scheme: "https", Host: "sourcegraph.com"}
+
+	// Reinit router
+	initRouter()
+}
 
 func TestRouter(t *testing.T) {
 	tests := []struct {

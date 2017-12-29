@@ -70,7 +70,6 @@ type JSContext struct {
 	IntercomHash         string                `json:"intercomHash"`
 	TrackingAppID        string                `json:"trackingAppID"`
 	Debug                bool                  `json:"debug"`
-	OnPrem               bool                  `json:"onPrem"`
 	RepoHomeRegexFilter  string                `json:"repoHomeRegexFilter"`
 	SessionID            string                `json:"sessionID"`
 	License              *license.License      `json:"license"`
@@ -79,6 +78,8 @@ type JSContext struct {
 	EmailEnabled         bool                  `json:"emailEnabled"`
 
 	Site schema.SiteConfiguration `json:"site"` // public subset of site configuration
+
+	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -119,7 +120,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
 	license, licenseStatus := license.Get(TrackingAppID)
 	var showOnboarding = false
-	if envvar.DeploymentOnPrem() && (license == nil || license.AppID == "") {
+	if license == nil || license.AppID == "" {
 		deploymentConfiguration, err := db.DeploymentConfiguration.Get(req.Context())
 		if err != nil {
 			// errors swallowed because telemetry is optional.
@@ -144,7 +145,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SentryDSN:            sentryDSNFrontend,
 		IntercomHash:         intercomHMAC(actor.UID),
 		Debug:                envvar.DebugMode(),
-		OnPrem:               envvar.DeploymentOnPrem(),
 		TrackingAppID:        TrackingAppID,
 		RepoHomeRegexFilter:  repoHomeRegexFilter,
 		SessionID:            sessionID,
@@ -153,6 +153,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         conf.CanSendEmail(),
 		Site:                 publicSiteConfiguration,
+
+		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 }
 

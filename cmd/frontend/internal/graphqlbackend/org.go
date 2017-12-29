@@ -308,7 +308,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		}
 	}
 
-	if !envvar.DeploymentOnPrem() {
+	if envvar.SourcegraphDotComMode() {
 		// Only allow email-verified users to send invites.
 		if emailVerified, err := auth0.GetEmailVerificationStatus(ctx); err != nil {
 			return nil, err
@@ -385,7 +385,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		if !u.EmailVerified && !envvar.DeploymentOnPrem() && strings.HasPrefix(actor.UID, "auth0|") {
+		if !u.EmailVerified && envvar.SourcegraphDotComMode() && strings.HasPrefix(actor.UID, "auth0|") {
 			// Don't add user to the org until email is verified. This will be a common failure mode,
 			// so rather than return an error we return a response the client can handle.
 			// Email verification is only a requirement for Sourcegraph.com.

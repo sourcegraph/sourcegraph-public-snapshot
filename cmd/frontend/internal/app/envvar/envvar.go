@@ -3,15 +3,18 @@ package envvar
 import (
 	"strconv"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-var deploymentOnPrem, _ = strconv.ParseBool(env.Get("DEPLOYMENT_ON_PREM", "false", "true if the frontend is running in a customer's datacenter instead of in Sourcegraph's cloud."))
+var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
 
-// DeploymentOnPrem returns true when the frontend is running in a customer's datacenter
-// instead of in Sourcegraph's cloud.
-func DeploymentOnPrem() bool {
-	return deploymentOnPrem
+// SourcegraphDotComMode is true if this server is running Sourcegraph.com. It shows
+// add'l marketing and sets up some add'l redirects.
+func SourcegraphDotComMode() bool {
+	u := globals.AppURL.String()
+	return sourcegraphDotComMode || u == "https://sourcegraph.com" || u == "https://sourcegraph.com/"
 }
 
 var debugMode, _ = strconv.ParseBool(env.Get("DEBUG", "false", "debug mode"))

@@ -7,13 +7,13 @@
  * Whether the server can list all of its repositories. False for Sourcegraph.com,
  * which is a mirror of all public GitHub.com repositories.
  */
-export const canListAllRepositories = window.context.onPrem || window.context.debug
+export const canListAllRepositories = !window.context.sourcegraphDotComMode || window.context.debug
 
 /**
  * Whether the application should show the user marketing elements (links, etc.)
  * that are intended for Sourcegraph.com.
  */
-export const showDotComMarketing = !window.context.onPrem || window.context.debug
+export const showDotComMarketing = window.context.sourcegraphDotComMode || window.context.debug
 
 /**
  * Whether the application supports the user "forgot-password" flow.
@@ -22,9 +22,9 @@ export const showDotComMarketing = !window.context.onPrem || window.context.debu
  * the server has Mandrill enabled, but we don't yet have a way of knowing that
  * here and this is a good enough proxy.
  */
-export const userForgotPassword = !window.context.onPrem
+export const userForgotPassword = window.context.sourcegraphDotComMode
 
 /**
  * Whether the signup form should show terms and privacy policy links.
  */
-export const signupTerms = !window.context.onPrem
+export const signupTerms = window.context.sourcegraphDotComMode
