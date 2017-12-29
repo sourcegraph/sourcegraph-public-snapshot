@@ -855,8 +855,11 @@ type OrgRepo {
 	threads(file: String, branch: String, limit: Int): ThreadConnection!
 }
 
+# A list of threads.
 type ThreadConnection {
+	# A list of threads.
 	nodes: [Thread!]!
+	# The total count of threads in the connection.
 	totalCount: Int!
 }
 
@@ -874,6 +877,11 @@ type Site implements ConfigurationSubject {
 	latestSettings: Settings
 	# Whether the viewer can reload the site (with the reloadSite mutation).
 	canReloadSite: Boolean!
+	# List all threads.
+	threads(
+		# Returns the first n threads from the list.
+		first: Int
+	): ThreadConnection!
 }
 
 # The configuration for a site.

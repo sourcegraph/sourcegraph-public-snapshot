@@ -208,7 +208,7 @@ func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (
 	return thread, nil
 }
 
-func (t *threads) listQuery(orgID *int32, repoIDs []int32, branch, file *string) *sqlf.Query {
+func (t *threads) listByFileQuery(orgID *int32, repoIDs []int32, branch, file *string) *sqlf.Query {
 	var join string
 	conds := []*sqlf.Query{}
 	if len(repoIDs) > 0 {
@@ -232,14 +232,22 @@ func (t *threads) listQuery(orgID *int32, repoIDs []int32, branch, file *string)
 	return sqlf.Sprintf(join+"WHERE %s", sqlf.Join(conds, "AND"))
 }
 
-func (t *threads) List(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string, limit int32) ([]*sourcegraph.Thread, error) {
-	q := sqlf.Sprintf("%s LIMIT %d", t.listQuery(orgID, repoIDs, branch, file), limit)
+func (t *threads) ListByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string, limit int32) ([]*sourcegraph.Thread, error) {
+	q := sqlf.Sprintf("%s LIMIT %d", t.listByFileQuery(orgID, repoIDs, branch, file), limit)
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) Count(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string) (int32, error) {
-	q := t.listQuery(orgID, repoIDs, branch, file)
+func (t *threads) CountByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string) (int32, error) {
+	q := t.listByFileQuery(orgID, repoIDs, branch, file)
 	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (t *threads) List(ctx context.Context) ([]*sourcegraph.Thread, error) {
+	return t.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
+}
+
+func (t *threads) Count(ctx context.Context) (int32, error) {
+	return t.getCountBySQL(ctx, "WHERE deleted_at IS NULL")
 }
 
 func (t *threads) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int32, error) {

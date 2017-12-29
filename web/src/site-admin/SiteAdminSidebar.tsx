@@ -93,6 +93,16 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                     </li>
                     <li className="site-admin-sidebar__item">
                         <NavLink
+                            to="/site-admin/threads"
+                            className="site-admin-sidebar__item-link"
+                            activeClassName="site-admin-sidebar__item--active"
+                            exact={true}
+                        >
+                            Threads &amp; comments
+                        </NavLink>
+                    </li>
+                    <li className="site-admin-sidebar__item">
+                        <NavLink
                             to="/site-admin/analytics"
                             className="site-admin-sidebar__item-link"
                             activeClassName="site-admin-sidebar__item--active"

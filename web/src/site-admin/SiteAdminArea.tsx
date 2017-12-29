@@ -13,6 +13,7 @@ import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 import { SiteAdminTelemetryPage } from './SiteAdminTelemetryPage'
+import { SiteAdminThreadsPage } from './SiteAdminThreadsPage'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -101,6 +102,11 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
                         <RouteWithProps
                             path={`${this.props.match.url}/invite-user`}
                             component={SiteAdminInviteUserPage}
+                            exact={true}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/threads`}
+                            component={SiteAdminThreadsPage}
                             exact={true}
                         />
                         <RouteWithProps
