@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
@@ -312,9 +313,11 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		// Only allow email-verified users to send invites.
 		if emailVerified, err := auth0.GetEmailVerificationStatus(ctx); err != nil {
 			return nil, err
-		} else if !emailVerified {
+		} else if !emailVerified && strings.HasPrefix(actor.UID, "auth0|") {
 			return nil, errors.New("must verify your email to send invites")
 		}
+
+		// TODO(sqs): check email verif for non-auth0 users
 
 		// Check and decrement our invite quota, to prevent abuse (sending too many invites).
 		//
@@ -385,7 +388,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		if !u.EmailVerified && !envvar.DeploymentOnPrem() {
+		if !u.EmailVerified && !envvar.DeploymentOnPrem() && strings.HasPrefix(actor.UID, "auth0|") {
 			// Don't add user to the org until email is verified. This will be a common failure mode,
 			// so rather than return an error we return a response the client can handle.
 			// Email verification is only a requirement for Sourcegraph.com.
