@@ -4,17 +4,27 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
-func (r *schemaResolver) Users(ctx context.Context) (*userConnectionResolver, error) {
-	users, err := listUsers(ctx)
-	if err != nil {
-		return nil, err
+func (r *schemaResolver) Users(args *struct {
+	connectionArgs
+}) *userConnectionResolver {
+	return &userConnectionResolver{
+		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
 	}
-	return &userConnectionResolver{users: users}, nil
 }
 
-func listUsers(ctx context.Context) ([]*userResolver, error) {
+type userConnectionResolver struct {
+	connectionResolverCommon
+}
+
+func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*userResolver, error) {
+	// 🚨 SECURITY: Only site admins can list users.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	usersList, err := backend.Users.List(ctx)
 	if err != nil {
 		return nil, err
@@ -26,14 +36,15 @@ func listUsers(ctx context.Context) ([]*userResolver, error) {
 			user: user,
 		})
 	}
-
 	return l, nil
 }
 
-type userConnectionResolver struct {
-	users []*userResolver
+func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	// 🚨 SECURITY: Only site admins can count users.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return 0, err
+	}
+
+	count, err := localstore.Users.Count(ctx)
+	return int32(count), err
 }
-
-func (r *userConnectionResolver) Nodes() []*userResolver { return r.users }
-
-func (r *userConnectionResolver) TotalCount() int32 { return int32(len(r.users)) }

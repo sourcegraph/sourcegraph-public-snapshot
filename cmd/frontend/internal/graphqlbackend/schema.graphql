@@ -232,7 +232,10 @@ type Query {
 	repository(uri: String!): Repository
 	phabricatorRepo(uri: String!): PhabricatorRepo
 	# A list of all repositories on this site.
-	repositories: RepositoryConnection!
+	repositories(
+		# Returns the first n repositories from the list.
+		first: Int
+	): RepositoryConnection!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
 	isUsernameAvailable(username: String!): Boolean!
@@ -267,9 +270,15 @@ type Query {
 		package: String
 		limit: Int
 	): [Dependency!]!
-	users: UserConnection
+	users(
+		# Returns the first n users from the list.
+		first: Int
+	): UserConnection!
 	# List all organizations.
-	orgs: OrgConnection!
+	orgs(
+		# Returns the first n organizations from the list.
+		first: Int
+	): OrgConnection!
 	updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 	# The current site.
 	site: Site!

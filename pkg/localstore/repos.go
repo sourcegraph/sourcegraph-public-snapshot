@@ -165,6 +165,17 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	return repos[0], nil
 }
 
+func (s *repos) Count(ctx context.Context) (int, error) {
+	if Mocks.Repos.Count != nil {
+		return Mocks.Repos.Count(ctx)
+	}
+	var count int
+	if err := globalDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM repo`).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourcegraph.Repo, error) {
 	q := sqlf.Sprintf("SELECT id, uri, description, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)

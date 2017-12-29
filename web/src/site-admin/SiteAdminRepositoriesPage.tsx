@@ -12,6 +12,7 @@ interface Props extends RouteComponentProps<any> {}
 
 export interface State {
     repos?: GQL.IRepository[]
+    totalCount?: number
 }
 
 /**
@@ -25,7 +26,14 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminRepos')
 
-        this.subscriptions.add(fetchAllRepositories().subscribe(repos => this.setState({ repos })))
+        this.subscriptions.add(
+            fetchAllRepositories().subscribe(resp =>
+                this.setState({
+                    repos: resp.nodes,
+                    totalCount: resp.totalCount,
+                })
+            )
+        )
     }
 
     public componentWillUnmount(): void {
@@ -36,7 +44,12 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-detail-list site-admin-repositories-page">
                 <PageTitle title="Repositories" />
-                <h2>Repositories</h2>
+                <h2>
+                    Repositories{' '}
+                    {typeof this.state.totalCount === 'number' &&
+                        this.state.totalCount > 0 &&
+                        `(${this.state.totalCount})`}
+                </h2>
                 <p>
                     See{' '}
                     <a href="https://about.sourcegraph.com/docs/server/config/repositories">
@@ -63,14 +76,18 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                             </li>
                         ))}
                 </ul>
-                {this.state.repos && (
-                    <p>
-                        <small>
-                            {this.state.repos.length} {pluralize('repository', this.state.repos.length, 'repositories')}{' '}
-                            total
-                        </small>
-                    </p>
-                )}
+                {this.state.repos &&
+                    typeof this.state.totalCount === 'number' &&
+                    this.state.totalCount > 0 && (
+                        <p>
+                            <small>
+                                {this.state.totalCount} {pluralize('repository', this.state.totalCount, 'repositories')}{' '}
+                                total{' '}
+                                {this.state.repos.length < this.state.totalCount &&
+                                    `(showing first ${this.state.repos.length})`}
+                            </small>
+                        </p>
+                    )}
             </div>
         )
     }

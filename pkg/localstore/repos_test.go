@@ -133,3 +133,40 @@ func TestRepos_Delete(t *testing.T) {
 		t.Errorf("expected error %q, but got error %q with repo %v", ErrRepoNotFound, err, rp2)
 	}
 }
+
+func TestRepos_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	if count, err := Repos.Count(ctx); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx); err != nil {
+		t.Fatal(err)
+	} else if want := 1; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+
+	repos, err := Repos.List(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Repos.Delete(ctx, repos[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Repos.Count(ctx); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+}

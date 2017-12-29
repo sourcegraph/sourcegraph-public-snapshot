@@ -113,6 +113,7 @@ interface Props extends RouteComponentProps<any> {}
 
 export interface State {
     orgs?: GQL.IOrg[]
+    totalCount?: number
 }
 
 /**
@@ -127,7 +128,11 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminOrgs')
 
-        this.subscriptions.add(this.orgUpdates.pipe(mergeMap(fetchAllOrgs)).subscribe(orgs => this.setState({ orgs })))
+        this.subscriptions.add(
+            this.orgUpdates
+                .pipe(mergeMap(fetchAllOrgs))
+                .subscribe(resp => this.setState({ orgs: resp.nodes, totalCount: resp.totalCount }))
+        )
         this.orgUpdates.next()
     }
 
@@ -139,7 +144,12 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-detail-list site-admin-orgs-page">
                 <PageTitle title="Organizations - Admin" />
-                <h2>Organizations</h2>
+                <h2>
+                    Organizations{' '}
+                    {typeof this.state.totalCount === 'number' &&
+                        this.state.totalCount > 0 &&
+                        `(${this.state.totalCount})`}
+                </h2>
                 <p>
                     See{' '}
                     <a href="https://about.sourcegraph.com/docs/server/config/organizations">
@@ -163,13 +173,17 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                             />
                         ))}
                 </ul>
-                {this.state.orgs && (
-                    <p>
-                        <small>
-                            {this.state.orgs.length} {pluralize('organization', this.state.orgs.length)} total
-                        </small>
-                    </p>
-                )}
+                {this.state.orgs &&
+                    typeof this.state.totalCount === 'number' &&
+                    this.state.totalCount > 0 && (
+                        <p>
+                            <small>
+                                {this.state.totalCount} {pluralize('organization', this.state.totalCount)} total{' '}
+                                {this.state.orgs.length < this.state.totalCount &&
+                                    `(showing first ${this.state.orgs.length})`}
+                            </small>
+                        </p>
+                    )}
             </div>
         )
     }
