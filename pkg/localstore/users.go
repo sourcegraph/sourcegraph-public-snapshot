@@ -317,18 +317,18 @@ func (u *users) Count(ctx context.Context) (int, error) {
 
 // ListByOrg returns users for a given org. It can also query a list of specific
 // users by either authIDs or usernames.
-func (u *users) ListByOrg(ctx context.Context, orgID int32, authIDs, usernames []string) ([]*sourcegraph.User, error) {
+func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
 	if Mocks.Users.ListByOrg != nil {
-		return Mocks.Users.ListByOrg(ctx, orgID, authIDs, usernames)
+		return Mocks.Users.ListByOrg(ctx, orgID, userIDs, usernames)
 	}
 	conds := []*sqlf.Query{}
 	filters := []*sqlf.Query{}
-	if len(authIDs) > 0 {
+	if len(userIDs) > 0 {
 		items := []*sqlf.Query{}
-		for _, id := range authIDs {
-			items = append(items, sqlf.Sprintf("%s", id))
+		for _, id := range userIDs {
+			items = append(items, sqlf.Sprintf("%d", id))
 		}
-		filters = append(filters, sqlf.Sprintf("u.auth_id IN (%s)", sqlf.Join(items, ",")))
+		filters = append(filters, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 	}
 	if len(usernames) > 0 {
 		items := []*sqlf.Query{}

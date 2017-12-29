@@ -118,7 +118,7 @@ export const Org = reactive<Props>(props => {
                 return confirm(`Remove ${member.user.displayName} from this organization?`)
             }),
             mergeMap(([memberToRemove, user]) =>
-                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.authID).pipe(
+                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.id).pipe(
                     concat([
                         (state: State): State => ({
                             ...state,

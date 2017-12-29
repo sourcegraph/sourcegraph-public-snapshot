@@ -52,45 +52,59 @@ func TestComments_emailsToNotify(t *testing.T) {
 
 	// Mock users
 	nick := sourcegraph.User{
-		Username: "nick",
+		ID:       1,
 		AuthID:   "auth|1",
+		Username: "nick",
 		Email:    "nick@sourcegraph.com",
 	}
 	renfred := sourcegraph.User{
-		Username: "renfred",
+		ID:       2,
 		AuthID:   "auth|2",
+		Username: "renfred",
 		Email:    "renfred@sourcegraph.com",
 	}
 	john := sourcegraph.User{
-		Username: "john",
+		ID:       3,
 		AuthID:   "auth|3",
+		Username: "john",
 		Email:    "john@sourcegraph.com",
 	}
 	sqs := sourcegraph.User{
-		Username: "sqs",
+		ID:       4,
 		AuthID:   "auth|4",
+		Username: "sqs",
 		Email:    "sqs@sourcegraph.com",
 	}
 	kingy := sourcegraph.User{
-		Username: "kingy",
+		ID:       5,
 		AuthID:   "auth|5",
+		Username: "kingy",
 		Email:    "kingy@sourcegraph.com",
 	}
 	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}
 
+	store.Mocks.Users.GetByAuthID = func(ctx context.Context, authID string) (*sourcegraph.User, error) {
+		for _, u := range testUsers {
+			if u.AuthID == authID {
+				return &u, nil
+			}
+		}
+		return nil, fmt.Errorf("user with authID %q not found", authID)
+	}
+
 	// Mock Users.ListByOrg
-	store.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, authIDs, usernames []string) ([]*sourcegraph.User, error) {
+	store.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
 		if orgID != testOrg.ID {
 			return nil, fmt.Errorf(`expected to be called with testOrg ID "%d", got "%d"`, testOrg.ID, orgID)
 		}
 		var users []*sourcegraph.User
-		for _, id := range authIDs {
-			u, ok := map[string]sourcegraph.User{
-				nick.AuthID:    nick,
-				renfred.AuthID: renfred,
-				sqs.AuthID:     sqs,
-				john.AuthID:    john,
-				kingy.AuthID:   kingy,
+		for _, id := range userIDs {
+			u, ok := map[int32]sourcegraph.User{
+				nick.ID:    nick,
+				renfred.ID: renfred,
+				sqs.ID:     sqs,
+				john.ID:    john,
+				kingy.ID:   kingy,
 			}[id]
 			if ok {
 				users = append(users, &u)
@@ -112,14 +126,14 @@ func TestComments_emailsToNotify(t *testing.T) {
 	}
 
 	// Mock allOrgEmails
-	mockAllEmailsForOrg = func(ctx context.Context, orgID int32, excludeByUserID []string) ([]string, error) {
-		exclude := map[string]struct{}{}
+	mockAllEmailsForOrg = func(ctx context.Context, orgID int32, excludeByUserID []int32) ([]string, error) {
+		exclude := map[int32]struct{}{}
 		for _, id := range excludeByUserID {
 			exclude[id] = struct{}{}
 		}
 		var emails []string
 		for _, u := range testUsers {
-			if _, ok := exclude[u.AuthID]; !ok {
+			if _, ok := exclude[u.ID]; !ok {
 				emails = append(emails, u.Email)
 			}
 		}

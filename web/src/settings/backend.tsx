@@ -154,6 +154,7 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                         id
                         createdAt
                         user {
+                            id
                             authID
                             username
                             email
@@ -378,10 +379,10 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
  * @param userID The user's ID to remove
  * @return An Observable that does emits `undefined` when done, then completes
  */
-export function removeUserFromOrg(orgID: string, userID: string): Observable<never> {
+export function removeUserFromOrg(orgID: GQLID, userID: GQLID): Observable<never> {
     return mutateGraphQL(
         gql`
-            mutation removeUserFromOrg($userID: Int!, $orgID: ID!) {
+            mutation removeUserFromOrg($userID: ID!, $orgID: ID!) {
                 removeUserFromOrg(userID: $userID, orgID: $orgID) {
                     alwaysNil
                 }
@@ -396,7 +397,7 @@ export function removeUserFromOrg(orgID: string, userID: string): Observable<nev
             const eventData = {
                 organization: {
                     remove: {
-                        auth_id: userID,
+                        user_id: userID,
                     },
                     org_id: orgID,
                 },

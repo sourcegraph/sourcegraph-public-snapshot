@@ -36,24 +36,24 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := OrgMembers.Create(ctx, org1.ID, user1.AuthID); err != nil {
+	if _, err := OrgMembers.Create(ctx, org1.ID, user1.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	check := func() error {
-		want := map[string][]string{
-			"org1": []string{"authid1", "authid2"},
-			"org2": []string{},
-			"org3": []string{"authid1", "authid2"},
+		want := map[string][]int32{
+			"org1": []int32{1, 2},
+			"org2": []int32{},
+			"org3": []int32{1, 2},
 		}
-		got := map[string][]string{}
+		got := map[string][]int32{}
 		for _, org := range []*sourcegraph.Org{org1, org2, org3} {
 			members, err := OrgMembers.GetByOrgID(ctx, org.ID)
 			if err != nil {
 				return err
 			}
 			if len(members) == 0 {
-				got[org.Name] = []string{}
+				got[org.Name] = []int32{}
 			}
 			for _, member := range members {
 				got[org.Name] = append(got[org.Name], member.UserID)

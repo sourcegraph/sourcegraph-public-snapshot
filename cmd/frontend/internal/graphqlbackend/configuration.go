@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -44,7 +45,7 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 
 	case *orgResolver:
 		// 🚨 SECURITY: Check that the current user is a member of the org.
-		if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, s.org.ID, actor.UID); err != nil {
+		if err := backend.CheckCurrentUserIsOrgMember(ctx, s.org.ID); err != nil {
 			return nil, err
 		}
 		return &configurationSubject{org: s}, nil

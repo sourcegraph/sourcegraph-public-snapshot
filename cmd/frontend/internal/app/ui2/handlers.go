@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -231,7 +233,7 @@ func serveEditorAuthWithEditorBetaRegistration(w http.ResponseWriter, r *http.Re
 			}
 
 			// Add tag to all orgs.
-			orgs, err := localstore.Orgs.GetByUserID(r.Context(), user.AuthID)
+			orgs, err := localstore.Orgs.GetByUserID(r.Context(), user.ID)
 			if err != nil {
 				return err
 			}
@@ -388,8 +390,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// 🚨 SECURITY: verify that the current user is in the org.
-		_, err = localstore.OrgMembers.GetByOrgIDAndUserID(r.Context(), orgRepo.OrgID, actor.UID)
-		if err != nil {
+		if err := backend.CheckCurrentUserIsOrgMember(r.Context(), orgRepo.OrgID); err != nil {
 			// User is not in the org. We don't want to produce a 500, because we
 			// want to render a nice error page on the frontend. But it's important
 			// that we do not leak information about the shared item (e.g. through

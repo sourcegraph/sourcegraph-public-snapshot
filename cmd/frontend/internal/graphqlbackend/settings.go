@@ -7,6 +7,7 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -76,11 +77,12 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: verify that the current user is in the org.
-	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
+	// 🚨 SECURITY: Check that the current user is a member of the org.
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
 		return nil, err
 	}
+
+	actor := actor.FromContext(ctx)
 
 	org, err := store.Orgs.GetByID(ctx, orgID)
 	if err != nil {

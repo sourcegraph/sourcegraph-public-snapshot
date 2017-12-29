@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
@@ -40,10 +41,10 @@ func orgByID(ctx context.Context, id graphql.ID) (*orgResolver, error) {
 
 func orgByIDInt32(ctx context.Context, orgID int32) (*orgResolver, error) {
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	actor := actor.FromContext(ctx)
-	if _, err := localstore.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
 		return nil, err
 	}
+
 	org, err := localstore.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
@@ -180,8 +181,11 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	Name        string
 	DisplayName string
 }) (*orgResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
+	currentUser, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if currentUser == nil {
 		return nil, errors.New("no current user")
 	}
 
@@ -191,7 +195,7 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = store.OrgMembers.Create(ctx, newOrg.ID, actor.UID)
+	_, err = store.OrgMembers.Create(ctx, newOrg.ID, *currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
@@ -200,12 +204,8 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 		// Orgs created by an editor-beta user get the editor-beta tag.
 		//
 		// TODO(sqs): perform this transactionally with the other operations above.
-		user, err := currentUser(ctx)
-		if err != nil {
-			return nil, err
-		}
 		const editorBetaTag = "editor-beta"
-		tag, err := store.UserTags.GetByUserIDAndTagName(ctx, *user.SourcegraphID(), editorBetaTag)
+		tag, err := store.UserTags.GetByUserIDAndTagName(ctx, *currentUser.SourcegraphID(), editorBetaTag)
 		if _, ok := err.(store.ErrUserTagNotFound); !ok && err != nil {
 			return nil, err
 		} else if tag != nil {
@@ -230,11 +230,11 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
 		return nil, err
 	}
-	log15.Info("updating org", "org", args.ID, "display name", args.DisplayName, "webhook URL", args.SlackWebhookURL, "actor", actor.UID)
+
+	log15.Info("updating org", "org", args.ID, "display name", args.DisplayName, "webhook URL", args.SlackWebhookURL)
 
 	updatedOrg, err := store.Orgs.Update(ctx, orgID, args.DisplayName, args.SlackWebhookURL)
 	if err != nil {
@@ -245,7 +245,7 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
-	UserID string
+	UserID int32
 	OrgID  graphql.ID
 }) (*EmptyResponse, error) {
 	var orgID int32
@@ -255,10 +255,10 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	actor := actor.FromContext(ctx)
-	if _, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID); err != nil {
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
 		return nil, err
 	}
+
 	log15.Info("removing user from org", "user", args.UserID, "org", orgID)
 	return nil, store.OrgMembers.Remove(ctx, orgID, args.UserID)
 }
@@ -280,15 +280,16 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that the user is being invited to.
-	actor := actor.FromContext(ctx)
-	orgMember, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, actor.UID)
-	if err != nil {
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
 		return nil, err
 	}
 
-	user, err := store.Users.GetByAuthID(ctx, orgMember.UserID)
+	currentUser, err := currentUser(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if currentUser == nil {
+		return nil, errors.New("must be logged in")
 	}
 
 	// Don't invite the user if they are already a member.
@@ -300,7 +301,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	if invitedUser != nil {
-		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.AuthID)
+		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.ID)
 		if err == nil {
 			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, orgID)
 		}
@@ -313,7 +314,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		// Only allow email-verified users to send invites.
 		if emailVerified, err := auth0.GetEmailVerificationStatus(ctx); err != nil {
 			return nil, err
-		} else if !emailVerified && strings.HasPrefix(actor.UID, "auth0|") {
+		} else if !emailVerified && strings.HasPrefix(currentUser.AuthID(), "auth0|") {
 			return nil, errors.New("must verify your email to send invites")
 		}
 
@@ -323,7 +324,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if err := store.Users.CheckAndDecrementInviteQuota(ctx, user.ID); err != nil {
+		if err := store.Users.CheckAndDecrementInviteQuota(ctx, *currentUser.SourcegraphID()); err != nil {
 			if err == store.ErrInviteQuotaExceeded {
 				return nil, fmt.Errorf("%s (contact support to increase the quota)", err)
 			}
@@ -359,16 +360,11 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 
 	if conf.CanSendEmail() {
 		// If email is disabled, the frontend will show a link instead.
-		invite.SendEmail(args.Email, user.DisplayName, org.Name, inviteURL)
+		invite.SendEmail(args.Email, *currentUser.DisplayName(), org.Name, inviteURL)
 	}
 
-	if user, err := currentUser(ctx); err != nil {
-		// errors swallowed because user is only needed for Slack notifications
-		log15.Error("graphqlbackend.InviteUser: currentUser failed", "error", err)
-	} else {
-		client := slack.New(org.SlackWebhookURL, true)
-		go client.NotifyOnInvite(user, org, args.Email)
-	}
+	client := slack.New(org.SlackWebhookURL, true)
+	go client.NotifyOnInvite(currentUser, org, args.Email)
 
 	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
 }
@@ -376,14 +372,17 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	InviteToken string
 }) (*orgInviteResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
+	currentUser, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if currentUser == nil {
 		return nil, errors.New("no current user")
 	}
 
 	// If the user is natively authenticated, require a verified email (if via SSO, we assume the SSO provider
 	// has authenticated the user's email)
-	if actor.Provider == "" {
+	if actor := actor.FromContext(ctx); actor.Provider == "" {
 		u, err := auth0.GetAuth0User(ctx)
 		if err != nil {
 			return nil, err
@@ -405,18 +404,13 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	_, err = store.OrgMembers.Create(ctx, token.OrgID, actor.UID)
+	_, err = store.OrgMembers.Create(ctx, token.OrgID, *currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
 
-	if user, err := currentUser(ctx); err != nil {
-		// errors swallowed because user is only needed for Slack notifications
-		log15.Error("graphqlbackend.AcceptUserInvite: currentUser failed", "error", err)
-	} else {
-		client := slack.New(org.SlackWebhookURL, true)
-		go client.NotifyOnAcceptedInvite(user, org)
-	}
+	client := slack.New(org.SlackWebhookURL, true)
+	go client.NotifyOnAcceptedInvite(currentUser, org)
 
 	return &orgInviteResolver{emailVerified: true}, nil
 }
