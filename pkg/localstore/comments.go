@@ -27,19 +27,13 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
-	var err error
-	if authorUserID != "" {
-		err = globalDB.QueryRowContext(
-			ctx,
-			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-			threadID, contents, createdAt, updatedAt, authorUserID, authorName, authorEmail).Scan(&id)
-	} else {
-		// deprecated code path
-		err = globalDB.QueryRowContext(
-			ctx,
-			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-			threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
+	if authorUserID == "" {
+		return nil, errors.New("must specify author ID to create comment")
 	}
+	err := globalDB.QueryRowContext(
+		ctx,
+		"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		threadID, contents, createdAt, updatedAt, authorUserID, authorName, authorEmail).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
