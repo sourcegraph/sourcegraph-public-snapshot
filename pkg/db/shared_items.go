@@ -18,8 +18,8 @@ import (
 // This must be set by a client of this package before use.
 //
 // HACK: It's a bit of a hack to have this variable, because it is only
-// set in the frontend's main function, and localstore can be called
-// from other services. Currently, we are okay, because localstore.SharedItems
+// set in the frontend's main function, and db can be called
+// from other services. Currently, we are okay, because db.SharedItems
 // is only referenced in the frontend service. Should this ever cease to be
 // the case, we'll need to rethink this variable.
 var AppURL *url.URL

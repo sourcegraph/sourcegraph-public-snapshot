@@ -1,6 +1,6 @@
 .bin/
 *.bundle.*
-pkg/localstore/schema.md
+pkg/db/schema.md
 ui/assets/scripts
 vendor/
 web/graphqlschema.json

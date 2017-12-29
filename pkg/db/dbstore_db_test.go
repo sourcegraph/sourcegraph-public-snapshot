@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	dbname := "localstore-test"
+	dbname := "sg-db-test"
 	_ = exec.Command("dropdb", dbname).Run()
 	if err := exec.Command("createdb", dbname).Run(); err != nil {
 		log.Fatal(err)

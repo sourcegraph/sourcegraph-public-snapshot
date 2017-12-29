@@ -240,7 +240,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 	}
 	originalLength := len(totalRefs)
 
-	// Limit total references to 250 to prevent the many localstore.Repos.Get
+	// Limit total references to 250 to prevent the many db.Repos.Get
 	// operations from taking too long.
 	sort.Sort(sortByRepoSpecID(totalRefs))
 	if limit := 250; len(totalRefs) > limit {

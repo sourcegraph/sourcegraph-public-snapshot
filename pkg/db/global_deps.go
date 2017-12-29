@@ -474,7 +474,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 // and then for `global_dep` (public repos). See the globalDeps type docstring
 // for more concrete information.
 func (g *globalDeps) queryDependencies(ctx context.Context, table string, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.Dependencies")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "db.Dependencies")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
