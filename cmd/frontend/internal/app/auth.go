@@ -135,7 +135,7 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 	// Validate user
 	usr, err := getUserFromNativeOrAuth0(ctx, creds.Email)
 	if err != nil {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
+		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
 		return
 	}
 	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
@@ -145,7 +145,7 @@ func serveSignIn2(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: check password
 	correct, err := store.Users.IsPassword(ctx, usr.ID, creds.Password)
 	if err != nil {
-		httpLogAndError(w, "Error checking password", http.StatusInternalServerError)
+		httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
 		return
 	}
 	if !correct {
