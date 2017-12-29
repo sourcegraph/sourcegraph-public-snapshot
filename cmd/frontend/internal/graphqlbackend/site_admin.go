@@ -82,7 +82,7 @@ func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, arg
 func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can randomize user passwords.
+	// 🚨 SECURITY: Only site admins can delete users.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
