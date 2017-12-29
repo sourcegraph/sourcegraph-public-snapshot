@@ -61,7 +61,8 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 				$10,
 				$11,
 				$12,
-				$13
+				$13,
+				$14
 			) RETURNING id
 			`,
 			newThread.OrgRepoID,
