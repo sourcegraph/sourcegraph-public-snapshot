@@ -47,8 +47,8 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                             this.state.users.map(user => (
                                 <tr key={user.id}>
                                     <td>{user.username}</td>
-                                    <td>{user.activity.pageViews}</td>
-                                    <td>{user.activity.searchQueries}</td>
+                                    <td>{user.activity ? user.activity.pageViews : '?'}</td>
+                                    <td>{user.activity ? user.activity.searchQueries : '?'}</td>
                                 </tr>
                             ))}
                     </tbody>
@@ -56,8 +56,15 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                         <tfoot>
                             <tr>
                                 <th>Total</th>
-                                <td>{this.state.users.reduce((c, v) => c + v.activity.pageViews, 0)}</td>
-                                <td>{this.state.users.reduce((c, v) => c + v.activity.searchQueries, 0)}</td>
+                                <td>
+                                    {this.state.users.reduce((c, v) => c + (v.activity ? v.activity.pageViews : 0), 0)}
+                                </td>
+                                <td>
+                                    {this.state.users.reduce(
+                                        (c, v) => c + (v.activity ? v.activity.searchQueries : 0),
+                                        0
+                                    )}
+                                </td>
                             </tr>
                         </tfoot>
                     )}
