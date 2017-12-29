@@ -69,6 +69,17 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, erro
 	return orgs[0], nil
 }
 
+func (o *orgs) Count(ctx context.Context) (int, error) {
+	if Mocks.Orgs.Count != nil {
+		return Mocks.Orgs.Count(ctx)
+	}
+	var count int
+	if err := globalDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM orgs WHERE deleted_at IS NULL`).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (o *orgs) List(ctx context.Context) ([]*sourcegraph.Org, error) {
 	return o.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
 }

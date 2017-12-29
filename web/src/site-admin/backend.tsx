@@ -4,10 +4,8 @@ import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 
 /**
  * Fetches all users.
- *
- * @return Observable that emits the list of users
  */
-export function fetchAllUsers(): Observable<GQL.IUser[]> {
+export function fetchAllUsers(): Observable<GQL.IUserConnection> {
     return queryGraphQL(gql`
         query Users {
             users {
@@ -32,6 +30,7 @@ export function fetchAllUsers(): Observable<GQL.IUser[]> {
                         name
                     }
                 }
+                totalCount
             }
         }
     `).pipe(
@@ -39,17 +38,15 @@ export function fetchAllUsers(): Observable<GQL.IUser[]> {
             if (!data || !data.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.users.nodes
+            return data.users
         })
     )
 }
 
 /**
  * Fetches all orgs.
- *
- * @return Observable that emits the list of orgs
  */
-export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
+export function fetchAllOrgs(): Observable<GQL.IOrgConnection> {
     return queryGraphQL(gql`
         query Orgs {
             orgs {
@@ -73,6 +70,7 @@ export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
                         name
                     }
                 }
+                totalCount
             }
         }
     `).pipe(
@@ -80,7 +78,7 @@ export function fetchAllOrgs(): Observable<GQL.IOrg[]> {
             if (!data || !data.orgs) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.orgs.nodes
+            return data.orgs
         })
     )
 }

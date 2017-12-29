@@ -96,6 +96,34 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	}
 }
 
+func TestUsers_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	user, err := Users.Create(ctx, "authid", "a@a.com", "u", "", "", nil, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Users.Count(ctx); err != nil {
+		t.Fatal(err)
+	} else if want := 1; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+
+	if err := Users.Delete(ctx, user.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if count, err := Users.Count(ctx); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+}
+
 func TestUsers_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

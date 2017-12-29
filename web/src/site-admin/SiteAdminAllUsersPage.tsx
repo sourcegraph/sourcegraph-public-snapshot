@@ -244,6 +244,7 @@ interface Props extends RouteComponentProps<any> {
 
 export interface State {
     users?: GQL.IUser[]
+    totalCount?: number
 }
 
 /**
@@ -259,7 +260,9 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         eventLogger.logViewEvent('SiteAdminAllUsers')
 
         this.subscriptions.add(
-            this.userUpdates.pipe(mergeMap(fetchAllUsers)).subscribe(users => this.setState({ users }))
+            this.userUpdates
+                .pipe(mergeMap(fetchAllUsers))
+                .subscribe(resp => this.setState({ users: resp.nodes, totalCount: resp.totalCount }))
         )
         this.userUpdates.next()
     }
@@ -272,7 +275,12 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-detail-list site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
-                <h2>Users</h2>
+                <h2>
+                    Users{' '}
+                    {typeof this.state.totalCount === 'number' &&
+                        this.state.totalCount > 0 &&
+                        `(${this.state.totalCount})`}
+                </h2>
                 <p>
                     See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
                     information about configuring user accounts and authentication.
@@ -294,13 +302,17 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                             />
                         ))}
                 </ul>
-                {this.state.users && (
-                    <p>
-                        <small>
-                            {this.state.users.length} {pluralize('user', this.state.users.length)} total
-                        </small>
-                    </p>
-                )}
+                {this.state.users &&
+                    typeof this.state.totalCount === 'number' &&
+                    this.state.totalCount > 0 && (
+                        <p>
+                            <small>
+                                {this.state.totalCount} {pluralize('user', this.state.totalCount)} total{' '}
+                                {this.state.users.length < this.state.totalCount &&
+                                    `(showing first ${this.state.users.length})`}
+                            </small>
+                        </p>
+                    )}
             </div>
         )
     }

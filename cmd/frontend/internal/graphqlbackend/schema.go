@@ -277,9 +277,15 @@ type Query {
 		package: String
 		limit: Int
 	): [Dependency!]!
-	users: UserConnection!
+	users(
+		# Returns the first n users from the list.
+		first: Int
+	): UserConnection!
 	# List all organizations.
-	orgs: OrgConnection!
+	orgs(
+		# Returns the first n organizations from the list.
+		first: Int
+	): OrgConnection!
 	updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 	# The current site.
 	site: Site!

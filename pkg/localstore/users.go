@@ -304,6 +304,17 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
+func (u *users) Count(ctx context.Context) (int, error) {
+	if Mocks.Users.Count != nil {
+		return Mocks.Users.Count(ctx)
+	}
+	var count int
+	if err := globalDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // ListByOrg returns users for a given org. It can also query a list of specific
 // users by either authIDs or usernames.
 func (u *users) ListByOrg(ctx context.Context, orgID int32, authIDs, usernames []string) ([]*sourcegraph.User, error) {
