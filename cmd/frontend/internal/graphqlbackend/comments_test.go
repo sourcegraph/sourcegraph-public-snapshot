@@ -53,27 +53,27 @@ func TestComments_emailsToNotify(t *testing.T) {
 	// Mock users
 	nick := sourcegraph.User{
 		Username: "nick",
-		AuthID:   "auth0|1",
+		AuthID:   "auth|1",
 		Email:    "nick@sourcegraph.com",
 	}
 	renfred := sourcegraph.User{
 		Username: "renfred",
-		AuthID:   "auth0|2",
+		AuthID:   "auth|2",
 		Email:    "renfred@sourcegraph.com",
 	}
 	john := sourcegraph.User{
 		Username: "john",
-		AuthID:   "auth0|3",
+		AuthID:   "auth|3",
 		Email:    "john@sourcegraph.com",
 	}
 	sqs := sourcegraph.User{
 		Username: "sqs",
-		AuthID:   "auth0|4",
+		AuthID:   "auth|4",
 		Email:    "sqs@sourcegraph.com",
 	}
 	kingy := sourcegraph.User{
 		Username: "kingy",
-		AuthID:   "auth0|5",
+		AuthID:   "auth|5",
 		Email:    "kingy@sourcegraph.com",
 	}
 	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}

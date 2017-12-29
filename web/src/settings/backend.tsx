@@ -396,7 +396,7 @@ export function removeUserFromOrg(orgID: string, userID: string): Observable<nev
             const eventData = {
                 organization: {
                     remove: {
-                        auth0_id: userID,
+                        auth_id: userID,
                     },
                     org_id: orgID,
                 },
