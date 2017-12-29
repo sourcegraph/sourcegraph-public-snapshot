@@ -9,21 +9,15 @@ import (
 )
 
 func (r *schemaResolver) Repositories(args *struct {
-	First *int32
+	connectionArgs
 }) *repositoryConnectionResolver {
-	var c repositoryConnectionResolver
-
-	if args.First == nil {
-		c.first = defaultFirstValue
-	} else {
-		c.first = *args.First
+	return &repositoryConnectionResolver{
+		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
 	}
-
-	return &c
 }
 
 type repositoryConnectionResolver struct {
-	first int32
+	connectionResolverCommon
 }
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {

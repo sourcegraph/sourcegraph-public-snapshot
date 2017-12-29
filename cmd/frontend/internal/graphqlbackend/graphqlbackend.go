@@ -356,6 +356,3 @@ func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args
 	}
 	return &EmptyResponse{}, nil
 }
-
-// defaultFirstValue is the default "first" arg value (to fetch the first n items).
-const defaultFirstValue = 10
