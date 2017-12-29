@@ -372,7 +372,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 		// We need to check those in our own DB.
 		if user.Provider == "auth0" || strings.HasPrefix(user.AuthID, "auth0|") {
 			ok, err := auth0tmp.CheckPassword(ctx, user.Email, password)
-			// log15.Info("checking password via auth0", "user", user.Username, "auth0ID", user.Auth0ID, "email", user.Email, "ok", ok, "err", err)
+			// log15.Info("checking password via auth0", "user", user.Username, "authID", user.AuthID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err
 		}
 	}

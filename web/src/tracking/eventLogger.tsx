@@ -66,17 +66,17 @@ class EventLogger {
     /**
      * Set user ID in Telligent tracker script.
      * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.ID from backend)
-     * @param uniqueAuth0Id Unique Auth0 user ID (corresponds to Actor.UID or User.Auth0ID from backend)
+     * @param uniqueAuthId Unique user auth ID (corresponds to Actor.UID or User.AuthID from backend)
      * @param username Human-readable user identifier, not guaranteed to always stay the same
      */
-    public setUserIds(uniqueSourcegraphId: number | null, uniqueAuth0Id: string, username: string | null): void {
+    public setUserIds(uniqueSourcegraphId: number | null, uniqueAuthId: string, username: string | null): void {
         if (username) {
             telligent.setUserProperty('username', username)
         }
         if (uniqueSourcegraphId) {
             telligent.setUserProperty('user_id', uniqueSourcegraphId)
         }
-        telligent.setUserProperty('internal_user_id', uniqueAuth0Id)
+        telligent.setUserProperty('internal_user_id', uniqueAuthId)
     }
 
     public setUserEmail(primaryEmail: string): void {
