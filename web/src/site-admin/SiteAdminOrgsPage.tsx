@@ -2,12 +2,81 @@ import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { fetchAllOrgs } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
+
+interface OrgListItemProps {
+    className: string
+
+    /**
+     * The org to display in this list item.
+     */
+    org: GQL.IOrg
+
+    /**
+     * Called when the org is updated by an action in this list item.
+     */
+    onDidUpdate?: () => void
+}
+
+interface OrgListItemState {
+    loading: boolean
+    errorDescription?: string
+}
+
+class OrgListItem extends React.PureComponent<OrgListItemProps, OrgListItemState> {
+    public state: OrgListItemState = {
+        loading: false,
+    }
+
+    public render(): JSX.Element | null {
+        return (
+            <li className={this.props.className}>
+                <div className="site-admin-detail-list__header">
+                    <span className="site-admin-detail-list__name">{this.props.org.name}</span>
+                    <br />
+                    <span className="site-admin-detail-list__display-name">{this.props.org.displayName}</span>
+                </div>
+                <ul className="site-admin-detail-list__info">
+                    {this.props.org.id && <li>ID: {this.props.org.id}</li>}
+                    {this.props.org.createdAt && <li>Created: {format(this.props.org.createdAt, 'YYYY-MM-DD')}</li>}
+                    {this.props.org.members &&
+                        this.props.org.members.length > 0 && (
+                            <li>
+                                Members:{' '}
+                                <span title={this.props.org.members.map(m => m.user.username).join(', ')}>
+                                    {this.props.org.members.length} {pluralize('user', this.props.org.members.length)}
+                                </span>
+                            </li>
+                        )}
+                    {this.props.org.latestSettings && (
+                        <li>
+                            <SettingsInfo
+                                settings={this.props.org.latestSettings}
+                                filename={`this.props.org-settings-${this.props.org.id}.json`}
+                            />
+                        </li>
+                    )}
+                    {this.props.org.tags &&
+                        this.props.org.tags.length > 0 && (
+                            <li>Tags: {this.props.org.tags.map(tag => tag.name).join(', ')}</li>
+                        )}
+                </ul>
+                <div className="site-admin-detail-list__actions">
+                    {this.state.errorDescription && (
+                        <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
+                    )}
+                </div>
+            </li>
+        )
+    }
+}
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -21,12 +90,14 @@ export interface State {
 export class SiteAdminOrgsPage extends React.Component<Props, State> {
     public state: State = {}
 
+    private orgUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminOrgs')
 
-        this.subscriptions.add(fetchAllOrgs().subscribe(orgs => this.setState({ orgs })))
+        this.subscriptions.add(this.orgUpdates.pipe(mergeMap(fetchAllOrgs)).subscribe(orgs => this.setState({ orgs })))
+        this.orgUpdates.next()
     }
 
     public componentWillUnmount(): void {
@@ -53,38 +124,12 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                 <ul className="site-admin-detail-list__list">
                     {this.state.orgs &&
                         this.state.orgs.map(org => (
-                            <li key={org.id} className="site-admin-detail-list__item">
-                                <div className="site-admin-detail-list__header">
-                                    <span className="site-admin-detail-list__name">{org.name}</span>
-                                    <br />
-                                    <span className="site-admin-detail-list__display-name">{org.displayName}</span>
-                                </div>
-                                <ul className="site-admin-detail-list__info">
-                                    {org.id && <li>ID: {org.id}</li>}
-                                    {org.createdAt && <li>Created: {format(org.createdAt, 'YYYY-MM-DD')}</li>}
-                                    {org.members &&
-                                        org.members.length > 0 && (
-                                            <li>
-                                                Members:{' '}
-                                                <span title={org.members.map(m => m.user.username).join(', ')}>
-                                                    {org.members.length} {pluralize('user', org.members.length)}
-                                                </span>
-                                            </li>
-                                        )}
-                                    {org.latestSettings && (
-                                        <li>
-                                            <SettingsInfo
-                                                settings={org.latestSettings}
-                                                filename={`org-settings-${org.id}.json`}
-                                            />
-                                        </li>
-                                    )}
-                                    {org.tags &&
-                                        org.tags.length > 0 && (
-                                            <li>Tags: {org.tags.map(tag => tag.name).join(', ')}</li>
-                                        )}
-                                </ul>
-                            </li>
+                            <OrgListItem
+                                key={org.id}
+                                className="site-admin-detail-list__item"
+                                org={org}
+                                onDidUpdate={this.onDidUpdateOrg}
+                            />
                         ))}
                 </ul>
                 {this.state.orgs && (
@@ -97,4 +142,6 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
             </div>
         )
     }
+
+    private onDidUpdateOrg = () => this.orgUpdates.next()
 }
