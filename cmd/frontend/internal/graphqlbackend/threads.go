@@ -420,7 +420,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		StartCharacter:    args.StartCharacter,
 		EndCharacter:      args.EndCharacter,
 		RangeLength:       args.RangeLength,
-		AuthorUserID:      *currentUser.SourcegraphID(),
+		AuthorUserID:      currentUser.SourcegraphID(),
 	}
 	if args.Lines != nil {
 		thread.Lines = &sourcegraph.ThreadLines{
@@ -440,7 +440,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 	}
 
 	if args.Contents != "" {
-		comment, err := db.Comments.Create(ctx, newThread.ID, args.Contents, "", currentUser.Email(), *currentUser.SourcegraphID())
+		comment, err := db.Comments.Create(ctx, newThread.ID, args.Contents, "", currentUser.Email(), currentUser.SourcegraphID())
 		if err != nil {
 			return nil, err
 		}

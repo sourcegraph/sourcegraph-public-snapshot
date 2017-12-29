@@ -193,7 +193,7 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = db.OrgMembers.Create(ctx, newOrg.ID, *currentUser.SourcegraphID())
+	_, err = db.OrgMembers.Create(ctx, newOrg.ID, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 		//
 		// TODO(sqs): perform this transactionally with the other operations above.
 		const editorBetaTag = "editor-beta"
-		tag, err := db.UserTags.GetByUserIDAndTagName(ctx, *currentUser.SourcegraphID(), editorBetaTag)
+		tag, err := db.UserTags.GetByUserIDAndTagName(ctx, currentUser.SourcegraphID(), editorBetaTag)
 		if _, ok := err.(db.ErrUserTagNotFound); !ok && err != nil {
 			return nil, err
 		} else if tag != nil {
@@ -322,7 +322,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if err := db.Users.CheckAndDecrementInviteQuota(ctx, *currentUser.SourcegraphID()); err != nil {
+		if err := db.Users.CheckAndDecrementInviteQuota(ctx, currentUser.SourcegraphID()); err != nil {
 			if err == db.ErrInviteQuotaExceeded {
 				return nil, fmt.Errorf("%s (contact support to increase the quota)", err)
 			}
@@ -402,7 +402,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	_, err = db.OrgMembers.Create(ctx, token.OrgID, *currentUser.SourcegraphID())
+	_, err = db.OrgMembers.Create(ctx, token.OrgID, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}

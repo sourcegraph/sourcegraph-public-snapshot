@@ -47,19 +47,18 @@ func (r *userResolver) AuthID() string { return r.user.AuthID }
 
 func (r *userResolver) Auth0ID() string { return r.AuthID() }
 
-func (r *userResolver) SourcegraphID() *int32 { return &r.user.ID }
+func (r *userResolver) SourcegraphID() int32 { return r.user.ID }
 
 func (r *userResolver) Email() string { return r.user.Email }
 
-func (r *userResolver) Username() *string { return &r.user.Username }
+func (r *userResolver) Username() string { return r.user.Username }
 
 func (r *userResolver) DisplayName() *string { return &r.user.DisplayName }
 
 func (r *userResolver) AvatarURL() *string { return r.user.AvatarURL }
 
-func (r *userResolver) CreatedAt() *string {
-	t := r.user.CreatedAt.Format(time.RFC3339) // ISO
-	return &t
+func (r *userResolver) CreatedAt() string {
+	return r.user.CreatedAt.Format(time.RFC3339)
 }
 
 func (r *userResolver) UpdatedAt() *string {

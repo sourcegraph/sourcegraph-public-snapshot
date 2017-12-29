@@ -430,7 +430,7 @@ type SharedItem {
 # type.
 type SharedItemUser {
 	displayName: String
-	username: String
+	username: String!
 	avatarURL: String
 }
 
@@ -787,12 +787,12 @@ type User implements Node, ConfigurationSubject {
 	id: ID!
 	authID: String!
 	auth0ID: String! @deprecated(reason: "use authID instead")
-	sourcegraphID: Int
+	sourcegraphID: Int!
 	email: String!
 	displayName: String
-	username: String
+	username: String!
 	avatarURL: String
-	createdAt: String
+	createdAt: String!
 	updatedAt: String
 	verified: Boolean!
 	# Whether the user is a site admin.

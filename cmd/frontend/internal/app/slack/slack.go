@@ -34,7 +34,7 @@ func New(webhookURL *string, alsoSendToSourcegraph bool) *Client {
 // User is an interface for accessing a Sourcegraph user's profile data
 type User interface {
 	Email() string
-	Username() *string
+	Username() string
 	DisplayName() *string
 	AvatarURL() *string
 }
@@ -197,8 +197,8 @@ func (c *Client) notifyOnComments(
 		displayNameText = *user.DisplayName()
 	}
 	usernameText := ""
-	if user.Username() != nil {
-		usernameText = fmt.Sprintf("(@%s) ", *user.Username())
+	if user.Username() != "" {
+		usernameText = fmt.Sprintf("(@%s) ", user.Username())
 	}
 	payload := &Payload{
 		Attachments: []*Attachment{
@@ -258,8 +258,8 @@ func (c *Client) NotifyOnInvite(user User, org *sourcegraph.Org, inviteEmail str
 		displayNameText = *user.DisplayName()
 	}
 	usernameText := ""
-	if user.Username() != nil {
-		usernameText = fmt.Sprintf("(@%s) ", *user.Username())
+	if user.Username() != "" {
+		usernameText = fmt.Sprintf("(@%s) ", user.Username())
 	}
 
 	text := fmt.Sprintf("*%s* %sjust invited %s to join *<https://sourcegraph.com/settings/orgs/%s|%s>*", displayNameText, usernameText, inviteEmail, org.Name, org.Name)
@@ -303,8 +303,8 @@ func (c *Client) NotifyOnAcceptedInvite(user User, org *sourcegraph.Org) {
 		displayNameText = *user.DisplayName()
 	}
 	usernameText := ""
-	if user.Username() != nil {
-		usernameText = fmt.Sprintf("(@%s) ", *user.Username())
+	if user.Username() != "" {
+		usernameText = fmt.Sprintf("(@%s) ", user.Username())
 	}
 
 	text := fmt.Sprintf("*%s* %sjust accepted their invitation to join *<https://sourcegraph.com/settings/orgs/%s|%s>*", displayNameText, usernameText, org.Name, org.Name)
