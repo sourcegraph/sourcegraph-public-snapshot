@@ -464,7 +464,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, res
 		// update them accordingly.
 		//
 		// TODO(sqs): remove after migration away from auth0
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "WITH x AS (UPDATE settings SET author_auth_id=$1 WHERE author_auth_id=(SELECT auth_id FROM users WHERE id=$2)) UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
 			return false, err
 		}
 	}
