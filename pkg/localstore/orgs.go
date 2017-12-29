@@ -11,6 +11,15 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
+// OrgNotFoundError occurs when an organization is not found.
+type OrgNotFoundError struct {
+	Message string
+}
+
+func (e *OrgNotFoundError) Error() string {
+	return fmt.Sprintf("org not found: %s", e.Message)
+}
+
 type orgs struct{}
 
 // GetByUserID returns a list of all organizations for the user. An empty slice is
@@ -55,7 +64,7 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, erro
 		return nil, err
 	}
 	if len(orgs) == 0 {
-		return nil, fmt.Errorf("org %d not found", orgID)
+		return nil, &OrgNotFoundError{fmt.Sprintf("id %d", orgID)}
 	}
 	return orgs[0], nil
 }
