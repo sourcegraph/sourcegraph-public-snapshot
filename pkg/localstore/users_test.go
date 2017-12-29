@@ -95,3 +95,39 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 		t.Fatalf("over-limit CheckAndDecrementInviteQuota #2: got error %v, want %q", err, ErrInviteQuotaExceeded)
 	}
 }
+
+func TestUsers_Delete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	user, err := Users.Create(ctx, "authid", "a@a.com", "u", "", "", nil, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete user.
+	if err := Users.Delete(ctx, user.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	// User no longer exists.
+	_, err = Users.GetByID(ctx, user.ID)
+	if _, ok := err.(ErrUserNotFound); !ok {
+		t.Errorf("got error %v, want ErrUserNotFound", err)
+	}
+	users, err := Users.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(users) > 0 {
+		t.Errorf("got %d users, want 0", len(users))
+	}
+
+	// Can't delete already-deleted user.
+	err = Users.Delete(ctx, user.ID)
+	if _, ok := err.(ErrUserNotFound); !ok {
+		t.Errorf("got error %v, want ErrUserNotFound", err)
+	}
+}

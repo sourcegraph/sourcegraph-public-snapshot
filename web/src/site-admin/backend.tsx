@@ -258,6 +258,23 @@ export function randomizeUserPasswordBySiteAdmin(user: GQLID): Observable<GQL.IR
     )
 }
 
+export function deleteUser(user: GQLID): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteUser($user: ID!) {
+                deleteUser(user: $user) { }
+            }
+        `,
+        { user }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0) || !data.deleteUser) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+        })
+    )
+}
+
 export function createUserBySiteAdmin(username: string, email: string): Observable<GQL.ICreateUserBySiteAdminResult> {
     return mutateGraphQL(
         gql`

@@ -137,6 +137,8 @@ type Mutation {
 	# Randomize a user's password so that they need to reset it before they can sign in again.
 	# Only site admins may perform this mutation.
 	randomizeUserPasswordBySiteAdmin(user: ID!): RandomizeUserPasswordBySiteAdminResult!
+	# Deletes a user account. Only site admins may perform this mutation.
+	deleteUser(user: ID!): EmptyResponse
 	inviteUser(email: String!, orgID: ID!): InviteUserResult
 	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
 	removeUserFromOrg(userID: String!, orgID: ID!): EmptyResponse

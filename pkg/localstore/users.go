@@ -224,6 +224,21 @@ func (u *users) Update(ctx context.Context, id int32, username *string, displayN
 	return user, nil
 }
 
+func (u *users) Delete(ctx context.Context, id int32) error {
+	res, err := globalDB.ExecContext(ctx, "UPDATE users SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrUserNotFound{args: []interface{}{id}}
+	}
+	return nil
+}
+
 func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	_, err := globalDB.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", isSiteAdmin, id)
 	return err

@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
-import { fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
+import { deleteUser, fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
 interface UserListItemProps {
@@ -75,6 +75,16 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
                     disabled={this.state.loading || !!this.state.resetPasswordURL}
                 >
                     Reset password
+                </button>
+            )
+            actions.push(
+                <button
+                    key="deleteUser"
+                    className="btn btn-link btn-sm"
+                    onClick={this.deleteUser}
+                    disabled={this.state.loading}
+                >
+                    Delete user
                 </button>
             )
         }
@@ -198,6 +208,30 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
                         loading: false,
                         resetPasswordURL,
                     })
+                },
+                err => this.setState({ loading: false, errorDescription: err.message })
+            )
+    }
+
+    private deleteUser = () => {
+        if (!window.confirm(`Really delete the user ${this.props.user.username}?`)) {
+            return
+        }
+
+        this.setState({
+            errorDescription: undefined,
+            resetPasswordURL: undefined,
+            loading: true,
+        })
+
+        deleteUser(this.props.user.id)
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({ loading: false })
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
                 },
                 err => this.setState({ loading: false, errorDescription: err.message })
             )
