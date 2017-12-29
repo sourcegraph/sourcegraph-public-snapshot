@@ -8,11 +8,10 @@ import { Redirect } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { VALID_USERNAME_REGEXP } from '../settings/validation'
 import { eventLogger } from '../tracking/eventLogger'
 import { signupTerms } from '../util/features'
 import { isUsernameAvailable } from './backend'
-import { EmailInput, getReturnTo, PasswordInput } from './SignInSignUpCommon'
+import { EmailInput, getReturnTo, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 
 interface SignUpFormProps {
     location: H.Location
@@ -62,14 +61,11 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                     />
                 </div>
                 <div className="form-group">
-                    <input
-                        className="form-control signin-signup-form__input"
+                    <UsernameInput
+                        className="signin-signup-form__input"
                         onChange={this.onUsernameFieldChange}
                         value={this.state.username}
-                        type="text"
                         required={true}
-                        placeholder="Username"
-                        pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
                         disabled={this.state.loading}
                     />
                 </div>

@@ -5,8 +5,79 @@ import (
 	"errors"
 
 	graphql "github.com/neelance/graphql-go"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
+
+type createUserResult struct {
+	resetPasswordURL string
+}
+
+func (r *createUserResult) ResetPasswordURL() string { return r.resetPasswordURL }
+
+func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
+	Username string
+	Email    string
+}) (*createUserResult, error) {
+	// 🚨 SECURITY: Only site admins can create user accounts.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	user, err := localstore.Users.Create(ctx, backend.NativeAuthUserAuthID(args.Email), args.Email, args.Username, "", sourcegraph.UserProviderNative, nil, backend.MakeRandomHardToGuessPassword(), backend.MakeEmailVerificationCode())
+	if err != nil {
+		return nil, err
+	}
+
+	resetURL, err := backend.MakePasswordResetURL(ctx, user.ID, args.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &createUserResult{
+		resetPasswordURL: globals.AppURL.ResolveReference(resetURL).String(),
+	}, nil
+}
+
+type randomizeUserPasswordResult struct {
+	resetPasswordURL string
+}
+
+func (r *randomizeUserPasswordResult) ResetPasswordURL() string { return r.resetPasswordURL }
+
+func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, args *struct {
+	User graphql.ID
+}) (*randomizeUserPasswordResult, error) {
+	// 🚨 SECURITY: Only site admins can randomize user passwords.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := unmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := localstore.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	user, err := localstore.Users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	resetURL, err := backend.MakePasswordResetURL(ctx, userID, user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return &randomizeUserPasswordResult{
+		resetPasswordURL: globals.AppURL.ResolveReference(resetURL).String(),
+	}, nil
+}
 
 func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID

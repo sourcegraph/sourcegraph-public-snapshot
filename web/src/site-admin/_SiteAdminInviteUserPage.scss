@@ -1,0 +1,16 @@
+.site-admin-invite-user-page {
+    &__alert {
+        &-button {
+            margin-top: 0.5rem;
+        }
+    }
+
+    &__url {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+
+    &__form {
+        max-width: 24rem;
+    }
+}

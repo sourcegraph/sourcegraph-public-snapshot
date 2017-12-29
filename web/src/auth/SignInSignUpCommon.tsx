@@ -1,5 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
+import { VALID_USERNAME_REGEXP } from '../settings/validation'
 
 export const PasswordInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input
@@ -18,6 +19,17 @@ export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> 
         type="email"
         placeholder="Email"
         spellCheck={false}
+    />
+)
+
+export const UsernameInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
+    <input
+        {...props}
+        className={`form-control ${props.className || ''}`}
+        type="text"
+        placeholder="Username"
+        spellCheck={false}
+        pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
     />
 )
 

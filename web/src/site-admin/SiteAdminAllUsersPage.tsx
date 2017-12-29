@@ -1,13 +1,14 @@
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
-import { fetchAllUsers, setUserIsSiteAdmin } from './backend'
+import { fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
 interface UserListItemProps {
@@ -32,6 +33,7 @@ interface UserListItemProps {
 interface UserListItemState {
     loading: boolean
     errorDescription?: string
+    resetPasswordURL?: string
 }
 
 class UserListItem extends React.PureComponent<UserListItemProps, UserListItemState> {
@@ -65,51 +67,76 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
                     </button>
                 )
             }
+            actions.push(
+                <button
+                    key="randomizePassword"
+                    className="btn btn-link btn-sm"
+                    onClick={this.randomizePassword}
+                    disabled={this.state.loading || !!this.state.resetPasswordURL}
+                >
+                    Reset password
+                </button>
+            )
         }
 
         return (
-            <li className={this.props.className}>
-                <div className="site-admin-detail-list__header">
-                    <span className="site-admin-detail-list__name">{this.props.user.username}</span>
-                    <br />
-                    <span className="site-admin-detail-list__display-name">{this.props.user.displayName}</span>
-                </div>
-                <ul className="site-admin-detail-list__info">
-                    {this.props.user.siteAdmin && (
-                        <li>
-                            <strong>Site admin</strong>
-                        </li>
-                    )}
-                    {this.props.user.email && (
-                        <li>
-                            Email: <a href={`mailto:${this.props.user.email}`}>{this.props.user.email}</a>
-                        </li>
-                    )}
-                    <li>ID: {this.props.user.id}</li>
-                    {this.props.user.createdAt && <li>Created: {format(this.props.user.createdAt, 'YYYY-MM-DD')}</li>}
-                    {this.props.user.orgs &&
-                        this.props.user.orgs.length > 0 && (
-                            <li>Orgs: {this.props.user.orgs.map(org => org.name).join(', ')}</li>
+            <li className={`site-admin-all-users-page__item-container ${this.props.className}`}>
+                <div className="site-admin-all-users-page__item">
+                    <div className="site-admin-detail-list__header">
+                        <span className="site-admin-detail-list__name">{this.props.user.username}</span>
+                        <br />
+                        <span className="site-admin-detail-list__display-name">{this.props.user.displayName}</span>
+                    </div>
+                    <ul className="site-admin-detail-list__info">
+                        {this.props.user.siteAdmin && (
+                            <li>
+                                <strong>Site admin</strong>
+                            </li>
                         )}
-                    {this.props.user.latestSettings && (
-                        <li>
-                            <SettingsInfo
-                                settings={this.props.user.latestSettings}
-                                filename={`user-settings-${this.props.user.id}.json`}
-                            />
-                        </li>
-                    )}
-                    {this.props.user.tags &&
-                        this.props.user.tags.length > 0 && (
-                            <li>Tags: {this.props.user.tags.map(tag => tag.name).join(', ')}</li>
+                        {this.props.user.email && (
+                            <li>
+                                Email: <a href={`mailto:${this.props.user.email}`}>{this.props.user.email}</a>
+                            </li>
                         )}
-                </ul>
-                <div>
-                    {actions}
-                    {this.state.errorDescription && (
-                        <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
-                    )}
+                        <li>ID: {this.props.user.id}</li>
+                        {this.props.user.createdAt && (
+                            <li>Created: {format(this.props.user.createdAt, 'YYYY-MM-DD')}</li>
+                        )}
+                        {this.props.user.orgs &&
+                            this.props.user.orgs.length > 0 && (
+                                <li>Orgs: {this.props.user.orgs.map(org => org.name).join(', ')}</li>
+                            )}
+                        {this.props.user.latestSettings && (
+                            <li>
+                                <SettingsInfo
+                                    settings={this.props.user.latestSettings}
+                                    filename={`user-settings-${this.props.user.id}.json`}
+                                />
+                            </li>
+                        )}
+                        {this.props.user.tags &&
+                            this.props.user.tags.length > 0 && (
+                                <li>Tags: {this.props.user.tags.map(tag => tag.name).join(', ')}</li>
+                            )}
+                    </ul>
+                    <div className="site-admin-detail-list__actions">
+                        {actions}
+                        {this.state.errorDescription && (
+                            <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
+                        )}
+                    </div>
                 </div>
+                {this.state.resetPasswordURL && (
+                    <div className="alert alert-success site-admin-all-users-page__item-alert">
+                        <p>
+                            Password was reset. You must manually send <strong>{this.props.user.username}</strong> this
+                            reset link:
+                        </p>
+                        <div>
+                            <code className="site-admin-all-users-page__url">{this.state.resetPasswordURL}</code>
+                        </div>
+                    </div>
+                )}
             </li>
         )
     }
@@ -141,6 +168,36 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
                     if (this.props.onDidUpdate) {
                         this.props.onDidUpdate()
                     }
+                },
+                err => this.setState({ loading: false, errorDescription: err.message })
+            )
+    }
+
+    private randomizePassword = () => {
+        if (
+            !window.confirm(
+                `Really reset the password for ${
+                    this.props.user.username
+                } to a random password? The user must reset their password to sign in again.`
+            )
+        ) {
+            return
+        }
+
+        this.setState({
+            errorDescription: undefined,
+            resetPasswordURL: undefined,
+            loading: true,
+        })
+
+        randomizeUserPasswordBySiteAdmin(this.props.user.id)
+            .toPromise()
+            .then(
+                ({ resetPasswordURL }) => {
+                    this.setState({
+                        loading: false,
+                        resetPasswordURL,
+                    })
                 },
                 err => this.setState({ loading: false, errorDescription: err.message })
             )
@@ -185,6 +242,11 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 <p>
                     See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
                     information about configuring user accounts and authentication.
+                </p>
+                <p>
+                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm">
+                        Invite user
+                    </Link>
                 </p>
                 <ul className="site-admin-detail-list__list">
                     {this.state.users &&

@@ -1,1 +1,21 @@
 @import './DetailList';
+
+.site-admin-all-users-page {
+    &__item {
+        display: flex;
+        width: 100%;
+
+        &-container {
+            display: block !important;
+        }
+
+        &-alert {
+            margin: 0.75rem 0;
+        }
+    }
+
+    &__url {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+}
