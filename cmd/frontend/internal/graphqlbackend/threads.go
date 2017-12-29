@@ -61,7 +61,7 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 		limit = *t.limit
 	}
 	orgID, repoIDs := t.orgRepoArgs()
-	threads, err := store.Threads.List(ctx, orgID, repoIDs, t.branch, t.file, limit)
+	threads, err := store.Threads.ListByFile(ctx, orgID, repoIDs, t.branch, t.file, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 
 func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	orgID, repoIDs := t.orgRepoArgs()
-	return store.Threads.Count(ctx, orgID, repoIDs, t.branch, t.file)
+	return store.Threads.CountByFile(ctx, orgID, repoIDs, t.branch, t.file)
 }
 
 type threadResolver struct {
