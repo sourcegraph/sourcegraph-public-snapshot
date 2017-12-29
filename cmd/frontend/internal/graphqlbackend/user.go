@@ -10,8 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -116,8 +114,7 @@ func currentUser(ctx context.Context) (*userResolver, error) {
 }
 
 func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
-	actor := actor.FromContext(ctx)
-	orgs, err := store.Orgs.GetByUserID(ctx, actor.UID)
+	orgs, err := store.Orgs.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +126,7 @@ func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
 }
 
 func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
-	actor := actor.FromContext(ctx)
-	members, err := store.OrgMembers.GetByUserID(ctx, actor.UID)
+	members, err := store.OrgMembers.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}

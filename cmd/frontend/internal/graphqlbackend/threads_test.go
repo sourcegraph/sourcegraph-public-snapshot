@@ -18,6 +18,7 @@ func TestThreads_Create(t *testing.T) {
 		CanonicalRemoteID: "test",
 		CloneURL:          "https://test.com/test",
 	}
+	store.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) { return &sourcegraph.User{}, nil }
 	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
 	store.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{}, nil)
 	store.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, store.ErrRepoNotFound)
@@ -39,6 +40,9 @@ func TestThreads_Create(t *testing.T) {
 		LinesRevision:     lineRev,
 	}, nil)
 	commentCreateCalled, _ := store.Mocks.Comments.MockCreate(t)
+
+	mockNotifyNewComment = func() (*commentResults, error) { return nil, nil }
+	defer func() { mockNotifyNewComment = nil }()
 
 	r := &schemaResolver{}
 	_, err := r.CreateThread(ctx, &struct {
@@ -84,10 +88,11 @@ func TestThreads_Update(t *testing.T) {
 		CanonicalRemoteID: "test",
 	}
 
+	store.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) { return &sourcegraph.User{}, nil }
 	store.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
 	store.Mocks.OrgRepos.MockGetByID_Return(t, &wantRepo, nil)
 	called := store.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
-	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, nil, nil)
+	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
 	store.Mocks.Orgs.MockGetByID_Return(t, nil, nil)
 
 	r := &schemaResolver{}

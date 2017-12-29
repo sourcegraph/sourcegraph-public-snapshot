@@ -143,7 +143,7 @@ type Mutation {
 	deleteUser(user: ID!): EmptyResponse
 	inviteUser(email: String!, orgID: ID!): InviteUserResult
 	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
-	removeUserFromOrg(userID: String!, orgID: ID!): EmptyResponse
+	removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
 	# adds a phabricator repository to the Sourcegraph server.
 	# example callsign: "MUX"
 	# example uri: "github.com/gorilla/mux"

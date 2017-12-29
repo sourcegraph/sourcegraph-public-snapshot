@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -62,10 +62,8 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 		}
 
 		if !item.Public {
-			// 🚨 SECURITY: verify that the user is in the org.
-			actor := actor.FromContext(ctx)
-			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
-			if err != nil {
+			// 🚨 SECURITY: Check that the current user is a member of the org.
+			if err := backend.CheckCurrentUserIsOrgMember(ctx, orgRepo.OrgID); err != nil {
 				return nil, err
 			}
 		}
@@ -91,10 +89,8 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 		}
 
 		if !item.Public {
-			// 🚨 SECURITY: verify that the current user is in the org.
-			actor := actor.FromContext(ctx)
-			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgRepo.OrgID, actor.UID)
-			if err != nil {
+			// 🚨 SECURITY: Check that the current user is a member of the org.
+			if err := backend.CheckCurrentUserIsOrgMember(ctx, orgRepo.OrgID); err != nil {
 				return nil, err
 			}
 		}

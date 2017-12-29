@@ -96,6 +96,8 @@
 // ../../../migrations/1514312401_add_site_admin_column_to_users.up.sql
 // ../../../migrations/1514534085_add_orgs_deleted_at.down.sql
 // ../../../migrations/1514534085_add_orgs_deleted_at.up.sql
+// ../../../migrations/1514536731_add_org_members_user_fkey.down.sql
+// ../../../migrations/1514536731_add_org_members_user_fkey.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2083,6 +2085,46 @@ func _1514534085_add_orgs_deleted_atUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514536731_add_org_members_user_fkeyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x90\x5f\x4f\x83\x30\x14\xc5\xdf\xf9\x14\xf7\x71\x4b\xc8\x12\x32\xa7\x0f\x64\x0f\x0c\xae\x4a\xd2\x3f\xb3\xb4\xf1\xb1\x61\xb6\x51\xa2\x73\x0b\x94\xe8\xc7\x37\x0c\x48\xb0\x0b\xfa\x76\x7b\x7a\x7e\xed\xb9\x67\x87\x0f\x39\x8b\x83\x84\x48\x14\x20\x93\x1d\x41\x38\xd5\xaf\xfa\x68\x8f\x07\x5b\x37\x20\x90\x25\x14\x21\xe5\x44\x51\x06\x6d\x63\x6b\x5d\x19\x90\x7c\x1c\xf5\xa7\xfd\x9a\xa7\x93\x2c\xf3\x51\x67\xbf\x5d\x1c\xa8\x7d\x96\xc8\xdf\xde\x02\xe5\x68\xda\x2e\x0a\x24\x98\xf6\xe7\x66\x55\xb6\xee\xad\x43\xef\x05\xa7\xbd\x04\xcf\x8f\x28\x70\xb8\xae\xcc\x76\xf2\xce\x6a\x12\x6c\xf9\x47\xb2\x8b\xee\x65\xeb\x22\x30\x2e\x81\x29\x42\xe6\xd1\x4c\xf0\xbd\x47\xfe\xdf\x82\x62\xf9\x93\x42\x58\x74\x7a\x65\xc2\x11\x5c\xc6\x41\xce\x0a\x14\x12\x72\x26\xf9\x94\xf2\x9d\x21\xbc\xd4\xb6\x74\xd6\xe8\xd2\x85\xd0\x9e\xcd\x30\x2f\x61\xe8\xca\xf3\xeb\xd3\xc7\x2c\xd3\x37\x39\xf9\x4c\x1f\xde\xdb\xb3\x8e\x36\xd1\xcd\x66\x7d\x7b\xb7\x8e\xe2\xe0\xb2\xe4\xd5\x2a\xd7\xbe\x94\x53\x9a\xcb\x38\xf8\x09\x00\x00\xff\xff\x31\x33\x63\x50\x47\x02\x00\x00")
+
+func _1514536731_add_org_members_user_fkeyDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514536731_add_org_members_user_fkeyDownSql,
+		"1514536731_add_org_members_user_fkey.down.sql",
+	)
+}
+
+func _1514536731_add_org_members_user_fkeyDownSql() (*asset, error) {
+	bytes, err := _1514536731_add_org_members_user_fkeyDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514536731_add_org_members_user_fkey.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514536731_add_org_members_user_fkeyUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x51\x5d\x4f\x83\x30\x14\x7d\xe7\x57\xdc\x47\x30\x66\x09\x99\xd3\x07\xe2\x43\x07\x67\x4a\x52\xda\xd9\x5e\xe2\x23\x71\x81\x4c\xa2\x73\x06\xc6\xff\x37\xdd\x20\x22\x46\xb7\xb7\xf6\xde\xf3\xd1\x73\xba\xc4\x43\xaa\x22\x4f\x48\x86\x21\x16\x4b\x09\xda\x37\xdb\x62\x57\xed\x36\x55\xd3\x92\x81\x12\x19\x28\xd6\x32\xcf\x14\x75\x6d\xd5\x14\x75\x49\xac\x87\x63\xb1\x7f\x2f\xff\x66\x8b\x24\x99\x52\xeb\x8f\x43\xb5\xad\x1a\x32\x58\xc1\x40\xc5\xb0\xc7\x55\x4b\x7e\x5d\x06\xa4\x15\x25\x90\x60\x90\x81\x65\x93\xc6\x1c\x79\xf9\x3a\x11\xfc\x53\xd7\x82\x07\xc1\x7b\xdf\x42\x22\x3e\xdd\xdb\x59\x5d\xd2\xca\xe8\xac\xd7\x7c\x7e\x84\x41\xbf\x79\xe9\x0e\xaf\x0e\x3f\xd2\x99\x8d\x42\x04\x91\x17\x1b\x38\xa3\x5f\x31\x8a\xcd\x5b\xf7\x59\x84\x8b\xf0\x66\x31\xbf\xbd\x9b\x87\x24\x2c\x0d\xae\x57\x27\xbb\xf1\xe3\xbe\x4d\x5d\xde\xd4\x92\xca\xa5\x0c\x22\xaf\x0f\x76\x19\xfe\x9f\x4e\x8f\xf3\x49\xab\xae\x10\xa5\xf9\x0c\x35\x31\x7a\x3d\x61\x9e\xff\xbf\x5c\xa5\x4f\x39\xc8\x77\xf3\xba\xbc\x1e\x88\xae\x2f\x9d\x65\x29\x47\xde\x57\x00\x00\x00\xff\xff\x60\xfc\x68\x3b\x43\x02\x00\x00")
+
+func _1514536731_add_org_members_user_fkeyUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514536731_add_org_members_user_fkeyUpSql,
+		"1514536731_add_org_members_user_fkey.up.sql",
+	)
+}
+
+func _1514536731_add_org_members_user_fkeyUpSql() (*asset, error) {
+	bytes, err := _1514536731_add_org_members_user_fkeyUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514536731_add_org_members_user_fkey.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2231,6 +2273,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514312401_add_site_admin_column_to_users.up.sql":            _1514312401_add_site_admin_column_to_usersUpSql,
 	"1514534085_add_orgs_deleted_at.down.sql":                     _1514534085_add_orgs_deleted_atDownSql,
 	"1514534085_add_orgs_deleted_at.up.sql":                       _1514534085_add_orgs_deleted_atUpSql,
+	"1514536731_add_org_members_user_fkey.down.sql":               _1514536731_add_org_members_user_fkeyDownSql,
+	"1514536731_add_org_members_user_fkey.up.sql":                 _1514536731_add_org_members_user_fkeyUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2370,6 +2414,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514312401_add_site_admin_column_to_users.up.sql":            &bintree{_1514312401_add_site_admin_column_to_usersUpSql, map[string]*bintree{}},
 	"1514534085_add_orgs_deleted_at.down.sql":                     &bintree{_1514534085_add_orgs_deleted_atDownSql, map[string]*bintree{}},
 	"1514534085_add_orgs_deleted_at.up.sql":                       &bintree{_1514534085_add_orgs_deleted_atUpSql, map[string]*bintree{}},
+	"1514536731_add_org_members_user_fkey.down.sql":               &bintree{_1514536731_add_org_members_user_fkeyDownSql, map[string]*bintree{}},
+	"1514536731_add_org_members_user_fkey.up.sql":                 &bintree{_1514536731_add_org_members_user_fkeyUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

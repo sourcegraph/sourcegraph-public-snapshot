@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
@@ -103,9 +104,8 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	actor := actor.FromContext(ctx)
 	if args.ULID == "" {
 		// Plain case (adding a comment to a thread from the editor).
-		// 🚨 SECURITY: verify that the user is in the org.
-		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
-		if err != nil {
+		// 🚨 SECURITY: Check that the current user is a member of the org.
+		if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -123,9 +123,8 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 			return nil, err
 		}
 		if !item.Public {
-			// 🚨 SECURITY: verify that the user is in the org.
-			_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
-			if err != nil {
+			// 🚨 SECURITY: Check that the current user is a member of the org.
+			if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
 				return nil, err
 			}
 		}
@@ -214,12 +213,13 @@ func (*schemaResolver) shareCommentInternal(ctx context.Context, commentID int32
 		return nil, err
 	}
 
-	// 🚨 SECURITY: verify that the user is in the org.
-	actor := actor.FromContext(ctx)
-	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
-	if err != nil {
+	// 🚨 SECURITY: Check that the current user is a member of the org.
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
 		return nil, err
 	}
+
+	actor := actor.FromContext(ctx)
+
 	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
 		AuthorUserID: actor.UID,
 		Public:       public,
@@ -233,7 +233,13 @@ type commentResults struct {
 	commentURL string
 }
 
+var mockNotifyNewComment func() (*commentResults, error)
+
 func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) (*commentResults, error) {
+	if mockNotifyNewComment != nil {
+		return mockNotifyNewComment()
+	}
+
 	commentURL, err := s.getURL(ctx, thread.ID, &comment.ID, "email")
 	if err != nil {
 		return nil, err
@@ -296,17 +302,23 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 
 // emailsToNotify returns all emails that should be notified of activity given a list of comments.
 func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
-	uniqueParticipants, uniqueMentions := map[string]struct{}{}, map[string]struct{}{}
+	uniqueParticipants, uniqueMentions := map[int32]struct{}{}, map[string]struct{}{}
 	orgName, authorUsername := strings.ToLower(org.Name), strings.ToLower(author.Username)
 
 	// Prevent the author from being mentioned
-	uniqueParticipants[author.AuthID] = struct{}{}
+	uniqueParticipants[author.ID] = struct{}{}
 	uniqueMentions[authorUsername] = struct{}{}
 
-	var participantIDs, mentions []string
+	var participantIDs []int32
+	var mentions []string
 	for i, c := range comments {
+		author, err := store.Users.GetByAuthID(ctx, c.AuthorUserID)
+		if err != nil {
+			return nil, err
+		}
+
 		// Notify participants in the conversation.
-		participantIDs = appendUnique(uniqueParticipants, participantIDs, c.AuthorUserID)
+		participantIDs = appendUniqueInt32(uniqueParticipants, participantIDs, author.ID)
 
 		// Notify mentioned people in the conversation.
 		usernames := usernamesFromMentions(c.Contents)
@@ -327,9 +339,9 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	_, orgNameMention := uniqueMentions[orgName]
 
 	if atOrgMention || orgNameMention {
-		var exclude []string
+		var exclude []int32
 		if !selfMentioned {
-			exclude = []string{author.AuthID}
+			exclude = []int32{author.ID}
 		}
 		return allEmailsForOrg(ctx, org.ID, exclude)
 	}
@@ -396,6 +408,18 @@ func withUTMSource(u *url.URL, utmSource string) *url.URL {
 
 // appendUnique returns value appended to values if value is not a key in unique.
 func appendUnique(unique map[string]struct{}, slice []string, values ...string) []string {
+	for _, v := range values {
+		if _, ok := unique[v]; ok {
+			continue
+		}
+		unique[v] = struct{}{}
+		slice = append(slice, v)
+	}
+	return slice
+}
+
+// appendUniqueInt32 returns value appended to values if value is not a key in unique.
+func appendUniqueInt32(unique map[int32]struct{}, slice []int32, values ...int32) []int32 {
 	for _, v := range values {
 		if _, ok := unique[v]; ok {
 			continue

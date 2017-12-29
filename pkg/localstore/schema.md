@@ -68,14 +68,28 @@ Indexes:
 ------------+--------------------------+----------------------------------------------------------
  id         | integer                  | not null default nextval('org_members_id_seq'::regclass)
  org_id     | integer                  | not null
- user_id    | text                     | not null
  created_at | timestamp with time zone | not null default now()
  updated_at | timestamp with time zone | not null default now()
+ user_id    | integer                  | not null
 Indexes:
     "org_members_pkey" PRIMARY KEY, btree (id)
     "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
 Foreign-key constraints:
     "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
+    "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.org_members_bkup_1514536731"
+```
+   Column    |           Type           | Modifiers 
+-------------+--------------------------+-----------
+ id          | integer                  | 
+ org_id      | integer                  | 
+ user_id_old | text                     | 
+ created_at  | timestamp with time zone | 
+ updated_at  | timestamp with time zone | 
+ user_id     | integer                  | 
 
 ```
 
@@ -358,6 +372,7 @@ Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
+    TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_activity" CONSTRAINT "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

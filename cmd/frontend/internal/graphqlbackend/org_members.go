@@ -38,7 +38,7 @@ func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
 func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
 	if m.user == nil {
 		var err error
-		m.user, err = localstore.Users.GetByAuthID(ctx, m.member.UserID)
+		m.user, err = localstore.Users.GetByID(ctx, m.member.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -58,9 +58,9 @@ func (i *orgInviteResolver) EmailVerified() bool {
 	return i.emailVerified
 }
 
-var mockAllEmailsForOrg func(ctx context.Context, orgID int32, excludeByUserID []string) ([]string, error)
+var mockAllEmailsForOrg func(ctx context.Context, orgID int32, excludeByUserID []int32) ([]string, error)
 
-func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []string) ([]string, error) {
+func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) ([]string, error) {
 	if mockAllEmailsForOrg != nil {
 		return mockAllEmailsForOrg(ctx, orgID, excludeByUserID)
 	}
@@ -69,7 +69,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []string)
 	if err != nil {
 		return nil, err
 	}
-	exclude := make(map[string]interface{})
+	exclude := make(map[int32]interface{})
 	for _, id := range excludeByUserID {
 		exclude[id] = struct{}{}
 	}
@@ -78,7 +78,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []string)
 		if _, ok := exclude[m.UserID]; ok {
 			continue
 		}
-		user, err := store.Users.GetByAuthID(ctx, m.UserID)
+		user, err := store.Users.GetByID(ctx, m.UserID)
 		if err != nil {
 			// This shouldn't happen, but we don't want to prevent the notification,
 			// so swallow the error.

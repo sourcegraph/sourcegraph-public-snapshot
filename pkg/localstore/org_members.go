@@ -14,7 +14,7 @@ import (
 
 type orgMembers struct{}
 
-func (*orgMembers) Create(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
+func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*sourcegraph.OrgMember, error) {
 	m := sourcegraph.OrgMember{
 		OrgID:  orgID,
 		UserID: userID,
@@ -34,18 +34,18 @@ func (*orgMembers) Create(ctx context.Context, orgID int32, userID string) (*sou
 	return &m, nil
 }
 
-func (m *orgMembers) GetByUserID(ctx context.Context, userID string) ([]*sourcegraph.OrgMember, error) {
+func (m *orgMembers) GetByUserID(ctx context.Context, userID int32) ([]*sourcegraph.OrgMember, error) {
 	return m.getBySQL(ctx, "WHERE user_id=$1", userID)
 }
 
-func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID int32, userID string) (*sourcegraph.OrgMember, error) {
+func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*sourcegraph.OrgMember, error) {
 	if Mocks.OrgMembers.GetByOrgIDAndUserID != nil {
 		return Mocks.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
 	}
 	return m.getOneBySQL(ctx, "WHERE org_id=$1 AND user_id=$2 LIMIT 1", orgID, userID)
 }
 
-func (*orgMembers) Remove(ctx context.Context, orgID int32, userID string) error {
+func (*orgMembers) Remove(ctx context.Context, orgID, userID int32) error {
 	_, err := globalDB.ExecContext(ctx, "DELETE FROM org_members WHERE (org_id=$1 AND user_id=$2)", orgID, userID)
 	return err
 }
@@ -56,7 +56,7 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.
 	if err != nil {
 		return nil, err
 	}
-	return OrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.auth_id WHERE org_id=$1 ORDER BY upper(users.display_name)", org.ID)
+	return OrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.id WHERE org_id=$1 ORDER BY upper(users.display_name)", org.ID)
 }
 
 // ErrOrgMemberNotFound is the error that is returned when
@@ -121,11 +121,11 @@ func (*orgMembers) CreateMembershipInOrgsForAllUsers(ctx context.Context, dbh in
 
 	sqlQuery := sqlf.Sprintf(`
 			WITH org_ids AS (SELECT id FROM orgs WHERE name IN (%s)),
-				 user_ids AS (SELECT auth_id FROM users),
-				 to_join AS (SELECT org_ids.id AS org_id, user_ids.auth_id AS user_id
+				 user_ids AS (SELECT id FROM users),
+				 to_join AS (SELECT org_ids.id AS org_id, user_ids.id AS user_id
 						  FROM org_ids join user_ids ON true
 						  LEFT JOIN org_members ON org_members.org_id=org_ids.id AND
-									org_members.user_id=user_ids.auth_id
+									org_members.user_id=user_ids.id
 						  WHERE org_members.id is null)
 			INSERT INTO org_members(org_id,user_id) SELECT to_join.org_id, to_join.user_id FROM to_join;`,
 		sqlf.Join(orgNameVars, ","))

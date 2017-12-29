@@ -24,7 +24,7 @@ type orgs struct{}
 
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
-func (*orgs) GetByUserID(ctx context.Context, userID string) ([]*sourcegraph.Org, error) {
+func (*orgs) GetByUserID(ctx context.Context, userID int32) ([]*sourcegraph.Org, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name, orgs.slack_webhook_url, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
 	if err != nil {
 		return []*sourcegraph.Org{}, err

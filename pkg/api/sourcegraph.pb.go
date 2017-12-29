@@ -388,7 +388,7 @@ type Org struct {
 type OrgMember struct {
 	ID        int32     `json:"ID"`
 	OrgID     int32     `json:"OrgID"`
-	UserID    string    `json:"UserID"`
+	UserID    int32     `json:"UserID"`
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 }

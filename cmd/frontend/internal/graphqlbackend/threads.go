@@ -19,6 +19,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
@@ -379,12 +380,12 @@ func (s *schemaResolver) CreateThread2(ctx context.Context, args *struct {
 }
 
 func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThreadInput) (*threadResolver, error) {
-	// 🚨 SECURITY: verify that the current user is in the org.
-	actor := actor.FromContext(ctx)
-	_, err := store.OrgMembers.GetByOrgIDAndUserID(ctx, args.OrgID.int32Value, actor.UID)
-	if err != nil {
+	// 🚨 SECURITY: Check that the current user is a member of the org.
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, args.OrgID.int32Value); err != nil {
 		return nil, err
 	}
+
+	actor := actor.FromContext(ctx)
 
 	repo, err := store.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
 	if err == store.ErrRepoNotFound {
@@ -490,12 +491,12 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: verify that the current user is in the org.
-	actor := actor.FromContext(ctx)
-	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
-	if err != nil {
+	// 🚨 SECURITY: Check that the current user is a member of the org.
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
 		return nil, err
 	}
+
+	actor := actor.FromContext(ctx)
 
 	org, err := store.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
@@ -551,12 +552,12 @@ func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, 
 		return nil, err
 	}
 
-	// 🚨 SECURITY: verify that the current user is in the org.
-	actor := actor.FromContext(ctx)
-	_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, repo.OrgID, actor.UID)
-	if err != nil {
+	// 🚨 SECURITY: Check that the current user is a member of the org.
+	if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
 		return nil, err
 	}
+
+	actor := actor.FromContext(ctx)
 	return store.SharedItems.Create(ctx, &sourcegraph.SharedItem{
 		AuthorUserID: actor.UID,
 		Public:       public,
