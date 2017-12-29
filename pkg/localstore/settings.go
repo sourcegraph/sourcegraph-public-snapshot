@@ -6,20 +6,20 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
-	"github.com/hashicorp/go-multierror"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 )
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuthID, contents string) (latestSetting *sourcegraph.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
-		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorAuth0ID, contents)
+		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorAuthID, contents)
 	}
 
 	s := sourcegraph.Settings{
 		Subject:       subject,
-		AuthorAuth0ID: authorAuth0ID,
+		AuthorAuth0ID: authorAuthID,
 		Contents:      contents,
 	}
 

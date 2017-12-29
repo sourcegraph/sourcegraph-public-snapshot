@@ -61,7 +61,7 @@ func TestCreateSavedQuery(t *testing.T) {
 	store.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
 		return &sourcegraph.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	store.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	store.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuthID, contents string) (latestSetting *sourcegraph.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &sourcegraph.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
@@ -128,7 +128,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 		}
 		return &sourcegraph.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	store.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	store.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuthID, contents string) (latestSetting *sourcegraph.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &sourcegraph.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
