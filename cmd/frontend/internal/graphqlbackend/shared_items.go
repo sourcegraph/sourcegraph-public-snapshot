@@ -8,14 +8,14 @@ import (
 )
 
 type sharedItemResolver struct {
-	authorUserID string
+	authorUserID int32
 	public       bool
 	thread       *threadResolver
 	comment      *commentResolver
 }
 
 func (s *sharedItemResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByAuthID(ctx, s.authorUserID)
+	user, err := store.Users.GetByID(ctx, s.authorUserID)
 	if err != nil {
 		return nil, err
 	}

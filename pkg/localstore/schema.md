@@ -10,9 +10,28 @@
  deleted_at     | timestamp with time zone | 
  author_name    | text                     | 
  author_email   | text                     | 
- author_user_id | text                     | 
+ author_user_id | integer                  | not null
 Indexes:
     "comments_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.comments_bkup_1514545501"
+```
+       Column       |           Type           | Modifiers 
+--------------------+--------------------------+-----------
+ id                 | bigint                   | 
+ thread_id          | bigint                   | 
+ contents           | text                     | 
+ created_at         | timestamp with time zone | 
+ updated_at         | timestamp with time zone | 
+ deleted_at         | timestamp with time zone | 
+ author_name        | text                     | 
+ author_email       | text                     | 
+ author_user_id_old | text                     | 
+ author_user_id     | integer                  | 
 
 ```
 
@@ -258,16 +277,35 @@ Foreign-key constraints:
 ----------------+--------------------------+-----------------------------------------------------------
  id             | bigint                   | not null default nextval('shared_items_id_seq'::regclass)
  ulid           | text                     | not null
- author_user_id | text                     | not null
  thread_id      | bigint                   | 
  comment_id     | bigint                   | 
  created_at     | timestamp with time zone | not null default now()
  updated_at     | timestamp with time zone | not null default now()
  deleted_at     | timestamp with time zone | 
  public         | boolean                  | not null default false
+ author_user_id | integer                  | not null
 Indexes:
     "shared_items_pkey" PRIMARY KEY, btree (id)
     "shared_items_ulid_idx" UNIQUE, btree (ulid)
+Foreign-key constraints:
+    "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.shared_items_bkup_1514546912"
+```
+       Column       |           Type           | Modifiers 
+--------------------+--------------------------+-----------
+ id                 | bigint                   | 
+ ulid               | text                     | 
+ author_user_id_old | text                     | 
+ thread_id          | bigint                   | 
+ comment_id         | bigint                   | 
+ created_at         | timestamp with time zone | 
+ updated_at         | timestamp with time zone | 
+ deleted_at         | timestamp with time zone | 
+ public             | boolean                  | 
+ author_user_id     | integer                  | 
 
 ```
 
@@ -289,7 +327,6 @@ Indexes:
  deleted_at                        | timestamp with time zone | 
  range_length                      | integer                  | 
  branch                            | text                     | 
- author_user_id                    | text                     | not null
  html_lines_before                 | text                     | 
  html_lines                        | text                     | 
  html_lines_after                  | text                     | 
@@ -300,11 +337,47 @@ Indexes:
  text_lines_selection_range_length | integer                  | not null default 0
  lines_revision                    | text                     | not null
  lines_revision_path               | text                     | not null
+ author_user_id                    | integer                  | not null
 Indexes:
     "threads_pkey" PRIMARY KEY, btree (id)
     "threads_org_repo_id_branch_idx" btree (org_repo_id, branch)
     "threads_org_repo_id_lines_revision_path_branch_idx" btree (org_repo_id, lines_revision_path, branch)
     "threads_org_repo_id_repo_revision_path_branch_idx" btree (org_repo_id, repo_revision_path, branch)
+Foreign-key constraints:
+    "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.threads_bkup_1514544774"
+```
+              Column               |           Type           | Modifiers 
+-----------------------------------+--------------------------+-----------
+ id                                | bigint                   | 
+ org_repo_id                       | bigint                   | 
+ repo_revision_path                | text                     | 
+ repo_revision                     | text                     | 
+ start_line                        | integer                  | 
+ end_line                          | integer                  | 
+ start_character                   | integer                  | 
+ end_character                     | integer                  | 
+ created_at                        | timestamp with time zone | 
+ archived_at                       | timestamp with time zone | 
+ updated_at                        | timestamp with time zone | 
+ deleted_at                        | timestamp with time zone | 
+ range_length                      | integer                  | 
+ branch                            | text                     | 
+ author_user_id_old                | text                     | 
+ html_lines_before                 | text                     | 
+ html_lines                        | text                     | 
+ html_lines_after                  | text                     | 
+ text_lines_before                 | text                     | 
+ text_lines                        | text                     | 
+ text_lines_after                  | text                     | 
+ text_lines_selection_range_start  | integer                  | 
+ text_lines_selection_range_length | integer                  | 
+ lines_revision                    | text                     | 
+ lines_revision_path               | text                     | 
+ author_user_id                    | integer                  | 
 
 ```
 
@@ -372,9 +445,12 @@ Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
+    TABLE "comments" CONSTRAINT "comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "shared_items" CONSTRAINT "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "threads" CONSTRAINT "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_activity" CONSTRAINT "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 

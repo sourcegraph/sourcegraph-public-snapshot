@@ -15,7 +15,7 @@ import (
 // For a detailed overview of the schema, see schema.txt.
 type comments struct{}
 
-func (*comments) Create(ctx context.Context, threadID int32, contents, authorName, authorEmail, authorUserID string) (*sourcegraph.Comment, error) {
+func (*comments) Create(ctx context.Context, threadID int32, contents, authorName, authorEmail string, authorUserID int32) (*sourcegraph.Comment, error) {
 	if Mocks.Comments.Create != nil {
 		return Mocks.Comments.Create(ctx, threadID, contents, authorName, authorEmail)
 	}
@@ -27,19 +27,13 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
-	var err error
-	if authorUserID != "" {
-		err = globalDB.QueryRowContext(
-			ctx,
-			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-			threadID, contents, createdAt, updatedAt, authorUserID, authorName, authorEmail).Scan(&id)
-	} else {
-		// deprecated code path
-		err = globalDB.QueryRowContext(
-			ctx,
-			"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-			threadID, contents, createdAt, updatedAt, authorName, authorEmail).Scan(&id)
+	if authorUserID == 0 {
+		return nil, errors.New("must specify author ID to create comment")
 	}
+	err := globalDB.QueryRowContext(
+		ctx,
+		"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		threadID, contents, createdAt, updatedAt, authorUserID, authorName, authorEmail).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +76,10 @@ func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}
 	defer rows.Close()
 	for rows.Next() {
 		var c sourcegraph.Comment
-		var authorUserID, authorName, authorEmail sql.NullString
-		err := rows.Scan(&c.ID, &c.ThreadID, &authorUserID, &c.Contents, &c.CreatedAt, &c.UpdatedAt, &authorName, &authorEmail)
+		var authorName, authorEmail sql.NullString
+		err := rows.Scan(&c.ID, &c.ThreadID, &c.AuthorUserID, &c.Contents, &c.CreatedAt, &c.UpdatedAt, &authorName, &authorEmail)
 		if err != nil {
 			return nil, err
-		}
-		if authorUserID.Valid {
-			c.AuthorUserID = authorUserID.String
 		}
 		if authorName.Valid {
 			c.AuthorName = authorName.String

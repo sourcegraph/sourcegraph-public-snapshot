@@ -43,7 +43,7 @@ func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) 
 	if item.ULID != "" {
 		return nil, errors.New("SharedItems.Create: cannot specify ULID when creating shared item")
 	}
-	if item.AuthorUserID == "" {
+	if item.AuthorUserID == 0 {
 		return nil, errors.New("SharedItems.Create: must specify author user ID")
 	}
 	if item.ThreadID == nil {
