@@ -5,12 +5,12 @@ import (
 
 	"github.com/neelance/graphql-go/gqltesting"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func TestRepository(t *testing.T) {
 	resetMocks()
-	localstore.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
+	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,

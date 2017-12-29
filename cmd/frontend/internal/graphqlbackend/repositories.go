@@ -5,7 +5,7 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func (r *schemaResolver) Repositories(args *struct {
@@ -40,6 +40,6 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := localstore.Repos.Count(ctx)
+	count, err := db.Repos.Count(ctx)
 	return int32(count), err
 }

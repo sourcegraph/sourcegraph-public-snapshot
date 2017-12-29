@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func (r *schemaResolver) Orgs(args *struct {
@@ -45,6 +45,6 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	count, err := localstore.Orgs.Count(ctx)
+	count, err := db.Orgs.Count(ctx)
 	return int32(count), err
 }

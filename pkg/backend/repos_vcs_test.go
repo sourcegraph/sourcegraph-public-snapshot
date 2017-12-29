@@ -9,7 +9,7 @@ import (
 	"context"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
@@ -20,7 +20,7 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -46,7 +46,7 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -71,7 +71,7 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return vcs.CommitID(want), nil
@@ -96,7 +96,7 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 	want := errors.New("x")
 
 	var calledVCSRepoResolveRevision bool
-	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return "", errors.New("x")
@@ -137,7 +137,7 @@ func Test_Repos_ListCommits(t *testing.T) {
 		}
 		return wantCommits, uint(len(wantCommits)), nil
 	}
-	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	db.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return mockRepo, nil
 	}
 
@@ -187,11 +187,11 @@ func testReposResolveDeleteOrKeepRepo(t *testing.T, vcsErr error, expectDelete b
 		return "", vcsErr
 	}
 
-	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	db.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return mockNonExistentRepo, nil
 	}
 	calledDelete := map[int32]struct{}{}
-	localstore.Mocks.Repos.Delete = func(ctx context.Context, repo int32) error {
+	db.Mocks.Repos.Delete = func(ctx context.Context, repo int32) error {
 		calledDelete[repo] = struct{}{}
 		return nil
 	}

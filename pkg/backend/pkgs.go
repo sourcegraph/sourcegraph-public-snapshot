@@ -4,7 +4,7 @@ import (
 	"context"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var Pkgs = &pkgs{}
@@ -19,14 +19,14 @@ func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 
 	ctx, done := trace(ctx, "Pkgs", "RefreshIndex", map[string]interface{}{"repoURI": repoURI, "commitID": commitID}, &err)
 	defer done()
-	return localstore.Pkgs.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
+	return db.Pkgs.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
 }
 
 func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
 	if Mocks.Pkgs.ListPackages != nil {
 		return Mocks.Pkgs.ListPackages(ctx, op)
 	}
-	return localstore.Pkgs.ListPackages(ctx, op)
+	return db.Pkgs.ListPackages(ctx, op)
 }
 
 type MockPkgs struct {

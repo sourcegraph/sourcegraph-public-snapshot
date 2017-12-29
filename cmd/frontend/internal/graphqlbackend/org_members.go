@@ -6,8 +6,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type orgMemberResolver struct {
@@ -27,7 +27,7 @@ func (m *orgMemberResolver) ID() int32 {
 func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
 	if m.org == nil {
 		var err error
-		m.org, err = localstore.Orgs.GetByID(ctx, m.member.OrgID)
+		m.org, err = db.Orgs.GetByID(ctx, m.member.OrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +38,7 @@ func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
 func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
 	if m.user == nil {
 		var err error
-		m.user, err = localstore.Users.GetByID(ctx, m.member.UserID)
+		m.user, err = db.Users.GetByID(ctx, m.member.UserID)
 		if err != nil {
 			return nil, err
 		}

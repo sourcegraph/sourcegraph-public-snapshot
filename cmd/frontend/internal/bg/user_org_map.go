@@ -6,7 +6,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 // ApplyUserOrgMap enforces auth.userOrgMap, ensuring that users are joined
@@ -22,7 +22,7 @@ func ApplyUserOrgMap(ctx context.Context) {
 			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\" is supported)", "userPattern", userPattern)
 			continue
 		}
-		if err := localstore.OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, nil, orgs); err != nil {
+		if err := db.OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, nil, orgs); err != nil {
 			log15.Error("error applying auth.userOrgMap (users were not auto-joined to configured orgs)", "userPattern", userPattern, "orgs", orgs, "err", err)
 		}
 	}

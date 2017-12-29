@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
@@ -25,7 +25,7 @@ func (s *users) List(ctx context.Context) (res *sourcegraph.UserList, err error)
 	if err := CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	users, err := localstore.Users.List(ctx)
+	users, err := db.Users.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func MakeRandomHardToGuessPassword() string {
 }
 
 func MakePasswordResetURL(ctx context.Context, userID int32, userEmail string) (*url.URL, error) {
-	resetCode, err := localstore.Users.RenewPasswordResetCode(ctx, userID)
+	resetCode, err := db.Users.RenewPasswordResetCode(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

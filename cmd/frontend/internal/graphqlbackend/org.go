@@ -18,11 +18,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
@@ -45,7 +45,7 @@ func orgByIDInt32(ctx context.Context, orgID int32) (*orgResolver, error) {
 		return nil, err
 	}
 
-	org, err := localstore.Orgs.GetByID(ctx, orgID)
+	org, err := db.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +332,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		}
 	}
 
-	org, err := localstore.Orgs.GetByID(ctx, orgID)
+	org, err := db.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}

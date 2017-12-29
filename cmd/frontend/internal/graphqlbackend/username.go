@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func (*schemaResolver) IsUsernameAvailable(ctx context.Context, args *struct {

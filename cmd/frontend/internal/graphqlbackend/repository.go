@@ -16,7 +16,7 @@ import (
 	"github.com/neelance/parallel"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -30,7 +30,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := localstore.Repos.Get(ctx, repoID)
+	repo, err := db.Repos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 }
 
 func repositoryByIDInt32(ctx context.Context, id int32) (*repositoryResolver, error) {
-	repo, err := localstore.Repos.Get(ctx, id)
+	repo, err := db.Repos.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 func (r *repositoryResolver) GitCmdRaw(ctx context.Context, args *struct {
 	Params []string
 }) (string, error) {
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.repo.ID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
 	if err != nil {
 		return "", err
 	}
@@ -139,7 +139,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*commi
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error) {
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.repo.ID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error)
 }
 
 func (r *repositoryResolver) Branches(ctx context.Context) ([]string, error) {
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.repo.ID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (r *repositoryResolver) Branches(ctx context.Context) ([]string, error) {
 }
 
 func (r *repositoryResolver) Tags(ctx context.Context) ([]string, error) {
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.repo.ID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +314,7 @@ func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	URI      string
 	URL      string
 }) (*EmptyResponse, error) {
-	_, err := localstore.Phabricator.CreateIfNotExists(ctx, args.Callsign, args.URI, args.URL)
+	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, args.URI, args.URL)
 	if err != nil {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI, "url", args.URL)
 	}

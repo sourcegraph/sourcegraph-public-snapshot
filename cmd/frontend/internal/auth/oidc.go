@@ -18,8 +18,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/gorilla/csrf"
@@ -298,9 +298,9 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		return nil, err
 	}
 
-	usr, err := localstore.Users.GetByAuthID(ctx, authID)
-	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
-		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, provider, nil, "", "")
+	usr, err := db.Users.GetByAuthID(ctx, authID)
+	if _, notFound := err.(db.ErrUserNotFound); notFound {
+		usr, err = db.Users.Create(ctx, authID, email, login, displayName, provider, nil, "", "")
 	}
 	if err != nil {
 		return nil, err

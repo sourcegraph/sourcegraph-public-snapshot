@@ -20,7 +20,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
@@ -146,9 +146,9 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 		return nil, nil
 	}
 
-	repo, err := localstore.Repos.GetByURI(ctx, args.URI)
+	repo, err := db.Repos.GetByURI(ctx, args.URI)
 	if err != nil {
-		if err, ok := err.(localstore.ErrRepoSeeOther); ok {
+		if err, ok := err.(db.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &sourcegraph.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
@@ -165,7 +165,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI string }) (*phabricatorRepoResolver, error) {
-	repo, err := localstore.Phabricator.GetByURI(ctx, args.URI)
+	repo, err := db.Phabricator.GetByURI(ctx, args.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
 	}
 
 	go func() {
-		if err := localstore.Repos.UpdateRepoFieldsFromRemote(context.Background(), repo.ID); err != nil {
+		if err := db.Repos.UpdateRepoFieldsFromRemote(context.Background(), repo.ID); err != nil {
 			log.Printf("failed to update repo %s from remote: %s", repo.URI, err)
 		}
 	}()
@@ -209,7 +209,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 	}
 
 	repoURI := strings.TrimPrefix(cloneURL, "https://")
-	repo, err := localstore.Repos.GetByURI(ctx, repoURI)
+	repo, err := db.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil
@@ -329,7 +329,7 @@ func (r *schemaResolver) Dependents(ctx context.Context, args *struct {
 		packag:  args.Package,
 	}.toPkgQuery()
 
-	deps, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, Limit: int(limit)})
+	deps, err := db.GlobalDeps.Dependencies(ctx, db.DependenciesOptions{Language: args.Lang, DepData: pkgQuery, Limit: int(limit)})
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args
 		Email:            args.Email,
 		TelemetryEnabled: args.EnableTelemetry,
 	}
-	err := localstore.DeploymentConfiguration.UpdateConfiguration(ctx, configuration)
+	err := db.DeploymentConfiguration.UpdateConfiguration(ctx, configuration)
 	if err != nil {
 		return nil, err
 	}

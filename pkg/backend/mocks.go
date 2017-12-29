@@ -6,7 +6,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var Mocks MockServices
@@ -21,7 +21,7 @@ type MockServices struct {
 
 // testContext creates a new context.Context for use by tests
 func testContext() context.Context {
-	localstore.Mocks = localstore.MockStores{}
+	db.Mocks = db.MockStores{}
 	Mocks = MockServices{}
 
 	ctx := context.Background()

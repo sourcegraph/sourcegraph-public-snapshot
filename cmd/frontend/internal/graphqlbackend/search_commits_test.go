@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )

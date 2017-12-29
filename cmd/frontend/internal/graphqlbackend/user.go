@@ -8,7 +8,7 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )

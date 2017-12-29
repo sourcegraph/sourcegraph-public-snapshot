@@ -9,7 +9,7 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -17,7 +17,7 @@ import (
 
 func TestTree(t *testing.T) {
 	resetMocks()
-	localstore.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
+	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
 		if op.Repo != 2 || op.Rev != exampleCommitSHA1 {
 			t.Error("wrong arguments to Repos.ResolveRev")
@@ -37,7 +37,7 @@ func TestTree(t *testing.T) {
 			&util.FileInfo{Name_: "testFile", Mode_: 0},
 		}, nil
 	}
-	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	db.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return mockRepo, nil
 	}
 

@@ -24,7 +24,7 @@ import (
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 
 	"github.com/crewjam/saml/samlidp"
 )
@@ -152,7 +152,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 
 	// Mock user
 	mockedUserID := samlToAuthID(idpHTTPServer.URL+"/metadata", "testuser_id")
-	localstore.Mocks.Users.GetByAuthID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
+	db.Mocks.Users.GetByAuthID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
 		if uid == mockedUserID {
 			return &sourcegraph.User{ID: 123, AuthID: uid, Username: uid}, nil
 		}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type sharedItemResolver struct {

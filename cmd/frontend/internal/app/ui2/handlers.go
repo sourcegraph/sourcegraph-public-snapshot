@@ -25,8 +25,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -118,7 +118,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, "/"+e.NewURL, http.StatusMovedPermanently)
 				return nil, nil
 			}
-			if e, ok := err.(localstore.ErrRepoSeeOther); ok {
+			if e, ok := err.(db.ErrRepoSeeOther); ok {
 				// Repo does not exist here, redirect to the reccomended location.
 				http.Redirect(w, r, e.RedirectURL, http.StatusSeeOther)
 				return nil, nil
@@ -218,7 +218,7 @@ func serveEditorAuthWithEditorBetaRegistration(w http.ResponseWriter, r *http.Re
 	// all of their orgs.
 	// This logic is executed when they are redirected to the editor-auth page
 	// with the referrer=editor query string.
-	user, err := localstore.Users.GetByCurrentAuthUser(r.Context())
+	user, err := db.Users.GetByCurrentAuthUser(r.Context())
 	if err != nil {
 		log15.Debug("no current auth user", "error", err)
 	}
@@ -227,18 +227,18 @@ func serveEditorAuthWithEditorBetaRegistration(w http.ResponseWriter, r *http.Re
 		if referrer == "editor" {
 			const editorBetaTag = "editor-beta"
 			// Add tag to user.
-			_, err := localstore.UserTags.CreateIfNotExists(r.Context(), user.ID, editorBetaTag)
+			_, err := db.UserTags.CreateIfNotExists(r.Context(), user.ID, editorBetaTag)
 			if err != nil {
 				return err
 			}
 
 			// Add tag to all orgs.
-			orgs, err := localstore.Orgs.GetByUserID(r.Context(), user.ID)
+			orgs, err := db.Orgs.GetByUserID(r.Context(), user.ID)
 			if err != nil {
 				return err
 			}
 			for _, org := range orgs {
-				if _, err := localstore.OrgTags.CreateIfNotExists(r.Context(), org.ID, editorBetaTag); err != nil {
+				if _, err := db.OrgTags.CreateIfNotExists(r.Context(), org.ID, editorBetaTag); err != nil {
 					return err
 				}
 			}
@@ -326,9 +326,9 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Locate the shared item.
-	sharedItem, err := localstore.SharedItems.Get(r.Context(), mux.Vars(r)["ULID"])
+	sharedItem, err := db.SharedItems.Get(r.Context(), mux.Vars(r)["ULID"])
 	if err != nil {
-		if _, ok := err.(localstore.ErrSharedItemNotFound); ok {
+		if _, ok := err.(db.ErrSharedItemNotFound); ok {
 			// shared item does not exist.
 			serveError(w, r, err, http.StatusNotFound)
 			return nil
@@ -349,7 +349,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		//
 		// TODO(slimsag): future: If comment or thread was deleted, return 404
 		// instead of 500.
-		comments, err := localstore.Comments.GetAllForThread(r.Context(), *sharedItem.ThreadID)
+		comments, err := db.Comments.GetAllForThread(r.Context(), *sharedItem.ThreadID)
 		if err != nil {
 			return errors.Wrap(err, "Comments.GetAllForThread")
 		}
@@ -359,7 +359,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	case sharedItem.CommentID != nil:
 		// TODO(slimsag): future: If comment or thread was deleted, return 404
 		// instead of 500.
-		comment, err := localstore.Comments.GetByID(r.Context(), *sharedItem.CommentID)
+		comment, err := db.Comments.GetByID(r.Context(), *sharedItem.CommentID)
 		if err != nil {
 			return errors.Wrap(err, "Comments.GetByID")
 		}
@@ -367,11 +367,11 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		title = graphqlbackend.TitleFromContents(comment.Contents)
 	}
 
-	thread, err := localstore.Threads.Get(r.Context(), threadID)
+	thread, err := db.Threads.Get(r.Context(), threadID)
 	if err != nil {
 		return errors.Wrap(err, "Threads.Get")
 	}
-	orgRepo, err := localstore.OrgRepos.GetByID(r.Context(), thread.OrgRepoID)
+	orgRepo, err := db.OrgRepos.GetByID(r.Context(), thread.OrgRepoID)
 	if err != nil {
 		return errors.Wrap(err, "OrgRepos.GetByID")
 	}

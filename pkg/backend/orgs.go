@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var Orgs = &orgs{}
@@ -21,7 +21,7 @@ func (s *orgs) List(ctx context.Context) (res []*sourcegraph.Org, err error) {
 	if err := CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	return localstore.Orgs.List(ctx)
+	return db.Orgs.List(ctx)
 }
 
 func CheckCurrentUserIsOrgMember(ctx context.Context, orgID int32) error {
@@ -33,7 +33,7 @@ func CheckCurrentUserIsOrgMember(ctx context.Context, orgID int32) error {
 		return errors.New("not logged in")
 	}
 
-	resp, err := localstore.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, currentUser.ID)
+	resp, err := db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, currentUser.ID)
 	if err != nil {
 		return err
 	}

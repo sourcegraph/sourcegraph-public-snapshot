@@ -6,7 +6,7 @@ import (
 
 	"github.com/neelance/graphql-go/gqltesting"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func TestNode_User(t *testing.T) {

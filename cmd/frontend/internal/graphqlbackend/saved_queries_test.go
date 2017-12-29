@@ -9,7 +9,7 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func TestSavedQueries(t *testing.T) {

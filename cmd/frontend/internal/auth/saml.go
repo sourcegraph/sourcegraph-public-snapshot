@@ -18,7 +18,7 @@ import (
 	"github.com/crewjam/saml/samlsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var (
@@ -111,8 +111,8 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	subject := r.Header.Get("X-Saml-Subject") // this header is set by the SAML library after extracting the value from the JWT cookie
 	authID := samlToAuthID(idpID, subject)
 
-	usr, err := localstore.Users.GetByAuthID(ctx, authID)
-	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
+	usr, err := db.Users.GetByAuthID(ctx, authID)
+	if _, notFound := err.(db.ErrUserNotFound); notFound {
 		email := r.Header.Get("X-Saml-Email")
 		if email == "" && mightBeEmail(subject) {
 			email = subject
@@ -143,7 +143,7 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 			return nil, err
 		}
 
-		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, idpID, nil, "", "")
+		usr, err = db.Users.Create(ctx, authID, email, login, displayName, idpID, nil, "", "")
 		if err != nil {
 			return nil, fmt.Errorf("could not create user with authID %q, login %q: %s", authID, login, err)
 		}
