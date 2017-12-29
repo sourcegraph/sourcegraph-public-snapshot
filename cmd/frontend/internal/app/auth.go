@@ -67,7 +67,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	actor := &actor.Actor{
-		UID:   usr.Auth0ID,
+		UID:   usr.AuthID,
 		Login: usr.Username,
 		Email: usr.Email,
 	}
@@ -94,7 +94,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 func getUserFromNativeOrAuth0(ctx context.Context, email string) (*sourcegraph.User, error) {
 	authID := backend.NativeAuthUserAuthID(email)
-	usr, err := store.Users.GetByAuth0ID(ctx, authID)
+	usr, err := store.Users.GetByAuthID(ctx, authID)
 	if err == nil {
 		return usr, nil
 	} else if err != nil {
@@ -142,7 +142,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	actor := &actor.Actor{
-		UID:   usr.Auth0ID,
+		UID:   usr.AuthID,
 		Login: usr.Username,
 		Email: usr.Email,
 	}

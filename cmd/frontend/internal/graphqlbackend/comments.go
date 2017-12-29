@@ -53,7 +53,7 @@ func (c *commentResolver) UpdatedAt() string {
 }
 
 func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByAuth0ID(ctx, c.comment.AuthorUserID)
+	user, err := store.Users.GetByAuthID(ctx, c.comment.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +300,7 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	orgName, authorUsername := strings.ToLower(org.Name), strings.ToLower(author.Username)
 
 	// Prevent the author from being mentioned
-	uniqueParticipants[author.Auth0ID] = struct{}{}
+	uniqueParticipants[author.AuthID] = struct{}{}
 	uniqueMentions[authorUsername] = struct{}{}
 
 	var participantIDs, mentions []string
@@ -329,7 +329,7 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	if atOrgMention || orgNameMention {
 		var exclude []string
 		if !selfMentioned {
-			exclude = []string{author.Auth0ID}
+			exclude = []string{author.AuthID}
 		}
 		return allEmailsForOrg(ctx, org.ID, exclude)
 	}

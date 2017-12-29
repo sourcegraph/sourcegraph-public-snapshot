@@ -45,7 +45,7 @@ func unmarshalUserID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-func (r *userResolver) Auth0ID() string { return r.user.Auth0ID }
+func (r *userResolver) AuthID() string { return r.user.AuthID }
 
 func (r *userResolver) SourcegraphID() *int32 { return &r.user.ID }
 

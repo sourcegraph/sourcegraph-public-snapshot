@@ -91,9 +91,9 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 	srv := httptest.NewServer(s)
 
 	// Mock user
-	localstore.Mocks.Users.GetByAuth0ID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
+	localstore.Mocks.Users.GetByAuthID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
 		if uid == srv.URL+":"+testOIDCUser {
-			return &sourcegraph.User{ID: 123, Auth0ID: uid, Username: uid}, nil
+			return &sourcegraph.User{ID: 123, AuthID: uid, Username: uid}, nil
 		}
 		return nil, fmt.Errorf("user %q not found in mock", uid)
 	}

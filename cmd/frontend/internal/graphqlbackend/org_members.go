@@ -38,7 +38,7 @@ func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
 func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
 	if m.user == nil {
 		var err error
-		m.user, err = localstore.Users.GetByAuth0ID(ctx, m.member.UserID)
+		m.user, err = localstore.Users.GetByAuthID(ctx, m.member.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []string)
 		if _, ok := exclude[m.UserID]; ok {
 			continue
 		}
-		user, err := store.Users.GetByAuth0ID(ctx, m.UserID)
+		user, err := store.Users.GetByAuthID(ctx, m.UserID)
 		if err != nil {
 			// This shouldn't happen, but we don't want to prevent the notification,
 			// so swallow the error.

@@ -767,7 +767,7 @@ type UserConnection {
 type User implements Node, ConfigurationSubject {
 	# The unique ID for the user.
 	id: ID!
-	auth0ID: String!
+	authID: String!
 	sourcegraphID: Int
 	email: String!
 	displayName: String

@@ -53,27 +53,27 @@ func TestComments_emailsToNotify(t *testing.T) {
 	// Mock users
 	nick := sourcegraph.User{
 		Username: "nick",
-		Auth0ID:  "auth0|1",
+		AuthID:   "auth0|1",
 		Email:    "nick@sourcegraph.com",
 	}
 	renfred := sourcegraph.User{
 		Username: "renfred",
-		Auth0ID:  "auth0|2",
+		AuthID:   "auth0|2",
 		Email:    "renfred@sourcegraph.com",
 	}
 	john := sourcegraph.User{
 		Username: "john",
-		Auth0ID:  "auth0|3",
+		AuthID:   "auth0|3",
 		Email:    "john@sourcegraph.com",
 	}
 	sqs := sourcegraph.User{
 		Username: "sqs",
-		Auth0ID:  "auth0|4",
+		AuthID:   "auth0|4",
 		Email:    "sqs@sourcegraph.com",
 	}
 	kingy := sourcegraph.User{
 		Username: "kingy",
-		Auth0ID:  "auth0|5",
+		AuthID:   "auth0|5",
 		Email:    "kingy@sourcegraph.com",
 	}
 	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}
@@ -86,11 +86,11 @@ func TestComments_emailsToNotify(t *testing.T) {
 		var users []*sourcegraph.User
 		for _, id := range auth0IDs {
 			u, ok := map[string]sourcegraph.User{
-				nick.Auth0ID:    nick,
-				renfred.Auth0ID: renfred,
-				sqs.Auth0ID:     sqs,
-				john.Auth0ID:    john,
-				kingy.Auth0ID:   kingy,
+				nick.AuthID:    nick,
+				renfred.AuthID: renfred,
+				sqs.AuthID:     sqs,
+				john.AuthID:    john,
+				kingy.AuthID:   kingy,
 			}[id]
 			if ok {
 				users = append(users, &u)
@@ -119,7 +119,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 		}
 		var emails []string
 		for _, u := range testUsers {
-			if _, ok := exclude[u.Auth0ID]; !ok {
+			if _, ok := exclude[u.AuthID]; !ok {
 				emails = append(emails, u.Email)
 			}
 		}
@@ -129,42 +129,42 @@ func TestComments_emailsToNotify(t *testing.T) {
 	// Mock comments
 	one := &sourcegraph.Comment{
 		Contents:     "Yo @renfred",
-		AuthorUserID: nick.Auth0ID,
+		AuthorUserID: nick.AuthID,
 		AuthorEmail:  nick.Email,
 	}
 	two := &sourcegraph.Comment{
 		Contents:     "Did you see this comment?",
-		AuthorUserID: nick.Auth0ID,
+		AuthorUserID: nick.AuthID,
 		AuthorEmail:  nick.Email,
 	}
 	three := &sourcegraph.Comment{
 		Contents:     "Going to mention myself to test notifications @nick",
-		AuthorUserID: nick.Auth0ID,
+		AuthorUserID: nick.AuthID,
 		AuthorEmail:  nick.Email,
 	}
 	four := &sourcegraph.Comment{
 		Contents:     "Dude, I am on vacation. Ask @sqs or @John",
-		AuthorUserID: renfred.Auth0ID,
+		AuthorUserID: renfred.AuthID,
 		AuthorEmail:  renfred.Email,
 	}
 	five := &sourcegraph.Comment{
 		Contents:     "Stop bothering Renfred!",
-		AuthorUserID: sqs.Auth0ID,
+		AuthorUserID: sqs.AuthID,
 		AuthorEmail:  sqs.Email,
 	}
 	six := &sourcegraph.Comment{
 		Contents:     "Maybe @linus could take a look?",
-		AuthorUserID: nick.Auth0ID,
+		AuthorUserID: nick.AuthID,
 		AuthorEmail:  nick.Email,
 	}
 	seven := &sourcegraph.Comment{
 		Contents:     "Feels like yelling into @the-void",
-		AuthorUserID: nick.Auth0ID,
+		AuthorUserID: nick.AuthID,
 		AuthorEmail:  nick.Email,
 	}
 	eight := &sourcegraph.Comment{
 		Contents:     "Nevermind. Just going to ask the whole @org",
-		AuthorUserID: nick.Auth0ID,
+		AuthorUserID: nick.AuthID,
 		AuthorEmail:  nick.Email,
 	}
 

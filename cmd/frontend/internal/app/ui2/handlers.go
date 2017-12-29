@@ -231,7 +231,7 @@ func serveEditorAuthWithEditorBetaRegistration(w http.ResponseWriter, r *http.Re
 			}
 
 			// Add tag to all orgs.
-			orgs, err := localstore.Orgs.GetByUserID(r.Context(), user.Auth0ID)
+			orgs, err := localstore.Orgs.GetByUserID(r.Context(), user.AuthID)
 			if err != nil {
 				return err
 			}

@@ -158,7 +158,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 
 	return &sourcegraph.User{
 		ID:          id,
-		Auth0ID:     auth0ID,
+		AuthID:      auth0ID,
 		Email:       email,
 		Username:    username,
 		DisplayName: displayName,
@@ -263,9 +263,9 @@ func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByAuth0ID(ctx context.Context, id string) (*sourcegraph.User, error) {
-	if Mocks.Users.GetByAuth0ID != nil {
-		return Mocks.Users.GetByAuth0ID(ctx, id)
+func (u *users) GetByAuthID(ctx context.Context, id string) (*sourcegraph.User, error) {
+	if Mocks.Users.GetByAuthID != nil {
+		return Mocks.Users.GetByAuthID(ctx, id)
 	}
 	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
@@ -348,7 +348,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified, &u.SiteAdmin)
+		err := rows.Scan(&u.ID, &u.AuthID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
@@ -372,7 +372,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 		}
 		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
 		// We need to check those in our own DB.
-		if user.Provider == "auth0" || strings.HasPrefix(user.Auth0ID, "auth0|") {
+		if user.Provider == "auth0" || strings.HasPrefix(user.AuthID, "auth0|") {
 			ok, err := auth0tmp.CheckPassword(ctx, user.Email, password)
 			// log15.Info("checking password via auth0", "user", user.Username, "auth0ID", user.Auth0ID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err

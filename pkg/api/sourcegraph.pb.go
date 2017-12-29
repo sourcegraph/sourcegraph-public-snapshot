@@ -295,7 +295,7 @@ const (
 // User represents a registered user.
 type User struct {
 	ID          int32     `json:"ID,omitempty"`
-	Auth0ID     string    `json:"auth0ID,omitempty"`
+	AuthID      string    `json:"authID,omitempty"`
 	Email       string    `json:"email,omitempty"`
 	Username    string    `json:"username,omitempty"`
 	Provider    string    `json:"provider,omitempty"`
