@@ -19,7 +19,7 @@ const (
 
 	Logout = "logout"
 
-	SignIn2           = "sign-in2"
+	SignIn            = "sign-in"
 	SignOut           = "sign-out"
 	SignUp            = "sign-up"
 	VerifyEmail       = "verify-email"
@@ -63,7 +63,7 @@ func New() *Router {
 
 	base.Path("/-/sign-up").Methods("POST").Name(SignUp)
 	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)
-	base.Path("/-/sign-in-2").Methods("POST").Name(SignIn2)
+	base.Path("/-/sign-in").Methods("POST").Name(SignIn)
 	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
 	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
 	base.Path("/-/reset-password").Methods("POST").Name(ResetPassword)

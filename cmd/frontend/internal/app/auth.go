@@ -107,8 +107,8 @@ func getUserFromNativeOrAuth0(ctx context.Context, email string) (*sourcegraph.U
 	return store.Users.GetByEmail(ctx, email)
 }
 
-// serveSignIn2 serves a native-auth endpoint
-func serveSignIn2(w http.ResponseWriter, r *http.Request) {
+// serveSignIn serves a native-auth endpoint
+func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method != "POST" {

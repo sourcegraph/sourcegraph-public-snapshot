@@ -34,8 +34,6 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.RepoBadge).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoBadge)))
 
-	r.Get(router.Logout).Handler(traceutil.TraceRoute(errorutil.Handler(serveLogout)))
-
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/beta", 301)
@@ -50,7 +48,7 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.UI).Handler(ui2.Router())
 
 	r.Get(router.SignUp).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignUp)))
-	r.Get(router.SignIn2).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignIn2)))
+	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignIn)))
 	r.Get(router.SignOut).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignOut)))
 	r.Get(router.VerifyEmail).Handler(traceutil.TraceRoute(http.HandlerFunc(serveVerifyEmail)))
 	r.Get(router.ResetPasswordInit).Handler(traceutil.TraceRoute(http.HandlerFunc(serveResetPasswordInit)))
@@ -75,11 +73,4 @@ func NewHandler(r *router.Router) http.Handler {
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	session.DeleteSession(w, r)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-// DEPRECATED
-func serveLogout(w http.ResponseWriter, r *http.Request) error {
-	session.DeleteSession(w, r)
-	http.Redirect(w, r, "/", http.StatusFound)
-	return nil
 }

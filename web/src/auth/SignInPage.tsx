@@ -97,7 +97,7 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
 
         this.setState({ loading: true })
         eventLogger.log('InitiateSignIn')
-        fetch('/-/sign-in-2', {
+        fetch('/-/sign-in', {
             credentials: 'same-origin',
             method: 'POST',
             headers: {
