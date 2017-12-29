@@ -6,21 +6,21 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
-	"github.com/hashicorp/go-multierror"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 )
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuth0ID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuthID, contents string) (latestSetting *sourcegraph.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
-		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorAuth0ID, contents)
+		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorAuthID, contents)
 	}
 
 	s := sourcegraph.Settings{
-		Subject:       subject,
-		AuthorAuth0ID: authorAuth0ID,
-		Contents:      contents,
+		Subject:      subject,
+		AuthorAuthID: authorAuthID,
+		Contents:     contents,
 	}
 
 	tx, err := globalDB.BeginTx(ctx, nil)
@@ -48,7 +48,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.Con
 	if latestSetting == nil || creatorIsUpToDate {
 		err := tx.QueryRow(
 			"INSERT INTO settings(org_id, user_id, author_auth_id, contents) VALUES($1, $2, $3, $4) RETURNING id, created_at",
-			s.Subject.Org, s.Subject.User, s.AuthorAuth0ID, s.Contents).Scan(&s.ID, &s.CreatedAt)
+			s.Subject.Org, s.Subject.User, s.AuthorAuthID, s.Contents).Scan(&s.ID, &s.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*sourc
 	defer rows.Close()
 	for rows.Next() {
 		s := sourcegraph.Settings{}
-		err := rows.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorAuth0ID, &s.Contents, &s.CreatedAt)
+		err := rows.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorAuthID, &s.Contents, &s.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

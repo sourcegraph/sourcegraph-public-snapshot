@@ -37,7 +37,7 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 
 	case *userResolver:
 		// 🚨 SECURITY: A user may only view or modify their own configuration.
-		if actor.UID == "" || s.Auth0ID() == "" || actor.UID != s.Auth0ID() {
+		if actor.UID == "" || s.AuthID() == "" || actor.UID != s.AuthID() {
 			return nil, errors.New("a user may only view or modify their own configuration")
 		}
 		return &configurationSubject{user: s}, nil

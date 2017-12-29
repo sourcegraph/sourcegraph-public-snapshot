@@ -295,7 +295,7 @@ const (
 // User represents a registered user.
 type User struct {
 	ID          int32     `json:"ID,omitempty"`
-	Auth0ID     string    `json:"auth0ID,omitempty"`
+	AuthID      string    `json:"authID,omitempty"`
 	Email       string    `json:"email,omitempty"`
 	Username    string    `json:"username,omitempty"`
 	Provider    string    `json:"provider,omitempty"`
@@ -428,11 +428,11 @@ func (s ConfigurationSubject) String() string {
 
 // Settings contains configuration settings for a subject.
 type Settings struct {
-	ID            int32 `json:"ID"`
-	Subject       ConfigurationSubject
-	AuthorAuth0ID string    `json:"AuthorAuth0ID"`
-	Contents      string    `json:"Contents"`
-	CreatedAt     time.Time `json:"CreatedAt"`
+	ID           int32 `json:"ID"`
+	Subject      ConfigurationSubject
+	AuthorAuthID string    `json:"AuthorAuthID"`
+	Contents     string    `json:"Contents"`
+	CreatedAt    time.Time `json:"CreatedAt"`
 }
 
 type PhabricatorRepo struct {

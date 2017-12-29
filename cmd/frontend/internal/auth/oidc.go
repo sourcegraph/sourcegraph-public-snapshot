@@ -298,7 +298,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		return nil, err
 	}
 
-	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)
+	usr, err := localstore.Users.GetByAuthID(ctx, authID)
 	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
 		usr, err = localstore.Users.Create(ctx, authID, email, login, displayName, provider, nil, "", "")
 	}

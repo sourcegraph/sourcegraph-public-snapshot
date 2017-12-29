@@ -154,7 +154,7 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                         id
                         createdAt
                         user {
-                            auth0ID
+                            authID
                             username
                             email
                             displayName
@@ -251,7 +251,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 gql`
                     mutation updateUser($username: String!, $displayName: String!, $avatarURL: String) {
                         updateUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
-                            auth0ID
+                            authID
                             sourcegraphID
                             username
                         }
@@ -269,7 +269,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 auth: {
                     user: {
                         id: data.updateUser.sourcegraphID,
-                        auth0_id: data.updateUser.auth0ID,
+                        auth_id: data.updateUser.authID,
                         username: data.updateUser.username,
                         display_name: options.displayName,
                         avatar_url: options.avatarUrl,
@@ -396,7 +396,7 @@ export function removeUserFromOrg(orgID: string, userID: string): Observable<nev
             const eventData = {
                 organization: {
                     remove: {
-                        auth0_id: userID,
+                        auth_id: userID,
                     },
                     org_id: orgID,
                 },

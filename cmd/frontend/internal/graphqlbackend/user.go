@@ -45,7 +45,9 @@ func unmarshalUserID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-func (r *userResolver) Auth0ID() string { return r.user.Auth0ID }
+func (r *userResolver) AuthID() string { return r.user.AuthID }
+
+func (r *userResolver) Auth0ID() string { return r.AuthID() }
 
 func (r *userResolver) SourcegraphID() *int32 { return &r.user.ID }
 
@@ -78,30 +80,11 @@ func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
 }
 
-// HasSourcegraphUser indicates whether the current user has a Sourcegraph user
-// associated with their account, as opposed to only having a registered Auth0 user.
-func (r *userResolver) HasSourcegraphUser() bool {
-	return true
-}
-
 func (r *userResolver) Verified() bool {
 	return r.user.Verified
 }
 
 func (r *userResolver) SiteAdmin() bool { return r.user.SiteAdmin }
-
-// CreateUser creates a new native auth (non-SSO) user.
-func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
-	Username    string
-	DisplayName string
-	AvatarURL   *string
-}) (*userResolver, error) {
-	// NOTE: This is temporarily disabled. It was previously used for backfilling users
-	// who had an Auth0 actor but no Sourcegraph user account, which was the case for
-	// users who had logged in pre-streamlined webapp. That backfill code was removed.
-	// We will reuse this very soon for self-stored user accounts.
-	return nil, errors.New("creating user accounts is not supported")
-}
 
 func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	Username    *string

@@ -65,14 +65,12 @@ func (err ErrCannotCreateUser) Code() string {
 
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
 // the user:
-// - If the provider is "", the user was authenticated the native-auth UI using Auth0
 // - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
 // - If the provider is something else, the user was authenticated by an SSO provider
 //
 // Native-auth users must also specify a password and email verification code upon creation. When the user's email is
-// verified, the email verification code is set to null in the DB. All other users (including Auth0
-// Auth0 users that were authenticated using the native-auth UI) have a null password and email verification code.
-func (*users) Create(ctx context.Context, auth0ID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
+// verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
+func (*users) Create(ctx context.Context, authID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
 	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
@@ -125,7 +123,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		auth0ID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id, &isSiteAdmin)
+		authID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -158,7 +156,7 @@ func (*users) Create(ctx context.Context, auth0ID, email, username, displayName,
 
 	return &sourcegraph.User{
 		ID:          id,
-		Auth0ID:     auth0ID,
+		AuthID:      authID,
 		Email:       email,
 		Username:    username,
 		DisplayName: displayName,
@@ -263,9 +261,9 @@ func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByAuth0ID(ctx context.Context, id string) (*sourcegraph.User, error) {
-	if Mocks.Users.GetByAuth0ID != nil {
-		return Mocks.Users.GetByAuth0ID(ctx, id)
+func (u *users) GetByAuthID(ctx context.Context, id string) (*sourcegraph.User, error) {
+	if Mocks.Users.GetByAuthID != nil {
+		return Mocks.Users.GetByAuthID(ctx, id)
 	}
 	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
@@ -292,16 +290,16 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 }
 
 // ListByOrg returns users for a given org. It can also query a list of specific
-// users by either auth0IDs or usernames.
-func (u *users) ListByOrg(ctx context.Context, orgID int32, auth0IDs, usernames []string) ([]*sourcegraph.User, error) {
+// users by either authIDs or usernames.
+func (u *users) ListByOrg(ctx context.Context, orgID int32, authIDs, usernames []string) ([]*sourcegraph.User, error) {
 	if Mocks.Users.ListByOrg != nil {
-		return Mocks.Users.ListByOrg(ctx, orgID, auth0IDs, usernames)
+		return Mocks.Users.ListByOrg(ctx, orgID, authIDs, usernames)
 	}
 	conds := []*sqlf.Query{}
 	filters := []*sqlf.Query{}
-	if len(auth0IDs) > 0 {
+	if len(authIDs) > 0 {
 		items := []*sqlf.Query{}
-		for _, id := range auth0IDs {
+		for _, id := range authIDs {
 			items = append(items, sqlf.Sprintf("%s", id))
 		}
 		filters = append(filters, sqlf.Sprintf("u.auth_id IN (%s)", sqlf.Join(items, ",")))
@@ -348,7 +346,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.Auth0ID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified, &u.SiteAdmin)
+		err := rows.Scan(&u.ID, &u.AuthID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
@@ -372,9 +370,9 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 		}
 		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
 		// We need to check those in our own DB.
-		if user.Provider == "auth0" || strings.HasPrefix(user.Auth0ID, "auth0|") {
+		if user.Provider == "auth0" || strings.HasPrefix(user.AuthID, "auth0|") {
 			ok, err := auth0tmp.CheckPassword(ctx, user.Email, password)
-			// log15.Info("checking password via auth0", "user", user.Username, "auth0ID", user.Auth0ID, "email", user.Email, "ok", ok, "err", err)
+			// log15.Info("checking password via auth0", "user", user.Username, "authID", user.AuthID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err
 		}
 	}

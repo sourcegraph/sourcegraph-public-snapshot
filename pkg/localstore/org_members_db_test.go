@@ -36,7 +36,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := OrgMembers.Create(ctx, org1.ID, user1.Auth0ID); err != nil {
+	if _, err := OrgMembers.Create(ctx, org1.ID, user1.AuthID); err != nil {
 		t.Fatal(err)
 	}
 

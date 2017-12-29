@@ -15,7 +15,7 @@ type sharedItemResolver struct {
 }
 
 func (s *sharedItemResolver) Author(ctx context.Context) (*userResolver, error) {
-	user, err := store.Users.GetByAuth0ID(ctx, s.authorUserID)
+	user, err := store.Users.GetByAuthID(ctx, s.authorUserID)
 	if err != nil {
 		return nil, err
 	}

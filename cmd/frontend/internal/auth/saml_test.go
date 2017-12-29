@@ -152,9 +152,9 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 
 	// Mock user
 	mockedUserID := samlToAuthID(idpHTTPServer.URL+"/metadata", "testuser_id")
-	localstore.Mocks.Users.GetByAuth0ID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
+	localstore.Mocks.Users.GetByAuthID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
 		if uid == mockedUserID {
-			return &sourcegraph.User{ID: 123, Auth0ID: uid, Username: uid}, nil
+			return &sourcegraph.User{ID: 123, AuthID: uid, Username: uid}, nil
 		}
 		return nil, fmt.Errorf("user %q not found in mock", uid)
 	}

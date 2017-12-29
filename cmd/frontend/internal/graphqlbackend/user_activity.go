@@ -44,7 +44,7 @@ func (s *schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event string
 }) (*EmptyResponse, error) {
 	actor := actor.FromContext(ctx)
-	user, err := localstore.Users.GetByAuth0ID(ctx, actor.UID)
+	user, err := localstore.Users.GetByAuthID(ctx, actor.UID)
 	if err != nil {
 		return nil, err
 	}

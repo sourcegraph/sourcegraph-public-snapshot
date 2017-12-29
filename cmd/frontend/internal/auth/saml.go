@@ -111,7 +111,7 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	subject := r.Header.Get("X-Saml-Subject") // this header is set by the SAML library after extracting the value from the JWT cookie
 	authID := samlToAuthID(idpID, subject)
 
-	usr, err := localstore.Users.GetByAuth0ID(ctx, authID)
+	usr, err := localstore.Users.GetByAuthID(ctx, authID)
 	if _, notFound := err.(localstore.ErrUserNotFound); notFound {
 		email := r.Header.Get("X-Saml-Email")
 		if email == "" && mightBeEmail(subject) {

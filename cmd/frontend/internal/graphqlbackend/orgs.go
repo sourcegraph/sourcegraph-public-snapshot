@@ -306,7 +306,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := store.Users.GetByAuth0ID(ctx, orgMember.UserID)
+	user, err := store.Users.GetByAuthID(ctx, orgMember.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +320,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	if invitedUser != nil {
-		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.Auth0ID)
+		_, err = store.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.AuthID)
 		if err == nil {
 			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, orgID)
 		}

@@ -92,7 +92,7 @@ export const Org = reactive<Props>(props => {
                 eventLogger.log('RemoveOrgMemberClicked', {
                     organization: {
                         remove: {
-                            auth0_id: member.user,
+                            auth_id: member.user,
                         },
                         org_id: member.org.id,
                     },
@@ -112,21 +112,21 @@ export const Org = reactive<Props>(props => {
                         ].join('')
                     )
                 }
-                if (user.auth0ID === member.user.auth0ID) {
+                if (user.authID === member.user.authID) {
                     return confirm(`Leave this organization?`)
                 }
                 return confirm(`Remove ${member.user.displayName} from this organization?`)
             }),
             mergeMap(([memberToRemove, user]) =>
-                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.auth0ID).pipe(
+                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.authID).pipe(
                     concat([
                         (state: State): State => ({
                             ...state,
-                            left: memberToRemove.user.auth0ID === user!.auth0ID,
+                            left: memberToRemove.user.authID === user!.authID,
                             org: state.org && {
                                 ...state.org,
                                 members: state.org.members.filter(
-                                    member => member.user.auth0ID !== memberToRemove.user.auth0ID
+                                    member => member.user.authID !== memberToRemove.user.authID
                                 ),
                             },
                         }),
@@ -177,7 +177,7 @@ export const Org = reactive<Props>(props => {
                                     <td className="org__actions-cell">
                                         <button
                                             className="btn btn-icon"
-                                            title={user.auth0ID === member.user.auth0ID ? 'Leave' : 'Remove'}
+                                            title={user.authID === member.user.authID ? 'Leave' : 'Remove'}
                                             // tslint:disable-next-line:jsx-no-lambda
                                             onClick={() => memberRemoves.next({ ...member, org })}
                                         >

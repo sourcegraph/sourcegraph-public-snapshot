@@ -19,7 +19,7 @@ func TestThreads_Create(t *testing.T) {
 		CloneURL:          "https://test.com/test",
 	}
 	store.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
-	store.Mocks.Users.MockGetByAuth0ID_Return(t, &sourcegraph.User{}, nil)
+	store.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{}, nil)
 	store.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, store.ErrRepoNotFound)
 	repoCreateCalled, repoCreateCalledWith := store.Mocks.OrgRepos.MockCreate_Return(t, &sourcegraph.OrgRepo{
 		ID:                1,

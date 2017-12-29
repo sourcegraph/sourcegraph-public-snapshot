@@ -55,8 +55,6 @@ interface SourcegraphContext {
     assetsRoot: string
 
     version: string
-    auth0Domain: string
-    auth0ClientID: string
 
     /**
      * Debug is whether debug mode is enabled.
@@ -106,11 +104,6 @@ interface SourcegraphContext {
      * Emails support enabled
      */
     emailEnabled: boolean
-
-    /**
-     * Use Auth0 authentication
-     */
-    useAuth0: boolean
 
     /**
      * A subset of the site configuration. Not all fields are set.
