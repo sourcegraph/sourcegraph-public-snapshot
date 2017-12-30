@@ -2,8 +2,9 @@ import * as H from 'history'
 import * as React from 'react'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
-import { refreshConfiguration, updateOrgSettings } from '../backend'
-import { SettingsFile } from '../SettingsFile'
+import { refreshConfiguration } from '../settings/backend'
+import { SettingsFile } from '../settings/SettingsFile'
+import { updateOrgSettings } from './backend'
 
 export interface Props {
     orgID: string

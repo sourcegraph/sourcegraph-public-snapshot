@@ -8,10 +8,10 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { createOrg } from '../backend'
-import { VALID_ORG_NAME_REGEXP } from '../validation'
+import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
+import { createOrg } from './backend'
+import { VALID_ORG_NAME_REGEXP } from './validation'
 
 export interface Props {
     history: H.History

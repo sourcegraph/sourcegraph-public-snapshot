@@ -12,8 +12,8 @@ import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
-import { eventLogger } from '../../tracking/eventLogger'
-import { inviteUser } from '../backend'
+import { eventLogger } from '../tracking/eventLogger'
+import { inviteUser } from './backend'
 
 const emailInvitesEnabled = window.context.emailEnabled
 

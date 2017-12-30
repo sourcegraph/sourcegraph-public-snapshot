@@ -12,7 +12,7 @@ import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
-import { updateOrg } from '../backend'
+import { updateOrg } from './backend'
 
 export interface Props {
     org: GQL.IOrg
