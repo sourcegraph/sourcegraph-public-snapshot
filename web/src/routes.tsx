@@ -6,6 +6,7 @@ import { SignUpPage } from './auth/SignUpPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { OpenPage } from './open/OpenPage'
+import { OrgsArea } from './org/OrgsArea'
 import { RepoBrowser } from './repo/RepoBrowser'
 import { RepositoryResolver } from './repo/RepositoryResolver'
 import { parseSearchURLQuery } from './search'
@@ -73,6 +74,11 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/settings',
         component: SettingsArea,
+        forceNarrowWidth: true,
+    },
+    {
+        path: '/organizations',
+        component: OrgsArea,
         forceNarrowWidth: true,
     },
     {

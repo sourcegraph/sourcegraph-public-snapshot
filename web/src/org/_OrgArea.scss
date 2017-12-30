@@ -1,10 +1,8 @@
-@import '../org/AcceptInvitePage';
-@import './SettingsFile';
-@import './SettingsSidebar';
-@import './user/UserSettingsProfilePage';
-@import './EditorAuthPage';
+@import './org/OrgSettingsProfilePage';
+@import './OrgSidebar';
 
-.settings-area {
+.org-area {
+    height: 100%;
     flex: 1 1 auto;
     display: flex;
     margin-top: 1rem;
@@ -20,7 +18,7 @@
 }
 
 .theme-light {
-    .settings-area {
+    .org-area {
         border: 1px solid $color-light-border;
 
         &__content {
@@ -30,13 +28,13 @@
 }
 
 @media (max-width: $media-lg) {
-    .settings-area {
+    .org-area {
         border-width: 1px 0 0 0 !important;
     }
 }
 
 @media (min-width: $media-lg) {
-    .settings-area {
+    .org-area {
         border-radius: 0.25rem;
     }
 }

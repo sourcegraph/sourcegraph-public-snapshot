@@ -153,7 +153,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                             !error &&
                             hasSubmitted &&
                             orgName &&
-                            emailVerified && <Redirect to={`/settings/orgs/${orgName}`} />}
+                            emailVerified && <Redirect to={`/organizations/${orgName}/settings`} />}
                         <PageTitle title="Accept invite" />
                         <h1>You were invited to join {orgName} on Sourcegraph!</h1>
 

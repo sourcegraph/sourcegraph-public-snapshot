@@ -111,7 +111,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 this.state.orgs.map(org => (
                                     <li className="sidebar__item" key={org.id}>
                                         <NavLink
-                                            to={`/settings/orgs/${org.name}`}
+                                            to={`/organizations/${org.name}/settings`}
                                             className="sidebar__item-link"
                                             activeClassName="sidebar__item--active"
                                         >
@@ -124,7 +124,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 ))}
                             <li className="sidebar__item">
                                 <NavLink
-                                    to="/settings/orgs/new"
+                                    to="/organizations/new"
                                     className="sidebar__item-link"
                                     activeClassName="sidebar__item--active"
                                 >

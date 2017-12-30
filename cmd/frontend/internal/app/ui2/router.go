@@ -35,6 +35,7 @@ const (
 	routeBlob          = "blob"
 	routeSignIn        = "sign-in"
 	routeSignUp        = "sign-up"
+	routeOrganizations = "org"
 	routeSettings      = "settings"
 	routeSiteAdmin     = "site-admin"
 	routePasswordReset = "password-reset"
@@ -94,6 +95,7 @@ func newRouter() *mux.Router {
 	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
 	r.Path("/sign-up").Methods("GET").Name(routeSignUp)
+	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
@@ -136,6 +138,7 @@ func initRouter() {
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
 	router.Get(routeSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))
+	router.Get(routeOrganizations).Handler(handler(serveBasicPageString("Organization - Sourcegraph")))
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("Settings - Sourcegraph")))
 	router.Get(routeSiteAdmin).Handler(handler(serveBasicPageString("Admin - Sourcegraph")))
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))

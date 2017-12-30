@@ -1,205 +1,185 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import * as H from 'history'
 import * as React from 'react'
-import { match, Redirect } from 'react-router'
-import reactive from 'rx-component'
-import { combineLatest } from 'rxjs/observable/combineLatest'
-import { merge } from 'rxjs/observable/merge'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { concat } from 'rxjs/operators/concat'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
-import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { scan } from 'rxjs/operators/scan'
-import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
+import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
-import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { UserAvatar } from '../settings/user/UserAvatar'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchOrg, removeUserFromOrg } from './backend'
+import { removeUserFromOrg } from './backend'
 import { InviteForm } from './InviteForm'
-import { OrgSettingsFile } from './OrgSettingsFile'
 import { OrgSettingsForm } from './OrgSettingsForm'
 
-const OrgNotFound = () => (
-    <HeroPage
-        icon={DirectionalSignIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested organization was not found."
-    />
-)
-
-export interface Props {
-    match: match<{ orgName: string }>
-    history: H.History
+interface Props extends RouteComponentProps<any> {
+    org: GQL.IOrg
+    user: GQL.IUser
 }
 
 interface State {
-    org?: GQL.IOrg
+    /**
+     * The org from props, possibly modified optimistically to reflect remote operations.
+     */
+    org: GQL.IOrg
+
     user?: GQL.IUser
     /** Whether the user just left the org */
     left: boolean
-    history: H.History
+    error?: string
 }
-
-type Update = (s: State) => State
 
 /**
  * The organizations settings page
  */
-export const OrgSettingsProfilePage = reactive<Props>(props => {
-    const memberRemoves = new Subject<GQL.IOrgMember>()
+export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
+    private orgChanges = new Subject<GQL.IOrg>()
+    private memberRemoves = new Subject<GQL.IOrgMember>()
+    private subscriptions = new Subscription()
 
-    const orgChanges = props.pipe(
-        map(props => props.match.params.orgName),
-        distinctUntilChanged(),
-        tap(orgName => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: orgName } }))
-    )
+    constructor(props: Props) {
+        super(props)
 
-    const settingsCommits = new Subject<void>()
-    const nextSettingsCommit = () => settingsCommits.next(void 0)
+        this.state = {
+            left: false,
+            org: this.props.org,
+        }
+    }
 
-    return merge<Update>(
-        combineLatest(props, currentUser, orgChanges, settingsCommits.pipe(startWith(void 0))).pipe(
-            mergeMap(([{ history }, user, orgName]) => {
-                if (!user) {
-                    return [(state: State): State => ({ ...state, user: undefined })]
-                }
-                // Find org ID from user auth state
-                const org = user.orgs.find(org => org.name === orgName)
-                if (!org) {
-                    return [(state: State): State => ({ ...state, user, org })]
-                }
-                // Fetch the org by ID by ID
-                return fetchOrg(org.id).pipe(
-                    map(org => (state: State): State => ({
-                        ...state,
-                        history,
-                        user,
-                        org: org || undefined,
-                    }))
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.orgChanges
+                .pipe(
+                    distinctUntilChanged(),
+                    tap(org => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: org.name } }))
                 )
-            })
-        ),
-
-        memberRemoves.pipe(
-            tap(member =>
-                eventLogger.log('RemoveOrgMemberClicked', {
-                    organization: {
-                        remove: {
-                            auth_id: member.user,
-                        },
-                        org_id: member.org.id,
-                    },
-                })
-            ),
-            withLatestFrom(currentUser),
-            filter(([member, user]) => {
-                if (!user) {
-                    return false
-                }
-                if (member.org.members.length === 1) {
-                    return confirm(
-                        [
-                            `You're the last member of ${member.org.displayName}. `,
-                            `Leaving will delete the ${member.org.displayName} organization. `,
-                            `Leave this organization?`,
-                        ].join('')
-                    )
-                }
-                if (user.authID === member.user.authID) {
-                    return confirm(`Leave this organization?`)
-                }
-                return confirm(`Remove ${member.user.displayName} from this organization?`)
-            }),
-            mergeMap(([memberToRemove, user]) =>
-                removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.id).pipe(
-                    concat([
-                        (state: State): State => ({
-                            ...state,
-                            left: memberToRemove.user.authID === user!.authID,
-                            org: state.org && {
-                                ...state.org,
-                                members: state.org.members.filter(
-                                    member => member.user.authID !== memberToRemove.user.authID
-                                ),
-                            },
-                        }),
-                    ])
-                )
-            )
+                .subscribe(org => this.setState({ org }))
         )
-    ).pipe(
-        scan<Update, State>((state: State, update: Update) => update(state), { left: false } as State),
-        map(({ user, org, left, history }: State): JSX.Element | null => {
-            // If the current user just left the org, redirect to settings start page
-            if (left) {
-                return <Redirect to="/settings/profile" />
-            }
-            if (!user) {
-                return <Redirect to="/sign-in" />
-            }
-            if (!org) {
-                return <OrgNotFound />
-            }
-            return (
-                <div className="org-settings-profile-page">
-                    <PageTitle title={org.name} />
-                    <div className="org-settings-profile-page__header">
-                        <h2>{org.name}</h2>
-                    </div>
-                    <h3>Members</h3>
-                    <InviteForm orgID={org.id} />
-                    <table className="table table-hover org-settings-profile-page__table">
-                        <thead>
-                            <tr>
-                                <th className="org-settings-profile-page__avatar-cell" />
-                                <th>Name</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th className="org-settings-profile-page__actions-cell" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {org.members.map(member => (
-                                <tr key={member.id}>
-                                    <td className="org-settings-profile-page__avatar-cell">
-                                        <UserAvatar user={member.user} size={64} />
-                                    </td>
-                                    <td>{member.user.displayName}</td>
-                                    <td>{member.user.username}</td>
-                                    <td>{member.user.email}</td>
-                                    <td className="org-settings-profile-page__actions-cell">
+        this.orgChanges.next(this.props.org)
+
+        this.subscriptions.add(
+            this.memberRemoves
+                .pipe(
+                    tap(member =>
+                        eventLogger.log('RemoveOrgMemberClicked', {
+                            organization: {
+                                remove: {
+                                    auth_id: member.user,
+                                },
+                                org_id: member.org.id,
+                            },
+                        })
+                    ),
+                    withLatestFrom(currentUser),
+                    filter(([member, user]) => {
+                        if (!user) {
+                            return false
+                        }
+                        if (member.org.members.length === 1) {
+                            return confirm(
+                                [
+                                    `You're the last member of ${member.org.displayName}. `,
+                                    `Leaving will delete the ${member.org.displayName} organization. `,
+                                    `Leave this organization?`,
+                                ].join('')
+                            )
+                        }
+                        if (user.authID === member.user.authID) {
+                            return confirm(`Leave this organization?`)
+                        }
+                        return confirm(`Remove ${member.user.displayName} from this organization?`)
+                    }),
+                    mergeMap(([memberToRemove, user]) =>
+                        removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.id).pipe(
+                            concat([
+                                {
+                                    left: memberToRemove.user.authID === user!.authID,
+                                    org:
+                                        this.state.org &&
+                                        ({
+                                            ...this.state.org,
+                                            members: this.state.org.members.filter(
+                                                member => member.user.authID !== memberToRemove.user.authID
+                                            ),
+                                        } as GQL.IOrg),
+                                },
+                            ])
+                        )
+                    )
+                )
+                .subscribe(
+                    ({ left, org }) => this.setState({ left, org }),
+                    err => this.setState({ error: err.message })
+                )
+        )
+    }
+
+    public componentWillReceiveProps(props: Props): void {
+        if (props.org !== this.props.org) {
+            this.orgChanges.next(props.org)
+        }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
+    public render(): JSX.Element | null {
+        // If the current user just left the org, redirect to settings start page
+        if (this.state.left) {
+            return <Redirect to="/settings/profile" />
+        }
+
+        return (
+            <div className="org-settings-profile-page">
+                <PageTitle title={this.props.org.name} />
+                <div className="org-settings-profile-page__header">
+                    <h2>{this.props.org.name}</h2>
+                </div>
+                <h3>Members</h3>
+                <InviteForm orgID={this.props.org.id} />
+                <table className="table table-hover org-settings-profile-page__table">
+                    <thead>
+                        <tr>
+                            <th className="org-settings-profile-page__avatar-cell" />
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th className="org-settings-profile-page__actions-cell" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {this.state.org.members.map(member => (
+                            <tr key={member.id}>
+                                <td className="org-settings-profile-page__avatar-cell">
+                                    <UserAvatar user={member.user} size={64} />
+                                </td>
+                                <td>{member.user.displayName}</td>
+                                <td>{member.user.username}</td>
+                                <td>{member.user.email}</td>
+                                <td className="org-settings-profile-page__actions-cell">
+                                    {this.props.user && (
                                         <button
                                             className="btn btn-icon"
-                                            title={user.authID === member.user.authID ? 'Leave' : 'Remove'}
+                                            title={this.props.user.authID === member.user.authID ? 'Leave' : 'Remove'}
                                             // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={() => memberRemoves.next({ ...member, org })}
+                                            onClick={() => this.memberRemoves.next({ ...member, org: this.state.org })}
                                         >
                                             <CloseIcon className="icon-inline" />
                                         </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <OrgSettingsForm org={org} />
-                    <hr />
-                    <h3>Configuration</h3>
-                    <OrgSettingsFile
-                        orgID={org.id}
-                        settings={org.latestSettings}
-                        onDidCommit={nextSettingsCommit}
-                        orgInEditorBeta={org.tags.some(tag => tag.name === 'editor-beta')}
-                        history={history}
-                    />
-                </div>
-            )
-        })
-    )
-})
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                <OrgSettingsForm org={this.props.org} />
+            </div>
+        )
+    }
+}

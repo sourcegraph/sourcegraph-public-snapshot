@@ -71,7 +71,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                 )
                 .subscribe(
                     org => {
-                        this.props.history.push(`/settings/orgs/${org.name}`)
+                        this.props.history.push(`/organizations/${org.name}/settings`)
                     },
                     error => {
                         console.error(error)
