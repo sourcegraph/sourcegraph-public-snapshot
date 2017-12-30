@@ -7,7 +7,7 @@ import { HeroPage } from '../components/HeroPage'
 import { EditorAuthPage } from './EditorAuthPage'
 import { AcceptInvitePage } from './org/AcceptInvitePage'
 import { NewOrg } from './org/NewOrg'
-import { Org } from './org/Org'
+import { OrgSettingsProfilePage } from './org/OrgSettingsProfilePage'
 import { SettingsSidebar } from './SettingsSidebar'
 import { UserSettingsProfilePage } from './user/UserSettingsProfilePage'
 
@@ -63,7 +63,11 @@ export class SettingsArea extends React.Component<Props> {
                         />
                         <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
                         <Route path={`${this.props.match.url}/orgs/new`} component={NewOrg} exact={true} />
-                        <Route path={`${this.props.match.url}/orgs/:orgName`} component={Org} exact={true} />
+                        <Route
+                            path={`${this.props.match.url}/orgs/:orgName`}
+                            component={OrgSettingsProfilePage}
+                            exact={true}
+                        />
                         <Route component={SettingsNotFoundPage} />
                     </Switch>
                 </div>

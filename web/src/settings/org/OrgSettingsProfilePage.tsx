@@ -52,7 +52,7 @@ type Update = (s: State) => State
 /**
  * The organizations settings page
  */
-export const Org = reactive<Props>(props => {
+export const OrgSettingsProfilePage = reactive<Props>(props => {
     const memberRemoves = new Subject<GQL.IOrgMember>()
 
     const orgChanges = props.pipe(
@@ -148,33 +148,33 @@ export const Org = reactive<Props>(props => {
                 return <OrgNotFound />
             }
             return (
-                <div className="org">
+                <div className="org-settings-profile-page">
                     <PageTitle title={org.name} />
-                    <div className="org__header">
+                    <div className="org-settings-profile-page__header">
                         <h2>{org.name}</h2>
                     </div>
                     <h3>Members</h3>
                     <InviteForm orgID={org.id} />
-                    <table className="table table-hover org__table">
+                    <table className="table table-hover org-settings-profile-page__table">
                         <thead>
                             <tr>
-                                <th className="org__avatar-cell" />
+                                <th className="org-settings-profile-page__avatar-cell" />
                                 <th>Name</th>
                                 <th>Username</th>
                                 <th>Email</th>
-                                <th className="org__actions-cell" />
+                                <th className="org-settings-profile-page__actions-cell" />
                             </tr>
                         </thead>
                         <tbody>
                             {org.members.map(member => (
                                 <tr key={member.id}>
-                                    <td className="org__avatar-cell">
+                                    <td className="org-settings-profile-page__avatar-cell">
                                         <UserAvatar user={member.user} size={64} />
                                     </td>
                                     <td>{member.user.displayName}</td>
                                     <td>{member.user.username}</td>
                                     <td>{member.user.email}</td>
-                                    <td className="org__actions-cell">
+                                    <td className="org-settings-profile-page__actions-cell">
                                         <button
                                             className="btn btn-icon"
                                             title={user.authID === member.user.authID ? 'Leave' : 'Remove'}
