@@ -6,7 +6,7 @@ import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { EditorAuthPage } from './EditorAuthPage'
 import { AcceptInvitePage } from './org/AcceptInvitePage'
-import { NewOrg } from './org/NewOrg'
+import { NewOrganizationPage } from './org/NewOrganizationPage'
 import { OrgSettingsProfilePage } from './org/OrgSettingsProfilePage'
 import { SettingsSidebar } from './SettingsSidebar'
 import { UserSettingsProfilePage } from './user/UserSettingsProfilePage'
@@ -62,7 +62,7 @@ export class SettingsArea extends React.Component<Props> {
                             exact={true}
                         />
                         <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
-                        <Route path={`${this.props.match.url}/orgs/new`} component={NewOrg} exact={true} />
+                        <Route path={`${this.props.match.url}/orgs/new`} component={NewOrganizationPage} exact={true} />
                         <Route
                             path={`${this.props.match.url}/orgs/:orgName`}
                             component={OrgSettingsProfilePage}

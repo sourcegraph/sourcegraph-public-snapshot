@@ -36,7 +36,7 @@ export interface State {
     loading: boolean
 }
 
-export class NewOrg extends React.Component<Props, State> {
+export class NewOrganizationPage extends React.Component<Props, State> {
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
 
@@ -82,7 +82,7 @@ export class NewOrg extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="new-organization">
+            <div className="new-organization-page">
                 <PageTitle title="New organization" />
                 <form className="settings-form" onSubmit={this.onSubmit}>
                     <h1>Create a new organization</h1>
