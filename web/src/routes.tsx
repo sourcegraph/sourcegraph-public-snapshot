@@ -81,11 +81,6 @@ export const routes: LayoutRouteProps[] = [
         exact: true,
     },
     {
-        path: '/search',
-        component: SearchResults,
-        exact: true,
-    },
-    {
         path: '/site-admin/init',
         exact: true,
         component: SiteInitPage,
