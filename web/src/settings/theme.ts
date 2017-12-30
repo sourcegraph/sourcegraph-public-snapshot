@@ -12,7 +12,7 @@ export type ColorTheme = 'light' | 'dark'
  * Returns the active color theme.
  */
 export function getColorTheme(): ColorTheme {
-    return window.localStorage.getItem('light-theme') === 'true' ? 'light' : 'dark'
+    return window.localStorage.getItem('light-theme') !== 'false' ? 'light' : 'dark'
 }
 
 const colorThemeUpdates = new ReplaySubject<ColorTheme>(1)
