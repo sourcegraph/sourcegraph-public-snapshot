@@ -26,5 +26,8 @@ fi
 
 if git diff --cached --name-only | grep --quiet '.go$'
 then
-	go test -run='^$' ./... || exit 1
+	files=$(git diff --cached --name-only | grep '.go$')
+	dirs=$(dirname $files | sort -u)
+	gopkgs=$(echo $dirs | sed 's/\(^\| \)/.\//g')
+	go test -run='^$' $gopkgs || exit 1
 fi
