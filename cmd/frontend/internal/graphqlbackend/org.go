@@ -380,7 +380,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 
 	// If the user is natively authenticated, require a verified email (if via SSO, we assume the SSO provider
 	// has authenticated the user's email)
-	if actor := actor.FromContext(ctx); actor.Provider == "" {
+	if actor := actor.FromContext(ctx); actor.Provider == "" && strings.HasPrefix(actor.UID, "auth0|") {
 		u, err := auth0.GetAuth0User(ctx)
 		if err != nil {
 			return nil, err
