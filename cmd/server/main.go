@@ -30,9 +30,6 @@ var defaultEnv = map[string]string{
 	// We disable google analytics, etc
 	"SRC_APP_DISABLE_SUPPORT_SERVICES": "true",
 
-	// We adjust behaviour for on-prem vs prod
-	"DEPLOYMENT_ON_PREM": "true",
-
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher to ensure this value isn't larger than the volume for
 	// CACHE_DIR.

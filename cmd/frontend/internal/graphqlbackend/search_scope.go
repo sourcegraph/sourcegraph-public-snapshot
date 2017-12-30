@@ -31,14 +31,14 @@ func init() {
 func defaultSearchScopes() []*searchScope {
 	var prependScope string
 	var defaultSearchScopes []*searchScope
-	useActiveInactiveRepos := envvar.DeploymentOnPrem() && inactiveRepos != ""
+	useActiveInactiveRepos := !envvar.SourcegraphDotComMode() && inactiveRepos != ""
 	if useActiveInactiveRepos {
 		prependScope = "repogroup:active "
 		defaultSearchScopes = append(defaultSearchScopes,
 			&searchScope{JName: "All active repos", JValue: "repogroup:active"},
 		)
 	} else {
-		if !envvar.DeploymentOnPrem() {
+		if envvar.SourcegraphDotComMode() {
 			prependScope = "repogroup:sample "
 			defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Sample repositories", JValue: "repogroup:sample"})
 		}

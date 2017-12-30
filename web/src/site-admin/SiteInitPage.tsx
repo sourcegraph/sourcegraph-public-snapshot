@@ -10,7 +10,7 @@ import { updateDeploymentConfiguration } from './backend'
  */
 export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> {
     public render(): JSX.Element {
-        if (!window.context.onPrem || !window.context.showOnboarding) {
+        if (!window.context.showOnboarding) {
             return <Redirect to="/search" />
         }
 

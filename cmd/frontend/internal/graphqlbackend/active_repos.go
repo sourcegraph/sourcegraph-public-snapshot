@@ -72,15 +72,11 @@ func (*schemaResolver) ActiveRepos(ctx context.Context) (*activeRepoResults, err
 //
 // In the case of on-prem, active repos is defined as all repositories known by
 // Sourcegraph minus inactive repositories (specified via $INACTIVE_REPOS).
-//
-// In the case of Sourcegraph.com, active repos is defined as all remote repos
-// for the authenticated user minus inactive repositories (again, specified via
-// $INACTIVE_REPOS).
 func listActiveAndInactive(ctx context.Context) (active []*sourcegraph.Repo, inactive []*sourcegraph.Repo, err error) {
 	// Find the list of all repos (this is the union of active + inactive
 	// repos, see description of this function above).
 	var all *sourcegraph.RepoList
-	if envvar.DeploymentOnPrem() {
+	if !envvar.SourcegraphDotComMode() {
 		all, err = backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
 			ListOptions: sourcegraph.ListOptions{
 				PerPage: 10000, // we want every repo.

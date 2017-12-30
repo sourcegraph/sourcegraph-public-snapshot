@@ -141,6 +141,10 @@ func newRouter() *mux.Router {
 }
 
 func init() {
+	initRouter()
+}
+
+func initRouter() {
 	// basic pages with static titles
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
@@ -162,7 +166,7 @@ func init() {
 	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
 
 	// Legacy redirects
-	if !envvar.DeploymentOnPrem() {
+	if envvar.SourcegraphDotComMode() {
 		router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 		router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
 		router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
@@ -190,7 +194,7 @@ func init() {
 		return "Saved queries - Sourcegraph"
 	})))
 
-	if !envvar.DeploymentOnPrem() {
+	if envvar.SourcegraphDotComMode() {
 		// about subdomain
 		router.Get(routeAboutSubdomain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.URL.Scheme = aboutRedirectScheme

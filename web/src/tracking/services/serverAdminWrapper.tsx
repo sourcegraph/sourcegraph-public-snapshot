@@ -8,7 +8,7 @@ class ServerAdminWrapper {
     private active = false
 
     constructor() {
-        if (window.context.onPrem) {
+        if (!window.context.sourcegraphDotComMode) {
             currentUser.subscribe(user => {
                 if (user) {
                     if (!this.active) {

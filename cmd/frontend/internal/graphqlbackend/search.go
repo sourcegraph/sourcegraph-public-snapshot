@@ -114,7 +114,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 	}
 
 	var sample []*sourcegraph.Repo
-	if !envvar.DeploymentOnPrem() {
+	if envvar.SourcegraphDotComMode() {
 		var err error
 		sample, err = getSampleRepos(ctx)
 		if err != nil {
