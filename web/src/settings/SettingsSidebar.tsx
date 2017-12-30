@@ -116,13 +116,13 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                         </NavLink>
                                     </li>
                                 ))}
-                            <li className="sidebar__item">
+                            <li className="sidebar__item sidebar__item-action">
                                 <NavLink
                                     to="/organizations/new"
-                                    className="sidebar__item-link"
+                                    className="sidebar__item-action-button btn"
                                     activeClassName="sidebar__item--active"
                                 >
-                                    <AddIcon className="icon-inline sidebar__item-icon" />Create new organization
+                                    <AddIcon className="icon-inline sidebar__item-action-icon" />Create new organization
                                 </NavLink>
                             </li>
                         </ul>
@@ -182,6 +182,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </a>
                         </div>
                     </li>
+                    <li className="sidebar__separator" role="separator" />
                     {this.state.editorBeta && (
                         <li className="sidebar__item sidebar__item-action">
                             <a

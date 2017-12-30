@@ -56,7 +56,6 @@
         }
 
         &-action {
-            border-top: 1px solid #2b3750;
             padding: 0.5rem;
             text-align: center;
 
@@ -101,6 +100,11 @@
         }
     }
 
+    &__separator {
+        border-top: 1px solid #2b3750;
+        height: 0.125rem;
+    }
+
     &__link {
         width: 50%;
         cursor: pointer;
@@ -138,8 +142,6 @@
             }
 
             &-action {
-                border-color: $color-light-border;
-
                 &-button {
                     background-color: $color-light-bg-2;
                 }
@@ -149,6 +151,10 @@
                     text-decoration: none;
                 }
             }
+        }
+
+        &__separator {
+            border-color: $color-light-border;
         }
     }
 }
