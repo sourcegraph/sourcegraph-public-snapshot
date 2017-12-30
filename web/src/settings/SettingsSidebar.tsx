@@ -76,10 +76,9 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     <li className="settings-sidebar__item">
                         <NavLink
                             to="/settings"
+                            exact={true}
                             className={`settings-sidebar__item-link`}
-                            activeClassName={`${this.props.location &&
-                                this.props.location.pathname === '/settings' &&
-                                'settings-sidebar__item--active'}`}
+                            activeClassName="settings-sidebar__item--active"
                         >
                             Profile
                         </NavLink>
