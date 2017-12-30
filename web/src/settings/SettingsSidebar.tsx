@@ -122,7 +122,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                     className="sidebar__item-action-button btn"
                                     activeClassName="sidebar__item--active"
                                 >
-                                    <AddIcon className="icon-inline sidebar__item-action-icon" />Create new organization
+                                    <AddIcon className="icon-inline sidebar__item-action-icon" />New organization
                                 </NavLink>
                             </li>
                         </ul>
