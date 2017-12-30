@@ -71,7 +71,7 @@ export class NavLinks extends React.Component<Props, State> {
                         </Link>
                     )}
                 {this.state.user && (
-                    <Link className="nav-links__link nav-links__link-user" to="/settings">
+                    <Link className="nav-links__link nav-links__link-user" to="/settings/profile">
                         {isGQLUser(this.state.user) && this.state.user.avatarURL ? (
                             <UserAvatar size={64} />
                         ) : isGQLUser(this.state.user) ? (

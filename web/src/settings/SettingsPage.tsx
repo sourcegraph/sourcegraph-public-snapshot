@@ -40,13 +40,18 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
             newUrl.searchParams.set('returnTo', window.location.href)
             return <Redirect to={newUrl.pathname + newUrl.search} />
         }
+
+        if (this.props.location.pathname === '/settings') {
+            return <Redirect to="/settings/profile" />
+        }
+
         return (
             <div className="settings-page">
                 <SettingsSidebar history={this.props.history} location={this.props.location} user={this.props.user} />
                 <div className="settings-page__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
-                        <Route path={this.props.match.url} component={UserProfilePage} exact={true} />
+                        <Route path={`${this.props.match.url}/profile`} component={UserProfilePage} exact={true} />
                         <Route
                             path={`${this.props.match.url}/accept-invite`}
                             component={AcceptInvitePage}

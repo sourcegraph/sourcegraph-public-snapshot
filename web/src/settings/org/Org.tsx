@@ -139,7 +139,7 @@ export const Org = reactive<Props>(props => {
         map(({ user, org, left, history }: State): JSX.Element | null => {
             // If the current user just left the org, redirect to settings start page
             if (left) {
-                return <Redirect to="/settings" />
+                return <Redirect to="/settings/profile" />
             }
             if (!user) {
                 return <Redirect to="/sign-in" />

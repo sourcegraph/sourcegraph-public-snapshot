@@ -194,7 +194,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/settings", http.StatusFound)
+	http.Redirect(w, r, "/settings/profile", http.StatusFound)
 }
 
 // serveResetPasswordInit initiates the native-auth password reset flow by sending a password-reset email.
