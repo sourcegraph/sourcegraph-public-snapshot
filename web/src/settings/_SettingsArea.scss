@@ -5,7 +5,7 @@
 @import './user/UserProfilePage';
 @import './EditorAuthPage';
 
-.settings-page {
+.settings-area {
     flex: 1 1 auto;
     display: flex;
     margin-top: 1rem;
@@ -21,7 +21,7 @@
 }
 
 .theme-light {
-    .settings-page {
+    .settings-area {
         border: 1px solid $color-light-border;
 
         &__content {
@@ -31,13 +31,13 @@
 }
 
 @media (max-width: $media-lg) {
-    .settings-page {
+    .settings-area {
         border-width: 1px 0 0 0 !important;
     }
 }
 
 @media (min-width: $media-lg) {
-    .settings-page {
+    .settings-area {
         border-radius: 0.25rem;
     }
 }

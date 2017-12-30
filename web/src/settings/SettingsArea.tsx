@@ -19,7 +19,7 @@ const SettingsNotFoundPage = () => (
     />
 )
 
-interface SettingsPageProps {
+interface Props {
     history: H.History
     location: H.Location
     match: match<{}>
@@ -27,9 +27,9 @@ interface SettingsPageProps {
 }
 
 /**
- * Renders a layout of a sidebar and a content area to display different settings
+ * Renders a layout of a sidebar and a content area to display settings.
  */
-export class SettingsPage extends React.Component<SettingsPageProps> {
+export class SettingsArea extends React.Component<Props> {
     public render(): JSX.Element | null {
         // If not logged in, redirect to sign in
         if (!this.props.user) {
@@ -46,9 +46,9 @@ export class SettingsPage extends React.Component<SettingsPageProps> {
         }
 
         return (
-            <div className="settings-page">
+            <div className="settings-area">
                 <SettingsSidebar history={this.props.history} location={this.props.location} user={this.props.user} />
-                <div className="settings-page__content">
+                <div className="settings-area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
                         <Route path={`${this.props.match.url}/profile`} component={UserProfilePage} exact={true} />
