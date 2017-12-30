@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { concat } from 'rxjs/operators/concat'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { refreshConfiguration } from '../settings/backend'
+import { refreshConfiguration } from '../user/settings/backend'
 import { createSavedQuery, deleteSavedQuery, updateSavedQuery } from './backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 

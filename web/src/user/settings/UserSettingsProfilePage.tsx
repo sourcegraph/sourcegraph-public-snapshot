@@ -12,9 +12,9 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser, refreshCurrentUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { updateUser } from '../backend'
-import { VALID_USERNAME_REGEXP } from '../validation'
-import { UserAvatar } from './UserAvatar'
+import { VALID_USERNAME_REGEXP } from '../index'
+import { UserAvatar } from '../UserAvatar'
+import { updateUser } from './backend'
 
 interface Props extends RouteComponentProps<any> {}
 

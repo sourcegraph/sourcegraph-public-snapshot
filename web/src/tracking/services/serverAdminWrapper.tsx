@@ -1,5 +1,5 @@
 import { currentUser } from '../../auth'
-import { logUserEvent } from '../../settings/backend'
+import { logUserEvent } from '../../user/settings/backend'
 
 class ServerAdminWrapper {
     /**

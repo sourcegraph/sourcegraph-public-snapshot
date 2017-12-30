@@ -1,8 +1,8 @@
 @import '../org/AcceptInvitePage';
 @import './SettingsFile';
 @import './SettingsSidebar';
-@import './user/UserSettingsProfilePage';
-@import './EditorAuthPage';
+@import '../user/settings/UserSettingsProfilePage';
+@import '../user/settings/EditorAuthPage';
 
 .settings-area {
     flex: 1 1 auto;

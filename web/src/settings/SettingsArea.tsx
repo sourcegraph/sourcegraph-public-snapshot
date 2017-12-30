@@ -5,12 +5,10 @@ import { match, Route, RouteProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/AcceptInvitePage'
-import { NewOrganizationPage } from '../org/NewOrganizationPage'
-import { OrgSettingsProfilePage } from '../org/OrgSettingsProfilePage'
-import { EditorAuthPage } from './EditorAuthPage'
+import { EditorAuthPage } from '../user/settings/EditorAuthPage'
+import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
+import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
 import { SettingsSidebar } from './SettingsSidebar'
-import { UserSettingsConfigurationPage } from './user/UserSettingsConfigurationPage'
-import { UserSettingsProfilePage } from './user/UserSettingsProfilePage'
 
 const SettingsNotFoundPage = () => (
     <HeroPage
@@ -89,16 +87,6 @@ export class SettingsArea extends React.Component<Props> {
                         <RouteWithProps
                             path={`${this.props.match.url}/editor-auth`}
                             component={EditorAuthPage}
-                            exact={true}
-                        />
-                        <RouteWithProps
-                            path={`${this.props.match.url}/orgs/new`}
-                            component={NewOrganizationPage}
-                            exact={true}
-                        />
-                        <RouteWithProps
-                            path={`${this.props.match.url}/orgs/:orgName`}
-                            component={OrgSettingsProfilePage}
                             exact={true}
                         />
                         <Route component={SettingsNotFoundPage} />

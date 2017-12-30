@@ -11,7 +11,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createOrg } from './backend'
-import { VALID_ORG_NAME_REGEXP } from './validation'
+import { VALID_ORG_NAME_REGEXP } from './index'
 
 export interface Props {
     history: H.History

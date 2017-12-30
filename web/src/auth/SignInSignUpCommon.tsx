@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { VALID_USERNAME_REGEXP } from '../settings/validation'
+import { VALID_USERNAME_REGEXP } from '../user'
 
 export const PasswordInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input

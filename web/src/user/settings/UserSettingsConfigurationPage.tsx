@@ -2,9 +2,9 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../../components/PageTitle'
+import { SettingsFile } from '../../settings/SettingsFile'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchUserSettings, updateUserSettings } from '../backend'
-import { SettingsFile } from '../SettingsFile'
+import { fetchUserSettings, updateUserSettings } from './backend'
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser

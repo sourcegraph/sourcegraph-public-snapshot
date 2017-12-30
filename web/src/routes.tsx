@@ -13,9 +13,9 @@ import { parseSearchURLQuery } from './search'
 import { SavedQueries } from './search/SavedQueries'
 import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
-import { SettingsArea } from './settings/SettingsArea'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { SiteInitPage } from './site-admin/SiteInitPage'
+import { SettingsArea } from './settings/SettingsArea'
 import { canListAllRepositories } from './util/features'
 
 export interface LayoutRouteProps extends RouteProps {

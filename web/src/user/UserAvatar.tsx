@@ -1,7 +1,7 @@
 import UserWomanAlternateIcon from '@sourcegraph/icons/lib/UserWomanAlternate'
 import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../../auth'
+import { currentUser } from '../auth'
 
 export interface Avatarable {
     avatarURL: string | null

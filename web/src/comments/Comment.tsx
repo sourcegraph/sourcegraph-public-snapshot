@@ -4,8 +4,8 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Markdown } from '../components/Markdown'
-import { UserAvatar } from '../settings/user/UserAvatar'
 import { eventLogger } from '../tracking/eventLogger'
+import { UserAvatar } from '../user/UserAvatar'
 
 interface Props {
     comment: GQL.ISharedItemComment

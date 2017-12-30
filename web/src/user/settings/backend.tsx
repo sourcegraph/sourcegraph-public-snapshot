@@ -3,10 +3,10 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
 import { tap } from 'rxjs/operators/tap'
-import { currentUser } from '../auth'
-import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { eventLogger } from '../tracking/eventLogger'
-import { configurationCascade } from './configuration'
+import { currentUser } from '../../auth'
+import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
+import { configurationCascade } from '../../settings/configuration'
+import { eventLogger } from '../../tracking/eventLogger'
 
 /**
  * Refreshes the configuration from the server, which propagates throughout the

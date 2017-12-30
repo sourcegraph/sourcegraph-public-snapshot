@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { UserAvatar } from '../settings/user/UserAvatar'
 import { eventLogger } from '../tracking/eventLogger'
+import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
 interface Props {

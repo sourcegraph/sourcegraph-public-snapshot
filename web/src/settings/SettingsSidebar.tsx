@@ -14,9 +14,9 @@ import { NavLink } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { OrgAvatar } from '../org/OrgAvatar'
+import { hasTagRecursive } from '../settings/tags'
+import { colorTheme, getColorTheme, setColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
-import { hasTagRecursive } from './tags'
-import { colorTheme, getColorTheme, setColorTheme } from './theme'
 
 interface Props {
     history: H.History
