@@ -82,7 +82,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="new-organization-page">
+            <div className="new-org-page">
                 <PageTitle title="New organization" />
                 <form className="settings-form" onSubmit={this.onSubmit}>
                     <h1>Create a new organization</h1>
