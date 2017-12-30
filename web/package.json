@@ -19,7 +19,7 @@
     "watch-schema": "chokidar --silent '../schema/**.schema.json' --initial -c 'npm run schema'",
     "lint": "npm run tslint && npm run stylelint",
     "tslint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.ts?(x)'",
-    "stylelint": "stylelint 'src/**/*.scss'",
+    "stylelint": "stylelint --quiet 'src/**/*.scss'",
     "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js"
   },
   "author": "John Rothfels <john@sourcegraph.com>",
