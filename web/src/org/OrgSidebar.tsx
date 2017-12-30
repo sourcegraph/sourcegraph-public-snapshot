@@ -1,5 +1,3 @@
-import AddIcon from '@sourcegraph/icons/lib/Add'
-import CityIcon from '@sourcegraph/icons/lib/City'
 import * as React from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
@@ -71,40 +69,6 @@ export class OrgSidebar extends React.Component<Props, State> {
                             Configuration
                         </NavLink>
                     </li>
-                    <ul>
-                        <div className="sidebar__header">
-                            <div className="sidebar__header-icon">
-                                <CityIcon className="icon-inline" />
-                            </div>
-                            <h5 className="sidebar__header-title ui-title">Organizations</h5>
-                        </div>
-                        <ul>
-                            {this.state.orgs &&
-                                this.state.orgs.map(org => (
-                                    <li className="sidebar__item" key={org.id}>
-                                        <NavLink
-                                            to={`/organizations/${org.name}/settings/profile`}
-                                            className="sidebar__item-link"
-                                            activeClassName="sidebar__item--active"
-                                        >
-                                            <div className="sidebar__item-icon">
-                                                <OrgAvatar org={org.name} />
-                                            </div>
-                                            {org.name}
-                                        </NavLink>
-                                    </li>
-                                ))}
-                            <li className="sidebar__item">
-                                <NavLink
-                                    to="/organizations/new"
-                                    className="sidebar__item-link"
-                                    activeClassName="sidebar__item--active"
-                                >
-                                    <AddIcon className="icon-inline sidebar__item-icon" />Create new organization
-                                </NavLink>
-                            </li>
-                        </ul>
-                    </ul>
                 </ul>
             </div>
         )
