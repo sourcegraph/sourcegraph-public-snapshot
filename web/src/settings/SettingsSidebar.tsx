@@ -93,12 +93,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             Configuration
                         </NavLink>
                     </li>
-                    <li className="sidebar__item sidebar__item">
-                        <a href="/-/sign-out" className="sidebar__item-link" onClick={this.logTelemetryOnSignOut}>
-                            <SignOutIcon className="icon-inline sidebar__item-icon" />
-                            Sign out
-                        </a>
-                    </li>
                     <ul>
                         <div className="sidebar__header">
                             <div className="sidebar__header-icon">
@@ -212,6 +206,16 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 </NavLink>
                             </li>
                         )}
+                    <li className="sidebar__item sidebar__item-action">
+                        <a
+                            href="/-/sign-out"
+                            className="sidebar__item-action-button btn"
+                            onClick={this.logTelemetryOnSignOut}
+                        >
+                            <SignOutIcon className="icon-inline sidebar__item-action-icon" />
+                            Sign out
+                        </a>
+                    </li>
                 </ul>
             </div>
         )
