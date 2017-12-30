@@ -1,7 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as H from 'history'
 import * as React from 'react'
-import { match, Route, Switch } from 'react-router'
+import { match, Route, RouteProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/AcceptInvitePage'
@@ -46,30 +46,57 @@ export class SettingsArea extends React.Component<Props> {
             return <Redirect to="/settings/profile" />
         }
 
+        // Transfer the user prop to the routes' components.
+        const RouteWithProps = (props: RouteProps): React.ReactElement<Route> => (
+            <Route
+                {...props}
+                component={undefined}
+                // tslint:disable-next-line:jsx-no-lambda
+                render={props2 => {
+                    const finalProps = { ...props2, user: this.props.user }
+                    if (props.component) {
+                        return React.createElement(props.component, finalProps)
+                    }
+                    if (props.render) {
+                        return props.render(finalProps)
+                    }
+                    return null
+                }}
+            />
+        )
+
         return (
             <div className="settings-area">
                 <SettingsSidebar history={this.props.history} location={this.props.location} user={this.props.user} />
                 <div className="settings-area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
-                        <Route
+                        <RouteWithProps
                             path={`${this.props.match.url}/profile`}
                             component={UserSettingsProfilePage}
                             exact={true}
                         />
-                        <Route
+                        <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
                             component={UserSettingsConfigurationPage}
                             exact={true}
                         />
-                        <Route
+                        <RouteWithProps
                             path={`${this.props.match.url}/accept-invite`}
                             component={AcceptInvitePage}
                             exact={true}
                         />
-                        <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
-                        <Route path={`${this.props.match.url}/orgs/new`} component={NewOrganizationPage} exact={true} />
-                        <Route
+                        <RouteWithProps
+                            path={`${this.props.match.url}/editor-auth`}
+                            component={EditorAuthPage}
+                            exact={true}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/orgs/new`}
+                            component={NewOrganizationPage}
+                            exact={true}
+                        />
+                        <RouteWithProps
                             path={`${this.props.match.url}/orgs/:orgName`}
                             component={OrgSettingsProfilePage}
                             exact={true}
