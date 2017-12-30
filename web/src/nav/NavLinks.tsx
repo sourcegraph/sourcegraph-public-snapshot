@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { UserAvatar } from '../settings/user/UserAvatar'
 import { eventLogger } from '../tracking/eventLogger'
+import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
 interface Props {
@@ -71,7 +71,7 @@ export class NavLinks extends React.Component<Props, State> {
                         </Link>
                     )}
                 {this.state.user && (
-                    <Link className="nav-links__link nav-links__link-user" to="/settings">
+                    <Link className="nav-links__link nav-links__link-user" to="/settings/profile">
                         {isGQLUser(this.state.user) && this.state.user.avatarURL ? (
                             <UserAvatar size={64} />
                         ) : isGQLUser(this.state.user) ? (

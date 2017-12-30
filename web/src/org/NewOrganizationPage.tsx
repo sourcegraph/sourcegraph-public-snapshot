@@ -8,10 +8,10 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { createOrg } from '../backend'
-import { VALID_ORG_NAME_REGEXP } from '../validation'
+import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
+import { createOrg } from './backend'
+import { VALID_ORG_NAME_REGEXP } from './index'
 
 export interface Props {
     history: H.History
@@ -36,7 +36,7 @@ export interface State {
     loading: boolean
 }
 
-export class NewOrg extends React.Component<Props, State> {
+export class NewOrganizationPage extends React.Component<Props, State> {
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
 
@@ -71,7 +71,7 @@ export class NewOrg extends React.Component<Props, State> {
                 )
                 .subscribe(
                     org => {
-                        this.props.history.push(`/settings/orgs/${org.name}`)
+                        this.props.history.push(`/organizations/${org.name}/settings`)
                     },
                     error => {
                         console.error(error)
@@ -82,7 +82,7 @@ export class NewOrg extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="new-organization">
+            <div className="new-org-page">
                 <PageTitle title="New organization" />
                 <form className="settings-form" onSubmit={this.onSubmit}>
                     <h1>Create a new organization</h1>

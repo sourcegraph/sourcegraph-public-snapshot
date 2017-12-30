@@ -6,13 +6,14 @@ import { SignUpPage } from './auth/SignUpPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { OpenPage } from './open/OpenPage'
+import { OrgsArea } from './org/OrgsArea'
 import { RepoBrowser } from './repo/RepoBrowser'
 import { RepositoryResolver } from './repo/RepositoryResolver'
 import { parseSearchURLQuery } from './search'
 import { SavedQueries } from './search/SavedQueries'
 import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
-import { SettingsPage } from './settings/SettingsPage'
+import { SettingsArea } from './settings/SettingsArea'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { SiteInitPage } from './site-admin/SiteInitPage'
 import { canListAllRepositories } from './util/features'
@@ -72,8 +73,11 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/settings',
-        component: SettingsPage,
-        forceNarrowWidth: true,
+        component: SettingsArea,
+    },
+    {
+        path: '/organizations',
+        component: OrgsArea,
     },
     {
         path: '/search',
@@ -89,7 +93,6 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/site-admin',
         component: SiteAdminArea,
-        forceNarrowWidth: true,
     },
     {
         path: '/password-reset',

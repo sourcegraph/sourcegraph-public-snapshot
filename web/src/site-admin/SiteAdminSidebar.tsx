@@ -23,99 +23,99 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="site-admin-sidebar">
-                <div className="site-admin-sidebar__header">
-                    <div className="site-admin-sidebar__header-icon">
-                        <ServerIcon className="icon-inline" />
-                    </div>
-                    <h5 className="site-admin-sidebar__header-title">Site Admin</h5>
-                </div>
-                <ul className="site-admin-sidebar__items">
-                    <li className="site-admin-sidebar__item">
+            <div className="sidebar site-admin-sidebar">
+                <ul className="sidebar__items">
+                    <li className="sidebar__header">
+                        <div className="sidebar__header-icon">
+                            <ServerIcon className="icon-inline" />
+                        </div>
+                        <h5 className="sidebar__header-title">Site Admin</h5>
+                    </li>
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Overview
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/configuration"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Configuration
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/repositories"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Repositories
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/organizations"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Organizations
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/users"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Users
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/invite-user"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Invite user
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/threads"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Threads &amp; comments
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/analytics"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Analytics
                         </NavLink>
                     </li>
-                    <li className="site-admin-sidebar__item">
+                    <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/telemetry"
-                            className="site-admin-sidebar__item-link"
-                            activeClassName="site-admin-sidebar__item--active"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
                             exact={true}
                         >
                             Telemetry

@@ -27,7 +27,7 @@ const NotSiteAdminPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
-interface SettingsPageProps {
+interface Props {
     history: H.History
     location: H.Location
     match: match<{}>
@@ -37,7 +37,7 @@ interface SettingsPageProps {
 /**
  * Renders a layout of a sidebar and a content area to display site admin information.
  */
-export class SiteAdminArea extends React.Component<SettingsPageProps> {
+export class SiteAdminArea extends React.Component<Props> {
     public render(): JSX.Element | null {
         // If not logged in, redirect to sign in.
         if (!this.props.user) {
@@ -73,9 +73,9 @@ export class SiteAdminArea extends React.Component<SettingsPageProps> {
         )
 
         return (
-            <div className="site-admin-area">
+            <div className="site-admin-area area">
                 <SiteAdminSidebar history={this.props.history} location={this.props.location} />
-                <div className="site-admin-area__content">
+                <div className="area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}
                         <RouteWithProps path={this.props.match.url} component={SiteAdminOverviewPage} exact={true} />

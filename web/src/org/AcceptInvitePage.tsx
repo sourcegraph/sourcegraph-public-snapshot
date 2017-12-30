@@ -18,10 +18,10 @@ import { scan } from 'rxjs/operators/scan'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
-import { refreshCurrentUser } from '../../auth'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { acceptUserInvite } from '../backend'
+import { refreshCurrentUser } from '../auth'
+import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
+import { acceptUserInvite } from './backend'
 
 export interface Props {
     location: H.Location
@@ -153,7 +153,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                             !error &&
                             hasSubmitted &&
                             orgName &&
-                            emailVerified && <Redirect to={`/settings/orgs/${orgName}`} />}
+                            emailVerified && <Redirect to={`/organizations/${orgName}/settings`} />}
                         <PageTitle title="Accept invite" />
                         <h1>You were invited to join {orgName} on Sourcegraph!</h1>
 

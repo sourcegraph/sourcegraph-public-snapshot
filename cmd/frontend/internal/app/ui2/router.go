@@ -25,25 +25,21 @@ import (
 )
 
 const (
-	routeHome                 = "home"
-	routeSearch               = "search"
-	routeSearchQueries        = "search-queries"
-	routeComment              = "comment"
-	routeOpen                 = "open"
-	routeRepo                 = "repo"
-	routeTree                 = "tree"
-	routeBlob                 = "blob"
-	routeSignIn               = "sign-in"
-	routeSignUp               = "sign-up"
-	routeSettings             = "settings"
-	routeSettingsAcceptInvite = "settings.accept-invite"
-	routeSettingsAdmin        = "settings.admin"
-	routeSettingsEditorAuth   = "settings.editor-auth"
-	routeSettingsOrgsNew      = "settings.orgs.new"
-	routeSettingsOrgsOrg      = "settings.orgs.org"
-	routeSiteAdmin            = "site-admin"
-	routePasswordReset        = "password-reset"
-	routeBrowseRepos          = "browse"
+	routeHome          = "home"
+	routeSearch        = "search"
+	routeSearchQueries = "search-queries"
+	routeComment       = "comment"
+	routeOpen          = "open"
+	routeRepo          = "repo"
+	routeTree          = "tree"
+	routeBlob          = "blob"
+	routeSignIn        = "sign-in"
+	routeSignUp        = "sign-up"
+	routeOrganizations = "org"
+	routeSettings      = "settings"
+	routeSiteAdmin     = "site-admin"
+	routePasswordReset = "password-reset"
+	routeBrowseRepos   = "browse"
 
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
@@ -57,8 +53,6 @@ const (
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
 	routeLegacyAcceptInvite            = "legacy.accept-invite"
-	routeLegacySettingsTeam            = "legacy.settings.team"
-	routeLegacySettingsTeams           = "legacy.settings.teams"
 	routeLegacyEditorAuth              = "legacy.editor-auth"
 )
 
@@ -101,12 +95,8 @@ func newRouter() *mux.Router {
 	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
 	r.Path("/sign-up").Methods("GET").Name(routeSignUp)
-	r.Path("/settings").Methods("GET").Name(routeSettings)
-	r.Path("/settings/accept-invite").Methods("GET").Name(routeSettingsAcceptInvite)
-	r.Path("/settings/admin").Methods("GET").Name(routeSettingsAdmin)
-	r.Path("/settings/editor-auth").Methods("GET").Name(routeSettingsEditorAuth)
-	r.Path("/settings/orgs/new").Methods("GET").Name(routeSettingsOrgsNew)
-	r.Path("/settings/orgs/{org}").Methods("GET").Name(routeSettingsOrgsOrg)
+	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
+	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
 	r.Path("/browse").Methods("GET").Name(routeBrowseRepos)
@@ -116,8 +106,6 @@ func newRouter() *mux.Router {
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
 	r.Path("/accept-invite").Methods("GET").Name(routeLegacyAcceptInvite)
-	r.Path("/settings/team/{org}").Methods("GET").Name(routeLegacySettingsTeam)
-	r.Path("/settings/teams/{org}").Methods("GET").Name(routeLegacySettingsTeams)
 	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
 
 	// repo
@@ -150,17 +138,8 @@ func initRouter() {
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
 	router.Get(routeSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))
-	router.Get(routeSettings).Handler(handler(serveBasicPageString("Profile - Sourcegraph")))
-	router.Get(routeSettingsAcceptInvite).Handler(handler(serveBasicPageWithEmailVerification(func(c *Common, r *http.Request) string {
-		return "Accept invite - Sourcegraph"
-	})))
-	router.Get(routeSettingsAdmin).Handler(handler(serveBasicPageString("Admin page - Sourcegraph")))
-	router.Get(routeSettingsEditorAuth).Handler(handler(serveEditorAuthWithEditorBetaRegistration))
-	router.Get(routeSettingsOrgsNew).Handler(handler(serveBasicPageString("New organization - Sourcegraph")))
-	router.Get(routeSettingsOrgsOrg).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
-		// e.g. "myorganization - Sourcegraph"
-		return fmt.Sprintf("%s - Sourcegraph", mux.Vars(r)["org"])
-	})))
+	router.Get(routeOrganizations).Handler(handler(serveBasicPageString("Organization - Sourcegraph")))
+	router.Get(routeSettings).Handler(handler(serveBasicPageString("Settings - Sourcegraph")))
 	router.Get(routeSiteAdmin).Handler(handler(serveBasicPageString("Admin - Sourcegraph")))
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
 	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
@@ -174,8 +153,6 @@ func initRouter() {
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
 		router.Get(routeLegacyAcceptInvite).Handler(staticRedirectHandler("/settings/accept-invite", http.StatusMovedPermanently))
-		router.Get(routeLegacySettingsTeam).Handler(handler(serveLegacySettingsTeam))
-		router.Get(routeLegacySettingsTeams).Handler(handler(serveLegacySettingsTeam))
 		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/editor-auth", http.StatusMovedPermanently))
 	}
 

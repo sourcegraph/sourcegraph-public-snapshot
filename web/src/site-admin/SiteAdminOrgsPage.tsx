@@ -158,7 +158,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                     for information about configuring organizations.
                 </p>
                 <p>
-                    <Link to="/settings/orgs/new" className="btn btn-primary btn-sm">
+                    <Link to="/organizations/new" className="btn btn-primary btn-sm">
                         Create new organization
                     </Link>
                 </p>

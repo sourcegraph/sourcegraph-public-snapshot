@@ -123,7 +123,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className="settings-file">
-                <h3>Configuration</h3>
                 <SaveToolbar
                     dirty={dirty}
                     disabled={this.state.saving || !dirty}

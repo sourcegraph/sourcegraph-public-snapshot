@@ -3,8 +3,8 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
 import { gql, GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
-import { refreshConfiguration } from '../settings/backend'
 import { configurationCascade } from '../settings/configuration'
+import { refreshConfiguration } from '../user/settings/backend'
 
 /**
  * Updates the configuration for a subject to the value produced by the given update function.

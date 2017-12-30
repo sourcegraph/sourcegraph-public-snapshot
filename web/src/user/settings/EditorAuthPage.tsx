@@ -1,7 +1,7 @@
 import copy from 'copy-to-clipboard'
 import * as React from 'react'
-import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
+import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props {}
 interface State {

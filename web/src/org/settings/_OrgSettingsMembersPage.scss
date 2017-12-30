@@ -1,8 +1,7 @@
 @import './InviteForm';
-@import './OrgSettingsForm';
-@import './OrgAvatar';
+@import '../OrgAvatar';
 
-.org {
+.org-settings-members-page {
     &__avatar-cell {
         width: 3rem;
 
