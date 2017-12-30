@@ -28,7 +28,7 @@ interface State {
     displayName: string
 }
 
-export class UserProfilePage extends React.Component<Props, State> {
+export class UserSettingsProfilePage extends React.Component<Props, State> {
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
 
@@ -97,14 +97,14 @@ export class UserProfilePage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="user-profile-page">
+            <div className="user-settings-profile-page">
                 <PageTitle title="Profile" />
                 <h2>Your profile</h2>
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.saved && <p className="alert alert-success">Profile saved!</p>}
-                <form className="user-profile-page__form" onSubmit={this.handleSubmit}>
-                    <div className="user-profile-page__avatar-row">
-                        <div className="user-profile-page__avatar-column">
+                <form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
+                    <div className="user-settings-profile-page__avatar-row">
+                        <div className="user-settings-profile-page__avatar-column">
                             <UserAvatar />
                         </div>
                         <div className="form-group">
@@ -151,7 +151,7 @@ export class UserProfilePage extends React.Component<Props, State> {
                         />
                     </div>
                     <button
-                        className="btn btn-primary user-profile-page__button"
+                        className="btn btn-primary user-settings-profile-page__button"
                         type="submit"
                         disabled={this.state.loading}
                     >

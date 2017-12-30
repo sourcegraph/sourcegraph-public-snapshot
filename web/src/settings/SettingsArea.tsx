@@ -9,7 +9,7 @@ import { AcceptInvitePage } from './org/AcceptInvitePage'
 import { NewOrg } from './org/NewOrg'
 import { Org } from './org/Org'
 import { SettingsSidebar } from './SettingsSidebar'
-import { UserProfilePage } from './user/UserProfilePage'
+import { UserSettingsProfilePage } from './user/UserSettingsProfilePage'
 
 const SettingsNotFoundPage = () => (
     <HeroPage
@@ -51,7 +51,11 @@ export class SettingsArea extends React.Component<Props> {
                 <div className="settings-area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
-                        <Route path={`${this.props.match.url}/profile`} component={UserProfilePage} exact={true} />
+                        <Route
+                            path={`${this.props.match.url}/profile`}
+                            component={UserSettingsProfilePage}
+                            exact={true}
+                        />
                         <Route
                             path={`${this.props.match.url}/accept-invite`}
                             component={AcceptInvitePage}
