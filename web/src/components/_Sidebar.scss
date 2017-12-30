@@ -102,7 +102,9 @@
 
     &__separator {
         border-top: 1px solid #2b3750;
-        height: 0.125rem;
+        height: 0.5rem;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: calc(0.5rem - 1px);
     }
 
     &__link {
