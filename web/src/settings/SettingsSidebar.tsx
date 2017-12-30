@@ -5,7 +5,6 @@ import ColorPaletteIcon from '@sourcegraph/icons/lib/ColorPalette'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
-import ServerIcon from '@sourcegraph/icons/lib/Server'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import SunIcon from '@sourcegraph/icons/lib/Sun'
 import UserIcon from '@sourcegraph/icons/lib/User'
@@ -18,7 +17,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { OrgAvatar } from './org/OrgAvatar'
 import { hasTagRecursive } from './tags'
 import { colorTheme, getColorTheme, setColorTheme } from './theme'
-import { UserAvatar } from './user/UserAvatar'
 
 interface Props {
     history: H.History
@@ -68,18 +66,12 @@ export class SettingsSidebar extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="settings-sidebar">
-                <div className="settings-sidebar__header settings-sidebar__header-account-settings">
-                    <div className="settings-sidebar__header-icon">
-                        <GearIcon className="icon-inline" />
-                    </div>
-                    <h5 className="settings-sidebar__header-title">Account Settings</h5>
-                </div>
                 <ul className="settings-sidebar__items">
                     <div className="settings-sidebar__header">
                         <div className="settings-sidebar__header-icon">
                             <UserIcon className="icon-inline" />
                         </div>
-                        <h5 className="settings-sidebar__header-title">Profile</h5>
+                        <h5 className="settings-sidebar__header-title">Personal settings</h5>
                     </div>
                     <li className="settings-sidebar__item">
                         <NavLink
@@ -89,38 +81,9 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 this.props.location.pathname === '/settings' &&
                                 'settings-sidebar__item--active'}`}
                         >
-                            <div className="settings-sidebar__profile">
-                                <div className="settings-sidebar__profile-avatar-column">
-                                    <UserAvatar user={this.state.currentUser} />
-                                </div>
-                                <div className="settings-sidebar__profile-content">
-                                    <div className="settings-sidebar__profile-row">
-                                        {this.state.currentUser ? this.state.currentUser.displayName : ''}
-                                    </div>
-                                    <div
-                                        className="settings-sidebar__profile-row"
-                                        title={this.state.currentUser ? this.state.currentUser.email : ''}
-                                    >
-                                        {this.state.currentUser ? this.state.currentUser.email : ''}
-                                    </div>
-                                </div>
-                            </div>
+                            Profile
                         </NavLink>
                     </li>
-                    {this.props.user &&
-                        this.props.user.siteAdmin && (
-                            <ul>
-                                <li className="settings-sidebar__item">
-                                    <NavLink
-                                        to="/site-admin"
-                                        className="settings-sidebar__item-link"
-                                        activeClassName="settings-sidebar__item--active"
-                                    >
-                                        <ServerIcon className="icon-inline settings-sidebar__item-icon" />Admin
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        )}
                     <li className="settings-sidebar__item settings-sidebar__item">
                         <a
                             href="/-/sign-out"
@@ -147,7 +110,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                             className="settings-sidebar__item-link"
                                             activeClassName="settings-sidebar__item--active"
                                         >
-                                            <div className="settings-sidebar__profile-avatar-column">
+                                            <div className="settings-sidebar__item-icon">
                                                 <OrgAvatar org={org.name} />
                                             </div>
                                             {org.name}
@@ -230,9 +193,9 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         </div>
                     </li>
                     {this.state.editorBeta && (
-                        <li className="settings-sidebar__item settings-sidebar__item-action settings-sidebar__download-editor">
+                        <li className="settings-sidebar__item settings-sidebar__item-action">
                             <a
-                                className="settings-sidebar__item-action-button settings-sidebar__download-editor-button btn"
+                                className="settings-sidebar__item-action-button btn"
                                 target="_blank"
                                 href="https://about.sourcegraph.com/docs/editor/setup/"
                             >
@@ -240,6 +203,19 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </a>
                         </li>
                     )}
+                    {this.props.user &&
+                        this.props.user.siteAdmin && (
+                            <li className="settings-sidebar__item settings-sidebar__item-action">
+                                <NavLink
+                                    to="/site-admin"
+                                    className="settings-sidebar__item-action-button btn"
+                                    activeClassName="settings-sidebar__item--active"
+                                >
+                                    <GearIcon className="icon-inline settings-sidebar__item-action-icon" />
+                                    Site admin
+                                </NavLink>
+                            </li>
+                        )}
                 </ul>
             </div>
         )

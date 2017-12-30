@@ -19,10 +19,6 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
         padding: 0.5rem;
         vertical-align: middle;
         background: #151c28;
-
-        &-account-settings {
-            background: #1c2736;
-        }
     }
 
     &__header-title {
@@ -48,12 +44,15 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
         flex-direction: column;
 
         &-header,
-        &-link,
-        &-link-user {
+        &-link {
             height: 100%;
             padding: 0.5rem 0;
             display: flex;
             align-items: center;
+        }
+
+        &-link {
+            padding-left: 0.75rem;
         }
 
         &-link:hover {
@@ -77,6 +76,7 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
             &-button:hover {
                 background-color: rgba(42, 58, 81, 0.7);
                 color: #f2f4f8;
+                text-decoration: none;
             }
 
             &-icon {
@@ -86,7 +86,7 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
 
         &-icon {
             margin-right: 0.5rem;
-            margin-left: 0.5rem;
+            margin-left: -0.125rem;
         }
 
         .avatar {
@@ -103,29 +103,6 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
                 color: #f2f4f8;
                 text-decoration: none;
             }
-        }
-    }
-
-    &__profile {
-        display: flex;
-        overflow: hidden;
-
-        &-avatar-column {
-            flex: 0 0 auto;
-            display: flex;
-            padding-left: 0.5rem;
-            margin-right: 0.5rem;
-        }
-
-        &-content {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        &-row {
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
     }
 
@@ -157,22 +134,6 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
         width: 50%;
         cursor: pointer;
     }
-
-    &__download-editor {
-        padding: 0.5rem;
-        text-align: center;
-
-        &-button {
-            background-color: #2b3750;
-            color: #93a9c8;
-
-            &:hover {
-                background-color: rgba(42, 58, 81, 0.7);
-                color: #f2f4f8;
-                text-decoration: none;
-            }
-        }
-    }
 }
 
 .theme-light {
@@ -184,10 +145,6 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
         &__header {
             color: $color-light-text-1;
             background: $color-light-bg-4;
-
-            &-account-settings {
-                background: $color-light-bg-1;
-            }
         }
 
         &__item {
@@ -201,7 +158,8 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
                 background-color: $color-primary;
                 color: $color-light-text-4;
 
-                &:hover, &:focus {
+                &:hover,
+                &:focus {
                     background-color: $color-primary;
                     text-decoration: none;
                     color: $color-light-text-4;
@@ -210,6 +168,15 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
 
             &-action {
                 border-color: $color-light-border;
+
+                &-button {
+                    background-color: $color-light-bg-2;
+                }
+
+                &-button:hover {
+                    background-color: $color-light-bg-4;
+                    text-decoration: none;
+                }
             }
         }
 
@@ -223,17 +190,6 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
                     background-color: $color-light-bg-3;
                     color: inherit;
                 }
-            }
-        }
-
-        &__download-editor {
-            &-button {
-                background-color: $color-light-bg-2;
-            }
-
-            &-button:hover {
-                background-color: $color-light-bg-4;
-                text-decoration: none;
             }
         }
     }
