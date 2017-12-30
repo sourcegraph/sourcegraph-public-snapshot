@@ -11,6 +11,7 @@ import { OrgSettingsConfigurationPage } from '../org/OrgSettingsConfigurationPag
 import { OrgSettingsProfilePage } from '../org/OrgSettingsProfilePage'
 import { fetchOrg } from './backend'
 import { OrgSidebar } from './OrgSidebar'
+import { OrgSettingsMembersPage } from './settings/OrgSettingsMembersPage'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -114,6 +115,11 @@ export class OrgArea extends React.Component<Props> {
                         <RouteWithProps
                             path={`${this.props.match.url}/settings/profile`}
                             component={OrgSettingsProfilePage}
+                            exact={true}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/settings/members`}
+                            component={OrgSettingsMembersPage}
                             exact={true}
                         />
                         <RouteWithProps

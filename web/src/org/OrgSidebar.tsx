@@ -61,6 +61,16 @@ export class OrgSidebar extends React.Component<Props, State> {
                     </li>
                     <li className="sidebar__item">
                         <NavLink
+                            to={`/organizations/${org.name}/settings/members`}
+                            exact={true}
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                        >
+                            Members
+                        </NavLink>
+                    </li>
+                    <li className="sidebar__item">
+                        <NavLink
                             to={`/organizations/${org.name}/settings/configuration`}
                             exact={true}
                             className="sidebar__item-link"
