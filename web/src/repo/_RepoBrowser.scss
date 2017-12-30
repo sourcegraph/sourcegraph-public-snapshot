@@ -10,4 +10,8 @@
         text-decoration: underline;
         margin-bottom: 1rem;
     }
+
+    @media (max-width: $media-lg) {
+        padding: 0 2rem;
+    }
 }
