@@ -9,6 +9,7 @@ import { AcceptInvitePage } from './org/AcceptInvitePage'
 import { NewOrganizationPage } from './org/NewOrganizationPage'
 import { OrgSettingsProfilePage } from './org/OrgSettingsProfilePage'
 import { SettingsSidebar } from './SettingsSidebar'
+import { UserSettingsConfigurationPage } from './user/UserSettingsConfigurationPage'
 import { UserSettingsProfilePage } from './user/UserSettingsProfilePage'
 
 const SettingsNotFoundPage = () => (
@@ -54,6 +55,11 @@ export class SettingsArea extends React.Component<Props> {
                         <Route
                             path={`${this.props.match.url}/profile`}
                             component={UserSettingsProfilePage}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/configuration`}
+                            component={UserSettingsConfigurationPage}
                             exact={true}
                         />
                         <Route

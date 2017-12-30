@@ -1,26 +1,29 @@
-import * as H from 'history'
 import * as React from 'react'
+import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
+import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchUserSettings, updateUserSettings } from '../backend'
 import { SettingsFile } from '../SettingsFile'
 
-interface Props {
-    userInEditorBeta: boolean
-
-    history: H.History
+interface Props extends RouteComponentProps<any> {
+    user: GQL.IUser
 }
 
 interface State {
-    error?: Error
     settings?: GQL.ISettings | null
+    error?: string
+    commitError?: Error
 }
 
-export class UserSettingsFile extends React.PureComponent<Props, State> {
+export class UserSettingsConfigurationPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('UserSettingsConfiguration')
+
         this.subscriptions.add(
             fetchUserSettings().subscribe(
                 settings => this.setState({ settings }),
@@ -34,13 +37,18 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const userInEditorBeta = this.props.user.tags && this.props.user.tags.some(tag => tag.name === 'editor-beta')
+
         return (
-            <div className="settings-file-container">
-                {this.state.error && <p className="settings-file-container__error">{this.state.error}</p>}
+            <div className="user-settings-configuration-page">
+                <PageTitle title="User configuration" />
+                <h2>Configuration</h2>
+                {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
                 {this.state.settings !== undefined && (
                     <SettingsFile
                         settings={this.state.settings}
                         onDidCommit={this.onDidCommit}
+                        commitError={this.state.commitError}
                         history={this.props.history}
                     />
                 )}
@@ -50,7 +58,7 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
                         Customizing search scopes
                     </a>
                 </small>
-                {this.props.userInEditorBeta && (
+                {userInEditorBeta && (
                     <small className="form-text">
                         Editor beta users: This configuration does not yet take effect in Sourcegraph Editor, unlike org
                         config (which does). It can only be used to configure the Sourcegraph web app.
@@ -61,15 +69,19 @@ export class UserSettingsFile extends React.PureComponent<Props, State> {
     }
 
     private onDidCommit = (lastKnownSettingsID: number | null, contents: string): void => {
-        this.setState({ error: undefined })
+        this.setState({
+            error: undefined,
+            commitError: undefined,
+        })
         updateUserSettings(lastKnownSettingsID, contents).subscribe(
             settings =>
                 this.setState({
                     error: undefined,
+                    commitError: undefined,
                     settings,
                 }),
             error => {
-                this.setState({ error: error.message })
+                this.setState({ error: undefined, commitError: error.message })
                 console.error(error)
             }
         )

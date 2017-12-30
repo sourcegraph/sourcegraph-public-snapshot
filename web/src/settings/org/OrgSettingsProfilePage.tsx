@@ -189,6 +189,8 @@ export const OrgSettingsProfilePage = reactive<Props>(props => {
                         </tbody>
                     </table>
                     <OrgSettingsForm org={org} />
+                    <hr />
+                    <h3>Configuration</h3>
                     <OrgSettingsFile
                         orgID={org.id}
                         settings={org.latestSettings}

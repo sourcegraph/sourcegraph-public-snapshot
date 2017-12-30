@@ -15,7 +15,6 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { updateUser } from '../backend'
 import { VALID_USERNAME_REGEXP } from '../validation'
 import { UserAvatar } from './UserAvatar'
-import { UserSettingsFile } from './UserSettingsFile'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -163,15 +162,6 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         </div>
                     )}
                 </form>
-
-                {this.state.user && (
-                    <UserSettingsFile
-                        userInEditorBeta={
-                            this.state.user.tags && this.state.user.tags.some(tag => tag.name === 'editor-beta')
-                        }
-                        history={this.props.history}
-                    />
-                )}
             </div>
         )
     }

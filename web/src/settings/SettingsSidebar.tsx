@@ -83,6 +83,16 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             Profile
                         </NavLink>
                     </li>
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/settings/configuration"
+                            exact={true}
+                            className={`sidebar__item-link`}
+                            activeClassName="sidebar__item--active"
+                        >
+                            Configuration
+                        </NavLink>
+                    </li>
                     <li className="sidebar__item sidebar__item">
                         <a href="/-/sign-out" className="sidebar__item-link" onClick={this.logTelemetryOnSignOut}>
                             <SignOutIcon className="icon-inline sidebar__item-icon" />
