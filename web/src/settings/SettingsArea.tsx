@@ -64,9 +64,9 @@ export class SettingsArea extends React.Component<Props> {
         )
 
         return (
-            <div className="settings-area">
+            <div className="settings-area area">
                 <SettingsSidebar history={this.props.history} location={this.props.location} user={this.props.user} />
-                <div className="settings-area__content">
+                <div className="area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
                         <RouteWithProps

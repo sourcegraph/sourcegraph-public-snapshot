@@ -1,5 +1,6 @@
+import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { OrgAvatar } from '../org/OrgAvatar'
@@ -80,6 +81,12 @@ export class OrgSidebar extends React.Component<Props, State> {
                         </NavLink>
                     </li>
                 </ul>
+                <div className="sidebar__item sidebar__item-action">
+                    <Link to="/settings/profile" className="sidebar__item-action-button btn">
+                        <UserIcon className="icon-inline sidebar__item-action-icon" />
+                        Personal settings
+                    </Link>
+                </div>
             </div>
         )
     }

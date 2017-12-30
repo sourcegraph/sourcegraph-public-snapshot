@@ -1,6 +1,5 @@
 .sidebar {
     flex: 0 0 auto;
-    background-color: #1c2736;
     user-select: none;
 
     display: flex;
@@ -13,7 +12,7 @@
         align-items: center;
         padding: 0.5rem;
         vertical-align: middle;
-        background: #151c28;
+        background: #1c2736;
     }
 
     &__header-title {
@@ -29,6 +28,10 @@
     &__items {
         overflow: hidden;
         position: relative;
+
+        background: #151c28;
+        border: 1px solid #2b3750;
+        border-radius: 0.125rem;
     }
 
     &__item {
@@ -100,11 +103,9 @@
         }
     }
 
-    &__separator {
-        border-top: 1px solid #2b3750;
-        height: 0.5rem;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-top: calc(0.5rem - 1px);
+    &__spacer {
+        height: 0.125rem;
+        margin-top: 0.125rem;
     }
 
     &__link {
@@ -115,13 +116,16 @@
 
 .theme-light {
     .sidebar {
-        background-color: $color-light-bg-1;
         color: $color-light-text-1;
-        border-right: 1px solid $color-light-border;
 
         &__header {
             color: $color-light-text-1;
             background: $color-light-bg-4;
+        }
+
+        &__items {
+            border-color: $color-light-border;
+            background-color: $color-light-bg-1;
         }
 
         &__item {
@@ -153,10 +157,6 @@
                     text-decoration: none;
                 }
             }
-        }
-
-        &__separator {
-            border-color: $color-light-border;
         }
     }
 }

@@ -73,9 +73,9 @@ export class SiteAdminArea extends React.Component<Props> {
         )
 
         return (
-            <div className="site-admin-area">
+            <div className="site-admin-area area">
                 <SiteAdminSidebar history={this.props.history} location={this.props.location} />
-                <div className="site-admin-area__content">
+                <div className="area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}
                         <RouteWithProps path={this.props.match.url} component={SiteAdminOverviewPage} exact={true} />

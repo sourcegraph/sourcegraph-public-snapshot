@@ -59,7 +59,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
             <div className="settings-file-container">
                 <PageTitle title="Organization configuration" />
                 <h2>Configuration</h2>
-                {this.state.settings && (
+                {this.state.settings !== undefined && (
                     <SettingsFile
                         settings={this.state.settings}
                         commitError={this.state.commitError}

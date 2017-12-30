@@ -1,7 +1,4 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
-import ChartIcon from '@sourcegraph/icons/lib/Chart'
-import CityIcon from '@sourcegraph/icons/lib/City'
-import ColorPaletteIcon from '@sourcegraph/icons/lib/ColorPalette'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
@@ -67,12 +64,12 @@ export class SettingsSidebar extends React.Component<Props, State> {
         return (
             <div className="sidebar settings-sidebar">
                 <ul className="sidebar__items">
-                    <div className="sidebar__header">
+                    <li className="sidebar__header">
                         <div className="sidebar__header-icon">
                             <UserIcon className="icon-inline" />
                         </div>
                         <h5 className="sidebar__header-title">Personal settings</h5>
-                    </div>
+                    </li>
                     <li className="sidebar__item">
                         <NavLink
                             to="/settings/profile"
@@ -93,65 +90,17 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             Configuration
                         </NavLink>
                     </li>
-                    <ul>
-                        <div className="sidebar__header">
-                            <div className="sidebar__header-icon">
-                                <CityIcon className="icon-inline" />
-                            </div>
-                            <h5 className="sidebar__header-title ui-title">Organizations</h5>
-                        </div>
-                        <ul>
-                            {this.state.orgs &&
-                                this.state.orgs.map(org => (
-                                    <li className="sidebar__item" key={org.id}>
-                                        <NavLink
-                                            to={`/organizations/${org.name}/settings`}
-                                            className="sidebar__item-link"
-                                            activeClassName="sidebar__item--active"
-                                        >
-                                            <div className="sidebar__item-icon">
-                                                <OrgAvatar org={org.name} />
-                                            </div>
-                                            {org.name}
-                                        </NavLink>
-                                    </li>
-                                ))}
-                            <li className="sidebar__item sidebar__item-action">
-                                <NavLink
-                                    to="/organizations/new"
-                                    className="sidebar__item-action-button btn"
-                                    activeClassName="sidebar__item--active"
-                                >
-                                    <AddIcon className="icon-inline sidebar__item-action-icon" />New organization
-                                </NavLink>
-                            </li>
-                        </ul>
-                        {this.state.editorBeta && (
-                            <div className="sidebar__header">
-                                <div className="sidebar__header-icon">
-                                    <ChartIcon className="icon-inline" />
-                                </div>
-                                <h5 className="sidebar__header-title">Connections</h5>
-                            </div>
-                        )}
-                        {this.state.editorBeta && (
-                            <li className="sidebar__item">
-                                <NavLink
-                                    to="/settings/editor-auth"
-                                    className="sidebar__item-link"
-                                    activeClassName="sidebar__item--active"
-                                >
-                                    <KeyIcon className="icon-inline sidebar__item-icon" />Editor authentication
-                                </NavLink>
-                            </li>
-                        )}
-                    </ul>
-                    <div className="sidebar__header">
-                        <div className="sidebar__header-icon">
-                            <ColorPaletteIcon className="icon-inline" />
-                        </div>
-                        <h5 className="sidebar__header-title">Color Theme</h5>
-                    </div>
+                    {this.state.editorBeta && (
+                        <li className="sidebar__item">
+                            <NavLink
+                                to="/settings/editor-auth"
+                                className="sidebar__item-link"
+                                activeClassName="sidebar__item--active"
+                            >
+                                <KeyIcon className="icon-inline sidebar__item-icon" />Editor authentication
+                            </NavLink>
+                        </li>
+                    )}
                     <li className="sidebar__item">
                         <div className="settings-sidebar__theme-switcher">
                             <a className="sidebar__link" onClick={this.toggleTheme} title="Switch to light theme">
@@ -182,42 +131,76 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </a>
                         </div>
                     </li>
-                    <li className="sidebar__separator" role="separator" />
-                    {this.state.editorBeta && (
-                        <li className="sidebar__item sidebar__item-action">
-                            <a
-                                className="sidebar__item-action-button btn"
-                                target="_blank"
-                                href="https://about.sourcegraph.com/docs/editor/setup/"
-                            >
-                                Download Editor
-                            </a>
-                        </li>
-                    )}
-                    {this.props.user &&
-                        this.props.user.siteAdmin && (
-                            <li className="sidebar__item sidebar__item-action">
+                </ul>
+
+                <div className="sidebar__spacer" />
+
+                <ul className="sidebar__items">
+                    <li className="sidebar__header">
+                        <h5 className="sidebar__header-title ui-title">Organization settings</h5>
+                    </li>
+                    {this.state.orgs &&
+                        this.state.orgs.map(org => (
+                            <li className="sidebar__item" key={org.id}>
                                 <NavLink
-                                    to="/site-admin"
-                                    className="sidebar__item-action-button btn"
+                                    to={`/organizations/${org.name}/settings`}
+                                    className="sidebar__item-link"
                                     activeClassName="sidebar__item--active"
                                 >
-                                    <GearIcon className="icon-inline sidebar__item-action-icon" />
-                                    Site admin
+                                    <div className="sidebar__item-icon">
+                                        <OrgAvatar org={org.name} />
+                                    </div>
+                                    {org.name}
                                 </NavLink>
                             </li>
-                        )}
+                        ))}
                     <li className="sidebar__item sidebar__item-action">
-                        <a
-                            href="/-/sign-out"
+                        <NavLink
+                            to="/organizations/new"
                             className="sidebar__item-action-button btn"
-                            onClick={this.logTelemetryOnSignOut}
+                            activeClassName="sidebar__item--active"
                         >
-                            <SignOutIcon className="icon-inline sidebar__item-action-icon" />
-                            Sign out
-                        </a>
+                            <AddIcon className="icon-inline sidebar__item-action-icon" />New organization
+                        </NavLink>
                     </li>
                 </ul>
+
+                <div className="sidebar__spacer" />
+
+                {this.state.editorBeta && (
+                    <div className="sidebar__item sidebar__item-action">
+                        <a
+                            className="sidebar__item-action-button btn"
+                            target="_blank"
+                            href="https://about.sourcegraph.com/docs/editor/setup/"
+                        >
+                            Download Editor
+                        </a>
+                    </div>
+                )}
+                {this.props.user &&
+                    this.props.user.siteAdmin && (
+                        <div className="sidebar__item sidebar__item-action">
+                            <NavLink
+                                to="/site-admin"
+                                className="sidebar__item-action-button btn"
+                                activeClassName="sidebar__item--active"
+                            >
+                                <GearIcon className="icon-inline sidebar__item-action-icon" />
+                                Site admin
+                            </NavLink>
+                        </div>
+                    )}
+                <div className="sidebar__item sidebar__item-action">
+                    <a
+                        href="/-/sign-out"
+                        className="sidebar__item-action-button btn"
+                        onClick={this.logTelemetryOnSignOut}
+                    >
+                        <SignOutIcon className="icon-inline sidebar__item-action-icon" />
+                        Sign out
+                    </a>
+                </div>
             </div>
         )
     }

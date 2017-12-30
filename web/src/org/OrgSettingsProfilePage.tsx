@@ -93,9 +93,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
         return (
             <div className="org-settings-profile-page">
                 <PageTitle title={this.props.org.name} />
-                <div className="org-settings-profile-page__header">
-                    <h2>{this.props.org.name}</h2>
-                </div>
+                <h2>Organization profile</h2>
                 <form className="org-settings-profile-page" onSubmit={this.onSubmit}>
                     <div className="form-group">
                         <label>Display name</label>

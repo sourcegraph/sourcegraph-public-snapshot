@@ -24,13 +24,13 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="sidebar site-admin-sidebar">
-                <div className="sidebar__header">
-                    <div className="sidebar__header-icon">
-                        <ServerIcon className="icon-inline" />
-                    </div>
-                    <h5 className="sidebar__header-title">Site Admin</h5>
-                </div>
                 <ul className="sidebar__items">
+                    <li className="sidebar__header">
+                        <div className="sidebar__header-icon">
+                            <ServerIcon className="icon-inline" />
+                        </div>
+                        <h5 className="sidebar__header-title">Site Admin</h5>
+                    </li>
                     <li className="sidebar__item">
                         <NavLink
                             to="/site-admin"

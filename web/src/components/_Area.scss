@@ -1,0 +1,15 @@
+.area {
+    display: flex;
+    justify-content: center;
+    flex: 1 1 auto;
+    padding-top: 1.5rem;
+    line-height: 1.5rem;
+    overflow-y: auto;
+    min-height: calc(100vh - 4.35rem - 1.5rem);
+
+    &__content {
+        flex: 1 1 auto;
+        padding: 0 2rem;
+        max-width: 48rem;
+    }
+}

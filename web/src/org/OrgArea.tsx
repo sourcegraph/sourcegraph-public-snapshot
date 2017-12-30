@@ -108,9 +108,9 @@ export class OrgArea extends React.Component<Props> {
         )
 
         return (
-            <div className="org-area">
+            <div className="org-area area">
                 <OrgSidebar {...this.props} />
-                <div className="org-area__content">
+                <div className="area__content">
                     <Switch>
                         <RouteWithProps
                             path={`${this.props.match.url}/settings/profile`}

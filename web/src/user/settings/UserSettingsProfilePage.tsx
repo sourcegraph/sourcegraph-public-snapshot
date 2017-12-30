@@ -98,7 +98,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         return (
             <div className="user-settings-profile-page">
                 <PageTitle title="Profile" />
-                <h2>Your profile</h2>
+                <h2>Profile</h2>
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.saved && <p className="alert alert-success">Profile saved!</p>}
                 <form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
