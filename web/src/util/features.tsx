@@ -7,13 +7,13 @@
  * Whether the server can list all of its repositories. False for Sourcegraph.com,
  * which is a mirror of all public GitHub.com repositories.
  */
-export const canListAllRepositories = !window.context.sourcegraphDotComMode || window.context.debug
+export const canListAllRepositories = !window.context.sourcegraphDotComMode
 
 /**
  * Whether the application should show the user marketing elements (links, etc.)
  * that are intended for Sourcegraph.com.
  */
-export const showDotComMarketing = window.context.sourcegraphDotComMode || window.context.debug
+export const showDotComMarketing = window.context.sourcegraphDotComMode
 
 /**
  * Whether the application supports the user "forgot-password" flow.
