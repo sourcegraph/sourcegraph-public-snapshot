@@ -128,33 +128,10 @@ func TestRouter(t *testing.T) {
 			wantRoute: routeSettings,
 			wantVars:  map[string]string{},
 		},
-
-		// settings/accept-invite
 		{
-			path:      "/settings/accept-invite",
-			wantRoute: routeSettingsAcceptInvite,
+			path:      "/settings/profile",
+			wantRoute: routeSettings,
 			wantVars:  map[string]string{},
-		},
-
-		// settings/editor-auth
-		{
-			path:      "/settings/editor-auth",
-			wantRoute: routeSettingsEditorAuth,
-			wantVars:  map[string]string{},
-		},
-
-		// settings/orgs/new
-		{
-			path:      "/settings/orgs/new",
-			wantRoute: routeSettingsOrgsNew,
-			wantVars:  map[string]string{},
-		},
-
-		// settings/orgs/{team}
-		{
-			path:      "/settings/orgs/sourcegraph",
-			wantRoute: routeSettingsOrgsOrg,
-			wantVars:  map[string]string{"org": "sourcegraph"},
 		},
 
 		// password invite
@@ -169,13 +146,6 @@ func TestRouter(t *testing.T) {
 			path:      "/accept-invite",
 			wantRoute: routeLegacyAcceptInvite,
 			wantVars:  map[string]string{},
-		},
-
-		// legacy settings/team/{team}
-		{
-			path:      "/settings/team/sourcegraph",
-			wantRoute: routeLegacySettingsTeam,
-			wantVars:  map[string]string{"org": "sourcegraph"},
 		},
 
 		{
