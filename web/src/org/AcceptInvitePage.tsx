@@ -29,7 +29,6 @@ export interface Props {
 
 interface State {
     email: string
-    emailVerified: boolean
     loading: boolean
     hasSubmitted: boolean
     orgName?: string
@@ -97,11 +96,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                                         user_email: tokenPayload.email,
                                         org_name: tokenPayload.orgName,
                                     }
-                                    if (status.emailVerified) {
-                                        eventLogger.log('InviteAccepted', eventProps)
-                                    } else {
-                                        eventLogger.log('AcceptInviteFailed', eventProps)
-                                    }
+                                    eventLogger.log('InviteAccepted', eventProps)
                                 }),
                                 mergeMap(status =>
                                     // Reload user
@@ -113,7 +108,6 @@ export const AcceptInvitePage = reactive<Props>(props => {
                                                     ...state,
                                                     loading: false,
                                                     hasSubmitted: true,
-                                                    emailVerified: status.emailVerified,
                                                 }),
                                             ])
                                         )
@@ -144,29 +138,26 @@ export const AcceptInvitePage = reactive<Props>(props => {
                 scan<Update, State>((state: State, update: Update) => update(state), {
                     email: '',
                     loading: false,
-                    emailVerified: true,
                     hasSubmitted: false,
                 }),
-                map(({ email, loading, error, orgName, emailVerified, hasSubmitted }) => (
+                map(({ email, loading, error, orgName, hasSubmitted }) => (
                     <form className="accept-invite-page" onSubmit={nextSubmitEvent}>
                         {!loading &&
                             !error &&
                             hasSubmitted &&
-                            orgName &&
-                            emailVerified && <Redirect to={`/organizations/${orgName}/settings`} />}
+                            orgName && <Redirect to={`/organizations/${orgName}/settings`} />}
                         <PageTitle title="Accept invite" />
                         <h1>You were invited to join {orgName} on Sourcegraph!</h1>
 
                         {error && <p className="form-text text-error">{error.message}</p>}
 
                         {/* TODO(john): provide action to re-send verification email */}
-                        {hasSubmitted &&
-                            !emailVerified && (
-                                <p className="form-text text-error">
-                                    Please verify your email address to accept this invitation; check your inbox for a
-                                    verification link.
-                                </p>
-                            )}
+                        {hasSubmitted && (
+                            <p className="form-text text-error">
+                                Please verify your email address to accept this invitation; check your inbox for a
+                                verification link.
+                            </p>
+                        )}
 
                         <div className="form-group">
                             <label>Your company email</label>

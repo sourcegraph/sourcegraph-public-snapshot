@@ -142,7 +142,7 @@ type Mutation {
 	# Deletes a user account. Only site admins may perform this mutation.
 	deleteUser(user: ID!): EmptyResponse
 	inviteUser(email: String!, orgID: ID!): InviteUserResult
-	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
+	acceptUserInvite(inviteToken: String!): EmptyResponse
 	removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
 	# adds a phabricator repository to the Sourcegraph server.
 	# example callsign: "MUX"
@@ -840,10 +840,6 @@ type OrgMember {
 type InviteUserResult {
 	# The URL that the invited user can visit to accept the invitation.
 	acceptInviteURL: String!
-}
-
-type OrgInviteStatus {
-	emailVerified: Boolean!
 }
 
 type OrgRepo {

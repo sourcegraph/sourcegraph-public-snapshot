@@ -15,10 +15,6 @@ type orgMemberResolver struct {
 	user   *sourcegraph.User
 }
 
-type orgInviteResolver struct {
-	emailVerified bool
-}
-
 func (m *orgMemberResolver) ID() int32 {
 	return m.member.ID
 }
@@ -51,10 +47,6 @@ func (m *orgMemberResolver) CreatedAt() string {
 
 func (m *orgMemberResolver) UpdatedAt() string {
 	return m.member.UpdatedAt.Format(time.RFC3339) // ISO
-}
-
-func (i *orgInviteResolver) EmailVerified() bool {
-	return i.emailVerified
 }
 
 var mockAllEmailsForOrg func(ctx context.Context, orgID int32, excludeByUserID []int32) ([]string, error)

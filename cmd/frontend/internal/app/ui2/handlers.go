@@ -16,14 +16,12 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/eventlogger"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -166,51 +164,6 @@ func serveBasicPageString(title string) handlerFunc {
 
 func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", serveError)
-		if err != nil {
-			return err
-		}
-		if common == nil {
-			return nil // request was handled
-		}
-		common.Title = title(common, r)
-		return renderTemplate(w, "app.html", common)
-	}
-}
-
-func serveBasicPageWithEmailVerification(title func(c *Common, r *http.Request) string) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		actor := actor.FromContext(r.Context())
-		if actor != nil && actor.UID != "" {
-			inviteToken := r.URL.Query().Get("token")
-			// Verify the user email if they follow an invite link.
-			if inviteToken != "" {
-				// 🚨 SECURITY: verify that the token is valid before verifying email
-				payload, err := invite.ParseToken(inviteToken)
-				if err != nil {
-					return err
-				}
-
-				user, err := db.Users.GetByCurrentAuthUser(r.Context())
-				if err != nil {
-					return err
-				}
-				email, _, err := db.UserEmails.GetEmail(r.Context(), user.ID)
-				if err != nil {
-					return err
-				}
-
-				// 🚨 SECURITY: verify the current user's email iff it's the same as the email in the token
-				// and the actor came from native authentication (i.e., not an external SSO provider)
-				if payload.Email == email && actor.Provider == "" && conf.EmailVerificationRequired() && strings.HasPrefix(actor.UID, "auth0|") {
-					err = auth0.VerifyEmail(r.Context(), actor.UID)
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-
 		common, err := newCommon(w, r, "", serveError)
 		if err != nil {
 			return err
