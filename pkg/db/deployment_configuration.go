@@ -29,7 +29,7 @@ func (o *deploymentConfiguration) Get(ctx context.Context) (*sourcegraph.Deploym
 
 func (o *deploymentConfiguration) getConfiguration(ctx context.Context) (*sourcegraph.DeploymentConfiguration, error) {
 	configuration := &sourcegraph.DeploymentConfiguration{}
-	err := globalDB.QueryRowContext(ctx, "SELECT app_id, enable_telemetry, last_updated from deployment_configuration LIMIT 1").Scan(
+	err := globalDB.QueryRowContext(ctx, "SELECT app_id, enable_telemetry, last_updated from site_config LIMIT 1").Scan(
 		&configuration.AppID,
 		&configuration.TelemetryEnabled,
 		&configuration.LastUpdated,
@@ -49,7 +49,7 @@ func (o *deploymentConfiguration) UpdateConfiguration(ctx context.Context, updat
 		return err
 	}
 	t := time.Now()
-	_, err = globalDB.ExecContext(ctx, "UPDATE deployment_configuration SET email = $1, enable_telemetry = $2, last_updated = $3 where id = 1", updatedConfiguration.Email, updatedConfiguration.TelemetryEnabled, t.String())
+	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email = $1, enable_telemetry = $2, last_updated = $3 where id = 1", updatedConfiguration.Email, updatedConfiguration.TelemetryEnabled, t.String())
 	return err
 }
 
@@ -62,10 +62,10 @@ func (o *deploymentConfiguration) tryInsertNew(ctx context.Context) error {
 	if telemetryDisabled {
 		lastUpdated = time.Now().String()
 	}
-	_, err = globalDB.ExecContext(ctx, "INSERT INTO deployment_configuration(id, app_id, enable_telemetry, last_updated) values(1, $1, $2, $3)", appID, !telemetryDisabled, lastUpdated)
+	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(id, app_id, enable_telemetry, last_updated) values(1, $1, $2, $3)", appID, !telemetryDisabled, lastUpdated)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Constraint == "deployment_configuration_pkey" {
+			if pqErr.Constraint == "site_config_pkey" {
 				// The row we were trying to insert already exists.
 				// Don't treat this as an error.
 				err = nil

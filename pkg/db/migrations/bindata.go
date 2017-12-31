@@ -104,6 +104,8 @@
 // ../../../migrations/1514545501_add_comments_user_fkey.up.sql
 // ../../../migrations/1514546912_add_shared_items_user_fkey.down.sql
 // ../../../migrations/1514546912_add_shared_items_user_fkey.up.sql
+// ../../../migrations/1514691735_rename_deployment_configuration.down.sql
+// ../../../migrations/1514691735_rename_deployment_configuration.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2251,6 +2253,46 @@ func _1514546912_add_shared_items_user_fkeyUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514691735_rename_deployment_configurationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xce\x2c\x49\x8d\x4f\xce\xcf\x4b\xcb\x4c\x57\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x48\x49\x2d\xc8\xc9\xaf\xcc\x4d\xcd\x2b\x81\xca\x95\x16\x25\x96\x64\xe6\xe7\x59\x73\x11\xd0\xeb\xec\xef\x17\x1c\x12\xe4\xe8\xe9\x17\x82\x2c\x1b\x5f\x90\x9d\x5a\x89\xcf\x5c\xb0\x02\x6b\x2e\x40\x00\x00\x00\xff\xff\x36\x4e\xf0\x07\x99\x00\x00\x00")
+
+func _1514691735_rename_deployment_configurationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514691735_rename_deployment_configurationDownSql,
+		"1514691735_rename_deployment_configuration.down.sql",
+	)
+}
+
+func _1514691735_rename_deployment_configurationDownSql() (*asset, error) {
+	bytes, err := _1514691735_rename_deployment_configurationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514691735_rename_deployment_configuration.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514691735_rename_deployment_configurationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x49\x2d\xc8\xc9\xaf\xcc\x4d\xcd\x2b\x89\x4f\xce\xcf\x4b\xcb\x4c\x2f\x2d\x4a\x2c\xc9\xcc\xcf\x53\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x28\xce\x2c\x49\x85\x4a\x5a\x73\x21\xeb\x45\x92\x80\x29\x77\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\xc1\x69\x72\x7c\x41\x76\x6a\x25\x9a\xb9\x60\x31\x6b\x2e\x40\x00\x00\x00\xff\xff\xb8\x77\xd1\x90\x99\x00\x00\x00")
+
+func _1514691735_rename_deployment_configurationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514691735_rename_deployment_configurationUpSql,
+		"1514691735_rename_deployment_configuration.up.sql",
+	)
+}
+
+func _1514691735_rename_deployment_configurationUpSql() (*asset, error) {
+	bytes, err := _1514691735_rename_deployment_configurationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514691735_rename_deployment_configuration.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2407,6 +2449,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514545501_add_comments_user_fkey.up.sql":                    _1514545501_add_comments_user_fkeyUpSql,
 	"1514546912_add_shared_items_user_fkey.down.sql":              _1514546912_add_shared_items_user_fkeyDownSql,
 	"1514546912_add_shared_items_user_fkey.up.sql":                _1514546912_add_shared_items_user_fkeyUpSql,
+	"1514691735_rename_deployment_configuration.down.sql":         _1514691735_rename_deployment_configurationDownSql,
+	"1514691735_rename_deployment_configuration.up.sql":           _1514691735_rename_deployment_configurationUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2554,6 +2598,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514545501_add_comments_user_fkey.up.sql":                    &bintree{_1514545501_add_comments_user_fkeyUpSql, map[string]*bintree{}},
 	"1514546912_add_shared_items_user_fkey.down.sql":              &bintree{_1514546912_add_shared_items_user_fkeyDownSql, map[string]*bintree{}},
 	"1514546912_add_shared_items_user_fkey.up.sql":                &bintree{_1514546912_add_shared_items_user_fkeyUpSql, map[string]*bintree{}},
+	"1514691735_rename_deployment_configuration.down.sql":         &bintree{_1514691735_rename_deployment_configurationDownSql, map[string]*bintree{}},
+	"1514691735_rename_deployment_configuration.up.sql":           &bintree{_1514691735_rename_deployment_configurationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

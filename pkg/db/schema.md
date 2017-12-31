@@ -35,20 +35,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.deployment_configuration"
-```
-      Column      |  Type   |  Modifiers   
-------------------+---------+--------------
- id               | integer | not null
- app_id           | uuid    | not null
- enable_telemetry | boolean | default true
- email            | text    | 
- last_updated     | text    | 
-Indexes:
-    "deployment_configuration_pkey" PRIMARY KEY, btree (id)
-
-```
-
 # Table "public.global_dep"
 ```
   Column  |  Type   | Modifiers 
@@ -306,6 +292,20 @@ Foreign-key constraints:
  deleted_at         | timestamp with time zone | 
  public             | boolean                  | 
  author_user_id     | integer                  | 
+
+```
+
+# Table "public.site_config"
+```
+      Column      |  Type   |  Modifiers   
+------------------+---------+--------------
+ id               | integer | not null
+ app_id           | uuid    | not null
+ enable_telemetry | boolean | default true
+ email            | text    | 
+ last_updated     | text    | 
+Indexes:
+    "site_config_pkey" PRIMARY KEY, btree (id)
 
 ```
 
