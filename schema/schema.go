@@ -89,6 +89,16 @@ type SAMLAuthProvider struct {
 	ServiceProviderPrivateKey   string `json:"serviceProviderPrivateKey"`
 }
 
+// SMTPServerConfig The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
+type SMTPServerConfig struct {
+	Authentication string `json:"authentication"`
+	Domain         string `json:"domain,omitempty"`
+	Host           string `json:"host"`
+	Password       string `json:"password,omitempty"`
+	Port           int    `json:"port"`
+	Username       string `json:"username,omitempty"`
+}
+
 // SearchSavedQueries
 type SearchSavedQueries struct {
 	Description string `json:"description"`
@@ -124,6 +134,8 @@ type SiteConfiguration struct {
 	CorsOrigin                     string                     `json:"corsOrigin,omitempty"`
 	DisablePublicRepoRedirects     bool                       `json:"disablePublicRepoRedirects,omitempty"`
 	DisableTelemetry               bool                       `json:"disableTelemetry,omitempty"`
+	EmailAddress                   string                     `json:"email.address,omitempty"`
+	EmailSmtp                      *SMTPServerConfig          `json:"email.smtp,omitempty"`
 	ExecuteGradleOriginalRootPaths string                     `json:"executeGradleOriginalRootPaths,omitempty"`
 	GitMaxConcurrentClones         int                        `json:"gitMaxConcurrentClones,omitempty"`
 	GitOriginMap                   string                     `json:"gitOriginMap,omitempty"`

@@ -1433,6 +1433,12 @@
 			"revisionTime": "2016-10-24T23:08:27Z"
 		},
 		{
+			"checksumSHA1": "AdOyVgm/RMNYrsDCLBNCbTOp7Og=",
+			"path": "github.com/sloonz/go-qprintable",
+			"revision": "775b3a4592d5bfc47b0ba398ec0d4dba018e5926",
+			"revisionTime": "2016-02-03T16:03:05Z"
+		},
+		{
 			"checksumSHA1": "hg5j4kdVPNACc4G8nsb1MX/U7KE=",
 			"path": "github.com/sourcegraph/annotate",
 			"revision": "f4cad6c6324d3f584e1743d8b3e0e017a5f3a636",
@@ -2134,6 +2140,12 @@
 			"path": "gopkg.in/inf.v0",
 			"revision": "e121606b0d09b2e1c467183ee46217fa85a6b672",
 			"revisionTime": "2017-02-13T17:46:50Z"
+		},
+		{
+			"checksumSHA1": "KJqj2L8NBcfIHZt4yOPhmvy7ZJ0=",
+			"path": "gopkg.in/jpoehls/gophermail.v0",
+			"revision": "62941eab772c480c968feea68faba37f941cc931",
+			"revisionTime": "2016-04-10T23:56:21Z"
 		},
 		{
 			"checksumSHA1": "Qq9iBb+/Hjnydxe0Ait/ouqX7yE=",

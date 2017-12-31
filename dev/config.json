@@ -32,5 +32,14 @@
   "repoListUpdateInterval": 600,
   "auth.allowSignup": true,
   "auth.provider": "builtin",
+  "email.address": "noreply@sourcegraph.com",
+  "email.smtp": {
+    "host": "smtp.mandrillapp.com",
+    "port": 587,
+    "authentication": "PLAIN",
+    "username": "beyang@sourcegraph.com",
+    "password": "Gk9_YjhgJMvKu4OW9SK2aw"
+  },
+  "mandrillKey": "HUBvkcrqJAJ5ufBK52nEJQ",
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK"
 }

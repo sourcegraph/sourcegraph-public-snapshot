@@ -304,6 +304,15 @@
         "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
       "type": "string"
     },
+    "email.smtp": {
+      "$ref": "#/definitions/SMTPServerConfig"
+    },
+    "email.address": {
+      "description": "The \"from\" address for emails sent by this server.",
+      "type": "string",
+      "format": "email",
+      "default": "noreply@sourcegraph.com"
+    },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
       "$ref": "settings.schema.json#"
@@ -421,6 +430,40 @@
             "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
           "type": "string",
           "pattern": "^-----BEGIN PRIVATE KEY-----\n"
+        }
+      }
+    },
+    "SMTPServerConfig": {
+      "description":
+        "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port", "authentication"],
+      "properties": {
+        "host": {
+          "description": "The SMTP server host.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The SMTP server port.",
+          "type": "integer"
+        },
+        "username": {
+          "description": "The username to use when communicating with the SMTP server.",
+          "type": "string"
+        },
+        "password": {
+          "description": "The username to use when communicating with the SMTP server.",
+          "type": "string"
+        },
+        "authentication": {
+          "description": "The type of authentication to use for the SMTP server.",
+          "type": "string",
+          "enum": ["none", "PLAIN", "CRAM-MD5"]
+        },
+        "domain": {
+          "description": "The HELO domain to provide to the SMTP server (if needed).",
+          "type": "string"
         }
       }
     }
