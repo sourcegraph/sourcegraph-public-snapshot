@@ -103,9 +103,6 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 {this.state.saved && <p className="alert alert-success">Profile saved!</p>}
                 <form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                     <div className="user-settings-profile-page__avatar-row">
-                        <div className="user-settings-profile-page__avatar-column">
-                            <UserAvatar />
-                        </div>
                         <div className="form-group">
                             <label>Username</label>
                             <input
@@ -124,18 +121,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                 hyphen
                             </small>
                         </div>
-                    </div>
-                    <div className="form-group">
-                        <label>Email {this.state.user && this.state.user.verified ? '✔' : '(unverified)'}</label>
-                        <input
-                            readOnly={true}
-                            type="email"
-                            className="form-control"
-                            value={(this.state.user && this.state.user.email) || ''}
-                            disabled={true}
-                            spellCheck={false}
-                            placeholder="Email"
-                        />
+                        <div className="user-settings-profile-page__avatar-column">
+                            <UserAvatar />
+                        </div>
                     </div>
                     <div className="form-group">
                         <label>Display name (optional)</label>
@@ -182,8 +170,6 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         switch (code) {
             case 'err_username_exists':
                 return 'The username you selected is already taken, please try again.'
-            case 'err_email_exists':
-                return 'The email you selected is already taken, please try again.'
         }
         return 'There was an error creating your profile, please try again.'
     }

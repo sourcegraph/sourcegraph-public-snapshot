@@ -5,7 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
+
+// UserEmail represents a row in the `user_emails` table.
+type UserEmail struct {
+	UserID           int32
+	Email            string
+	CreatedAt        time.Time
+	VerificationCode *string
+	VerifiedAt       *time.Time
+}
 
 // userEmails provides access to the `user_emails` table.
 type userEmails struct{}
@@ -38,4 +48,33 @@ func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string)
 		return false, err
 	}
 	return true, nil
+}
+
+// getBySQL returns user emails matching the SQL query, if any exist.
+func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
+	rows, err := globalDB.QueryContext(ctx,
+		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
+				user_emails.verified_at FROM user_emails `+query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var userEmails []*UserEmail
+	defer rows.Close()
+	for rows.Next() {
+		var v UserEmail
+		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt)
+		if err != nil {
+			return nil, err
+		}
+		userEmails = append(userEmails, &v)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return userEmails, nil
+}
+
+func (*userEmails) ListByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
+	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at ASC, email ASC", userID)
 }

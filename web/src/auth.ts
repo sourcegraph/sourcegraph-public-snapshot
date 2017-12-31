@@ -34,7 +34,6 @@ export function refreshCurrentUser(): Observable<never> {
                 email
                 username
                 displayName
-                verified
                 siteAdmin
                 orgs {
                     id

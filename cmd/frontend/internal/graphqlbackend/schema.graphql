@@ -781,13 +781,12 @@ type User implements Node, ConfigurationSubject {
 	authID: String!
 	auth0ID: String! @deprecated(reason: "use authID instead")
 	sourcegraphID: Int!
-	email: String!
+	email: String! @deprecated(reason: "use emails instead")
 	displayName: String
 	username: String!
 	avatarURL: String
 	createdAt: String!
 	updatedAt: String
-	verified: Boolean!
 	# Whether the user is a site admin.
 	siteAdmin: Boolean!
 	# The latest settings for the user.
@@ -796,6 +795,20 @@ type User implements Node, ConfigurationSubject {
 	orgMemberships: [OrgMember!]!
 	tags: [UserTag!]!
 	activity: UserActivity!
+	# The user's email addresses.
+	emails: [UserEmail!]!
+}
+
+# A user's email address.
+type UserEmail {
+	# The email address.
+	email: String!
+	# Whether the email address has been verified by the user.
+	verified: Boolean!
+	# Whether the email address is pending verification.
+	verificationPending: Boolean!
+	# The user associated with this email address.
+	user: User!
 }
 
 # A list of organizations.
