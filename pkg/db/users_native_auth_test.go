@@ -2,8 +2,6 @@ package db
 
 import (
 	"testing"
-
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestUsers_NativeAuth(t *testing.T) {
@@ -13,50 +11,26 @@ func TestUsers_NativeAuth(t *testing.T) {
 	ctx := testContext()
 
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:       "native:foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: sourcegraph.UserProviderNative,
+		Email:       "foo@bar.com",
+		Username:    "foo",
+		DisplayName: "foo",
 	}); err == nil {
 		t.Fatal("native user created without password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:       "native:foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: sourcegraph.UserProviderNative,
-		Password:         "asdfasdf",
+		Email:       "foo@bar.com",
+		Username:    "foo",
+		DisplayName: "foo",
+		Password:    "asdfasdf",
 	}); err == nil {
 		t.Fatal("native user created without email verification code")
-	}
-	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:       "foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: "",
-		Password:         "qwer",
-	}); err == nil {
-		t.Fatal("non-native user created with password")
-	}
-	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:       "foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: "",
-		EmailCode:        "qwer",
-	}); err == nil {
-		t.Fatal("non-native user created with email verification code")
 	}
 	if _, err := Users.Create(ctx, NewUser{
 		ExternalID:       "sso:foo@bar.com",
 		Email:            "foo@bar.com",
 		Username:         "foo",
 		DisplayName:      "foo",
-		ExternalProvider: "",
+		ExternalProvider: "sso",
 		Password:         "qwer",
 	}); err == nil {
 		t.Fatal("sso user created with password")
@@ -66,20 +40,18 @@ func TestUsers_NativeAuth(t *testing.T) {
 		Email:            "foo@bar.com",
 		Username:         "foo",
 		DisplayName:      "foo",
-		ExternalProvider: "",
+		ExternalProvider: "sso",
 		EmailCode:        "qwer",
 	}); err == nil {
 		t.Fatal("sso user created with email verification code")
 	}
 
 	usr, err := Users.Create(ctx, NewUser{
-		ExternalID:       "native:foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: sourcegraph.UserProviderNative,
-		Password:         "right-password",
-		EmailCode:        "email-code",
+		Email:       "foo@bar.com",
+		Username:    "foo",
+		DisplayName: "foo",
+		Password:    "right-password",
+		EmailCode:   "email-code",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -119,16 +91,16 @@ func TestUsers_NativeAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if success, err := Users.SetPassword(ctx, usr.ID, "", "wrong-code", "new-password"); err == nil && success {
+	if success, err := Users.SetPassword(ctx, usr.ID, false, "wrong-code", "new-password"); err == nil && success {
 		t.Fatal("password updated without right reset code")
 	}
-	if success, err := Users.SetPassword(ctx, usr.ID, "", "", "new-password"); err == nil && success {
+	if success, err := Users.SetPassword(ctx, usr.ID, false, "", "new-password"); err == nil && success {
 		t.Fatal("password updated without reset code")
 	}
 	if isPassword, err := Users.IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
 		t.Fatal("password changed")
 	}
-	if success, err := Users.SetPassword(ctx, usr.ID, "", resetCode, "new-password"); err != nil || !success {
+	if success, err := Users.SetPassword(ctx, usr.ID, false, resetCode, "new-password"); err != nil || !success {
 		t.Fatalf("failed to update user password with code: %s", err)
 	}
 	if isPassword, err := Users.IsPassword(ctx, usr.ID, "new-password"); err != nil || !isPassword {
@@ -152,13 +124,11 @@ func TestUsers_NativeAuthPasswordResetRateLimit(t *testing.T) {
 
 	passwordResetRateLimit = "24 hours"
 	usr, err := Users.Create(ctx, NewUser{
-		ExternalID:       "native:foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: sourcegraph.UserProviderNative,
-		Password:         "right-password",
-		EmailCode:        "email-code",
+		Email:       "foo@bar.com",
+		Username:    "foo",
+		DisplayName: "foo",
+		Password:    "right-password",
+		EmailCode:   "email-code",
 	})
 	if err != nil {
 		t.Fatal(err)

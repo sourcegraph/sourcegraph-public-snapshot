@@ -466,7 +466,7 @@ Foreign-key constraints:
  site_admin        | boolean                  | not null default false
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
-    "users_external_id_key" UNIQUE CONSTRAINT, btree (external_id)
+    "users_external_id" UNIQUE, btree (external_id, external_provider) WHERE external_provider IS NOT NULL
     "users_username_key" UNIQUE CONSTRAINT, btree (username)
 Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)

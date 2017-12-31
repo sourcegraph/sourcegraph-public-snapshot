@@ -6,7 +6,6 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
@@ -27,12 +26,10 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 	}
 
 	user, err := db.Users.Create(ctx, db.NewUser{
-		ExternalID:       backend.NativeAuthUserExternalID(args.Email),
-		Email:            args.Email,
-		Username:         args.Username,
-		ExternalProvider: sourcegraph.UserProviderNative,
-		Password:         backend.MakeRandomHardToGuessPassword(),
-		EmailCode:        backend.MakeEmailVerificationCode(),
+		Email:     args.Email,
+		Username:  args.Username,
+		Password:  backend.MakeRandomHardToGuessPassword(),
+		EmailCode: backend.MakeEmailVerificationCode(),
 	})
 	if err != nil {
 		return nil, err

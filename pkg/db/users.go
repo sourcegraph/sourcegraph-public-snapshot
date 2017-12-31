@@ -81,7 +81,7 @@ type NewUser struct {
 
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
 // the user:
-// - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
+// - If the provider is empty, the user was authenticated by the native-auth UI using native authentication
 // - If the provider is something else, the user was authenticated by an SSO provider
 //
 // Native-auth users must also specify a password and email verification code upon creation. When the user's email is
@@ -91,10 +91,16 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 		return Mocks.Users.Create(ctx, info)
 	}
 
-	if info.ExternalProvider == sourcegraph.UserProviderNative && (info.Password == "" || info.EmailCode == "") {
+	if info.ExternalID != "" && info.ExternalProvider == "" {
+		return nil, errors.New("external ID is set but external provider is empty")
+	}
+	if info.ExternalProvider != "" && info.ExternalID == "" {
+		return nil, errors.New("external provider is set but external ID is empty")
+	}
+	if info.ExternalID == "" && (info.Password == "" || info.EmailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
-	if info.ExternalProvider != sourcegraph.UserProviderNative && (info.Password != "" || info.EmailCode != "") {
+	if info.ExternalID != "" && (info.Password != "" || info.EmailCode != "") {
 		return nil, errors.New("password and/or email verification code provided for non-native users")
 	}
 
@@ -113,8 +119,14 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 		}
 	}
 
+	dbExternalID := sql.NullString{String: info.ExternalID}
+	dbExternalID.Valid = info.ExternalID != ""
+
+	dbExternalProvider := sql.NullString{String: info.ExternalProvider}
+	dbExternalProvider.Valid = info.ExternalProvider != ""
+
 	dbEmailCode := sql.NullString{String: info.EmailCode}
-	dbEmailCode.Valid = info.EmailCode == ""
+	dbEmailCode.Valid = info.EmailCode != ""
 
 	// Wrap in transaction so we can execute hooks below atomically.
 	tx, err := globalDB.BeginTx(ctx, nil)
@@ -139,13 +151,13 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO users(external_id, username, display_name, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		info.ExternalID, info.Username, info.DisplayName, info.ExternalProvider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
+		dbExternalID, info.Username, info.DisplayName, dbExternalProvider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
 			case "users_username_key":
 				return nil, ErrUsernameExists
-			case "users_external_id_key":
+			case "users_external_id":
 				return nil, ErrExternalIDExists
 			}
 		}
@@ -401,10 +413,16 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	defer rows.Close()
 	for rows.Next() {
 		var u sourcegraph.User
-		var avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.ExternalID, &u.Username, &u.DisplayName, &u.ExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
+		var dbExternalID, dbExternalProvider, avatarURL sql.NullString
+		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &u.DisplayName, &dbExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
+		}
+		if dbExternalID.Valid {
+			u.ExternalID = dbExternalID.String
+		}
+		if dbExternalProvider.Valid {
+			u.ExternalProvider = dbExternalProvider.String
 		}
 		if avatarURL.Valid {
 			u.AvatarURL = &avatarURL.String
@@ -430,7 +448,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 			return false, err
 		}
 
-		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
+		// During the transition, new users will have provider=="" and no "auth0|" prefix.
 		// We need to check those in our own DB.
 		if user.ExternalProvider == "auth0" || strings.HasPrefix(user.ExternalID, "auth0|") {
 			ok, err := auth0.CheckPassword(ctx, email, password)
@@ -478,7 +496,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-func (u *users) SetPassword(ctx context.Context, id int32, newExternalID string, resetCode string, newPassword string) (bool, error) {
+func (u *users) SetPassword(ctx context.Context, id int32, removeExternalProvider bool, resetCode string, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -503,12 +521,12 @@ func (u *users) SetPassword(ctx context.Context, id int32, newExternalID string,
 	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
 	}
-	if newExternalID != "" {
-		// Also, this user effectively becomes a builtin (native) auth user since we now store their password, so
+	if removeExternalProvider {
+		// This user effectively becomes a builtin (native) auth user since we now store their password, so
 		// update them accordingly.
 		//
 		// TODO(sqs): remove after migration away from auth0
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET external_id=$1 WHERE id=$2", newExternalID, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET external_id=null, external_provider=null WHERE id=$1", id); err != nil {
 			return false, err
 		}
 	}

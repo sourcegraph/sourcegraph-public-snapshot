@@ -14,17 +14,10 @@ import (
 type Actor struct {
 	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
 	UID int32 `json:",omitempty"`
-
-	// Provider is the ID provider that is the source of truth for this user's identity.
-	// It is either the URL of a SSO Provider or "" if the user authenticated via
-	// the native authentication flow.
-	Provider string
 }
 
 // FromUser returns an actor corresponding to a user
-func FromUser(usr *sourcegraph.User) *Actor {
-	return &Actor{UID: usr.ID, Provider: usr.ExternalProvider}
-}
+func FromUser(usr *sourcegraph.User) *Actor { return &Actor{UID: usr.ID} }
 
 // UIDString is a helper method that returns the UID as a string.
 func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
