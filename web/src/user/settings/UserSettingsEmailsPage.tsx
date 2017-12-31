@@ -37,18 +37,19 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
             <div className="user-settings-emails-page">
                 <PageTitle title="Emails" />
                 <h2>Emails</h2>
-                {this.state.emails && this.state.emails.length > 0 ? (
-                    <ul className="user-settings-emails-page__list">
-                        {this.state.emails.map((e, i) => (
-                            <li key={i} className="user-settings-emails-page__item">
-                                {e.email} {e.verified && <span title="Verified email">✔</span>}
-                                {e.verificationPending && <span>(verification pending)</span>}
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No email addresses are associated with your account.</p>
-                )}
+                {this.state.emails &&
+                    (this.state.emails.length > 0 ? (
+                        <ul className="user-settings-emails-page__list">
+                            {this.state.emails.map((e, i) => (
+                                <li key={i} className="user-settings-emails-page__item">
+                                    {e.email} {e.verified && <span title="Verified email">✔</span>}
+                                    {e.verificationPending && <span>(verification pending)</span>}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>No email addresses are associated with your account.</p>
+                    ))}
             </div>
         )
     }
