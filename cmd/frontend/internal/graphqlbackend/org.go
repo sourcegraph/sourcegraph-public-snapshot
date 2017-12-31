@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
@@ -16,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
@@ -288,7 +286,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("must be logged in")
 	}
-	email, _, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
+	email, emailVerified, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
@@ -313,9 +311,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 
 	if envvar.SourcegraphDotComMode() {
 		// Only allow email-verified users to send invites.
-		if emailVerified, err := auth0.GetEmailVerificationStatus(ctx); err != nil {
-			return nil, err
-		} else if !emailVerified && strings.HasPrefix(currentUser.AuthID(), "auth0|") {
+		if !emailVerified {
 			return nil, errors.New("must verify your email to send invites")
 		}
 

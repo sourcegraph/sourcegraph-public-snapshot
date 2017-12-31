@@ -19,8 +19,8 @@ import (
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db/auth0tmp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -427,7 +427,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
 		// We need to check those in our own DB.
 		if user.Provider == "auth0" || strings.HasPrefix(user.AuthID, "auth0|") {
-			ok, err := auth0tmp.CheckPassword(ctx, email, password)
+			ok, err := auth0.CheckPassword(ctx, email, password)
 			// log15.Info("checking password via auth0", "user", user.Username, "authID", user.AuthID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err
 		}
