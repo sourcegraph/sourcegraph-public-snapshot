@@ -27,9 +27,6 @@ type Actor struct {
 	// It is either the URL of a SSO Provider or "" if the user authenticated via
 	// the native authentication flow.
 	Provider string
-
-	// AvatarURL is the URL to an avatar image for the user, if it is known.
-	AvatarURL string
 }
 
 // FromUser returns an actor corresponding to a user
