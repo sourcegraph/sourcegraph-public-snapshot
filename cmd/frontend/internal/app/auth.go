@@ -34,8 +34,7 @@ type credentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 
-	Username    string `json:"username"`
-	DisplayName string `json:"displayName"`
+	Username string `json:"username"`
 }
 
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
@@ -53,19 +52,13 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	displayName := creds.DisplayName
-	if displayName == "" {
-		displayName = creds.Username
-	}
-
 	// Create user
 	emailCode := backend.MakeEmailVerificationCode()
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
-		Email:       creds.Email,
-		Username:    creds.Username,
-		DisplayName: displayName,
-		Password:    creds.Password,
-		EmailCode:   emailCode,
+		Email:     creds.Email,
+		Username:  creds.Username,
+		Password:  creds.Password,
+		EmailCode: emailCode,
 	})
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
