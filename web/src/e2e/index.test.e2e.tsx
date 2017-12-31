@@ -439,12 +439,16 @@ describe('e2e test suite', () => {
                     await assertAllHighlightedTokens('MultiFileDiffReader')
                 })
 
-                // Testing external references on localhost is unreliable, since different dev environments will
-                // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
-                // 1 repo, in which case there would never be external references. So we *only* run this test against
-                // non-localhost servers.
-                const test = baseURL === 'http://localhost:3080' ? it.skip : it
-                test('opens widget and fetches external references', async () => {
+                it('opens widget and fetches external references', async function(): Promise<void> {
+                    // Testing external references on localhost is unreliable, since different dev environments will
+                    // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
+                    // 1 repo, in which case there would never be external references. So we *only* run this test against
+                    // non-localhost servers.
+                    if (baseURL === 'http://localhost:3080') {
+                        this.skip()
+                        return
+                    }
+
                     await chrome.goto(
                         baseURL +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16$references:external'

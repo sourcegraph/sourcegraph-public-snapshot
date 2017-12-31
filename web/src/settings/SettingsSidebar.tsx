@@ -217,7 +217,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
 
     private toggleTheme = () => setColorTheme(getColorTheme() === 'light' ? 'dark' : 'light')
 
-    private logTelemetryOnSignOut(): void {
+    private logTelemetryOnSignOut = (): void => {
         eventLogger.log('SignOutClicked')
     }
 }
