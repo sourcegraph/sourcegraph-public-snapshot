@@ -365,7 +365,7 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, use
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
 	}
 	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"))
-	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth_id) WHERE %s", sqlf.Join(conds, "AND"))
+	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.id) WHERE %s", sqlf.Join(conds, "AND"))
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
@@ -502,7 +502,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, res
 		// update them accordingly.
 		//
 		// TODO(sqs): remove after migration away from auth0
-		if _, err := globalDB.ExecContext(ctx, "WITH abc1 AS (UPDATE threads SET author_user_id=$1 WHERE author_user_id=(SELECT auth_id FROM users WHERE id=$2)), abc2 AS (UPDATE comments SET author_user_id=$1 WHERE author_user_id=(SELECT auth_id FROM users WHERE id=$2)), x AS (UPDATE settings SET author_auth_id=$1 WHERE author_auth_id=(SELECT auth_id FROM users WHERE id=$2)), y AS (UPDATE org_members SET user_id=$1 WHERE user_id=(SELECT auth_id FROM users WHERE id=$2)) UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
 			return false, err
 		}
 	}
