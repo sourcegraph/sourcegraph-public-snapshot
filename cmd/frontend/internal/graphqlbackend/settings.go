@@ -38,7 +38,7 @@ func (o *settingsResolver) CreatedAt() string {
 func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 	if o.user == nil {
 		var err error
-		o.user, err = db.Users.GetByAuthID(ctx, o.settings.AuthorAuthID)
+		o.user, err = db.Users.GetByID(ctx, o.settings.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -82,14 +82,12 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
-
 	org, err := db.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.UID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}

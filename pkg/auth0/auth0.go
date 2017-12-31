@@ -5,135 +5,56 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/url"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-var Domain = env.Get("AUTH0_DOMAIN", "", "domain of the Auth0 account")
+var domain = env.Get("AUTH0_DOMAIN", "", "domain of the Auth0 account")
 
-var Config = &oauth2.Config{
+var config = &oauth2.Config{
 	ClientID:     env.Get("AUTH0_CLIENT_ID", "", "OAuth client ID for Auth0"),
 	ClientSecret: env.Get("AUTH0_CLIENT_SECRET", "", "OAuth client secret for Auth0"),
 	Endpoint: oauth2.Endpoint{
-		AuthURL:  "https://" + Domain + "/authorize",
-		TokenURL: "https://" + Domain + "/oauth/token",
+		AuthURL:  "https://" + domain + "/authorize",
+		TokenURL: "https://" + domain + "/oauth/token",
 	},
 }
 
 var auth0ManagementTokenSource = (&clientcredentials.Config{
-	ClientID:     Config.ClientID,
-	ClientSecret: Config.ClientSecret,
-	TokenURL:     "https://" + Domain + "/oauth/token",
+	ClientID:     config.ClientID,
+	ClientSecret: config.ClientSecret,
+	TokenURL:     "https://" + domain + "/oauth/token",
 	EndpointParams: url.Values{
-		"audience": []string{"https://" + Domain + "/api/v2/"},
+		"audience": []string{"https://" + domain + "/api/v2/"},
 	},
 }).TokenSource(context.Background())
 
-// User represents the user information returned from Auth0 profile information
-type User struct {
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	FamilyName    string `json:"family_name"`
-	Gender        string `json:"gender"`
-	GivenName     string `json:"given_name"`
-	AppMetadata   struct {
-		DidLoginBefore bool `json:"did_login_before"`
-	} `json:"app_metadata"`
-	UserMetadata struct {
-		DisplayName string `json:"name"`
-	} `json:"user_metadata"`
-	Identities []struct {
-		Provider   string `json:"provider"`
-		UserID     string `json:"user_id"`
-		Connection string `json:"connection"`
-		IsSocial   bool   `json:"isSocial"`
-	} `json:"identities"`
-	Locale   string `json:"locale"`
-	Name     string `json:"name"`
-	Nickname string `json:"nickname"`
-	Username string `json:"username"`
-	Picture  string `json:"picture"`
-	UserID   string `json:"user_id"`
-}
-
-func GetAuth0User(ctx context.Context) (*User, error) {
-	actor := actor.FromContext(ctx)
-	uid := actor.AuthInfo().UID
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users/" + uid)
-	if err != nil {
-		return nil, err
-	}
-	var user User
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
-func GetEmailVerificationStatus(ctx context.Context) (bool, error) {
-	user, err := GetAuth0User(ctx)
+// CheckPassword asks Auth0 if the given username and password are valid.
+//
+// TODO(sqs): migrate the Auth0 password hashes to our own DB and remove this func
+func CheckPassword(ctx context.Context, username, password string) (bool, error) {
+	// Resource Owner Password (OAuth 2.0 grant)
+	body, err := json.Marshal(map[string]string{
+		"grant_type":    "password",
+		"username":      username,
+		"password":      password,
+		"scope":         "",
+		"client_id":     config.ClientID,
+		"client_secret": config.ClientSecret,
+	})
 	if err != nil {
 		return false, err
 	}
-	return user.EmailVerified, nil
-}
 
-type AppMetadata struct {
-	AppMetadata map[string]interface{} `json:"app_metadata"`
-}
-
-func SetAppMetadata(ctx context.Context, uid string, key string, value interface{}) error {
-	body, err := json.Marshal(AppMetadata{
-		AppMetadata: map[string]interface{}{
-			key: value,
-		},
-	})
+	resp, err := http.Post(config.Endpoint.TokenURL, "application/json", bytes.NewReader(body))
 	if err != nil {
-		return err
-	}
-
-	return updateUser(ctx, uid, body)
-}
-
-type EmailVerification struct {
-	Connection    string `json:"connection"`
-	EmailVerified bool   `json:"email_verified"`
-}
-
-func VerifyEmail(ctx context.Context, uid string) error {
-	body, err := json.Marshal(EmailVerification{
-		Connection:    "Sourcegraph",
-		EmailVerified: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	return updateUser(ctx, uid, body)
-}
-
-func updateUser(ctx context.Context, uid string, body []byte) error {
-	req, err := http.NewRequest("PATCH", "https://"+Domain+"/api/v2/users/"+uid, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Do(req)
-	if err != nil {
-		return err
+		return false, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed to update user")
-	}
-
-	return nil
+	return resp.StatusCode == http.StatusOK, nil
 }

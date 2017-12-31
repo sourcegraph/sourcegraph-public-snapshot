@@ -15,7 +15,8 @@ interface Window {
  * and (2) not change over a user session
  */
 interface ImmutableUser {
-    readonly UID: string
+    readonly UID: number
+    readonly externalID: string
 }
 
 interface License {
@@ -46,7 +47,6 @@ interface SourcegraphContext {
     readonly user: ImmutableUser | null
 
     sentryDSN: string
-    intercomHash: string
 
     /** Base URL for app (e.g., https://sourcegraph.com or http://localhost:3080) */
     appURL: string

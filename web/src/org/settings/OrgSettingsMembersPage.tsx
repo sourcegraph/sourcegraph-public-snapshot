@@ -67,7 +67,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                         eventLogger.log('RemoveOrgMemberClicked', {
                             organization: {
                                 remove: {
-                                    auth_id: member.user,
+                                    external_id: member.user,
                                 },
                                 org_id: member.org.id,
                             },
@@ -87,7 +87,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                                 ].join('')
                             )
                         }
-                        if (user.authID === member.user.authID) {
+                        if (user.id === member.user.id) {
                             return confirm(`Leave this organization?`)
                         }
                         return confirm(`Remove ${member.user.displayName} from this organization?`)
@@ -96,13 +96,13 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                         removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.id).pipe(
                             concat([
                                 {
-                                    left: memberToRemove.user.authID === user!.authID,
+                                    left: memberToRemove.user.id === user!.id,
                                     org:
                                         this.state.org &&
                                         ({
                                             ...this.state.org,
                                             members: this.state.org.members.filter(
-                                                member => member.user.authID !== memberToRemove.user.authID
+                                                member => member.user.id !== memberToRemove.user.id
                                             ),
                                         } as GQL.IOrg),
                                 },
@@ -163,7 +163,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                                     {this.props.user && (
                                         <button
                                             className="btn btn-icon"
-                                            title={this.props.user.authID === member.user.authID ? 'Leave' : 'Remove'}
+                                            title={this.props.user.id === member.user.id ? 'Leave' : 'Remove'}
                                             // tslint:disable-next-line:jsx-no-lambda
                                             onClick={() => this.memberRemoves.next({ ...member, org: this.state.org })}
                                         >

@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
+
+var errMustBeSiteAdmin = errors.New("must be site admin")
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
 func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
@@ -16,7 +19,25 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
 	}
 	// 🚨 SECURITY: Only site admins can make other users site admins (or demote).
 	if user == nil || !user.SiteAdmin {
-		return errors.New("must be site admin")
+		return errMustBeSiteAdmin
+	}
+	return nil
+}
+
+// CheckSiteAdminOrSameUser returns an error if the user is NEITHER (1) a
+// site admin NOR (2) the user specified by subjectUserID.
+//
+// It is used when an action on a user can be performed by site admins and the
+// user themselves, but nobody else.
+func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
+	actor := actor.FromContext(ctx)
+	if actor.IsAuthenticated() && actor.UID == subjectUserID {
+		return nil
+	}
+	if err := CheckCurrentUserIsSiteAdmin(ctx); err == errMustBeSiteAdmin {
+		return errors.New("must be site admin or the self user")
+	} else if err != nil {
+		return err
 	}
 	return nil
 }

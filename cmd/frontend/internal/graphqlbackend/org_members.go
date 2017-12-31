@@ -15,10 +15,6 @@ type orgMemberResolver struct {
 	user   *sourcegraph.User
 }
 
-type orgInviteResolver struct {
-	emailVerified bool
-}
-
 func (m *orgMemberResolver) ID() int32 {
 	return m.member.ID
 }
@@ -53,10 +49,6 @@ func (m *orgMemberResolver) UpdatedAt() string {
 	return m.member.UpdatedAt.Format(time.RFC3339) // ISO
 }
 
-func (i *orgInviteResolver) EmailVerified() bool {
-	return i.emailVerified
-}
-
 var mockAllEmailsForOrg func(ctx context.Context, orgID int32, excludeByUserID []int32) ([]string, error)
 
 func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) ([]string, error) {
@@ -77,14 +69,14 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) 
 		if _, ok := exclude[m.UserID]; ok {
 			continue
 		}
-		user, err := db.Users.GetByID(ctx, m.UserID)
+		email, _, err := db.UserEmails.GetEmail(ctx, m.UserID)
 		if err != nil {
 			// This shouldn't happen, but we don't want to prevent the notification,
 			// so swallow the error.
 			log15.Error("get user", "uid", m.UserID, "error", err)
 			continue
 		}
-		emails = append(emails, user.Email)
+		emails = append(emails, email)
 	}
 	return emails, nil
 }

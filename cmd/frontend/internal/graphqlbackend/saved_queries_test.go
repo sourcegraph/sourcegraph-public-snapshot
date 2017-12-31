@@ -18,7 +18,6 @@ func TestSavedQueries(t *testing.T) {
 	uid := int32(1)
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{ID: uid}, nil)
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
 		return &sourcegraph.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
@@ -50,18 +49,17 @@ func TestCreateSavedQuery(t *testing.T) {
 	ctx := context.Background()
 
 	uid := int32(1)
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "uid"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, AuthID: "uid"}}}
+	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}}
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid}, nil)
 	calledSettingsCreateIfUpToDate := false
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
 		return &sourcegraph.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuthID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *sourcegraph.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &sourcegraph.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
@@ -111,14 +109,13 @@ func TestUpdateSavedQuery(t *testing.T) {
 	ctx := context.Background()
 
 	uid := int32(1)
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "uid"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, AuthID: "uid"}}}
+	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}}
 	newDescription := "d2"
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid}, nil)
 	calledSettingsGetLatest := false
 	calledSettingsCreateIfUpToDate := false
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
@@ -128,7 +125,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 		}
 		return &sourcegraph.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuthID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *sourcegraph.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &sourcegraph.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}

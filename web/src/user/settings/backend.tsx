@@ -156,7 +156,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 gql`
                     mutation updateUser($username: String!, $displayName: String!, $avatarURL: String) {
                         updateUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
-                            authID
+                            id
                             sourcegraphID
                             username
                         }
@@ -174,7 +174,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                 auth: {
                     user: {
                         id: data.updateUser.sourcegraphID,
-                        auth_id: data.updateUser.authID,
+                        external_id: data.updateUser.externalID,
                         username: data.updateUser.username,
                         display_name: options.displayName,
                         avatar_url: options.avatarUrl,

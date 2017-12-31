@@ -109,9 +109,9 @@ func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
 func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	ctx := r.Context()
 	subject := r.Header.Get("X-Saml-Subject") // this header is set by the SAML library after extracting the value from the JWT cookie
-	authID := samlToAuthID(idpID, subject)
+	externalID := samlToExternalID(idpID, subject)
 
-	usr, err := db.Users.GetByAuthID(ctx, authID)
+	usr, err := db.Users.GetByExternalID(ctx, idpID, externalID)
 	if _, notFound := err.(db.ErrUserNotFound); notFound {
 		email := r.Header.Get("X-Saml-Email")
 		if email == "" && mightBeEmail(subject) {
@@ -143,17 +143,23 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 			return nil, err
 		}
 
-		usr, err = db.Users.Create(ctx, authID, email, login, displayName, idpID, nil, "", "")
+		usr, err = db.Users.Create(ctx, db.NewUser{
+			ExternalID:       externalID,
+			Email:            email,
+			Username:         login,
+			DisplayName:      displayName,
+			ExternalProvider: idpID,
+		})
 		if err != nil {
-			return nil, fmt.Errorf("could not create user with authID %q, login %q: %s", authID, login, err)
+			return nil, fmt.Errorf("could not create user with externalID %q, login %q: %s", externalID, login, err)
 		}
 	} else if err != nil {
-		return nil, fmt.Errorf("could not get user with authID %q: %s", authID, err)
+		return nil, fmt.Errorf("could not get user with externalID %q: %s", externalID, err)
 	}
 	return actor.FromUser(usr), nil
 }
 
-func samlToAuthID(idpID, subject string) string {
+func samlToExternalID(idpID, subject string) string {
 	return fmt.Sprintf("%s:%s", idpID, subject)
 }
 

@@ -19,8 +19,8 @@ import (
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db/auth0tmp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -63,42 +63,70 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
+var (
+	ErrUsernameExists   = ErrCannotCreateUser{"err_username_exists"}
+	ErrExternalIDExists = ErrCannotCreateUser{"err_external_id_exists"}
+)
+
+// NewUser describes a new to-be-created user.
+type NewUser struct {
+	ExternalID       string
+	Email            string
+	Username         string
+	DisplayName      string
+	ExternalProvider string
+	Password         string
+	EmailCode        string
+}
+
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
 // the user:
-// - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
+// - If the provider is empty, the user is a builtin user with no external auth account associated
 // - If the provider is something else, the user was authenticated by an SSO provider
 //
-// Native-auth users must also specify a password and email verification code upon creation. When the user's email is
+// Builtin users must also specify a password and email verification code upon creation. When the user's email is
 // verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
-func (*users) Create(ctx context.Context, authID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
-	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
-		return nil, errors.New("no password or email code provided for new native-auth user")
+func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.User, err error) {
+	if Mocks.Users.Create != nil {
+		return Mocks.Users.Create(ctx, info)
 	}
-	if provider != sourcegraph.UserProviderNative && (password != "" || emailCode != "") {
-		return nil, errors.New("password and/or email verification code provided for non-native users")
+
+	if info.ExternalID != "" && info.ExternalProvider == "" {
+		return nil, errors.New("external ID is set but external provider is empty")
+	}
+	if info.ExternalProvider != "" && info.ExternalID == "" {
+		return nil, errors.New("external provider is set but external ID is empty")
+	}
+	if info.ExternalID == "" && (info.Password == "" || info.EmailCode == "") {
+		return nil, errors.New("no password or email code provided for new builtin user")
+	}
+	if info.ExternalID != "" && (info.Password != "" || info.EmailCode != "") {
+		return nil, errors.New("password and/or email verification code provided for external user")
 	}
 
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
-	var avatarURLValue sql.NullString
-	if avatarURL != nil {
-		avatarURLValue = sql.NullString{String: *avatarURL, Valid: true}
-	}
 
 	var passwd sql.NullString
-	if password == "" {
+	if info.Password == "" {
 		passwd = sql.NullString{Valid: false}
 	} else {
 		// Compute hash of password
-		passwd, err = hashPassword(password)
+		passwd, err = hashPassword(info.Password)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	dbEmailCode := sql.NullString{String: emailCode}
-	dbEmailCode.Valid = emailCode == ""
+	dbExternalID := sql.NullString{String: info.ExternalID}
+	dbExternalID.Valid = info.ExternalID != ""
+
+	dbExternalProvider := sql.NullString{String: info.ExternalProvider}
+	dbExternalProvider.Valid = info.ExternalProvider != ""
+
+	dbEmailCode := sql.NullString{String: info.EmailCode}
+	dbEmailCode.Valid = info.EmailCode != ""
 
 	// Wrap in transaction so we can execute hooks below atomically.
 	tx, err := globalDB.BeginTx(ctx, nil)
@@ -122,20 +150,32 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		authID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id, &isSiteAdmin)
+		"INSERT INTO users(external_id, username, display_name, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
+		dbExternalID, info.Username, info.DisplayName, dbExternalProvider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
 			case "users_username_key":
-				return nil, ErrCannotCreateUser{"err_username_exists"}
-			case "users_email_key":
-				return nil, ErrCannotCreateUser{"err_email_exists"}
-			case "users_auth_id_key":
-				return nil, ErrCannotCreateUser{"err_auth_id_exists"}
+				return nil, ErrUsernameExists
+			case "users_external_id":
+				return nil, ErrExternalIDExists
 			}
 		}
 		return nil, err
+	}
+
+	if info.Email != "" {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)",
+			id, info.Email, info.EmailCode,
+		); err != nil {
+			if pqErr, ok := err.(*pq.Error); ok {
+				switch pqErr.Constraint {
+				case "user_emails_email_key":
+					return nil, ErrCannotCreateUser{"err_email_exists"}
+				}
+			}
+			return nil, err
+		}
 	}
 
 	{
@@ -155,16 +195,14 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 	}
 
 	return &sourcegraph.User{
-		ID:          id,
-		AuthID:      authID,
-		Email:       email,
-		Username:    username,
-		DisplayName: displayName,
-		Provider:    provider,
-		AvatarURL:   avatarURL,
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
-		SiteAdmin:   isSiteAdmin,
+		ID:               id,
+		ExternalID:       info.ExternalID,
+		Username:         info.Username,
+		DisplayName:      info.DisplayName,
+		ExternalProvider: info.ExternalProvider,
+		CreatedAt:        createdAt,
+		UpdatedAt:        updatedAt,
+		SiteAdmin:        isSiteAdmin,
 	}, nil
 }
 
@@ -276,18 +314,27 @@ func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByAuthID(ctx context.Context, id string) (*sourcegraph.User, error) {
-	if Mocks.Users.GetByAuthID != nil {
-		return Mocks.Users.GetByAuthID(ctx, id)
+// GetByExternalID gets the user (if any) from the database that is associated with an external
+// user account, based on the given provider and ID on the provider.
+func (u *users) GetByExternalID(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
+	if provider == "" || id == "" {
+		panic(fmt.Sprintf("GetByExternalID: both provider (%q) and id (%q) must be nonempty", provider, id))
 	}
-	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	if Mocks.Users.GetByExternalID != nil {
+		return Mocks.Users.GetByExternalID(ctx, provider, id)
+	}
+	return u.getOneBySQL(ctx, "WHERE external_provider=$1 AND external_id=$2 AND deleted_at IS NULL LIMIT 1", provider, id)
 }
 
 func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User, error) {
-	return u.getOneBySQL(ctx, "WHERE email=$1 AND deleted_at IS NULL LIMIT 1", email)
+	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1) AND deleted_at IS NULL LIMIT 1", email)
 }
 
 func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegraph.User, error) {
+	if Mocks.Users.GetByUsername != nil {
+		return Mocks.Users.GetByUsername(ctx, username)
+	}
+
 	return u.getOneBySQL(ctx, "WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
@@ -301,7 +348,7 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 		return nil, errors.New("no current user")
 	}
 
-	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
+	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
 func (u *users) Count(ctx context.Context) (int, error) {
@@ -316,7 +363,7 @@ func (u *users) Count(ctx context.Context) (int, error) {
 }
 
 // ListByOrg returns users for a given org. It can also query a list of specific
-// users by either authIDs or usernames.
+// users by either user IDs or usernames.
 func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
 	if Mocks.Users.ListByOrg != nil {
 		return Mocks.Users.ListByOrg(ctx, orgID, userIDs, usernames)
@@ -341,7 +388,7 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, use
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
 	}
 	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"))
-	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.auth_id) WHERE %s", sqlf.Join(conds, "AND"))
+	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.id) WHERE %s", sqlf.Join(conds, "AND"))
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
@@ -362,7 +409,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.email_code is null, u.site_admin FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.external_id, u.username, u.display_name, u.external_provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -371,13 +418,19 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	defer rows.Close()
 	for rows.Next() {
 		var u sourcegraph.User
-		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.AuthID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified, &u.SiteAdmin)
+		var dbExternalID, dbExternalProvider, avatarURL sql.NullString
+		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &u.DisplayName, &dbExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
-		if avatarUrl.Valid {
-			u.AvatarURL = &avatarUrl.String
+		if dbExternalID.Valid {
+			u.ExternalID = dbExternalID.String
+		}
+		if dbExternalProvider.Valid {
+			u.ExternalProvider = dbExternalProvider.String
+		}
+		if avatarURL.Valid {
+			u.AvatarURL = &avatarURL.String
 		}
 		users = append(users, &u)
 	}
@@ -394,11 +447,17 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 		if err != nil {
 			return false, err
 		}
-		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
+
+		email, _, err := UserEmails.GetEmail(ctx, id)
+		if err != nil {
+			return false, err
+		}
+
+		// During the transition, new users will have provider=="" and no "auth0|" prefix.
 		// We need to check those in our own DB.
-		if user.Provider == "auth0" || strings.HasPrefix(user.AuthID, "auth0|") {
-			ok, err := auth0tmp.CheckPassword(ctx, user.Email, password)
-			// log15.Info("checking password via auth0", "user", user.Username, "authID", user.AuthID, "email", user.Email, "ok", ok, "err", err)
+		if user.ExternalProvider == "auth0" || strings.HasPrefix(user.ExternalID, "auth0|") {
+			ok, err := auth0.CheckPassword(ctx, email, password)
+			// log15.Info("checking password via auth0", "user", user.Username, "externalID", user.ExternalID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err
 		}
 	}
@@ -411,23 +470,6 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 		return false, nil
 	}
 	return bcrypt.CompareHashAndPassword([]byte(passwd.String), []byte(password)) == nil, nil
-}
-
-func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
-	var dbCode sql.NullString
-	if err := globalDB.QueryRowContext(ctx, "SELECT email_code FROM users WHERE id=$1", id).Scan(&dbCode); err != nil {
-		return false, err
-	}
-	if !dbCode.Valid {
-		return false, errors.New("email already verified")
-	}
-	if dbCode.String != userCode {
-		return false, nil
-	}
-	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET email_code=null WHERE id=$1", id); err != nil {
-		return false, err
-	}
-	return true, nil
 }
 
 var (
@@ -459,7 +501,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, resetCode string, newPassword string) (bool, error) {
+func (u *users) SetPassword(ctx context.Context, id int32, removeExternalProvider bool, resetCode string, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -484,12 +526,12 @@ func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, res
 	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
 	}
-	if newAuthID != "" {
-		// Also, this user effectively becomes a builtin (native) auth user since we now store their password, so
+	if removeExternalProvider {
+		// This user effectively becomes a builtin auth user since we now store their password, so
 		// update them accordingly.
 		//
 		// TODO(sqs): remove after migration away from auth0
-		if _, err := globalDB.ExecContext(ctx, "WITH abc1 AS (UPDATE threads SET author_user_id=$1 WHERE author_user_id=(SELECT auth_id FROM users WHERE id=$2)), abc2 AS (UPDATE comments SET author_user_id=$1 WHERE author_user_id=(SELECT auth_id FROM users WHERE id=$2)), x AS (UPDATE settings SET author_auth_id=$1 WHERE author_auth_id=(SELECT auth_id FROM users WHERE id=$2)), y AS (UPDATE org_members SET user_id=$1 WHERE user_id=(SELECT auth_id FROM users WHERE id=$2)) UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET external_id=null, external_provider=null WHERE id=$1", id); err != nil {
 			return false, err
 		}
 	}

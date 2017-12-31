@@ -68,8 +68,8 @@ func Middleware(next http.Handler) http.Handler {
 		routeName := "unknown"
 		ctx = context.WithValue(ctx, routeNameKey, &routeName)
 
-		user := ""
-		ctx = context.WithValue(ctx, userKey, &user)
+		var userID int32
+		ctx = context.WithValue(ctx, userKey, &userID)
 
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
@@ -93,7 +93,7 @@ func Middleware(next http.Handler) http.Handler {
 			"routename", routeName,
 			"trace", SpanURL(span),
 			"userAgent", r.UserAgent(),
-			"user", user,
+			"user", userID,
 			"xForwardedFor", r.Header.Get("X-Forwarded-For"),
 			"written", m.Written,
 			"code", m.Code,
@@ -113,9 +113,9 @@ func TraceRoute(next http.Handler) http.Handler {
 	})
 }
 
-func TraceUser(ctx context.Context, user string) {
-	if p, ok := ctx.Value(userKey).(*string); ok {
-		*p = user
+func TraceUser(ctx context.Context, userID int32) {
+	if p, ok := ctx.Value(userKey).(*int32); ok {
+		*p = userID
 	}
 }
 

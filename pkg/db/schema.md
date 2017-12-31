@@ -242,18 +242,32 @@ Indexes:
 ----------------+--------------------------+-------------------------------------------------------
  id             | integer                  | not null default nextval('settings_id_seq'::regclass)
  org_id         | integer                  | 
- author_auth_id | text                     | not null
  contents       | text                     | 
  created_at     | timestamp with time zone | not null default now()
  user_id        | integer                  | 
+ author_user_id | integer                  | not null
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "has_subject" CHECK (org_id IS NOT NULL OR user_id IS NOT NULL)
 Foreign-key constraints:
+    "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
-    "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.settings_bkup_1514702776"
+```
+       Column       |           Type           | Modifiers 
+--------------------+--------------------------+-----------
+ id                 | integer                  | 
+ org_id             | integer                  | 
+ author_user_id_old | text                     | 
+ contents           | text                     | 
+ created_at         | timestamp with time zone | 
+ user_id            | integer                  | 
+ author_user_id     | integer                  | 
 
 ```
 
@@ -399,6 +413,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.user_emails"
+```
+      Column       |           Type           |       Modifiers        
+-------------------+--------------------------+------------------------
+ user_id           | integer                  | not null
+ email             | citext                   | not null
+ created_at        | timestamp with time zone | not null default now()
+ verification_code | text                     | 
+ verified_at       | timestamp with time zone | 
+Indexes:
+    "user_emails_email_key" UNIQUE CONSTRAINT, btree (email)
+Foreign-key constraints:
+    "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+
+```
+
 # Table "public.user_tags"
 ```
    Column   |           Type           |                       Modifiers                        
@@ -421,37 +451,36 @@ Foreign-key constraints:
       Column       |           Type           |                     Modifiers                      
 -------------------+--------------------------+----------------------------------------------------
  id                | integer                  | not null default nextval('users_id_seq'::regclass)
- auth_id           | text                     | not null
- email             | citext                   | not null
+ external_id       | text                     | 
  username          | citext                   | not null
  display_name      | text                     | not null
  avatar_url        | text                     | 
  created_at        | timestamp with time zone | not null default now()
  updated_at        | timestamp with time zone | not null default now()
  deleted_at        | timestamp with time zone | 
- provider          | text                     | not null default ''::text
+ external_provider | text                     | 
  invite_quota      | integer                  | not null default 15
  passwd            | text                     | 
- email_code        | text                     | 
  passwd_reset_code | text                     | 
  passwd_reset_time | timestamp with time zone | 
  site_admin        | boolean                  | not null default false
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
-    "users_auth_id_key" UNIQUE CONSTRAINT, btree (auth_id)
-    "users_email_key" UNIQUE CONSTRAINT, btree (email)
+    "users_external_id" UNIQUE, btree (external_id, external_provider) WHERE external_provider IS NOT NULL
     "users_username_key" UNIQUE CONSTRAINT, btree (username)
 Check constraints:
+    "check_external_id" CHECK ((external_provider IS NULL) = (external_id IS NULL))
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
     TABLE "comments" CONSTRAINT "comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
-    TABLE "settings" CONSTRAINT "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
+    TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "shared_items" CONSTRAINT "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "threads" CONSTRAINT "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_activity" CONSTRAINT "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```

@@ -32,7 +32,6 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                         createdAt
                         user {
                             id
-                            authID
                             username
                             email
                             displayName
@@ -161,10 +160,8 @@ export interface AcceptUserInviteOptions {
 
 /**
  * Sends a GraphQL mutation to accept an invitation to an org
- *
- * @return An Observable that does not emit items and completes when done
  */
-export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<GQL.IOrgInviteStatus> {
+export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<void> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
@@ -174,9 +171,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
             return mutateGraphQL(
                 gql`
                     mutation AcceptUserInvite {
-                        acceptUserInvite(inviteToken: $inviteToken) {
-                            emailVerified
-                        }
+                        acceptUserInvite(inviteToken: $inviteToken) { }
                     }
                 `,
                 options
@@ -187,7 +182,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<G
                 eventLogger.log('AcceptInviteFailed')
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.acceptUserInvite
+            return
         })
     )
 }

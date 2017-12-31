@@ -151,12 +151,14 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	defer idpHTTPServer.Close()
 
 	// Mock user
-	mockedUserID := samlToAuthID(idpHTTPServer.URL+"/metadata", "testuser_id")
-	db.Mocks.Users.GetByAuthID = func(ctx context.Context, uid string) (*sourcegraph.User, error) {
-		if uid == mockedUserID {
-			return &sourcegraph.User{ID: 123, AuthID: uid, Username: uid}, nil
+	mockedProvider := idpHTTPServer.URL + "/metadata"
+	mockedExternalID := samlToExternalID(mockedProvider, "testuser_id")
+	const mockedUserID = 123
+	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
+		if provider == mockedProvider && id == mockedExternalID {
+			return &sourcegraph.User{ID: mockedUserID, ExternalID: id, Username: id}, nil
 		}
-		return nil, fmt.Errorf("user %q not found in mock", uid)
+		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
 	}
 
 	// Set SAML global parameters
@@ -180,10 +182,10 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 			w.Write([]byte("This is a page"))
 		case "/require-authn":
 			actr := actor.FromContext(r.Context())
-			if actr.UID == "" {
-				t.Errorf("in authn expected-endpoint, no actor was set; expected actor with UID %q", mockedUserID)
+			if actr.UID == 0 {
+				t.Errorf("in authn expected-endpoint, no actor was set; expected actor with UID %d", mockedUserID)
 			} else if actr.UID != mockedUserID {
-				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %q != %q", actr.UID, mockedUserID)
+				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %d != %d", actr.UID, mockedUserID)
 			}
 			w.Write([]byte("Authenticated"))
 		default:

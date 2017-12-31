@@ -1,11 +1,32 @@
 .save-toolbar {
+    margin-top: 0.25rem;
+
     &__actions {
         display: flex;
     }
 
-    &__action {
+    &__btn {
+        &-first {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-top-right-radius: 0;
+            padding-left: 2.5rem;
+            padding-right: 2.5rem;
+        }
+        &-last {
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+            border-top-left-radius: 0;
+        }
+    }
+
+    &__item {
         display: flex;
         align-items: center;
+    }
+
+    &__message {
+        margin-left: 0.5rem;
     }
 
     &__error {

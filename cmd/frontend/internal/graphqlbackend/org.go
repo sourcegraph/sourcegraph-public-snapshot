@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
@@ -15,9 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
@@ -289,6 +286,10 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("must be logged in")
 	}
+	email, emailVerified, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
+	if err != nil {
+		return nil, err
+	}
 
 	// Don't invite the user if they are already a member.
 	invitedUser, err := db.Users.GetByEmail(ctx, args.Email)
@@ -310,9 +311,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 
 	if envvar.SourcegraphDotComMode() {
 		// Only allow email-verified users to send invites.
-		if emailVerified, err := auth0.GetEmailVerificationStatus(ctx); err != nil {
-			return nil, err
-		} else if !emailVerified && strings.HasPrefix(currentUser.AuthID(), "auth0|") {
+		if !emailVerified {
 			return nil, errors.New("must verify your email to send invites")
 		}
 
@@ -362,14 +361,14 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	client := slack.New(org.SlackWebhookURL, true)
-	go client.NotifyOnInvite(currentUser, org, args.Email)
+	go client.NotifyOnInvite(currentUser, email, org, args.Email)
 
 	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
 }
 
 func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	InviteToken string
-}) (*orgInviteResolver, error) {
+}) (*EmptyResponse, error) {
 	currentUser, err := currentUser(ctx)
 	if err != nil {
 		return nil, err
@@ -377,20 +376,9 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("no current user")
 	}
-
-	// If the user is natively authenticated, require a verified email (if via SSO, we assume the SSO provider
-	// has authenticated the user's email)
-	if actor := actor.FromContext(ctx); actor.Provider == "" && strings.HasPrefix(actor.UID, "auth0|") {
-		u, err := auth0.GetAuth0User(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !u.EmailVerified && envvar.SourcegraphDotComMode() && strings.HasPrefix(actor.UID, "auth0|") {
-			// Don't add user to the org until email is verified. This will be a common failure mode,
-			// so rather than return an error we return a response the client can handle.
-			// Email verification is only a requirement for Sourcegraph.com.
-			return &orgInviteResolver{emailVerified: false}, nil
-		}
+	email, _, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
+	if err != nil {
+		return nil, err
 	}
 
 	token, err := invite.ParseToken(args.InviteToken)
@@ -408,9 +396,9 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	}
 
 	client := slack.New(org.SlackWebhookURL, true)
-	go client.NotifyOnAcceptedInvite(currentUser, org)
+	go client.NotifyOnAcceptedInvite(currentUser, email, org)
 
-	return &orgInviteResolver{emailVerified: true}, nil
+	return &EmptyResponse{}, nil
 }
 
 // unmarshalOrgGraphQLID unmarshals and returns the int32 org ID of the first

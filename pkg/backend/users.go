@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"net/url"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -30,10 +29,6 @@ func (s *users) List(ctx context.Context) (res *sourcegraph.UserList, err error)
 		return nil, err
 	}
 	return &sourcegraph.UserList{Users: users}, nil
-}
-
-func NativeAuthUserAuthID(email string) string {
-	return fmt.Sprintf("%s:%s", sourcegraph.UserProviderNative, email)
 }
 
 func MakeEmailVerificationCode() string {

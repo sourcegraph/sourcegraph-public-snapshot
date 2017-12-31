@@ -6,16 +6,16 @@ Developer documentation for the frontend service.
 
 There are two types of authentication:
 
-* **Native authentication** goes through the native login page.
+* **Builtin authentication** goes through the builtin login page.
 * **SSO authentication** integrates with external SSO providers such as Okta and OneLogin.
 
-Once a user completes either authentication flow, a session is created that identifies that user to the app. On the server side, the session is validated and then an Actor is stored in the request context. The Actor in the context indicates to the request handlers the identity associated with the current request. SSO and native auth are mutually exclusive, because SSO auth requries sign-in before accessing any part of the app (including the native auth pages), and once a user is signed in, the native login button no longer appears in the UI.
+Once a user completes either authentication flow, a session is created that identifies that user to the app. On the server side, the session is validated and then an Actor is stored in the request context. The Actor in the context indicates to the request handlers the identity associated with the current request. SSO and builtin auth are mutually exclusive, because SSO auth requries sign-in before accessing any part of the app (including the builtin auth pages), and once a user is signed in, the builtin login button no longer appears in the UI.
 
-In addition to authentication flow, there are a few differences between SSO and native auth.
+In addition to authentication flow, there are a few differences between SSO and builtin auth.
 
 <table>
 <tr>
-    <th>SSO Authentication</th><th>Native authentication</th>
+    <th>SSO Authentication</th><th>Builtin authentication</th>
 </tr>
 <tr>
     <td>Login on an external page (e.g., Okta).</td>
@@ -32,19 +32,19 @@ In addition to authentication flow, there are a few differences between SSO and 
 </tr>
 </table>
 
-Native authentication and the different forms of SSO authentication are all mutually exclusive. Only one should be enabled for any given Sourcegraph Server instance.
+Builtin authentication and the different forms of SSO authentication are all mutually exclusive. Only one should be enabled for any given Sourcegraph Server instance.
 
 ### Session implementation
 
-#### Native and OIDC
+#### Builtin and OIDC
 
-For native authentication and OIDC SSO, we use our own session implementation. We use the [gorilla/sessions](http://www.gorillatoolkit.org/pkg/sessions) library with a [Redis-backed store](https://github.com/boj/redistore). The session state is stored in Redis and an opaque "sg-session" cookie is stored in the user's browser. If `APP_URL` is HTTPS, the cookie is a secure cookie. The session state (stored in Redis) comprises an Actor struct and an expiry. The expiry is the session expiration date (taken from the SSO metadata or, for native auth, 10 years from the session creation date).
+For builtin authentication and OIDC SSO, we use our own session implementation. We use the [gorilla/sessions](http://www.gorillatoolkit.org/pkg/sessions) library with a [Redis-backed store](https://github.com/boj/redistore). The session state is stored in Redis and an opaque "sg-session" cookie is stored in the user's browser. If `APP_URL` is HTTPS, the cookie is a secure cookie. The session state (stored in Redis) comprises an Actor struct and an expiry. The expiry is the session expiration date (taken from the SSO metadata or, for builtin auth, 10 years from the session creation date).
 
 #### SAML session
 
 For SAML SSO, we use the session implementation provided by [github.com/crewjam/saml](https://github.com/crewjam/saml). The name of the cookie is still "sg-session", but the cookie value is a signed JWT that contains the SAML assertion. The third-party library is responsible for managing session expiration and re-authentication in a manner that is conformant to the SAML 2.0 spec.
 
-After the SAML library has verified and decoded the SAML session, we translate the SAML assertion to an Actor, which is then stored in the request context. The context Actor serves as the source of truth for user identity for the remainder of the request cycle (identically to the native and OIDC case).
+After the SAML library has verified and decoded the SAML session, we translate the SAML assertion to an Actor, which is then stored in the request context. The context Actor serves as the source of truth for user identity for the remainder of the request cycle (identically to the builtin and OIDC case).
 
 ### Actor struct
 
@@ -264,7 +264,7 @@ This is a partial picture of the HTTP handler structure as it pertains to authen
             <p class="c9"><span class="c0">GraphQL</span></p>
          </td>
          <td class="c20" colspan="2" rowspan="1">
-            <p class="c9"><span class="c0">app router (including native sign-in routes)</span></p>
+            <p class="c9"><span class="c0">app router (including builtin sign-in routes)</span></p>
          </td>
          <td class="c13" colspan="1" rowspan="1">
             <p class="c8"><span class="c0"></span></p>

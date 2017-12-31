@@ -27,14 +27,13 @@ export function refreshCurrentUser(): Observable<never> {
         query CurrentAuthState {
             currentUser {
                 __typename
-                authID
+                externalID
                 sourcegraphID
                 username
                 avatarURL
                 email
                 username
                 displayName
-                verified
                 siteAdmin
                 orgs {
                     id

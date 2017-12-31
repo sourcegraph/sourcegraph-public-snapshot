@@ -7,6 +7,7 @@ import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/AcceptInvitePage'
 import { EditorAuthPage } from '../user/settings/EditorAuthPage'
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
+import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
 import { SettingsSidebar } from './SettingsSidebar'
 
@@ -77,6 +78,11 @@ export class SettingsArea extends React.Component<Props> {
                         <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
                             component={UserSettingsConfigurationPage}
+                            exact={true}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/emails`}
+                            component={UserSettingsEmailsPage}
                             exact={true}
                         />
                         <RouteWithProps

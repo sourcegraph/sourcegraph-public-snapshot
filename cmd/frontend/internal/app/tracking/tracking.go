@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slackinternal"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
@@ -20,7 +19,7 @@ import (
 // TrackUser handles user data logging during auth flows
 //
 // Specifically, updating user data properties in HubSpot
-func TrackUser(a *actor.Actor, event string) {
+func TrackUser(avatarURL *string, uid, email, event string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.TrackUser: %s", err)
@@ -34,20 +33,20 @@ func TrackUser(a *actor.Actor, event string) {
 
 	// Generate a single set of user parameters for HubSpot and Slack exports
 	contactParams := &hubspot.ContactProperties{
-		UserID:     a.Email,
-		UID:        a.UID,
-		LookerLink: lookerUserLink(a.Email),
+		UserID:     email,
+		UID:        uid,
+		LookerLink: lookerUserLink(email),
 	}
 
 	// Update or create user contact information in HubSpot
-	hsResponse, err := trackHubSpotContact(a.Email, event, contactParams)
+	hsResponse, err := trackHubSpotContact(email, event, contactParams)
 	if err != nil {
 		log15.Warn("trackHubSpotContact: failed to create or update HubSpot contact on auth", "source", "HubSpot", "error", err)
 	}
 
 	// Finally, post signup notification to Slack
 	if event == "SignupCompleted" {
-		err = slackinternal.NotifyOnSignup(a, contactParams, hsResponse)
+		err = slackinternal.NotifyOnSignup(avatarURL, email, contactParams, hsResponse)
 		if err != nil {
 			log15.Error("Error sending new signup details to Slack", "error", err)
 			return

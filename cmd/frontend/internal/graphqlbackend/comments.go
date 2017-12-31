@@ -134,6 +134,10 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+	email, _, err := db.UserEmails.GetEmail(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	org, err := db.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
@@ -146,7 +150,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := db.Comments.Create(ctx, args.ThreadID, args.Contents, "", actor.Email, user.ID)
+	comment, err := db.Comments.Create(ctx, args.ThreadID, args.Contents, "", email, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +177,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		if err != nil {
 			log15.Error("graphqlbackend.AddCommentToThread: getURL failed", "error", err)
 		} else {
-			go client.NotifyOnComment(user, org, repo, thread, comment, results.emails, commentURL.String(), title)
+			go client.NotifyOnComment(user, email, org, repo, thread, comment, results.emails, commentURL.String(), title)
 		}
 	}
 
@@ -355,7 +359,12 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	}
 	emails, uniqueEmails := []string{}, map[string]struct{}{}
 	for _, u := range users {
-		emails = appendUnique(uniqueEmails, emails, u.Email)
+		email, _, err := db.UserEmails.GetEmail(ctx, u.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		emails = appendUnique(uniqueEmails, emails, email)
 	}
 	return emails, nil
 }

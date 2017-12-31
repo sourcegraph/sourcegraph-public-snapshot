@@ -389,6 +389,10 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 	if err != nil {
 		return nil, err
 	}
+	email, _, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
+	if err != nil {
+		return nil, err
+	}
 
 	repo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
 	if err == db.ErrRepoNotFound {
@@ -440,7 +444,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 	}
 
 	if args.Contents != "" {
-		comment, err := db.Comments.Create(ctx, newThread.ID, args.Contents, "", currentUser.Email(), currentUser.SourcegraphID())
+		comment, err := db.Comments.Create(ctx, newThread.ID, args.Contents, "", email, currentUser.SourcegraphID())
 		if err != nil {
 			return nil, err
 		}
@@ -466,7 +470,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 			if err != nil {
 				log15.Error("graphqlbackend.CreateThread: getURL failed", "error", err)
 			} else {
-				go client.NotifyOnThread(currentUser, org, repo, newThread, comment, results.emails, commentURL.String())
+				go client.NotifyOnThread(currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
 			}
 		}
 	} /* else {
@@ -510,7 +514,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 
 	if wasArchived == nil && thread.ArchivedAt != nil {
-		user, err := db.Users.GetByAuthID(ctx, actor.UID)
+		user, err := db.Users.GetByID(ctx, actor.UID)
 		if err != nil {
 			return nil, err
 		}

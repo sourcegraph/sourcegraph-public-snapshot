@@ -163,6 +163,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		var info sessionInfo
 		if err := json.Unmarshal(actorJSON.([]byte), &info); err != nil {
 			log15.Error("error unmarshalling actor", "error", err)
+			DeleteSession(w, r) // so that we clear the bad value
 			return r.Context()
 		}
 

@@ -16,7 +16,7 @@ func TestStartDeleteSession(t *testing.T) {
 
 	// Start new session
 	w := httptest.NewRecorder()
-	actr := &actor.Actor{UID: "test-actor-123"}
+	actr := &actor.Actor{UID: 123}
 	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour); err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestSessionExpiry(t *testing.T) {
 
 	// Start new session
 	w := httptest.NewRecorder()
-	actr := &actor.Actor{UID: "test-actor-123"}
+	actr := &actor.Actor{UID: 123}
 	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Second); err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func TestCookieMiddleware(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	actors := []*actor.Actor{{UID: "test-actor-123"}, {UID: "test-actor-456"}}
+	actors := []*actor.Actor{{UID: 123}, {UID: 456}}
 
 	// Start new sessions for all actors
 	authedReqs := make([]*http.Request, len(actors))
@@ -184,7 +184,7 @@ func TestCookieOrSessionMiddleware(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	actors := []*actor.Actor{{UID: "test-actor-123"}, {UID: "test-actor-456"}}
+	actors := []*actor.Actor{{UID: 123}, {UID: 456}}
 
 	// Start new sessions for all actors and record authentication info
 	cookieAuthedReqs := make([]*http.Request, len(actors))

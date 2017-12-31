@@ -108,8 +108,6 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			}
 			if actor := actor.FromContext(r.Context()); actor != nil {
 				ev.AddField("uid", actor.UID)
-				ev.AddField("login", actor.Login)
-				ev.AddField("email", actor.Email)
 			}
 			ev.Send()
 		}

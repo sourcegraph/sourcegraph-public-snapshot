@@ -6,7 +6,6 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
@@ -26,7 +25,12 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := db.Users.Create(ctx, backend.NativeAuthUserAuthID(args.Email), args.Email, args.Username, "", sourcegraph.UserProviderNative, nil, backend.MakeRandomHardToGuessPassword(), backend.MakeEmailVerificationCode())
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Email:     args.Email,
+		Username:  args.Username,
+		Password:  backend.MakeRandomHardToGuessPassword(),
+		EmailCode: backend.MakeEmailVerificationCode(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +68,12 @@ func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, arg
 		return nil, err
 	}
 
-	user, err := db.Users.GetByID(ctx, userID)
+	email, _, err := db.UserEmails.GetEmail(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	resetURL, err := backend.MakePasswordResetURL(ctx, userID, user.Email)
+	resetURL, err := backend.MakePasswordResetURL(ctx, userID, email)
 	if err != nil {
 		return nil, err
 	}

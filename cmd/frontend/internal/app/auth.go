@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/mattbaird/gochimp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -33,14 +34,13 @@ type credentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 
-	Username    string `json:"username"`
-	DisplayName string `json:"displayName"`
+	Username string `json:"username"`
 }
 
-// serveSignUp serves the native-auth sign-up endpoint
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	if !conf.Get().AuthAllowSignup {
 		http.Error(w, "signup is not enabled", http.StatusNotFound)
+		return
 	}
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
@@ -52,23 +52,19 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	displayName := creds.DisplayName
-	if displayName == "" {
-		displayName = creds.Username
-	}
-
 	// Create user
 	emailCode := backend.MakeEmailVerificationCode()
-	usr, err := db.Users.Create(r.Context(), backend.NativeAuthUserAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, nil, creds.Password, emailCode)
+	usr, err := db.Users.Create(r.Context(), db.NewUser{
+		Email:     creds.Email,
+		Username:  creds.Username,
+		Password:  creds.Password,
+		EmailCode: emailCode,
+	})
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
 		return
 	}
-	actor := &actor.Actor{
-		UID:   usr.AuthID,
-		Login: usr.Username,
-		Email: usr.Email,
-	}
+	actor := &actor.Actor{UID: usr.ID}
 
 	if conf.EmailVerificationRequired() {
 		// Send verify email
@@ -90,22 +86,13 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getUserFromNativeOrAuth0(ctx context.Context, email string) (*sourcegraph.User, error) {
-	authID := backend.NativeAuthUserAuthID(email)
-	usr, err := db.Users.GetByAuthID(ctx, authID)
-	if err == nil {
-		return usr, nil
-	} else if err != nil {
-		if _, ok := err.(db.ErrUserNotFound); !ok {
-			return nil, err
-		}
+func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*sourcegraph.User, error) {
+	if strings.Contains(emailOrUsername, "@") {
+		return db.Users.GetByEmail(ctx, emailOrUsername)
 	}
-
-	// The user might be a legacy auth0 user.
-	return db.Users.GetByEmail(ctx, email)
+	return db.Users.GetByUsername(ctx, emailOrUsername)
 }
 
-// serveSignIn serves a native-auth endpoint
 func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -119,14 +106,10 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate user
-	usr, err := getUserFromNativeOrAuth0(ctx, creds.Email)
+	// Validate user. Allow login by both email and username (for convenience).
+	usr, err := getByEmailOrUsername(ctx, creds.Email)
 	if err != nil {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
-		return
-	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
 	// 🚨 SECURITY: check password
@@ -139,11 +122,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
 		return
 	}
-	actor := &actor.Actor{
-		UID:   usr.AuthID,
-		Login: usr.Username,
-		Email: usr.Email,
-	}
+	actor := &actor.Actor{UID: usr.ID}
 
 	// Write the session cookie
 	if session.StartNewSession(w, r, actor, 0); err != nil {
@@ -154,11 +133,10 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	// Track user data in GCS
 	eventLabel := "CompletedNativeSignIn"
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(actor, eventLabel)
+		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, eventLabel)
 	}
 }
 
-// serveVerifyEmail serves the email verification link for native auth
 func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	verifyCode := r.URL.Query().Get("code")
@@ -176,15 +154,17 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
 		return
 	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
+
+	email, alreadyVerified, err := db.UserEmails.GetEmail(ctx, usr.ID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("No email found for user %d", usr.ID), http.StatusBadRequest)
 		return
 	}
-	if usr.Verified {
-		http.Error(w, fmt.Sprintf("User %s already verified", usr.Email), http.StatusBadRequest)
+	if alreadyVerified {
+		http.Error(w, fmt.Sprintf("User %s already verified", email), http.StatusBadRequest)
 		return
 	}
-	verified, err := db.Users.ValidateEmail(ctx, usr.ID, verifyCode)
+	verified, err := db.UserEmails.ValidateEmail(ctx, usr.ID, verifyCode)
 	if err != nil {
 		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
 		return
@@ -197,7 +177,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/settings/profile", http.StatusFound)
 }
 
-// serveResetPasswordInit initiates the native-auth password reset flow by sending a password-reset email.
+// serveResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
 func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	if !conf.CanSendEmail() {
 		httpLogAndError(w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
@@ -221,10 +201,6 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "No user found for email", http.StatusBadRequest, "email", creds.Email)
 		return
 	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
-		return
-	}
 
 	resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID, creds.Email)
 	if err == db.ErrPasswordResetRateLimit {
@@ -238,7 +214,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	notif.SendMandrillTemplate(&notif.EmailConfig{
 		Template:  "forgot-password",
 		FromEmail: "noreply@sourcegraph.com",
-		ToEmail:   usr.Email,
+		ToEmail:   creds.Email,
 		Subject:   "Reset your Sourcegraph Server password",
 	}, []gochimp.Var{}, []gochimp.Var{
 		{Name: "SUBJECT", Content: "Reset password"},
@@ -247,7 +223,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// serveResetPassword resets a native-auth password if the correct code is provided
+// serveResetPassword resets the password if the correct code is provided.
 func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var params struct {
@@ -266,12 +242,11 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, fmt.Sprintf("User with email %s not found", params.Email), http.StatusNotFound)
 		return
 	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
-		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
-		return
-	}
 
-	success, err := db.Users.SetPassword(ctx, usr.ID, backend.NativeAuthUserAuthID(params.Email), params.Code, params.Password)
+	// We are converting old auth0 users to builtin users on sourcegraph.com.
+	removeExternalProvider := strings.HasPrefix(usr.ExternalID, "auth0|")
+
+	success, err := db.Users.SetPassword(ctx, usr.ID, removeExternalProvider, params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return

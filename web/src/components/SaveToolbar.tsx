@@ -29,7 +29,7 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
                 <button
                     disabled={saveDiscardDisabled}
                     title={saveDiscardTitle || 'Save changes'}
-                    className="btn btn-sm btn-link save-toolbar__action"
+                    className="btn btn-sm btn-success save-toolbar__item save-toolbar__btn save-toolbar__btn-first"
                     onClick={onSave}
                 >
                     <CheckmarkIcon className="icon-inline" /> Save
@@ -37,13 +37,13 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
                 <button
                     disabled={saveDiscardDisabled}
                     title={saveDiscardTitle || 'Discard changes'}
-                    className="btn btn-sm btn-link save-toolbar__action"
+                    className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last"
                     onClick={onDiscard}
                 >
                     <CloseIcon className="icon-inline" /> Discard
                 </button>
                 {saving && (
-                    <span className="save-toolbar__action">
+                    <span className="save-toolbar__item save-toolbar__message">
                         <Loader className="icon-inline" /> Saving...
                     </span>
                 )}

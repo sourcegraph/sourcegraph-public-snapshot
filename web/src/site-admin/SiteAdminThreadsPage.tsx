@@ -125,6 +125,7 @@ export class SiteAdminThreadsPage extends React.Component<Props, State> {
                             />
                         ))}
                 </ul>
+                {this.state.threads && this.state.threads.length === 0 && <p>No threads to display.</p>}
                 {this.state.threads &&
                     typeof this.state.totalCount === 'number' &&
                     this.state.totalCount > 0 && (

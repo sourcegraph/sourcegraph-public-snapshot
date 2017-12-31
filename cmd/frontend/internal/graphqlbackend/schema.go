@@ -149,7 +149,7 @@ type Mutation {
 	# Deletes a user account. Only site admins may perform this mutation.
 	deleteUser(user: ID!): EmptyResponse
 	inviteUser(email: String!, orgID: ID!): InviteUserResult
-	acceptUserInvite(inviteToken: String!): OrgInviteStatus!
+	acceptUserInvite(inviteToken: String!): EmptyResponse
 	removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
 	# adds a phabricator repository to the Sourcegraph server.
 	# example callsign: "MUX"
@@ -785,16 +785,16 @@ type UserConnection {
 type User implements Node, ConfigurationSubject {
 	# The unique ID for the user.
 	id: ID!
-	authID: String!
-	auth0ID: String! @deprecated(reason: "use authID instead")
+	authID: String! @deprecated(reason: "renamed to externalID - use that instead")
+	auth0ID: String! @deprecated(reason: "use externalID instead")
+	externalID: String!
 	sourcegraphID: Int!
-	email: String!
+	email: String! @deprecated(reason: "use emails instead")
 	displayName: String
 	username: String!
 	avatarURL: String
 	createdAt: String!
 	updatedAt: String
-	verified: Boolean!
 	# Whether the user is a site admin.
 	siteAdmin: Boolean!
 	# The latest settings for the user.
@@ -803,6 +803,20 @@ type User implements Node, ConfigurationSubject {
 	orgMemberships: [OrgMember!]!
 	tags: [UserTag!]!
 	activity: UserActivity!
+	# The user's email addresses.
+	emails: [UserEmail!]!
+}
+
+# A user's email address.
+type UserEmail {
+	# The email address.
+	email: String!
+	# Whether the email address has been verified by the user.
+	verified: Boolean!
+	# Whether the email address is pending verification.
+	verificationPending: Boolean!
+	# The user associated with this email address.
+	user: User!
 }
 
 # A list of organizations.
@@ -847,10 +861,6 @@ type OrgMember {
 type InviteUserResult {
 	# The URL that the invited user can visit to accept the invitation.
 	acceptInviteURL: String!
-}
-
-type OrgInviteStatus {
-	emailVerified: Boolean!
 }
 
 type OrgRepo {

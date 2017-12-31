@@ -11,7 +11,7 @@ export function fetchAllUsers(): Observable<GQL.IUserConnection> {
             users {
                 nodes {
                     id
-                    authID
+                    externalID
                     username
                     displayName
                     email
