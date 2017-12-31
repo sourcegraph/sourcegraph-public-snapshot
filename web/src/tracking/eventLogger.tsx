@@ -28,12 +28,9 @@ class EventLogger {
             })
         })
 
-        // tslint:disable-next-line deprecation
         if (window.context.user) {
             this.updateUser({
-                // tslint:disable-next-line deprecation
                 externalID: window.context.user.externalID,
-                // tslint:disable-next-line deprecation
                 sourcegraphID: window.context.user.UID,
                 username: null,
                 email: null,
@@ -151,7 +148,6 @@ class EventLogger {
     private decorateEventProperties(eventProperties: any): any {
         const props = {
             ...eventProperties,
-            // tslint:disable-next-line deprecation
             is_authed: window.context.user ? 'true' : 'false',
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }
