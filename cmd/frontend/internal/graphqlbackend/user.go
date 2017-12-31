@@ -50,7 +50,7 @@ func (r *userResolver) Auth0ID() string { return r.AuthID() }
 func (r *userResolver) SourcegraphID() int32 { return r.user.ID }
 
 func (r *userResolver) Email(ctx context.Context) (string, error) {
-	email, _, err := db.Users.GetEmail(ctx, r.user.ID)
+	email, _, err := db.UserEmails.GetEmail(ctx, r.user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +85,7 @@ func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 }
 
 func (r *userResolver) Verified(ctx context.Context) (bool, error) {
-	_, verified, err := db.Users.GetEmail(ctx, r.user.ID)
+	_, verified, err := db.UserEmails.GetEmail(ctx, r.user.ID)
 	if err != nil {
 		return false, err
 	}

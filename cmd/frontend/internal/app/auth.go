@@ -179,7 +179,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, alreadyVerified, err := db.Users.GetEmail(ctx, usr.ID)
+	email, alreadyVerified, err := db.UserEmails.GetEmail(ctx, usr.ID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("No email found for user %d", usr.ID), http.StatusBadRequest)
 		return
@@ -188,7 +188,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("User %s already verified", email), http.StatusBadRequest)
 		return
 	}
-	verified, err := db.Users.ValidateEmail(ctx, usr.ID, verifyCode)
+	verified, err := db.UserEmails.ValidateEmail(ctx, usr.ID, verifyCode)
 	if err != nil {
 		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
 		return

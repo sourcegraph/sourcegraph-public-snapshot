@@ -389,7 +389,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 	if err != nil {
 		return nil, err
 	}
-	email, _, err := db.Users.GetEmail(ctx, currentUser.SourcegraphID())
+	email, _, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}

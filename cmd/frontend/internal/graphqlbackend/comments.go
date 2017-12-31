@@ -134,7 +134,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	email, _, err := db.Users.GetEmail(ctx, user.ID)
+	email, _, err := db.UserEmails.GetEmail(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +359,7 @@ func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author
 	}
 	emails, uniqueEmails := []string{}, map[string]struct{}{}
 	for _, u := range users {
-		email, _, err := db.Users.GetEmail(ctx, u.ID)
+		email, _, err := db.UserEmails.GetEmail(ctx, u.ID)
 		if err != nil {
 			return nil, err
 		}

@@ -195,7 +195,7 @@ func serveBasicPageWithEmailVerification(title func(c *Common, r *http.Request) 
 				if err != nil {
 					return err
 				}
-				email, _, err := db.Users.GetEmail(r.Context(), user.ID)
+				email, _, err := db.UserEmails.GetEmail(r.Context(), user.ID)
 				if err != nil {
 					return err
 				}

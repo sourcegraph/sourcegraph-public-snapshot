@@ -16,6 +16,7 @@ var (
 	OrgMembers   = &orgMembers{}
 	Settings     = &settings{}
 	Users        = &users{}
+	UserEmails   = &userEmails{}
 	UserTags     = &userTags{}
 	SiteConfig   = &siteConfig{}
 )

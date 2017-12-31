@@ -82,7 +82,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 		return nil, fmt.Errorf("user with ID %d not found", id)
 	}
 
-	db.Mocks.Users.GetEmail = func(ctx context.Context, id int32) (string, bool, error) {
+	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) {
 		for _, u := range testUsers {
 			if u.ID == id {
 				return u.Username + "@sourcegraph.com", true, nil

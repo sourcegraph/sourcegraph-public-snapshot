@@ -289,7 +289,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("must be logged in")
 	}
-	email, _, err := db.Users.GetEmail(ctx, currentUser.SourcegraphID())
+	email, _, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +381,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("no current user")
 	}
-	email, verified, err := db.Users.GetEmail(ctx, currentUser.SourcegraphID())
+	email, verified, err := db.UserEmails.GetEmail(ctx, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
