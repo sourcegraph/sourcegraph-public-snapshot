@@ -405,7 +405,7 @@ func (s ConfigurationSubject) String() string {
 type Settings struct {
 	ID           int32 `json:"ID"`
 	Subject      ConfigurationSubject
-	AuthorAuthID string    `json:"AuthorAuthID"`
+	AuthorUserID int32     `json:"AuthorUserID"`
 	Contents     string    `json:"Contents"`
 	CreatedAt    time.Time `json:"CreatedAt"`
 }

@@ -108,6 +108,8 @@
 // ../../../migrations/1514691735_rename_deployment_configuration.up.sql
 // ../../../migrations/1514693059_user_emails_table.down.sql
 // ../../../migrations/1514693059_user_emails_table.up.sql
+// ../../../migrations/1514702776_add_settings_user_fkey.down.sql
+// ../../../migrations/1514702776_add_settings_user_fkey.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2335,6 +2337,46 @@ func _1514693059_user_emails_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514702776_add_settings_user_fkeyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x52\xcf\x4f\x83\x30\x14\x3e\xdb\xbf\xe2\x1d\xb7\x84\x2c\xce\xa8\x1c\xc8\x0e\x0c\x9e\x4a\x52\xda\xa5\x3c\xe2\xb1\xc1\xd1\x4c\xa2\x01\x03\x25\xfa\xe7\x1b\x06\x33\xee\x47\xe3\xc1\x53\xd3\xf7\xfd\xc8\xf7\xbe\x76\x8d\x8f\x89\x08\x58\xc8\x09\x15\x50\xb8\xe6\x08\x9d\xb1\xb6\xaa\x77\x1d\x28\x14\x61\x8a\x10\x49\x9e\xa7\x02\x8a\xde\xbe\x36\xad\xee\x3b\xd3\xea\xaa\x04\x92\x27\x13\x5d\x9b\x4f\x87\x51\x18\xc7\x0e\x17\x6b\xbe\x6c\xc0\xf2\x4d\x1c\xd2\x2f\x7e\x86\x74\x42\x5c\xcd\x32\xe4\x18\x11\x0c\xf7\x6e\x31\x80\x83\xfc\x41\xc9\x74\x1c\xc1\xf3\x13\x2a\x9c\xe0\xaa\x5c\x1d\xbc\x16\xe7\x21\xe7\xae\x94\xfb\xe1\xe5\x9c\x43\x22\x21\x09\x44\xce\xb9\x43\x1e\x2b\xb9\xb9\xac\x1e\x9b\x49\x44\x86\x8a\x20\x11\x24\x7f\x44\xb3\xaa\xf4\xa0\x69\x77\x7a\x38\x8f\x45\x1e\x6c\x9b\xda\x9a\xda\x76\x1e\x6c\x5b\x53\x58\x53\xea\xc2\x7a\x30\xc1\x73\x76\x35\x35\xe2\xb6\xd0\xcd\xfb\x5f\x36\x63\x83\x87\x38\xfa\xe5\xad\xff\xd0\xcb\xbb\xe5\xad\x7f\x7d\xe3\xfb\xf7\x01\xdb\x2f\x75\xbc\xe8\x39\xe9\x5f\xbf\x67\x7a\xca\x80\x45\x32\x4d\x13\x0a\xd8\x77\x00\x00\x00\xff\xff\x83\x8c\x60\x09\x92\x02\x00\x00")
+
+func _1514702776_add_settings_user_fkeyDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514702776_add_settings_user_fkeyDownSql,
+		"1514702776_add_settings_user_fkey.down.sql",
+	)
+}
+
+func _1514702776_add_settings_user_fkeyDownSql() (*asset, error) {
+	bytes, err := _1514702776_add_settings_user_fkeyDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514702776_add_settings_user_fkey.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514702776_add_settings_user_fkeyUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\xcf\x4e\xf3\x30\x10\xc4\xef\x7e\x8a\x3d\x36\xdf\xa1\xfa\x8a\x80\x1c\xac\x1e\x5c\x67\x0b\x91\x1c\xbb\xb2\x37\xe2\x68\x81\x12\x15\x0b\xd4\xa2\xfc\x79\x7f\x14\xe2\x20\x68\x1b\x04\x27\x4b\xbb\x9a\xdf\xec\x8c\x37\x78\x97\x6b\xce\x84\x22\xb4\x40\x62\xa3\x10\xda\xba\xeb\xc2\x61\xdf\x82\x45\x2d\x0a\x04\x69\x54\x59\x68\x78\xec\xbb\xe7\x63\xe3\x87\xc7\x87\x0a\xc8\x4c\x93\xbe\xad\x1b\x1f\x2a\xce\xfe\x40\x89\x9a\x73\x8a\x3f\xbe\x56\x33\xe7\x88\x2c\x9b\xa1\x84\x43\x57\xef\xeb\x06\x2c\x6e\xd1\xa2\x96\xe8\x60\x58\xb5\xb0\x08\x55\x02\x46\x43\x86\x0a\x09\xc1\xa2\x23\x9b\x4b\xe2\xac\xdc\x65\x82\xbe\xb0\x1d\xd2\x09\x74\xbd\x70\xa8\x50\xd2\x48\x5a\x86\x0a\xb6\xd6\x14\x91\xfb\x70\x8f\x16\xe3\x26\x16\xb2\x9e\x58\xcb\xf3\x40\x09\x67\xd2\xe2\x60\xf8\x3d\x92\x7f\x7a\xe9\xdf\xfc\xea\x66\x75\x9d\xfe\xbf\x4a\xd3\x5b\x10\x0e\x26\xdb\x7f\xa3\xdf\xe7\x85\xa3\xe5\x49\xf0\xdc\x81\x2e\x95\x4a\x38\x8b\x09\x7f\xaf\x99\x2b\xf9\x63\x78\xb9\xe6\xa1\x24\x6d\xe8\x27\x79\x66\xcd\xee\xb2\x7a\xfc\x58\x69\x8a\x22\x27\xce\xde\x03\x00\x00\xff\xff\xb6\x34\x19\xe0\x77\x02\x00\x00")
+
+func _1514702776_add_settings_user_fkeyUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514702776_add_settings_user_fkeyUpSql,
+		"1514702776_add_settings_user_fkey.up.sql",
+	)
+}
+
+func _1514702776_add_settings_user_fkeyUpSql() (*asset, error) {
+	bytes, err := _1514702776_add_settings_user_fkeyUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514702776_add_settings_user_fkey.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2495,6 +2537,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514691735_rename_deployment_configuration.up.sql":           _1514691735_rename_deployment_configurationUpSql,
 	"1514693059_user_emails_table.down.sql":                       _1514693059_user_emails_tableDownSql,
 	"1514693059_user_emails_table.up.sql":                         _1514693059_user_emails_tableUpSql,
+	"1514702776_add_settings_user_fkey.down.sql":                  _1514702776_add_settings_user_fkeyDownSql,
+	"1514702776_add_settings_user_fkey.up.sql":                    _1514702776_add_settings_user_fkeyUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2646,6 +2690,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514691735_rename_deployment_configuration.up.sql":           &bintree{_1514691735_rename_deployment_configurationUpSql, map[string]*bintree{}},
 	"1514693059_user_emails_table.down.sql":                       &bintree{_1514693059_user_emails_tableDownSql, map[string]*bintree{}},
 	"1514693059_user_emails_table.up.sql":                         &bintree{_1514693059_user_emails_tableUpSql, map[string]*bintree{}},
+	"1514702776_add_settings_user_fkey.down.sql":                  &bintree{_1514702776_add_settings_user_fkeyDownSql, map[string]*bintree{}},
+	"1514702776_add_settings_user_fkey.up.sql":                    &bintree{_1514702776_add_settings_user_fkeyUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

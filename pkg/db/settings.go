@@ -12,14 +12,14 @@ import (
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorAuthID, contents string) (latestSetting *sourcegraph.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *sourcegraph.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
-		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorAuthID, contents)
+		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorUserID, contents)
 	}
 
 	s := sourcegraph.Settings{
 		Subject:      subject,
-		AuthorAuthID: authorAuthID,
+		AuthorUserID: authorUserID,
 		Contents:     contents,
 	}
 
@@ -47,8 +47,8 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.Con
 	creatorIsUpToDate := latestSetting != nil && lastKnownSettingsID != nil && latestSetting.ID == *lastKnownSettingsID
 	if latestSetting == nil || creatorIsUpToDate {
 		err := tx.QueryRow(
-			"INSERT INTO settings(org_id, user_id, author_auth_id, contents) VALUES($1, $2, $3, $4) RETURNING id, created_at",
-			s.Subject.Org, s.Subject.User, s.AuthorAuthID, s.Contents).Scan(&s.ID, &s.CreatedAt)
+			"INSERT INTO settings(org_id, user_id, author_user_id, contents) VALUES($1, $2, $3, $4) RETURNING id, created_at",
+			s.Subject.Org, s.Subject.User, s.AuthorUserID, s.Contents).Scan(&s.ID, &s.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, org_id, user_id, author_auth_id, contents, created_at FROM settings
+		SELECT id, org_id, user_id, author_user_id, contents, created_at FROM settings
 		WHERE %s
 		ORDER BY id DESC LIMIT 1`, cond)
 	rows, err := queryTarget.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -107,7 +107,7 @@ func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*sourc
 	defer rows.Close()
 	for rows.Next() {
 		s := sourcegraph.Settings{}
-		err := rows.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorAuthID, &s.Contents, &s.CreatedAt)
+		err := rows.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

@@ -401,9 +401,13 @@ func (r *configurationMutationResolver) doUpdateConfiguration(ctx context.Contex
 		return 0, err
 	}
 
+	currentUser, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return 0, err
+	}
+
 	// Write mutated settings.
-	actor := actor.FromContext(ctx)
-	updatedSettings, err := db.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, actor.UID, newConfig)
+	updatedSettings, err := db.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, currentUser.ID, newConfig)
 	if err != nil {
 		return 0, err
 	}

@@ -242,18 +242,32 @@ Indexes:
 ----------------+--------------------------+-------------------------------------------------------
  id             | integer                  | not null default nextval('settings_id_seq'::regclass)
  org_id         | integer                  | 
- author_auth_id | text                     | not null
  contents       | text                     | 
  created_at     | timestamp with time zone | not null default now()
  user_id        | integer                  | 
+ author_user_id | integer                  | not null
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "has_subject" CHECK (org_id IS NOT NULL OR user_id IS NOT NULL)
 Foreign-key constraints:
+    "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
-    "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
     "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.settings_bkup_1514702776"
+```
+       Column       |           Type           | Modifiers 
+--------------------+--------------------------+-----------
+ id                 | integer                  | 
+ org_id             | integer                  | 
+ author_user_id_old | text                     | 
+ contents           | text                     | 
+ created_at         | timestamp with time zone | 
+ user_id            | integer                  | 
+ author_user_id     | integer                  | 
 
 ```
 
@@ -460,7 +474,7 @@ Check constraints:
 Referenced by:
     TABLE "comments" CONSTRAINT "comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
-    TABLE "settings" CONSTRAINT "settings_references_users" FOREIGN KEY (author_auth_id) REFERENCES users(auth_id) ON DELETE RESTRICT
+    TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "shared_items" CONSTRAINT "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "threads" CONSTRAINT "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
