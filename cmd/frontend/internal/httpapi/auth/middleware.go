@@ -22,15 +22,14 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 
 		if ssoUserHeader != "" {
 			if username := r.Header.Get(ssoUserHeader); username != "" {
-				if _, err := getUserFromSSOHeaderUsername(r.Context(), username); err != nil {
+				userID, err := getUserFromSSOHeaderUsername(r.Context(), username)
+				if err != nil {
 					log15.Error("unable to get/create user from SSO header", "header", ssoUserHeader, "username", username, "err", err)
 					http.Error(w, "unable to get/create user", http.StatusInternalServerError)
 					return
 				}
 
-				r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{
-					UID: "http-header:" + username,
-				}))
+				r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
 				next.ServeHTTP(w, r)
 				return
 			}

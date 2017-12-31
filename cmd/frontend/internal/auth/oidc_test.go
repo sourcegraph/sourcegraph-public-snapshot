@@ -133,8 +133,17 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 	}
 
-	testOIDCUserUID := oidcToAuthID(oidcProvider.Issuer, testOIDCUser)
-	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, testOIDCUserUID), appURL)
+	testOIDCAuthUID := oidcToAuthID(oidcProvider.Issuer, testOIDCUser)
+	const mockUserID = 123
+	db.Mocks.Users.GetByAuthID = func(ctx context.Context, authID string) (*sourcegraph.User, error) {
+		if authID == testOIDCAuthUID {
+			return &sourcegraph.User{ID: mockUserID, AuthID: authID, Username: "testuser"}, nil
+		}
+		return nil, db.ErrUserNotFound{}
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, mockUserID), appURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +262,7 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, ""), appURL)
+	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, 123), appURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +286,7 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 }
 
 // newAppHandler returns a new mock app handler meant to be wrapped by the OIDC handler in tests.
-func newAppHandler(t *testing.T, mockedUserID string) http.Handler {
+func newAppHandler(t *testing.T, mockedUserID int32) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "":
@@ -286,10 +295,10 @@ func newAppHandler(t *testing.T, mockedUserID string) http.Handler {
 			w.Write([]byte("This is a page"))
 		case "/require-authn":
 			actr := actor.FromContext(r.Context())
-			if actr.UID == "" {
-				t.Errorf("in authn expected-endpoint, no actor was set; expected actor with UID %q", mockedUserID)
+			if actr.UID == 0 {
+				t.Errorf("in authn expected-endpoint, no actor was set; expected actor with UID %d", mockedUserID)
 			} else if actr.UID != mockedUserID {
-				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %q != %q", actr.UID, mockedUserID)
+				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %d != %d", actr.UID, mockedUserID)
 			}
 			w.Write([]byte("Authenticated"))
 		default:

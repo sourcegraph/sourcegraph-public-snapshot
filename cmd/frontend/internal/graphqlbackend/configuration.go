@@ -37,8 +37,11 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		return &configurationSubject{site: s}, nil
 
 	case *userResolver:
+		if !actor.IsAuthenticated() {
+			return nil, errors.New("must be logged in to view/modify user configuration")
+		}
 		// 🚨 SECURITY: A user may only view or modify their own configuration.
-		if actor.UID == "" || s.AuthID() == "" || actor.UID != s.AuthID() {
+		if actor.UID != s.SourcegraphID() {
 			return nil, errors.New("a user may only view or modify their own configuration")
 		}
 		return &configurationSubject{user: s}, nil
@@ -401,13 +404,8 @@ func (r *configurationMutationResolver) doUpdateConfiguration(ctx context.Contex
 		return 0, err
 	}
 
-	currentUser, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return 0, err
-	}
-
 	// Write mutated settings.
-	updatedSettings, err := db.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, currentUser.ID, newConfig)
+	updatedSettings, err := db.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, actor.FromContext(ctx).UID, newConfig)
 	if err != nil {
 		return 0, err
 	}

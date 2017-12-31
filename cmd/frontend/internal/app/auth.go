@@ -64,7 +64,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
 		return
 	}
-	actor := &actor.Actor{UID: usr.AuthID}
+	actor := &actor.Actor{UID: usr.ID}
 
 	if conf.EmailVerificationRequired() {
 		// Send verify email
@@ -135,7 +135,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized)
 		return
 	}
-	actor := &actor.Actor{UID: usr.AuthID}
+	actor := &actor.Actor{UID: usr.ID}
 
 	// Write the session cookie
 	if session.StartNewSession(w, r, actor, 0); err != nil {

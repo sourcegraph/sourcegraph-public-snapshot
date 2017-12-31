@@ -514,7 +514,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 
 	if wasArchived == nil && thread.ArchivedAt != nil {
-		user, err := db.Users.GetByAuthID(ctx, actor.UID)
+		user, err := db.Users.GetByID(ctx, actor.UID)
 		if err != nil {
 			return nil, err
 		}

@@ -15,7 +15,8 @@ interface Window {
  * and (2) not change over a user session
  */
 interface ImmutableUser {
-    readonly UID: string
+    readonly UID: number
+    readonly authID: string
 }
 
 interface License {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
@@ -55,7 +56,7 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, user.ID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -86,12 +87,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	currentUser, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, currentUser.ID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}

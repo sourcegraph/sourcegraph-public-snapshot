@@ -30,10 +30,14 @@ class EventLogger {
 
         // tslint:disable-next-line deprecation
         if (window.context.user) {
-            // TODO(dan): update with sourcegraphID from JS Context once available
-            //
-            // tslint:disable-next-line deprecation
-            this.updateUser({ authID: window.context.user.UID, sourcegraphID: null, username: null, email: null })
+            this.updateUser({
+                // tslint:disable-next-line deprecation
+                authID: window.context.user.authID,
+                // tslint:disable-next-line deprecation
+                sourcegraphID: window.context.user.UID,
+                username: null,
+                email: null,
+            })
         }
 
         currentUser.subscribe(

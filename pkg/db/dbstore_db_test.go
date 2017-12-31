@@ -26,7 +26,7 @@ func TestMigrations(t *testing.T) {
 // handle and other test configuration.
 func testContext() context.Context {
 	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 
 	Mocks = MockStores{}
 

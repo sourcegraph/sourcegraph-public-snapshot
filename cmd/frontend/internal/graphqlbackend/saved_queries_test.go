@@ -50,7 +50,7 @@ func TestCreateSavedQuery(t *testing.T) {
 	ctx := context.Background()
 
 	uid := int32(1)
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "uid"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
 	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, AuthID: "uid"}}}
 
@@ -111,7 +111,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 	ctx := context.Background()
 
 	uid := int32(1)
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "uid"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
 	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, AuthID: "uid"}}}
 	newDescription := "d2"

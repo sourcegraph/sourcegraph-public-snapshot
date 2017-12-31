@@ -46,7 +46,8 @@ func init() {
 
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
-	UID string
+	UID    int32
+	AuthID string `json:"authID"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -109,8 +110,12 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	headers["X-Csrf-Token"] = csrfToken
 
 	var user *immutableUser
-	if actor.UID != "" && actor != nil {
+	if actor.IsAuthenticated() {
 		user = &immutableUser{UID: actor.UID}
+
+		if u, err := db.Users.GetByID(req.Context(), actor.UID); err == nil && u != nil {
+			user.AuthID = u.AuthID
+		}
 	}
 
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.

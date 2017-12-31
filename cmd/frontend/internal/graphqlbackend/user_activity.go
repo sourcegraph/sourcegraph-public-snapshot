@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -44,15 +45,14 @@ func (s *schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event string
 }) (*EmptyResponse, error) {
 	actor := actor.FromContext(ctx)
-	user, err := db.Users.GetByAuthID(ctx, actor.UID)
-	if err != nil {
-		return nil, err
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("must be authenticated")
 	}
 	switch args.Event {
 	case "SEARCHQUERY":
-		return nil, db.UserActivity.LogSearchQuery(ctx, user.ID)
+		return nil, db.UserActivity.LogSearchQuery(ctx, actor.UID)
 	case "PAGEVIEW":
-		return nil, db.UserActivity.LogPageView(ctx, user.ID)
+		return nil, db.UserActivity.LogPageView(ctx, actor.UID)
 	}
 	return nil, fmt.Errorf("unknown user event %s", args.Event)
 }

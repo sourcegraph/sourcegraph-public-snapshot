@@ -3,17 +3,17 @@ package actor
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 // Actor represents an agent that accesses resources. It can represent
-// an anonymous user or a logged-in user.
+// an anonymous user or an authenticated user.
 type Actor struct {
-	// UID is the ID from the authentication provider. This uniquely identifies
-	// the actor's user within the context of the actor's provider.
-	UID string `json:",omitempty"`
+	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
+	UID int32 `json:",omitempty"`
 
 	// Provider is the ID provider that is the source of truth for this user's identity.
 	// It is either the URL of a SSO Provider or "" if the user authenticated via
@@ -23,16 +23,19 @@ type Actor struct {
 
 // FromUser returns an actor corresponding to a user
 func FromUser(usr *sourcegraph.User) *Actor {
-	return &Actor{UID: usr.AuthID, Provider: usr.Provider}
+	return &Actor{UID: usr.ID, Provider: usr.Provider}
 }
 
+// UIDString is a helper method that returns the UID as a string.
+func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
+
 func (a *Actor) String() string {
-	return fmt.Sprintf("Actor UID %s", a.UID)
+	return fmt.Sprintf("Actor UID %d", a.UID)
 }
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.
 func (a *Actor) IsAuthenticated() bool {
-	return a.UID != ""
+	return a.UID != 0
 }
 
 type key int
@@ -50,7 +53,7 @@ func FromContext(ctx context.Context) *Actor {
 }
 
 func WithActor(ctx context.Context, a *Actor) context.Context {
-	if a != nil && a.UID != "" {
+	if a != nil && a.UID != 0 {
 		traceutil.TraceUser(ctx, a.UID)
 	}
 	return context.WithValue(ctx, actorKey, a)

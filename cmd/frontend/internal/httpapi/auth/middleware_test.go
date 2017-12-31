@@ -56,7 +56,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
 			handler.ServeHTTP(rr, req)
-			if got, want := rr.Body.String(), "user http-header:alice"; got != want {
+			if got, want := rr.Body.String(), "user 1"; got != want {
 				t.Errorf("got %q, want %q", got, want)
 			}
 			if !calledGetByUsername {
@@ -74,7 +74,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			rr := httptest.NewRecorder()
 			req.Header.Set(ssoUserHeader, "alice")
 			handler.ServeHTTP(rr, req)
-			if got, want := rr.Body.String(), "user http-header:alice"; got != want {
+			if got, want := rr.Body.String(), "user 1"; got != want {
 				t.Errorf("got %q, want %q", got, want)
 			}
 		})
@@ -89,7 +89,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
 			handler.ServeHTTP(rr, req)
-			if got, want := rr.Body.String(), "user http-header:bob"; got != want {
+			if got, want := rr.Body.String(), "user 1"; got != want {
 				t.Errorf("got %q, want %q", got, want)
 			}
 			if !calledGetByUsername {
@@ -101,7 +101,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			rr := httptest.NewRecorder()
 			req.Header.Set(ssoUserHeader, "bob")
 			handler.ServeHTTP(rr, req)
-			if got, want := rr.Body.String(), "user http-header:bob"; got != want {
+			if got, want := rr.Body.String(), "user 2"; got != want {
 				t.Errorf("got %q, want %q", got, want)
 			}
 		})
