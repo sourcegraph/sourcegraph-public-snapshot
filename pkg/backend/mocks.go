@@ -25,7 +25,7 @@ func testContext() context.Context {
 	Mocks = MockServices{}
 
 	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1"})
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 
 	return ctx

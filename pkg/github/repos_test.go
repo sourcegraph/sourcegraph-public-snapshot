@@ -178,7 +178,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 
 	authedGet := func() bool {
 		calledGet = false
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test"})
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: "1"})
 		_, err := GetRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)

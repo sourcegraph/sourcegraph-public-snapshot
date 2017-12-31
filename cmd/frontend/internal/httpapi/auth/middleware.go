@@ -20,8 +20,7 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 		if ssoUserHeader != "" {
 			if h := r.Header.Get(ssoUserHeader); h != "" {
 				r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{
-					UID:   h,
-					Login: h,
+					UID: h,
 				}))
 				next.ServeHTTP(w, r)
 				return

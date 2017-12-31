@@ -80,7 +80,6 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	if actor := actor.FromContext(r.Context()); actor.UID != "" {
 		addTag("Authed", "yes")
 		addTag("Authed UID", actor.UID)
-		addTag("Authed user", actor.Login)
 	} else {
 		addTag("Authed", "no")
 	}

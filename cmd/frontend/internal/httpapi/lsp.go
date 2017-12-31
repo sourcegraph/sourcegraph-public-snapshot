@@ -56,7 +56,6 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	builder.AddField("user_agent", r.UserAgent())
 	if actor := actor.FromContext(ctx); actor != nil {
 		builder.AddField("uid", actor.UID)
-		builder.AddField("login", actor.Login)
 	}
 
 	// Connect to server before upgrading to websocket connection. This is

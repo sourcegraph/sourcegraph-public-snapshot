@@ -15,14 +15,6 @@ type Actor struct {
 	// the actor's user within the context of the actor's provider.
 	UID string `json:",omitempty"`
 
-	// Login is the login of the currently authenticated user, if
-	// any. It is provided as a convenience and is not guaranteed to
-	// be correct (e.g., the user's login can change during the course
-	// of a request if the user renames their account). It is also not
-	// guaranteed to be populated (many request paths do not populate
-	// it, as an optimization to avoid incurring the Users.Get call).
-	Login string `json:",omitempty"`
-
 	// Provider is the ID provider that is the source of truth for this user's identity.
 	// It is either the URL of a SSO Provider or "" if the user authenticated via
 	// the native authentication flow.
@@ -31,7 +23,7 @@ type Actor struct {
 
 // FromUser returns an actor corresponding to a user
 func FromUser(usr *sourcegraph.User) *Actor {
-	return &Actor{UID: usr.AuthID, Login: usr.Username, Provider: usr.Provider}
+	return &Actor{UID: usr.AuthID, Provider: usr.Provider}
 }
 
 func (a *Actor) String() string {
@@ -58,8 +50,8 @@ func FromContext(ctx context.Context) *Actor {
 }
 
 func WithActor(ctx context.Context, a *Actor) context.Context {
-	if a != nil && a.Login != "" {
-		traceutil.TraceUser(ctx, a.Login)
+	if a != nil && a.UID != "" {
+		traceutil.TraceUser(ctx, a.UID)
 	}
 	return context.WithValue(ctx, actorKey, a)
 }
