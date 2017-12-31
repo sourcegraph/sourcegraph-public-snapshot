@@ -13,73 +13,73 @@ func TestUsers_NativeAuth(t *testing.T) {
 	ctx := testContext()
 
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:  "native:foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    sourcegraph.UserProviderNative,
+		ExternalID:       "native:foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: sourcegraph.UserProviderNative,
 	}); err == nil {
 		t.Fatal("native user created without password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:  "native:foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    sourcegraph.UserProviderNative,
-		Password:    "asdfasdf",
+		ExternalID:       "native:foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: sourcegraph.UserProviderNative,
+		Password:         "asdfasdf",
 	}); err == nil {
 		t.Fatal("native user created without email verification code")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:  "foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    "",
-		Password:    "qwer",
+		ExternalID:       "foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: "",
+		Password:         "qwer",
 	}); err == nil {
 		t.Fatal("non-native user created with password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:  "foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    "",
-		EmailCode:   "qwer",
+		ExternalID:       "foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: "",
+		EmailCode:        "qwer",
 	}); err == nil {
 		t.Fatal("non-native user created with email verification code")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:  "sso:foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    "",
-		Password:    "qwer",
+		ExternalID:       "sso:foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: "",
+		Password:         "qwer",
 	}); err == nil {
 		t.Fatal("sso user created with password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:  "sso:foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    "",
-		EmailCode:   "qwer",
+		ExternalID:       "sso:foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: "",
+		EmailCode:        "qwer",
 	}); err == nil {
 		t.Fatal("sso user created with email verification code")
 	}
 
 	usr, err := Users.Create(ctx, NewUser{
-		ExternalID:  "native:foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    sourcegraph.UserProviderNative,
-		Password:    "right-password",
-		EmailCode:   "email-code",
+		ExternalID:       "native:foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: sourcegraph.UserProviderNative,
+		Password:         "right-password",
+		EmailCode:        "email-code",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -152,13 +152,13 @@ func TestUsers_NativeAuthPasswordResetRateLimit(t *testing.T) {
 
 	passwordResetRateLimit = "24 hours"
 	usr, err := Users.Create(ctx, NewUser{
-		ExternalID:  "native:foo@bar.com",
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Provider:    sourcegraph.UserProviderNative,
-		Password:    "right-password",
-		EmailCode:   "email-code",
+		ExternalID:       "native:foo@bar.com",
+		Email:            "foo@bar.com",
+		Username:         "foo",
+		DisplayName:      "foo",
+		ExternalProvider: sourcegraph.UserProviderNative,
+		Password:         "right-password",
+		EmailCode:        "email-code",
 	})
 	if err != nil {
 		t.Fatal(err)

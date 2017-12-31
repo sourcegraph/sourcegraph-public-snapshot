@@ -70,13 +70,13 @@ var (
 
 // NewUser describes a new to-be-created user.
 type NewUser struct {
-	ExternalID  string
-	Email       string
-	Username    string
-	DisplayName string
-	Provider    string
-	Password    string
-	EmailCode   string
+	ExternalID       string
+	Email            string
+	Username         string
+	DisplayName      string
+	ExternalProvider string
+	Password         string
+	EmailCode        string
 }
 
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
@@ -91,10 +91,10 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 		return Mocks.Users.Create(ctx, info)
 	}
 
-	if info.Provider == sourcegraph.UserProviderNative && (info.Password == "" || info.EmailCode == "") {
+	if info.ExternalProvider == sourcegraph.UserProviderNative && (info.Password == "" || info.EmailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
-	if info.Provider != sourcegraph.UserProviderNative && (info.Password != "" || info.EmailCode != "") {
+	if info.ExternalProvider != sourcegraph.UserProviderNative && (info.Password != "" || info.EmailCode != "") {
 		return nil, errors.New("password and/or email verification code provided for non-native users")
 	}
 
@@ -138,8 +138,8 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(external_id, username, display_name, provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		info.ExternalID, info.Username, info.DisplayName, info.Provider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
+		"INSERT INTO users(external_id, username, display_name, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
+		info.ExternalID, info.Username, info.DisplayName, info.ExternalProvider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -183,14 +183,14 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 	}
 
 	return &sourcegraph.User{
-		ID:          id,
-		ExternalID:  info.ExternalID,
-		Username:    info.Username,
-		DisplayName: info.DisplayName,
-		Provider:    info.Provider,
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
-		SiteAdmin:   isSiteAdmin,
+		ID:               id,
+		ExternalID:       info.ExternalID,
+		Username:         info.Username,
+		DisplayName:      info.DisplayName,
+		ExternalProvider: info.ExternalProvider,
+		CreatedAt:        createdAt,
+		UpdatedAt:        updatedAt,
+		SiteAdmin:        isSiteAdmin,
 	}, nil
 }
 
@@ -392,7 +392,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.external_id, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.external_id, u.username, u.display_name, u.external_provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.ExternalID, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
+		err := rows.Scan(&u.ID, &u.ExternalID, &u.Username, &u.DisplayName, &u.ExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
@@ -432,7 +432,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 
 		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
 		// We need to check those in our own DB.
-		if user.Provider == "auth0" || strings.HasPrefix(user.ExternalID, "auth0|") {
+		if user.ExternalProvider == "auth0" || strings.HasPrefix(user.ExternalID, "auth0|") {
 			ok, err := auth0.CheckPassword(ctx, email, password)
 			// log15.Info("checking password via auth0", "user", user.Username, "externalID", user.ExternalID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err

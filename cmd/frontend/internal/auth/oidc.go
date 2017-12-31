@@ -301,11 +301,11 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	usr, err := db.Users.GetByExternalID(ctx, externalID)
 	if _, notFound := err.(db.ErrUserNotFound); notFound {
 		usr, err = db.Users.Create(ctx, db.NewUser{
-			ExternalID:  externalID,
-			Email:       email,
-			Username:    login,
-			DisplayName: displayName,
-			Provider:    provider,
+			ExternalID:       externalID,
+			Email:            email,
+			Username:         login,
+			DisplayName:      displayName,
+			ExternalProvider: provider,
 		})
 	}
 	if err != nil {

@@ -60,13 +60,13 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	// Create user
 	emailCode := backend.MakeEmailVerificationCode()
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
-		ExternalID:  backend.NativeAuthUserExternalID(creds.Email),
-		Email:       creds.Email,
-		Username:    creds.Username,
-		DisplayName: displayName,
-		Provider:    sourcegraph.UserProviderNative,
-		Password:    creds.Password,
-		EmailCode:   emailCode,
+		ExternalID:       backend.NativeAuthUserExternalID(creds.Email),
+		Email:            creds.Email,
+		Username:         creds.Username,
+		DisplayName:      displayName,
+		ExternalProvider: sourcegraph.UserProviderNative,
+		Password:         creds.Password,
+		EmailCode:        emailCode,
 	})
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
@@ -129,7 +129,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
 		return
 	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.ExternalProvider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
@@ -176,7 +176,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
 		return
 	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.ExternalProvider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
@@ -227,7 +227,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "No user found for email", http.StatusBadRequest, "email", creds.Email)
 		return
 	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.ExternalProvider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
@@ -272,7 +272,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, fmt.Sprintf("User with email %s not found", params.Email), http.StatusNotFound)
 		return
 	}
-	if conf.AuthProvider() != "auth0" && usr.Provider != sourcegraph.UserProviderNative {
+	if conf.AuthProvider() != "auth0" && usr.ExternalProvider != sourcegraph.UserProviderNative {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}

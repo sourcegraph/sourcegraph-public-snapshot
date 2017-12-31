@@ -271,15 +271,15 @@ const (
 
 // User represents a registered user.
 type User struct {
-	ID          int32     `json:"ID,omitempty"`
-	ExternalID  string    `json:"externalID,omitempty"`
-	Username    string    `json:"username,omitempty"`
-	Provider    string    `json:"provider,omitempty"`
-	DisplayName string    `json:"displayName,omitempty"`
-	AvatarURL   *string   `json:"avatarURL,omitempty"`
-	CreatedAt   time.Time `json:"createdAt,omitempty"`
-	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
-	SiteAdmin   bool      `json:"siteAdmin,omitempty"`
+	ID               int32     `json:"ID,omitempty"`
+	ExternalID       string    `json:"externalID,omitempty"`
+	Username         string    `json:"username,omitempty"`
+	ExternalProvider string    `json:"externalProvider,omitempty"`
+	DisplayName      string    `json:"displayName,omitempty"`
+	AvatarURL        *string   `json:"avatarURL,omitempty"`
+	CreatedAt        time.Time `json:"createdAt,omitempty"`
+	UpdatedAt        time.Time `json:"updatedAt,omitempty"`
+	SiteAdmin        bool      `json:"siteAdmin,omitempty"`
 }
 
 // OrgRepo represents a repo that exists on a native client's filesystem, but

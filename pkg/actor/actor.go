@@ -23,7 +23,7 @@ type Actor struct {
 
 // FromUser returns an actor corresponding to a user
 func FromUser(usr *sourcegraph.User) *Actor {
-	return &Actor{UID: usr.ID, Provider: usr.Provider}
+	return &Actor{UID: usr.ID, Provider: usr.ExternalProvider}
 }
 
 // UIDString is a helper method that returns the UID as a string.

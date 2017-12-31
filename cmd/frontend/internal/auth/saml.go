@@ -144,11 +144,11 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		}
 
 		usr, err = db.Users.Create(ctx, db.NewUser{
-			ExternalID:  externalID,
-			Email:       email,
-			Username:    login,
-			DisplayName: displayName,
-			Provider:    idpID,
+			ExternalID:       externalID,
+			Email:            email,
+			Username:         login,
+			DisplayName:      displayName,
+			ExternalProvider: idpID,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("could not create user with externalID %q, login %q: %s", externalID, login, err)

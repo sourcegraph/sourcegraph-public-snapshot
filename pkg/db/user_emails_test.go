@@ -13,12 +13,12 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		ExternalID: "native:123",
-		Email:      "a@example.com",
-		Username:   "u2",
-		Provider:   "native",
-		Password:   "pw",
-		EmailCode:  "c",
+		ExternalID:       "native:123",
+		Email:            "a@example.com",
+		Username:         "u2",
+		ExternalProvider: "native",
+		Password:         "pw",
+		EmailCode:        "c",
 	})
 	if err != nil {
 		t.Fatal(err)

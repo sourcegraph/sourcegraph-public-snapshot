@@ -458,7 +458,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone | not null default now()
  updated_at        | timestamp with time zone | not null default now()
  deleted_at        | timestamp with time zone | 
- provider          | text                     | not null default ''::text
+ external_provider | text                     | 
  invite_quota      | integer                  | not null default 15
  passwd            | text                     | 
  passwd_reset_code | text                     | 

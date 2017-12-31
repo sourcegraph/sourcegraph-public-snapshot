@@ -112,6 +112,8 @@
 // ../../../migrations/1514702776_add_settings_user_fkey.up.sql
 // ../../../migrations/1514713044_rename_users_auth_id_to_external_id.down.sql
 // ../../../migrations/1514713044_rename_users_auth_id_to_external_id.up.sql
+// ../../../migrations/1514714572_external_provider.down.sql
+// ../../../migrations/1514714572_external_provider.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2419,6 +2421,46 @@ func _1514713044_rename_users_auth_id_to_external_idUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514714572_external_providerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x08\x72\xf5\x73\xf4\x75\x55\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x28\xca\x2f\xcb\x4c\x49\x2d\x52\x08\xf1\x57\x50\x82\x71\x94\xb0\x19\x00\x11\x81\xea\x47\x28\x55\x08\x76\x0d\x51\xf0\xf3\x0f\x51\xf0\x0b\xf5\xf1\x21\x55\x9f\x8b\xab\x9b\x63\xa8\x4f\x88\x82\xba\xba\x35\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x7f\x5c\xf3\x44\xc2\x00\x00\x00")
+
+func _1514714572_external_providerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514714572_external_providerDownSql,
+		"1514714572_external_provider.down.sql",
+	)
+}
+
+func _1514714572_external_providerDownSql() (*asset, error) {
+	bytes, err := _1514714572_external_providerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514714572_external_provider.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514714572_external_providerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x08\x72\xf5\x73\xf4\x75\x55\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x2a\x28\xca\x2f\xcb\x4c\x49\x2d\x52\x52\x08\xf1\x57\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x87\x89\x62\x33\x00\x22\x02\xd5\x8f\xa1\x43\xc1\x25\xc8\x3f\x40\xc1\xcf\x3f\x44\xc1\x2f\xd4\xc7\x87\x5c\xfd\x2e\xae\x6e\x8e\xa1\x3e\x21\xd6\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x4f\xb4\xad\xc0\xcf\x00\x00\x00")
+
+func _1514714572_external_providerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514714572_external_providerUpSql,
+		"1514714572_external_provider.up.sql",
+	)
+}
+
+func _1514714572_external_providerUpSql() (*asset, error) {
+	bytes, err := _1514714572_external_providerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514714572_external_provider.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2583,6 +2625,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514702776_add_settings_user_fkey.up.sql":                    _1514702776_add_settings_user_fkeyUpSql,
 	"1514713044_rename_users_auth_id_to_external_id.down.sql":     _1514713044_rename_users_auth_id_to_external_idDownSql,
 	"1514713044_rename_users_auth_id_to_external_id.up.sql":       _1514713044_rename_users_auth_id_to_external_idUpSql,
+	"1514714572_external_provider.down.sql":                       _1514714572_external_providerDownSql,
+	"1514714572_external_provider.up.sql":                         _1514714572_external_providerUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2738,6 +2782,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514702776_add_settings_user_fkey.up.sql":                    &bintree{_1514702776_add_settings_user_fkeyUpSql, map[string]*bintree{}},
 	"1514713044_rename_users_auth_id_to_external_id.down.sql":     &bintree{_1514713044_rename_users_auth_id_to_external_idDownSql, map[string]*bintree{}},
 	"1514713044_rename_users_auth_id_to_external_id.up.sql":       &bintree{_1514713044_rename_users_auth_id_to_external_idUpSql, map[string]*bintree{}},
+	"1514714572_external_provider.down.sql":                       &bintree{_1514714572_external_providerDownSql, map[string]*bintree{}},
+	"1514714572_external_provider.up.sql":                         &bintree{_1514714572_external_providerUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
