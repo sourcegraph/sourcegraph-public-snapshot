@@ -67,7 +67,6 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	actor := &actor.Actor{
 		UID:   usr.AuthID,
 		Login: usr.Username,
-		Email: usr.Email,
 	}
 
 	if conf.EmailVerificationRequired() {
@@ -142,7 +141,6 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	actor := &actor.Actor{
 		UID:   usr.AuthID,
 		Login: usr.Username,
-		Email: usr.Email,
 	}
 
 	// Write the session cookie
@@ -154,7 +152,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	// Track user data in GCS
 	eventLabel := "CompletedNativeSignIn"
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(actor, eventLabel)
+		go tracking.TrackUser(usr.AvatarURL, usr.AuthID, creds.Email, eventLabel)
 	}
 }
 
@@ -180,8 +178,14 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", "not a native auth user")
 		return
 	}
-	if usr.Verified {
-		http.Error(w, fmt.Sprintf("User %s already verified", usr.Email), http.StatusBadRequest)
+
+	email, alreadyVerified, err := db.Users.GetEmail(ctx, usr.ID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("No email found for user %d", usr.ID), http.StatusBadRequest)
+		return
+	}
+	if alreadyVerified {
+		http.Error(w, fmt.Sprintf("User %s already verified", email), http.StatusBadRequest)
 		return
 	}
 	verified, err := db.Users.ValidateEmail(ctx, usr.ID, verifyCode)
@@ -238,7 +242,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	notif.SendMandrillTemplate(&notif.EmailConfig{
 		Template:  "forgot-password",
 		FromEmail: "noreply@sourcegraph.com",
-		ToEmail:   usr.Email,
+		ToEmail:   creds.Email,
 		Subject:   "Reset your Sourcegraph Server password",
 	}, []gochimp.Var{}, []gochimp.Var{
 		{Name: "SUBJECT", Content: "Reset password"},

@@ -23,9 +23,6 @@ type Actor struct {
 	// it, as an optimization to avoid incurring the Users.Get call).
 	Login string `json:",omitempty"`
 
-	// Email is the primary email address of the user, if it is known.
-	Email string
-
 	// Provider is the ID provider that is the source of truth for this user's identity.
 	// It is either the URL of a SSO Provider or "" if the user authenticated via
 	// the native authentication flow.
@@ -37,7 +34,7 @@ type Actor struct {
 
 // FromUser returns an actor corresponding to a user
 func FromUser(usr *sourcegraph.User) *Actor {
-	return &Actor{UID: usr.AuthID, Login: usr.Username, Provider: usr.Provider, Email: usr.Email}
+	return &Actor{UID: usr.AuthID, Login: usr.Username, Provider: usr.Provider}
 }
 
 func (a *Actor) String() string {

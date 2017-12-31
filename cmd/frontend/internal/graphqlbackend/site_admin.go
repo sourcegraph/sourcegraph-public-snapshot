@@ -64,12 +64,12 @@ func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, arg
 		return nil, err
 	}
 
-	user, err := db.Users.GetByID(ctx, userID)
+	email, _, err := db.Users.GetEmail(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	resetURL, err := backend.MakePasswordResetURL(ctx, userID, user.Email)
+	resetURL, err := backend.MakePasswordResetURL(ctx, userID, email)
 	if err != nil {
 		return nil, err
 	}

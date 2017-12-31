@@ -35,7 +35,11 @@ func TestUsers_NativeAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if usr.Verified {
+	_, verified, err := Users.GetEmail(ctx, usr.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if verified {
 		t.Fatal("new user should not be verified")
 	}
 	if isValid, err := Users.ValidateEmail(ctx, usr.ID, "wrong_email-code"); err == nil && isValid {
@@ -48,7 +52,9 @@ func TestUsers_NativeAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !usr.Verified {
+	if _, verified, err := Users.GetEmail(ctx, usr.ID); err != nil {
+		t.Fatal(err)
+	} else if !verified {
 		t.Fatal("user should not be verified")
 	}
 	if isPassword, err := Users.IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {

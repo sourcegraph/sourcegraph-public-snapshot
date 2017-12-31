@@ -289,6 +289,10 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("must be logged in")
 	}
+	email, _, err := db.Users.GetEmail(ctx, currentUser.SourcegraphID())
+	if err != nil {
+		return nil, err
+	}
 
 	// Don't invite the user if they are already a member.
 	invitedUser, err := db.Users.GetByEmail(ctx, args.Email)
@@ -362,7 +366,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	client := slack.New(org.SlackWebhookURL, true)
-	go client.NotifyOnInvite(currentUser, org, args.Email)
+	go client.NotifyOnInvite(currentUser, email, org, args.Email)
 
 	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
 }
@@ -377,10 +381,14 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("no current user")
 	}
+	email, verified, err := db.Users.GetEmail(ctx, currentUser.SourcegraphID())
+	if err != nil {
+		return nil, err
+	}
 
 	// If the user is natively authenticated, require a verified email (if via SSO, we assume the SSO provider
 	// has authenticated the user's email)
-	if actor := actor.FromContext(ctx); actor.Provider == "" && strings.HasPrefix(actor.UID, "auth0|") {
+	if actor := actor.FromContext(ctx); !verified && (actor.Provider == "" && strings.HasPrefix(actor.UID, "auth0|")) {
 		u, err := auth0.GetAuth0User(ctx)
 		if err != nil {
 			return nil, err
@@ -408,7 +416,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	}
 
 	client := slack.New(org.SlackWebhookURL, true)
-	go client.NotifyOnAcceptedInvite(currentUser, org)
+	go client.NotifyOnAcceptedInvite(currentUser, email, org)
 
 	return &orgInviteResolver{emailVerified: true}, nil
 }

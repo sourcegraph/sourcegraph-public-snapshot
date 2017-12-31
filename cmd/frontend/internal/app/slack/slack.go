@@ -33,7 +33,6 @@ func New(webhookURL *string, alsoSendToSourcegraph bool) *Client {
 
 // User is an interface for accessing a Sourcegraph user's profile data
 type User interface {
-	Email() string
 	Username() string
 	DisplayName() *string
 	AvatarURL() *string
@@ -108,6 +107,7 @@ func Post(payload *Payload, webhookURL *string) error {
 // when a user posts a reply to a thread
 func (c *Client) NotifyOnComment(
 	user User,
+	userEmail string,
 	org *sourcegraph.Org,
 	orgRepo *sourcegraph.OrgRepo,
 	thread *sourcegraph.Thread,
@@ -117,7 +117,7 @@ func (c *Client) NotifyOnComment(
 	threadTitle string,
 ) {
 	// First, send the uncensored comment to the Client's webhookURL
-	err := c.notifyOnComments(false, user, org, orgRepo, thread, comment, recipients, deepURL, threadTitle, c.webhookURL, false)
+	err := c.notifyOnComments(false, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, threadTitle, c.webhookURL, false)
 	if err != nil {
 		log15.Error("slack.NotifyOnComment failed", "error", err)
 	}
@@ -126,7 +126,7 @@ func (c *Client) NotifyOnComment(
 	// comment to the Sourcegraph-internal webhook. In these instances, set censored
 	// to true to ensure that the private contents of the comment remain private.
 	if c.alsoSendToSourcegraph && sourcegraphOrgWebhookURL != "" && org.Name != "Sourcegraph" {
-		err := c.notifyOnComments(false, user, org, orgRepo, thread, comment, recipients, deepURL, threadTitle, &sourcegraphOrgWebhookURL, true)
+		err := c.notifyOnComments(false, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, threadTitle, &sourcegraphOrgWebhookURL, true)
 		if err != nil {
 			log15.Error("slack.NotifyOnThread failed", "error", err)
 		}
@@ -137,6 +137,7 @@ func (c *Client) NotifyOnComment(
 // when a user creates a thread
 func (c *Client) NotifyOnThread(
 	user User,
+	userEmail string,
 	org *sourcegraph.Org,
 	orgRepo *sourcegraph.OrgRepo,
 	thread *sourcegraph.Thread,
@@ -145,7 +146,7 @@ func (c *Client) NotifyOnThread(
 	deepURL string,
 ) {
 	// First, send the uncensored comment to the Client's webhookURL
-	err := c.notifyOnComments(true, user, org, orgRepo, thread, comment, recipients, deepURL, "", c.webhookURL, false)
+	err := c.notifyOnComments(true, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, "", c.webhookURL, false)
 	if err != nil {
 		log15.Error("slack.NotifyOnThread failed", "error", err)
 	}
@@ -154,7 +155,7 @@ func (c *Client) NotifyOnThread(
 	// comment to the Sourcegraph-internal webhook. In these instances, set censored
 	// to true to ensure that the private contents of the comment remain private.
 	if c.alsoSendToSourcegraph && sourcegraphOrgWebhookURL != "" && org.Name != "Sourcegraph" {
-		err := c.notifyOnComments(true, user, org, orgRepo, thread, comment, recipients, deepURL, "", &sourcegraphOrgWebhookURL, true)
+		err := c.notifyOnComments(true, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, "", &sourcegraphOrgWebhookURL, true)
 		if err != nil {
 			log15.Error("slack.NotifyOnThread failed", "error", err)
 		}
@@ -164,6 +165,7 @@ func (c *Client) NotifyOnThread(
 func (c *Client) notifyOnComments(
 	isNewThread bool,
 	user User,
+	userEmail string,
 	org *sourcegraph.Org,
 	orgRepo *sourcegraph.OrgRepo,
 	thread *sourcegraph.Thread,
@@ -192,7 +194,7 @@ func (c *Client) notifyOnComments(
 		text = comment.Contents
 	}
 
-	displayNameText := user.Email()
+	displayNameText := userEmail
 	if user.DisplayName() != nil {
 		displayNameText = *user.DisplayName()
 	}
@@ -252,8 +254,8 @@ func (c *Client) notifyOnComments(
 
 // NotifyOnInvite posts a message to the defined Slack channel
 // when a user invites another user to join their org
-func (c *Client) NotifyOnInvite(user User, org *sourcegraph.Org, inviteEmail string) {
-	displayNameText := user.Email()
+func (c *Client) NotifyOnInvite(user User, userEmail string, org *sourcegraph.Org, inviteEmail string) {
+	displayNameText := userEmail
 	if user.DisplayName() != nil {
 		displayNameText = *user.DisplayName()
 	}
@@ -297,8 +299,8 @@ func (c *Client) NotifyOnInvite(user User, org *sourcegraph.Org, inviteEmail str
 
 // NotifyOnAcceptedInvite posts a message to the defined Slack channel
 // when an invited user accepts their invite to join an org
-func (c *Client) NotifyOnAcceptedInvite(user User, org *sourcegraph.Org) {
-	displayNameText := user.Email()
+func (c *Client) NotifyOnAcceptedInvite(user User, userEmail string, org *sourcegraph.Org) {
+	displayNameText := userEmail
 	if user.DisplayName() != nil {
 		displayNameText = *user.DisplayName()
 	}

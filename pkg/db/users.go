@@ -122,17 +122,27 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth_id, email, username, display_name, provider, avatar_url, created_at, updated_at, passwd, email_code, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		authID, email, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd, emailCode).Scan(&id, &isSiteAdmin)
+		"INSERT INTO users(auth_id, username, display_name, provider, avatar_url, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
+		authID, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
 			case "users_username_key":
 				return nil, ErrCannotCreateUser{"err_username_exists"}
-			case "users_email_key":
-				return nil, ErrCannotCreateUser{"err_email_exists"}
 			case "users_auth_id_key":
 				return nil, ErrCannotCreateUser{"err_auth_id_exists"}
+			}
+		}
+		return nil, err
+	}
+
+	if _, err := tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)",
+		id, email, emailCode,
+	); err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Constraint {
+			case "user_emails_email_key":
+				return nil, ErrCannotCreateUser{"err_email_exists"}
 			}
 		}
 		return nil, err
@@ -157,7 +167,6 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 	return &sourcegraph.User{
 		ID:          id,
 		AuthID:      authID,
-		Email:       email,
 		Username:    username,
 		DisplayName: displayName,
 		Provider:    provider,
@@ -284,7 +293,7 @@ func (u *users) GetByAuthID(ctx context.Context, id string) (*sourcegraph.User, 
 }
 
 func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User, error) {
-	return u.getOneBySQL(ctx, "WHERE email=$1 AND deleted_at IS NULL LIMIT 1", email)
+	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1) AND deleted_at IS NULL LIMIT 1", email)
 }
 
 func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegraph.User, error) {
@@ -362,7 +371,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.email, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.email_code is null, u.site_admin FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +381,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarUrl sql.NullString
-		err := rows.Scan(&u.ID, &u.AuthID, &u.Email, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.Verified, &u.SiteAdmin)
+		err := rows.Scan(&u.ID, &u.AuthID, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
@@ -394,10 +403,16 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 		if err != nil {
 			return false, err
 		}
+
+		email, _, err := u.GetEmail(ctx, id)
+		if err != nil {
+			return false, err
+		}
+
 		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
 		// We need to check those in our own DB.
 		if user.Provider == "auth0" || strings.HasPrefix(user.AuthID, "auth0|") {
-			ok, err := auth0tmp.CheckPassword(ctx, user.Email, password)
+			ok, err := auth0tmp.CheckPassword(ctx, email, password)
 			// log15.Info("checking password via auth0", "user", user.Username, "authID", user.AuthID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err
 		}
@@ -413,9 +428,22 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 	return bcrypt.CompareHashAndPassword([]byte(passwd.String), []byte(password)) == nil, nil
 }
 
+func (u *users) GetEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
+	if Mocks.Users.GetEmail != nil {
+		return Mocks.Users.GetEmail(ctx, id)
+	}
+
+	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
+		id,
+	).Scan(&email, &verified); err != nil {
+		return "", false, ErrUserNotFound{[]interface{}{fmt.Sprintf("id %d", id)}}
+	}
+	return email, verified, nil
+}
+
 func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
 	var dbCode sql.NullString
-	if err := globalDB.QueryRowContext(ctx, "SELECT email_code FROM users WHERE id=$1", id).Scan(&dbCode); err != nil {
+	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1", id).Scan(&dbCode); err != nil {
 		return false, err
 	}
 	if !dbCode.Valid {
@@ -424,7 +452,7 @@ func (u *users) ValidateEmail(ctx context.Context, id int32, userCode string) (b
 	if dbCode.String != userCode {
 		return false, nil
 	}
-	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET email_code=null WHERE id=$1", id); err != nil {
+	if _, err := globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1", id); err != nil {
 		return false, err
 	}
 	return true, nil

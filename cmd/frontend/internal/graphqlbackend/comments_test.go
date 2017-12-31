@@ -54,27 +54,22 @@ func TestComments_emailsToNotify(t *testing.T) {
 	nick := sourcegraph.User{
 		ID:       1,
 		Username: "nick",
-		Email:    "nick@sourcegraph.com",
 	}
 	renfred := sourcegraph.User{
 		ID:       2,
 		Username: "renfred",
-		Email:    "renfred@sourcegraph.com",
 	}
 	john := sourcegraph.User{
 		ID:       3,
 		Username: "john",
-		Email:    "john@sourcegraph.com",
 	}
 	sqs := sourcegraph.User{
 		ID:       4,
 		Username: "sqs",
-		Email:    "sqs@sourcegraph.com",
 	}
 	kingy := sourcegraph.User{
 		ID:       5,
 		Username: "kingy",
-		Email:    "kingy@sourcegraph.com",
 	}
 	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}
 
@@ -85,6 +80,15 @@ func TestComments_emailsToNotify(t *testing.T) {
 			}
 		}
 		return nil, fmt.Errorf("user with ID %d not found", id)
+	}
+
+	db.Mocks.Users.GetEmail = func(ctx context.Context, id int32) (string, bool, error) {
+		for _, u := range testUsers {
+			if u.ID == id {
+				return u.Username + "@sourcegraph.com", true, nil
+			}
+		}
+		return "", false, fmt.Errorf("user with ID %d not found", id)
 	}
 
 	// Mock Users.ListByOrg
@@ -129,7 +133,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 		var emails []string
 		for _, u := range testUsers {
 			if _, ok := exclude[u.ID]; !ok {
-				emails = append(emails, u.Email)
+				emails = append(emails, u.Username+"@sourcegraph.com")
 			}
 		}
 		return emails, nil
@@ -139,42 +143,42 @@ func TestComments_emailsToNotify(t *testing.T) {
 	one := &sourcegraph.Comment{
 		Contents:     "Yo @renfred",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Email,
+		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	two := &sourcegraph.Comment{
 		Contents:     "Did you see this comment?",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Email,
+		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	three := &sourcegraph.Comment{
 		Contents:     "Going to mention myself to test notifications @nick",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Email,
+		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	four := &sourcegraph.Comment{
 		Contents:     "Dude, I am on vacation. Ask @sqs or @John",
 		AuthorUserID: renfred.ID,
-		AuthorEmail:  renfred.Email,
+		AuthorEmail:  renfred.Username + "@sourcegraph.com",
 	}
 	five := &sourcegraph.Comment{
 		Contents:     "Stop bothering Renfred!",
 		AuthorUserID: sqs.ID,
-		AuthorEmail:  sqs.Email,
+		AuthorEmail:  sqs.Username + "@sourcegraph.com",
 	}
 	six := &sourcegraph.Comment{
 		Contents:     "Maybe @linus could take a look?",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Email,
+		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	seven := &sourcegraph.Comment{
 		Contents:     "Feels like yelling into @the-void",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Email,
+		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	eight := &sourcegraph.Comment{
 		Contents:     "Nevermind. Just going to ask the whole @org",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Email,
+		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 
 	tests := []struct {
@@ -187,49 +191,49 @@ func TestComments_emailsToNotify(t *testing.T) {
 			[]*sourcegraph.Comment{},
 			one,
 			nick,
-			[]string{renfred.Email},
+			[]string{renfred.Username + "@sourcegraph.com"},
 		},
 		{
 			[]*sourcegraph.Comment{one},
 			two,
 			nick,
-			[]string{renfred.Email},
+			[]string{renfred.Username + "@sourcegraph.com"},
 		},
 		{
 			[]*sourcegraph.Comment{one, two},
 			three,
 			nick,
-			[]string{renfred.Email, nick.Email},
+			[]string{renfred.Username + "@sourcegraph.com", nick.Username + "@sourcegraph.com"},
 		},
 		{
 			[]*sourcegraph.Comment{one, two, three},
 			four,
 			renfred,
-			[]string{nick.Email, sqs.Email, john.Email},
+			[]string{nick.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
 			[]*sourcegraph.Comment{one, two, three, four},
 			five,
 			sqs,
-			[]string{nick.Email, renfred.Email, john.Email},
+			[]string{nick.Username + "@sourcegraph.com", renfred.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
 			[]*sourcegraph.Comment{one, two, three, four, five},
 			six,
 			nick,
-			[]string{renfred.Email, sqs.Email, john.Email},
+			[]string{renfred.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
 			[]*sourcegraph.Comment{one, two, three, four, five, six},
 			seven,
 			nick,
-			[]string{renfred.Email, sqs.Email, john.Email},
+			[]string{renfred.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
 			[]*sourcegraph.Comment{one, two, three, four, five, six, seven, eight},
 			eight,
 			nick,
-			[]string{renfred.Email, sqs.Email, john.Email, kingy.Email},
+			[]string{renfred.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com", kingy.Username + "@sourcegraph.com"},
 		},
 	}
 

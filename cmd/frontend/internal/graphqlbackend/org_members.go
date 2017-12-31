@@ -77,14 +77,14 @@ func allEmailsForOrg(ctx context.Context, orgID int32, excludeByUserID []int32) 
 		if _, ok := exclude[m.UserID]; ok {
 			continue
 		}
-		user, err := db.Users.GetByID(ctx, m.UserID)
+		email, _, err := db.Users.GetEmail(ctx, m.UserID)
 		if err != nil {
 			// This shouldn't happen, but we don't want to prevent the notification,
 			// so swallow the error.
 			log15.Error("get user", "uid", m.UserID, "error", err)
 			continue
 		}
-		emails = append(emails, user.Email)
+		emails = append(emails, email)
 	}
 	return emails, nil
 }
