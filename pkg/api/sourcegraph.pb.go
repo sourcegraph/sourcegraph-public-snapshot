@@ -265,6 +265,8 @@ const (
 const (
 	// UserProviderNative is the identity provider identifier that indicates a user identity came from native auth.
 	UserProviderNative = "native"
+	// UserProviderHTTPHeader is the http-header auth provider.
+	UserProviderHTTPHeader = "http-header"
 )
 
 // User represents a registered user.

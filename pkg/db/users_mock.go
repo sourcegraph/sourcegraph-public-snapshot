@@ -8,7 +8,9 @@ import (
 )
 
 type MockUsers struct {
+	Create               func(ctx context.Context, authID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error)
 	GetByID              func(ctx context.Context, id int32) (*sourcegraph.User, error)
+	GetByUsername        func(ctx context.Context, username string) (*sourcegraph.User, error)
 	GetByAuthID          func(ctx context.Context, id string) (*sourcegraph.User, error)
 	GetByCurrentAuthUser func(ctx context.Context) (*sourcegraph.User, error)
 	Count                func(ctx context.Context) (int, error)

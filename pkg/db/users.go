@@ -63,6 +63,11 @@ func (err ErrCannotCreateUser) Code() string {
 	return err.code
 }
 
+var (
+	ErrUsernameExists = ErrCannotCreateUser{"err_username_exists"}
+	ErrAuthIDExists   = ErrCannotCreateUser{"err_auth_id_exists"}
+)
+
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
 // the user:
 // - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
@@ -71,6 +76,10 @@ func (err ErrCannotCreateUser) Code() string {
 // Native-auth users must also specify a password and email verification code upon creation. When the user's email is
 // verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
 func (*users) Create(ctx context.Context, authID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
+	if Mocks.Users.Create != nil {
+		return Mocks.Users.Create(ctx, authID, email, username, displayName, provider, avatarURL, password, emailCode)
+	}
+
 	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
@@ -128,24 +137,26 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
 			case "users_username_key":
-				return nil, ErrCannotCreateUser{"err_username_exists"}
+				return nil, ErrUsernameExists
 			case "users_auth_id_key":
-				return nil, ErrCannotCreateUser{"err_auth_id_exists"}
+				return nil, ErrAuthIDExists
 			}
 		}
 		return nil, err
 	}
 
-	if _, err := tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)",
-		id, email, emailCode,
-	); err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Constraint {
-			case "user_emails_email_key":
-				return nil, ErrCannotCreateUser{"err_email_exists"}
+	if email != "" {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)",
+			id, email, emailCode,
+		); err != nil {
+			if pqErr, ok := err.(*pq.Error); ok {
+				switch pqErr.Constraint {
+				case "user_emails_email_key":
+					return nil, ErrCannotCreateUser{"err_email_exists"}
+				}
 			}
+			return nil, err
 		}
-		return nil, err
 	}
 
 	{
@@ -297,6 +308,10 @@ func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User
 }
 
 func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegraph.User, error) {
+	if Mocks.Users.GetByUsername != nil {
+		return Mocks.Users.GetByUsername(ctx, username)
+	}
+
 	return u.getOneBySQL(ctx, "WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 

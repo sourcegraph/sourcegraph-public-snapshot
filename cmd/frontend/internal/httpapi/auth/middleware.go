@@ -1,13 +1,16 @@
 package auth
 
 import (
+	"context"
 	"net/http"
+	"strings"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-
-	"strings"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var ssoUserHeader = conf.AuthHTTPHeader()
@@ -18,9 +21,15 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 		w.Header().Add("Vary", "Accept, Authorization, Cookie")
 
 		if ssoUserHeader != "" {
-			if h := r.Header.Get(ssoUserHeader); h != "" {
+			if username := r.Header.Get(ssoUserHeader); username != "" {
+				if _, err := getUserFromSSOHeaderUsername(r.Context(), username); err != nil {
+					log15.Error("unable to get/create user from SSO header", "header", ssoUserHeader, "username", username, "err", err)
+					http.Error(w, "unable to get/create user", http.StatusInternalServerError)
+					return
+				}
+
 				r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{
-					UID: h,
+					UID: "http-header:" + username,
 				}))
 				next.ServeHTTP(w, r)
 				return
@@ -40,6 +49,28 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID int32, err error) {
+	user, err := db.Users.GetByUsername(ctx, username)
+	if err == nil {
+		// User exists.
+		return user.ID, nil
+	} else if _, ok := err.(db.ErrUserNotFound); !ok {
+		return 0, err
+	}
+
+	// User does not exist, so we need to create it.
+	user, err = db.Users.Create(ctx, sourcegraph.UserProviderHTTPHeader+":"+username, "", username, "", sourcegraph.UserProviderHTTPHeader, nil, "", "")
+	// Handle the race condition where the new user performs two requests
+	// and both try to create the user.
+	if err == db.ErrUsernameExists || err == db.ErrAuthIDExists {
+		user, err = db.Users.GetByUsername(ctx, username)
+	}
+	if err != nil {
+		return 0, err
+	}
+	return user.ID, nil
 }
 
 // AuthorizationHeaderWithSessionCookie returns a value for the "Authorization" header that can be
