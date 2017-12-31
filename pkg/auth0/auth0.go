@@ -65,7 +65,7 @@ type User struct {
 
 func GetAuth0User(ctx context.Context) (*User, error) {
 	actor := actor.FromContext(ctx)
-	uid := actor.AuthInfo().UID
+	uid := actor.UID
 	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users/" + uid)
 	if err != nil {
 		return nil, err

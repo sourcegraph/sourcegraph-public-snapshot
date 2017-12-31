@@ -43,13 +43,6 @@ func (a *Actor) IsAuthenticated() bool {
 	return a.UID != ""
 }
 
-func (a *Actor) AuthInfo() *sourcegraph.AuthInfo {
-	return &sourcegraph.AuthInfo{
-		UID:   a.UID,
-		Login: a.Login,
-	}
-}
-
 type key int
 
 const (

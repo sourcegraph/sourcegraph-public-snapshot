@@ -199,19 +199,6 @@ type UserSpec struct {
 	UID string `json:"UID,omitempty"`
 }
 
-// AuthInfo describes the currently authenticated client and/or user
-// (if any).
-type AuthInfo struct {
-	// UID is the UID of the currently authenticated user (if any).
-	UID string `json:"UID,omitempty"`
-	// Login is the login of the currently authenticated user (if any).
-	Login string `json:"Login,omitempty"`
-	// Write is set if the user (if any) has write access on this server.
-	Write bool `json:"Write,omitempty"`
-	// Admin is set if the user (if any) has admin access on this server.
-	Admin bool `json:"Admin,omitempty"`
-}
-
 // ExternalToken specifies an auth token of a user for an external host.
 type ExternalToken struct {
 	// UID is the UID of the user authorized by the token.
