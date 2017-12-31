@@ -11,7 +11,7 @@ fi
 
 if ! git diff --quiet --cached --name-only cmd/frontend/internal/graphqlbackend/schema.graphql
 then
-	npm --prefix web graphql || exit 1
+	npm --prefix web run graphql || exit 1
 	# TODO(sqs): ensure we regenerated schema.go
 fi
 
