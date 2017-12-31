@@ -17,6 +17,11 @@ import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { editorActions } from './configHelpers'
 
+/**
+ * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
+ */
+const disposableToFn = (disposable: monaco.IDisposable) => () => disposable.dispose()
+
 interface Props extends RouteComponentProps<any> {}
 
 interface State {
@@ -299,44 +304,52 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private monacoRef = (monacoValue: typeof monaco | null) => {
         this.monaco = monacoValue
         if (this.monaco) {
-            this.subscriptions.add(this.monaco.editor.onDidCreateEditor(editor => (this.editor = editor)).dispose)
             this.subscriptions.add(
-                this.monaco.editor.onDidCreateModel(model => {
-                    if (this.editor && isStandaloneCodeEditor(this.editor)) {
-                        for (const { id, label, run } of editorActions) {
-                            this.editor.addAction({
-                                label,
-                                id,
-                                run: editor => {
-                                    editor.focus()
-                                    editor.pushUndoStop()
-                                    const { edits, selectText } = run(editor.getValue())
-                                    const monacoEdits = toMonacoEdits(model, edits)
-                                    let selection: monaco.Selection | undefined
-                                    if (typeof selectText === 'string') {
-                                        const afterText = applyEdits(editor.getValue(), edits)
-                                        let offset = afterText.slice(edits[0].offset).indexOf(selectText)
-                                        if (offset !== -1) {
-                                            offset += edits[0].offset
+                disposableToFn(
+                    this.monaco.editor.onDidCreateEditor(editor => {
+                        this.editor = editor
+                    })
+                )
+            )
+            this.subscriptions.add(
+                disposableToFn(
+                    this.monaco.editor.onDidCreateModel(model => {
+                        if (this.editor && isStandaloneCodeEditor(this.editor)) {
+                            for (const { id, label, run } of editorActions) {
+                                this.editor.addAction({
+                                    label,
+                                    id,
+                                    run: editor => {
+                                        editor.focus()
+                                        editor.pushUndoStop()
+                                        const { edits, selectText } = run(editor.getValue())
+                                        const monacoEdits = toMonacoEdits(model, edits)
+                                        let selection: monaco.Selection | undefined
+                                        if (typeof selectText === 'string') {
+                                            const afterText = applyEdits(editor.getValue(), edits)
+                                            let offset = afterText.slice(edits[0].offset).indexOf(selectText)
+                                            if (offset !== -1) {
+                                                offset += edits[0].offset
+                                                selection = monaco.Selection.fromPositions(
+                                                    getPositionAt(afterText, offset),
+                                                    getPositionAt(afterText, offset + selectText.length)
+                                                )
+                                            }
+                                        }
+                                        if (!selection) {
                                             selection = monaco.Selection.fromPositions(
-                                                getPositionAt(afterText, offset),
-                                                getPositionAt(afterText, offset + selectText.length)
+                                                monacoEdits[0].range.getStartPosition(),
+                                                monacoEdits[monacoEdits.length - 1].range.getEndPosition()
                                             )
                                         }
-                                    }
-                                    if (!selection) {
-                                        selection = monaco.Selection.fromPositions(
-                                            monacoEdits[0].range.getStartPosition(),
-                                            monacoEdits[monacoEdits.length - 1].range.getEndPosition()
-                                        )
-                                    }
-                                    editor.executeEdits(id, monacoEdits, [selection])
-                                    editor.revealPositionInCenter(selection.getStartPosition())
-                                },
-                            })
+                                        editor.executeEdits(id, monacoEdits, [selection])
+                                        editor.revealPositionInCenter(selection.getStartPosition())
+                                    },
+                                })
+                            }
                         }
-                    }
-                }).dispose
+                    })
+                )
             )
         }
     }
