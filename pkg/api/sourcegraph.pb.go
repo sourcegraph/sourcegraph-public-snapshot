@@ -199,18 +199,6 @@ type UserSpec struct {
 	UID string `json:"UID,omitempty"`
 }
 
-// ExternalToken specifies an auth token of a user for an external host.
-type ExternalToken struct {
-	// UID is the UID of the user authorized by the token.
-	UID string `json:"uid,omitempty"`
-	// Host is the external service which granted the token.
-	Host string `json:"host,omitempty"`
-	// Token is the auth token authorizing a user on an external service.
-	Token string `json:"token,omitempty"`
-	// Scope lists the permissions the token is entitled to.
-	Scope string `json:"scope,omitempty"`
-}
-
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language        string // e.g. "go"
