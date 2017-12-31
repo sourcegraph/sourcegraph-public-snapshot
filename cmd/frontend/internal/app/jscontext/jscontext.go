@@ -1,9 +1,6 @@
 package jscontext
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -67,7 +64,6 @@ type JSContext struct {
 
 	GithubEnterpriseURLs map[string]string     `json:"githubEnterpriseURLs"`
 	SentryDSN            string                `json:"sentryDSN"`
-	IntercomHash         string                `json:"intercomHash"`
 	TrackingAppID        string                `json:"trackingAppID"`
 	Debug                bool                  `json:"debug"`
 	RepoHomeRegexFilter  string                `json:"repoHomeRegexFilter"`
@@ -143,7 +139,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		User:                 user,
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
-		IntercomHash:         intercomHMAC(actor.UID),
 		Debug:                envvar.DebugMode(),
 		TrackingAppID:        TrackingAppID,
 		RepoHomeRegexFilter:  repoHomeRegexFilter,
@@ -168,15 +163,4 @@ var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* p
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
-}
-
-var intercomSecretKey = env.Get("SG_INTERCOM_SECRET_KEY", "", "secret key for the Intercom widget")
-
-func intercomHMAC(uid string) string {
-	if uid == "" || intercomSecretKey == "" {
-		return ""
-	}
-	mac := hmac.New(sha256.New, []byte(intercomSecretKey))
-	mac.Write([]byte(uid))
-	return hex.EncodeToString(mac.Sum(nil))
 }

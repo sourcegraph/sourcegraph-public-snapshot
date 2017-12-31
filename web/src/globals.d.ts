@@ -46,7 +46,6 @@ interface SourcegraphContext {
     readonly user: ImmutableUser | null
 
     sentryDSN: string
-    intercomHash: string
 
     /** Base URL for app (e.g., https://sourcegraph.com or http://localhost:3080) */
     appURL: string
