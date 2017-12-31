@@ -628,6 +628,7 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 			Subject:   subject,
 		}
 
+		// TODO(sqs): make this use txemail.Send
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
 			gochimp.Var{Name: "THREAD_ID", Content: strconv.Itoa(int(thread.ID))},
 			gochimp.Var{Name: "THREAD_URL", Content: url.String()},

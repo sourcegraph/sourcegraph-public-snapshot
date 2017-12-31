@@ -319,6 +319,7 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 			Subject:   subject,
 		}
 
+		// TODO(sqs): make this use txemail.Send
 		notif.SendMandrillTemplate(config, []gochimp.Var{}, append([]gochimp.Var{
 			gochimp.Var{Name: "CONTENTS", Content: contents},
 			gochimp.Var{Name: "COMMENT_URL", Content: commentURL.String()},

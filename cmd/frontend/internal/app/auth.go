@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mattbaird/gochimp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
@@ -20,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type oauthCookie struct {
@@ -71,12 +70,17 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		q := make(url.Values)
 		q.Set("code", emailCode)
 		verifyLink := globals.AppURL.String() + router.Rel.URLTo(router.VerifyEmail).Path + "?" + q.Encode()
-		notif.SendMandrillTemplate(&notif.EmailConfig{
-			Template:  "verify-email",
-			FromEmail: "noreply@sourcegraph.com",
-			ToEmail:   creds.Email,
-			Subject:   "Verify your email on Sourcegraph Server",
-		}, []gochimp.Var{}, []gochimp.Var{{Name: "VERIFY_URL", Content: verifyLink}})
+
+		if err := txemail.Send(r.Context(), txemail.Message{
+			To:      []string{creds.Email},
+			Subject: "Verify your email on Sourcegraph",
+			TextBody: fmt.Sprintf(`Verify your email address on Sourcegraph by following this link:
+
+  %s
+`, verifyLink),
+		}); err != nil {
+			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
+		}
 	}
 
 	// Write the session cookie
@@ -211,16 +215,17 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notif.SendMandrillTemplate(&notif.EmailConfig{
-		Template:  "forgot-password",
-		FromEmail: "noreply@sourcegraph.com",
-		ToEmail:   creds.Email,
-		Subject:   "Reset your Sourcegraph Server password",
-	}, []gochimp.Var{}, []gochimp.Var{
-		{Name: "SUBJECT", Content: "Reset password"},
-		{Name: "LOGIN", Content: usr.Username},
-		{Name: "RESET_LINK", Content: globals.AppURL.ResolveReference(resetURL).String()},
-	})
+	if err := txemail.Send(r.Context(), txemail.Message{
+		To:      []string{creds.Email},
+		Subject: "Reset your Sourcegraph password",
+		TextBody: fmt.Sprintf(`To reset the password for %q on Sourcegraph, follow this link:
+
+%s
+`, usr.Username, globals.AppURL.ResolveReference(resetURL).String()),
+	}); err != nil {
+		httpLogAndError(w, "Could not reset password", http.StatusInternalServerError, "err", err)
+		return
+	}
 }
 
 // serveResetPassword resets the password if the correct code is provided.
