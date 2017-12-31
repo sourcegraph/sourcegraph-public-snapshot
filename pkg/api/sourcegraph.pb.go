@@ -451,7 +451,7 @@ type UserActivity struct {
 	UpdatedAt     time.Time
 }
 
-type DeploymentConfiguration struct {
+type SiteConfig struct {
 	AppID            string `json:"AppID"`
 	Email            string `json:"Email"`
 	TelemetryEnabled bool   `json:"TelemetryEnabled"`

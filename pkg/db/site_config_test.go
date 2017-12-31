@@ -4,12 +4,12 @@ import (
 	"testing"
 )
 
-func Test_Get(t *testing.T) {
+func TestSiteConfig_Get(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := testContext()
-	config, err := DeploymentConfiguration.Get(ctx)
+	config, err := SiteConfig.Get(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

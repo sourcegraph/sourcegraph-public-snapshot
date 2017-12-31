@@ -346,11 +346,11 @@ func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args
 	Email           string
 	EnableTelemetry bool
 }) (*EmptyResponse, error) {
-	configuration := &sourcegraph.DeploymentConfiguration{
+	configuration := &sourcegraph.SiteConfig{
 		Email:            args.Email,
 		TelemetryEnabled: args.EnableTelemetry,
 	}
-	err := db.DeploymentConfiguration.UpdateConfiguration(ctx, configuration)
+	err := db.SiteConfig.UpdateConfiguration(ctx, configuration)
 	if err != nil {
 		return nil, err
 	}

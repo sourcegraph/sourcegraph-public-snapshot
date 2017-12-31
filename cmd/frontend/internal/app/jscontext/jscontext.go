@@ -121,16 +121,16 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	license, licenseStatus := license.Get(TrackingAppID)
 	var showOnboarding = false
 	if license == nil || license.AppID == "" {
-		deploymentConfiguration, err := db.DeploymentConfiguration.Get(req.Context())
+		siteConfig, err := db.SiteConfig.Get(req.Context())
 		if err != nil {
 			// errors swallowed because telemetry is optional.
 			log15.Error("db.Config.Get failed", "error", err)
-		} else if deploymentConfiguration.TelemetryEnabled {
-			TrackingAppID = deploymentConfiguration.AppID
+		} else if siteConfig.TelemetryEnabled {
+			TrackingAppID = siteConfig.AppID
 		} else {
 			TrackingAppID = ""
 		}
-		showOnboarding = deploymentConfiguration == nil || deploymentConfiguration.LastUpdated == ""
+		showOnboarding = siteConfig == nil || siteConfig.LastUpdated == ""
 	}
 
 	return JSContext{
