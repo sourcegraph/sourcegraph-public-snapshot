@@ -13,7 +13,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 	ctx := testContext()
 
 	if _, err := Users.Create(ctx, NewUser{
-		AuthID:      "native:foo@bar.com",
+		ExternalID:  "native:foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
@@ -22,7 +22,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 		t.Fatal("native user created without password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		AuthID:      "native:foo@bar.com",
+		ExternalID:  "native:foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
@@ -32,7 +32,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 		t.Fatal("native user created without email verification code")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		AuthID:      "foo@bar.com",
+		ExternalID:  "foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
@@ -42,7 +42,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 		t.Fatal("non-native user created with password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		AuthID:      "foo@bar.com",
+		ExternalID:  "foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
@@ -52,7 +52,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 		t.Fatal("non-native user created with email verification code")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		AuthID:      "sso:foo@bar.com",
+		ExternalID:  "sso:foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
@@ -62,7 +62,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 		t.Fatal("sso user created with password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		AuthID:      "sso:foo@bar.com",
+		ExternalID:  "sso:foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
@@ -73,7 +73,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 	}
 
 	usr, err := Users.Create(ctx, NewUser{
-		AuthID:      "native:foo@bar.com",
+		ExternalID:  "native:foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
@@ -152,7 +152,7 @@ func TestUsers_NativeAuthPasswordResetRateLimit(t *testing.T) {
 
 	passwordResetRateLimit = "24 hours"
 	usr, err := Users.Create(ctx, NewUser{
-		AuthID:      "native:foo@bar.com",
+		ExternalID:  "native:foo@bar.com",
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",

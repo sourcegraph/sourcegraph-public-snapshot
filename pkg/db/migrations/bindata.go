@@ -110,6 +110,8 @@
 // ../../../migrations/1514693059_user_emails_table.up.sql
 // ../../../migrations/1514702776_add_settings_user_fkey.down.sql
 // ../../../migrations/1514702776_add_settings_user_fkey.up.sql
+// ../../../migrations/1514713044_rename_users_auth_id_to_external_id.down.sql
+// ../../../migrations/1514713044_rename_users_auth_id_to_external_id.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2377,6 +2379,46 @@ func _1514702776_add_settings_user_fkeyUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514713044_rename_users_auth_id_to_external_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8d\x3d\x0a\xc3\x30\x0c\x46\x77\x9f\xe2\xbb\x87\x27\x27\x88\x62\x90\x65\x70\x94\xd9\x04\x62\x68\x68\xe9\x90\x1f\x68\x6f\x5f\x82\x3d\x74\x28\x59\x9f\xf4\xbe\xd7\xd1\xcd\x8b\x35\x8e\x95\x12\xd4\x75\x4c\x38\xb6\xb2\x6e\x48\x24\x2e\x10\xfa\xc8\x63\x10\x94\xf7\x5e\xd6\xd7\xf4\xcc\xcb\x0c\x8d\x98\x8e\xfd\x9e\x97\xf9\x9f\x57\x49\xd3\xda\x1f\x06\x52\x48\x54\xc8\xc8\x7c\x19\x93\x41\x93\xf3\xa2\x95\xe7\x9f\x6c\x7e\x94\xcf\x99\xae\x87\x36\x7c\x42\x6b\xfa\x18\x82\x57\x6b\xbe\x01\x00\x00\xff\xff\x47\xe9\x16\xfc\xcc\x00\x00\x00")
+
+func _1514713044_rename_users_auth_id_to_external_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514713044_rename_users_auth_id_to_external_idDownSql,
+		"1514713044_rename_users_auth_id_to_external_id.down.sql",
+	)
+}
+
+func _1514713044_rename_users_auth_id_to_external_idDownSql() (*asset, error) {
+	bytes, err := _1514713044_rename_users_auth_id_to_external_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514713044_rename_users_auth_id_to_external_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514713044_rename_users_auth_id_to_external_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8d\x3d\x0a\xc3\x30\x0c\x46\x77\x9f\xe2\xbb\x87\x27\x27\x35\xc5\x20\x4b\xc5\x55\x66\x13\x88\xa1\xa1\xa5\x43\x7e\xa0\xbd\x7d\x09\xce\x90\xa1\x64\x7d\xd2\xfb\x5e\xe3\xaf\x81\xad\x71\xa4\x3e\x41\x5d\x43\x1e\xeb\x5c\xa6\x19\xc9\xb3\x8b\x1e\xad\x50\x17\x19\xfd\xba\x3c\xf2\x38\x40\x05\xe5\xb3\x94\xe9\xdd\xbf\xf2\x38\xfc\xf3\x2a\xd9\xb5\xc3\x2f\x2e\x49\x6e\x60\x51\x70\x47\x74\x5a\xe4\xbb\x26\x17\x58\x2b\xcf\x7b\x3b\x3f\xcb\x77\xeb\x57\x78\x58\xde\x0e\xd6\xb4\x12\x63\x50\x6b\x7e\x01\x00\x00\xff\xff\x0c\x3a\x28\x7d\xd1\x00\x00\x00")
+
+func _1514713044_rename_users_auth_id_to_external_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514713044_rename_users_auth_id_to_external_idUpSql,
+		"1514713044_rename_users_auth_id_to_external_id.up.sql",
+	)
+}
+
+func _1514713044_rename_users_auth_id_to_external_idUpSql() (*asset, error) {
+	bytes, err := _1514713044_rename_users_auth_id_to_external_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514713044_rename_users_auth_id_to_external_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2539,6 +2581,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514693059_user_emails_table.up.sql":                         _1514693059_user_emails_tableUpSql,
 	"1514702776_add_settings_user_fkey.down.sql":                  _1514702776_add_settings_user_fkeyDownSql,
 	"1514702776_add_settings_user_fkey.up.sql":                    _1514702776_add_settings_user_fkeyUpSql,
+	"1514713044_rename_users_auth_id_to_external_id.down.sql":     _1514713044_rename_users_auth_id_to_external_idDownSql,
+	"1514713044_rename_users_auth_id_to_external_id.up.sql":       _1514713044_rename_users_auth_id_to_external_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2692,6 +2736,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514693059_user_emails_table.up.sql":                         &bintree{_1514693059_user_emails_tableUpSql, map[string]*bintree{}},
 	"1514702776_add_settings_user_fkey.down.sql":                  &bintree{_1514702776_add_settings_user_fkeyDownSql, map[string]*bintree{}},
 	"1514702776_add_settings_user_fkey.up.sql":                    &bintree{_1514702776_add_settings_user_fkeyUpSql, map[string]*bintree{}},
+	"1514713044_rename_users_auth_id_to_external_id.down.sql":     &bintree{_1514713044_rename_users_auth_id_to_external_idDownSql, map[string]*bintree{}},
+	"1514713044_rename_users_auth_id_to_external_id.up.sql":       &bintree{_1514713044_rename_users_auth_id_to_external_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

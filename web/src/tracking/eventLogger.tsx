@@ -32,7 +32,7 @@ class EventLogger {
         if (window.context.user) {
             this.updateUser({
                 // tslint:disable-next-line deprecation
-                authID: window.context.user.authID,
+                externalID: window.context.user.externalID,
                 // tslint:disable-next-line deprecation
                 sourcegraphID: window.context.user.UID,
                 username: null,
@@ -59,9 +59,14 @@ class EventLogger {
     public updateUser(
         user:
             | GQL.IUser
-            | { authID: string; sourcegraphID: number | null; username: string | null; email: string | null }
+            | {
+                  externalID: string
+                  sourcegraphID: number | null
+                  username: string | null
+                  email: string | null
+              }
     ): void {
-        this.setUserIds(user.sourcegraphID, user.authID, user.username)
+        this.setUserIds(user.sourcegraphID, user.externalID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
         }
@@ -70,17 +75,17 @@ class EventLogger {
     /**
      * Set user ID in Telligent tracker script.
      * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.ID from backend)
-     * @param uniqueAuthId Unique user auth ID (corresponds to Actor.UID or User.AuthID from backend)
+     * @param uniqueExternalID Unique user external auth provider ID
      * @param username Human-readable user identifier, not guaranteed to always stay the same
      */
-    public setUserIds(uniqueSourcegraphId: number | null, uniqueAuthId: string, username: string | null): void {
+    public setUserIds(uniqueSourcegraphId: number | null, uniqueExternalID: string, username: string | null): void {
         if (username) {
             telligent.setUserProperty('username', username)
         }
         if (uniqueSourcegraphId) {
             telligent.setUserProperty('user_id', uniqueSourcegraphId)
         }
-        telligent.setUserProperty('internal_user_id', uniqueAuthId)
+        telligent.setUserProperty('internal_user_id', uniqueExternalID)
     }
 
     public setUserEmail(primaryEmail: string): void {

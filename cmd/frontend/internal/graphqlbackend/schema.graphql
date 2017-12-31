@@ -778,8 +778,9 @@ type UserConnection {
 type User implements Node, ConfigurationSubject {
 	# The unique ID for the user.
 	id: ID!
-	authID: String!
-	auth0ID: String! @deprecated(reason: "use authID instead")
+	authID: String! @deprecated(reason: "renamed to externalID - use that instead")
+	auth0ID: String! @deprecated(reason: "use externalID instead")
+	externalID: String!
 	sourcegraphID: Int!
 	email: String! @deprecated(reason: "use emails instead")
 	displayName: String

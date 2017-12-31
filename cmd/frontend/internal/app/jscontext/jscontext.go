@@ -46,8 +46,8 @@ func init() {
 
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
-	UID    int32
-	AuthID string `json:"authID"`
+	UID        int32
+	ExternalID string `json:"externalID,omitempty"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -114,7 +114,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		user = &immutableUser{UID: actor.UID}
 
 		if u, err := db.Users.GetByID(req.Context(), actor.UID); err == nil && u != nil {
-			user.AuthID = u.AuthID
+			user.ExternalID = u.ExternalID
 		}
 	}
 

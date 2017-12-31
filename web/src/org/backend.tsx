@@ -32,7 +32,6 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                         createdAt
                         user {
                             id
-                            authID
                             username
                             email
                             displayName

@@ -64,13 +64,13 @@ func (err ErrCannotCreateUser) Code() string {
 }
 
 var (
-	ErrUsernameExists = ErrCannotCreateUser{"err_username_exists"}
-	ErrAuthIDExists   = ErrCannotCreateUser{"err_auth_id_exists"}
+	ErrUsernameExists   = ErrCannotCreateUser{"err_username_exists"}
+	ErrExternalIDExists = ErrCannotCreateUser{"err_external_id_exists"}
 )
 
 // NewUser describes a new to-be-created user.
 type NewUser struct {
-	AuthID      string
+	ExternalID  string
 	Email       string
 	Username    string
 	DisplayName string
@@ -138,15 +138,15 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth_id, username, display_name, provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		info.AuthID, info.Username, info.DisplayName, info.Provider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
+		"INSERT INTO users(external_id, username, display_name, provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
+		info.ExternalID, info.Username, info.DisplayName, info.Provider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
 			case "users_username_key":
 				return nil, ErrUsernameExists
-			case "users_auth_id_key":
-				return nil, ErrAuthIDExists
+			case "users_external_id_key":
+				return nil, ErrExternalIDExists
 			}
 		}
 		return nil, err
@@ -184,7 +184,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 
 	return &sourcegraph.User{
 		ID:          id,
-		AuthID:      info.AuthID,
+		ExternalID:  info.ExternalID,
 		Username:    info.Username,
 		DisplayName: info.DisplayName,
 		Provider:    info.Provider,
@@ -302,11 +302,11 @@ func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByAuthID(ctx context.Context, id string) (*sourcegraph.User, error) {
-	if Mocks.Users.GetByAuthID != nil {
-		return Mocks.Users.GetByAuthID(ctx, id)
+func (u *users) GetByExternalID(ctx context.Context, id string) (*sourcegraph.User, error) {
+	if Mocks.Users.GetByExternalID != nil {
+		return Mocks.Users.GetByExternalID(ctx, id)
 	}
-	return u.getOneBySQL(ctx, "WHERE auth_id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	return u.getOneBySQL(ctx, "WHERE external_id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
 func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User, error) {
@@ -346,7 +346,7 @@ func (u *users) Count(ctx context.Context) (int, error) {
 }
 
 // ListByOrg returns users for a given org. It can also query a list of specific
-// users by either authIDs or usernames.
+// users by either user IDs or usernames.
 func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
 	if Mocks.Users.ListByOrg != nil {
 		return Mocks.Users.ListByOrg(ctx, orgID, userIDs, usernames)
@@ -392,7 +392,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.auth_id, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.external_id, u.username, u.display_name, u.provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u sourcegraph.User
 		var avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.AuthID, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
+		err := rows.Scan(&u.ID, &u.ExternalID, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
@@ -432,9 +432,9 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 
 		// During the transition, new users will have provider=="native" and no "auth0|" prefix.
 		// We need to check those in our own DB.
-		if user.Provider == "auth0" || strings.HasPrefix(user.AuthID, "auth0|") {
+		if user.Provider == "auth0" || strings.HasPrefix(user.ExternalID, "auth0|") {
 			ok, err := auth0.CheckPassword(ctx, email, password)
-			// log15.Info("checking password via auth0", "user", user.Username, "authID", user.AuthID, "email", user.Email, "ok", ok, "err", err)
+			// log15.Info("checking password via auth0", "user", user.Username, "externalID", user.ExternalID, "email", user.Email, "ok", ok, "err", err)
 			return ok, err
 		}
 	}
@@ -478,7 +478,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, resetCode string, newPassword string) (bool, error) {
+func (u *users) SetPassword(ctx context.Context, id int32, newExternalID string, resetCode string, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -503,12 +503,12 @@ func (u *users) SetPassword(ctx context.Context, id int32, newAuthID string, res
 	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
 	}
-	if newAuthID != "" {
+	if newExternalID != "" {
 		// Also, this user effectively becomes a builtin (native) auth user since we now store their password, so
 		// update them accordingly.
 		//
 		// TODO(sqs): remove after migration away from auth0
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET auth_id=$1 WHERE id=$2", newAuthID, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET external_id=$1 WHERE id=$2", newExternalID, id); err != nil {
 			return false, err
 		}
 	}

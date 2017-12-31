@@ -32,7 +32,7 @@ func (s *users) List(ctx context.Context) (res *sourcegraph.UserList, err error)
 	return &sourcegraph.UserList{Users: users}, nil
 }
 
-func NativeAuthUserAuthID(email string) string {
+func NativeAuthUserExternalID(email string) string {
 	return fmt.Sprintf("%s:%s", sourcegraph.UserProviderNative, email)
 }
 

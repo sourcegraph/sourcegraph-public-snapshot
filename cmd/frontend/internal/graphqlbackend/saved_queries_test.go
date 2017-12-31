@@ -18,7 +18,7 @@ func TestSavedQueries(t *testing.T) {
 	uid := int32(1)
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{ID: uid}, nil)
+	db.Mocks.Users.MockGetByExternalID_Return(t, &sourcegraph.User{ID: uid}, nil)
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
 		return &sourcegraph.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
@@ -52,11 +52,11 @@ func TestCreateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, AuthID: "uid"}}}
+	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, ExternalID: "uid"}}}
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
+	db.Mocks.Users.MockGetByExternalID_Return(t, &sourcegraph.User{ID: uid, ExternalID: "uid"}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid, ExternalID: "uid"}, nil)
 	calledSettingsCreateIfUpToDate := false
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
 		return &sourcegraph.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
@@ -113,12 +113,12 @@ func TestUpdateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, AuthID: "uid"}}}
+	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid, ExternalID: "uid"}}}
 	newDescription := "d2"
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid, AuthID: "uid"}, nil)
+	db.Mocks.Users.MockGetByExternalID_Return(t, &sourcegraph.User{ID: uid, ExternalID: "uid"}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid, ExternalID: "uid"}, nil)
 	calledSettingsGetLatest := false
 	calledSettingsCreateIfUpToDate := false
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {

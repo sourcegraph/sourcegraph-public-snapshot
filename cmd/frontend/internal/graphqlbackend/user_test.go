@@ -40,7 +40,7 @@ func TestNode_User(t *testing.T) {
 
 func TestUsers_Activity(t *testing.T) {
 	ctx := context.Background()
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{}, nil)
+	db.Mocks.Users.MockGetByExternalID_Return(t, &sourcegraph.User{}, nil)
 	u := &userResolver{user: &sourcegraph.User{}}
 	_, err := u.Activity(ctx)
 	if err == nil {

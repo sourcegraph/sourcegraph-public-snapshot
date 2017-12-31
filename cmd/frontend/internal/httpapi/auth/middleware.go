@@ -61,13 +61,13 @@ func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID 
 
 	// User does not exist, so we need to create it.
 	user, err = db.Users.Create(ctx, db.NewUser{
-		AuthID:   sourcegraph.UserProviderHTTPHeader + ":" + username,
-		Username: username,
-		Provider: sourcegraph.UserProviderHTTPHeader,
+		ExternalID: sourcegraph.UserProviderHTTPHeader + ":" + username,
+		Username:   username,
+		Provider:   sourcegraph.UserProviderHTTPHeader,
 	})
 	// Handle the race condition where the new user performs two requests
 	// and both try to create the user.
-	if err == db.ErrUsernameExists || err == db.ErrAuthIDExists {
+	if err == db.ErrUsernameExists || err == db.ErrExternalIDExists {
 		user, err = db.Users.GetByUsername(ctx, username)
 	}
 	if err != nil {

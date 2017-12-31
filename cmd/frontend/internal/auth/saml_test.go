@@ -151,13 +151,13 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	defer idpHTTPServer.Close()
 
 	// Mock user
-	mockedAuthID := samlToAuthID(idpHTTPServer.URL+"/metadata", "testuser_id")
+	mockedExternalID := samlToExternalID(idpHTTPServer.URL+"/metadata", "testuser_id")
 	const mockedUserID = 123
-	db.Mocks.Users.GetByAuthID = func(ctx context.Context, authID string) (*sourcegraph.User, error) {
-		if authID == mockedAuthID {
-			return &sourcegraph.User{ID: mockedUserID, AuthID: authID, Username: authID}, nil
+	db.Mocks.Users.GetByExternalID = func(ctx context.Context, externalID string) (*sourcegraph.User, error) {
+		if externalID == mockedExternalID {
+			return &sourcegraph.User{ID: mockedUserID, ExternalID: externalID, Username: externalID}, nil
 		}
-		return nil, fmt.Errorf("user with authID %q not found in mock", authID)
+		return nil, fmt.Errorf("user with externalID %q not found in mock", externalID)
 	}
 
 	// Set SAML global parameters

@@ -279,7 +279,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 // exist.
 func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *UserClaims) (*actor.Actor, error) {
 	provider := idToken.Issuer
-	authID := oidcToAuthID(provider, idToken.Subject)
+	externalID := oidcToExternalID(provider, idToken.Subject)
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
@@ -298,10 +298,10 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		return nil, err
 	}
 
-	usr, err := db.Users.GetByAuthID(ctx, authID)
+	usr, err := db.Users.GetByExternalID(ctx, externalID)
 	if _, notFound := err.(db.ErrUserNotFound); notFound {
 		usr, err = db.Users.Create(ctx, db.NewUser{
-			AuthID:      authID,
+			ExternalID:  externalID,
 			Email:       email,
 			Username:    login,
 			DisplayName: displayName,
@@ -343,6 +343,6 @@ func (s *authnState) Decode(encoded string) error {
 	return json.Unmarshal(b, s)
 }
 
-func oidcToAuthID(issuer, subject string) string {
+func oidcToExternalID(issuer, subject string) string {
 	return fmt.Sprintf("%s:%s", issuer, subject)
 }

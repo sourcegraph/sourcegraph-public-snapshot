@@ -23,7 +23,7 @@ func TestThreads_Create(t *testing.T) {
 		return "alice@example.com", true, nil
 	}
 	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
-	db.Mocks.Users.MockGetByAuthID_Return(t, &sourcegraph.User{}, nil)
+	db.Mocks.Users.MockGetByExternalID_Return(t, &sourcegraph.User{}, nil)
 	db.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, db.ErrRepoNotFound)
 	repoCreateCalled, repoCreateCalledWith := db.Mocks.OrgRepos.MockCreate_Return(t, &sourcegraph.OrgRepo{
 		ID:                1,

@@ -451,7 +451,7 @@ Foreign-key constraints:
       Column       |           Type           |                     Modifiers                      
 -------------------+--------------------------+----------------------------------------------------
  id                | integer                  | not null default nextval('users_id_seq'::regclass)
- auth_id           | text                     | not null
+ external_id       | text                     | 
  username          | citext                   | not null
  display_name      | text                     | not null
  avatar_url        | text                     | 
@@ -466,7 +466,7 @@ Foreign-key constraints:
  site_admin        | boolean                  | not null default false
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
-    "users_auth_id_key" UNIQUE CONSTRAINT, btree (auth_id)
+    "users_external_id_key" UNIQUE CONSTRAINT, btree (external_id)
     "users_username_key" UNIQUE CONSTRAINT, btree (username)
 Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)

@@ -60,7 +60,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	// Create user
 	emailCode := backend.MakeEmailVerificationCode()
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
-		AuthID:      backend.NativeAuthUserAuthID(creds.Email),
+		ExternalID:  backend.NativeAuthUserExternalID(creds.Email),
 		Email:       creds.Email,
 		Username:    creds.Username,
 		DisplayName: displayName,
@@ -95,8 +95,8 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserFromNativeOrAuth0(ctx context.Context, email string) (*sourcegraph.User, error) {
-	authID := backend.NativeAuthUserAuthID(email)
-	usr, err := db.Users.GetByAuthID(ctx, authID)
+	externalID := backend.NativeAuthUserExternalID(email)
+	usr, err := db.Users.GetByExternalID(ctx, externalID)
 	if err == nil {
 		return usr, nil
 	} else if err != nil {
@@ -154,7 +154,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	// Track user data in GCS
 	eventLabel := "CompletedNativeSignIn"
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(usr.AvatarURL, usr.AuthID, creds.Email, eventLabel)
+		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, eventLabel)
 	}
 }
 
@@ -277,7 +277,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := db.Users.SetPassword(ctx, usr.ID, backend.NativeAuthUserAuthID(params.Email), params.Code, params.Password)
+	success, err := db.Users.SetPassword(ctx, usr.ID, backend.NativeAuthUserExternalID(params.Email), params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return

@@ -16,7 +16,7 @@ interface Window {
  */
 interface ImmutableUser {
     readonly UID: number
-    readonly authID: string
+    readonly externalID: string
 }
 
 interface License {

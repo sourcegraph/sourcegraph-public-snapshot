@@ -27,12 +27,12 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 	}
 
 	user, err := db.Users.Create(ctx, db.NewUser{
-		AuthID:    backend.NativeAuthUserAuthID(args.Email),
-		Email:     args.Email,
-		Username:  args.Username,
-		Provider:  sourcegraph.UserProviderNative,
-		Password:  backend.MakeRandomHardToGuessPassword(),
-		EmailCode: backend.MakeEmailVerificationCode(),
+		ExternalID: backend.NativeAuthUserExternalID(args.Email),
+		Email:      args.Email,
+		Username:   args.Username,
+		Provider:   sourcegraph.UserProviderNative,
+		Password:   backend.MakeRandomHardToGuessPassword(),
+		EmailCode:  backend.MakeEmailVerificationCode(),
 	})
 	if err != nil {
 		return nil, err
