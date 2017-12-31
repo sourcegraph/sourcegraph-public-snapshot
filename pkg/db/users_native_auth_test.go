@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestUsers_NativeAuth(t *testing.T) {
+func TestUsers_BuiltinAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -15,7 +15,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 		Username:    "foo",
 		DisplayName: "foo",
 	}); err == nil {
-		t.Fatal("native user created without password")
+		t.Fatal("builtin user created without password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
 		Email:       "foo@bar.com",
@@ -23,7 +23,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 		DisplayName: "foo",
 		Password:    "asdfasdf",
 	}); err == nil {
-		t.Fatal("native user created without email verification code")
+		t.Fatal("builtin user created without email verification code")
 	}
 	if _, err := Users.Create(ctx, NewUser{
 		ExternalID:       "sso:foo@bar.com",
@@ -111,7 +111,7 @@ func TestUsers_NativeAuth(t *testing.T) {
 	}
 }
 
-func TestUsers_NativeAuthPasswordResetRateLimit(t *testing.T) {
+func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

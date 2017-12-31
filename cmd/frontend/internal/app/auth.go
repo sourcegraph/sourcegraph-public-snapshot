@@ -38,7 +38,6 @@ type credentials struct {
 	DisplayName string `json:"displayName"`
 }
 
-// serveSignUp serves the native-auth sign-up endpoint
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	if !conf.Get().AuthAllowSignup {
 		http.Error(w, "signup is not enabled", http.StatusNotFound)
@@ -93,7 +92,6 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// serveSignIn serves a native-auth endpoint
 func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -138,7 +136,6 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// serveVerifyEmail serves the email verification link for native auth
 func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	verifyCode := r.URL.Query().Get("code")
@@ -179,7 +176,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/settings/profile", http.StatusFound)
 }
 
-// serveResetPasswordInit initiates the native-auth password reset flow by sending a password-reset email.
+// serveResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
 func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	if !conf.CanSendEmail() {
 		httpLogAndError(w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
@@ -225,7 +222,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// serveResetPassword resets a native-auth password if the correct code is provided
+// serveResetPassword resets the password if the correct code is provided.
 func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var params struct {
