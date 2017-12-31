@@ -1,5 +1,6 @@
 .bin/
 *.bundle.*
+cmd/xlang-python/python-langserver/
 pkg/db/schema.md
 ui/assets/scripts
 vendor/
