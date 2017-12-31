@@ -3,19 +3,13 @@ package db
 import (
 	"context"
 	"log"
-	"os/exec"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 func init() {
-	dbname := "sg-db-test"
-	_ = exec.Command("dropdb", dbname).Run()
-	if err := exec.Command("createdb", dbname).Run(); err != nil {
-		log.Fatal(err)
-	}
-	ConnectToDB("dbname=" + dbname)
+	InitTest("db")
 }
 
 func TestMigrations(t *testing.T) {
@@ -32,7 +26,7 @@ func TestMigrations(t *testing.T) {
 // handle and other test configuration.
 func testContext() context.Context {
 	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1"})
 
 	Mocks = MockStores{}
 
