@@ -390,13 +390,13 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	defer rows.Close()
 	for rows.Next() {
 		var u sourcegraph.User
-		var avatarUrl sql.NullString
+		var avatarURL sql.NullString
 		err := rows.Scan(&u.ID, &u.AuthID, &u.Username, &u.DisplayName, &u.Provider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
-		if avatarUrl.Valid {
-			u.AvatarURL = &avatarUrl.String
+		if avatarURL.Valid {
+			u.AvatarURL = &avatarURL.String
 		}
 		users = append(users, &u)
 	}
