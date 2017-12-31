@@ -59,7 +59,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 	// Create user
 	emailCode := backend.MakeEmailVerificationCode()
-	usr, err := db.Users.Create(r.Context(), backend.NativeAuthUserAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, nil, creds.Password, emailCode)
+	usr, err := db.Users.Create(r.Context(), backend.NativeAuthUserAuthID(creds.Email), creds.Email, creds.Username, displayName, sourcegraph.UserProviderNative, creds.Password, emailCode)
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
 		return

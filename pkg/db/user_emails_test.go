@@ -12,7 +12,7 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	}
 	ctx := testContext()
 
-	user, err := Users.Create(ctx, "native:authid123", "a@example.com", "u2", "", "native", nil, "pw", "c")
+	user, err := Users.Create(ctx, "native:authid123", "a@example.com", "u2", "", "native", "pw", "c")
 	if err != nil {
 		t.Fatal(err)
 	}

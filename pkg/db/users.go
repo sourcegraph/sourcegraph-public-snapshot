@@ -75,9 +75,9 @@ var (
 //
 // Native-auth users must also specify a password and email verification code upon creation. When the user's email is
 // verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
-func (*users) Create(ctx context.Context, authID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
+func (*users) Create(ctx context.Context, authID, email, username, displayName, provider string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
 	if Mocks.Users.Create != nil {
-		return Mocks.Users.Create(ctx, authID, email, username, displayName, provider, avatarURL, password, emailCode)
+		return Mocks.Users.Create(ctx, authID, email, username, displayName, provider, password, emailCode)
 	}
 
 	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
@@ -90,10 +90,6 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 	createdAt := time.Now()
 	updatedAt := createdAt
 	var id int32
-	var avatarURLValue sql.NullString
-	if avatarURL != nil {
-		avatarURLValue = sql.NullString{String: *avatarURL, Valid: true}
-	}
 
 	var passwd sql.NullString
 	if password == "" {
@@ -131,8 +127,8 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(auth_id, username, display_name, provider, avatar_url, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		authID, username, displayName, provider, avatarURLValue, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
+		"INSERT INTO users(auth_id, username, display_name, provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
+		authID, username, displayName, provider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -181,7 +177,6 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 		Username:    username,
 		DisplayName: displayName,
 		Provider:    provider,
-		AvatarURL:   avatarURL,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 		SiteAdmin:   isSiteAdmin,

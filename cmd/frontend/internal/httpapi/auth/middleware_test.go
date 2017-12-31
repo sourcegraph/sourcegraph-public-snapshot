@@ -50,7 +50,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 				calledGetByUsername = true
 				return nil, db.ErrUserNotFound{}
 			}
-			db.Mocks.Users.Create = func(ctx context.Context, authID, email, username, displayName, provider string, avatarURL *string, password string, emailCode string) (*sourcegraph.User, error) {
+			db.Mocks.Users.Create = func(ctx context.Context, authID, email, username, displayName, provider string, password string, emailCode string) (*sourcegraph.User, error) {
 				calledCreate = true
 				return &sourcegraph.User{ID: 1, AuthID: authID, Username: username}, nil
 			}
