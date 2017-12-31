@@ -92,6 +92,13 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*sourcegraph.User, error) {
+	if strings.Contains(emailOrUsername, "@") {
+		return db.Users.GetByEmail(ctx, emailOrUsername)
+	}
+	return db.Users.GetByUsername(ctx, emailOrUsername)
+}
+
 func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -105,8 +112,8 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate user
-	usr, err := db.Users.GetByEmail(ctx, creds.Email)
+	// Validate user. Allow login by both email and username (for convenience).
+	usr, err := getByEmailOrUsername(ctx, creds.Email)
 	if err != nil {
 		httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
 		return
