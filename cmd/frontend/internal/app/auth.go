@@ -41,6 +41,7 @@ type credentials struct {
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	if !conf.Get().AuthAllowSignup {
 		http.Error(w, "signup is not enabled", http.StatusNotFound)
+		return
 	}
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
