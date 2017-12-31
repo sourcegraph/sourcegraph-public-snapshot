@@ -355,7 +355,9 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 
 	if conf.CanSendEmail() {
 		// If email is disabled, the frontend will show a link instead.
-		invite.SendEmail(args.Email, *currentUser.DisplayName(), org.Name, inviteURL)
+		if err := invite.SendEmail(args.Email, *currentUser.DisplayName(), org.Name, inviteURL); err != nil {
+			return nil, err
+		}
 	}
 
 	client := slack.New(org.SlackWebhookURL, true)

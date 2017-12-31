@@ -1,16 +1,16 @@
 package invite
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/mattbaird/gochimp"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type TokenPayload struct {
@@ -76,18 +76,15 @@ func CreateOrgToken(email string, org *sourcegraph.Org) (string, error) {
 	return payload.SignedString(key)
 }
 
-func SendEmail(inviteEmail, fromName, orgName, inviteURL string) {
-	config := &notif.EmailConfig{
-		Template:  "invite-user",
-		FromName:  fromName,
-		FromEmail: "noreply@sourcegraph.com",
-		ToEmail:   inviteEmail,
-		Subject:   fmt.Sprintf("%s has invited you to join %s on Sourcegraph", fromName, orgName),
-	}
+func SendEmail(inviteEmail, fromName, orgName, inviteURL string) error {
+	return txemail.Send(context.Background(), txemail.Message{
+		To:      []string{inviteEmail},
+		Subject: fmt.Sprintf("%s invited you to join %s on Sourcegraph", fromName, orgName),
+		TextBody: fmt.Sprintf(`%s invited you to join the %s organization on Sourcegraph.
 
-	notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
-		gochimp.Var{Name: "INVITE_URL", Content: inviteURL},
-		gochimp.Var{Name: "ORG", Content: orgName},
-		gochimp.Var{Name: "FROM_USER", Content: fromName},
+To accept:
+
+  %s
+`, fromName, orgName, inviteURL),
 	})
 }
