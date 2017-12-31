@@ -74,6 +74,19 @@
     }
 }
 
+.btn-success {
+    background: $color-success;
+
+    &:hover:not(:disabled) {
+        background: darken($color-success, 5%);
+    }
+
+    &:focus:not(:disabled) {
+        outline: darken($color-success, 5%);
+        box-shadow: 0 0 0 2px rgba($color-success, 0.5);
+    }
+}
+
 .btn-secondary {
     background: $color-secondary;
     color: $color-page-background;
@@ -102,6 +115,7 @@
 }
 
 .btn-primary,
+.btn-success,
 .btn-info {
     // Make sure these styles are applied
     // even when used on an achor element
