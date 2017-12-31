@@ -91,11 +91,11 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 	srv := httptest.NewServer(s)
 
 	// Mock user
-	db.Mocks.Users.GetByExternalID = func(ctx context.Context, externalID string) (*sourcegraph.User, error) {
-		if externalID == srv.URL+":"+testOIDCUser {
-			return &sourcegraph.User{ID: 123, ExternalID: externalID, Username: externalID}, nil
+	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
+		if provider == oidcProvider.Issuer && id == srv.URL+":"+testOIDCUser {
+			return &sourcegraph.User{ID: 123, ExternalID: id, Username: id}, nil
 		}
-		return nil, fmt.Errorf("user %q not found in mock", externalID)
+		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
 	}
 
 	return srv
@@ -135,11 +135,11 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 
 	testOIDCExternalID := oidcToExternalID(oidcProvider.Issuer, testOIDCUser)
 	const mockUserID = 123
-	db.Mocks.Users.GetByExternalID = func(ctx context.Context, externalID string) (*sourcegraph.User, error) {
-		if externalID == testOIDCExternalID {
-			return &sourcegraph.User{ID: mockUserID, ExternalID: externalID, Username: "testuser"}, nil
+	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
+		if provider == oidcProvider.Issuer && id == testOIDCExternalID {
+			return &sourcegraph.User{ID: mockUserID, ExternalID: id, Username: "testuser"}, nil
 		}
-		return nil, db.ErrUserNotFound{}
+		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 

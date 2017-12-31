@@ -114,6 +114,8 @@
 // ../../../migrations/1514713044_rename_users_auth_id_to_external_id.up.sql
 // ../../../migrations/1514714572_external_provider.down.sql
 // ../../../migrations/1514714572_external_provider.up.sql
+// ../../../migrations/1514718560_external_provider_and_id.down.sql
+// ../../../migrations/1514718560_external_provider_and_id.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2461,6 +2463,46 @@ func _1514714572_external_providerUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514718560_external_provider_and_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xc1\x4a\xc4\x30\x10\x86\xef\x7d\x8a\xb9\x48\x77\x61\x59\xf4\x6a\xe9\x21\x4d\x47\x0d\xa6\xcd\x92\x8c\x88\xa7\x12\x9a\xc0\x06\xd7\x55\xd2\xec\xe2\xc1\x87\x17\x43\x17\x7a\x51\xbc\x25\xf3\xcf\x7c\xff\xd7\xe0\xbd\xe8\xab\x82\x49\x42\x0d\xc4\x1a\x89\x70\x9a\x7c\x9c\xa0\xd5\x6a\x07\x5c\xf5\x86\x34\x13\x3d\xc1\xb8\xf7\xe3\xeb\xe0\x3f\x93\x8f\x47\x7b\x18\x82\xab\x8a\xa7\x5d\xcb\xe8\xb2\x6f\x90\x60\x91\xd6\x5c\xf5\x9c\xd1\xaa\x3c\xda\x14\xce\xfe\xb6\xdc\xc0\xca\xa0\x44\x4e\xe0\xdf\x6c\x38\xc0\x9d\x56\x5d\x3e\x1d\xf2\x7f\x82\xe7\x07\xd4\xb8\x9c\x6c\xf3\x3b\xb8\x3a\x17\x6c\x83\x03\xa5\x5b\xd4\xd0\xbc\xc0\x18\xbd\x4d\xde\x0d\x36\x01\x33\x7c\x33\x23\x99\xe1\x20\x45\x27\x08\x6e\xd6\xeb\xbf\xf4\x3e\xe2\xfb\x39\x38\x1f\xeb\xd9\xae\x9c\xcb\x17\xfe\x20\xc5\x23\xc2\xc5\xfe\xaa\xfc\x1f\xce\x9e\xd2\xfe\xfa\x77\x5a\x8e\xbf\x7e\x60\x5c\x75\x9d\xa0\xaa\xf8\x0e\x00\x00\xff\xff\x65\x73\x78\xff\x7f\x01\x00\x00")
+
+func _1514718560_external_provider_and_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514718560_external_provider_and_idDownSql,
+		"1514718560_external_provider_and_id.down.sql",
+	)
+}
+
+func _1514718560_external_provider_and_idDownSql() (*asset, error) {
+	bytes, err := _1514718560_external_provider_and_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514718560_external_provider_and_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514718560_external_provider_and_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xce\xc1\x4b\xc3\x30\x14\xc7\xf1\x7b\xff\x8a\xdf\x45\x5e\x0b\x1e\x3c\x5b\x7a\xc8\xd2\x87\x0b\xcb\x52\x49\x33\x3c\x8e\xb2\x04\x16\x2c\x55\xb2\x76\x78\xf0\x8f\x17\xa9\x43\x27\x45\xbc\xbe\x1f\x7c\xde\x77\xc5\x0f\xca\x94\xd9\xee\xb1\x16\x8e\x31\x9d\x42\x3a\xa1\x65\x87\xf0\x36\x86\x34\x74\xfd\xfe\x35\xbd\x9c\xa3\x0f\xa9\xa2\x6e\x1a\x8f\x77\x84\xa7\x35\x5b\xfe\xde\xa3\x87\x56\x1b\xc6\x3c\xbf\xdf\xd0\xbf\xb0\x61\xea\xfb\xdf\xd2\x65\x84\x32\xc8\x89\x6e\x41\x43\x37\xc6\x73\xa0\xe2\x2f\x32\xfa\x45\x2c\xfa\x8a\x08\x8d\xbd\x0a\x55\x73\xe9\xcc\xde\x7f\xa6\x0a\xed\xd8\xc2\x89\x95\xbe\xe0\xa2\xae\x21\x1b\xd3\x3a\x2b\x94\x71\x38\x1c\xc3\xe1\x79\xff\x13\x91\x6b\x96\x1b\xe4\xf9\x42\x77\x0b\xb3\xd3\xba\x40\x85\xfc\xea\xed\xd7\xbd\x28\x33\xd9\x6c\xb7\xca\x95\xd9\x47\x00\x00\x00\xff\xff\xae\x5a\x62\xe4\x77\x01\x00\x00")
+
+func _1514718560_external_provider_and_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514718560_external_provider_and_idUpSql,
+		"1514718560_external_provider_and_id.up.sql",
+	)
+}
+
+func _1514718560_external_provider_and_idUpSql() (*asset, error) {
+	bytes, err := _1514718560_external_provider_and_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514718560_external_provider_and_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2627,6 +2669,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514713044_rename_users_auth_id_to_external_id.up.sql":       _1514713044_rename_users_auth_id_to_external_idUpSql,
 	"1514714572_external_provider.down.sql":                       _1514714572_external_providerDownSql,
 	"1514714572_external_provider.up.sql":                         _1514714572_external_providerUpSql,
+	"1514718560_external_provider_and_id.down.sql":                _1514718560_external_provider_and_idDownSql,
+	"1514718560_external_provider_and_id.up.sql":                  _1514718560_external_provider_and_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2784,6 +2828,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514713044_rename_users_auth_id_to_external_id.up.sql":       &bintree{_1514713044_rename_users_auth_id_to_external_idUpSql, map[string]*bintree{}},
 	"1514714572_external_provider.down.sql":                       &bintree{_1514714572_external_providerDownSql, map[string]*bintree{}},
 	"1514714572_external_provider.up.sql":                         &bintree{_1514714572_external_providerUpSql, map[string]*bintree{}},
+	"1514718560_external_provider_and_id.down.sql":                &bintree{_1514718560_external_provider_and_idDownSql, map[string]*bintree{}},
+	"1514718560_external_provider_and_id.up.sql":                  &bintree{_1514718560_external_provider_and_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -314,11 +314,16 @@ func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
 }
 
-func (u *users) GetByExternalID(ctx context.Context, id string) (*sourcegraph.User, error) {
-	if Mocks.Users.GetByExternalID != nil {
-		return Mocks.Users.GetByExternalID(ctx, id)
+// GetByExternalID gets the user (if any) from the database that is associated with an external
+// user account, based on the given provider and ID on the provider.
+func (u *users) GetByExternalID(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
+	if provider == "" || id == "" {
+		panic(fmt.Sprintf("GetByExternalID: both provider (%q) and id (%q) must be nonempty", provider, id))
 	}
-	return u.getOneBySQL(ctx, "WHERE external_id=$1 AND deleted_at IS NULL LIMIT 1", id)
+	if Mocks.Users.GetByExternalID != nil {
+		return Mocks.Users.GetByExternalID(ctx, provider, id)
+	}
+	return u.getOneBySQL(ctx, "WHERE external_provider=$1 AND external_id=$2 AND deleted_at IS NULL LIMIT 1", provider, id)
 }
 
 func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User, error) {

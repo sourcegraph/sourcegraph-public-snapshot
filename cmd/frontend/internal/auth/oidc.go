@@ -298,7 +298,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		return nil, err
 	}
 
-	usr, err := db.Users.GetByExternalID(ctx, externalID)
+	usr, err := db.Users.GetByExternalID(ctx, provider, externalID)
 	if _, notFound := err.(db.ErrUserNotFound); notFound {
 		usr, err = db.Users.Create(ctx, db.NewUser{
 			ExternalID:       externalID,

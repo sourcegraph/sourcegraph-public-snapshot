@@ -469,6 +469,7 @@ Indexes:
     "users_external_id" UNIQUE, btree (external_id, external_provider) WHERE external_provider IS NOT NULL
     "users_username_key" UNIQUE CONSTRAINT, btree (username)
 Check constraints:
+    "check_external_id" CHECK ((external_provider IS NULL) = (external_id IS NULL))
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:

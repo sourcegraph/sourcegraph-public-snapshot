@@ -28,11 +28,21 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user1, err := Users.Create(ctx, NewUser{Email: "a1@example.com", Username: "u1"})
+	user1, err := Users.Create(ctx, NewUser{
+		Email:     "a1@example.com",
+		Username:  "u1",
+		Password:  "p",
+		EmailCode: "c",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = Users.Create(ctx, NewUser{Email: "a2@example.com", Username: "u2"})
+	_, err = Users.Create(ctx, NewUser{
+		Email:     "a2@example.com",
+		Username:  "u2",
+		Password:  "p",
+		EmailCode: "c",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
