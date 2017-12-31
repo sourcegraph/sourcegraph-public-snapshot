@@ -300,7 +300,13 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 
 	usr, err := db.Users.GetByAuthID(ctx, authID)
 	if _, notFound := err.(db.ErrUserNotFound); notFound {
-		usr, err = db.Users.Create(ctx, authID, email, login, displayName, provider, "", "")
+		usr, err = db.Users.Create(ctx, db.NewUser{
+			AuthID:      authID,
+			Email:       email,
+			Username:    login,
+			DisplayName: displayName,
+			Provider:    provider,
+		})
 	}
 	if err != nil {
 		return nil, err

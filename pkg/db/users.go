@@ -68,6 +68,17 @@ var (
 	ErrAuthIDExists   = ErrCannotCreateUser{"err_auth_id_exists"}
 )
 
+// NewUser describes a new to-be-created user.
+type NewUser struct {
+	AuthID      string
+	Email       string
+	Username    string
+	DisplayName string
+	Provider    string
+	Password    string
+	EmailCode   string
+}
+
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
 // the user:
 // - If the provider is "native", the user was authenticated by the native-auth UI using native authentication
@@ -75,15 +86,15 @@ var (
 //
 // Native-auth users must also specify a password and email verification code upon creation. When the user's email is
 // verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
-func (*users) Create(ctx context.Context, authID, email, username, displayName, provider string, password string, emailCode string) (newUser *sourcegraph.User, err error) {
+func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.User, err error) {
 	if Mocks.Users.Create != nil {
-		return Mocks.Users.Create(ctx, authID, email, username, displayName, provider, password, emailCode)
+		return Mocks.Users.Create(ctx, info)
 	}
 
-	if provider == sourcegraph.UserProviderNative && (password == "" || emailCode == "") {
+	if info.Provider == sourcegraph.UserProviderNative && (info.Password == "" || info.EmailCode == "") {
 		return nil, errors.New("no password or email code provided for new native-auth user")
 	}
-	if provider != sourcegraph.UserProviderNative && (password != "" || emailCode != "") {
+	if info.Provider != sourcegraph.UserProviderNative && (info.Password != "" || info.EmailCode != "") {
 		return nil, errors.New("password and/or email verification code provided for non-native users")
 	}
 
@@ -92,18 +103,18 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 	var id int32
 
 	var passwd sql.NullString
-	if password == "" {
+	if info.Password == "" {
 		passwd = sql.NullString{Valid: false}
 	} else {
 		// Compute hash of password
-		passwd, err = hashPassword(password)
+		passwd, err = hashPassword(info.Password)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	dbEmailCode := sql.NullString{String: emailCode}
-	dbEmailCode.Valid = emailCode == ""
+	dbEmailCode := sql.NullString{String: info.EmailCode}
+	dbEmailCode.Valid = info.EmailCode == ""
 
 	// Wrap in transaction so we can execute hooks below atomically.
 	tx, err := globalDB.BeginTx(ctx, nil)
@@ -128,7 +139,7 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO users(auth_id, username, display_name, provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, "+makeSiteAdminSQLExpr+") RETURNING id, site_admin",
-		authID, username, displayName, provider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
+		info.AuthID, info.Username, info.DisplayName, info.Provider, createdAt, updatedAt, passwd).Scan(&id, &isSiteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -141,9 +152,9 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 		return nil, err
 	}
 
-	if email != "" {
+	if info.Email != "" {
 		if _, err := tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)",
-			id, email, emailCode,
+			id, info.Email, info.EmailCode,
 		); err != nil {
 			if pqErr, ok := err.(*pq.Error); ok {
 				switch pqErr.Constraint {
@@ -173,10 +184,10 @@ func (*users) Create(ctx context.Context, authID, email, username, displayName, 
 
 	return &sourcegraph.User{
 		ID:          id,
-		AuthID:      authID,
-		Username:    username,
-		DisplayName: displayName,
-		Provider:    provider,
+		AuthID:      info.AuthID,
+		Username:    info.Username,
+		DisplayName: info.DisplayName,
+		Provider:    info.Provider,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 		SiteAdmin:   isSiteAdmin,

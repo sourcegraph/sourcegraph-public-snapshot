@@ -50,9 +50,9 @@ func TestAuthorizationMiddleware(t *testing.T) {
 				calledGetByUsername = true
 				return nil, db.ErrUserNotFound{}
 			}
-			db.Mocks.Users.Create = func(ctx context.Context, authID, email, username, displayName, provider string, password string, emailCode string) (*sourcegraph.User, error) {
+			db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*sourcegraph.User, error) {
 				calledCreate = true
-				return &sourcegraph.User{ID: 1, AuthID: authID, Username: username}, nil
+				return &sourcegraph.User{ID: 1, AuthID: info.AuthID, Username: info.Username}, nil
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
 			handler.ServeHTTP(rr, req)

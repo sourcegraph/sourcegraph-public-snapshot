@@ -59,7 +59,11 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	}
 	ctx := testContext()
 
-	user, err := Users.Create(ctx, "authid", "a@a.com", "u", "", "", "", "")
+	user, err := Users.Create(ctx, NewUser{
+		AuthID:   "authid",
+		Email:    "a@a.com",
+		Username: "u",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +106,11 @@ func TestUsers_Count(t *testing.T) {
 	}
 	ctx := testContext()
 
-	user, err := Users.Create(ctx, "authid", "a@a.com", "u", "", "", "", "")
+	user, err := Users.Create(ctx, NewUser{
+		AuthID:   "authid",
+		Email:    "a@a.com",
+		Username: "u",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +138,11 @@ func TestUsers_Delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	user, err := Users.Create(ctx, "authid", "a@a.com", "u", "", "", "", "")
+	user, err := Users.Create(ctx, NewUser{
+		AuthID:   "authid",
+		Email:    "a@a.com",
+		Username: "u",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
