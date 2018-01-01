@@ -117,17 +117,17 @@ type Mutation {
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	# Update the settings for the currently authenticated user.
 	updateUserSettings(lastKnownSettingsID: Int, contents: String!): Settings!
-	updateThread(threadID: Int!, archived: Boolean): Thread!
-	addCommentToThread(threadID: Int!, contents: String!): Thread!
+	updateThread(threadID: ID!, archived: Boolean): Thread!
+	addCommentToThread(threadID: ID!, contents: String!): Thread!
 	# This method is the same as addCommentToThread, the only difference is
 	# that authentication is based on the secret ULID instead of the current
 	# user.
 	#
 	# 🚨 SECURITY: Every field of the return type here is accessible publicly
 	# given a shared item URL.
-	addCommentToThreadShared(ulid: String!, threadID: Int!, contents: String!): SharedItemThread!
-	shareThread(threadID: Int!): String!
-	shareComment(commentID: Int!): String!
+	addCommentToThreadShared(ulid: String!, threadID: ID!, contents: String!): SharedItemThread!
+	shareThread(threadID: ID!): String!
+	shareComment(commentID: ID!): String!
 	createOrg(name: String!, displayName: String!): Org!
 	updateOrg(id: ID!, displayName: String, slackWebhookURL: String): Org!
 	updateOrgSettings(
@@ -441,7 +441,8 @@ type SharedItemUser {
 # Do NOT use any non-primitive graphql type here unless it is also a SharedItem
 # type.
 type SharedItemThread {
-	id: Int!
+	id: ID!
+	databaseID: Int!
 	repo: SharedItemOrgRepo!
 	file: String!
 	branch: String
@@ -478,7 +479,8 @@ type SharedItemOrgRepo {
 # Do NOT use any non-primitive graphql type here unless it is also a SharedItem
 # type.
 type SharedItemComment {
-	id: Int!
+	id: ID!
+	databaseID: Int!
 	title: String!
 	contents: String!
 	richHTML: String!
@@ -962,8 +964,12 @@ type Configuration {
 	messages: [String!]!
 }
 
-type Thread {
-	id: Int!
+# Thread is a comment thread.
+type Thread implements Node {
+	# The unique ID.
+	id: ID!
+	# The primary key from the database.
+	databaseID: Int!
 	repo: OrgRepo!
 	file: String! @deprecated(reason: "use repoRevisionPath (or linesRevisionPath)")
 
@@ -1006,8 +1012,11 @@ type Thread {
 	comments: [Comment!]!
 }
 
+# Comment is a comment in a thread.
 type Comment {
-	id: Int!
+	# The unique ID.
+	id: ID!
+	# The primary key from the database.
 	title: String!
 	contents: String!
 

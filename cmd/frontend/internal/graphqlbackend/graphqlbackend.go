@@ -82,6 +82,11 @@ type nodeResolver struct {
 	node
 }
 
+func (r *nodeResolver) ToComment() (*commentResolver, bool) {
+	n, ok := r.node.(*commentResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
 	n, ok := r.node.(*repositoryResolver)
 	return n, ok
@@ -107,6 +112,11 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToThread() (*threadResolver, bool) {
+	n, ok := r.node.(*threadResolver)
+	return n, ok
+}
+
 type schemaResolver struct{}
 
 // DEPRECATED
@@ -124,6 +134,8 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 
 func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
+	case "Comment":
+		return commentByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
 	case "User":
@@ -136,6 +148,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return savedQueryByID(ctx, id)
 	case "Site":
 		return siteByID(ctx, id)
+	case "Thread":
+		return threadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

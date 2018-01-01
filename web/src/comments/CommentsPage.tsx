@@ -142,7 +142,7 @@ export const CommentsPage = reactive<Props>(props => {
                     sharedItem.thread.branch || sharedItem.thread.repoRevision,
                     sharedItem.thread.file,
                     { line: sharedItem.thread.startLine },
-                    sharedItem.thread.id
+                    sharedItem.thread.databaseID
                 )
                 const openEditor = () => {
                     eventLogger.log('OpenInNativeAppClicked')

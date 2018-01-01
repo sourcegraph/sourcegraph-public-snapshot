@@ -151,7 +151,7 @@ export function toEditorURL(
     rev?: string,
     filePath?: string,
     position?: { line?: number },
-    thread?: number
+    threadDatabaseID?: number
 ): string {
     let query = 'repo=' + encodeURIComponent('ssh://git@' + repoPath + '.git')
     query += '&vcs=git'
@@ -167,8 +167,8 @@ export function toEditorURL(
     if (position && position.line) {
         query += '&selection=' + encodeURIComponent('' + position.line)
     }
-    if (thread) {
-        query += '&thread=' + encodeURIComponent(String(thread))
+    if (threadDatabaseID) {
+        query += '&thread=' + encodeURIComponent(String(threadDatabaseID))
     }
     return '/open?' + query
 }

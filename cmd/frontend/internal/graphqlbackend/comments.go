@@ -11,6 +11,8 @@ import (
 
 	"github.com/dlclark/regexp2"
 	"github.com/mattbaird/gochimp"
+	graphql "github.com/neelance/graphql-go"
+	"github.com/neelance/graphql-go/relay"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
@@ -27,10 +29,6 @@ type commentResolver struct {
 	repo    *sourcegraph.OrgRepo
 	thread  *sourcegraph.Thread
 	comment *sourcegraph.Comment
-}
-
-func (c *commentResolver) ID() int32 {
-	return c.comment.ID
 }
 
 func (c *commentResolver) Title(ctx context.Context) string {
@@ -62,7 +60,7 @@ func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
 }
 
 func (s *schemaResolver) AddCommentToThreadShared(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 	Contents string
 	ULID     string
 }) (*threadResolver, error) {
@@ -70,11 +68,11 @@ func (s *schemaResolver) AddCommentToThreadShared(ctx context.Context, args *str
 }
 
 func (s *schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 	Contents string
 }) (*threadResolver, error) {
 	return s.addCommentToThread(ctx, &struct {
-		ThreadID int32
+		ThreadID threadID
 		Contents string
 		ULID     string
 	}{
@@ -87,11 +85,11 @@ func (s *schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 // TODO(slimsag): expose only one addCommentToThread in the future (with
 // nullable ULID string).
 func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 	Contents string
 	ULID     string
 }) (*threadResolver, error) {
-	thread, err := db.Threads.Get(ctx, args.ThreadID)
+	thread, err := db.Threads.Get(ctx, args.ThreadID.int32Value)
 	if err != nil {
 		return nil, err
 	}
@@ -145,12 +143,12 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	}
 
 	// Query all comments so we can send a notification to all participants.
-	comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID)
+	comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID.int32Value)
 	if err != nil {
 		return nil, err
 	}
 
-	comment, err := db.Comments.Create(ctx, args.ThreadID, args.Contents, "", email, user.ID)
+	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, "", email, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -184,10 +182,38 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	return t, nil
 }
 
+// commentID can accept either a GraphQL ID! or Int! value. It is used to back-compatibly
+// migrate from comment Int!-type IDs to ID!-type IDs.
+type commentID struct {
+	int32Value int32
+}
+
+func (commentID) ImplementsGraphQLType(name string) bool {
+	return name == "ID"
+}
+
+func (v *commentID) UnmarshalGraphQL(input interface{}) error {
+	switch input := input.(type) {
+	case string:
+		var int32Value int32
+		id := graphql.ID(input)
+		if kind := relay.UnmarshalKind(id); kind != "Comment" {
+			return fmt.Errorf("expected id with kind Comment; got %s", kind)
+		}
+		if err := relay.UnmarshalSpec(id, &int32Value); err != nil {
+			return err
+		}
+		*v = commentID{int32Value: int32Value}
+		return nil
+	default:
+		return fmt.Errorf("wrong type")
+	}
+}
+
 func (s *schemaResolver) ShareComment(ctx context.Context, args *struct {
-	CommentID int32
+	CommentID commentID
 }) (string, error) {
-	u, err := s.shareCommentInternal(ctx, args.CommentID, true)
+	u, err := s.shareCommentInternal(ctx, args.CommentID.int32Value, true)
 	if err != nil {
 		return "", nil
 	}

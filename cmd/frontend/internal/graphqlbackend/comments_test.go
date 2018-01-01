@@ -281,10 +281,10 @@ func TestComments_Create(t *testing.T) {
 
 	r := &schemaResolver{}
 	_, err := r.AddCommentToThread(ctx, &struct {
-		ThreadID int32
+		ThreadID threadID
 		Contents string
 	}{
-		ThreadID: thread.ID,
+		ThreadID: threadID{int32Value: thread.ID},
 		Contents: wantComment.Contents,
 	})
 
@@ -305,7 +305,7 @@ func TestComments_CreateAccessDenied(t *testing.T) {
 
 	r := &schemaResolver{}
 	comment, err := r.AddCommentToThread(ctx, &struct {
-		ThreadID int32
+		ThreadID threadID
 		Contents string
 	}{})
 
