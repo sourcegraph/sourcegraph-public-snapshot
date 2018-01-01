@@ -127,7 +127,7 @@ type Mutation {
 	# given a shared item URL.
 	addCommentToThreadShared(ulid: String!, threadID: ID!, contents: String!): SharedItemThread!
 	shareThread(threadID: ID!): String!
-	shareComment(commentID: Int!): String!
+	shareComment(commentID: ID!): String!
 	createOrg(name: String!, displayName: String!): Org!
 	updateOrg(id: ID!, displayName: String, slackWebhookURL: String): Org!
 	updateOrgSettings(
@@ -479,7 +479,8 @@ type SharedItemOrgRepo {
 # Do NOT use any non-primitive graphql type here unless it is also a SharedItem
 # type.
 type SharedItemComment {
-	id: Int!
+	id: ID!
+	databaseID: Int!
 	title: String!
 	contents: String!
 	richHTML: String!
@@ -1011,8 +1012,11 @@ type Thread implements Node {
 	comments: [Comment!]!
 }
 
+# Comment is a comment in a thread.
 type Comment {
-	id: Int!
+	# The unique ID.
+	id: ID!
+	# The primary key from the database.
 	title: String!
 	contents: String!
 
