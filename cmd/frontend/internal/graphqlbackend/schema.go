@@ -1017,6 +1017,7 @@ type Comment {
 	# The unique ID.
 	id: ID!
 	# The primary key from the database.
+	databaseID: Int!
 	title: String!
 	contents: String!
 
