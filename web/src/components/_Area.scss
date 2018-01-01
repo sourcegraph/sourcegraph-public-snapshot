@@ -1,3 +1,5 @@
+@import '../nav/Navbar';
+
 .area {
     display: flex;
     justify-content: center;
@@ -5,7 +7,7 @@
     padding-top: 1.5rem;
     line-height: 1.5rem;
     overflow-y: auto;
-    min-height: calc(100vh - 4.35rem - 1.5rem);
+    min-height: calc(100vh - $navbar-search-height - 1.5rem);
 
     &__content {
         flex: 1 1 auto;

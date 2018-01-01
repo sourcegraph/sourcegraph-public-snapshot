@@ -1,3 +1,5 @@
+$navbar-search-height: 4.35rem;
+
 .navbar {
     position: sticky;
     flex: none;
@@ -66,7 +68,7 @@
     }
 
     &.navbar-search {
-        height: 4.35rem; // +.05 to avoid the search box leaking
+        height: $navbar-search-height; // +.05 to avoid the search box leaking
         .navbar__logo {
             width: 2rem;
             height: 2rem;
