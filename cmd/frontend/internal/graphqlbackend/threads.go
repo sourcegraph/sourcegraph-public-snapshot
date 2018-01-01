@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/mattbaird/gochimp"
 	"github.com/microcosm-cc/bluemonday"
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
@@ -20,7 +18,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type threadConnectionResolver struct {
@@ -606,34 +604,32 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 		return err
 	}
 
-	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
-	for _, email := range emails {
-		var subject string
-		if first != nil {
-			var branch string
-			if thread.Branch != nil {
-				branch = "@" + *thread.Branch
+	// Send tx emails asynchronously.
+	go func() {
+		repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
+		for _, email := range emails {
+			var subject string
+			if first != nil {
+				var branch string
+				if thread.Branch != nil {
+					branch = "@" + *thread.Branch
+				}
+				subject = fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
 			}
-			subject = fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
+			if len(previousComments) > 0 {
+				subject = "Re: " + subject
+			}
+			if err := txemail.Send(ctx, txemail.Message{
+				FromName: archiver.DisplayName,
+				To:       []string{email},
+				Subject:  subject,
+				TextBody: fmt.Sprintf(`Archived #%d (%s)`, thread.ID, url),
+			}); err != nil {
+				log15.Error("error sending archived-thread email", "to", email, "err", err)
+			}
 		}
-		if len(previousComments) > 0 {
-			subject = "Re: " + subject
-		}
-		config := &notif.EmailConfig{
-			Template:  "thread-archived",
-			FromName:  archiver.DisplayName,
-			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
-			ToName:    "",                        // We don't know names right now.
-			ToEmail:   email,
-			Subject:   subject,
-		}
+	}()
 
-		// TODO(sqs): make this use txemail.Send
-		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
-			gochimp.Var{Name: "THREAD_ID", Content: strconv.Itoa(int(thread.ID))},
-			gochimp.Var{Name: "THREAD_URL", Content: url.String()},
-		})
-	}
 	return nil
 }
 

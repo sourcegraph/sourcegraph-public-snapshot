@@ -16,6 +16,7 @@ import (
 
 // Message describes an email message to be sent.
 type Message struct {
+	FromName string   // email "From" address proper name
 	To       []string // email "To" recipients
 	Subject  string   // email subject
 	TextBody string   // email plain-text body
@@ -45,6 +46,10 @@ func Send(ctx context.Context, message Message) error {
 		Body:     message.TextBody,
 		HTMLBody: message.HTMLBody,
 		Headers:  mail.Header{},
+	}
+
+	if message.FromName != "" {
+		m.From.Name = message.FromName
 	}
 
 	for _, to := range message.To {

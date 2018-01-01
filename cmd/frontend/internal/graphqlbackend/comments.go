@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
-	"github.com/mattbaird/gochimp"
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -23,7 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type commentResolver struct {
@@ -294,38 +293,40 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 	for _, m := range mentions {
 		contents = strings.Replace(contents, "@"+m, `<b>@`+m+`</b>`, -1)
 	}
-	lineVars := []gochimp.Var{}
+	var lines string
 	if len(previousComments) == 0 && thread.Lines != nil {
-		lines := strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
-		lineVars = []gochimp.Var{
-			gochimp.Var{Name: "CONTEXT_LINES", Content: html.EscapeString(lines)},
-		}
+		lines = strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
 	}
-	for _, email := range emails {
-		var branch string
-		if thread.Branch != nil {
-			branch = "@" + *thread.Branch
-		}
-		subject := fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
-		if len(previousComments) > 0 {
-			subject = "Re: " + subject
-		}
-		config := &notif.EmailConfig{
-			Template:  "new-comment",
-			FromName:  author.DisplayName,
-			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
-			ToName:    "",                        // We don't know names right now.
-			ToEmail:   email,
-			Subject:   subject,
-		}
 
-		// TODO(sqs): make this use txemail.Send
-		notif.SendMandrillTemplate(config, []gochimp.Var{}, append([]gochimp.Var{
-			gochimp.Var{Name: "CONTENTS", Content: contents},
-			gochimp.Var{Name: "COMMENT_URL", Content: commentURL.String()},
-			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)},
-		}, lineVars...))
-	}
+	// Send tx emails asynchronously.
+	go func() {
+		for _, email := range emails {
+			var branch string
+			if thread.Branch != nil {
+				branch = "@" + *thread.Branch
+			}
+			subject := fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
+			if len(previousComments) > 0 {
+				subject = "Re: " + subject
+			}
+			location := fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)
+			if err := txemail.Send(ctx, txemail.Message{
+				FromName: author.DisplayName,
+				To:       []string{email},
+				Subject:  subject,
+				TextBody: fmt.Sprintf(`%s:
+
+%s
+
+%s
+
+View discussion on Sourcegraph: %s`, location, lines, contents, commentURL),
+			}); err != nil {
+				log15.Error("error sending new-comment notifications", "err", err)
+			}
+		}
+	}()
+
 	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
 }
 
