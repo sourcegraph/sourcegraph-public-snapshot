@@ -100,10 +100,10 @@ func TestThreads_Update(t *testing.T) {
 	r := &schemaResolver{}
 	archived := true
 	_, err := r.UpdateThread(context.Background(), &struct {
-		ThreadID int32
+		ThreadID threadID
 		Archived *bool
 	}{
-		ThreadID: 1,
+		ThreadID: threadID{int32Value: 1},
 		Archived: &archived,
 	})
 

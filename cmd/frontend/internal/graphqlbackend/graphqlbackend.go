@@ -107,6 +107,11 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToThread() (*threadResolver, bool) {
+	n, ok := r.node.(*threadResolver)
+	return n, ok
+}
+
 type schemaResolver struct{}
 
 // DEPRECATED
@@ -136,6 +141,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return savedQueryByID(ctx, id)
 	case "Site":
 		return siteByID(ctx, id)
+	case "Thread":
+		return threadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

@@ -13,6 +13,7 @@ class PermissionDeniedError extends Error {
 const sharedItemThreadFragment = gql`
     fragment SharedItemThreadFields on SharedItemThread {
         id
+        databaseID
         repo {
             id
             remoteUri
@@ -98,13 +99,13 @@ export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable
  * @return Observable that emits the updated thread.
  */
 export function addCommentToThread(
-    threadID: number,
+    threadID: GQLID,
     contents: string,
     ulid: string,
     isLightTheme: boolean
 ): Observable<GQL.ISharedItemThread> {
     return mutateGraphQL(
-        gql`mutation AddCommentToThread($threadID: Int!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
+        gql`mutation AddCommentToThread($threadID: ID!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
             addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
                 ...SharedItemThreadFields
             }

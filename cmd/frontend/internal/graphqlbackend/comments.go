@@ -62,7 +62,7 @@ func (c *commentResolver) Author(ctx context.Context) (*userResolver, error) {
 }
 
 func (s *schemaResolver) AddCommentToThreadShared(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 	Contents string
 	ULID     string
 }) (*threadResolver, error) {
@@ -70,11 +70,11 @@ func (s *schemaResolver) AddCommentToThreadShared(ctx context.Context, args *str
 }
 
 func (s *schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 	Contents string
 }) (*threadResolver, error) {
 	return s.addCommentToThread(ctx, &struct {
-		ThreadID int32
+		ThreadID threadID
 		Contents string
 		ULID     string
 	}{
@@ -87,11 +87,11 @@ func (s *schemaResolver) AddCommentToThread(ctx context.Context, args *struct {
 // TODO(slimsag): expose only one addCommentToThread in the future (with
 // nullable ULID string).
 func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 	Contents string
 	ULID     string
 }) (*threadResolver, error) {
-	thread, err := db.Threads.Get(ctx, args.ThreadID)
+	thread, err := db.Threads.Get(ctx, args.ThreadID.int32Value)
 	if err != nil {
 		return nil, err
 	}
@@ -145,12 +145,12 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	}
 
 	// Query all comments so we can send a notification to all participants.
-	comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID)
+	comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID.int32Value)
 	if err != nil {
 		return nil, err
 	}
 
-	comment, err := db.Comments.Create(ctx, args.ThreadID, args.Contents, "", email, user.ID)
+	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, "", email, user.ID)
 	if err != nil {
 		return nil, err
 	}

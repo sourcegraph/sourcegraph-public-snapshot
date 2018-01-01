@@ -20,7 +20,7 @@ interface Props {
     editorURL: string
     onOpenEditor: () => void
     onThreadUpdated: (updatedThread: GQL.ISharedItemThread) => void
-    threadID: number
+    threadID: GQLID
     ulid: string
 }
 

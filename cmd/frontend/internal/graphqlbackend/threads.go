@@ -88,10 +88,6 @@ type threadResolver struct {
 	thread *sourcegraph.Thread
 }
 
-func (t *threadResolver) ID() int32 {
-	return t.thread.ID
-}
-
 func (t *threadResolver) Repo(ctx context.Context) (*orgRepoResolver, error) {
 	var err error
 	if t.repo == nil {
@@ -319,6 +315,34 @@ func (v *orgID) UnmarshalGraphQL(input interface{}) error {
 	}
 }
 
+// threadID can accept either a GraphQL ID! or Int! value. It is used to back-compatibly
+// migrate from thread Int!-type IDs to ID!-type IDs.
+type threadID struct {
+	int32Value int32
+}
+
+func (threadID) ImplementsGraphQLType(name string) bool {
+	return name == "ID"
+}
+
+func (v *threadID) UnmarshalGraphQL(input interface{}) error {
+	switch input := input.(type) {
+	case string:
+		var int32Value int32
+		id := graphql.ID(input)
+		if kind := relay.UnmarshalKind(id); kind != "Thread" {
+			return fmt.Errorf("expected id with kind Thread; got %s", kind)
+		}
+		if err := relay.UnmarshalSpec(id, &int32Value); err != nil {
+			return err
+		}
+		*v = threadID{int32Value: int32Value}
+		return nil
+	default:
+		return fmt.Errorf("wrong type")
+	}
+}
+
 // TODO(nick): deprecated
 func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
 	OrgID             orgID
@@ -482,10 +506,10 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 }
 
 func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 	Archived *bool
 }) (*threadResolver, error) {
-	thread, err := db.Threads.Get(ctx, args.ThreadID)
+	thread, err := db.Threads.Get(ctx, args.ThreadID.int32Value)
 	if err != nil {
 		return nil, err
 	}
@@ -508,7 +532,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 
 	wasArchived := thread.ArchivedAt
-	thread, err = db.Threads.Update(ctx, args.ThreadID, repo.ID, args.Archived)
+	thread, err = db.Threads.Update(ctx, args.ThreadID.int32Value, repo.ID, args.Archived)
 	if err != nil {
 		return nil, err
 	}
@@ -518,7 +542,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID)
+		comments, err := db.Comments.GetAllForThread(ctx, args.ThreadID.int32Value)
 		if err != nil {
 			return nil, err
 		}
@@ -529,9 +553,9 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 }
 
 func (s *schemaResolver) ShareThread(ctx context.Context, args *struct {
-	ThreadID int32
+	ThreadID threadID
 }) (string, error) {
-	u, err := s.shareThreadInternal(ctx, args.ThreadID, true)
+	u, err := s.shareThreadInternal(ctx, args.ThreadID.int32Value, true)
 	if err != nil {
 		return "", nil
 	}
