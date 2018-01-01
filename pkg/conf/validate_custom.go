@@ -19,8 +19,8 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		validationErrors = append(validationErrors, msg)
 	}
 
-	if cfg.AuthAllowSignup && !(cfg.AuthProvider == "builtin" || cfg.AuthProvider == "auth0") {
-		invalid(fmt.Sprintf("auth.allowSignup requires auth.provider == \"builtin\" or \"auth0\" (got %q)", cfg.AuthProvider))
+	if cfg.AuthAllowSignup && cfg.AuthProvider != "builtin" {
+		invalid(fmt.Sprintf("auth.allowSignup requires auth.provider == \"builtin\" (got %q)", cfg.AuthProvider))
 	}
 
 	if cfg.AuthProvider == "openidconnect" && cfg.AppURL == "" {

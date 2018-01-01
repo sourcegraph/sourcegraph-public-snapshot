@@ -291,11 +291,11 @@ const SiteSchemaJSON = `{
         "The authentication provider to use for identifying and signing in users. Defaults to built-in authentication.",
       "default": "builtin",
       "type": "string",
-      "enum": ["builtin", "auth0", "openidconnect", "saml", "http-header"]
+      "enum": ["builtin", "openidconnect", "saml", "http-header"]
     },
     "auth.allowSignup": {
       "description":
-        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nRequires auth.provider == \"builtin\" or \"auth0\".",
+        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nRequires auth.provider == \"builtin\".",
       "type": "boolean"
     },
     "auth.openIDConnect": {

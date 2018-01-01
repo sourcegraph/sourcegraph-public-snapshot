@@ -315,8 +315,6 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 			return nil, errors.New("must verify your email to send invites")
 		}
 
-		// TODO(sqs): check email verif for non-auth0 users
-
 		// Check and decrement our invite quota, to prevent abuse (sending too many invites).
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
