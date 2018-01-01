@@ -68,7 +68,9 @@ export const SavedQueryForm = reactive<Props>(props => {
         fromEvent<KeyboardEvent>(window, 'keydown').pipe(
             filter((e: KeyboardEvent) => e.key === 'Escape'),
             withLatestFrom(props),
-            tap(([, props]) => props.onDidCancel())
+            tap(([, props]) => props.onDidCancel()),
+            // Don't produce any state updates
+            mergeMap(() => [])
         ),
 
         // Apply default values.
@@ -95,7 +97,7 @@ export const SavedQueryForm = reactive<Props>(props => {
             }))
         ),
 
-        configurationCascade.pipe<{}>(
+        configurationCascade.pipe(
             map(({ subjects }): Update => state => ({
                 ...state,
                 subjectOptions: subjects,
