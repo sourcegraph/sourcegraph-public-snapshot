@@ -289,10 +289,6 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 
 	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
 	contents := strings.Replace(html.EscapeString(comment.Contents), "\n", "<br>", -1)
-	mentions := usernamesFromMentions(comment.Contents)
-	for _, m := range mentions {
-		contents = strings.Replace(contents, "@"+m, `<b>@`+m+`</b>`, -1)
-	}
 	var lines string
 	if len(previousComments) == 0 && thread.Lines != nil {
 		lines = strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
@@ -305,30 +301,65 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 			if thread.Branch != nil {
 				branch = "@" + *thread.Branch
 			}
-			subject := fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
-			if len(previousComments) > 0 {
-				subject = "Re: " + subject
-			}
 			location := fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)
 			if err := txemail.Send(ctx, txemail.Message{
 				FromName: author.DisplayName,
 				To:       []string{email},
-				Subject:  subject,
-				TextBody: fmt.Sprintf(`%s:
-
-%s
-
-%s
-
-View discussion on Sourcegraph: %s`, location, lines, contents, commentURL),
+				Template: newCommentEmailTemplates,
+				Data: struct {
+					threadEmailTemplateCommonData
+					Location     string
+					ContextLines string
+					Contents     string
+				}{
+					threadEmailTemplateCommonData: threadEmailTemplateCommonData{
+						Reply:    len(previousComments) > 0,
+						RepoName: repoName,
+						Branch:   branch,
+						Title:    TitleFromContents(first.Contents),
+						Number:   thread.ID,
+						URL:      commentURL.String(),
+					},
+					Location:     location,
+					ContextLines: lines,
+					Contents:     contents,
+				},
 			}); err != nil {
-				log15.Error("error sending new-comment notifications", "err", err)
+				log15.Error("error sending new-comment notifications", "to", email, "err", err)
 			}
 		}
 	}()
 
 	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
 }
+
+var (
+	newCommentEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+		Subject: threadEmailSubjectTemplate,
+		Text: `
+{{.Location}}
+
+{{if .ContextLines}}
+------------------------------------------------------------------------------
+{{.ContextLines}}
+------------------------------------------------------------------------------
+{{end}}
+
+{{.Contents}}
+
+View discussion on Sourcegraph: {{.URL}}
+`,
+		HTML: `
+{{if .ContextLines}}
+<pre style="color:#555">{{.ContextLines}}</pre>
+{{end}}
+
+<p>{{.Contents}}</p>
+
+<p>View discussion on Sourcegraph: <a href="{{.URL}}">{{.Location}}</a></p>
+`,
+	})
+)
 
 var mockEmailsToNotify func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error)
 

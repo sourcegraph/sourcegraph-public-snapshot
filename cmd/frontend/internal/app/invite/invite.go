@@ -78,13 +78,37 @@ func CreateOrgToken(email string, org *sourcegraph.Org) (string, error) {
 
 func SendEmail(inviteEmail, fromName, orgName, inviteURL string) error {
 	return txemail.Send(context.Background(), txemail.Message{
-		To:      []string{inviteEmail},
-		Subject: fmt.Sprintf("%s invited you to join %s on Sourcegraph", fromName, orgName),
-		TextBody: fmt.Sprintf(`%s invited you to join the %s organization on Sourcegraph.
-
-To accept:
-
-  %s
-`, fromName, orgName, inviteURL),
+		To:       []string{inviteEmail},
+		Template: emailTemplates,
+		Data: struct {
+			FromName string
+			OrgName  string
+			URL      string
+		}{
+			FromName: fromName,
+			OrgName:  orgName,
+			URL:      inviteURL,
+		},
 	})
 }
+
+var (
+	emailTemplates = txemail.MustParseTemplate(txemail.Templates{
+		Subject: `{{.FromName}} invited you to join {{.OrgName}} on Sourcegraph`,
+		Text: `
+{{.FromName}} invited you to join {{.OrgName}} on Sourcegraph.
+
+To accept the invitation, follow this link:
+
+  {{.URL}}
+`,
+		HTML: `
+<p>
+  <strong>{{.FromName}}</strong> invited you to join
+  <strong>{{.OrgName}}</strong> on Sourcegraph.
+</p>
+
+<p><strong><a href="{{.URL}}">Accept the invitation</a></strong></p>
+`,
+	})
+)

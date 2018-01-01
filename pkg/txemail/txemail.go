@@ -18,18 +18,18 @@ import (
 type Message struct {
 	FromName string   // email "From" address proper name
 	To       []string // email "To" recipients
-	Subject  string   // email subject
-	TextBody string   // email plain-text body
-	HTMLBody string   // email HTML body
+
+	Template ParsedTemplates // parsed subject/body templates
+	Data     interface{}     // template data
 }
 
 // Send sends a transactional email.
 func Send(ctx context.Context, message Message) error {
-	if disableSilently {
-		return nil
-	}
 	if MockSend != nil {
 		return MockSend(ctx, message)
+	}
+	if disableSilently {
+		return nil
 	}
 
 	conf := conf.Get()
@@ -45,10 +45,11 @@ func Send(ctx context.Context, message Message) error {
 			Name:    "Sourcegraph",
 			Address: conf.EmailAddress,
 		},
-		Subject:  message.Subject,
-		Body:     message.TextBody,
-		HTMLBody: message.HTMLBody,
-		Headers:  mail.Header{},
+		Headers: mail.Header{},
+	}
+
+	if err := message.Template.render(message.Data, &m); err != nil {
+		return err
 	}
 
 	if message.FromName != "" {

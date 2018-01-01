@@ -608,22 +608,26 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 	go func() {
 		repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
 		for _, email := range emails {
-			var subject string
-			if first != nil {
-				var branch string
-				if thread.Branch != nil {
-					branch = "@" + *thread.Branch
-				}
-				subject = fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
+			var branch string
+			if thread.Branch != nil {
+				branch = "@" + *thread.Branch
 			}
-			if len(previousComments) > 0 {
-				subject = "Re: " + subject
+			var title string
+			if first != nil {
+				title = TitleFromContents(first.Contents)
 			}
 			if err := txemail.Send(ctx, txemail.Message{
 				FromName: archiver.DisplayName,
 				To:       []string{email},
-				Subject:  subject,
-				TextBody: fmt.Sprintf(`Archived #%d (%s)`, thread.ID, url),
+				Template: threadArchivedEmailTemplates,
+				Data: threadEmailTemplateCommonData{
+					Reply:    len(previousComments) > 0,
+					RepoName: repoName,
+					Branch:   branch,
+					Title:    title,
+					Number:   thread.ID,
+					URL:      url.String(),
+				},
 			}); err != nil {
 				log15.Error("error sending archived-thread email", "to", email, "err", err)
 			}
@@ -632,6 +636,31 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 
 	return nil
 }
+
+type threadEmailTemplateCommonData struct {
+	Reply    bool
+	RepoName string
+	Branch   string
+	Title    string
+	Number   int32
+	URL      string
+}
+
+const threadEmailSubjectTemplate = `{{if .Reply}}Re: {{end}}[{{.RepoName}}{{.Branch}}] {{.Title}} (#{{.Number}})`
+
+var (
+	threadArchivedEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+		Subject: threadEmailSubjectTemplate,
+		Text: `
+Archived #{{.Number}}
+
+View discussion on Sourcegraph: {{.URL}}
+`,
+		HTML: `
+<p>Archived <a href="{{.URL}}">#{{.Number}}</a></p>
+`,
+	})
+)
 
 // TitleFromContents returns a title based on the first sentence or line of the content.
 func TitleFromContents(contents string) string {
