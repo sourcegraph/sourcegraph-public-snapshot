@@ -141,25 +141,51 @@ export function fetchThread(id: GQLID, isLightTheme: boolean): Observable<GQL.IT
 export function addCommentToThread(
     threadID: GQLID,
     contents: string,
-    ulid: string,
+    ulid: string | undefined,
     isLightTheme: boolean
-): Observable<GQL.ISharedItemThread> {
+): Observable<GQL.ISharedItemThread | GQL.IThread> {
+    if (ulid) {
+        return mutateGraphQL(
+            gql`
+                mutation AddCommentToThread(
+                    $threadID: ID!
+                    $contents: String!
+                    $ulid: String!
+                    $isLightTheme: Boolean!
+                ) {
+                    addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
+                        ...SharedItemThreadFields
+                    }
+                }
+                ${sharedItemThreadFragment}
+            `,
+            { threadID, contents, ulid, isLightTheme }
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.addCommentToThreadShared) {
+                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                }
+                return data.addCommentToThreadShared
+            })
+        )
+    }
+
     return mutateGraphQL(
         gql`
-            mutation AddCommentToThread($threadID: ID!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
-                addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
-                    ...SharedItemThreadFields
+            mutation AddCommentToThread($threadID: ID!, $contents: String!, $isLightTheme: Boolean!) {
+                addCommentToThread(threadID: $threadID, contents: $contents) {
+                    ...ThreadFields
                 }
             }
-            ${sharedItemThreadFragment}
+            ${threadFragment}
         `,
-        { threadID, contents, ulid, isLightTheme }
+        { threadID, contents, isLightTheme }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.addCommentToThreadShared) {
+            if (!data || !data.addCommentToThread) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.addCommentToThreadShared
+            return data.addCommentToThread
         })
     )
 }

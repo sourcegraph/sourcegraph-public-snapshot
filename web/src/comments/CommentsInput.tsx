@@ -17,16 +17,16 @@ import { eventLogger } from '../tracking/eventLogger'
 import { addCommentToThread } from './backend'
 
 interface Props {
-    editorURL: string
-    onOpenEditor: () => void
-    onThreadUpdated: (updatedThread: GQL.ISharedItemThread) => void
+    editorURL?: string
+    onOpenEditor?: () => void
+    onThreadUpdated: (updatedThread: GQL.ISharedItemThread | GQL.IThread) => void
     threadID: GQLID
-    ulid: string
+    ulid?: string
 }
 
 interface State {
-    editorURL: string
-    onOpenEditor: () => void
+    editorURL?: string
+    onOpenEditor?: () => void
     textAreaValue: string
     submitting: boolean
     error?: any
@@ -86,18 +86,20 @@ export const CommentsInput = reactive<Props>(props => {
             <form className="comments-input" onSubmit={nextSubmit}>
                 <small className="comments-input__row comments-input__info">
                     Markdown supported.
-                    <span>
-                        <a
-                            className="comments-input__open-in-editor"
-                            href={editorURL}
-                            target="sourcegraphapp"
-                            onClick={onOpenEditor}
-                        >
-                            Open in Sourcegraph Editor
-                        </a>
-                        {' | '}
-                        <a href="https://about.sourcegraph.com/beta/201708/#beta">Download Sourcegraph Editor</a>
-                    </span>
+                    {editorURL && (
+                        <span>
+                            <a
+                                className="comments-input__open-in-editor"
+                                href={editorURL}
+                                target="sourcegraphapp"
+                                onClick={onOpenEditor}
+                            >
+                                Open in Sourcegraph Editor
+                            </a>
+                            {' | '}
+                            <a href="https://about.sourcegraph.com/beta/201708/#beta">Download Sourcegraph Editor</a>
+                        </span>
+                    )}
                 </small>
                 <textarea
                     className="form-control comments-input__text-box"
