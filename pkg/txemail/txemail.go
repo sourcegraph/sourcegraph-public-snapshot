@@ -25,6 +25,9 @@ type Message struct {
 
 // Send sends a transactional email.
 func Send(ctx context.Context, message Message) error {
+	if disableSilently {
+		return nil
+	}
 	if MockSend != nil {
 		return MockSend(ctx, message)
 	}
@@ -92,3 +95,11 @@ func Send(ctx context.Context, message Message) error {
 
 // MockSend is used in tests to mock the Send func.
 var MockSend func(ctx context.Context, message Message) error
+
+var disableSilently bool
+
+// DisableSilently prevents sending of emails, even if email sending is
+// configured. Use it in tests to ensure that they do not send real emails.
+func DisableSilently() {
+	disableSilently = true
+}

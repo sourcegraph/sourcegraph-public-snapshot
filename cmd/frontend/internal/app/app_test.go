@@ -1,7 +1,7 @@
 package app
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 
 func init() {
-	notif.DisableSilently()
+	txemail.DisableSilently()
 }
