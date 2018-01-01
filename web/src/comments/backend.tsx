@@ -145,12 +145,14 @@ export function addCommentToThread(
     isLightTheme: boolean
 ): Observable<GQL.ISharedItemThread> {
     return mutateGraphQL(
-        gql`mutation AddCommentToThread($threadID: ID!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
-            addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
-                ...SharedItemThreadFields
+        gql`
+            mutation AddCommentToThread($threadID: ID!, $contents: String!, $ulid: String!, $isLightTheme: Boolean!) {
+                addCommentToThreadShared(threadID: $threadID, contents: $contents, ulid: $ulid) {
+                    ...SharedItemThreadFields
+                }
             }
             ${sharedItemThreadFragment}
-        }`,
+        `,
         { threadID, contents, ulid, isLightTheme }
     ).pipe(
         map(({ data, errors }) => {
