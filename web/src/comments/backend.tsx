@@ -37,6 +37,7 @@ const commonThreadFields = gql`
     }
     comments {
         id
+        databaseID
         author {
             displayName
             username

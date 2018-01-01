@@ -40,6 +40,7 @@ interface Props {
 interface State {
     sharedItem?: GQL.ISharedItem | null
     highlightLastComment?: boolean
+    highlightComment: GQLID | null
     ulid: string
     location: H.Location
     history: H.History
@@ -65,6 +66,7 @@ export const CommentsPage = reactive<Props>(props => {
             map(([{ location, history, user }, colorTheme]): Update => state => ({
                 ...state,
                 location,
+                highlightComment: new URLSearchParams(location.search).get('id'),
                 history,
                 colorTheme,
                 signedIn: !!user,
@@ -101,6 +103,7 @@ export const CommentsPage = reactive<Props>(props => {
             ({
                 sharedItem,
                 highlightLastComment,
+                highlightComment,
                 ulid,
                 location,
                 history,
@@ -199,7 +202,8 @@ export const CommentsPage = reactive<Props>(props => {
                                         key={comment.id}
                                         forceTargeted={
                                             (highlightLastComment && index === sharedItem.thread.comments.length - 1) ||
-                                            false
+                                            highlightComment === comment.id ||
+                                            highlightComment === String(comment.databaseID)
                                         }
                                     />
                                 ))}

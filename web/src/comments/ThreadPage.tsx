@@ -36,6 +36,7 @@ interface Props extends RouteComponentProps<{ threadID: GQLID }> {
 interface State {
     thread?: GQL.IThread | null
     highlightLastComment?: boolean
+    highlightComment: GQLID | null
     threadID: string
     location: H.Location
     history: H.History
@@ -63,6 +64,7 @@ export const ThreadPage = reactive<Props>(props => {
             map(([{ location, history, user }, colorTheme]): Update => state => ({
                 ...state,
                 location,
+                highlightComment: new URLSearchParams(location.search).get('id'),
                 history,
                 colorTheme,
                 signedIn: !!user,
@@ -96,6 +98,7 @@ export const ThreadPage = reactive<Props>(props => {
             ({
                 thread,
                 highlightLastComment,
+                highlightComment,
                 threadID,
                 location,
                 history,
@@ -165,7 +168,9 @@ export const ThreadPage = reactive<Props>(props => {
                                         comment={comment}
                                         key={comment.id}
                                         forceTargeted={
-                                            (highlightLastComment && index === thread.comments.length - 1) || false
+                                            (highlightLastComment && index === thread.comments.length - 1) ||
+                                            highlightComment === comment.id ||
+                                            highlightComment === String(comment.databaseID)
                                         }
                                     />
                                 ))}
