@@ -35,7 +35,7 @@ Before cutting a new release, please:
 
 ### Added
 
-* Built-in authentication: you can now sign up without an SSO provider or Auth0.
+* Built-in authentication: you can now sign up without an SSO provider.
 * Faster default branch code search via indexing.
 
 ### Fixed

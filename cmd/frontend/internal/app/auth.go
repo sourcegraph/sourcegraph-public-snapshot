@@ -243,10 +243,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// We are converting old auth0 users to builtin users on sourcegraph.com.
-	removeExternalProvider := strings.HasPrefix(usr.ExternalID, "auth0|")
-
-	success, err := db.Users.SetPassword(ctx, usr.ID, removeExternalProvider, params.Code, params.Password)
+	success, err := db.Users.SetPassword(ctx, usr.ID, params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return

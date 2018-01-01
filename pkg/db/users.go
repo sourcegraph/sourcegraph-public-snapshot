@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/dlclark/regexp2"
@@ -19,7 +18,6 @@ import (
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 
@@ -442,26 +440,6 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 }
 
 func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
-	if conf.AuthProvider() == "auth0" {
-		user, err := u.GetByID(ctx, id)
-		if err != nil {
-			return false, err
-		}
-
-		email, _, err := UserEmails.GetEmail(ctx, id)
-		if err != nil {
-			return false, err
-		}
-
-		// During the transition, new users will have provider=="" and no "auth0|" prefix.
-		// We need to check those in our own DB.
-		if user.ExternalProvider == "auth0" || strings.HasPrefix(user.ExternalID, "auth0|") {
-			ok, err := auth0.CheckPassword(ctx, email, password)
-			// log15.Info("checking password via auth0", "user", user.Username, "externalID", user.ExternalID, "email", user.Email, "ok", ok, "err", err)
-			return ok, err
-		}
-	}
-
 	var passwd sql.NullString
 	if err := globalDB.QueryRowContext(ctx, "SELECT passwd FROM users WHERE deleted_at IS NULL AND id=$1", id).Scan(&passwd); err != nil {
 		return false, err
@@ -501,7 +479,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-func (u *users) SetPassword(ctx context.Context, id int32, removeExternalProvider bool, resetCode string, newPassword string) (bool, error) {
+func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -525,15 +503,6 @@ func (u *users) SetPassword(ctx context.Context, id int32, removeExternalProvide
 	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused.
 	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
-	}
-	if removeExternalProvider {
-		// This user effectively becomes a builtin auth user since we now store their password, so
-		// update them accordingly.
-		//
-		// TODO(sqs): remove after migration away from auth0
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET external_id=null, external_provider=null WHERE id=$1", id); err != nil {
-			return false, err
-		}
 	}
 	return true, nil
 }

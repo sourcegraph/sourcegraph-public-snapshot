@@ -91,16 +91,16 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if success, err := Users.SetPassword(ctx, usr.ID, false, "wrong-code", "new-password"); err == nil && success {
+	if success, err := Users.SetPassword(ctx, usr.ID, "wrong-code", "new-password"); err == nil && success {
 		t.Fatal("password updated without right reset code")
 	}
-	if success, err := Users.SetPassword(ctx, usr.ID, false, "", "new-password"); err == nil && success {
+	if success, err := Users.SetPassword(ctx, usr.ID, "", "new-password"); err == nil && success {
 		t.Fatal("password updated without reset code")
 	}
 	if isPassword, err := Users.IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
 		t.Fatal("password changed")
 	}
-	if success, err := Users.SetPassword(ctx, usr.ID, false, resetCode, "new-password"); err != nil || !success {
+	if success, err := Users.SetPassword(ctx, usr.ID, resetCode, "new-password"); err != nil || !success {
 		t.Fatalf("failed to update user password with code: %s", err)
 	}
 	if isPassword, err := Users.IsPassword(ctx, usr.ID, "new-password"); err != nil || !isPassword {
