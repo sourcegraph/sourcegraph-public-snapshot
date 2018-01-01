@@ -10,45 +10,59 @@ class PermissionDeniedError extends Error {
     }
 }
 
+const commonThreadFields = gql`
+    id
+    databaseID
+    file
+    repoRevision
+    linesRevision
+    branch
+    title
+    startLine
+    endLine
+    startCharacter
+    endCharacter
+    rangeLength
+    createdAt
+    archivedAt
+    lines {
+        htmlBefore(isLightTheme: $isLightTheme)
+        html(isLightTheme: $isLightTheme)
+        htmlAfter(isLightTheme: $isLightTheme)
+        textBefore
+        text
+        textAfter
+        textSelectionRangeStart
+        textSelectionRangeLength
+    }
+    comments {
+        id
+        author {
+            displayName
+            username
+            avatarURL
+        }
+        createdAt
+        richHTML
+    }
+`
+
 const sharedItemThreadFragment = gql`
     fragment SharedItemThreadFields on SharedItemThread {
-        id
-        databaseID
+        ${commonThreadFields}
         repo {
             id
             remoteUri
         }
-        file
-        repoRevision
-        linesRevision
-        branch
-        title
-        startLine
-        endLine
-        startCharacter
-        endCharacter
-        rangeLength
-        createdAt
-        archivedAt
-        lines {
-            htmlBefore(isLightTheme: $isLightTheme)
-            html(isLightTheme: $isLightTheme)
-            htmlAfter(isLightTheme: $isLightTheme)
-            textBefore
-            text
-            textAfter
-            textSelectionRangeStart
-            textSelectionRangeLength
-        }
-        comments {
+    }
+`
+
+const threadFragment = gql`
+    fragment ThreadFields on Thread {
+        ${commonThreadFields}
+        repo {
             id
-            author {
-                displayName
-                username
-                avatarURL
-            }
-            createdAt
-            richHTML
+            canonicalRemoteID
         }
     }
 `
@@ -89,6 +103,32 @@ export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.sharedItem
+        })
+    )
+}
+
+/**
+ * Fetches thread by ID.
+ *
+ * @return Observable that emits the thread or `null` if it doesn't exist
+ */
+export function fetchThread(id: GQLID, isLightTheme: boolean): Observable<GQL.IThread | null> {
+    return queryGraphQL(
+        gql`
+            query Thread($id: ID!, $isLightTheme: Boolean!) {
+                node(id: $id) {
+                    ...ThreadFields
+                }
+            }
+            ${threadFragment}
+        `,
+        { id, isLightTheme }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.node || errors) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return (data.node as any) as GQL.IThread | null
         })
     )
 }

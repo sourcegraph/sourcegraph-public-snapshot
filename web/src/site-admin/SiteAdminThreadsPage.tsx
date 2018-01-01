@@ -1,6 +1,7 @@
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -38,16 +39,21 @@ class ThreadListItem extends React.PureComponent<ThreadListItemProps, ThreadList
             .map(c => `${c.author.username} on ${format(c.createdAt, 'YYYY-MM-DD')}:\n\n${c.contents}\n`)
             .join('\n-------------------------------------\n')
 
+        const url = `/threads/${this.props.thread.id}`
+
         return (
             <li className={this.props.className}>
                 <div className="site-admin-detail-list__header">
-                    {this.props.thread.title}
+                    <Link to={url}>{this.props.thread.title}</Link>
                     <br />
                     <span className="site-admin-detail-list__display-name">{this.props.thread.author.username}</span>
                 </div>
                 <ul className="site-admin-detail-list__info">
                     <li title={commentsTitle}>
-                        {this.props.thread.comments.length} {pluralize('comment', this.props.thread.comments.length)}
+                        <Link to={url}>
+                            {this.props.thread.comments.length}{' '}
+                            {pluralize('comment', this.props.thread.comments.length)}
+                        </Link>
                     </li>
                     <li>ID: {this.props.thread.id}</li>
                     <li>Repository: {this.props.thread.repo.canonicalRemoteID}</li>
