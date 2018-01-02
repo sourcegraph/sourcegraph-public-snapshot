@@ -67,9 +67,9 @@ func updateURL() string {
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 
-// Check performs an update check. It returns the result and updates the global state
+// check performs an update check. It returns the result and updates the global state
 // (returned by Last and IsPending).
-func Check(ctx context.Context) (*Status, error) {
+func check(ctx context.Context) (*Status, error) {
 	doCheck := func() (updateVersion string, err error) {
 		resp, err := http.Get(updateURL())
 		if err != nil {
@@ -124,8 +124,15 @@ func Check(ctx context.Context) (*Status, error) {
 	return lastStatus, err
 }
 
+var started bool
+
 // Start starts checking for software updates periodically.
 func Start() {
+	if started {
+		panic("already started")
+	}
+	started = true
+
 	if conf.Get().DisableTelemetry {
 		return // update check is a form of telemetry
 	}
@@ -138,7 +145,7 @@ func Start() {
 	const delay = 30 * time.Minute
 	for {
 		ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-		_, _ = Check(ctx) // updates global state on its own, can safely ignore return value
+		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
 
 		// Randomize sleep to prevent thundering herds.
