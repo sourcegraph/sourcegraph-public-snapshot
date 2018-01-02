@@ -63,6 +63,9 @@ interface SourcegraphContext {
 
     sourcegraphDotComMode: boolean
 
+    /** Whether telemetry is disabled. */
+    disableTelemetry: boolean
+
     /**
      * siteID, set as "" by default server side, is required for the telligent environment to be set to production.
      * For Sourcegraph.com, it is SourcegraphWeb. For the node.aws.sgdev.org deployment, it might be something like SgdevWeb.
