@@ -1,6 +1,7 @@
 package jscontext
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -24,9 +26,6 @@ import (
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
-
-// SiteID is used by the Telligent data pipeline
-var SiteID = conf.Get().SiteID
 
 var githubConf = conf.Get().Github
 
@@ -117,18 +116,18 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		}
 	}
 
+	siteID := siteid.Get()
+
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
-	license, licenseStatus := license.Get(SiteID)
+	license, licenseStatus := license.Get(siteID)
 	var showOnboarding = false
 	if license == nil || license.SiteID == "" {
+		// TODO(sqs): handle telemetry not enabled in license or site config
+		log.Println("// TODO(sqs): handle telemetry not enabled in license or site config")
 		siteConfig, err := db.SiteConfig.Get(req.Context())
 		if err != nil {
 			// errors swallowed because telemetry is optional.
 			log15.Error("db.Config.Get failed", "error", err)
-		} else if siteConfig.TelemetryEnabled {
-			SiteID = siteConfig.SiteID
-		} else {
-			SiteID = ""
 		}
 		showOnboarding = siteConfig == nil || siteConfig.UpdatedAt == ""
 	}
@@ -144,7 +143,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
 		Debug:                envvar.DebugMode(),
-		SiteID:               SiteID,
+		SiteID:               siteID,
 		RepoHomeRegexFilter:  repoHomeRegexFilter,
 		SessionID:            sessionID,
 		License:              license,

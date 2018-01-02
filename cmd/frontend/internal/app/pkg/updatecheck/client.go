@@ -14,8 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
-
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
@@ -63,7 +62,7 @@ var baseURL = &url.URL{
 func updateURL() string {
 	q := url.Values{}
 	q.Set("version", env.Version)
-	q.Set("site", jscontext.TrackingAppID)
+	q.Set("site", siteid.Get())
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 

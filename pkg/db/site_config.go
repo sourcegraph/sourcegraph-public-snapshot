@@ -16,6 +16,10 @@ type siteConfig struct{}
 var telemetryDisabled = conf.Get().DisableTelemetry
 
 func (o *siteConfig) Get(ctx context.Context) (*sourcegraph.SiteConfig, error) {
+	if Mocks.SiteConfig.Get != nil {
+		return Mocks.SiteConfig.Get(ctx)
+	}
+
 	configuration, err := o.getConfiguration(ctx)
 	if err == nil {
 		return configuration, nil
