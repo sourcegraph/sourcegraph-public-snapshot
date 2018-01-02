@@ -17,6 +17,7 @@ type DatacenterOpsConfiguration struct {
 	DeploymentOverrides map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
 	GitoliteIP          string                          `json:"gitoliteIP,omitempty"`
 	GitserverCount      int                             `json:"gitserverCount,omitempty"`
+	GitserverDiskSize   string                          `json:"gitserverDiskSize,omitempty"`
 	GitserverSSH        map[string]string               `json:"gitserverSSH,omitempty"`
 	HttpNodePort        int                             `json:"httpNodePort,omitempty"`
 	HttpsNodePort       int                             `json:"httpsNodePort,omitempty"`

@@ -38,6 +38,11 @@
       "type": "integer",
       "description": "The number of gitservers to deploy. Not a replica count since it is stateful. Defaults to 1."
     },
+    "gitserverDiskSize": {
+      "type": "string",
+      "description":
+        "The size of the disk that gitserver uses to store clones of repositories. One disk per gitserver. Defaults to 200Gi."
+    },
     "gitserverSSH": {
       "type": "object",
       "additionalProperties": { "type": "string" },
