@@ -42,6 +42,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
+	if clientVersionString == "dev" {
+		// No updates for dev servers.
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {
 		http.Error(w, "bad version string: "+err.Error(), http.StatusBadRequest)
