@@ -1,13 +1,13 @@
 .bin/
 *.bundle.*
 cmd/xlang-python/python-langserver/
+package-lock.json
+package.json
 pkg/db/schema.md
 ui/assets/scripts
 vendor/
 web/graphqlschema.json
 web/out/
-web/package-lock.json
-web/package.json
 web/src/settings/*.schema.json
 web/ts-node-*
 web/typings/graphqlschema.d.ts
