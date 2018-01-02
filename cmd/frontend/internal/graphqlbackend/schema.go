@@ -530,7 +530,8 @@ type RefLocation {
 type RepositoryConnection {
 	# A list of repositories.
 	nodes: [Repository!]!
-	# The total count of repositories in the connection.
+	# The total count of repositories in the connection. This total count may be larger
+	# than the number of nodes in this object when the result is paginated.
 	totalCount: Int!
 }
 
@@ -780,7 +781,8 @@ type Hunk {
 type UserConnection {
 	# A list of users.
 	nodes: [User!]!
-	# The total count of users in the connection.
+	# The total count of users in the connection. This total count may be larger
+	# than the number of nodes in this object when the result is paginated.
 	totalCount: Int!
 }
 
@@ -825,7 +827,8 @@ type UserEmail {
 type OrgConnection {
 	# A list of organizations.
 	nodes: [Org!]!
-	# The total count of organizations in the connection.
+	# The total count of organizations in the connection. This total count may be larger
+	# than the number of nodes in this object when the result is paginated.
 	totalCount: Int!
 }
 
@@ -878,7 +881,8 @@ type OrgRepo {
 type ThreadConnection {
 	# A list of threads.
 	nodes: [Thread!]!
-	# The total count of threads in the connection.
+	# The total count of threads in the connection. This total count may be larger
+	# than the number of nodes in this object when the result is paginated.
 	totalCount: Int!
 }
 
