@@ -64,9 +64,7 @@ func (l jsonLoader) LoaderFactory() gojsonschema.JSONLoaderFactory {
 	return &jsonLoaderFactory{}
 }
 
-type jsonLoaderFactory struct {
-	schemas map[string]string
-}
+type jsonLoaderFactory struct{}
 
 func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 	switch source {
