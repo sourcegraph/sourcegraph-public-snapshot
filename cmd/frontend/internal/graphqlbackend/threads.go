@@ -536,7 +536,9 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		s.utilNotifyThreadArchived(ctx, *repo, *thread, comments, *user)
+		if err := s.utilNotifyThreadArchived(ctx, *repo, *thread, comments, *user); err != nil {
+			return nil, err
+		}
 	}
 
 	return &threadResolver{org, repo, thread}, nil

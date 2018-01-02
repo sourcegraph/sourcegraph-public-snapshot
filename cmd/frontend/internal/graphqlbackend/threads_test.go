@@ -9,6 +9,7 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 func TestThreads_Create(t *testing.T) {
@@ -30,6 +31,7 @@ func TestThreads_Create(t *testing.T) {
 		CreatedAt:         time.Now(),
 		UpdatedAt:         time.Now(),
 	}, nil)
+	txemail.MockSend = func(context.Context, txemail.Message) error { return nil }
 
 	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
 	repoRev, lineRev := "abcd", "dcba"
@@ -90,17 +92,22 @@ func TestThreads_Update(t *testing.T) {
 		CanonicalRemoteID: "test",
 	}
 
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) { return &sourcegraph.User{}, nil }
-	db.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) { return &sourcegraph.User{ID: 1}, nil }
+	db.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1, AuthorUserID: 1}, nil)
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &wantRepo, nil)
 	called := db.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{OrgRepoID: 1, ArchivedAt: &time.Time{}}, nil)
 	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
-	db.Mocks.Comments.GetAllForThread = func(context.Context, int32) ([]*sourcegraph.Comment, error) { return nil, nil }
-	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
+	db.Mocks.Comments.GetAllForThread = func(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error) {
+		return []*sourcegraph.Comment{
+			{AuthorUserID: 2},
+		}, nil
+	}
 	mockEmailsToNotify = func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
 		return []string{"a@example.com"}, nil
 	}
 	defer func() { mockEmailsToNotify = nil }()
+	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
+	txemail.MockSend = func(context.Context, txemail.Message) error { return nil }
 
 	r := &schemaResolver{}
 	archived := true
