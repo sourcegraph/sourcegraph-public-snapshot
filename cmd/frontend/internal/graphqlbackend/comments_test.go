@@ -8,6 +8,7 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 func TestComments_appendUniqueEmailsFromMentions(t *testing.T) {
@@ -278,6 +279,7 @@ func TestComments_Create(t *testing.T) {
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)
 	db.Mocks.Threads.MockGet_Return(t, &thread, nil)
 	called, calledWith := db.Mocks.Comments.MockCreate(t)
+	txemail.MockSend = func(context.Context, txemail.Message) error { return nil }
 
 	r := &schemaResolver{}
 	_, err := r.AddCommentToThread(ctx, &struct {

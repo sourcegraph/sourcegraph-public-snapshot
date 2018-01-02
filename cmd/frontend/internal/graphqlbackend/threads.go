@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/mattbaird/gochimp"
 	"github.com/microcosm-cc/bluemonday"
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
@@ -20,7 +18,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type threadConnectionResolver struct {
@@ -538,7 +536,9 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		s.utilNotifyThreadArchived(ctx, *repo, *thread, comments, *user)
+		if err := s.utilNotifyThreadArchived(ctx, *repo, *thread, comments, *user); err != nil {
+			return nil, err
+		}
 	}
 
 	return &threadResolver{org, repo, thread}, nil
@@ -606,35 +606,63 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 		return err
 	}
 
-	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
-	for _, email := range emails {
-		var subject string
-		if first != nil {
+	// Send tx emails asynchronously.
+	go func() {
+		repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
+		for _, email := range emails {
 			var branch string
 			if thread.Branch != nil {
 				branch = "@" + *thread.Branch
 			}
-			subject = fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
+			var title string
+			if first != nil {
+				title = TitleFromContents(first.Contents)
+			}
+			if err := txemail.Send(ctx, txemail.Message{
+				FromName: archiver.DisplayName,
+				To:       []string{email},
+				Template: threadArchivedEmailTemplates,
+				Data: threadEmailTemplateCommonData{
+					Reply:    len(previousComments) > 0,
+					RepoName: repoName,
+					Branch:   branch,
+					Title:    title,
+					Number:   thread.ID,
+					URL:      url.String(),
+				},
+			}); err != nil {
+				log15.Error("error sending archived-thread email", "to", email, "err", err)
+			}
 		}
-		if len(previousComments) > 0 {
-			subject = "Re: " + subject
-		}
-		config := &notif.EmailConfig{
-			Template:  "thread-archived",
-			FromName:  archiver.DisplayName,
-			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
-			ToName:    "",                        // We don't know names right now.
-			ToEmail:   email,
-			Subject:   subject,
-		}
+	}()
 
-		notif.SendMandrillTemplate(config, []gochimp.Var{}, []gochimp.Var{
-			gochimp.Var{Name: "THREAD_ID", Content: strconv.Itoa(int(thread.ID))},
-			gochimp.Var{Name: "THREAD_URL", Content: url.String()},
-		})
-	}
 	return nil
 }
+
+type threadEmailTemplateCommonData struct {
+	Reply    bool
+	RepoName string
+	Branch   string
+	Title    string
+	Number   int32
+	URL      string
+}
+
+const threadEmailSubjectTemplate = `{{if .Reply}}Re: {{end}}[{{.RepoName}}{{.Branch}}] {{.Title}} (#{{.Number}})`
+
+var (
+	threadArchivedEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+		Subject: threadEmailSubjectTemplate,
+		Text: `
+Archived #{{.Number}}
+
+View discussion on Sourcegraph: {{.URL}}
+`,
+		HTML: `
+<p>Archived <a href="{{.URL}}">#{{.Number}}</a></p>
+`,
+	})
+)
 
 // TitleFromContents returns a title based on the first sentence or line of the content.
 func TitleFromContents(contents string) string {

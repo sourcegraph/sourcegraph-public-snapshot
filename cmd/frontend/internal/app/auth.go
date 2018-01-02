@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mattbaird/gochimp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
@@ -20,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type oauthCookie struct {
@@ -71,12 +70,18 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		q := make(url.Values)
 		q.Set("code", emailCode)
 		verifyLink := globals.AppURL.String() + router.Rel.URLTo(router.VerifyEmail).Path + "?" + q.Encode()
-		notif.SendMandrillTemplate(&notif.EmailConfig{
-			Template:  "verify-email",
-			FromEmail: "noreply@sourcegraph.com",
-			ToEmail:   creds.Email,
-			Subject:   "Verify your email on Sourcegraph Server",
-		}, []gochimp.Var{}, []gochimp.Var{{Name: "VERIFY_URL", Content: verifyLink}})
+
+		if err := txemail.Send(r.Context(), txemail.Message{
+			To:       []string{creds.Email},
+			Template: verifyEmailTemplates,
+			Data: struct {
+				URL string
+			}{
+				URL: verifyLink,
+			},
+		}); err != nil {
+			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
+		}
 	}
 
 	// Write the session cookie
@@ -85,6 +90,22 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+var (
+	verifyEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+		Subject: `Verify your email on Sourcegraph`,
+		Text: `
+Verify your email address on Sourcegraph by following this link:
+
+  {{.URL}}
+`,
+		HTML: `
+<p>Verify your email address on Sourcegraph to finish signing up.</p>
+
+<p><strong><a href="{{.URL}}">Verify email address</a></p>
+`,
+	})
+)
 
 func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*sourcegraph.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
@@ -211,17 +232,42 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notif.SendMandrillTemplate(&notif.EmailConfig{
-		Template:  "forgot-password",
-		FromEmail: "noreply@sourcegraph.com",
-		ToEmail:   creds.Email,
-		Subject:   "Reset your Sourcegraph Server password",
-	}, []gochimp.Var{}, []gochimp.Var{
-		{Name: "SUBJECT", Content: "Reset password"},
-		{Name: "LOGIN", Content: usr.Username},
-		{Name: "RESET_LINK", Content: globals.AppURL.ResolveReference(resetURL).String()},
-	})
+	if err := txemail.Send(r.Context(), txemail.Message{
+		To:       []string{creds.Email},
+		Template: resetPasswordEmailTemplates,
+		Data: struct {
+			Username string
+			URL      string
+		}{
+			Username: usr.Username,
+			URL:      globals.AppURL.ResolveReference(resetURL).String(),
+		},
+	}); err != nil {
+		httpLogAndError(w, "Could not reset password", http.StatusInternalServerError, "err", err)
+		return
+	}
 }
+
+var (
+	resetPasswordEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+		Subject: `Reset your Sourcegraph password`,
+		Text: `
+Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph.
+
+To reset the password for {{.Username}} on Sourcegraph, follow this link:
+
+  {{.URL}}
+`,
+		HTML: `
+<p>
+  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
+  on Sourcegraph.
+</p>
+
+<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
+`,
+	})
+)
 
 // serveResetPassword resets the password if the correct code is provided.
 func serveResetPassword(w http.ResponseWriter, r *http.Request) {

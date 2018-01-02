@@ -81,5 +81,16 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		}
 	}
 
+	{
+		hasSMTP := cfg.EmailSmtp != nil
+		hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
+		if hasSMTP && cfg.EmailAddress == "" {
+			invalid(`should set email.address because email.smtp is set`)
+		}
+		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
+			invalid(`must set email.smtp username and password for email.smtp authentication`)
+		}
+	}
+
 	return validationErrors, nil
 }

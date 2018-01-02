@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
-	"github.com/mattbaird/gochimp"
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -23,7 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type commentResolver struct {
@@ -290,43 +289,77 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 
 	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
 	contents := strings.Replace(html.EscapeString(comment.Contents), "\n", "<br>", -1)
-	mentions := usernamesFromMentions(comment.Contents)
-	for _, m := range mentions {
-		contents = strings.Replace(contents, "@"+m, `<b>@`+m+`</b>`, -1)
-	}
-	lineVars := []gochimp.Var{}
+	var lines string
 	if len(previousComments) == 0 && thread.Lines != nil {
-		lines := strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
-		lineVars = []gochimp.Var{
-			gochimp.Var{Name: "CONTEXT_LINES", Content: html.EscapeString(lines)},
-		}
+		lines = strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
 	}
-	for _, email := range emails {
-		var branch string
-		if thread.Branch != nil {
-			branch = "@" + *thread.Branch
-		}
-		subject := fmt.Sprintf("[%s%s] %s (#%d)", repoName, branch, TitleFromContents(first.Contents), thread.ID)
-		if len(previousComments) > 0 {
-			subject = "Re: " + subject
-		}
-		config := &notif.EmailConfig{
-			Template:  "new-comment",
-			FromName:  author.DisplayName,
-			FromEmail: "noreply@sourcegraph.com", // Remember to update this once we allow replies to these emails.
-			ToName:    "",                        // We don't know names right now.
-			ToEmail:   email,
-			Subject:   subject,
-		}
 
-		notif.SendMandrillTemplate(config, []gochimp.Var{}, append([]gochimp.Var{
-			gochimp.Var{Name: "CONTENTS", Content: contents},
-			gochimp.Var{Name: "COMMENT_URL", Content: commentURL.String()},
-			gochimp.Var{Name: "LOCATION", Content: fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)},
-		}, lineVars...))
-	}
+	// Send tx emails asynchronously.
+	go func() {
+		for _, email := range emails {
+			var branch string
+			if thread.Branch != nil {
+				branch = "@" + *thread.Branch
+			}
+			location := fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)
+			if err := txemail.Send(ctx, txemail.Message{
+				FromName: author.DisplayName,
+				To:       []string{email},
+				Template: newCommentEmailTemplates,
+				Data: struct {
+					threadEmailTemplateCommonData
+					Location     string
+					ContextLines string
+					Contents     string
+				}{
+					threadEmailTemplateCommonData: threadEmailTemplateCommonData{
+						Reply:    len(previousComments) > 0,
+						RepoName: repoName,
+						Branch:   branch,
+						Title:    TitleFromContents(first.Contents),
+						Number:   thread.ID,
+						URL:      commentURL.String(),
+					},
+					Location:     location,
+					ContextLines: lines,
+					Contents:     contents,
+				},
+			}); err != nil {
+				log15.Error("error sending new-comment notifications", "to", email, "err", err)
+			}
+		}
+	}()
+
 	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
 }
+
+var (
+	newCommentEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+		Subject: threadEmailSubjectTemplate,
+		Text: `
+{{.Location}}
+
+{{if .ContextLines}}
+------------------------------------------------------------------------------
+{{.ContextLines}}
+------------------------------------------------------------------------------
+{{end}}
+
+{{.Contents}}
+
+View discussion on Sourcegraph: {{.URL}}
+`,
+		HTML: `
+{{if .ContextLines}}
+<pre style="color:#555">{{.ContextLines}}</pre>
+{{end}}
+
+<p>{{.Contents}}</p>
+
+<p>View discussion on Sourcegraph: <a href="{{.URL}}">{{.Location}}</a></p>
+`,
+	})
+)
 
 var mockEmailsToNotify func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error)
 
