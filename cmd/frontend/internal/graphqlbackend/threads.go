@@ -17,10 +17,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
@@ -520,8 +518,6 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
-
 	org, err := db.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return nil, err
@@ -534,7 +530,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 
 	if wasArchived == nil && thread.ArchivedAt != nil {
-		user, err := db.Users.GetByID(ctx, actor.UID)
+		user, err := db.Users.GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -594,9 +590,6 @@ func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, 
 }
 
 func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
-	if !conf.CanSendEmail() {
-		return nil
-	}
 	url := threadURL(thread.ID, nil, "email")
 
 	var first *sourcegraph.Comment

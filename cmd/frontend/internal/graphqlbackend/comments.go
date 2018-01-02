@@ -150,7 +150,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, "", email, user.ID)
+	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, user.DisplayName, email, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -328,8 +328,14 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
 }
 
+var mockEmailsToNotify func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error)
+
 // emailsToNotify returns all emails that should be notified of activity given a list of comments.
 func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+	if mockEmailsToNotify != nil {
+		return mockEmailsToNotify(ctx, comments, author, org)
+	}
+
 	uniqueParticipants, uniqueMentions := map[int32]struct{}{}, map[string]struct{}{}
 	orgName, authorUsername := strings.ToLower(org.Name), strings.ToLower(author.Username)
 

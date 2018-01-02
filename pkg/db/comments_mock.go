@@ -9,7 +9,8 @@ import (
 )
 
 type MockComments struct {
-	Create func(ctx context.Context, threadID int32, contents string, authorName, authorEmail string) (*sourcegraph.Comment, error)
+	Create          func(ctx context.Context, threadID int32, contents string, authorName, authorEmail string) (*sourcegraph.Comment, error)
+	GetAllForThread func(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error)
 }
 
 func (s *MockComments) MockCreate(t *testing.T) (called *bool, calledWith *sourcegraph.Comment) {

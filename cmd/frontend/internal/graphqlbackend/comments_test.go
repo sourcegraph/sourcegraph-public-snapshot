@@ -249,8 +249,6 @@ func TestComments_emailsToNotify(t *testing.T) {
 }
 
 func TestComments_Create(t *testing.T) {
-	t.Skip("broken due to test using the DB")
-
 	ctx := context.Background()
 
 	repo := sourcegraph.OrgRepo{
@@ -272,9 +270,20 @@ func TestComments_Create(t *testing.T) {
 		ThreadID:    1,
 		Contents:    "Hello",
 		AuthorName:  "Alice",
-		AuthorEmail: "alice@acme.com",
+		AuthorEmail: "b@example.com",
 	}
 
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) {
+		return &sourcegraph.User{DisplayName: "Alice"}, nil
+	}
+	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
+	mockEmailsToNotify = func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+		return []string{"a@example.com"}, nil
+	}
+	defer func() { mockEmailsToNotify = nil }()
+	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) { return "b@example.com", true, nil }
+	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
+	db.Mocks.Comments.GetAllForThread = func(context.Context, int32) ([]*sourcegraph.Comment, error) { return nil, nil }
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)
 	db.Mocks.Threads.MockGet_Return(t, &thread, nil)
 	called, calledWith := db.Mocks.Comments.MockCreate(t)
