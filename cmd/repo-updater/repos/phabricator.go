@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -60,17 +59,11 @@ type phabAPIResponse struct {
 }
 
 var (
-	phabConf               = conf.Get().Phabricator
-	repoUpdateIntervalConf = conf.Get().RepoListUpdateInterval
+	phabConf = conf.Get().Phabricator
 )
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) error {
-	if repoUpdateIntervalConf == 0 {
-		return errors.New("Update interval is 0 (set repoListUpdateInterval to a non-zero value or omit it)")
-	}
-	updateInterval := time.Duration(repoUpdateIntervalConf) * time.Second
-
 	for {
 		for _, c := range phabConf {
 			if c.Token == "" {

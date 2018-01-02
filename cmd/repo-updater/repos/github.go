@@ -35,11 +35,6 @@ var (
 
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the GitHub Enterprise instance to Sourcegraph
 func RunGitHubRepositorySyncWorker(ctx context.Context) error {
-	if updateIntervalConf == 0 {
-		return errors.New("Update interval is 0 (set repoListUpdateInterval to a non-zero value or omit it)")
-	}
-	updateInterval := time.Duration(updateIntervalConf) * time.Second
-
 	configs := githubConf
 	var clients []configAndClient
 	for _, c := range configs {

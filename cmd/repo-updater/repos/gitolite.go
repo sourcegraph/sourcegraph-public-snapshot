@@ -10,12 +10,8 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// RunRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
+// RunGitoliteRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
 func RunGitoliteRepositorySyncWorker(ctx context.Context) error {
-	if updateIntervalConf == 0 {
-		select {}
-	}
-
 	// Filter log output by level.
 	lvl, err := log15.LvlFromString(logLevel)
 	if err != nil {
@@ -30,6 +26,6 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) error {
 			log15.Debug("updated Gitolite repos")
 		}
 
-		time.Sleep(time.Duration(updateIntervalConf) * time.Minute)
+		time.Sleep(updateInterval)
 	}
 }
