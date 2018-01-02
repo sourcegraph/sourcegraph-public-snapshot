@@ -16,7 +16,7 @@ import (
 // are traversed, so we needn't worry about nested names or collisions.
 var legacyEnvToFieldName = map[string]string{
 	"AdminUsernames": "ADMIN_USERNAMES",
-	"SiteID":         "TRACKING_APP_ID",
+	"SiteID":         "TRACKING_APP_ID", // this env var name is used in many other places, can't be updated to TRACKING_SITE_ID yet
 	"AppURL":         "SRC_APP_URL",
 	// AuthUserOrgMap has no env var
 	"AutoRepoAdd": "AUTO_REPO_ADD",
