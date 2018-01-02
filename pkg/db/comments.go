@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -15,9 +14,9 @@ import (
 // For a detailed overview of the schema, see schema.txt.
 type comments struct{}
 
-func (*comments) Create(ctx context.Context, threadID int32, contents, authorName, authorEmail string, authorUserID int32) (*sourcegraph.Comment, error) {
+func (*comments) Create(ctx context.Context, threadID int32, contents string, authorUserID int32) (*sourcegraph.Comment, error) {
 	if Mocks.Comments.Create != nil {
-		return Mocks.Comments.Create(ctx, threadID, contents, authorName, authorEmail)
+		return Mocks.Comments.Create(ctx, threadID, contents, authorUserID)
 	}
 
 	if len(contents) > 100000 {
@@ -32,8 +31,8 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 	}
 	err := globalDB.QueryRowContext(
 		ctx,
-		"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id, author_name, author_email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		threadID, contents, createdAt, updatedAt, authorUserID, authorName, authorEmail).Scan(&id)
+		"INSERT INTO comments(thread_id, contents, created_at, updated_at, author_user_id) VALUES($1, $2, $3, $4, $5) RETURNING id",
+		threadID, contents, createdAt, updatedAt, authorUserID).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +43,6 @@ func (*comments) Create(ctx context.Context, threadID int32, contents, authorNam
 		Contents:     contents,
 		CreatedAt:    createdAt,
 		UpdatedAt:    updatedAt,
-		AuthorName:   authorName,
-		AuthorEmail:  authorEmail,
 		AuthorUserID: authorUserID,
 	}, nil
 }
@@ -71,7 +68,7 @@ func (c *comments) GetAllForThread(ctx context.Context, threadID int32) ([]*sour
 
 // getBySQL returns comments matching the SQL query, if any exist.
 func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Comment, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT id, thread_id, author_user_id, contents, created_at, updated_at, author_name, author_email FROM comments "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT id, thread_id, author_user_id, contents, created_at, updated_at FROM comments "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,16 +77,9 @@ func (*comments) getBySQL(ctx context.Context, query string, args ...interface{}
 	defer rows.Close()
 	for rows.Next() {
 		var c sourcegraph.Comment
-		var authorName, authorEmail sql.NullString
-		err := rows.Scan(&c.ID, &c.ThreadID, &c.AuthorUserID, &c.Contents, &c.CreatedAt, &c.UpdatedAt, &authorName, &authorEmail)
+		err := rows.Scan(&c.ID, &c.ThreadID, &c.AuthorUserID, &c.Contents, &c.CreatedAt, &c.UpdatedAt)
 		if err != nil {
 			return nil, err
-		}
-		if authorName.Valid {
-			c.AuthorName = authorName.String
-		}
-		if authorEmail.Valid {
-			c.AuthorEmail = authorEmail.String
 		}
 		comments = append(comments, &c)
 	}

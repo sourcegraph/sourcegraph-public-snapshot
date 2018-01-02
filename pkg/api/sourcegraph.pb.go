@@ -328,15 +328,12 @@ type Thread struct {
 }
 
 type Comment struct {
-	ID        int32     `json:"ID,omitempty"`
-	ThreadID  int32     `json:"ThreadID,omitempty"`
-	Contents  string    `json:"Contents,omitempty"`
-	CreatedAt time.Time `json:"CreatedAt,omitempty"`
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
-	// TODO(nick): remove author fields and resolve data using author id instead
-	AuthorName   string `json:"AuthorName,omitempty"`
-	AuthorEmail  string `json:"AuthorEmail,omitempty"`
-	AuthorUserID int32  `json:"AuthorUserID,omitempty"`
+	ID           int32     `json:"ID,omitempty"`
+	ThreadID     int32     `json:"ThreadID,omitempty"`
+	Contents     string    `json:"Contents,omitempty"`
+	CreatedAt    time.Time `json:"CreatedAt,omitempty"`
+	UpdatedAt    time.Time `json:"UpdatedAt,omitempty"`
+	AuthorUserID int32     `json:"AuthorUserID,omitempty"`
 }
 
 // SharedItem represents a shared thread or comment. Note that a code snippet

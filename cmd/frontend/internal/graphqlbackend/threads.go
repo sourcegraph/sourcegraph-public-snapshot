@@ -466,7 +466,7 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 	}
 
 	if args.Contents != "" {
-		comment, err := db.Comments.Create(ctx, newThread.ID, args.Contents, "", email, currentUser.SourcegraphID())
+		comment, err := db.Comments.Create(ctx, newThread.ID, args.Contents, currentUser.SourcegraphID())
 		if err != nil {
 			return nil, err
 		}
