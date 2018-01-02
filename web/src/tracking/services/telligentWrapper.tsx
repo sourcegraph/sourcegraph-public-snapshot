@@ -89,6 +89,9 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
+        if (window.context.disableTelemetry) {
+            return
+        }
         let telligentUrl = 'sourcegraph-logging.telligentdata.com'
         // for an on-prem trial, we want to send information directly telligent.
         // for clients like umami, we use a bi-logger

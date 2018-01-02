@@ -1,7 +1,6 @@
 package jscontext
 
 import (
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -60,6 +59,8 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 	User           *immutableUser    `json:"user"`
+
+	DisableTelemetry bool `json:"disableTelemetry"`
 
 	GithubEnterpriseURLs map[string]string     `json:"githubEnterpriseURLs"`
 	SentryDSN            string                `json:"sentryDSN"`
@@ -122,14 +123,11 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	license, licenseStatus := license.Get(siteID)
 	var showOnboarding = false
 	if license == nil || license.SiteID == "" {
-		// TODO(sqs): handle telemetry not enabled in license or site config
-		log.Println("// TODO(sqs): handle telemetry not enabled in license or site config")
-		siteConfig, err := db.SiteConfig.Get(req.Context())
+		userCount, err := db.Users.Count(req.Context())
 		if err != nil {
-			// errors swallowed because telemetry is optional.
-			log15.Error("db.Config.Get failed", "error", err)
+			panic("Users.Count failed: " + err.Error())
 		}
-		showOnboarding = siteConfig == nil || siteConfig.UpdatedAt == ""
+		showOnboarding = conf.AuthProvider() == "builtin" && userCount == 0
 	}
 
 	return JSContext{
@@ -140,6 +138,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AssetsRoot:           assets.URL("/").String(),
 		Version:              env.Version,
 		User:                 user,
+		DisableTelemetry:     conf.Get().DisableTelemetry,
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
 		Debug:                envvar.DebugMode(),
