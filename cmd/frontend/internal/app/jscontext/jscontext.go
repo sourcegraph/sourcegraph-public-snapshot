@@ -127,11 +127,11 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 			// errors swallowed because telemetry is optional.
 			log15.Error("db.Config.Get failed", "error", err)
 		} else if siteConfig.TelemetryEnabled {
-			TrackingAppID = siteConfig.AppID
+			TrackingAppID = siteConfig.SiteID
 		} else {
 			TrackingAppID = ""
 		}
-		showOnboarding = siteConfig == nil || siteConfig.LastUpdated == ""
+		showOnboarding = siteConfig == nil || siteConfig.UpdatedAt == ""
 	}
 
 	return JSContext{

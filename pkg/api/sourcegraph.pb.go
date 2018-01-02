@@ -422,10 +422,10 @@ type UserActivity struct {
 }
 
 type SiteConfig struct {
-	AppID            string `json:"AppID"`
+	SiteID           string `json:"SiteID"`
 	Email            string `json:"Email"`
 	TelemetryEnabled bool   `json:"TelemetryEnabled"`
-	LastUpdated      string `json:"LastUpdated"`
+	UpdatedAt        string `json:"UpdatedAt"`
 }
 
 type UserList struct {
