@@ -206,7 +206,7 @@ export class SearchResults extends React.Component<Props, State> {
                                     <HourglassIcon className="icon-inline" />
                                     {this.state.timedout.length}&nbsp;
                                     {pluralize('repository', this.state.timedout.length, 'repositories')} timed out
-                                    (reload to view)
+                                    (reload to try again)
                                 </span>
                             )}
                             {this.state.results.length > 0 && (
