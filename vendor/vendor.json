@@ -802,11 +802,6 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
-			"path": "github.com/mattbaird/gochimp",
-			"revision": "b61cabb037b3948f0a87fe544b0a9c656fa37128",
-			"revisionTime": "2015-07-15T10:31:50-07:00"
-		},
-		{
 			"checksumSHA1": "kdvsDmguft5CZiHCmjaaBwoVT08=",
 			"path": "github.com/mattes/migrate",
 			"revision": "804f9c2d4f403bdea957346b5c8ede7d66b4ba37",
@@ -1851,12 +1846,6 @@
 		{
 			"checksumSHA1": "nJGYSAwWAjkslNuv7w6yvmjf2K8=",
 			"path": "golang.org/x/oauth2",
-			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
-			"revisionTime": "2017-03-13T19:46:53Z"
-		},
-		{
-			"checksumSHA1": "8U0u48TaP/zvUTrt35ceybvgm3Q=",
-			"path": "golang.org/x/oauth2/clientcredentials",
 			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
 			"revisionTime": "2017-03-13T19:46:53Z"
 		},
