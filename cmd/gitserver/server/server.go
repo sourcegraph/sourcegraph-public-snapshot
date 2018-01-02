@@ -265,11 +265,13 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 						s.releaseCloneLock(dir)
 					}()
 
+					log15.Debug("cloning repo", "repo", req.Repo)
 					cmd := cloneCmd(ctx, origin, dir)
 					if output, err := s.runWithRemoteOpts(cmd, req.Repo); err != nil {
 						log15.Error("clone failed", "error", err, "output", string(output))
 						return
 					}
+					log15.Debug("repo cloned", "repo", req.Repo)
 				}()
 			}
 
