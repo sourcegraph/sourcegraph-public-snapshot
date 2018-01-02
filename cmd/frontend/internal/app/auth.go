@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
@@ -299,15 +298,6 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Password reset failed", http.StatusUnauthorized)
 		return
 	}
-}
-
-func addEditorBetaTag(ctx context.Context, user *sourcegraph.User, tokenString string) (*sourcegraph.UserTag, error) {
-	// 🚨 SECURITY: verify that the token is valid before adding editor-beta tag
-	_, err := invite.ParseToken(tokenString)
-	if err != nil {
-		return nil, err
-	}
-	return db.UserTags.CreateIfNotExists(ctx, user.ID, "editor-beta")
 }
 
 func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {

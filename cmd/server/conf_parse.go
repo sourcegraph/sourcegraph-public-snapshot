@@ -21,41 +21,6 @@ func setDefaultEnv(k, v string) string {
 	return v
 }
 
-// setDefaultEnvFromConfig parses a json value and updates the environ with
-// the fields present.
-func setDefaultEnvFromConfig(rawConfig string) {
-	env, err := getEnvironFromConfig(rawConfig)
-	if err != nil {
-		log.Fatal("failed to unmarshal SOURCEGRAPH_CONFIG: ", err)
-	}
-	for k, v := range env {
-		setDefaultEnv(k, v)
-	}
-}
-
-// getEnvironFromConfig parses a json value into an environ map.
-func getEnvironFromConfig(rawConfig string) (map[string]string, error) {
-	raw := map[string]*json.RawMessage{}
-	if err := jsonxUnmarshal(rawConfig, &raw); err != nil {
-		return nil, err
-	}
-	environ := map[string]string{}
-	for k, v := range raw {
-		// Convert into an environ value
-		s := string(*v)
-		// The only value we "unwrap" is a string
-		if len(s) > 0 && s[0] == '"' {
-			if err := json.Unmarshal([]byte(*v), &s); err != nil {
-				// This shouldn't happen
-				return nil, err
-			}
-		}
-
-		environ[k] = s
-	}
-	return environ, nil
-}
-
 // jsonxUnmarshal unmarshals the JSON using a fault tolerant parser. If any
 // unrecoverable faults are found an error is returned
 func jsonxUnmarshal(text string, v interface{}) error {

@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	graphql "github.com/neelance/graphql-go"
-	"github.com/neelance/graphql-go/relay"
 	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -57,22 +56,6 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		return nil, errors.New("bad configuration subject type")
 	}
 
-}
-
-func idToConfigurationSubject(id graphql.ID) (sourcegraph.ConfigurationSubject, error) {
-	switch relay.UnmarshalKind(id) {
-	case "Site":
-		siteID, err := unmarshalSiteID(id)
-		return sourcegraph.ConfigurationSubject{Site: &siteID}, err
-	case "User":
-		userID, err := unmarshalUserID(id)
-		return sourcegraph.ConfigurationSubject{User: &userID}, err
-	case "Org":
-		orgID, err := unmarshalOrgID(id)
-		return sourcegraph.ConfigurationSubject{Org: &orgID}, err
-	default:
-		return sourcegraph.ConfigurationSubject{}, errors.New("bad configuration subject type")
-	}
 }
 
 func configurationSubjectID(subject sourcegraph.ConfigurationSubject) (graphql.ID, error) {
