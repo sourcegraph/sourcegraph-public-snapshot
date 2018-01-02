@@ -37,8 +37,14 @@ func Raw() string { return raw }
 
 // Get returns a copy of the configuration. The returned value should NEVER be modified.
 func Get() schema.SiteConfiguration {
+	if MockGetData != nil {
+		return *MockGetData
+	}
 	return cfg
 }
+
+// MockGetData is overridden in tests that need to mock site config.
+var MockGetData *schema.SiteConfiguration
 
 // cfg is initialized to configuration defaults.
 var cfg = schema.SiteConfiguration{

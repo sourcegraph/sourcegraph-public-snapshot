@@ -118,6 +118,8 @@
 // ../../../migrations/1514718560_external_provider_and_id.up.sql
 // ../../../migrations/1514853193_remove_author_name_and_email.down.sql
 // ../../../migrations/1514853193_remove_author_name_and_email.up.sql
+// ../../../migrations/1514876826_site_id.down.sql
+// ../../../migrations/1514876826_site_id.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2545,6 +2547,46 @@ func _1514853193_remove_author_name_and_emailUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514876826_site_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xc1\x6a\x02\x31\x18\x84\xcf\xdd\xa7\x98\x9b\x0a\xf5\x52\x7a\x72\x4f\x71\x13\x34\x74\xff\x64\xc9\xc6\x43\x4e\x21\x98\xb4\x0d\x95\xba\xb8\x29\xb4\x6f\x5f\x2a\x16\xf6\xa2\x78\x9d\xf9\xbe\x61\xd6\x62\x23\x55\x5d\xb1\xd6\x0a\x03\xcb\xd6\xad\xc0\x98\x4b\xf2\xfb\xe3\xe7\x6b\x7e\x03\x37\xba\x43\xa3\x55\x6f\x0d\x93\xca\x4e\x3b\x3f\x7c\xa4\x9f\xeb\x26\xe3\x1c\x8d\x6e\x77\xa4\x90\x23\xc6\x74\xca\xe1\x70\x9b\xee\x8c\x24\x66\x1c\x5e\x84\xc3\x3c\xc7\xc5\x75\xda\x08\xc5\x48\xfc\xcf\x9f\x9b\x1c\x61\x35\xc2\x30\xf8\x1c\xef\x15\xbf\x86\x18\x4a\x8a\x3e\x94\x3f\xf7\x10\xc6\xe2\x2f\xd1\x8d\xa3\xe7\xfc\x32\x30\x55\x60\x5d\x27\x50\xd2\x77\xa9\x1e\x76\xbd\x54\x1b\x94\xa3\xdf\xbf\x87\xd3\x7c\x4a\x3d\x62\xe6\x9c\x73\x4b\xa2\x25\xe7\xd8\x6e\x9f\x9e\x57\x24\x57\x7d\x3f\x5b\xd4\x55\xa3\x89\xa4\xad\xab\xdf\x00\x00\x00\xff\xff\x46\xf7\x47\xf5\x93\x01\x00\x00")
+
+func _1514876826_site_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514876826_site_idDownSql,
+		"1514876826_site_id.down.sql",
+	)
+}
+
+func _1514876826_site_idDownSql() (*asset, error) {
+	bytes, err := _1514876826_site_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514876826_site_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514876826_site_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8d\x31\x6b\xc3\x30\x10\x46\xe7\xfa\x57\x7c\x5b\x12\x68\x96\xd2\x29\x9e\x94\x48\x24\xa2\x3e\xdb\xc8\xca\xa0\x49\x88\x5a\x6d\x05\x4d\x2c\xf0\x95\x42\x7f\x7d\xc1\x75\x9b\xa9\x21\xdb\xdd\xf1\xde\xbd\xad\xda\xeb\xba\x2c\x44\x65\x95\x81\x15\xdb\x4a\x61\x4c\x1c\xfd\xf3\x70\x7e\x49\xaf\x90\xa6\x69\xb1\x6b\xaa\x23\xd5\x48\xfd\xff\x9c\x51\xb5\x20\xf5\x4b\x86\x9c\x7d\xea\x61\x9b\x1f\xe6\x9a\x28\xa4\x44\x6b\x34\x09\xe3\xf0\xa4\x1c\x96\xb3\xb1\xba\xb5\xf5\x1e\x46\xf6\x1f\xb9\x0f\x1c\xa7\xe2\x3c\xfa\xc0\x57\xa2\xd3\x7d\x7e\x70\x11\x60\x5d\xab\xc0\xe9\x14\x47\x0e\xa7\x8c\xcf\xc4\x6f\xd3\x8a\xaf\xe1\x1c\x8b\xbb\x63\xa7\xeb\x3d\x78\xf0\x7f\xc8\xf2\x22\xdf\x63\xe1\x9c\x73\x6b\xa2\xb5\x94\x38\x1c\x1e\x1e\x37\xa4\x37\x5d\xb7\x58\x95\xc5\xae\x21\xd2\xb6\x2c\xbe\x03\x00\x00\xff\xff\xb0\x9c\x12\xab\x6d\x01\x00\x00")
+
+func _1514876826_site_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514876826_site_idUpSql,
+		"1514876826_site_id.up.sql",
+	)
+}
+
+func _1514876826_site_idUpSql() (*asset, error) {
+	bytes, err := _1514876826_site_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514876826_site_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2715,6 +2757,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514718560_external_provider_and_id.up.sql":                  _1514718560_external_provider_and_idUpSql,
 	"1514853193_remove_author_name_and_email.down.sql":            _1514853193_remove_author_name_and_emailDownSql,
 	"1514853193_remove_author_name_and_email.up.sql":              _1514853193_remove_author_name_and_emailUpSql,
+	"1514876826_site_id.down.sql":                                 _1514876826_site_idDownSql,
+	"1514876826_site_id.up.sql":                                   _1514876826_site_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2876,6 +2920,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514718560_external_provider_and_id.up.sql":                  &bintree{_1514718560_external_provider_and_idUpSql, map[string]*bintree{}},
 	"1514853193_remove_author_name_and_email.down.sql":            &bintree{_1514853193_remove_author_name_and_emailDownSql, map[string]*bintree{}},
 	"1514853193_remove_author_name_and_email.up.sql":              &bintree{_1514853193_remove_author_name_and_emailUpSql, map[string]*bintree{}},
+	"1514876826_site_id.down.sql":                                 &bintree{_1514876826_site_idDownSql, map[string]*bintree{}},
+	"1514876826_site_id.up.sql":                                   &bintree{_1514876826_site_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

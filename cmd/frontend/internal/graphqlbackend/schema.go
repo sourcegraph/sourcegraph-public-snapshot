@@ -1111,6 +1111,6 @@ enum UserEvent {
 type DeploymentConfiguration {
 	email: String
 	telemetryEnabled: Boolean
-	appID: String
+	siteID: String
 }
 `

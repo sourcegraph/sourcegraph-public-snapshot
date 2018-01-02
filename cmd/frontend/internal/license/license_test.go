@@ -1,6 +1,7 @@
 package license
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -54,7 +55,7 @@ func TestLicense(t *testing.T) {
 	tomorrow := time.Now().Add(24 * time.Hour).Round(time.Hour)
 	{
 		t.Log("unexpired key")
-		l := License{AppID: "test-id", Expiry: &tomorrow}
+		l := License{SiteID: "test-id", Expiry: &tomorrow}
 		check(t, !l.Expired(), "license should not be expired")
 
 		sig, err := l.signature(privateKey)
@@ -64,7 +65,7 @@ func TestLicense(t *testing.T) {
 		sl := &signedLicense{Signature: sig, License: l}
 		check(t, verify(sl, publicKey), "valid signed license failed to verify")
 
-		l2 := License{AppID: "test-id-2", Expiry: &tomorrow}
+		l2 := License{SiteID: "test-id-2", Expiry: &tomorrow}
 		sig2, err := l2.signature(privateKey)
 		if err != nil {
 			t.Fatal(err)
@@ -84,7 +85,7 @@ func TestLicense(t *testing.T) {
 	}
 	{
 		t.Log("expired key")
-		l := License{AppID: "test-id", Expiry: &yesterday}
+		l := License{SiteID: "test-id", Expiry: &yesterday}
 		check(t, l.Expired(), "license should be expired")
 	}
 	{
@@ -98,7 +99,7 @@ func TestLicense(t *testing.T) {
 			t.Fatal(err)
 		}
 		check(t, verify(sl, publicKey), "generated license key didn't verify")
-		checkEq(t, "test-id", sl.AppID, "AppID didn't match")
+		checkEq(t, "test-id", sl.SiteID, "SiteID didn't match")
 		check(t, !sl.Expired(), "license key should not be expired")
 	}
 	{
@@ -112,7 +113,7 @@ func TestLicense(t *testing.T) {
 			t.Fatal(err)
 		}
 		check(t, verify(sl, publicKey), "generated license key didn't verify")
-		checkEq(t, "test-id", sl.AppID, "AppID didn't match")
+		checkEq(t, "test-id", sl.SiteID, "SiteID didn't match")
 		check(t, sl.Expired(), "license key should not be expired")
 	}
 }
@@ -142,6 +143,35 @@ func checkEq(t *testing.T, expected, actual interface{}, errMsg string) {
 }
 
 func checkEqLicense(t *testing.T, expected, actual License) {
-	checkEq(t, expected.AppID, actual.AppID, "decoded signed license App ID did not match original")
+	checkEq(t, expected.SiteID, actual.SiteID, "decoded signed license SiteID did not match original")
 	check(t, expected.Expiry.Equal(*actual.Expiry), fmt.Sprintf("decoded signed license expiry did not match original (%+v != %+v)", expected.Expiry, actual.Expiry))
+}
+
+// The License.SiteID field used to be named AppID. Test that license JSON values
+// with the old AppID field name unmarshal correctly.
+func TestLicense_AppIDBackcompat(t *testing.T) {
+	var l License
+	if err := json.Unmarshal([]byte(`{"AppID":"myappid"}`), &l); err != nil {
+		t.Fatal(err)
+	}
+	if want := "myappid"; l.SiteID != want {
+		t.Errorf("got %q, want %q", l.SiteID, want)
+	}
+}
+
+func TestLicense_UnmarshalJSON(t *testing.T) {
+	var l License
+	if err := json.Unmarshal([]byte(`{"SiteID":"mysiteid","Expiry":"2018-01-01T22:48:26-08:00"}`), &l); err != nil {
+		t.Fatal(err)
+	}
+	if want := "mysiteid"; l.SiteID != want {
+		t.Errorf("got %q, want %q", l.SiteID, want)
+	}
+	want, err := time.Parse(time.RFC3339, "2018-01-01T22:48:26-08:00")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l.Expiry == nil || !l.Expiry.Equal(want) {
+		t.Errorf("got %v, want %v", l.Expiry, want)
+	}
 }

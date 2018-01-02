@@ -13,7 +13,7 @@ func TestSiteConfig_Get(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.AppID == "" {
-		t.Fatal("expected app_id to be set")
+	if config.SiteID == "" {
+		t.Fatal("expected site_id to be set")
 	}
 }

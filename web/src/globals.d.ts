@@ -20,7 +20,7 @@ interface ImmutableUser {
 }
 
 interface License {
-    AppID: string
+    SiteID: string
     Expiry: DateTime
 }
 
@@ -64,11 +64,11 @@ interface SourcegraphContext {
     sourcegraphDotComMode: boolean
 
     /**
-     * trackingAppID, set as "" by default server side, is required for the telligent environment to be set to production.
+     * siteID, set as "" by default server side, is required for the telligent environment to be set to production.
      * For Sourcegraph.com, it is SourcegraphWeb. For the node.aws.sgdev.org deployment, it might be something like SgdevWeb.
      * It is stored in telligent as a field called appID.
      */
-    trackingAppID: string | null
+    siteID: string | null
 
     /**
      * repoHomePageRegex filter is for on-premises deployments, to ensure that only organization repos appear on the home page.

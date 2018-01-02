@@ -8,7 +8,7 @@ class TelligentWrapper {
     private telligent: (...args: any[]) => void | null
     private DEFAULT_ENV = 'development'
     private PROD_ENV = 'production'
-    private DEFAULT_APP_ID = 'UnknownApp'
+    private DEFAULT_SITE_ID = 'UnknownApp'
 
     constructor() {
         if (window && window.telligent) {
@@ -16,10 +16,10 @@ class TelligentWrapper {
         } else {
             return
         }
-        if (window.context.version !== 'dev' && window.context.trackingAppID) {
-            this.initialize(window.context.trackingAppID, this.PROD_ENV)
+        if (window.context.version !== 'dev' && window.context.siteID) {
+            this.initialize(window.context.siteID, this.PROD_ENV)
         } else {
-            this.initialize(this.DEFAULT_APP_ID, this.DEFAULT_ENV)
+            this.initialize(this.DEFAULT_SITE_ID, this.DEFAULT_ENV)
         }
     }
 
@@ -48,8 +48,8 @@ class TelligentWrapper {
         // for on-prem usage, we only want to collect high level event context
         // note user identification information is still captured through persistent `user_info`
         // metadata stored in a cookie
-        if (!window.context.sourcegraphDotComMode && window.context.trackingAppID !== 'UmamiWeb') {
-            if (!window.context.trackingAppID) {
+        if (!window.context.sourcegraphDotComMode && window.context.siteID !== 'UmamiWeb') {
+            if (!window.context.siteID) {
                 return
             }
             const limitedEventProps = {
@@ -85,18 +85,18 @@ class TelligentWrapper {
         return cookieProps ? cookieProps[5] : null
     }
 
-    private initialize(appId: string, env: string): void {
+    private initialize(siteID: string, env: string): void {
         if (!this.telligent) {
             return
         }
         let telligentUrl = 'sourcegraph-logging.telligentdata.com'
         // for an on-prem trial, we want to send information directly telligent.
         // for clients like umami, we use a bi-logger
-        if (!window.context.sourcegraphDotComMode && window.context.trackingAppID === 'UmamiWeb') {
+        if (!window.context.sourcegraphDotComMode && window.context.siteID === 'UmamiWeb') {
             telligentUrl = `${window.location.host}`.concat('/.bi-logger')
         }
         this.telligent('newTracker', 'sg', telligentUrl, {
-            appId,
+            appId: siteID,
             platform: 'Web',
             encodeBase64: false,
             env,

@@ -32,6 +32,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -167,6 +168,8 @@ func Main() error {
 	}
 
 	db.ConnectToDB("")
+
+	siteid.Init()
 
 	go bg.ApplyUserOrgMap(context.Background())
 	go bg.MigrateAdminUsernames(context.Background())

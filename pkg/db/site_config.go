@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -16,6 +15,10 @@ type siteConfig struct{}
 var telemetryDisabled = conf.Get().DisableTelemetry
 
 func (o *siteConfig) Get(ctx context.Context) (*sourcegraph.SiteConfig, error) {
+	if Mocks.SiteConfig.Get != nil {
+		return Mocks.SiteConfig.Get(ctx)
+	}
+
 	configuration, err := o.getConfiguration(ctx)
 	if err == nil {
 		return configuration, nil
@@ -29,10 +32,10 @@ func (o *siteConfig) Get(ctx context.Context) (*sourcegraph.SiteConfig, error) {
 
 func (o *siteConfig) getConfiguration(ctx context.Context) (*sourcegraph.SiteConfig, error) {
 	configuration := &sourcegraph.SiteConfig{}
-	err := globalDB.QueryRowContext(ctx, "SELECT app_id, enable_telemetry, last_updated from site_config LIMIT 1").Scan(
-		&configuration.AppID,
+	err := globalDB.QueryRowContext(ctx, "SELECT site_id, enable_telemetry, updated_at from site_config LIMIT 1").Scan(
+		&configuration.SiteID,
 		&configuration.TelemetryEnabled,
-		&configuration.LastUpdated,
+		&configuration.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -48,21 +51,16 @@ func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfigurati
 	if err != nil {
 		return err
 	}
-	t := time.Now()
-	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email = $1, enable_telemetry = $2, last_updated = $3 where id = 1", updatedConfiguration.Email, updatedConfiguration.TelemetryEnabled, t.String())
+	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email=$1, enable_telemetry=$2, updated_at=now()", updatedConfiguration.Email, updatedConfiguration.TelemetryEnabled)
 	return err
 }
 
 func (o *siteConfig) tryInsertNew(ctx context.Context) error {
-	appID, err := uuid.NewUUID()
+	siteID, err := uuid.NewUUID()
 	if err != nil {
 		return err
 	}
-	var lastUpdated = ""
-	if telemetryDisabled {
-		lastUpdated = time.Now().String()
-	}
-	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(id, app_id, enable_telemetry, last_updated) values(1, $1, $2, $3)", appID, !telemetryDisabled, lastUpdated)
+	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(site_id, enable_telemetry, updated_at) values($1, $2, now())", siteID, !telemetryDisabled)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "site_config_pkey" {

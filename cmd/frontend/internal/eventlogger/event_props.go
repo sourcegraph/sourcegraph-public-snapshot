@@ -11,8 +11,10 @@ type Payload struct {
 
 // Header represents environment-level properties
 type Header struct {
-	AppID string `json:"app_id,omitempty"`
-	Env   string `json:"env,omitempty"`
+	// TODO(sqs): It is intentional that the Go field name is SiteID and the JSON
+	// field name is app_id (which is the name in our telemetry backend).
+	SiteID string `json:"app_id,omitempty"`
+	Env    string `json:"env,omitempty"`
 }
 
 // DeviceInfo represents platform- and device-level properties

@@ -22,9 +22,9 @@ const SiteSchemaJSON = `{
         }
       }
     },
-    "appID": {
+    "siteID": {
       "description":
-        "Application ID to attribute front end user logs to. Providing this value will send usage data back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
+        "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph Server instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",
       "type": "string"
     },
     "appURL": {

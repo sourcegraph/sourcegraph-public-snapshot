@@ -15,6 +15,7 @@ type MockStores struct {
 	Comments    MockComments
 	Settings    MockSettings
 	SharedItems MockSharedItems
+	SiteConfig  MockSiteConfig
 	Users       MockUsers
 	UserEmails  MockUserEmails
 }

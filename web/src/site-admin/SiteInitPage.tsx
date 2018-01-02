@@ -45,7 +45,7 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
         eventLogger.log('ServerInstallationComplete', {
             server: {
                 email,
-                appId: window.context.trackingAppID,
+                appId: window.context.siteID,
                 telemetryEnabled: true,
             },
         })
