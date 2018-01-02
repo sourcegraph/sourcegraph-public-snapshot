@@ -13,17 +13,11 @@ import (
 )
 
 var (
-	reposListConf      = conf.Get().ReposList
-	repoListUpdateConf = conf.Get().RepoListUpdateInterval
+	reposListConf = conf.Get().ReposList
 )
 
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) error {
-	if repoListUpdateConf == 0 {
-		return errors.New("Update interval is 0 (set REPOSITORY_SYNC_PERIOD to a non-zero value or omit it)")
-	}
-	updateInterval := time.Duration(repoListUpdateConf) * time.Second
-
 	configs := reposListConf
 	if len(configs) == 0 {
 		return nil

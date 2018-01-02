@@ -164,7 +164,8 @@
       "type": "string"
     },
     "repoListUpdateInterval": {
-      "description": "Interval (in minutes) for checking code hosts (e.g. gitolite) for new repositories.",
+      "description":
+        "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer"
     },
     "ssoUserHeader": {

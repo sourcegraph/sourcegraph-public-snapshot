@@ -3,17 +3,12 @@ package main
 import (
 	"context"
 	"log"
-	"strconv"
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
-)
-
-var (
-	interval, _ = strconv.Atoi(env.Get("REPO_LIST_UPDATE_INTERVAL", "", "interval (in minutes) for checking code hosts (e.g. gitolite) for new repositories"))
 )
 
 func main() {
