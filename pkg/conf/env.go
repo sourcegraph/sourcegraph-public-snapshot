@@ -38,7 +38,6 @@ var legacyEnvToFieldName = map[string]string{
 	"LicenseKey":                     "LICENSE_KEY",
 	"LightstepAccessToken":           "LIGHTSTEP_ACCESS_TOKEN",
 	"LightstepProject":               "LIGHTSTEP_PROJECT",
-	"MandrillKey":                    "MANDRILL_KEY",
 	"MaxReposToSearch":               "MAX_REPOS_TO_SEARCH",
 	"NoGoGetDomains":                 "NO_GO_GET_DOMAINS",
 	"OidcClientID":                   "OIDC_CLIENT_ID",

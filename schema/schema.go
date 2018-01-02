@@ -155,7 +155,6 @@ type SiteConfiguration struct {
 	LicenseKey                     string                     `json:"licenseKey,omitempty"`
 	LightstepAccessToken           string                     `json:"lightstepAccessToken,omitempty"`
 	LightstepProject               string                     `json:"lightstepProject,omitempty"`
-	MandrillKey                    string                     `json:"mandrillKey,omitempty"`
 	MaxReposToSearch               int                        `json:"maxReposToSearch,omitempty"`
 	NoGoGetDomains                 string                     `json:"noGoGetDomains,omitempty"`
 	OidcClientID                   string                     `json:"oidcClientID,omitempty"`

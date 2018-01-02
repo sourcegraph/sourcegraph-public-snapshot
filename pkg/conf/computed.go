@@ -5,7 +5,7 @@ package conf
 //
 // It's false for sites that do not have an email sending API key set up.
 func EmailVerificationRequired() bool {
-	return Get().MandrillKey != ""
+	return Get().EmailSmtp != nil
 }
 
 // CanSendEmail returns whether the site can send emails (e.g., to reset a password or
@@ -13,5 +13,5 @@ func EmailVerificationRequired() bool {
 //
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
-	return Get().MandrillKey != ""
+	return Get().EmailSmtp != nil
 }

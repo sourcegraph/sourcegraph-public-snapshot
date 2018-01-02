@@ -240,10 +240,6 @@
       "description": "License key. You must purchase a license to obtain this.",
       "type": "string"
     },
-    "mandrillKey": {
-      "description": "Key for sending mails via Mandrill.",
-      "type": "string"
-    },
     "maxReposToSearch": {
       "description":
         "The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value 0 means unlimited.",
