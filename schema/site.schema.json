@@ -131,6 +131,11 @@
       "description": "Space separated list of mappings from repo name prefix to gitolite hosts.",
       "type": "string"
     },
+    "gitoliteRepoBlacklist": {
+      "description":
+        "Regular expression to filter repos from auto-discovery, so they will not get cloned automatically.",
+      "type": "string"
+    },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
       "type": "integer"

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -14,9 +16,25 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
+
+var gitoliteRepoBlacklist = compileGitoliteRepoBlacklist()
+
+func compileGitoliteRepoBlacklist() *regexp.Regexp {
+	expr := conf.Get().GitoliteRepoBlacklist
+	if expr == "" {
+		return nil
+	}
+	r, err := regexp.Compile(expr)
+	if err != nil {
+		log15.Error("Invalid regexp for gitolite repo blacklist", "expr", expr, "err", err)
+		os.Exit(1)
+	}
+	return r
+}
 
 func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 	uri, _ := mux.Vars(r)["RepoURI"]
@@ -41,6 +59,13 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 
 	run := parallel.NewRun(16)
 	for _, uri := range list {
+		if strings.Contains(uri, "..*") { // seen such entries on gitolite
+			continue
+		}
+		if gitoliteRepoBlacklist != nil && gitoliteRepoBlacklist.MatchString(uri) {
+			continue
+		}
+
 		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, false)
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)

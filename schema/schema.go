@@ -148,6 +148,7 @@ type SiteConfiguration struct {
 	GithubEnterpriseURL            string                     `json:"githubEnterpriseURL,omitempty"`
 	GithubPersonalAccessToken      string                     `json:"githubPersonalAccessToken,omitempty"`
 	GitoliteHosts                  string                     `json:"gitoliteHosts,omitempty"`
+	GitoliteRepoBlacklist          string                     `json:"gitoliteRepoBlacklist,omitempty"`
 	HtmlBodyBottom                 string                     `json:"htmlBodyBottom,omitempty"`
 	HtmlBodyTop                    string                     `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                 string                     `json:"htmlHeadBottom,omitempty"`
