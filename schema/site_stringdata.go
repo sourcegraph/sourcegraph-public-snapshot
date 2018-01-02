@@ -315,6 +315,12 @@ const SiteSchemaJSON = `{
       "format": "email",
       "default": "noreply@sourcegraph.com"
     },
+    "update.channel": {
+      "description": "The channel on which to automatically check for Sourcegraph Server updates.",
+      "type": ["string", "null"],
+      "enum": ["release", null],
+      "default": "release"
+    },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
       "$ref": "settings.schema.json#"

@@ -22,6 +22,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
@@ -169,6 +170,7 @@ func Main() error {
 
 	go bg.ApplyUserOrgMap(context.Background())
 	go bg.MigrateAdminUsernames(context.Background())
+	go updatecheck.Start()
 
 	globals.AppURL, err = configureAppURL()
 	if err != nil {

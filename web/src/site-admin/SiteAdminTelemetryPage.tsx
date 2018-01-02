@@ -69,7 +69,7 @@ export class SiteAdminTelemetryPage extends React.Component<Props, State> {
 }
 
 /** Parses out the 'disableTelemetry' key from the JSON site config and returns the inverse. */
-function getTelemetryEnabled(text: string): boolean {
+export function getTelemetryEnabled(text: string): boolean {
     const o = parse(text, [], { allowTrailingComma: true, disallowComments: false })
     return o && !(o as SiteConfiguration).disableTelemetry
 }

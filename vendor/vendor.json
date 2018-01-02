@@ -130,6 +130,12 @@
 			"revisionTime": "2017-02-13T17:46:50Z"
 		},
 		{
+			"checksumSHA1": "97BsbXOiZ8+Kr+LIuZkQFtSj7H4=",
+			"path": "github.com/coreos/go-semver/semver",
+			"revision": "1817cd4bea52af76542157eeabd74b057d1a199e",
+			"revisionTime": "2017-06-13T09:22:38Z"
+		},
+		{
 			"checksumSHA1": "vhHfyZLaugP3bKfJjnZe2+5XaHc=",
 			"origin": "k8s.io/client-go/vendor/github.com/coreos/pkg/health",
 			"path": "github.com/coreos/pkg/health",

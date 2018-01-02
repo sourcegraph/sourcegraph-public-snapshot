@@ -364,3 +364,27 @@ export function fetchAllThreads(): Observable<GQL.IThreadConnection> {
         })
     )
 }
+
+export function fetchSiteUpdateCheck(): Observable<{ version: string; updateCheck: GQL.IUpdateCheck }> {
+    return queryGraphQL(
+        gql`
+            query SiteUpdateCheck() {
+                site {
+                    version
+                    updateCheck {
+                        pending
+                        checkedAt
+                        errorMessage
+                        updateVersionAvailable
+                    }
+                }
+            }        `
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.site || !data.site.updateCheck) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return { version: data.site.version, updateCheck: data.site.updateCheck }
+        })
+    )
+}

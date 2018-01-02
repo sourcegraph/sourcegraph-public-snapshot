@@ -13,6 +13,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
 )
 
@@ -82,6 +83,8 @@ func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
 	err := backend.CheckCurrentUserIsSiteAdmin(ctx)
 	return canReloadSite && err == nil
 }
+
+func (r *siteResolver) Version() string { return env.Version }
 
 type siteConfigurationResolver struct{}
 

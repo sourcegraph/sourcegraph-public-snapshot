@@ -179,4 +179,5 @@ type SiteConfiguration struct {
 	SsoUserHeader                  string                     `json:"ssoUserHeader,omitempty"`
 	TlsCert                        string                     `json:"tlsCert,omitempty"`
 	TlsKey                         string                     `json:"tlsKey,omitempty"`
+	UpdateChannel                  *string                    `json:"update.channel,omitempty"`
 }
