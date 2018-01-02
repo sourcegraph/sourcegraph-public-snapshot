@@ -143,42 +143,34 @@ func TestComments_emailsToNotify(t *testing.T) {
 	one := &sourcegraph.Comment{
 		Contents:     "Yo @renfred",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	two := &sourcegraph.Comment{
 		Contents:     "Did you see this comment?",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	three := &sourcegraph.Comment{
 		Contents:     "Going to mention myself to test notifications @nick",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	four := &sourcegraph.Comment{
 		Contents:     "Dude, I am on vacation. Ask @sqs or @John",
 		AuthorUserID: renfred.ID,
-		AuthorEmail:  renfred.Username + "@sourcegraph.com",
 	}
 	five := &sourcegraph.Comment{
 		Contents:     "Stop bothering Renfred!",
 		AuthorUserID: sqs.ID,
-		AuthorEmail:  sqs.Username + "@sourcegraph.com",
 	}
 	six := &sourcegraph.Comment{
 		Contents:     "Maybe @linus could take a look?",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	seven := &sourcegraph.Comment{
 		Contents:     "Feels like yelling into @the-void",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 	eight := &sourcegraph.Comment{
 		Contents:     "Nevermind. Just going to ask the whole @org",
 		AuthorUserID: nick.ID,
-		AuthorEmail:  nick.Username + "@sourcegraph.com",
 	}
 
 	tests := []struct {
@@ -267,14 +259,13 @@ func TestComments_Create(t *testing.T) {
 		EndCharacter:     4,
 	}
 	wantComment := sourcegraph.Comment{
-		ThreadID:    1,
-		Contents:    "Hello",
-		AuthorName:  "Alice",
-		AuthorEmail: "b@example.com",
+		ThreadID:     1,
+		Contents:     "Hello",
+		AuthorUserID: 1,
 	}
 
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) {
-		return &sourcegraph.User{DisplayName: "Alice"}, nil
+		return &sourcegraph.User{ID: 1, DisplayName: "Alice"}, nil
 	}
 	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
 	mockEmailsToNotify = func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {

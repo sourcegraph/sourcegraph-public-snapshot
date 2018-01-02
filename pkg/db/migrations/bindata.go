@@ -116,6 +116,8 @@
 // ../../../migrations/1514714572_external_provider.up.sql
 // ../../../migrations/1514718560_external_provider_and_id.down.sql
 // ../../../migrations/1514718560_external_provider_and_id.up.sql
+// ../../../migrations/1514853193_remove_author_name_and_email.down.sql
+// ../../../migrations/1514853193_remove_author_name_and_email.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2503,6 +2505,46 @@ func _1514718560_external_provider_and_idUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514853193_remove_author_name_and_emailDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\xcf\xcd\x4d\xcd\x2b\x29\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x2c\x2d\xc9\xc8\x2f\x8a\xcf\x4b\xcc\x4d\x55\x28\x49\xad\x28\x21\x5a\x47\x6a\x6e\x62\x66\x0e\x54\x8b\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xba\xa6\x05\x83\x74\x00\x00\x00")
+
+func _1514853193_remove_author_name_and_emailDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514853193_remove_author_name_and_emailDownSql,
+		"1514853193_remove_author_name_and_email.down.sql",
+	)
+}
+
+func _1514853193_remove_author_name_and_emailDownSql() (*asset, error) {
+	bytes, err := _1514853193_remove_author_name_and_emailDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514853193_remove_author_name_and_email.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514853193_remove_author_name_and_emailUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\xcf\xcd\x4d\xcd\x2b\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x2c\x2d\xc9\xc8\x2f\x8a\xcf\x4b\xcc\x4d\x25\x5e\x75\x6a\x6e\x62\x66\x8e\x35\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xf7\xc5\x0f\xad\x6c\x00\x00\x00")
+
+func _1514853193_remove_author_name_and_emailUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514853193_remove_author_name_and_emailUpSql,
+		"1514853193_remove_author_name_and_email.up.sql",
+	)
+}
+
+func _1514853193_remove_author_name_and_emailUpSql() (*asset, error) {
+	bytes, err := _1514853193_remove_author_name_and_emailUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514853193_remove_author_name_and_email.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2671,6 +2713,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514714572_external_provider.up.sql":                         _1514714572_external_providerUpSql,
 	"1514718560_external_provider_and_id.down.sql":                _1514718560_external_provider_and_idDownSql,
 	"1514718560_external_provider_and_id.up.sql":                  _1514718560_external_provider_and_idUpSql,
+	"1514853193_remove_author_name_and_email.down.sql":            _1514853193_remove_author_name_and_emailDownSql,
+	"1514853193_remove_author_name_and_email.up.sql":              _1514853193_remove_author_name_and_emailUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2830,6 +2874,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514714572_external_provider.up.sql":                         &bintree{_1514714572_external_providerUpSql, map[string]*bintree{}},
 	"1514718560_external_provider_and_id.down.sql":                &bintree{_1514718560_external_provider_and_idDownSql, map[string]*bintree{}},
 	"1514718560_external_provider_and_id.up.sql":                  &bintree{_1514718560_external_provider_and_idUpSql, map[string]*bintree{}},
+	"1514853193_remove_author_name_and_email.down.sql":            &bintree{_1514853193_remove_author_name_and_emailDownSql, map[string]*bintree{}},
+	"1514853193_remove_author_name_and_email.up.sql":              &bintree{_1514853193_remove_author_name_and_emailUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

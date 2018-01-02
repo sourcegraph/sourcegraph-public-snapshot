@@ -150,7 +150,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, user.DisplayName, email, user.ID)
+	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, user.ID)
 	if err != nil {
 		return nil, err
 	}
