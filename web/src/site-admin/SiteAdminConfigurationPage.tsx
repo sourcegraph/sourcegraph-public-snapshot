@@ -299,7 +299,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         this.remoteUpdates.next(this.state.contents)
     }
 
-    private reloadSite = () => this.siteReloads.next()
+    private reloadSite = () => {
+        eventLogger.log('SiteReloaded')
+        this.siteReloads.next()
+    }
 
     private monacoRef = (monacoValue: typeof monaco | null) => {
         this.monaco = monacoValue
@@ -320,6 +323,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                     label,
                                     id,
                                     run: editor => {
+                                        eventLogger.log('SiteConfigurationActionExecuted', { id })
                                         editor.focus()
                                         editor.pushUndoStop()
                                         const { edits, selectText } = run(editor.getValue())
