@@ -62,6 +62,10 @@ func (c *comments) GetByID(ctx context.Context, commentID int32) (*sourcegraph.C
 }
 
 func (c *comments) GetAllForThread(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error) {
+	if Mocks.Comments.GetAllForThread != nil {
+		return Mocks.Comments.GetAllForThread(ctx, threadID)
+	}
+
 	return c.getBySQL(ctx, "WHERE thread_id=$1 AND deleted_at IS NULL ORDER BY id ASC", threadID)
 }
 

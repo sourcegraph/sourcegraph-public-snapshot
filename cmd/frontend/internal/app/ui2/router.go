@@ -31,6 +31,7 @@ const (
 	routeComment       = "comment"
 	routeOpen          = "open"
 	routeRepo          = "repo"
+	routeThreads       = "threads"
 	routeTree          = "tree"
 	routeBlob          = "blob"
 	routeSignIn        = "sign-in"
@@ -89,6 +90,7 @@ func newRouter() *mux.Router {
 
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
+	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/queries").Methods("GET").Name(routeSearchQueries)
 	r.Path("/c/{ULID}").Methods("GET").Name(routeComment)
@@ -136,6 +138,7 @@ func initRouter() {
 	// basic pages with static titles
 	router = newRouter()
 	router.Get(routeHome).Handler(handler(serveHome))
+	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
 	router.Get(routeSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
 	router.Get(routeSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))
 	router.Get(routeOrganizations).Handler(handler(serveBasicPageString("Organization - Sourcegraph")))

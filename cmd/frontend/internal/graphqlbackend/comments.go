@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -148,7 +150,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, "", email, user.ID)
+	comment, err := db.Comments.Create(ctx, args.ThreadID.int32Value, args.Contents, user.DisplayName, email, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -171,12 +173,8 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	} else if results != nil {
 		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 		client := slack.New(org.SlackWebhookURL, true)
-		commentURL, err := s.getURL(ctx, thread.ID, &comment.ID, "slack")
-		if err != nil {
-			log15.Error("graphqlbackend.AddCommentToThread: getURL failed", "error", err)
-		} else {
-			go client.NotifyOnComment(user, email, org, repo, thread, comment, results.emails, commentURL.String(), title)
-		}
+		commentURL := threadURL(thread.ID, &comment.ID, "slack")
+		go client.NotifyOnComment(user, email, org, repo, thread, comment, results.emails, commentURL.String(), title)
 	}
 
 	return t, nil
@@ -273,10 +271,7 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 		return mockNotifyNewComment()
 	}
 
-	commentURL, err := s.getURL(ctx, thread.ID, &comment.ID, "email")
-	if err != nil {
-		return nil, err
-	}
+	commentURL := threadURL(thread.ID, &comment.ID, "email")
 	if !conf.CanSendEmail() {
 		return &commentResults{emails: []string{}, commentURL: commentURL.String()}, nil
 	}
@@ -333,8 +328,14 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
 }
 
+var mockEmailsToNotify func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error)
+
 // emailsToNotify returns all emails that should be notified of activity given a list of comments.
 func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+	if mockEmailsToNotify != nil {
+		return mockEmailsToNotify(ctx, comments, author, org)
+	}
+
 	uniqueParticipants, uniqueMentions := map[int32]struct{}{}, map[string]struct{}{}
 	orgName, authorUsername := strings.ToLower(org.Name), strings.ToLower(author.Username)
 
@@ -421,20 +422,18 @@ func repoNameFromRemoteID(canonicalRemoteID string) string {
 	return m[1]
 }
 
-func (s *schemaResolver) getURL(ctx context.Context, threadID int32, commentID *int32, utmSource string) (*url.URL, error) {
-	var (
-		url *url.URL
-		err error
-	)
+// threadURL returns the URL to a thread (scrolled to an optional comment).
+func threadURL(threadID int32, commentID *int32, utmSource string) *url.URL {
+	u := globals.AppURL.ResolveReference(&url.URL{Path: path.Join("threads", string(marshalThreadID(threadID)))})
 	if commentID != nil {
-		url, err = s.shareCommentInternal(ctx, *commentID, false)
-	} else {
-		url, err = s.shareThreadInternal(ctx, threadID, false)
+		q := u.Query()
+		q.Set("id", fmt.Sprint(*commentID))
+		u.RawQuery = q.Encode()
 	}
-	if err != nil {
-		return nil, err
+	if utmSource != "" {
+		u = withUTMSource(u, utmSource)
 	}
-	return withUTMSource(url, utmSource), nil
+	return u
 }
 
 func withUTMSource(u *url.URL, utmSource string) *url.URL {

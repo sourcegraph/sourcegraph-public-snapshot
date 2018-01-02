@@ -3,7 +3,7 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import LockIcon from '@sourcegraph/icons/lib/Lock'
 import * as H from 'history'
 import * as React from 'react'
-import { match } from 'react-router'
+import { RouteComponentProps } from 'react-router'
 import { Link, Redirect } from 'react-router-dom'
 import reactive from 'rx-component'
 import { merge } from 'rxjs/observable/merge'
@@ -19,29 +19,25 @@ import { PageTitle } from '../components/PageTitle'
 import { RepoNav } from '../repo/RepoNav'
 import { colorTheme, ColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
-import { toEditorURL } from '../util/url'
-import { EPERMISSIONDENIED, fetchSharedItem } from './backend'
+import { EPERMISSIONDENIED, fetchThread } from './backend'
 import { CodeView } from './CodeView'
 import { Comment } from './Comment'
 import { CommentsInput } from './CommentsInput'
 import { SecurityWidget } from './SecurityWidget'
 
-const SharedItemNotFound = () => (
+const ThreadNotFound = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="Sorry, we can&#39;t find anything here." />
 )
 
-interface Props {
-    match: match<{ ulid: string }>
-    location: H.Location
-    history: H.History
+interface Props extends RouteComponentProps<{ threadID: GQLID }> {
     user: GQL.IUser | null
 }
 
 interface State {
-    sharedItem?: GQL.ISharedItem | null
+    thread?: GQL.IThread | null
     highlightLastComment?: boolean
     highlightComment: GQLID | null
-    ulid: string
+    threadID: string
     location: H.Location
     history: H.History
     colorTheme: ColorTheme
@@ -52,13 +48,15 @@ interface State {
 type Update = (s: State) => State
 
 /**
- * Renders a shared code comment's thread.
+ * The page for a comment thread.
+ *
+ * TODO(sqs): this is duplicated from CommentsPage, with some things omitted.
  */
-export const CommentsPage = reactive<Props>(props => {
-    const threadUpdates = new Subject<GQL.ISharedItemThread>()
-    const nextThreadUpdate = (updatedThread: GQL.ISharedItemThread) => threadUpdates.next(updatedThread)
+export const ThreadPage = reactive<Props>(props => {
+    const threadUpdates = new Subject<GQL.IThread>()
+    const nextThreadUpdate = (updatedThread: GQL.IThread) => threadUpdates.next(updatedThread)
 
-    eventLogger.logViewEvent('SharedItem')
+    eventLogger.logViewEvent('Thread')
 
     return merge(
         props.pipe(
@@ -73,15 +71,15 @@ export const CommentsPage = reactive<Props>(props => {
             }))
         ),
         props.pipe(
-            map(props => props.match.params.ulid),
+            map(props => props.match.params.threadID),
             distinctUntilChanged(),
             withLatestFrom(colorTheme),
-            mergeMap(([ulid, colorTheme]) =>
-                fetchSharedItem(ulid, colorTheme === 'light').pipe(
-                    map((sharedItem): Update => state => ({ ...state, sharedItem, ulid, highlightLastComment: false })),
+            mergeMap(([threadID, colorTheme]) =>
+                fetchThread(threadID, colorTheme === 'light').pipe(
+                    map((thread): Update => state => ({ ...state, thread, threadID, highlightLastComment: false })),
                     catchError((error): Update[] => {
                         console.error(error)
-                        return [state => ({ ...state, error, ulid, highlightLastComment: false })]
+                        return [state => ({ ...state, error, threadID, highlightLastComment: false })]
                     })
                 )
             )
@@ -90,10 +88,7 @@ export const CommentsPage = reactive<Props>(props => {
         threadUpdates.pipe(
             map((thread): Update => state => ({
                 ...state,
-                sharedItem: state.sharedItem && {
-                    ...state.sharedItem,
-                    thread,
-                },
+                thread,
                 highlightLastComment: true,
             }))
         )
@@ -101,10 +96,10 @@ export const CommentsPage = reactive<Props>(props => {
         scan<Update, State>((state: State, update: Update) => update(state), {} as State),
         map(
             ({
-                sharedItem,
+                thread,
                 highlightLastComment,
                 highlightComment,
-                ulid,
+                threadID,
                 location,
                 history,
                 colorTheme,
@@ -123,12 +118,12 @@ export const CommentsPage = reactive<Props>(props => {
                     }
                     return <HeroPage icon={ErrorIcon} title="Something went wrong." subtitle={error.message} />
                 }
-                if (sharedItem === undefined) {
+                if (thread === undefined) {
                     // TODO(slimsag): future: add loading screen
                     return null
                 }
-                if (sharedItem === null) {
-                    return <SharedItemNotFound />
+                if (thread === null) {
+                    return <ThreadNotFound />
                 }
 
                 // If not logged in, redirect to sign in
@@ -136,104 +131,59 @@ export const CommentsPage = reactive<Props>(props => {
                 newUrl.pathname = '/sign-in'
                 newUrl.searchParams.set('returnTo', window.location.href)
                 const signInURL = newUrl.pathname + newUrl.search
-                if (!sharedItem.public && !signedIn) {
+                if (!signedIn) {
                     return <Redirect to={signInURL} />
-                }
-
-                const editorURL = toEditorURL(
-                    sharedItem.thread.repo.remoteUri,
-                    sharedItem.thread.branch || sharedItem.thread.repoRevision,
-                    sharedItem.thread.file,
-                    { line: sharedItem.thread.startLine },
-                    sharedItem.thread.databaseID
-                )
-                const openEditor = () => {
-                    eventLogger.log('OpenInNativeAppClicked')
                 }
 
                 return (
                     <div className="comments-page">
-                        <PageTitle title={getPageTitle(sharedItem)} />
-                        {/* TODO(slimsag): future: do not disable breadcrumb _if_ the repository is public */}
+                        <PageTitle title={thread.title} />
                         <RepoNav
-                            repoPath={sharedItem.thread.repo.remoteUri}
-                            rev={sharedItem.thread.branch || sharedItem.thread.repoRevision}
-                            filePath={sharedItem.thread.file}
+                            repoPath={thread.repo.canonicalRemoteID}
+                            rev={thread.branch || thread.repoRevision}
+                            filePath={thread.file}
                             isDirectory={false}
                             hideCopyLink={true}
-                            customEditorURL={editorURL}
-                            breadcrumbDisabled={true}
-                            revSwitcherDisabled={true}
-                            line={sharedItem && sharedItem.thread.startLine}
+                            breadcrumbDisabled={false}
+                            revSwitcherDisabled={false}
+                            line={thread && thread.startLine}
                             location={location}
                             history={history}
                         />
-                        {sharedItem &&
-                            !sharedItem.thread.linesRevision && (
+                        {thread &&
+                            !thread.linesRevision && (
                                 <div className="comments-page__no-revision">
                                     <ErrorIcon className="icon-inline comments-page__error-icon" />
-                                    {sharedItem.thread.comments.length === 0
+                                    {thread.comments.length === 0
                                         ? 'This code snippet was created from code that was not pushed. File or line numbers may have changed since this snippet was created.'
                                         : 'This discussion was created on code that was not pushed. File or line numbers may have changed since this discussion was created.'}
                                 </div>
                             )}
                         <div className="comments-page__content">
-                            {sharedItem &&
-                                !sharedItem.thread.lines && (
-                                    <div className="comments-page__no-shared-code-container">
-                                        <div className="comments-page__no-shared-code">
-                                            The author of this discussion did not{' '}
-                                            <a href="https://about.sourcegraph.com/docs/editor/share-code">
-                                                share the code
-                                            </a>.&nbsp;
-                                            <a href={editorURL} target="sourcegraphapp" onClick={openEditor}>
-                                                Open in Sourcegraph Editor
-                                            </a>{' '}
-                                            to see code.
-                                        </div>
-                                    </div>
-                                )}
-                            {sharedItem && CodeView(sharedItem)}
-                            {sharedItem &&
-                                sharedItem.thread.comments.map((comment, index) => (
+                            {thread && CodeView({ thread })}
+                            {thread &&
+                                thread.comments.map((comment, index) => (
                                     <Comment
                                         location={location}
                                         comment={comment}
                                         key={comment.id}
                                         forceTargeted={
-                                            (highlightLastComment && index === sharedItem.thread.comments.length - 1) ||
+                                            (highlightLastComment && index === thread.comments.length - 1) ||
                                             highlightComment === comment.id ||
                                             highlightComment === String(comment.databaseID)
                                         }
                                     />
                                 ))}
-                            {sharedItem &&
-                                sharedItem.thread.comments.length === 0 && (
-                                    <a
-                                        className="btn btn-primary btn-block comments-page__reply-in-editor"
-                                        href={editorURL}
-                                        target="sourcegraphapp"
-                                        onClick={openEditor}
-                                    >
-                                        Open in Sourcegraph Editor
-                                    </a>
-                                )}
-                            {sharedItem &&
-                                sharedItem.thread.comments.length !== 0 &&
+                            {thread &&
+                                thread.comments.length !== 0 &&
                                 (signedIn ? (
-                                    <CommentsInput
-                                        editorURL={editorURL}
-                                        onOpenEditor={openEditor}
-                                        threadID={sharedItem.thread.id}
-                                        ulid={ulid}
-                                        onThreadUpdated={nextThreadUpdate}
-                                    />
+                                    <CommentsInput threadID={thread.id} onThreadUpdated={nextThreadUpdate} />
                                 ) : (
                                     <Link className="btn btn-primary comments-page__sign-in" to={signInURL}>
                                         Sign in to comment
                                     </Link>
                                 ))}
-                            {sharedItem && <SecurityWidget sharedItem={sharedItem} />}
+                            {thread && <SecurityWidget sharedItem={{ public: false }} />}
                         </div>
                     </div>
                 )
@@ -241,11 +191,3 @@ export const CommentsPage = reactive<Props>(props => {
         )
     )
 })
-
-function getPageTitle(sharedItem: GQL.ISharedItem): string | undefined {
-    const title = sharedItem.comment ? sharedItem.comment.title : sharedItem.thread.title
-    if (title === '') {
-        return sharedItem.thread.file
-    }
-    return title
-}

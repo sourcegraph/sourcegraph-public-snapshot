@@ -93,9 +93,14 @@ func TestThreads_Update(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) { return &sourcegraph.User{}, nil }
 	db.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &wantRepo, nil)
-	called := db.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
+	called := db.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{OrgRepoID: 1, ArchivedAt: &time.Time{}}, nil)
 	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
-	db.Mocks.Orgs.MockGetByID_Return(t, nil, nil)
+	db.Mocks.Comments.GetAllForThread = func(context.Context, int32) ([]*sourcegraph.Comment, error) { return nil, nil }
+	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
+	mockEmailsToNotify = func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+		return []string{"a@example.com"}, nil
+	}
+	defer func() { mockEmailsToNotify = nil }()
 
 	r := &schemaResolver{}
 	archived := true

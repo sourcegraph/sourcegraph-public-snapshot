@@ -17,10 +17,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
@@ -490,12 +488,8 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		if results != nil {
 			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
-			commentURL, err := s.getURL(ctx, newThread.ID, &comment.ID, "slack")
-			if err != nil {
-				log15.Error("graphqlbackend.CreateThread: getURL failed", "error", err)
-			} else {
-				go client.NotifyOnThread(currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
-			}
+			commentURL := threadURL(newThread.ID, &comment.ID, "slack")
+			go client.NotifyOnThread(currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
 		}
 	} /* else {
 		// Creating a thread without Contents (a comment) means it is a code
@@ -524,8 +518,6 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
-
 	org, err := db.Orgs.GetByID(ctx, repo.OrgID)
 	if err != nil {
 		return nil, err
@@ -538,7 +530,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 
 	if wasArchived == nil && thread.ArchivedAt != nil {
-		user, err := db.Users.GetByID(ctx, actor.UID)
+		user, err := db.Users.GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -598,13 +590,7 @@ func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, 
 }
 
 func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
-	url, err := s.getURL(ctx, thread.ID, nil, "email")
-	if err != nil {
-		return err
-	}
-	if !conf.CanSendEmail() {
-		return nil
-	}
+	url := threadURL(thread.ID, nil, "email")
 
 	var first *sourcegraph.Comment
 	if len(previousComments) > 0 {

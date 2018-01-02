@@ -3,7 +3,7 @@ import UnlockIcon from '@sourcegraph/icons/lib/Unlock'
 import * as React from 'react'
 
 interface Props {
-    sharedItem: GQL.ISharedItem
+    sharedItem: GQL.ISharedItem | { public: boolean }
 }
 
 export function SecurityWidget(props: Props): JSX.Element | null {

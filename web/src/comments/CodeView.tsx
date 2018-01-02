@@ -51,7 +51,7 @@ const splitLines = (linesToSplit: string) => {
     return linesToSplit.split('\n')
 }
 
-const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
+const itemToLines = (sharedItem: GQL.ISharedItem | { thread: GQL.IThread }): Line[] => {
     const startLine = sharedItem.thread.startLine
     const threadLines = sharedItem.thread.lines
 
@@ -88,7 +88,7 @@ const itemToLines = (sharedItem: GQL.ISharedItem): Line[] => {
     }))
 }
 
-export function CodeView(sharedItem: GQL.ISharedItem): JSX.Element | null {
+export function CodeView(sharedItem: GQL.ISharedItem | { thread: GQL.IThread }): JSX.Element | null {
     const isSnippet = sharedItem.thread.comments.length === 0
     return (
         <code>

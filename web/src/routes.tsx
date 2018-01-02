@@ -4,6 +4,7 @@ import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
 import { CommentsPage } from './comments/CommentsPage'
+import { ThreadPage } from './comments/ThreadPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
@@ -93,6 +94,12 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/site-admin',
         component: SiteAdminArea,
+    },
+    {
+        path: '/threads/:threadID',
+        exact: true,
+        component: ThreadPage,
+        forceNarrowWidth: true,
     },
     {
         path: '/password-reset',

@@ -8,7 +8,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 
 interface Props {
-    comment: GQL.ISharedItemComment
+    comment: GQL.ISharedItemComment | GQL.IComment
     location: H.Location
     forceTargeted: boolean
 }
