@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -52,8 +51,7 @@ func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfigurati
 	if err != nil {
 		return err
 	}
-	t := time.Now()
-	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email = $1, enable_telemetry = $2, updated_at = $3 where id = 1", updatedConfiguration.Email, updatedConfiguration.TelemetryEnabled, t.String())
+	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email=$1, enable_telemetry=$2, updated_at=now()", updatedConfiguration.Email, updatedConfiguration.TelemetryEnabled)
 	return err
 }
 
@@ -62,7 +60,7 @@ func (o *siteConfig) tryInsertNew(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(id, site_id, enable_telemetry, updated_at) values(1, $1, $2, now())", siteID, !telemetryDisabled)
+	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(site_id, enable_telemetry, updated_at) values($1, $2, now())", siteID, !telemetryDisabled)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "site_config_pkey" {
