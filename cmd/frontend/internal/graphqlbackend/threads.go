@@ -490,12 +490,8 @@ func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThr
 		if results != nil {
 			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
-			commentURL, err := s.getURL(ctx, newThread.ID, &comment.ID, "slack")
-			if err != nil {
-				log15.Error("graphqlbackend.CreateThread: getURL failed", "error", err)
-			} else {
-				go client.NotifyOnThread(currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
-			}
+			commentURL := threadURL(newThread.ID, &comment.ID, "slack")
+			go client.NotifyOnThread(currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
 		}
 	} /* else {
 		// Creating a thread without Contents (a comment) means it is a code
@@ -598,13 +594,10 @@ func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, 
 }
 
 func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
-	url, err := s.getURL(ctx, thread.ID, nil, "email")
-	if err != nil {
-		return err
-	}
 	if !conf.CanSendEmail() {
 		return nil
 	}
+	url := threadURL(thread.ID, nil, "email")
 
 	var first *sourcegraph.Comment
 	if len(previousComments) > 0 {
