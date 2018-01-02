@@ -14,6 +14,7 @@ import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 import { SiteAdminTelemetryPage } from './SiteAdminTelemetryPage'
 import { SiteAdminThreadsPage } from './SiteAdminThreadsPage'
+import { SiteAdminUpdatesPage } from './SiteAdminUpdatesPage'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -112,6 +113,11 @@ export class SiteAdminArea extends React.Component<Props> {
                         <RouteWithProps
                             path={`${this.props.match.url}/analytics`}
                             component={SiteAdminAnalyticsPage}
+                            exact={true}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/updates`}
+                            component={SiteAdminUpdatesPage}
                             exact={true}
                         />
                         <RouteWithProps

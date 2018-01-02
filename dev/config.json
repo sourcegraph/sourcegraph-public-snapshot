@@ -40,5 +40,6 @@
     "username": "beyang@sourcegraph.com",
     "password": "Gk9_YjhgJMvKu4OW9SK2aw"
   },
+  "update.channel": "release",
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK"
 }

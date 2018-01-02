@@ -901,6 +901,12 @@ type Site implements ConfigurationSubject {
 		# Returns the first n threads from the list.
 		first: Int
 	): ThreadConnection!
+	# The version string of the Sourcegraph Server version that is running
+	# on this site.
+	version: String!
+	# Information about software updates for version of Sourcegraph Server that
+	# this site is running.
+	updateCheck: UpdateCheck!
 }
 
 # The configuration for a site.
@@ -923,6 +929,20 @@ type SiteConfiguration {
 	# referring to either the on-disk file path or the SOURCEGRAPH_CONFIG
 	# env var.
 	source: String!
+}
+
+# Information about software updates for Sourcegraph Server.
+type UpdateCheck {
+	# Whether an update check is currently in progress.
+	pending: Boolean!
+	# When the last update check was completed, or null if no update check has
+	# been completed (or performed) yet.
+	checkedAt: String
+	# If an error occurred during the last update check, this message describes
+	# the error.
+	errorMessage: String
+	# If an update is available, the version string of the updated version.
+	updateVersionAvailable: String
 }
 
 # ConfigurationSubject is something that can have configuration.

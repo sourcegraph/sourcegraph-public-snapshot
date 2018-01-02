@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -43,6 +44,10 @@ func NewHandler(m *mux.Router) http.Handler {
 	}))
 
 	m.Get(apirouter.XLang).Handler(traceutil.TraceRoute(handler(serveXLang)))
+
+	if envvar.SourcegraphDotComMode() {
+		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(traceutil.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
+	}
 
 	// 🚨 SECURITY: The LSP endpoints specifically allows cookie authorization 🚨
 	// because the JavaScript WebSocket API does not allow us to set custom
