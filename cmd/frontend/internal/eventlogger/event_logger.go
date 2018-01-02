@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var backendEventsTrackingAppID = "SourcegraphBackend"
+var backendEventsTrackingSiteID = "SourcegraphBackend"
 var defaultRemoteURL = "https://sourcegraph-logging.telligentdata.com/log/v1/"
 
 // EventLogger is a singleton for event logging from the backend
@@ -98,8 +98,8 @@ func (logger *eventLogger) newPayload(userEmail *string, event *Event) *Payload 
 			event,
 		},
 		Header: &Header{
-			AppID: backendEventsTrackingAppID,
-			Env:   logger.env,
+			SiteID: backendEventsTrackingSiteID,
+			Env:    logger.env,
 		},
 		BatchInfo: &BatchInfo{
 			BatchID:     uuid.New().String(),

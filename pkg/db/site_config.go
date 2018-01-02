@@ -54,11 +54,11 @@ func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfigurati
 }
 
 func (o *siteConfig) tryInsertNew(ctx context.Context) error {
-	appID, err := uuid.NewUUID()
+	siteID, err := uuid.NewUUID()
 	if err != nil {
 		return err
 	}
-	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(id, site_id, enable_telemetry, updated_at) values(1, $1, $2, now())", appID, !telemetryDisabled)
+	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(id, site_id, enable_telemetry, updated_at) values(1, $1, $2, now())", siteID, !telemetryDisabled)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "site_config_pkey" {

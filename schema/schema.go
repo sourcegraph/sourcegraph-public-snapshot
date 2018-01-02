@@ -123,7 +123,6 @@ type Settings struct {
 // SiteConfiguration Configuration for a Sourcegraph Server site.
 type SiteConfiguration struct {
 	AdminUsernames                 string                     `json:"adminUsernames,omitempty"`
-	AppID                          string                     `json:"appID,omitempty"`
 	AppURL                         string                     `json:"appURL,omitempty"`
 	AuthAllowSignup                bool                       `json:"auth.allowSignup,omitempty"`
 	AuthOpenIDConnect              *OpenIDConnectAuthProvider `json:"auth.openIDConnect,omitempty"`
@@ -178,6 +177,7 @@ type SiteConfiguration struct {
 	SearchScopes                   []SearchScope              `json:"searchScopes,omitempty"`
 	SecretKey                      string                     `json:"secretKey,omitempty"`
 	Settings                       *Settings                  `json:"settings,omitempty"`
+	SiteID                         string                     `json:"siteID,omitempty"`
 	SsoUserHeader                  string                     `json:"ssoUserHeader,omitempty"`
 	TlsCert                        string                     `json:"tlsCert,omitempty"`
 	TlsKey                         string                     `json:"tlsKey,omitempty"`

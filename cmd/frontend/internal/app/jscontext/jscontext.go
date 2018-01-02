@@ -25,8 +25,8 @@ import (
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
 
-// TrackingAppID is used by the Telligent data pipeline
-var TrackingAppID = conf.Get().AppID
+// SiteID is used by the Telligent data pipeline
+var SiteID = conf.Get().SiteID
 
 var githubConf = conf.Get().Github
 
@@ -55,7 +55,6 @@ type immutableUser struct {
 type JSContext struct {
 	AppRoot        string            `json:"appRoot,omitempty"`
 	AppURL         string            `json:"appURL,omitempty"`
-	AppID          string            `json:"appID,omitempty"`
 	XHRHeaders     map[string]string `json:"xhrHeaders"`
 	CSRFToken      string            `json:"csrfToken"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
@@ -65,7 +64,7 @@ type JSContext struct {
 
 	GithubEnterpriseURLs map[string]string     `json:"githubEnterpriseURLs"`
 	SentryDSN            string                `json:"sentryDSN"`
-	TrackingAppID        string                `json:"trackingAppID"`
+	SiteID               string                `json:"siteID"`
 	Debug                bool                  `json:"debug"`
 	RepoHomeRegexFilter  string                `json:"repoHomeRegexFilter"`
 	SessionID            string                `json:"sessionID"`
@@ -119,17 +118,17 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
-	license, licenseStatus := license.Get(TrackingAppID)
+	license, licenseStatus := license.Get(SiteID)
 	var showOnboarding = false
-	if license == nil || license.AppID == "" {
+	if license == nil || license.SiteID == "" {
 		siteConfig, err := db.SiteConfig.Get(req.Context())
 		if err != nil {
 			// errors swallowed because telemetry is optional.
 			log15.Error("db.Config.Get failed", "error", err)
 		} else if siteConfig.TelemetryEnabled {
-			TrackingAppID = siteConfig.SiteID
+			SiteID = siteConfig.SiteID
 		} else {
-			TrackingAppID = ""
+			SiteID = ""
 		}
 		showOnboarding = siteConfig == nil || siteConfig.UpdatedAt == ""
 	}
@@ -145,7 +144,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
 		Debug:                envvar.DebugMode(),
-		TrackingAppID:        TrackingAppID,
+		SiteID:               SiteID,
 		RepoHomeRegexFilter:  repoHomeRegexFilter,
 		SessionID:            sessionID,
 		License:              license,

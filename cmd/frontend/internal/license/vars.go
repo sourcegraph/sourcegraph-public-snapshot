@@ -84,11 +84,11 @@ const (
 // Get returns the license and license status. The license is decoded and validated from the environment variable
 // LICENSE_KEY. The caller should always check if the license is nil regardless of the value of the license status.
 // The license coudl be nil while the license status is valid if running in development.
-func Get(appID string) (*License, LicenseStatus) {
+func Get(siteID string) (*License, LicenseStatus) {
 	if license == nil || licenseStatus != LicenseValid {
 		return nil, licenseStatus
 	}
-	if appID != license.AppID {
+	if siteID != license.SiteID {
 		return nil, LicenseInvalid
 	}
 	if licenseStatus == LicenseValid && license.Expired() {
@@ -109,13 +109,13 @@ func WithLicenseGenerator(h http.Handler) http.Handler {
 		case "GET":
 			w.Write([]byte(`<html>
 <form method="post">
-	<label>AppID</label> <input name="appID">
+	<label>Site ID</label> <input name="siteID">
 	<label>Expiry</label> <input type="date" name="expiry">
 	<input type="submit" value="Submit">
 </form>
 </html>`))
 		case "POST":
-			appID := r.FormValue("appID")
+			siteID := r.FormValue("siteID")
 			expiryVal := r.FormValue("expiry")
 			var expiry *time.Time
 			if expiryVal != "" {
@@ -126,17 +126,17 @@ func WithLicenseGenerator(h http.Handler) http.Handler {
 				}
 				expiry = &exp
 			}
-			licenseKey, err := generate(appID, expiry, privateKey)
+			licenseKey, err := generate(siteID, expiry, privateKey)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("couldn't generate license key: %s", err), http.StatusInternalServerError)
 				return
 			}
 
 			w.Write([]byte("<html>"))
-			if appID != "" {
-				w.Write([]byte(fmt.Sprintf("AppID: %s<br>", appID)))
+			if siteID != "" {
+				w.Write([]byte(fmt.Sprintf("Site ID: %s<br>", siteID)))
 			} else {
-				w.Write([]byte("WARNING: no AppID was set. This will be an anonymous license.<br>"))
+				w.Write([]byte("WARNING: no site ID was set. This will be an anonymous license.<br>"))
 			}
 			if expiry == nil {
 				w.Write([]byte("Expiry: no expiry set, license is perpetual<br>"))
