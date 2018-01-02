@@ -199,21 +199,23 @@ export class SearchResults extends React.Component<Props, State> {
         return (
             <div className="search-results">
                 <div className="search-results__header">
-                    {this.state.results.length > 0 && (
+                    {(this.state.timedout.length > 0 || this.state.results.length > 0) && (
                         <small>
                             {this.state.timedout.length > 0 && (
                                 <span className="search-results__header-notice" title={this.state.timedout.join('\n')}>
                                     <HourglassIcon className="icon-inline" />
-                                    {this.state.timedout.length}{' '}
+                                    {this.state.timedout.length}&nbsp;
                                     {pluralize('repository', this.state.timedout.length, 'repositories')} timed out
                                     (reload to view)
                                 </span>
                             )}
-                            <span className="search-results__header-stats">
-                                {numberWithCommas(totalResults)}
-                                {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
-                                {this.state.searchDuration! / 1000} seconds
-                            </span>
+                            {this.state.results.length > 0 && (
+                                <span className="search-results__header-stats">
+                                    {numberWithCommas(totalResults)}
+                                    {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
+                                    {this.state.searchDuration! / 1000} seconds
+                                </span>
+                            )}
                         </small>
                     )}
                     {!this.state.alert &&
