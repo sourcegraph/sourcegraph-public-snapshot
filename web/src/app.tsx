@@ -16,10 +16,14 @@ import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { colorTheme, getColorTheme } from './settings/theme'
+import { SiteFlags } from './site'
+import { siteFlags } from './site/backend'
+import { NeedsRepositoryConfigurationAlert } from './site/NeedsRepositoryConfigurationAlert'
 
 interface LayoutProps extends RouteComponentProps<any> {
     isLightTheme: boolean
     user: GQL.IUser | null
+    siteFlags?: SiteFlags
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -30,10 +34,14 @@ const Layout: React.SFC<LayoutProps> = props => {
 
     const hideNavbar = isSearchHomepage || isSiteInit
 
-    const transferProps = { user: props.user }
+    const transferProps: Pick<LayoutProps, 'user' | 'siteFlags'> = {
+        user: props.user,
+        siteFlags: props.siteFlags,
+    }
 
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
+            {props.siteFlags && props.siteFlags.needsRepositoryConfiguration && <NeedsRepositoryConfigurationAlert />}
             {!hideNavbar && <Navbar location={props.location} history={props.history} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
@@ -68,6 +76,7 @@ const Layout: React.SFC<LayoutProps> = props => {
 interface AppState {
     error?: Error
     user?: GQL.IUser | null
+    siteFlags?: SiteFlags
     isLightTheme: boolean
 }
 
@@ -83,6 +92,7 @@ class App extends React.Component<{}, AppState> {
 
     public componentDidMount(): void {
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
+        this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
         this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
     }
 
@@ -136,7 +146,12 @@ class App extends React.Component<{}, AppState> {
     }
 
     private renderLayout = (props: LayoutProps) => (
-        <Layout {...props} user={this.state.user!} isLightTheme={this.state.isLightTheme} />
+        <Layout
+            {...props}
+            user={this.state.user!}
+            siteFlags={this.state.siteFlags}
+            isLightTheme={this.state.isLightTheme}
+        />
     )
 }
 

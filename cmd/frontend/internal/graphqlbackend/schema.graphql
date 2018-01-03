@@ -907,6 +907,8 @@ type Site implements ConfigurationSubject {
 	updateCheck: UpdateCheck!
 	# Samples of recent telemetry payloads, visible to the site administrator only.
 	telemetrySamples: [String!]!
+	# Whether the site needs to be configured to add repositories.
+	needsRepositoryConfiguration: Boolean!
 }
 
 # The configuration for a site.
