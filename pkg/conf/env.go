@@ -128,7 +128,7 @@ func configFromLegacyEnvVars() (configJSON []byte, envVarNames []string, err err
 					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
 				}
 			default:
-				return nil, nil, fmt.Errorf("unhandled config field type: %s", valField.Kind())
+				return nil, nil, fmt.Errorf("unhandled config field type: %s (field: %s)", valField.Kind(), typeField.Name)
 			}
 		}
 
