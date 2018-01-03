@@ -17,24 +17,28 @@ func TestRepositories(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					repositories {
-						nodes { uri }
-						totalCount
+					site {
+						repositories {
+						    nodes { uri }
+							totalCount
+						}
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"repositories": {
-						"nodes": [
-							{
-								"uri": "repo1"
-							},
-							{
-								"uri": "repo2"
-							}
-						],
-						"totalCount": 2
+					"site": {
+						"repositories": {
+							"nodes": [
+								{
+									"uri": "repo1"
+								},
+								{
+									"uri": "repo2"
+								}
+							],
+							"totalCount": 2
+						}
 					}
 				}
 			`,

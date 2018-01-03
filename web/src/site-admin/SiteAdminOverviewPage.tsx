@@ -115,25 +115,27 @@ interface OverviewInfo {
 function fetchOverview(): Observable<OverviewInfo> {
     return queryGraphQL(gql`
         query Overview {
-            repositories {
-                totalCount
-            }
-            users {
-                totalCount
-            }
-            orgs {
-                totalCount
+            site {
+                repositories {
+                    totalCount
+                }
+                users {
+                    totalCount
+                }
+                orgs {
+                    totalCount
+                }
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || (!data.repositories || !data.users || !data.orgs)) {
+            if (!data || !data.site || !data.site.repositories || !data.site.users || !data.site.orgs) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return {
-                repositories: data.repositories.totalCount,
-                users: data.users.totalCount,
-                orgs: data.orgs.totalCount,
+                repositories: data.site.repositories.totalCount,
+                users: data.site.users.totalCount,
+                orgs: data.site.orgs.totalCount,
             }
         })
     )

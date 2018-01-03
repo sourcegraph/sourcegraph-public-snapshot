@@ -413,24 +413,26 @@ export function fetchRepositories(): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
         gql`
             query fetchRepositories {
-                repositories {
-                    nodes {
-                        uri
-                        description
-                        private
+                site {
+                    repositories {
+                        nodes {
+                            uri
+                            description
+                            private
+                        }
                     }
                 }
             }
         `
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.repositories) {
+            if (!data || !data.site || !data.site.repositories) {
                 throw Object.assign(
                     'Could not fetch repositories: ' + new Error((errors || []).map(e => e.message).join('\n')),
                     { errors }
                 )
             }
-            return data.repositories
+            return data.site.repositories
         })
     )
 }

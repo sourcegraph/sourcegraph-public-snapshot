@@ -8,7 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
-func (r *schemaResolver) Repositories(args *struct {
+func (r *siteResolver) Repositories(args *struct {
 	connectionArgs
 }) *repositoryConnectionResolver {
 	return &repositoryConnectionResolver{

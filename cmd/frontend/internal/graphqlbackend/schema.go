@@ -238,11 +238,6 @@ type Query {
 	node(id: ID!): Node
 	repository(uri: String!): Repository
 	phabricatorRepo(uri: String!): PhabricatorRepo
-	# A list of all repositories on this site.
-	repositories(
-		# Returns the first n repositories from the list.
-		first: Int
-	): RepositoryConnection!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
 	isUsernameAvailable(username: String!): Boolean!
@@ -277,15 +272,6 @@ type Query {
 		package: String
 		limit: Int
 	): [Dependency!]!
-	users(
-		# Returns the first n users from the list.
-		first: Int
-	): UserConnection!
-	# List all organizations.
-	orgs(
-		# Returns the first n organizations from the list.
-		first: Int
-	): OrgConnection!
 	updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
 	# The current site.
 	site: Site!
@@ -900,6 +886,21 @@ type Site implements ConfigurationSubject {
 	latestSettings: Settings
 	# Whether the viewer can reload the site (with the reloadSite mutation).
 	canReloadSite: Boolean!
+	# List all repositories.
+	repositories(
+		# Returns the first n repositories from the list.
+		first: Int
+	): RepositoryConnection!
+	# List all users.
+	users(
+		# Returns the first n users from the list.
+		first: Int
+	): UserConnection!
+	# List all organizations.
+	orgs(
+		# Returns the first n organizations from the list.
+		first: Int
+	): OrgConnection!
 	# List all threads.
 	threads(
 		# Returns the first n threads from the list.
