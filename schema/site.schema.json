@@ -47,6 +47,10 @@
       "description": "Automatically add external public repositories on demand when visited.",
       "type": "boolean"
     },
+    "disableAutoGitUpdates": {
+      "description": "Disable periodically fetching git contents for existing repositories.",
+      "type": "boolean"
+    },
     "disablePublicRepoRedirects": {
       "description":
         "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",

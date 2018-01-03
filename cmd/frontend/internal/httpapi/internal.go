@@ -70,15 +70,25 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		}
 		repo, err := backend.Repos.GetByURI(r.Context(), uri)
 		if err != nil {
-			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+			log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
 			continue
 		}
-		cmd := gitserver.DefaultClient.Command("git", "fetch")
-		cmd.Repo = repo
-		err = cmd.Run(r.Context())
+
+		// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
+		cloned, err := gitserver.DefaultClient.IsRepoCloned(r.Context(), uri)
 		if err != nil {
 			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 			continue
+		}
+		if !conf.Get().DisableAutoGitUpdates || !cloned {
+			log15.Debug("fetching Gitolite repo", "repo", uri, "cloned", cloned)
+			cmd := gitserver.DefaultClient.Command("git", "fetch")
+			cmd.Repo = repo
+			err = cmd.Run(r.Context())
+			if err != nil {
+				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+				continue
+			}
 		}
 	}
 

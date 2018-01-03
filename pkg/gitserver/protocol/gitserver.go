@@ -20,6 +20,12 @@ type IsRepoCloneableRequest struct {
 	Repo string
 }
 
+// IsRepoClonedRequest is a request to determine if a repo currently exists on gitserver.
+type IsRepoClonedRequest struct {
+	// Repo is the repository to check.
+	Repo string
+}
+
 // RepoFromRemoteURLRequest is a request to determine a repository URI (like
 // github.com/gorilla/mux) from a Git remote URL (like git@github.com:gorilla/mux
 // or any other variation).

@@ -45,16 +45,25 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 }
 
 func updateRepo(ctx context.Context, repoConf schema.Repository) error {
-	repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, repoConf.Path, "", false, false)
+	uri := repoConf.Path
+	repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, uri, "", false, false)
 	if err != nil {
 		return err
 	}
-	// Run a fetch kick-off an update or a clone if the repo doesn't already exist.
-	cmd := gitserver.DefaultClient.Command("git", "fetch")
-	cmd.Repo = repo
-	err = cmd.Run(ctx)
+
+	// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
+	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, uri)
 	if err != nil {
-		return errors.Wrap(err, "error cloning repo")
+		return errors.Wrap(err, "error checking if repo cloned")
+	}
+	if !conf.Get().DisableAutoGitUpdates || !cloned {
+		log15.Debug("fetching repos.list repo", "repo", uri, "cloned", cloned)
+		cmd := gitserver.DefaultClient.Command("git", "fetch")
+		cmd.Repo = repo
+		err := cmd.Run(ctx)
+		if err != nil {
+			return errors.Wrap(err, "error cloning repo")
+		}
 	}
 	return nil
 }

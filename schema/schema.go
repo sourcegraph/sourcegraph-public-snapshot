@@ -132,6 +132,7 @@ type SiteConfiguration struct {
 	AuthUserOrgMap                 map[string][]string        `json:"auth.userOrgMap,omitempty"`
 	AutoRepoAdd                    bool                       `json:"autoRepoAdd,omitempty"`
 	CorsOrigin                     string                     `json:"corsOrigin,omitempty"`
+	DisableAutoGitUpdates          bool                       `json:"disableAutoGitUpdates,omitempty"`
 	DisablePublicRepoRedirects     bool                       `json:"disablePublicRepoRedirects,omitempty"`
 	DisableTelemetry               bool                       `json:"disableTelemetry,omitempty"`
 	EmailAddress                   string                     `json:"email.address,omitempty"`

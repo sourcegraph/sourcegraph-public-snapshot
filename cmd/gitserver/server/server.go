@@ -124,6 +124,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
+	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repo-from-remote-url", s.handleRepoFromRemoteURL)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	return mux
@@ -170,6 +171,20 @@ func (s *Server) handleRepoFromRemoteURL(w http.ResponseWriter, r *http.Request)
 	if err := json.NewEncoder(w).Encode(repo); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+}
+
+func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
+	var req protocol.IsRepoClonedRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	dir := path.Join(s.ReposDir, req.Repo)
+	if repoCloned(dir) {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
 

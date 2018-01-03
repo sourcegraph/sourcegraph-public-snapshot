@@ -152,13 +152,22 @@ func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*gith
 			log15.Warn("Could not ensure repository exists", "uri", uri, "error", err)
 			continue
 		}
-		// Run a fetch kick-off an update or a clone if the repo doesn't already exist.
-		cmd := gitserver.DefaultClient.Command("git", "fetch")
-		cmd.Repo = repo
-		err = cmd.Run(ctx)
+
+		// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
+		cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, repo.URI)
 		if err != nil {
 			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 			continue
+		}
+		if !conf.Get().DisableAutoGitUpdates || !cloned {
+			log15.Debug("fetching GitHub repo", "repo", repo.URI, "cloned", cloned)
+			cmd := gitserver.DefaultClient.Command("git", "fetch")
+			cmd.Repo = repo
+			err := cmd.Run(ctx)
+			if err != nil {
+				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+				continue
+			}
 		}
 
 		// Every 100 repos we clone, wait a bit to prevent overloading gitserver.

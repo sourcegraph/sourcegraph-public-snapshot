@@ -232,6 +232,21 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo string) (bool, error)
 	return cloneable, err
 }
 
+func (c *Client) IsRepoCloned(ctx context.Context, repo string) (bool, error) {
+	req := &protocol.IsRepoClonedRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, c.Addrs[0], "is-repo-cloned", req)
+	if err != nil {
+		return false, err
+	}
+	var cloned bool
+	if resp.StatusCode == http.StatusOK {
+		cloned = true
+	}
+	return cloned, nil
+}
+
 func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (string, error) {
 	req := &protocol.RepoFromRemoteURLRequest{
 		RemoteURL: remoteURL,
