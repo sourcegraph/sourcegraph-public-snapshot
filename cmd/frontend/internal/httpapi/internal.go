@@ -56,14 +56,20 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	var whitelist, blacklist []string
 	for _, uri := range list {
-		if strings.Contains(uri, "..*") { // seen such entries on gitolite
+		if strings.Contains(uri, "..*") || (gitoliteRepoBlacklist != nil && gitoliteRepoBlacklist.MatchString(uri)) {
+			blacklist = append(blacklist, uri)
 			continue
 		}
-		if gitoliteRepoBlacklist != nil && gitoliteRepoBlacklist.MatchString(uri) {
-			continue
-		}
+		whitelist = append(whitelist, uri)
+	}
 
+	if len(blacklist) != 0 {
+		log15.Info("blacklisted gitolite repos", "blacklist", strings.Join(blacklist, ", "))
+	}
+
+	for _, uri := range whitelist {
 		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, false)
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
