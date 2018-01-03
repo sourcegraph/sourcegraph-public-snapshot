@@ -33,7 +33,7 @@ func init() {
 	}
 }
 
-const maxQueryLength = 4096
+const maxQueryLength = 50000
 
 type searchArgs struct {
 	// Query is the search query.
