@@ -92,5 +92,13 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		}
 	}
 
+	{
+		for _, phabCfg := range cfg.Phabricator {
+			if len(phabCfg.Repos) == 0 && phabCfg.Token == "" {
+				invalid(`each phabricator instance must have either "token" or "repos" set`)
+			}
+		}
+	}
+
 	return validationErrors, nil
 }
