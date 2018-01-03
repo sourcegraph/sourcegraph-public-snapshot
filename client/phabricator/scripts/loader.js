@@ -26,11 +26,25 @@ function getPhabricatorUsername() {
 var userWhitelist = undefined
 
 /**
+ * To load the extension from a different endpoint than the one set during
+ * installation, add domains to this whitelist. Don't remove `window.SOURCEGRAPH_URL`
+ * as this is the default URL set by the Phabricator admin during installation.
+ * e.g. `var sourcegraphWhitelist = [window.SOURCEGRAPH_URL, 'https://test.sourcegagraph.mycompany.org']`
+ */
+var sourcegraphWhitelist = [window.SOURCEGRAPH_URL]
+
+/**
  * Installing the loader script requires specifying the Sourcegraph Server URL.
  * This is the default endpoint used by the loader and for API requests from the extension.
- * Override the default by setting `window.localStorage.SOURCEGRAPH_URL = ...`
+ * Override the default by setting `window.localStorage.SOURCEGRAPH_URL = ...` (requires adding a value
+ * to `sourcegraphWhitelist` above).
  */
 var sourcegraphURL = window.localStorage.SOURCEGRAPH_URL || window.SOURCEGRAPH_URL
+if (!sourcegraphWhitelist.includes(sourcegraphURL)) {
+  // The URL is not included in the whitelist, so fail.
+  throw new Error('cannot load Sourcegraph extension for Phabricator from ' + sourcegraphURL)
+}
+
 window.SOURCEGRAPH_URL = sourcegraphURL // possibly override value set by installation
 
 function load() {
