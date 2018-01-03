@@ -1090,12 +1090,12 @@ type OrgTag {
 	name: String!
 }
 
+# UserActivity describes a user's activity on the site.
 type UserActivity {
-	id: Int!
+	# The number of search queries that the user has performed.
 	searchQueries: Int!
+	# The number of page views that the user has performed.
 	pageViews: Int!
-	createdAt: String!
-	updatedAt: String!
 }
 
 enum UserEvent {
