@@ -137,14 +137,24 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 		Err  error
 	})
 	go func() {
-		f, err := s.cache.Open(context.Background(), key, func(ctx context.Context) (io.ReadCloser, error) {
+		// We can't directly use WithTimeout, since we only want to start the
+		// timeout from the moment we acquire fetchSem below. However, if we
+		// use WithTimeout there then we will cancel before the the Reader
+		// returned by s.fetch has been read.
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		f, err := s.cache.Open(ctx, key, func(ctx context.Context) (io.ReadCloser, error) {
 			// s.fetch will fetch from gitserver. We limit concurrency here to
 			// ensure we don't overload gitserver.
 			s.fetchSem <- 1
 			defer func() { <-s.fetchSem }()
 
-			ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-			defer cancel()
+			// We can now speak to gitserver, so start the context timeout
+			// from this point. See above comment for why we don't just use
+			// WithTimeout.
+			afterFunc(ctx, 2*time.Minute, cancel)
+
 			return s.fetch(ctx, repo, commit)
 		})
 		resC <- struct {
@@ -313,6 +323,18 @@ func (s *Store) watchAndEvict() {
 		cacheSizeBytes.Set(float64(stats.CacheSize))
 		evictions.Add(float64(stats.Evicted))
 	}
+}
+
+// afterFunc is like time.AfterFunc, but takes a context to cancel the timer.
+func afterFunc(ctx context.Context, d time.Duration, f func()) {
+	go func() {
+		t := time.NewTimer(2 * time.Minute)
+		select {
+		case <-ctx.Done():
+		case <-t.C:
+			f()
+		}
+	}()
 }
 
 var (
