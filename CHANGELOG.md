@@ -18,10 +18,12 @@ Before cutting a new release, please:
 ## 2.3.11
 
 ### Added
+
 * Added site admin updates page and update checking
 * Added site admin telemetry page
 
 ### Changed
+
 * Enhanced site admin panel
 * Changed repo- and SSO-related site config property names to be consistent, updated documentation
 
