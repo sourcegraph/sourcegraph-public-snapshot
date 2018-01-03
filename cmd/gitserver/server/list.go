@@ -34,6 +34,15 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+
+	case query("cloning"):
+		s.cloningMu.Lock()
+		repos = make([]string, 0, len(s.cloning))
+		for repo := range s.cloning {
+			repos = append(repos, repo)
+		}
+		s.cloningMu.Unlock()
+
 	default:
 		// empty list response for unrecognized URL query
 	}

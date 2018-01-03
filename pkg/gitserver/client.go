@@ -210,6 +210,11 @@ func (c *Client) ListGitolite(ctx context.Context) ([]string, error) {
 	return c.doList(ctx, "?gitolite")
 }
 
+// ListCloning lists repositories that are currently being cloned.
+func (c *Client) ListCloning(ctx context.Context) ([]string, error) {
+	return c.doList(ctx, "?cloning")
+}
+
 func (c *Client) doList(ctx context.Context, urlSuffix string) ([]string, error) {
 	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.Addrs[0]+"/list"+urlSuffix)
 	if err != nil {
