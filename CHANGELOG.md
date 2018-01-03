@@ -15,6 +15,16 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
+## 2.3.11
+
+### Added
+* Added site admin updates page and update checking
+* Added site admin telemetry page
+
+### Changed
+* Enhanced site admin panel
+* Changed repo- and SSO-related site config property names to be consistent, updated documentation
+
 ## 2.3.10
 
 ### Added
