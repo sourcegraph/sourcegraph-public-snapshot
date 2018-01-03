@@ -78,8 +78,10 @@ for r in args.repos:
             'query':
             '''
 query {
-  repositories {
-    uri
+  site {
+    repositories {
+      uri
+    }
   }
 }
 	    ''',

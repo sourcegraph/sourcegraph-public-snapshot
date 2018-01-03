@@ -22,24 +22,28 @@ func TestUsers(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					users {
-						nodes { username }
-						totalCount
+					site {
+						users {
+							nodes { username }
+							totalCount
+						}
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"users": {
-						"nodes": [
-							{
-								"username": "user1"
-							},
-							{
-								"username": "user2"
-							}
-						],
-						"totalCount": 2
+					"site": {
+						"users": {
+							"nodes": [
+								{
+									"username": "user1"
+								},
+								{
+									"username": "user2"
+								}
+							],
+							"totalCount": 2
+						}
 					}
 				}
 			`,

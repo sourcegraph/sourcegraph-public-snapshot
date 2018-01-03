@@ -8,37 +8,39 @@ import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 export function fetchAllUsers(): Observable<GQL.IUserConnection> {
     return queryGraphQL(gql`
         query Users {
-            users {
-                nodes {
-                    id
-                    externalID
-                    username
-                    displayName
-                    email
-                    createdAt
-                    siteAdmin
-                    latestSettings {
+            site {
+                users {
+                    nodes {
+                        id
+                        externalID
+                        username
+                        displayName
+                        email
                         createdAt
-                        configuration {
-                            contents
+                        siteAdmin
+                        latestSettings {
+                            createdAt
+                            configuration {
+                                contents
+                            }
+                        }
+                        orgs {
+                            name
+                        }
+                        tags {
+                            name
                         }
                     }
-                    orgs {
-                        name
-                    }
-                    tags {
-                        name
-                    }
+                    totalCount
                 }
-                totalCount
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.users) {
+            if (!data || !data.site || !data.site.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.users
+            return data.site.users
         })
     )
 }
@@ -49,36 +51,38 @@ export function fetchAllUsers(): Observable<GQL.IUserConnection> {
 export function fetchAllOrgs(): Observable<GQL.IOrgConnection> {
     return queryGraphQL(gql`
         query Orgs {
-            orgs {
-                nodes {
-                    id
-                    name
-                    displayName
-                    createdAt
-                    latestSettings {
-                        createdAt
-                        configuration {
-                            contents
-                        }
-                    }
-                    members {
-                        user {
-                            username
-                        }
-                    }
-                    tags {
+            site {
+                orgs {
+                    nodes {
+                        id
                         name
+                        displayName
+                        createdAt
+                        latestSettings {
+                            createdAt
+                            configuration {
+                                contents
+                            }
+                        }
+                        members {
+                            user {
+                                username
+                            }
+                        }
+                        tags {
+                            name
+                        }
                     }
+                    totalCount
                 }
-                totalCount
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.orgs) {
+            if (!data || !data.site || !data.site.orgs) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.orgs
+            return data.site.orgs
         })
     )
 }
@@ -91,21 +95,23 @@ export function fetchAllOrgs(): Observable<GQL.IOrgConnection> {
 export function fetchAllRepositories(): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(gql`
         query Repositories {
-            repositories(first: 100) {
-                nodes {
-                    id
-                    uri
-                    createdAt
+            site {
+                repositories(first: 100) {
+                    nodes {
+                        id
+                        uri
+                        createdAt
+                    }
+                    totalCount
                 }
-                totalCount
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.repositories) {
+            if (!data || !data.site || !data.site.repositories) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.repositories
+            return data.site.repositories
         })
     )
 }
@@ -118,23 +124,25 @@ export function fetchAllRepositories(): Observable<GQL.IRepositoryConnection> {
 export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
     return queryGraphQL(gql`
         query Users {
-            users {
-                nodes {
-                    id
-                    username
-                    activity {
-                        searchQueries
-                        pageViews
+            site {
+                users {
+                    nodes {
+                        id
+                        username
+                        activity {
+                            searchQueries
+                            pageViews
+                        }
                     }
                 }
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.users) {
+            if (!data || !data.site || !data.site.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.users.nodes
+            return data.site.users.nodes
         })
     )
 }

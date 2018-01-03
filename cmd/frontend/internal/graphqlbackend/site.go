@@ -46,6 +46,7 @@ func (*schemaResolver) Site() *siteResolver {
 
 type siteResolver struct {
 	id string
+	siteFlagsResolver
 }
 
 var singletonSiteResolver = &siteResolver{id: singletonSiteID}

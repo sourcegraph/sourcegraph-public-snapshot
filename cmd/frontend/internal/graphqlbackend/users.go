@@ -7,7 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
-func (r *schemaResolver) Users(args *struct {
+func (r *siteResolver) Users(args *struct {
 	connectionArgs
 }) *userConnectionResolver {
 	return &userConnectionResolver{

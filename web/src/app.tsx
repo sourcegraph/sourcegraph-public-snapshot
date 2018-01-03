@@ -11,6 +11,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
+import { GlobalAlerts } from './global/GlobalAlerts'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
@@ -30,10 +31,13 @@ const Layout: React.SFC<LayoutProps> = props => {
 
     const hideNavbar = isSearchHomepage || isSiteInit
 
-    const transferProps = { user: props.user }
+    const transferProps: Pick<LayoutProps, 'user'> = {
+        user: props.user,
+    }
 
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
+            <GlobalAlerts />
             {!hideNavbar && <Navbar location={props.location} history={props.history} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
