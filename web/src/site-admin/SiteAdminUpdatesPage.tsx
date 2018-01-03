@@ -36,7 +36,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
         eventLogger.logViewEvent('SiteAdminUpdates')
 
         this.subscriptions.add(
-            fetchSite()
+            fetchSite({ telemetrySamples: false })
                 .pipe(withLatestFrom(fetchSiteUpdateCheck()))
                 .subscribe(
                     ([site, { version, updateCheck }]) =>

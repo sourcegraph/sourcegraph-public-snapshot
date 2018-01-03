@@ -911,6 +911,8 @@ type Site implements ConfigurationSubject {
 	# Information about software updates for version of Sourcegraph Server that
 	# this site is running.
 	updateCheck: UpdateCheck!
+	# Samples of recent telemetry payloads, visible to the site administrator only.
+	telemetrySamples: [String!]!
 }
 
 # The configuration for a site.

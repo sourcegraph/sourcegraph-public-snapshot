@@ -6,9 +6,8 @@ declare global {
 
 class TelligentWrapper {
     private telligent: (...args: any[]) => void | null
-    private DEFAULT_ENV = 'development'
+    private DEV_ENV = 'development'
     private PROD_ENV = 'production'
-    private DEFAULT_SITE_ID = 'UnknownApp'
 
     constructor() {
         if (window && window.telligent) {
@@ -16,11 +15,7 @@ class TelligentWrapper {
         } else {
             return
         }
-        if (window.context.version !== 'dev' && window.context.siteID) {
-            this.initialize(window.context.siteID, this.PROD_ENV)
-        } else {
-            this.initialize(this.DEFAULT_SITE_ID, this.DEFAULT_ENV)
-        }
+        this.initialize(window.context.siteID, window.context.version === 'dev' ? this.DEV_ENV : this.PROD_ENV)
     }
 
     public isTelligentLoaded(): boolean {
@@ -49,9 +44,6 @@ class TelligentWrapper {
         // note user identification information is still captured through persistent `user_info`
         // metadata stored in a cookie
         if (!window.context.sourcegraphDotComMode && window.context.siteID !== 'UmamiWeb') {
-            if (!window.context.siteID) {
-                return
-            }
             const limitedEventProps = {
                 event_action: eventProps.eventAction,
                 event_category: eventProps.eventCategory,
@@ -89,11 +81,9 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        if (window.context.disableTelemetry) {
-            return
-        }
-        let telligentUrl = 'sourcegraph-logging.telligentdata.com'
-        // for an on-prem trial, we want to send information directly telligent.
+        let telligentUrl = window.context.sourcegraphDotComMode
+            ? 'sourcegraph-logging.telligentdata.com'
+            : `${window.location.host}/.api/telemetry`
         // for clients like umami, we use a bi-logger
         if (!window.context.sourcegraphDotComMode && window.context.siteID === 'UmamiWeb') {
             telligentUrl = `${window.location.host}`.concat('/.bi-logger')

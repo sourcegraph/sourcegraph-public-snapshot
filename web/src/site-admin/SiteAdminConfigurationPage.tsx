@@ -70,7 +70,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(
-            this.remoteRefreshes.pipe(mergeMap(fetchSite)).subscribe(
+            this.remoteRefreshes.pipe(mergeMap(() => fetchSite({}))).subscribe(
                 site =>
                     this.setState({
                         site,
@@ -99,7 +99,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     delay(2000),
                     mergeMap(() =>
                         // wait for server to restart
-                        fetchSite().pipe(
+                        fetchSite({}).pipe(
                             retryWhen(x => x.pipe(tap(() => this.forceUpdate()), delay(500))),
                             timeout(5000)
                         )

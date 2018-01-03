@@ -144,9 +144,9 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
  *
  * @return Observable that emits the site
  */
-export function fetchSite(): Observable<GQL.ISite> {
+export function fetchSite(opt: { telemetrySamples?: boolean }): Observable<GQL.ISite> {
     return queryGraphQL(gql`
-        query SiteConfiguration {
+        query Site {
             site {
                 id
                 configuration {
@@ -156,6 +156,7 @@ export function fetchSite(): Observable<GQL.ISite> {
                     canUpdate
                     source
                 }
+                ${opt && opt.telemetrySamples ? 'telemetrySamples' : ''}
             }
         }
     `).pipe(
