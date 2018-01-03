@@ -205,9 +205,8 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
-// List lists the known Gitolite repositories only. It does not list all repositories
-// on the gitserver (that is not a supported operation).
-func (c *Client) List(ctx context.Context) ([]string, error) {
+// ListGitolite lists Gitolite repositories.
+func (c *Client) ListGitolite(ctx context.Context) ([]string, error) {
 	return c.doList(ctx, "?gitolite")
 }
 
