@@ -526,11 +526,10 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 	}
 
 	var (
-		wg            sync.WaitGroup
-		mu            sync.Mutex
-		unflattened   [][]*fileMatch
-		flattenedSize int
-		common        = &searchResultsCommon{}
+		wg          sync.WaitGroup
+		mu          sync.Mutex
+		unflattened [][]*fileMatch
+		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) >= 2 {
@@ -561,14 +560,6 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *s
 					return a > b
 				})
 				unflattened = append(unflattened, matches)
-				flattenedSize += len(matches)
-
-				// Stop searching once we have found enough matches. This does
-				// lead to potentially unstable result ordering, but is worth
-				// it for the performance benefit.
-				if flattenedSize > int(args.query.FileMatchLimit) {
-					cancel()
-				}
 			}
 		}(*repoRev)
 	}
