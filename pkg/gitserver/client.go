@@ -208,7 +208,11 @@ func (c *cmdReader) Close() error {
 // List lists the known Gitolite repositories only. It does not list all repositories
 // on the gitserver (that is not a supported operation).
 func (c *Client) List(ctx context.Context) ([]string, error) {
-	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.Addrs[0]+"/list")
+	return c.doList(ctx, "")
+}
+
+func (c *Client) doList(ctx context.Context, urlSuffix string) ([]string, error) {
+	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.Addrs[0]+"/list"+urlSuffix)
 	if err != nil {
 		return nil, err
 	}
