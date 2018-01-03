@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
@@ -84,7 +86,9 @@ func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor,
 func DeleteSession(w http.ResponseWriter, r *http.Request) {
 	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
-		log15.Error("error getting session", "error", err)
+		if conf.AuthSAML() == nil {
+			log15.Error("error getting session", "error", err)
+		}
 	}
 	session.Options.MaxAge = -1
 	if err = session.Save(r, w); err != nil {
@@ -155,7 +159,9 @@ func SessionHeaderToCookieMiddleware(h http.Handler) http.Handler {
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
 	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
-		log15.Error("error getting session", "error", err)
+		if conf.AuthSAML() == nil {
+			log15.Error("error getting session", "error", err)
+		}
 		return r.Context()
 	}
 
