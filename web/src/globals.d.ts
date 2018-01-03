@@ -67,11 +67,9 @@ interface SourcegraphContext {
     disableTelemetry: boolean
 
     /**
-     * siteID, set as "" by default server side, is required for the telligent environment to be set to production.
-     * For Sourcegraph.com, it is SourcegraphWeb. For the node.aws.sgdev.org deployment, it might be something like SgdevWeb.
-     * It is stored in telligent as a field called appID.
+     * siteID is the identifier of the Sourcegraph site. It is also the Telligent app ID.
      */
-    siteID: string | null
+    siteID: string
 
     /**
      * repoHomePageRegex filter is for on-premises deployments, to ensure that only organization repos appear on the home page.
