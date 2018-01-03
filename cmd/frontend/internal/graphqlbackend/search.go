@@ -33,8 +33,6 @@ func init() {
 	}
 }
 
-const maxQueryLength = 50000
-
 type searchArgs struct {
 	// Query is the search query.
 	Query string
@@ -45,10 +43,6 @@ type searchArgs struct {
 
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *searchArgs) (*searchResolver, error) {
-	if len(args.Query)+len(args.ScopeQuery) > maxQueryLength {
-		return nil, fmt.Errorf("query exceeds max length (%d)", maxQueryLength)
-	}
-
 	combinedQuery, err := searchquery.ParseAndCheck(args.Query + " " + args.ScopeQuery)
 	if err != nil {
 		return nil, err
