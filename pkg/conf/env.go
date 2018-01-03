@@ -117,9 +117,7 @@ func configFromLegacyEnvVars() (configJSON []byte, envVarNames []string, err err
 					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
 				}
 				valField.SetInt(int64(valInt))
-			case reflect.Slice:
-				fallthrough
-			case reflect.Struct:
+			case reflect.Ptr, reflect.Slice, reflect.Struct:
 				// Don't base64-decode SRC_APP_SECRET_KEY yet, to avoid double-decoding
 				// when JSON config is used.
 				if typeField.Name == "SecretKey" {
