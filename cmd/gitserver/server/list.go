@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -39,7 +40,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		s.cloningMu.Lock()
 		repos = make([]string, 0, len(s.cloning))
 		for repo := range s.cloning {
-			repos = append(repos, repo)
+			repos = append(repos, strings.TrimPrefix(repo, s.ReposDir+string(os.PathSeparator)))
 		}
 		s.cloningMu.Unlock()
 
