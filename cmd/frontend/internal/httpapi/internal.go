@@ -51,7 +51,7 @@ func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
-	list, err := gitserver.DefaultClient.List()
+	list, err := gitserver.DefaultClient.List(r.Context())
 	if err != nil {
 		return err
 	}

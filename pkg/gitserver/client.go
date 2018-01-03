@@ -19,6 +19,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/net/context/ctxhttp"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
@@ -204,8 +205,8 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
-func (c *Client) List() ([]string, error) {
-	resp, err := http.Get("http://" + c.Addrs[0] + "/list")
+func (c *Client) List(ctx context.Context) ([]string, error) {
+	resp, err := ctxhttp.Get(ctx, nil, "http://"+c.Addrs[0]+"/list")
 	if err != nil {
 		return nil, err
 	}
