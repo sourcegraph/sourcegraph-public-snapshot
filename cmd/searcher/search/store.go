@@ -53,11 +53,19 @@ type Store struct {
 	// MaxCacheSizeBytes.
 	MaxCacheSizeBytes int64
 
+	// MaxConcurrentFetchTar is the maximum number of concurrent calls allowed
+	// to FetchTar. It defaults to 15.
+	MaxConcurrentFetchTar int
+
 	// once protects Start
 	once sync.Once
 
 	// cache is the disk backed cache.
 	cache *diskcache.Store
+
+	// fetchSem is a semaphore to limit concurrent calls to FetchTar. The
+	// semaphore size is controlled by MaxConcurrentFetchTar
+	fetchSem chan int
 }
 
 // Start initializes state and starts background goroutines. It can be called
@@ -65,6 +73,11 @@ type Store struct {
 // search request paying the cost of initializing.
 func (s *Store) Start() {
 	s.once.Do(func() {
+		if s.MaxConcurrentFetchTar == 0 {
+			s.MaxConcurrentFetchTar = 15
+		}
+		s.fetchSem = make(chan int, s.MaxConcurrentFetchTar)
+
 		s.cache = &diskcache.Store{
 			Dir:               s.Path,
 			Component:         "store",
@@ -124,9 +137,14 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 		Err  error
 	})
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
-		f, err := s.cache.Open(ctx, key, func(ctx context.Context) (io.ReadCloser, error) {
+		f, err := s.cache.Open(context.Background(), key, func(ctx context.Context) (io.ReadCloser, error) {
+			// s.fetch will fetch from gitserver. We limit concurrency here to
+			// ensure we don't overload gitserver.
+			s.fetchSem <- 1
+			defer func() { <-s.fetchSem }()
+
+			ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+			defer cancel()
 			return s.fetch(ctx, repo, commit)
 		})
 		resC <- struct {
@@ -134,6 +152,12 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 			Err  error
 		}{f, err}
 	}()
+
+	// When searching across thousands of repos at once, we don't want to wait
+	// for repos that are still be fetched. So we set a very aggressive
+	// deadline on how long we wait to open/fetch an archive.
+	ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
+	defer cancel()
 
 	select {
 	case <-ctx.Done():

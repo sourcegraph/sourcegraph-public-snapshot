@@ -63,11 +63,13 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	matches, limitHit, err := s.search(r.Context(), &p)
 	if err != nil {
-		code := http.StatusBadRequest
-		// Log errors not caused by the client.
-		if !isBadRequest(err) && r.Context().Err() != context.Canceled {
+		code := http.StatusInternalServerError
+		if isBadRequest(err) || r.Context().Err() == context.Canceled {
+			code = http.StatusBadRequest
+		} else if isTemporary(err) {
+			code = http.StatusServiceUnavailable
+		} else {
 			log.Printf("internal error serving %#+v: %s", p, err)
-			code = http.StatusInternalServerError
 		}
 		http.Error(w, err.Error(), code)
 		return
@@ -114,6 +116,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 			span.SetTag("err", err.Error())
 			if isBadRequest(err) {
 				code = "400"
+			} else if isTemporary(err) {
+				code = "503"
 			} else {
 				code = "500"
 			}
@@ -127,7 +131,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 			if err != nil {
 				errS = " error=" + strconv.Quote(err.Error())
 			}
-			s.RequestLog.Printf("search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v matches=%d duration=%v%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, len(matches), time.Since(start), errS)
+			s.RequestLog.Printf("search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v matches=%d code=%s duration=%v%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, len(matches), code, time.Since(start), errS)
 		}
 	}(time.Now())
 
@@ -189,4 +193,11 @@ func isBadRequest(err error) bool {
 		BadRequest() bool
 	})
 	return ok && e.BadRequest()
+}
+
+func isTemporary(err error) bool {
+	e, ok := errors.Cause(err).(interface {
+		Temporary() bool
+	})
+	return ok && e.Temporary()
 }

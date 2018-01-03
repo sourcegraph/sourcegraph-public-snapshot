@@ -226,7 +226,11 @@ type searcherError struct {
 }
 
 func (e *searcherError) BadRequest() bool {
-	return e.StatusCode == 400
+	return e.StatusCode == http.StatusBadRequest
+}
+
+func (e *searcherError) Temporary() bool {
+	return e.StatusCode == http.StatusServiceUnavailable
 }
 
 func (e *searcherError) Error() string {
@@ -238,12 +242,43 @@ func isBadRequest(err error) bool {
 	type badRequester interface {
 		BadRequest() bool
 	}
+	return isErrorPredicate(err, func(err error) bool {
+		badrequest, ok := err.(badRequester)
+		return ok && badrequest.BadRequest()
+	})
+}
+
+// isTemporary will check if error or one of its causes is temporary.
+func isTemporary(err error) bool {
+	type temporaryer interface {
+		Temporary() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(temporaryer)
+		return ok && e.Temporary()
+	})
+}
+
+// isTimeout will check if error or one of its causes is a timeout.
+func isTimeout(err error) bool {
+	type timeouter interface {
+		Timeout() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(timeouter)
+		return ok && e.Timeout()
+	})
+}
+
+// isErrorPredicate returns true if error or one of its causes returns true
+// when passed to p.
+func isErrorPredicate(err error, p func(err error) bool) bool {
 	type causer interface {
 		Cause() error
 	}
 
 	for err != nil {
-		if badrequest, ok := err.(badRequester); ok && badrequest.BadRequest() {
+		if p(err) {
 			return true
 		}
 		cause, ok := err.(causer)
@@ -317,7 +352,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		common.missing = append(common.missing, repoRev.repo.URI)
 	} else if searchErr == vcs.ErrRevisionNotFound && len(repoRev.revs) == 0 {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
-	} else if errors.Cause(searchErr) == context.DeadlineExceeded {
+	} else if isTimeout(searchErr) || isTemporary(searchErr) {
 		common.timedout = append(common.timedout, repoRev.repo.URI)
 	} else if searchErr != nil {
 		return searchErr

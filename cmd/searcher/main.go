@@ -54,6 +54,9 @@ func main() {
 			FetchTar:          fetchTar,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+
+			// Allow roughly 10 fetches per gitserver
+			MaxConcurrentFetchTar: 10 * len(gitserver.DefaultClient.Addrs),
 		},
 		RequestLog: log.New(os.Stderr, "", 0),
 	}
