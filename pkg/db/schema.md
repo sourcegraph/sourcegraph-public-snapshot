@@ -392,24 +392,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.user_activity"
-```
-     Column     |           Type           |                         Modifiers                          
-----------------+--------------------------+------------------------------------------------------------
- id             | integer                  | not null default nextval('user_activity_id_seq'::regclass)
- user_id        | integer                  | not null
- page_views     | integer                  | not null default 0
- search_queries | integer                  | not null default 0
- created_at     | timestamp with time zone | not null default now()
- updated_at     | timestamp with time zone | not null default now()
-Indexes:
-    "user_activity_pkey" PRIMARY KEY, btree (id)
-    "user_activity_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
-Foreign-key constraints:
-    "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
-
-```
-
 # Table "public.user_emails"
 ```
       Column       |           Type           |       Modifiers        
@@ -461,6 +443,8 @@ Foreign-key constraints:
  passwd_reset_code | text                     | 
  passwd_reset_time | timestamp with time zone | 
  site_admin        | boolean                  | not null default false
+ page_views        | integer                  | not null default 0
+ search_queries    | integer                  | not null default 0
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_external_id" UNIQUE, btree (external_id, external_provider) WHERE external_provider IS NOT NULL
@@ -476,7 +460,6 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "shared_items" CONSTRAINT "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "threads" CONSTRAINT "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
-    TABLE "user_activity" CONSTRAINT "user_activity" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 

@@ -2,8 +2,6 @@ package db
 
 import (
 	"testing"
-
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestUserActivity_LogPageView(t *testing.T) {
@@ -28,24 +26,13 @@ func TestUserActivity_LogPageView(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Now check the DB has correct results by doing a DB query:
-	rows, err := globalDB.QueryContext(ctx, "SELECT user_id, page_views FROM user_activity WHERE user_id=$1", user.ID)
+	a, err := UserActivity.GetByUserID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		e := sourcegraph.UserActivity{}
-		err := rows.Scan(&e.UserID, &e.PageViews)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if e.PageViews != 1 {
-			t.Errorf("expected 1 pageview, got %v", e.PageViews)
-		}
+	if want := int32(1); a.PageViews != want {
+		t.Errorf("got %d, want %d", a.PageViews, want)
 	}
-
 }
 
 func TestUserActivity_LogSearchQuery(t *testing.T) {
@@ -69,21 +56,11 @@ func TestUserActivity_LogSearchQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rows, err := globalDB.QueryContext(ctx, "SELECT user_id, search_queries FROM user_activity WHERE user_id=$1", user.ID)
+	a, err := UserActivity.GetByUserID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		e := sourcegraph.UserActivity{}
-		err := rows.Scan(&e.UserID, &e.SearchQueries)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if e.SearchQueries != 1 {
-			t.Errorf("expected 1 search query, got %v", e.SearchQueries)
-		}
+	if want := int32(1); a.SearchQueries != want {
+		t.Errorf("got %d, want %d", a.SearchQueries, want)
 	}
-
 }

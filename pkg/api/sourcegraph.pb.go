@@ -413,12 +413,9 @@ type PhabricatorRepo struct {
 }
 
 type UserActivity struct {
-	ID            int32
 	UserID        int32
 	PageViews     int32
 	SearchQueries int32
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
 }
 
 type SiteConfig struct {

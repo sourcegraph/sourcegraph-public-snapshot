@@ -120,6 +120,8 @@
 // ../../../migrations/1514853193_remove_author_name_and_email.up.sql
 // ../../../migrations/1514876826_site_id.down.sql
 // ../../../migrations/1514876826_site_id.up.sql
+// ../../../migrations/1514937919_remove_user_activity_table.down.sql
+// ../../../migrations/1514937919_remove_user_activity_table.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2587,6 +2589,46 @@ func _1514876826_site_idUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1514937919_remove_user_activity_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x92\x41\x6f\x9c\x30\x14\x84\xcf\xf8\x57\xbc\x23\x48\xa4\xea\x9d\x93\xc3\x3e\x52\xab\xc6\xa6\xe6\xa1\x2a\xbd\x20\x0b\xac\xad\xa5\x88\xa4\x36\x4b\x94\x7f\x5f\xb1\xdb\x6a\xd9\xdd\xc3\x4a\x39\x82\x66\xc6\x33\x9f\xfd\x88\x4f\x42\x15\xac\x34\xc8\x09\x81\xf8\xa3\x44\x38\x44\x17\x7a\x3b\xcc\x7e\xf1\xf3\x07\xa4\x2c\xf1\x23\x44\x17\xbc\x7d\x01\xa5\x09\x54\x27\x25\x34\x46\xd4\xdc\x3c\xc3\x77\x7c\xce\x59\x72\x74\xf8\x11\xfc\x34\xbb\xbd\x0b\x67\x59\xa7\xc4\x8f\x0e\x73\x96\xbc\xd9\xbd\xeb\x17\xef\xde\xe3\xad\x68\x87\x15\xef\x24\xc1\xd7\x9c\x25\xd1\xd9\x30\xfc\xee\xff\x1c\x5c\xf0\xee\x8e\x76\x08\xce\xce\x6e\xec\xed\x0c\x24\x6a\x6c\x89\xd7\x0d\xfc\x14\xf4\xed\xf8\x09\xbf\xb4\xc2\x5b\xe3\xf4\xfa\x9e\x66\x6b\xe5\xb7\xf1\xf3\xe6\x52\xab\x96\x0c\x17\x8a\xae\x60\x55\xda\xa0\x78\x52\x2b\x16\x48\xff\x51\xc9\xc0\x60\x85\x06\x55\x89\xed\x51\x1e\x21\x5d\xff\x6a\x05\x3b\x94\x48\x08\x06\x5b\x32\xa2\x24\xc6\xb2\x82\x3d\x3c\x40\x13\x5c\x74\x61\xf1\xd3\xfe\x2a\x7e\xb3\xd8\x4e\x23\x6c\x36\x2c\xf6\xe5\xb0\xf2\x8a\x30\xbd\xce\x30\xb9\xc1\xc5\x68\xc3\xc7\x17\x26\x54\x8b\x86\x40\x28\xd2\x97\x61\xff\xeb\xe5\x70\xbe\x9b\x1c\x2e\xf9\x67\xd0\xa2\xc4\x92\xc0\x8f\xc0\x4f\xe5\xef\x38\xa0\x32\xba\x3e\xad\x2c\x18\x97\x84\x66\xf3\xa8\x22\xec\x8c\x6e\xa0\xd4\xb2\xab\xd5\x26\xe4\x9e\xf2\xf2\x88\x82\x95\xba\xae\x05\x15\xec\x6f\x00\x00\x00\xff\xff\x83\xa4\x74\x22\xbd\x02\x00\x00")
+
+func _1514937919_remove_user_activity_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514937919_remove_user_activity_tableDownSql,
+		"1514937919_remove_user_activity_table.down.sql",
+	)
+}
+
+func _1514937919_remove_user_activity_tableDownSql() (*asset, error) {
+	bytes, err := _1514937919_remove_user_activity_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514937919_remove_user_activity_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1514937919_remove_user_activity_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x90\x4d\x4b\xc4\x30\x10\x40\xcf\x9b\x5f\x31\x47\x05\x59\xbc\x87\x3d\x64\x9b\x51\x17\x92\xcd\x92\xcd\xe2\xb1\x84\x76\xac\x81\x52\x35\x1f\x15\xff\xbd\x50\xb0\xb6\x1e\x14\x3c\xce\xf0\x78\xf3\x98\x3d\xde\x1f\x8e\x9c\x09\xe5\xd0\x82\x13\x7b\x85\x50\x12\xc5\x04\x42\x4a\xa8\x8c\xba\xe8\x23\xbc\xfa\x8e\xea\x31\xd0\x7b\x82\x30\x64\xea\x28\xc2\xf0\x92\x61\x28\x7d\x0f\x2d\x3d\xf9\xd2\x67\xb8\xfd\xc3\x91\xc8\xc7\xe6\xb9\x7e\x2b\x14\x03\xfd\xee\xb9\x9c\xa4\x70\x5f\x8a\x33\x3a\xb6\xf9\x0e\xd8\x5d\x9d\x51\x61\xe5\x96\x4d\x77\xd6\xe8\x89\xae\x7d\x93\xc3\x18\xf2\x07\x3c\x3e\xa0\xc5\xf5\x6e\x3b\x4d\xa1\xdd\x4d\xde\x6d\x68\xaf\x6f\xd8\x66\x5d\x35\xcb\x7f\xc4\xfe\xf7\x00\x67\xd2\x9a\xd3\xe2\x23\x33\xcb\x59\x65\xb4\x3e\x38\xce\x3e\x03\x00\x00\xff\xff\x0c\xc1\x28\x46\x80\x01\x00\x00")
+
+func _1514937919_remove_user_activity_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1514937919_remove_user_activity_tableUpSql,
+		"1514937919_remove_user_activity_table.up.sql",
+	)
+}
+
+func _1514937919_remove_user_activity_tableUpSql() (*asset, error) {
+	bytes, err := _1514937919_remove_user_activity_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1514937919_remove_user_activity_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2759,6 +2801,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514853193_remove_author_name_and_email.up.sql":              _1514853193_remove_author_name_and_emailUpSql,
 	"1514876826_site_id.down.sql":                                 _1514876826_site_idDownSql,
 	"1514876826_site_id.up.sql":                                   _1514876826_site_idUpSql,
+	"1514937919_remove_user_activity_table.down.sql":              _1514937919_remove_user_activity_tableDownSql,
+	"1514937919_remove_user_activity_table.up.sql":                _1514937919_remove_user_activity_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2922,6 +2966,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514853193_remove_author_name_and_email.up.sql":              &bintree{_1514853193_remove_author_name_and_emailUpSql, map[string]*bintree{}},
 	"1514876826_site_id.down.sql":                                 &bintree{_1514876826_site_idDownSql, map[string]*bintree{}},
 	"1514876826_site_id.up.sql":                                   &bintree{_1514876826_site_idUpSql, map[string]*bintree{}},
+	"1514937919_remove_user_activity_table.down.sql":              &bintree{_1514937919_remove_user_activity_tableDownSql, map[string]*bintree{}},
+	"1514937919_remove_user_activity_table.up.sql":                &bintree{_1514937919_remove_user_activity_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

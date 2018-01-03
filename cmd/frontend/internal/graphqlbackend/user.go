@@ -175,14 +175,7 @@ func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, err
 	}
 	activity, err := db.UserActivity.GetByUserID(ctx, r.user.ID)
 	if err != nil {
-		if _, ok := err.(db.ErrUserActivityNotFound); !ok {
-			return nil, err
-		}
-		// If the user does not yet have a row in the UserActivity table, create a row for the user.
-		activity, err = db.UserActivity.CreateIfNotExists(ctx, r.user.ID)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 	return &userActivityResolver{activity}, nil
 }
