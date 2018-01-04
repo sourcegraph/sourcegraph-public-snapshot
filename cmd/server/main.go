@@ -121,6 +121,11 @@ func main() {
 	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
 		log.Fatal(err)
 	}
+	if _, ok := os.LookupEnv("LOGO"); !ok {
+		if err := os.Setenv("LOGO", "t"); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	err := goreman.Start(goremanAddr, []byte(strings.Join(procfile, "\n")))
 	if err != nil {
