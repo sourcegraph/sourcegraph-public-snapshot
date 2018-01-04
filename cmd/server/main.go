@@ -32,10 +32,6 @@ var defaultEnv = map[string]string{
 	// CACHE_DIR.
 	"SEARCHER_CACHE_SIZE_MB": "100000",
 
-	// Enable our repo-updater to run every minute. Currently this is
-	// only used to sync from gitolite.
-	"REPO_LIST_UPDATE_INTERVAL": "1",
-
 	// Env vars for higher rate limits to api.github.com
 	"GITHUB_BASE_URL":      "http://localhost:3180",
 	"GITHUB_CLIENT_ID":     "a359c6590ebe783800b1",
