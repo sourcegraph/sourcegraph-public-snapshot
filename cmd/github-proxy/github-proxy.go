@@ -12,6 +12,7 @@ import (
 	"sync"
 	"syscall"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -25,6 +26,7 @@ var githubClientID = conf.Get().GithubClientID
 var githubClientSecret = conf.Get().GithubClientSecret
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
+var logLevel = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
 
 // requestMu ensures we only do one request at a time to prevent tripping abuse detection.
 var requestMu sync.Mutex
@@ -46,6 +48,11 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init("github-proxy")
+
+	// Filter log output by level.
+	if lvl, err := log15.LvlFromString(logLevel); err == nil {
+		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
+	}
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -112,6 +119,6 @@ func main() {
 	h = prometheus.InstrumentHandler("github-proxy", h)
 	http.Handle("/", h)
 
-	log.Print("github-proxy: listening on :3180")
+	log15.Info("github-proxy: listening", "addr", ":3180")
 	log.Fatal(http.ListenAndServe(":3180", nil))
 }

@@ -130,6 +130,12 @@ func main() {
 		}
 	}
 
+	if _, ok := os.LookupEnv("SRC_LOG_LEVEL"); !ok {
+		if err := os.Setenv("SRC_LOG_LEVEL", "warn"); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	err := goreman.Start(goremanAddr, []byte(strings.Join(procfile, "\n")))
 	if err != nil {
 		log.Fatal(err)

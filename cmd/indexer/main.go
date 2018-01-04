@@ -87,6 +87,6 @@ func main() {
 		resp.Write([]byte("OK"))
 	})
 
-	fmt.Println("indexer: listening on :3179")
+	log15.Info("indexer: listening", "addr", ":3179")
 	log.Fatalf("Fatal error serving: %s", http.ListenAndServe(":3179", nil))
 }

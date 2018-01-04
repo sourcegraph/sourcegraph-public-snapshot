@@ -17,6 +17,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -27,6 +28,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
+var logLevel = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
@@ -37,6 +39,11 @@ func main() {
 	log.SetFlags(0)
 	tracer.Init("searcher")
 	gitserver.DefaultClient.NoCreds = true
+
+	// Filter log output by level.
+	if lvl, err := log15.LvlFromString(logLevel); err == nil {
+		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
+	}
 
 	if profBindAddr != "" {
 		go debugserver.Start(profBindAddr)
@@ -67,7 +74,7 @@ func main() {
 	server := &http.Server{Addr: addr, Handler: handler}
 	go shutdownOnSIGINT(server)
 
-	log.Println("listening on :3181")
+	log15.Info("searcher: listening", "addr", ":3181")
 	err := server.ListenAndServe()
 	if err != http.ErrServerClosed {
 		log.Fatal(err)

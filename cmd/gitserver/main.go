@@ -67,7 +67,7 @@ func main() {
 		}()
 	}
 
-	log.Print("git-server: listening on :3178")
+	log15.Info("git-server: listening", "addr", ":3178")
 	srv := &http.Server{Addr: ":3178", Handler: gitserver.Handler()}
 	log.Fatal(srv.ListenAndServe())
 }
