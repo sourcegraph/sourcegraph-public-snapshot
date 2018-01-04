@@ -1,17 +1,16 @@
 .repo-browser {
     margin-top: 1rem;
+    width: 100%;
 
-    &__group {
+    &__actions {
         margin-top: 1rem;
-        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
     }
 
-    &__add-more {
-        text-decoration: underline;
-        margin-bottom: 1rem;
+    &__filtered-connection {
+        margin-top: 1rem;
     }
 
-    @media (max-width: $media-lg) {
-        padding: 0 2rem;
-    }
+    padding: 0 2rem;
 }
