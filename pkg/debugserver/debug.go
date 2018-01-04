@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/pprof"
 
+	"golang.org/x/net/trace"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -28,6 +30,8 @@ func Start(addr string, extra ...Endpoint) {
 				<a href="/vars">Vars</a><br>
 				<a href="/debug/pprof">PProf</a><br>
 				<a href="/metrics">Metrics</a><br>
+				<a href="/debug/requests">Requests</a><br>
+				<a href="/debug/events">Events</a><br>
 			`))
 		for _, e := range extra {
 			fmt.Fprintf(w, `<a href="%s">%s</a><br>`, e.Path, e.Name)
@@ -48,6 +52,8 @@ func Start(addr string, extra ...Endpoint) {
 	pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 	pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 	pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
+	pp.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
+	pp.Handle("/debug/events", http.HandlerFunc(trace.Events))
 	pp.Handle("/metrics", promhttp.Handler())
 	for _, e := range extra {
 		pp.Handle(e.Path, e.Handler)

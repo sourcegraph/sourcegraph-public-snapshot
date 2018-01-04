@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/trace"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
 
@@ -100,11 +102,21 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
 	return r.doResults(ctx, "")
 }
 
-func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (*searchResults, error) {
+func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
+	tr := trace.New("graphql.searchResults", fmt.Sprintf("%s %s", r.args.Query, r.args.ScopeQuery))
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		tr.Finish()
+	}()
+
 	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
 		alert, err := r.alertForNoResolvedRepos(ctx)
 		if err != nil {
@@ -204,6 +216,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		// commit (and match on the commit's diff and message, respectively).
 		results.searchResultsCommon.update(*common1)
 	}
+
+	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results.results), results.searchResultsCommon.limitHit, len(results.searchResultsCommon.cloning), len(results.searchResultsCommon.missing), len(results.searchResultsCommon.timedout))
 
 	if len(missingRepoRevs) > 0 {
 		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)

@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/trace"
+
 	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -135,6 +137,15 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
 
+	tr := trace.New("searcher.client", fmt.Sprintf("%s@%s", repo, commit))
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		tr.Finish()
+	}()
+
 	// Combine IncludePattern and IncludePatterns.
 	//
 	// NOTE: This makes it easier to (in the future) remove support for
@@ -184,6 +195,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		return nil, false, err
 	}
 	req.URL.RawQuery = q.Encode()
+	tr.LazyPrintf("%s", req.URL)
 	req = req.WithContext(ctx)
 
 	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,

@@ -14,10 +14,13 @@ package search
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"golang.org/x/net/trace"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 
@@ -94,6 +97,9 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit bool, err error) {
+	tr := trace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	tr.LazyPrintf("%s", p.Pattern)
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
@@ -113,6 +119,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 			code = "canceled"
 			span.SetTag("err", err)
 		} else if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 			if isBadRequest(err) {
@@ -123,6 +131,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 				code = "500"
 			}
 		}
+		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, len(matches), limitHit)
+		tr.Finish()
 		requestTotal.WithLabelValues(code).Inc()
 		span.LogFields(otlog.Int("matches.len", len(matches)))
 		span.SetTag("limitHit", limitHit)
@@ -149,6 +159,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 
 	nFiles := zr.Reader().DirectoryRecords
 	bytes := zr.Reader().Size()
+	tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
 	span.LogFields(
 		otlog.Uint64("archive.files", nFiles),
 		otlog.Int64("archive.size", bytes))

@@ -21,6 +21,8 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/net/trace"
+
 	"github.com/neelance/parallel"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -219,8 +221,19 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		if len(req.Args) > 0 {
 			cmd = req.Args[0]
 		}
+		args := strings.Join(req.Args, " ")
+
+		tr := trace.New("exec."+cmd, req.Repo)
+		tr.LazyPrintf("args: %s", args)
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
+			tr.LazyPrintf("status=%s stdout=%d stderr=%d", status, stdoutN, stderrN)
+			if errStr != "" {
+				tr.LazyPrintf("error: %s", errStr)
+				tr.SetError()
+			}
+			tr.Finish()
+
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd, repo).Dec()
 			execDuration.WithLabelValues(cmd, repo, status).Observe(duration.Seconds())
@@ -228,7 +241,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ev := honey.Event("gitserver-exec")
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
-				ev.AddField("args", strings.Join(req.Args, " "))
+				ev.AddField("args", args)
 				ev.AddField("duration_ms", duration.Seconds()*1000)
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
