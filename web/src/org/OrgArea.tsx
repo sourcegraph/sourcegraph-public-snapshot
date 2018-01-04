@@ -21,6 +21,27 @@ const NotFoundPage = () => (
     />
 )
 
+// Transfer the user and org prop to the routes' components.
+const RouteWithProps = (props: RouteProps & { user: GQL.IUser; org: GQL.IOrg }): React.ReactElement<Route> => (
+    <Route
+        {...props}
+        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+        component={undefined}
+        // tslint:disable-next-line:jsx-no-lambda
+        render={props2 => {
+            const finalProps = { ...props2, user: props.user, org: props.org }
+            if (props.component) {
+                const C = props.component
+                return <C {...finalProps} />
+            }
+            if (props.render) {
+                return props.render(finalProps)
+            }
+            return null
+        }}
+    />
+)
+
 interface Props extends RouteComponentProps<{ orgName: string }> {}
 
 interface State {
@@ -88,24 +109,7 @@ export class OrgArea extends React.Component<Props> {
             return <NotFoundPage />
         }
 
-        // Transfer the user prop to the routes' components.
-        const RouteWithProps = (props: RouteProps): React.ReactElement<Route> => (
-            <Route
-                {...props}
-                component={undefined}
-                // tslint:disable-next-line:jsx-no-lambda
-                render={props2 => {
-                    const finalProps = { ...props2, org: this.state.org, user: this.state.user }
-                    if (props.component) {
-                        return React.createElement(props.component, finalProps)
-                    }
-                    if (props.render) {
-                        return props.render(finalProps)
-                    }
-                    return null
-                }}
-            />
-        )
+        const transferProps = { user: this.state.user, org: this.state.org }
 
         return (
             <div className="org-area area">
@@ -116,16 +120,19 @@ export class OrgArea extends React.Component<Props> {
                             path={`${this.props.match.url}/settings/profile`}
                             component={OrgSettingsProfilePage}
                             exact={true}
+                            {...transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/settings/members`}
                             component={OrgSettingsMembersPage}
                             exact={true}
+                            {...transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/settings/configuration`}
                             component={OrgSettingsConfigurationPage}
                             exact={true}
+                            {...transferProps}
                         />
                         <Route component={NotFoundPage} />
                     </Switch>
