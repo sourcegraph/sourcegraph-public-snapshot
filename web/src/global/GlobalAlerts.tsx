@@ -11,7 +11,9 @@ import { refreshSiteFlags, siteFlags } from '../site/backend'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 import { RepositoriesCloningAlert } from '../site/RepositoriesCloningAlert'
 
-interface Props {}
+interface Props {
+    isSiteAdmin: boolean
+}
 
 interface State {
     siteFlags?: SiteFlags
@@ -28,20 +30,22 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
 
-        // Refresh site flags periodically while repositories are cloning.
-        this.subscriptions.add(
-            siteFlags
-                .pipe(filter(({ repositoriesCloning }) => repositoriesCloning.totalCount > 0))
-                .pipe(delay(5000), switchMap(refreshSiteFlags))
-                .subscribe()
-        )
+        if (this.props.isSiteAdmin) {
+            // Refresh site flags periodically while repositories are cloning.
+            this.subscriptions.add(
+                siteFlags
+                    .pipe(filter(({ repositoriesCloning }) => repositoriesCloning.totalCount > 0))
+                    .pipe(delay(5000), switchMap(refreshSiteFlags))
+                    .subscribe()
+            )
 
-        // Also periodically fetch (but less often) always.
-        this.subscriptions.add(
-            interval(5000)
-                .pipe(take(3), delay(3000), switchMap(refreshSiteFlags), catchError(() => []))
-                .subscribe()
-        )
+            // Also periodically fetch (but less often) always.
+            this.subscriptions.add(
+                interval(5000)
+                    .pipe(take(3), delay(3000), switchMap(refreshSiteFlags), catchError(() => []))
+                    .subscribe()
+            )
+        }
     }
 
     public componentWillUnmount(): void {
