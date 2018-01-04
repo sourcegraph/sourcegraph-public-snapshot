@@ -19,6 +19,11 @@ maxmemory-policy noeviction
 dir {{ .Dir }}
 appendonly yes
 save 600 1
+
+# redis is unlikely to have meaningful logs. Even loglevel warning is quite noisy (about common host
+# kernel issues), so suppress logs altogether.
+loglevel warning
+logfile /dev/null
 `))
 
 func maybeRedisProcFile() (string, error) {
