@@ -54,7 +54,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     className="site-admin-overview-page__item-header-link"
                                 >
                                     <RepoIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    {this.state.info.repositories}{' '}
+                                    {this.state.info.repositories}&nbsp;
                                     {pluralize('repository', this.state.info.repositories, 'repositories')}
                                 </Link>
                             </div>
@@ -79,7 +79,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
                                 <Link to="/site-admin/users" className="site-admin-overview-page__item-header-link">
                                     <UserIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    {this.state.info.users} {pluralize('user', this.state.info.users)}
+                                    {this.state.info.users}&nbsp;{pluralize('user', this.state.info.users)}
                                 </Link>
                             </div>
                             <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
@@ -112,7 +112,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     className="site-admin-overview-page__item-header-link"
                                 >
                                     <CityIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    {this.state.info.orgs} {pluralize('organization', this.state.info.orgs)}
+                                    {this.state.info.orgs}&nbsp;{pluralize('organization', this.state.info.orgs)}
                                 </Link>
                             </div>
                             <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
