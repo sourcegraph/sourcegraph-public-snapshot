@@ -32,11 +32,6 @@ var defaultEnv = map[string]string{
 	// CACHE_DIR.
 	"SEARCHER_CACHE_SIZE_MB": "100000",
 
-	// Env vars for higher rate limits to api.github.com
-	"GITHUB_BASE_URL":      "http://localhost:3180",
-	"GITHUB_CLIENT_ID":     "a359c6590ebe783800b1",
-	"GITHUB_CLIENT_SECRET": "2f8c304d01ad3b23c1f6c0a3b42bd09a8694262f",
-
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
 	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
