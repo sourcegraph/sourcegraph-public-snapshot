@@ -14,7 +14,7 @@ func TestUsers(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*sourcegraph.User, error) {
 		return &sourcegraph.User{SiteAdmin: true}, nil
 	}
-	db.Mocks.Users.List = func(ctx context.Context) ([]*sourcegraph.User, error) {
+	db.Mocks.Users.List = func(ctx context.Context, opt *db.UsersListOptions) ([]*sourcegraph.User, error) {
 		return []*sourcegraph.User{{Username: "user1"}, {Username: "user2"}}, nil
 	}
 	db.Mocks.Users.Count = func(context.Context) (int, error) { return 2, nil }

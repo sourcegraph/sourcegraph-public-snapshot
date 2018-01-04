@@ -160,7 +160,7 @@ func TestUsers_Delete(t *testing.T) {
 	if _, ok := err.(ErrUserNotFound); !ok {
 		t.Errorf("got error %v, want ErrUserNotFound", err)
 	}
-	users, err := Users.List(ctx)
+	users, err := Users.List(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -897,6 +897,8 @@ type Site implements ConfigurationSubject {
 	users(
 		# Returns the first n users from the list.
 		first: Int
+		# Return users whose usernames or display names match the query.
+		query: String
 	): UserConnection!
 	# List all organizations.
 	orgs(

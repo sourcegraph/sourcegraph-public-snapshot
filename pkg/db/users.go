@@ -390,11 +390,34 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, use
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (u *users) List(ctx context.Context) ([]*sourcegraph.User, error) {
+// UsersListOptions specifies the options for listing users.
+type UsersListOptions struct {
+	// Query specifies a search query for users.
+	Query string
+
+	sourcegraph.ListOptions
+}
+
+func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*sourcegraph.User, error) {
 	if Mocks.Users.List != nil {
-		return Mocks.Users.List(ctx)
+		return Mocks.Users.List(ctx, opt)
 	}
-	return u.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
+
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt.Query != "" {
+		query := "%" + opt.Query + "%"
+		conds = append(conds, sqlf.Sprintf("username ILIKE %s OR display_name ILIKE %s", query, query))
+	}
+
+	q := sqlf.Sprintf("WHERE %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %d OFFSET %d",
+		sqlf.Join(conds, "AND"),
+		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
+	)
+	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
 func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
