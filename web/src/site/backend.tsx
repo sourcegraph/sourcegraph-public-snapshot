@@ -18,16 +18,30 @@ export function refreshSiteFlags(): Observable<never> {
     return queryGraphQL(gql`
         query SiteFlags {
             site {
+                repositoriesCloning: repositories(cloning: true) {
+                    nodes {
+                        uri
+                    }
+                    totalCount
+                }
                 needsRepositoryConfiguration
             }
         }
     `).pipe(
-        tap(({ data, errors }) => {
-            if (!data || !data.site || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+        tap(
+            ({
+                data,
+                errors,
+            }: {
+                data?: GQL.IQuery & { site: { repositoriesCloning: GQL.IRepositoryConnection } }
+                errors?: GQL.IGraphQLResponseError[]
+            }) => {
+                if (!data || !data.site || (errors && errors.length > 0)) {
+                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                }
+                siteFlags.next(data.site)
             }
-            siteFlags.next(data.site)
-        }),
+        ),
         mergeMap(() => [])
     )
 }
