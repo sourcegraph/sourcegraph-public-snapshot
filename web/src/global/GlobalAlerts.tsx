@@ -1,8 +1,12 @@
 import * as React from 'react'
+import { delay } from 'rxjs/operators/delay'
+import { filter } from 'rxjs/operators/filter'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subscription } from 'rxjs/Subscription'
 import { SiteFlags } from '../site'
-import { siteFlags } from '../site/backend'
+import { refreshSiteFlags, siteFlags } from '../site/backend'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
+import { RepositoriesCloningAlert } from '../site/RepositoriesCloningAlert'
 
 interface Props {}
 
@@ -20,6 +24,14 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
+
+        // Refresh site flags periodically while repositories are cloning.
+        this.subscriptions.add(
+            siteFlags
+                .pipe(filter(({ repositoriesCloning }) => repositoriesCloning.totalCount > 0))
+                .pipe(delay(5000), switchMap(refreshSiteFlags))
+                .subscribe()
+        )
     }
 
     public componentWillUnmount(): void {
@@ -27,6 +39,13 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        if (
+            this.state.siteFlags &&
+            this.state.siteFlags.repositoriesCloning &&
+            this.state.siteFlags.repositoriesCloning.totalCount > 0
+        ) {
+            return <RepositoriesCloningAlert repositoriesCloning={this.state.siteFlags.repositoriesCloning} />
+        }
         if (this.state.siteFlags && this.state.siteFlags.needsRepositoryConfiguration) {
             return <NeedsRepositoryConfigurationAlert />
         }
