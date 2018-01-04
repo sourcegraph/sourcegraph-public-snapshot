@@ -1,65 +1,57 @@
-import groupBy from 'lodash/groupBy'
+import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
-import { Subscription } from 'rxjs/Subscription'
+import { Link, RouteComponentProps } from 'react-router-dom'
+import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { fetchAllRepositories } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchRepositories } from './backend'
 
-interface State {
-    repositories?: GQL.IRepository[]
+export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: repo }) => (
+    <li key={repo.id} className="site-admin-detail-list__item site-admin-repositories-page__repo">
+        <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
+            <Link to={`/${repo.uri}`} className="site-admin-detail-list__name">
+                {repo.uri}
+            </Link>
+        </div>
+    </li>
+)
+
+interface Props extends RouteComponentProps<any> {
+    user: GQL.IUser | null
 }
 
-export class RepoBrowser extends React.PureComponent<{}, State> {
-    public state: State = {}
-    private subscriptions = new Subscription()
-
+export class RepoBrowser extends React.PureComponent<Props> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('Browse')
-
-        this.subscriptions.add(
-            fetchRepositories().subscribe(
-                ({ nodes }) => {
-                    this.setState({ repositories: nodes })
-                },
-                err => console.error(err)
-            )
-        )
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element {
+    public render(): JSX.Element | null {
         return (
             <div className="repo-browser">
-                <PageTitle title="Browse repositories" />
+                <PageTitle title="Repositories" />
                 <h2>Repositories</h2>
-                {!this.state.repositories && <span>Loading...</span>}
-                {this.state.repositories && this.repoGroups()}
-                {this.state.repositories && this.state.repositories.length === 0 && <p>No repositories.</p>}
+                {this.props.user &&
+                    this.props.user.siteAdmin && (
+                        <div className="repo-browser__actions">
+                            <Link
+                                to="/site-admin/configuration"
+                                className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                            >
+                                <GearIcon className="icon-inline" /> Configure repositories
+                            </Link>
+                            (site admin only)
+                        </div>
+                    )}
+                <FilteredConnection
+                    className="repo-browser__filtered-connection"
+                    noun="repository"
+                    pluralNoun="repositories"
+                    queryConnection={fetchAllRepositories}
+                    nodeComponent={RepositoryNode}
+                    history={this.props.history}
+                    location={this.props.location}
+                />
             </div>
         )
-    }
-
-    private repoGroups = () => {
-        const groups = groupBy(this.state.repositories, repo => repo.uri.split('/')[0])
-        const hosts = Object.keys(groups).sort()
-        return hosts.map((host, i) => (
-            <div className="repo-browser__group" key={i}>
-                <h3>{host}</h3>
-                {groups[host].map((repo, j) => (
-                    <div key={j}>
-                        <Link to={'/' + repo.uri}>
-                            {repo.uri // remove first path component
-                                .split('/')
-                                .slice(1)
-                                .join('/')}
-                        </Link>
-                    </div>
-                ))}
-            </div>
-        ))
     }
 }

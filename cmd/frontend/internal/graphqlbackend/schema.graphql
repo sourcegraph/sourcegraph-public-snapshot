@@ -883,16 +883,22 @@ type Site implements ConfigurationSubject {
 	repositories(
 		# Returns the first n repositories from the list.
 		first: Int
+		# Return repositories whose names match the query.
+		query: String
 	): RepositoryConnection!
 	# List all users.
 	users(
 		# Returns the first n users from the list.
 		first: Int
+		# Return users whose usernames or display names match the query.
+		query: String
 	): UserConnection!
 	# List all organizations.
 	orgs(
 		# Returns the first n organizations from the list.
 		first: Int
+		# Return organizations whose names or display names match the query.
+		query: String
 	): OrgConnection!
 	# List all threads.
 	threads(

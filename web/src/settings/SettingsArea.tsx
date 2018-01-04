@@ -1,7 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import * as H from 'history'
 import * as React from 'react'
-import { match, Route, RouteProps, Switch } from 'react-router'
+import { Route, RouteComponentProps, RouteProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/AcceptInvitePage'
@@ -19,10 +18,28 @@ const SettingsNotFoundPage = () => (
     />
 )
 
-interface Props {
-    history: H.History
-    location: H.Location
-    match: match<{}>
+// Transfer the user prop to the routes' components.
+const RouteWithProps = (props: RouteProps & { user: GQL.IUser | null }): React.ReactElement<Route> => (
+    <Route
+        {...props}
+        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+        component={undefined}
+        // tslint:disable-next-line:jsx-no-lambda
+        render={props2 => {
+            const finalProps: Props = { ...props2, user: props.user }
+            if (props.component) {
+                const C = props.component
+                return <C {...finalProps} />
+            }
+            if (props.render) {
+                return props.render(finalProps)
+            }
+            return null
+        }}
+    />
+)
+
+interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser | null
 }
 
@@ -45,24 +62,7 @@ export class SettingsArea extends React.Component<Props> {
             return <Redirect to="/settings/profile" />
         }
 
-        // Transfer the user prop to the routes' components.
-        const RouteWithProps = (props: RouteProps): React.ReactElement<Route> => (
-            <Route
-                {...props}
-                component={undefined}
-                // tslint:disable-next-line:jsx-no-lambda
-                render={props2 => {
-                    const finalProps = { ...props2, user: this.props.user }
-                    if (props.component) {
-                        return React.createElement(props.component, finalProps)
-                    }
-                    if (props.render) {
-                        return props.render(finalProps)
-                    }
-                    return null
-                }}
-            />
-        )
+        const transferProps = { user: this.props.user }
 
         return (
             <div className="settings-area area">
@@ -74,26 +74,31 @@ export class SettingsArea extends React.Component<Props> {
                             path={`${this.props.match.url}/profile`}
                             component={UserSettingsProfilePage}
                             exact={true}
+                            {...transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
                             component={UserSettingsConfigurationPage}
                             exact={true}
+                            {...transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/emails`}
                             component={UserSettingsEmailsPage}
                             exact={true}
+                            {...transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/accept-invite`}
                             component={AcceptInvitePage}
                             exact={true}
+                            {...transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/editor-auth`}
                             component={EditorAuthPage}
                             exact={true}
+                            {...transferProps}
                         />
                         <Route component={SettingsNotFoundPage} />
                     </Switch>

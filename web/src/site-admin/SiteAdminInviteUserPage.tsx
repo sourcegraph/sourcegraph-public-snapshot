@@ -98,7 +98,7 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                             </code>
                         </p>
                         <button
-                            className="btn btn-secondary btn-sm site-admin-invite-user-page__alert-button"
+                            className="btn btn-sm site-admin-invite-user-page__alert-button"
                             onClick={this.dismissAlert}
                         >
                             Invite another user

@@ -88,16 +88,34 @@
 }
 
 .btn-secondary {
-    background: $color-secondary;
-    color: $color-page-background;
+    border: solid 1px $color-secondary;
+    background-color: transparent;
 
     &:hover:not(:disabled) {
-        background: lighten($color-secondary, 5%);
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        border-color: lighten($color-secondary, 10%);
+        color: lighten($color-secondary, 10%);
+        .theme-light & {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            border-color: darken($color-secondary, 10%);
+            color: darken($color-light-text-2, 10%);
+        }
     }
 
     &:focus:not(:disabled) {
-        outline: lighten($color-secondary, 5%);
+        outline: lighten($color-secondary, 10%);
         box-shadow: 0 0 0 2px rgba($color-secondary, 0.5);
+    }
+
+    // Make sure these styles are applied
+    // even when used on an anchor element
+    &,
+    &:hover {
+        color: $color-secondary;
+        text-decoration: none;
+        .theme-light & {
+            color: $color-light-text-2;
+        }
     }
 }
 
@@ -118,7 +136,7 @@
 .btn-success,
 .btn-info {
     // Make sure these styles are applied
-    // even when used on an achor element
+    // even when used on an anchor element
     &,
     &:hover {
         &,

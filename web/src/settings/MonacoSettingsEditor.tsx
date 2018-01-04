@@ -36,7 +36,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private monaco: typeof monaco | null
-    private editor: monaco.editor.ICodeEditor
+    private editor: monaco.editor.ICodeEditor | null
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -73,10 +73,16 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
+        if (this.editor) {
+            this.editor.dispose()
+        }
+
         this.subscriptions.unsubscribe()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        this.monaco = null
+        this.editor = null
     }
 
     public render(): JSX.Element | null {

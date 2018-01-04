@@ -405,34 +405,3 @@ export const fetchFileCommitInfo = memoizeObservable(
         ),
     makeRepoURI
 )
-
-/**
- * Fetches a list of all repositories.
- */
-export function fetchRepositories(): Observable<GQL.IRepositoryConnection> {
-    return queryGraphQL(
-        gql`
-            query fetchRepositories {
-                site {
-                    repositories(first: 50000) {
-                        nodes {
-                            uri
-                            description
-                            private
-                        }
-                    }
-                }
-            }
-        `
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.repositories) {
-                throw Object.assign(
-                    'Could not fetch repositories: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                    { errors }
-                )
-            }
-            return data.site.repositories
-        })
-    )
-}

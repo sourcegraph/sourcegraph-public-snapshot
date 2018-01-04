@@ -1,24 +1,22 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import AddIcon from '@sourcegraph/icons/lib/Add'
+import GearIcon from '@sourcegraph/icons/lib/Gear'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { mergeMap } from 'rxjs/operators/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { pluralize } from '../util/strings'
 import { deleteUser, fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
-interface UserListItemProps {
-    className: string
-
+interface UserNodeProps {
     /**
      * The user to display in this list item.
      */
-    user: GQL.IUser
+    node: GQL.IUser
 
     /**
      * The currently authenticated user.
@@ -31,21 +29,21 @@ interface UserListItemProps {
     onDidUpdate?: () => void
 }
 
-interface UserListItemState {
+interface UserNodeState {
     loading: boolean
     errorDescription?: string
     resetPasswordURL?: string
 }
 
-class UserListItem extends React.PureComponent<UserListItemProps, UserListItemState> {
-    public state: UserListItemState = {
+class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
+    public state: UserNodeState = {
         loading: false,
     }
 
     public render(): JSX.Element | null {
         const actions: JSX.Element[] = []
-        if (this.props.user.id !== this.props.currentUser.id) {
-            if (this.props.user.siteAdmin) {
+        if (this.props.node.id !== this.props.currentUser.id) {
+            if (this.props.node.siteAdmin) {
                 actions.push(
                     <button
                         key="demote"
@@ -91,43 +89,43 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
         }
 
         return (
-            <li className={`site-admin-all-users-page__item-container ${this.props.className}`}>
+            <li className="site-admin-detail-list__item site-admin-all-users-page__item-container">
                 <div className="site-admin-all-users-page__item">
                     <div className="site-admin-detail-list__header">
-                        <span className="site-admin-detail-list__name">{this.props.user.username}</span>
+                        <span className="site-admin-detail-list__name">{this.props.node.username}</span>
                         <br />
-                        <span className="site-admin-detail-list__display-name">{this.props.user.displayName}</span>
+                        <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
                     </div>
                     <ul className="site-admin-detail-list__info">
-                        {this.props.user.siteAdmin && (
+                        {this.props.node.siteAdmin && (
                             <li>
                                 <strong>Site admin</strong>
                             </li>
                         )}
-                        {this.props.user.email && (
+                        {this.props.node.email && (
                             <li>
-                                Email: <a href={`mailto:${this.props.user.email}`}>{this.props.user.email}</a>
+                                Email: <a href={`mailto:${this.props.node.email}`}>{this.props.node.email}</a>
                             </li>
                         )}
-                        <li>ID: {this.props.user.id}</li>
-                        {this.props.user.createdAt && (
-                            <li>Created: {format(this.props.user.createdAt, 'YYYY-MM-DD')}</li>
+                        <li>ID: {this.props.node.id}</li>
+                        {this.props.node.createdAt && (
+                            <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
                         )}
-                        {this.props.user.orgs &&
-                            this.props.user.orgs.length > 0 && (
-                                <li>Orgs: {this.props.user.orgs.map(org => org.name).join(', ')}</li>
+                        {this.props.node.orgs &&
+                            this.props.node.orgs.length > 0 && (
+                                <li>Orgs: {this.props.node.orgs.map(org => org.name).join(', ')}</li>
                             )}
-                        {this.props.user.latestSettings && (
+                        {this.props.node.latestSettings && (
                             <li>
                                 <SettingsInfo
-                                    settings={this.props.user.latestSettings}
-                                    filename={`user-settings-${this.props.user.id}.json`}
+                                    settings={this.props.node.latestSettings}
+                                    filename={`user-settings-${this.props.node.id}.json`}
                                 />
                             </li>
                         )}
-                        {this.props.user.tags &&
-                            this.props.user.tags.length > 0 && (
-                                <li>Tags: {this.props.user.tags.map(tag => tag.name).join(', ')}</li>
+                        {this.props.node.tags &&
+                            this.props.node.tags.length > 0 && (
+                                <li>Tags: {this.props.node.tags.map(tag => tag.name).join(', ')}</li>
                             )}
                     </ul>
                     <div className="site-admin-detail-list__actions">
@@ -140,7 +138,7 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
                 {this.state.resetPasswordURL && (
                     <div className="alert alert-success site-admin-all-users-page__item-alert">
                         <p>
-                            Password was reset. You must manually send <strong>{this.props.user.username}</strong> this
+                            Password was reset. You must manually send <strong>{this.props.node.username}</strong> this
                             reset link:
                         </p>
                         <div>
@@ -159,8 +157,8 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
         if (
             !window.confirm(
                 siteAdmin
-                    ? `Really promote user ${this.props.user.username} to site admin?`
-                    : `Really revoke site admin status from user ${this.props.user.username}?`
+                    ? `Really promote user ${this.props.node.username} to site admin?`
+                    : `Really revoke site admin status from user ${this.props.node.username}?`
             )
         ) {
             return
@@ -171,7 +169,7 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
             loading: true,
         })
 
-        setUserIsSiteAdmin(this.props.user.id, siteAdmin)
+        setUserIsSiteAdmin(this.props.node.id, siteAdmin)
             .toPromise()
             .then(
                 () => {
@@ -188,7 +186,7 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
         if (
             !window.confirm(
                 `Really reset the password for ${
-                    this.props.user.username
+                    this.props.node.username
                 } to a random password? The user must reset their password to sign in again.`
             )
         ) {
@@ -201,7 +199,7 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
             loading: true,
         })
 
-        randomizeUserPasswordBySiteAdmin(this.props.user.id)
+        randomizeUserPasswordBySiteAdmin(this.props.node.id)
             .toPromise()
             .then(
                 ({ resetPasswordURL }) => {
@@ -215,7 +213,7 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
     }
 
     private deleteUser = () => {
-        if (!window.confirm(`Really delete the user ${this.props.user.username}?`)) {
+        if (!window.confirm(`Really delete the user ${this.props.node.username}?`)) {
             return
         }
 
@@ -225,7 +223,7 @@ class UserListItem extends React.PureComponent<UserListItemProps, UserListItemSt
             loading: true,
         })
 
-        deleteUser(this.props.user.id)
+        deleteUser(this.props.node.id)
             .toPromise()
             .then(
                 () => {
@@ -259,13 +257,6 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminAllUsers')
-
-        this.subscriptions.add(
-            this.userUpdates
-                .pipe(mergeMap(fetchAllUsers))
-                .subscribe(resp => this.setState({ users: resp.nodes, totalCount: resp.totalCount }))
-        )
-        this.userUpdates.next()
     }
 
     public componentWillUnmount(): void {
@@ -273,50 +264,38 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const nodeProps: Pick<UserNodeProps, 'currentUser' | 'onDidUpdate'> = {
+            currentUser: this.props.user,
+            onDidUpdate: this.onDidUpdateUser,
+        }
+
         return (
             <div className="site-admin-detail-list site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
-                <h2>
-                    Users{' '}
-                    {typeof this.state.totalCount === 'number' &&
-                        this.state.totalCount > 0 &&
-                        `(${this.state.totalCount})`}
-                </h2>
-                <p>
-                    See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
-                    information about configuring user accounts and authentication.
-                </p>
-                <p>
-                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm">
-                        Invite user
+                <h2>Users</h2>
+                <div className="site-admin-page__actions">
+                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm site-admin-page__actions-btn">
+                        <AddIcon className="icon-inline" /> Invite user
                     </Link>
-                </p>
-                {!this.state.users && <Loader className="icon-inline" />}
-                <ul className="site-admin-detail-list__list">
-                    {this.state.users &&
-                        this.state.users.map(user => (
-                            <UserListItem
-                                key={user.id}
-                                className="site-admin-detail-list__item"
-                                user={user}
-                                currentUser={this.props.user}
-                                onDidUpdate={this.onDidUpdateUser}
-                            />
-                        ))}
-                </ul>
-                {this.state.users &&
-                    typeof this.state.totalCount === 'number' &&
-                    (this.state.totalCount > 0 ? (
-                        <p>
-                            <small>
-                                {this.state.totalCount} {pluralize('user', this.state.totalCount)} total{' '}
-                                {this.state.users.length < this.state.totalCount &&
-                                    `(showing first ${this.state.users.length})`}
-                            </small>
-                        </p>
-                    ) : (
-                        <p>No users.</p>
-                    ))}
+                    &nbsp;
+                    <Link
+                        to="/site-admin/configuration"
+                        className="btn btn-secondary btn-sm site-admin-page__actions-btn"
+                    >
+                        <GearIcon className="icon-inline" /> Configure SSO
+                    </Link>
+                </div>
+                <FilteredConnection
+                    className="site-admin-page__filtered-connection"
+                    noun="user"
+                    pluralNoun="users"
+                    queryConnection={fetchAllUsers}
+                    nodeComponent={UserNode}
+                    nodeComponentProps={nodeProps}
+                    updates={this.userUpdates}
+                    history={this.props.history}
+                    location={this.props.location}
+                />
             </div>
         )
     }

@@ -89,6 +89,6 @@ export const editorActions: EditorAction[] = [
         run: addGitHubEnterprise,
     },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
-    { id: 'sourcegraph.site.ssoViaGSuite', label: 'SSO via Google (G Suite)', run: addSSOViaGSuite },
-    { id: 'sourcegraph.site.ssoViaSAML', label: 'SSO via SAML', run: addSSOViaSAML },
+    { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
+    { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
 ]

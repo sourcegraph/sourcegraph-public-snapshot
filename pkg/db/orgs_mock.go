@@ -11,6 +11,7 @@ import (
 type MockOrgs struct {
 	GetByID func(ctx context.Context, id int32) (*sourcegraph.Org, error)
 	Count   func(ctx context.Context) (int, error)
+	List    func(ctx context.Context, opt *OrgsListOptions) ([]*sourcegraph.Org, error)
 }
 
 func (s *MockOrgs) MockGetByID_Return(t *testing.T, returns *sourcegraph.Org, returnsErr error) (called *bool) {

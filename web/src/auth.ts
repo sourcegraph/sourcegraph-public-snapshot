@@ -27,6 +27,7 @@ export function refreshCurrentUser(): Observable<never> {
         query CurrentAuthState {
             currentUser {
                 __typename
+                id
                 externalID
                 sourcegraphID
                 username
