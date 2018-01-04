@@ -48,6 +48,8 @@ var (
 	trace          = env.Get("SRC_LOG_TRACE", "HTTP", "space separated list of trace logs to show. Options: all, HTTP, build, github")
 	traceThreshold = env.Get("SRC_LOG_TRACE_THRESHOLD", "", "show traces that take longer than this")
 
+	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
+
 	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
 	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
@@ -326,31 +328,11 @@ func Main() error {
 		}()
 	}
 
-	// Connection test
-	fmt.Println(`
-             ,///,
-            ///////
-            ///////*      (#####.
-            ,///////    *#######(
-             ///////* ,#########.
-   //////,   .///////#########,
-  /////////////////#########(
-  *//////////////////(#####
-    .*/////////////////////,.
-         .*/////////////////////*.
-            ####(///////////////////.
-          (#########////////////////*
-        .#########(//////  .,///////
-      .#########, ///////,
-      ########/   .///////.
-      *#####(      ///////*
-         ..        .///////
-                     ////*
-
-`)
-
-	fmt.Println()
-	fmt.Println()
+	if printLogo {
+		fmt.Println(" ")
+		fmt.Println(logoColor)
+		fmt.Println(" ")
+	}
 	fmt.Printf("✱ Sourcegraph is now running at %s\n", appURL)
 
 	select {}
