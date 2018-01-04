@@ -8,6 +8,8 @@ import { debounceTime } from 'rxjs/operators/debounceTime'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
@@ -87,7 +89,9 @@ export class FilteredConnection<C extends AbstractConnection<N>, N extends GQL.N
                                             State<C, N>,
                                             'connection' | 'loading' | 'connectionQuery'
                                         >)
-                                )
+                                ),
+                                publishReplay(),
+                                refCount()
                             )
                         return merge(result, of({ loading: true }).pipe(delay(100), takeUntil(result)))
                     })
