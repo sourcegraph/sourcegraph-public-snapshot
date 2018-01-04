@@ -4,6 +4,7 @@ import { catchError } from 'rxjs/operators/catchError'
 import { delay } from 'rxjs/operators/delay'
 import { filter } from 'rxjs/operators/filter'
 import { switchMap } from 'rxjs/operators/switchMap'
+import { take } from 'rxjs/operators/take'
 import { Subscription } from 'rxjs/Subscription'
 import { SiteFlags } from '../site'
 import { refreshSiteFlags, siteFlags } from '../site/backend'
@@ -37,8 +38,8 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
         // Also periodically fetch (but less often) always.
         this.subscriptions.add(
-            interval(30000)
-                .pipe(delay(5000), switchMap(refreshSiteFlags), catchError(() => []))
+            interval(5000)
+                .pipe(take(3), delay(3000), switchMap(refreshSiteFlags), catchError(() => []))
                 .subscribe()
         )
     }
