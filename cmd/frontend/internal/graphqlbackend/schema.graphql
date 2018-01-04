@@ -872,6 +872,8 @@ type ThreadConnection {
 type Site implements ConfigurationSubject {
 	# The site's ID.
 	id: ID!
+	# The site's display ID, used for telemetry.
+	displaySiteID: ID!
 	# The site's configuration. Only visible to site admins.
 	configuration: SiteConfiguration!
 	# The site's latest site-wide settings (which are the lowest-precedence

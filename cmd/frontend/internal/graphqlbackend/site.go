@@ -10,6 +10,7 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -52,6 +53,8 @@ type siteResolver struct {
 var singletonSiteResolver = &siteResolver{id: singletonSiteID}
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteID(r.id) }
+
+func (r *siteResolver) DisplaySiteID() graphql.ID { return graphql.ID(siteid.Get()) }
 
 func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
