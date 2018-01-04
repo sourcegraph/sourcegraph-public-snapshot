@@ -11,6 +11,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { URL } from 'whatwg-url'
 import { HeroPage } from '../components/HeroPage'
 import {
     ECLONEINPROGESS,
@@ -74,7 +75,15 @@ export class RepositoryResolver extends React.Component<Props, State> {
                                             tap(err => {
                                                 switch (err.code) {
                                                     case ERREPOSEEOTHER:
-                                                        window.location.href = (err as RepoSeeOtherError).redirectURL
+                                                        const externalHostURL = new URL(
+                                                            (err as RepoSeeOtherError).redirectURL
+                                                        )
+                                                        const redirectURL = new URL(window.location.href)
+                                                        // Preserve the path of the current URL and redirect to the repo on the external host.
+                                                        redirectURL.host = externalHostURL.host
+                                                        redirectURL.port = externalHostURL.port
+                                                        redirectURL.protocol = externalHostURL.protocol
+                                                        window.location.href = redirectURL.toString()
                                                     case ECLONEINPROGESS:
                                                         // Display cloning screen to the user and retry
                                                         this.setState({ cloneInProgress: true })

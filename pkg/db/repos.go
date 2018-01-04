@@ -33,6 +33,7 @@ var (
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external sourcegraph server.
 type ErrRepoSeeOther struct {
+	// RedirectURL is the base URL for the repository at an external location.
 	RedirectURL string
 }
 

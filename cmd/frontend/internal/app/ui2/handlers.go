@@ -118,7 +118,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			}
 			if e, ok := err.(db.ErrRepoSeeOther); ok {
 				// Repo does not exist here, redirect to the reccomended location.
-				http.Redirect(w, r, e.RedirectURL, http.StatusSeeOther)
+				u, err := url.Parse(e.RedirectURL)
+				if err != nil {
+					return nil, err
+				}
+				u.Path, u.RawQuery = r.URL.Path, r.URL.RawQuery
+				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
 			if legacyerr.ErrCode(err) == legacyerr.NotFound {
