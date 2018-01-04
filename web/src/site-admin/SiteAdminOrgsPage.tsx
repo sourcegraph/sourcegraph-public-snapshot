@@ -1,25 +1,22 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
-import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { mergeMap } from 'rxjs/operators/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { deleteOrganization, fetchAllOrgs } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
-interface OrgListItemProps {
-    className: string
-
+interface OrgNodeProps {
     /**
      * The org to display in this list item.
      */
-    org: GQL.IOrg
+    node: GQL.IOrg
 
     /**
      * Called when the org is updated by an action in this list item.
@@ -27,47 +24,47 @@ interface OrgListItemProps {
     onDidUpdate?: () => void
 }
 
-interface OrgListItemState {
+interface OrgNodeState {
     loading: boolean
     errorDescription?: string
 }
 
-class OrgListItem extends React.PureComponent<OrgListItemProps, OrgListItemState> {
-    public state: OrgListItemState = {
+class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
+    public state: OrgNodeState = {
         loading: false,
     }
 
     public render(): JSX.Element | null {
         return (
-            <li className={this.props.className}>
+            <li className="site-admin-detail-list__item">
                 <div className="site-admin-detail-list__header">
-                    <span className="site-admin-detail-list__name">{this.props.org.name}</span>
+                    <span className="site-admin-detail-list__name">{this.props.node.name}</span>
                     <br />
-                    <span className="site-admin-detail-list__display-name">{this.props.org.displayName}</span>
+                    <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
                 </div>
                 <ul className="site-admin-detail-list__info">
-                    {this.props.org.id && <li>ID: {this.props.org.id}</li>}
-                    {this.props.org.createdAt && <li>Created: {format(this.props.org.createdAt, 'YYYY-MM-DD')}</li>}
-                    {this.props.org.members &&
-                        this.props.org.members.length > 0 && (
+                    {this.props.node.id && <li>ID: {this.props.node.id}</li>}
+                    {this.props.node.createdAt && <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>}
+                    {this.props.node.members &&
+                        this.props.node.members.length > 0 && (
                             <li>
                                 Members:{' '}
-                                <span title={this.props.org.members.map(m => m.user.username).join(', ')}>
-                                    {this.props.org.members.length} {pluralize('user', this.props.org.members.length)}
+                                <span title={this.props.node.members.map(m => m.user.username).join(', ')}>
+                                    {this.props.node.members.length} {pluralize('user', this.props.node.members.length)}
                                 </span>
                             </li>
                         )}
-                    {this.props.org.latestSettings && (
+                    {this.props.node.latestSettings && (
                         <li>
                             <SettingsInfo
-                                settings={this.props.org.latestSettings}
-                                filename={`this.props.org-settings-${this.props.org.id}.json`}
+                                settings={this.props.node.latestSettings}
+                                filename={`this.props.org-settings-${this.props.node.id}.json`}
                             />
                         </li>
                     )}
-                    {this.props.org.tags &&
-                        this.props.org.tags.length > 0 && (
-                            <li>Tags: {this.props.org.tags.map(tag => tag.name).join(', ')}</li>
+                    {this.props.node.tags &&
+                        this.props.node.tags.length > 0 && (
+                            <li>Tags: {this.props.node.tags.map(tag => tag.name).join(', ')}</li>
                         )}
                 </ul>
                 <div className="site-admin-detail-list__actions">
@@ -88,7 +85,7 @@ class OrgListItem extends React.PureComponent<OrgListItemProps, OrgListItemState
     }
 
     private deleteOrg = () => {
-        if (!window.confirm(`Really delete the organization ${this.props.org.name}?`)) {
+        if (!window.confirm(`Really delete the organization ${this.props.node.name}?`)) {
             return
         }
 
@@ -97,7 +94,7 @@ class OrgListItem extends React.PureComponent<OrgListItemProps, OrgListItemState
             loading: true,
         })
 
-        deleteOrganization(this.props.org.id)
+        deleteOrganization(this.props.node.id)
             .toPromise()
             .then(
                 () => {
@@ -129,13 +126,6 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminOrgs')
-
-        this.subscriptions.add(
-            this.orgUpdates
-                .pipe(mergeMap(fetchAllOrgs))
-                .subscribe(resp => this.setState({ orgs: resp.nodes, totalCount: resp.totalCount }))
-        )
-        this.orgUpdates.next()
     }
 
     public componentWillUnmount(): void {
@@ -143,45 +133,30 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const nodeProps: Pick<OrgNodeProps, 'onDidUpdate'> = {
+            onDidUpdate: this.onDidUpdateOrg,
+        }
+
         return (
             <div className="site-admin-detail-list site-admin-orgs-page">
                 <PageTitle title="Organizations - Admin" />
-                <h2>
-                    Organizations{' '}
-                    {typeof this.state.totalCount === 'number' &&
-                        this.state.totalCount > 0 &&
-                        `(${this.state.totalCount})`}
-                </h2>
+                <h2>Organizations</h2>
                 <div className="site-admin-page__actions">
                     <Link to="/organizations/new" className="btn btn-primary btn-sm site-admin-page__actions-btn">
                         <AddIcon className="icon-inline" /> Create organization
                     </Link>
                 </div>
-                {!this.state.orgs && <Loader className="icon-inline" />}
-                <ul className="site-admin-detail-list__list">
-                    {this.state.orgs &&
-                        this.state.orgs.map(org => (
-                            <OrgListItem
-                                key={org.id}
-                                className="site-admin-detail-list__item"
-                                org={org}
-                                onDidUpdate={this.onDidUpdateOrg}
-                            />
-                        ))}
-                </ul>
-                {this.state.orgs &&
-                    typeof this.state.totalCount === 'number' &&
-                    (this.state.totalCount > 0 ? (
-                        <p>
-                            <small>
-                                {this.state.totalCount} {pluralize('organization', this.state.totalCount)} total{' '}
-                                {this.state.orgs.length < this.state.totalCount &&
-                                    `(showing first ${this.state.orgs.length})`}
-                            </small>
-                        </p>
-                    ) : (
-                        <p>No organizations.</p>
-                    ))}
+                <FilteredConnection
+                    className="site-admin-page__filtered-connection"
+                    noun="organization"
+                    pluralNoun="organizations"
+                    queryConnection={fetchAllOrgs}
+                    nodeComponent={OrgNode}
+                    nodeComponentProps={nodeProps}
+                    updates={this.orgUpdates}
+                    history={this.props.history}
+                    location={this.props.location}
+                />
             </div>
         )
     }

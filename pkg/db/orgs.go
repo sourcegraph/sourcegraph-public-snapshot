@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -80,8 +80,34 @@ func (o *orgs) Count(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-func (o *orgs) List(ctx context.Context) ([]*sourcegraph.Org, error) {
-	return o.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
+// OrgsListOptions specifies the options for listing organizations.
+type OrgsListOptions struct {
+	// Query specifies a search query for organizations.
+	Query string
+
+	sourcegraph.ListOptions
+}
+
+func (o *orgs) List(ctx context.Context, opt *OrgsListOptions) ([]*sourcegraph.Org, error) {
+	if Mocks.Orgs.List != nil {
+		return Mocks.Orgs.List(ctx, opt)
+	}
+
+	if opt == nil {
+		opt = &OrgsListOptions{}
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt.Query != "" {
+		query := "%" + opt.Query + "%"
+		conds = append(conds, sqlf.Sprintf("name ILIKE %s OR display_name ILIKE %s", query, query))
+	}
+
+	q := sqlf.Sprintf("WHERE %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %d OFFSET %d",
+		sqlf.Join(conds, "AND"),
+		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
+	)
+	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Org, error) {

@@ -904,6 +904,8 @@ type Site implements ConfigurationSubject {
 	orgs(
 		# Returns the first n organizations from the list.
 		first: Int
+		# Return organizations whose names or display names match the query.
+		query: String
 	): OrgConnection!
 	# List all threads.
 	threads(

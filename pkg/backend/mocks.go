@@ -14,7 +14,6 @@ var Mocks MockServices
 type MockServices struct {
 	Defs  MockDefs
 	Pkgs  MockPkgs
-	Orgs  MockOrgs
 	Repos MockRepos
 }
 

@@ -51,7 +51,7 @@ func TestOrgs_Delete(t *testing.T) {
 	if _, ok := err.(*OrgNotFoundError); !ok {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
-	orgs, err := Orgs.List(ctx)
+	orgs, err := Orgs.List(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
