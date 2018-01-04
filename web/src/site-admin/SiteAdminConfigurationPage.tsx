@@ -226,24 +226,31 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 <PageTitle title="Configuration - Admin" />
                 <h2>Configuration</h2>
                 <p>
-                    View and edit the Sourcegraph site configuration below. See{' '}
+                    View and edit the Sourcegraph site configuration. See{' '}
                     <a href="https://about.sourcegraph.com/docs/server/">documentation</a> for more information.
                 </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.site &&
                     this.state.site.configuration && (
                         <div>
-                            <div className="site-admin-configuration-page__editor-actions">
-                                {editorActions.map(({ id, label }) => (
-                                    <button
-                                        key={id}
-                                        className="btn btn-primary btn-sm site-admin-configuration-page__editor-action"
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        onClick={() => this.runAction(id)}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
+                            <div className="site-admin-configuration-page__action-groups">
+                                <div className="site-admin-configuration-page__action-groups">
+                                    <div className="site-admin-configuration-page__action-group-header">
+                                        Quick configure:
+                                    </div>
+                                    <div className="site-admin-configuration-page__actions">
+                                        {editorActions.map(({ id, label }) => (
+                                            <button
+                                                key={id}
+                                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                                // tslint:disable-next-line:jsx-no-lambda
+                                                onClick={() => this.runAction(id)}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                             {this.state.site.configuration.canUpdate && (
                                 <SaveToolbar
