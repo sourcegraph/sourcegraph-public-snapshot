@@ -38,10 +38,25 @@ func init() {
 	}
 }
 
+var keepHeadersInProxiedTelemetry = map[string]struct{}{
+	"Host":            struct{}{},
+	"User-Agent":      struct{}{},
+	"Content-Length":  struct{}{},
+	"Accept":          struct{}{},
+	"Accept-Encoding": struct{}{},
+	"Accept-Language": struct{}{},
+	"Cache-Control":   struct{}{},
+	"Connection":      struct{}{},
+	"Content-Type":    struct{}{},
+	"Pragma":          struct{}{},
+}
+
 // stripTelemetryRequest removes sensitive and unnecessary data from the client request
 // before forwarding it up to the telemetry collector, such as the CSRF token.
 func stripTelemetryRequest(req *http.Request) {
-	req.Header.Del("cookie")
-	req.Header.Del("origin")
-	req.Header.Del("referer")
+	for name := range req.Header {
+		if _, keep := keepHeadersInProxiedTelemetry[http.CanonicalHeaderKey(name)]; !keep {
+			req.Header.Del(name)
+		}
+	}
 }
