@@ -414,7 +414,7 @@ export function fetchRepositories(): Observable<GQL.IRepositoryConnection> {
         gql`
             query fetchRepositories {
                 site {
-                    repositories(first: 10000) {
+                    repositories(first: 50000) {
                         nodes {
                             uri
                             description
