@@ -1,3 +1,4 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -162,6 +163,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                         Create new organization
                     </Link>
                 </p>
+                {!this.state.orgs && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.orgs &&
                         this.state.orgs.map(org => (
@@ -175,7 +177,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                 </ul>
                 {this.state.orgs &&
                     typeof this.state.totalCount === 'number' &&
-                    this.state.totalCount > 0 && (
+                    (this.state.totalCount > 0 ? (
                         <p>
                             <small>
                                 {this.state.totalCount} {pluralize('organization', this.state.totalCount)} total{' '}
@@ -183,7 +185,9 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                                     `(showing first ${this.state.orgs.length})`}
                             </small>
                         </p>
-                    )}
+                    ) : (
+                        <p>No organizations.</p>
+                    ))}
             </div>
         )
     }

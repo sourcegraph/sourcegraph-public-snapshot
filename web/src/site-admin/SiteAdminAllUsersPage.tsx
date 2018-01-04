@@ -1,3 +1,4 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -290,6 +291,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                         Invite user
                     </Link>
                 </p>
+                {!this.state.users && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.users &&
                         this.state.users.map(user => (
@@ -304,7 +306,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 </ul>
                 {this.state.users &&
                     typeof this.state.totalCount === 'number' &&
-                    this.state.totalCount > 0 && (
+                    (this.state.totalCount > 0 ? (
                         <p>
                             <small>
                                 {this.state.totalCount} {pluralize('user', this.state.totalCount)} total{' '}
@@ -312,7 +314,9 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                                     `(showing first ${this.state.users.length})`}
                             </small>
                         </p>
-                    )}
+                    ) : (
+                        <p>No users.</p>
+                    ))}
             </div>
         )
     }

@@ -1,3 +1,4 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
@@ -43,6 +44,13 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                         </tr>
                     </thead>
                     <tbody>
+                        {!this.state.users && (
+                            <tr>
+                                <td colSpan={3}>
+                                    <Loader className="icon-inline" />
+                                </td>
+                            </tr>
+                        )}
                         {this.state.users &&
                             this.state.users.map(user => (
                                 <tr key={user.id}>
