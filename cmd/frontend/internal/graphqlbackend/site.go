@@ -19,42 +19,42 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
 )
 
-const singletonSiteID = "site"
+const singletonSiteGQLID = "site"
 
 var serverStart = time.Now()
 
-func siteByID(ctx context.Context, id graphql.ID) (node, error) {
-	siteID, err := unmarshalSiteID(id)
+func siteByGQLID(ctx context.Context, id graphql.ID) (node, error) {
+	siteGQLID, err := unmarshalSiteGQLID(id)
 	if err != nil {
 		return nil, err
 	}
-	if siteID != singletonSiteID {
-		return nil, fmt.Errorf("site not found: %q", siteID)
+	if siteGQLID != singletonSiteGQLID {
+		return nil, fmt.Errorf("site not found: %q", siteGQLID)
 	}
-	return &siteResolver{id: siteID}, nil
+	return &siteResolver{gqlID: siteGQLID}, nil
 }
 
-func marshalSiteID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
+func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
 
-func unmarshalSiteID(id graphql.ID) (siteID string, err error) {
+func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 	err = relay.UnmarshalSpec(id, &siteID)
 	return
 }
 
 func (*schemaResolver) Site() *siteResolver {
-	return &siteResolver{id: singletonSiteID}
+	return &siteResolver{gqlID: singletonSiteGQLID}
 }
 
 type siteResolver struct {
-	id string
+	gqlID string // == singletonSiteGQLID, not the site ID
 	siteFlagsResolver
 }
 
-var singletonSiteResolver = &siteResolver{id: singletonSiteID}
+var singletonSiteResolver = &siteResolver{gqlID: singletonSiteGQLID}
 
-func (r *siteResolver) ID() graphql.ID { return marshalSiteID(r.id) }
+func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
-func (r *siteResolver) DisplaySiteID() graphql.ID { return graphql.ID(siteid.Get()) }
+func (r *siteResolver) SiteID() string { return siteid.Get() }
 
 func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
@@ -79,7 +79,7 @@ func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 			ID:        1,
 			Contents:  string(siteConfigJSON),
 			CreatedAt: serverStart,
-			Subject:   sourcegraph.ConfigurationSubject{Site: &r.id},
+			Subject:   sourcegraph.ConfigurationSubject{Site: &r.gqlID},
 		},
 	}, nil
 }

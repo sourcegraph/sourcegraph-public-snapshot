@@ -147,7 +147,7 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	case "SavedQuery":
 		return savedQueryByID(ctx, id)
 	case "Site":
-		return siteByID(ctx, id)
+		return siteByGQLID(ctx, id)
 	case "Thread":
 		return threadByID(ctx, id)
 	default:
