@@ -1,3 +1,4 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
 import { parse } from '@sqs/jsonc-parser/lib/main'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -96,8 +97,9 @@ export class SiteAdminTelemetryPage extends React.Component<Props, State> {
                         </p>
                     </div>
                 )}
+                {!this.state.telemetrySamples && <Loader className="icon-inline" />}
                 {this.state.telemetrySamples &&
-                    this.state.telemetrySamples.length > 0 && (
+                    (this.state.telemetrySamples.length > 0 ? (
                         <div>
                             <h3>Samples</h3>
                             <p>
@@ -112,7 +114,9 @@ export class SiteAdminTelemetryPage extends React.Component<Props, State> {
                                 </TelemetrySample>
                             ))}
                         </div>
-                    )}
+                    ) : (
+                        <p>No telemetry samples have been collected.</p>
+                    ))}
             </div>
         )
     }

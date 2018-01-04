@@ -1,5 +1,6 @@
 import CityIcon from '@sourcegraph/icons/lib/City'
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
+import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import UserIcon from '@sourcegraph/icons/lib/User'
 
@@ -43,6 +44,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
             <div className="site-admin-detail-list site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
                 <h2>Site overview</h2>
+                {!this.state.info && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.info && (
                         <li className="site-admin-detail-list__item site-admin-overview-page__item">

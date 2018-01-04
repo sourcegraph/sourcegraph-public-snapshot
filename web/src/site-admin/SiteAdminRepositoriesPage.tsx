@@ -1,3 +1,4 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -57,6 +58,7 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                     </a>{' '}
                     for information about adding repositories and integrating with code hosts.
                 </p>
+                {!this.state.repos && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.repos &&
                         this.state.repos.map(repo => (
@@ -78,7 +80,7 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                 </ul>
                 {this.state.repos &&
                     typeof this.state.totalCount === 'number' &&
-                    this.state.totalCount > 0 && (
+                    (this.state.totalCount > 0 ? (
                         <p>
                             <small>
                                 {this.state.totalCount} {pluralize('repository', this.state.totalCount, 'repositories')}{' '}
@@ -87,7 +89,9 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                                     `(showing first ${this.state.repos.length})`}
                             </small>
                         </p>
-                    )}
+                    ) : (
+                        <p>No repositories.</p>
+                    ))}
             </div>
         )
     }

@@ -1,3 +1,4 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -131,7 +132,8 @@ export class SiteAdminThreadsPage extends React.Component<Props, State> {
                             />
                         ))}
                 </ul>
-                {this.state.threads && this.state.threads.length === 0 && <p>No threads to display.</p>}
+                {!this.state.threads && <Loader className="icon-inline" />}
+                {this.state.threads && this.state.threads.length === 0 && <p>No threads.</p>}
                 {this.state.threads &&
                     typeof this.state.totalCount === 'number' &&
                     this.state.totalCount > 0 && (
