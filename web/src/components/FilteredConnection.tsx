@@ -18,20 +18,43 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { pluralize } from '../util/strings'
 
-interface Props<C extends AbstractConnection<N>, N, NP = {}> {
+/**
+ * Props for the FilteredConnection component.
+ *
+ * @template C is the GraphQL connection type, such as GQL.IRepositoryConnection.
+ * @template N is the node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template NP is the type of the nodeComponent's props
+ */
+interface Props<C extends Connection<N>, N, NP = {}> {
     history: H.History
     location: H.Location
+
+    /** CSS class name for the root element. */
     className?: string
+
+    /** Called to fetch the connection data to populate this component. */
     queryConnection: (query: string) => Observable<C>
+
+    /** The component type to use to display each node. */
     nodeComponent: React.ComponentType<{ node: N } & NP>
+
+    /** Props to pass to each nodeComponent. */
     nodeComponentProps?: NP
+
+    /** The English noun (in singular form) describing what this connection contains. */
     noun: string
+
+    /** The English noun (in plural form) describing what this connection contains. */
     pluralNoun: string
-    updates?: Subject<void>
+
+    /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
+    updates?: Observable<void>
+
+    /** Hides the filter input field. */
     hideFilter?: boolean
 }
 
-interface State<C extends AbstractConnection<N>, N> {
+interface State<C extends Connection<N>, N> {
     loading: boolean
     query: string
 
@@ -42,7 +65,7 @@ interface State<C extends AbstractConnection<N>, N> {
 /**
  * See https://facebook.github.io/relay/graphql/connections.htm.
  */
-interface AbstractConnection<N> {
+interface Connection<N> {
     nodes: N[]
     totalCount: number
 }
@@ -52,7 +75,7 @@ interface AbstractConnection<N> {
  * "connection" because it is intended for use with GraphQL, which calls it that
  * (see http://graphql.org/learn/pagination/).
  */
-export class FilteredConnection<C extends AbstractConnection<N>, N extends GQL.Node> extends React.PureComponent<
+export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> extends React.PureComponent<
     Props<C, N>,
     State<C, N>
 > {
@@ -103,7 +126,7 @@ export class FilteredConnection<C extends AbstractConnection<N>, N extends GQL.N
             this.subscriptions.add(
                 this.props.updates
                     .pipe(switchMap(() => this.props.queryConnection(this.state.query)))
-                    .subscribe((c: C) => this.setState({ connection: c }))
+                    .subscribe(c => this.setState({ connection: c }))
             )
         }
     }
@@ -167,12 +190,10 @@ export class FilteredConnection<C extends AbstractConnection<N>, N extends GQL.N
                     ) : (
                         <p>
                             No {this.props.pluralNoun}
-                            {this.state.connectionQuery ? (
+                            {this.state.connectionQuery && (
                                 <span>
                                     matching <strong>{this.state.connectionQuery}</strong>
                                 </span>
-                            ) : (
-                                ''
                             )}.
                         </p>
                     ))}
