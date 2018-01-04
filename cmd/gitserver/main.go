@@ -24,7 +24,6 @@ const repoCleanupInterval = 24 * time.Hour
 var (
 	reposDir          = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 	profBindAddr      = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-	logLevel          = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
 )
 
@@ -33,7 +32,7 @@ func main() {
 	env.HandleHelpFlag()
 
 	// Filter log output by level.
-	lvl, err := log15.LvlFromString(logLevel)
+	lvl, err := log15.LvlFromString(env.LogLevel)
 	if err == nil {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}

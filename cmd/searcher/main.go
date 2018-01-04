@@ -28,7 +28,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-var logLevel = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
@@ -41,7 +40,7 @@ func main() {
 	gitserver.DefaultClient.NoCreds = true
 
 	// Filter log output by level.
-	if lvl, err := log15.LvlFromString(logLevel); err == nil {
+	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}
 

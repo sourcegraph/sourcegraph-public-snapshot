@@ -44,7 +44,6 @@ import (
 )
 
 var (
-	logLevel       = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
 	trace          = env.Get("SRC_LOG_TRACE", "HTTP", "space separated list of trace logs to show. Options: all, HTTP, build, github")
 	traceThreshold = env.Get("SRC_LOG_TRACE_THRESHOLD", "", "show traces that take longer than this")
 
@@ -140,6 +139,7 @@ func Main() error {
 
 	// We have some noisey debug logs, so to aid development we have a
 	// special dbug level which excludes the noisey logs
+	logLevel := env.LogLevel
 	if logLevel == "dbug-dev" {
 		logLevel = "dbug"
 		logHandler = log15.FilterHandler(loghandlers.NotNoisey, logHandler)

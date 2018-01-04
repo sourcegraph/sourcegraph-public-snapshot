@@ -26,7 +26,6 @@ var githubClientID = conf.Get().GithubClientID
 var githubClientSecret = conf.Get().GithubClientSecret
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-var logLevel = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
 
 // requestMu ensures we only do one request at a time to prevent tripping abuse detection.
 var requestMu sync.Mutex
@@ -50,7 +49,7 @@ func main() {
 	tracer.Init("github-proxy")
 
 	// Filter log output by level.
-	if lvl, err := log15.LvlFromString(logLevel); err == nil {
+	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}
 

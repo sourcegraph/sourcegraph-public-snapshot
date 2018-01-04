@@ -10,7 +10,10 @@ import (
 var descriptions = make(map[string]string)
 var locked = false
 
-var Version = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
+var (
+	Version  = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
+	LogLevel = Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
+)
 
 // Get returns the value of the given environment variable. It also registers the description for
 // PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on
