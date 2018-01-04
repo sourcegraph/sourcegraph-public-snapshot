@@ -48,7 +48,7 @@ var MockGetData *schema.SiteConfiguration
 
 // cfg is initialized to configuration defaults.
 var cfg = schema.SiteConfiguration{
-	MaxReposToSearch: 50,
+	MaxReposToSearch: 500,
 }
 
 func init() {
