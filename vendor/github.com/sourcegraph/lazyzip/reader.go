@@ -18,8 +18,10 @@ import (
 )
 
 type Reader struct {
-	r             io.ReaderAt
-	Comment       string
+	r                io.ReaderAt
+	Comment          string
+	DirectoryRecords uint64
+
 	decompressors map[uint16]Decompressor
 
 	end       *directoryEnd
@@ -87,6 +89,7 @@ func (z *Reader) init(r io.ReaderAt, size int64) error {
 	z.end = end
 	z.r = r
 	z.Comment = end.comment
+	z.DirectoryRecords = end.directoryRecords
 	return z.Reset()
 }
 
@@ -99,6 +102,11 @@ func (z *Reader) Reset() error {
 	}
 	z.buf = bufio.NewReader(rs)
 	return nil
+}
+
+// Size is the size of the zip file being read.
+func (z *Reader) Size() int64 {
+	return z.size
 }
 
 // Next advances to the next entry in the zip archive.

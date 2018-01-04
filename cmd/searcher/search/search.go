@@ -26,6 +26,7 @@ import (
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -123,7 +124,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 			}
 		}
 		requestTotal.WithLabelValues(code).Inc()
-		span.SetTag("matches", len(matches))
+		span.LogFields(otlog.Int("matches.len", len(matches)))
 		span.SetTag("limitHit", limitHit)
 		span.Finish()
 		if s.RequestLog != nil {
@@ -146,6 +147,14 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}
 	defer zr.Close()
 
+	nFiles := zr.Reader().DirectoryRecords
+	bytes := zr.Reader().Size()
+	span.LogFields(
+		otlog.Uint64("archive.files", nFiles),
+		otlog.Int64("archive.size", bytes))
+	archiveFiles.Observe(float64(nFiles))
+	archiveSize.Observe(float64(bytes))
+
 	return concurrentFind(ctx, rg, zr.Reader(), p.FileMatchLimit)
 }
 
@@ -163,12 +172,28 @@ func validateParams(p *protocol.Request) error {
 	return nil
 }
 
+const megabyte = float64(1000 * 1000)
+
 var (
 	running = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "searcher",
 		Subsystem: "service",
 		Name:      "running",
 		Help:      "Number of running search requests.",
+	})
+	archiveSize = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "searcher",
+		Subsystem: "service",
+		Name:      "archive_size_bytes",
+		Help:      "Observes the size when an archive is searched.",
+		Buckets:   []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
+	})
+	archiveFiles = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "searcher",
+		Subsystem: "service",
+		Name:      "archive_files",
+		Help:      "Observes the number of files when an archive is searched.",
+		Buckets:   []float64{100, 1000, 10000, 50000, 100000},
 	})
 	requestTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "searcher",
