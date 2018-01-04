@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -12,6 +14,10 @@ import (
 type siteFlagsResolver struct{}
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
+	if envvar.SourcegraphDotComMode() {
+		return false, nil
+	}
+
 	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
 	// admins may view them.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
