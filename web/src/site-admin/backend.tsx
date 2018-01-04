@@ -5,37 +5,40 @@ import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 /**
  * Fetches all users.
  */
-export function fetchAllUsers(): Observable<GQL.IUserConnection> {
-    return queryGraphQL(gql`
-        query Users {
-            site {
-                users {
-                    nodes {
-                        id
-                        externalID
-                        username
-                        displayName
-                        email
-                        createdAt
-                        siteAdmin
-                        latestSettings {
+export function fetchAllUsers(query?: string): Observable<GQL.IUserConnection> {
+    return queryGraphQL(
+        gql`
+            query Users($query: String) {
+                site {
+                    users(first: 100, query: $query) {
+                        nodes {
+                            id
+                            externalID
+                            username
+                            displayName
+                            email
                             createdAt
-                            configuration {
-                                contents
+                            siteAdmin
+                            latestSettings {
+                                createdAt
+                                configuration {
+                                    contents
+                                }
+                            }
+                            orgs {
+                                name
+                            }
+                            tags {
+                                name
                             }
                         }
-                        orgs {
-                            name
-                        }
-                        tags {
-                            name
-                        }
+                        totalCount
                     }
-                    totalCount
                 }
             }
-        }
-    `).pipe(
+        `,
+        { query }
+    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.users) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })

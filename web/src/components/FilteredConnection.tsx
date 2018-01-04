@@ -16,14 +16,16 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { pluralize } from '../util/strings'
 
-interface Props<C extends AbstractConnection<N>, N> {
+interface Props<C extends AbstractConnection<N>, N, NP = {}> {
     history: H.History
     location: H.Location
     className?: string
     queryConnection: (query: string) => Observable<C>
-    nodeComponent: React.ComponentType<{ node: N }>
+    nodeComponent: React.ComponentType<{ node: N } & NP>
+    nodeComponentProps?: NP
     noun: string
     pluralNoun: string
+    updates?: Subject<void>
 }
 
 interface State<C extends AbstractConnection<N>, N> {
@@ -91,6 +93,14 @@ export class FilteredConnection<C extends AbstractConnection<N>, N extends GQL.N
                 )
                 .subscribe((stateUpdate: State<C, N>) => this.setState(stateUpdate))
         )
+
+        if (this.props.updates) {
+            this.subscriptions.add(
+                this.props.updates
+                    .pipe(switchMap(() => this.props.queryConnection(this.state.query)))
+                    .subscribe((c: C) => this.setState({ connection: c }))
+            )
+        }
     }
 
     public componentWillUnmount(): void {
@@ -116,7 +126,9 @@ export class FilteredConnection<C extends AbstractConnection<N>, N extends GQL.N
                     this.state.connection &&
                     this.state.connection.nodes.length > 0 && (
                         <ul className="filtered-connection__nodes">
-                            {this.state.connection.nodes.map(node => <NodeComponent key={node.id} node={node} />)}
+                            {this.state.connection.nodes.map(node => (
+                                <NodeComponent key={node.id} node={node} {...this.props.nodeComponentProps} />
+                            ))}
                         </ul>
                     )}
                 {!this.state.loading &&
