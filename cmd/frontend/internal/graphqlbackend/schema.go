@@ -877,8 +877,12 @@ type ThreadConnection {
 #
 # The site is a singleton; the API only ever returns the single global site.
 type Site implements ConfigurationSubject {
-	# The site's ID.
+	# The site's opaque GraphQL ID. This is NOT the "site ID" as it is referred to elsewhere;
+	# use the siteID field for that. (GraphQL node types conventionally have an id field of type
+	# ID! that globally identifies the node.)
 	id: ID!
+	# The site ID.
+	siteID: String!
 	# The site's configuration. Only visible to site admins.
 	configuration: SiteConfiguration!
 	# The site's latest site-wide settings (which are the lowest-precedence

@@ -61,7 +61,7 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 func configurationSubjectID(subject sourcegraph.ConfigurationSubject) (graphql.ID, error) {
 	switch {
 	case subject.Site != nil:
-		return marshalSiteID(*subject.Site), nil
+		return marshalSiteGQLID(*subject.Site), nil
 	case subject.User != nil:
 		return marshalUserID(*subject.User), nil
 	case subject.Org != nil:
@@ -107,7 +107,7 @@ func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s
 func (s *configurationSubject) toSubject() sourcegraph.ConfigurationSubject {
 	switch {
 	case s.site != nil:
-		return sourcegraph.ConfigurationSubject{Site: &s.site.id}
+		return sourcegraph.ConfigurationSubject{Site: &s.site.gqlID}
 	case s.org != nil:
 		return sourcegraph.ConfigurationSubject{Org: &s.org.org.ID}
 	case s.user != nil:
