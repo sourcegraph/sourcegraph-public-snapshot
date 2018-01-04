@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slackinternal"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
@@ -26,8 +27,8 @@ func TrackUser(avatarURL *string, uid, email, event string) {
 		}
 	}()
 
-	// If the user is in a dev environment, don't do any data pulls from GitHub, or any tracking
-	if env.Version == "dev" {
+	// If the user is in a dev or on-prem environment, don't do any tracking
+	if env.Version == "dev" || !envvar.SourcegraphDotComMode() {
 		return
 	}
 
@@ -61,7 +62,8 @@ func trackHubSpotContact(email string, eventLabel string, params *hubspot.Contac
 
 	c, err := hubspotutil.Client()
 	if err != nil {
-		return nil, errors.Wrap(err, "hubspotutil.Client")
+		log15.Warn(err.Error())
+		return nil, nil
 	}
 
 	if eventLabel == "SignupCompleted" {

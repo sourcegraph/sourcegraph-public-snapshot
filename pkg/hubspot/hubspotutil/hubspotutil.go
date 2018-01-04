@@ -38,13 +38,16 @@ var EventNameToHubSpotID = map[string]string{
 var client *hubspot.Client
 
 func init() {
-	client = hubspot.New("2762526", HubSpotHAPIKey)
+	// The HubSpot API key will only be available in the production sourcegraph.com environment
+	if HubSpotHAPIKey != "" {
+		client = hubspot.New("2762526", HubSpotHAPIKey)
+	}
 }
 
 // Client returns a hubspot client, or an error if HUBSPOT_KEY is not set.
 func Client() (*hubspot.Client, error) {
 	if client == nil {
-		return nil, errors.New("hubspotutil.Client: authorization key only available on production environments")
+		return nil, errors.New("hubspotutil.Client: HubSpot logging only available on sourcegraph.com production environment")
 	}
 	return client, nil
 }

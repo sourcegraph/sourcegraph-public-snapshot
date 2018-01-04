@@ -86,7 +86,11 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	// Write the session cookie
 	if session.StartNewSession(w, r, actor, 0); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
-		return
+	}
+
+	// Track user data
+	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, "SignupCompleted")
 	}
 }
 
@@ -150,10 +154,9 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Track user data in GCS
-	eventLabel := "CompletedNativeSignIn"
+	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, eventLabel)
+		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, "SigninCompleted")
 	}
 }
 
