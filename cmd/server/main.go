@@ -27,9 +27,6 @@ var defaultEnv = map[string]string{
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
 
-	// We disable google analytics, etc
-	"SRC_APP_DISABLE_SUPPORT_SERVICES": "true",
-
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher to ensure this value isn't larger than the volume for
 	// CACHE_DIR.

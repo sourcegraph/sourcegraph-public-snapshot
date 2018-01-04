@@ -27,7 +27,6 @@ export PGSSLMODE=disable
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export DEBUG=true
-export SRC_APP_DISABLE_SUPPORT_SERVICES=true
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export SEARCHER_URL=http://127.0.0.1:3181
 export LSP_PROXY=127.0.0.1:4388
