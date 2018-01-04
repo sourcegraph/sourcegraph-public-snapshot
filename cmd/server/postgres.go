@@ -76,5 +76,5 @@ func maybePostgresProcFile() (string, error) {
 	setDefaultEnv("PGDATABASE", "sourcegraph")
 	setDefaultEnv("PGSSLMODE", "disable")
 
-	return "postgres: su-exec postgres postgres -D " + path, nil
+	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started'", nil
 }
