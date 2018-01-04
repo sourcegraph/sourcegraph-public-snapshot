@@ -1,3 +1,5 @@
+import AddIcon from '@sourcegraph/icons/lib/Add'
+import GearIcon from '@sourcegraph/icons/lib/Gear'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
@@ -282,15 +284,18 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                         this.state.totalCount > 0 &&
                         `(${this.state.totalCount})`}
                 </h2>
-                <p>
-                    See <a href="https://about.sourcegraph.com/docs/server/config/">Sourcegraph documentation</a> for
-                    information about configuring user accounts and authentication.
-                </p>
-                <p>
-                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm">
-                        Invite user
+                <div className="site-admin-page__actions">
+                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm site-admin-page__actions-btn">
+                        <AddIcon className="icon-inline" /> Invite user
                     </Link>
-                </p>
+                    &nbsp;
+                    <Link
+                        to="/site-admin/configuration"
+                        className="btn btn-secondary btn-sm site-admin-page__actions-btn"
+                    >
+                        <GearIcon className="icon-inline" /> Configure SSO
+                    </Link>
+                </div>
                 {!this.state.users && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.users &&

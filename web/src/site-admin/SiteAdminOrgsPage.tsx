@@ -1,3 +1,4 @@
+import AddIcon from '@sourcegraph/icons/lib/Add'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
@@ -151,18 +152,11 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                         this.state.totalCount > 0 &&
                         `(${this.state.totalCount})`}
                 </h2>
-                <p>
-                    See{' '}
-                    <a href="https://about.sourcegraph.com/docs/server/config/organizations">
-                        Sourcegraph documentation
-                    </a>{' '}
-                    for information about configuring organizations.
-                </p>
-                <p>
-                    <Link to="/organizations/new" className="btn btn-primary btn-sm">
-                        Create new organization
+                <div className="site-admin-page__actions">
+                    <Link to="/organizations/new" className="btn btn-primary btn-sm site-admin-page__actions-btn">
+                        <AddIcon className="icon-inline" /> Create organization
                     </Link>
-                </p>
+                </div>
                 {!this.state.orgs && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.orgs &&

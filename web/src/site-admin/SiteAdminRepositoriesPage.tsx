@@ -1,3 +1,4 @@
+import GearIcon from '@sourcegraph/icons/lib/Gear'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
@@ -51,13 +52,15 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                         this.state.totalCount > 0 &&
                         `(${this.state.totalCount})`}
                 </h2>
-                <p>
-                    See{' '}
-                    <a href="https://about.sourcegraph.com/docs/server/config/repositories">
-                        Sourcegraph documentation
-                    </a>{' '}
-                    for information about adding repositories and integrating with code hosts.
-                </p>
+                <div className="site-admin-page__actions">
+                    <Link
+                        to="/site-admin/configuration"
+                        className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                    >
+                        <GearIcon className="icon-inline" /> Configure repositories
+                    </Link>
+                </div>
+
                 {!this.state.repos && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.repos &&
