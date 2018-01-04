@@ -16,7 +16,6 @@ type MockServices struct {
 	Pkgs  MockPkgs
 	Orgs  MockOrgs
 	Repos MockRepos
-	Users MockUsers
 }
 
 // testContext creates a new context.Context for use by tests

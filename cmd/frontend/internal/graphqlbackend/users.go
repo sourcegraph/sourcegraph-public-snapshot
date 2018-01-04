@@ -25,13 +25,13 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*userResolver, er
 		return nil, err
 	}
 
-	usersList, err := backend.Users.List(ctx)
+	users, err := db.Users.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var l []*userResolver
-	for _, user := range usersList.Users {
+	for _, user := range users {
 		l = append(l, &userResolver{
 			user: user,
 		})

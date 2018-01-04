@@ -391,6 +391,9 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, use
 }
 
 func (u *users) List(ctx context.Context) ([]*sourcegraph.User, error) {
+	if Mocks.Users.List != nil {
+		return Mocks.Users.List(ctx)
+	}
 	return u.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
 }
 
