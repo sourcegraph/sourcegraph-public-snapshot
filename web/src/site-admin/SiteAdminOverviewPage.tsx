@@ -1,9 +1,9 @@
+import AddIcon from '@sourcegraph/icons/lib/Add'
 import CityIcon from '@sourcegraph/icons/lib/City'
-import DocumentIcon from '@sourcegraph/icons/lib/Document'
+import GearIcon from '@sourcegraph/icons/lib/Gear'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import UserIcon from '@sourcegraph/icons/lib/User'
-
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -41,14 +41,14 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="site-admin-detail-list site-admin-overview-page">
+            <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
-                <h2>Site overview</h2>
+                {/* <h2>Site overview</h2> */}
                 {!this.state.info && <Loader className="icon-inline" />}
-                <ul className="site-admin-detail-list__list">
+                <ul className="site-admin-overview-page__list">
                     {this.state.info && (
-                        <li className="site-admin-detail-list__item site-admin-overview-page__item">
-                            <div className="site-admin-detail-list__header site-admin-overview-page__item-header">
+                        <li className="site-admin-overview-page__item site-admin-overview-page__item">
+                            <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
                                 <Link
                                     to="/site-admin/repositories"
                                     className="site-admin-overview-page__item-header-link"
@@ -58,20 +58,55 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     {pluralize('repository', this.state.info.repositories, 'repositories')}
                                 </Link>
                             </div>
-                            <div className="site-admin-detail-list__info site-admin-overview-page__item-info">
-                                <a href="https://about.sourcegraph.com/docs/server/">
-                                    <DocumentIcon className="icon-inline" /> Quickstart: add repositories to search
-                                </a>
-                                <br />
-                                <a href="https://about.sourcegraph.com/docs/server/config/repositories">
-                                    <DocumentIcon className="icon-inline" /> Documentation: repositories
-                                </a>
+                            <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
+                                <Link
+                                    to="/site-admin/configuration"
+                                    className="btn btn-primary btn-sm site-admin-overview-page__item-action"
+                                >
+                                    <GearIcon className="icon-inline" /> Configure repositories
+                                </Link>
+                                <Link
+                                    to="/site-admin/repositories"
+                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
+                                >
+                                    View all
+                                </Link>
                             </div>
                         </li>
                     )}
                     {this.state.info && (
-                        <li className="site-admin-detail-list__item site-admin-overview-page__item">
-                            <div className="site-admin-detail-list__header site-admin-overview-page__item-header">
+                        <li className="site-admin-overview-page__item site-admin-overview-page__item">
+                            <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
+                                <Link to="/site-admin/users" className="site-admin-overview-page__item-header-link">
+                                    <UserIcon className="icon-inline site-admin-overview-page__item-header-icon" />
+                                    {this.state.info.users} {pluralize('user', this.state.info.users)}
+                                </Link>
+                            </div>
+                            <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
+                                <Link
+                                    to="/site-admin/invite-user"
+                                    className="btn btn-primary btn-sm site-admin-overview-page__item-action"
+                                >
+                                    <AddIcon className="icon-inline" /> Invite user
+                                </Link>
+                                <Link
+                                    to="/site-admin/configuration"
+                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
+                                >
+                                    <GearIcon className="icon-inline" /> Configure SSO
+                                </Link>
+                                <Link
+                                    to="/site-admin/users"
+                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
+                                >
+                                    View all
+                                </Link>
+                            </div>
+                        </li>
+                    )}
+                    {this.state.info && (
+                        <li className="site-admin-overview-page__item site-admin-overview-page__item">
+                            <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
                                 <Link
                                     to="/site-admin/organizations"
                                     className="site-admin-overview-page__item-header-link"
@@ -80,25 +115,19 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     {this.state.info.orgs} {pluralize('organization', this.state.info.orgs)}
                                 </Link>
                             </div>
-                            <div className="site-admin-detail-list__info site-admin-overview-page__item-info">
-                                <a href="https://about.sourcegraph.com/docs/server/config/organizations">
-                                    <DocumentIcon className="icon-inline" /> Documentation: organizations
-                                </a>
-                            </div>
-                        </li>
-                    )}
-                    {this.state.info && (
-                        <li className="site-admin-detail-list__item site-admin-overview-page__item">
-                            <div className="site-admin-detail-list__header site-admin-overview-page__item-header">
-                                <Link to="/site-admin/users" className="site-admin-overview-page__item-header-link">
-                                    <UserIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    {this.state.info.users} {pluralize('user', this.state.info.users)}
+                            <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
+                                <Link
+                                    to="/organizations/new"
+                                    className="btn btn-primary btn-sm site-admin-overview-page__item-action"
+                                >
+                                    <AddIcon className="icon-inline" /> Create organization
                                 </Link>
-                            </div>
-                            <div className="site-admin-detail-list__info site-admin-overview-page__item-info">
-                                <a href="https://about.sourcegraph.com/docs/server/config/authentication">
-                                    <DocumentIcon className="icon-inline" /> Documentation: users
-                                </a>
+                                <Link
+                                    to="/site-admin/organizations"
+                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
+                                >
+                                    View all
+                                </Link>
                             </div>
                         </li>
                     )}
