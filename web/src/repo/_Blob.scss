@@ -25,6 +25,7 @@
         padding-left: 1rem;
         min-width: 3em;
         user-select: none;
+        vertical-align: top;
     }
 
     td.line,
@@ -47,6 +48,7 @@
                     58
                 ); // extends background color for highlighted code to overflown blame content
                 display: inline-block;
+                white-space: pre;
             }
 
             color: #464d57;
@@ -59,6 +61,12 @@
     .right {
         background-color: #151d28;
         flex: 4;
+    }
+
+    &--wrapped {
+        td.code {
+            white-space: pre-wrap;
+        }
     }
 }
 

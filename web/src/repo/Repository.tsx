@@ -79,6 +79,7 @@ interface State {
      */
     viewerType?: 'plain' | 'rich'
     richHTML?: string
+    wrapCode: boolean
 }
 
 export class Repository extends React.PureComponent<Props, State> {
@@ -86,6 +87,7 @@ export class Repository extends React.PureComponent<Props, State> {
         showTree: true,
         showRefs: false,
         isDirectory: false,
+        wrapCode: localStorage.getItem('wrap-code') === 'true',
     }
     private componentUpdates = new Subject<Props>()
     private showAnywayButtonClicks = new Subject<void>()
@@ -132,8 +134,6 @@ export class Repository extends React.PureComponent<Props, State> {
                     this.props.history.push(replaceRevisionInURL(window.location.href, this.props.commitID))
                 })
         )
-
-        this.subscriptions.add(colorTheme.subscribe(v => console.log('ColorTheme', v)))
 
         // Transitions to routes with file should update file contents
         this.subscriptions.add(
@@ -232,6 +232,7 @@ export class Repository extends React.PureComponent<Props, State> {
                     rev={this.props.rev || this.props.defaultBranch}
                     viewButtonType={this.getViewButtonType()}
                     onViewButtonClick={this.onViewButtonClick}
+                    onWrapCodeChange={this.onWrapCodeChange}
                 />
                 {IS_CHROME && <ChromeExtensionToast />}
                 {IS_FIREFOX && <FirefoxExtensionToast />}
@@ -307,6 +308,7 @@ export class Repository extends React.PureComponent<Props, State> {
                                     {...this.props}
                                     filePath={this.props.filePath!}
                                     html={this.state.highlightedFile.html}
+                                    wrapCode={this.state.wrapCode}
                                 />
                             ) : (
                                 /* render placeholder for layout before content is fetched */
@@ -347,5 +349,9 @@ export class Repository extends React.PureComponent<Props, State> {
     private handleShowAnywayButtonClick = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault()
         this.showAnywayButtonClicks.next()
+    }
+
+    private onWrapCodeChange = (wrapCode: boolean) => {
+        this.setState(state => ({ wrapCode }))
     }
 }

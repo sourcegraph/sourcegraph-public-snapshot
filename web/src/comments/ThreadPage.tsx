@@ -43,6 +43,7 @@ interface State {
     colorTheme: ColorTheme
     error?: any
     signedIn: boolean
+    wrapCode: boolean
 }
 
 type Update = (s: State) => State
@@ -56,9 +57,13 @@ export const ThreadPage = reactive<Props>(props => {
     const threadUpdates = new Subject<GQL.IThread>()
     const nextThreadUpdate = (updatedThread: GQL.IThread) => threadUpdates.next(updatedThread)
 
+    const codeWrapUpdates = new Subject<boolean>()
+    const nextWrapCodeChange = (codeWrap: boolean) => codeWrapUpdates.next(codeWrap)
+
     eventLogger.logViewEvent('Thread')
 
     return merge(
+        codeWrapUpdates.pipe(map((wrapCode): Update => state => ({ ...state, wrapCode }))),
         props.pipe(
             withLatestFrom(colorTheme),
             map(([{ location, history, user }, colorTheme]): Update => state => ({
@@ -105,6 +110,7 @@ export const ThreadPage = reactive<Props>(props => {
                 colorTheme,
                 error,
                 signedIn,
+                wrapCode,
             }: State): JSX.Element | null => {
                 if (error) {
                     if (error.code === EPERMISSIONDENIED) {
@@ -149,6 +155,8 @@ export const ThreadPage = reactive<Props>(props => {
                             line={thread && thread.startLine}
                             location={location}
                             history={history}
+                            showWrapCode={true}
+                            onWrapCodeChange={nextWrapCodeChange}
                         />
                         {thread &&
                             !thread.linesRevision && (
@@ -160,7 +168,7 @@ export const ThreadPage = reactive<Props>(props => {
                                 </div>
                             )}
                         <div className="comments-page__content">
-                            {thread && CodeView({ thread })}
+                            {thread && <CodeView thread={thread} wrapCode={wrapCode} />}
                             {thread &&
                                 thread.comments.map((comment, index) => (
                                     <Comment

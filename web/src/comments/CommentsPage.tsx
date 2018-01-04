@@ -47,6 +47,7 @@ interface State {
     colorTheme: ColorTheme
     error?: any
     signedIn: boolean
+    wrapCode: boolean
 }
 
 type Update = (s: State) => State
@@ -60,7 +61,11 @@ export const CommentsPage = reactive<Props>(props => {
 
     eventLogger.logViewEvent('SharedItem')
 
+    const codeWrapUpdates = new Subject<boolean>()
+    const nextWrapCodeChange = (codeWrap: boolean) => codeWrapUpdates.next(codeWrap)
+
     return merge(
+        codeWrapUpdates.pipe(map((wrapCode): Update => state => ({ ...state, wrapCode }))),
         props.pipe(
             withLatestFrom(colorTheme),
             map(([{ location, history, user }, colorTheme]): Update => state => ({
@@ -110,6 +115,7 @@ export const CommentsPage = reactive<Props>(props => {
                 colorTheme,
                 error,
                 signedIn,
+                wrapCode,
             }: State): JSX.Element | null => {
                 if (error) {
                     if (error.code === EPERMISSIONDENIED) {
@@ -167,6 +173,8 @@ export const CommentsPage = reactive<Props>(props => {
                             line={sharedItem && sharedItem.thread.startLine}
                             location={location}
                             history={history}
+                            showWrapCode={!!sharedItem}
+                            onWrapCodeChange={nextWrapCodeChange}
                         />
                         {sharedItem &&
                             !sharedItem.thread.linesRevision && (
@@ -193,7 +201,7 @@ export const CommentsPage = reactive<Props>(props => {
                                         </div>
                                     </div>
                                 )}
-                            {sharedItem && CodeView(sharedItem)}
+                            {sharedItem && <CodeView thread={sharedItem.thread} wrapCode={wrapCode} />}
                             {sharedItem &&
                                 sharedItem.thread.comments.map((comment, index) => (
                                     <Comment

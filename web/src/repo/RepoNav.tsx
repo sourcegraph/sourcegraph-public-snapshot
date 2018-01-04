@@ -2,11 +2,15 @@ import ComputerIcon from '@sourcegraph/icons/lib/Computer'
 import CopyIcon from '@sourcegraph/icons/lib/Copy'
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
+import UnwrapIcon from '@sourcegraph/icons/lib/Unwrap'
 import ViewIcon from '@sourcegraph/icons/lib/View'
 import ViewOffIcon from '@sourcegraph/icons/lib/ViewOff'
+import WrapIcon from '@sourcegraph/icons/lib/Wrap'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
+import { fromEvent } from 'rxjs/observable/fromEvent'
+import { filter } from 'rxjs/operators/filter'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
@@ -37,11 +41,14 @@ interface RepoSubnavProps {
     line?: number
     location: H.Location
     history: H.History
+    onWrapCodeChange: (wrapCode: boolean) => void
+    showWrapCode?: boolean
 }
 
 interface RepoSubnavState {
     copiedLink: boolean
     editorBeta: boolean
+    wrapCode: boolean
 }
 
 export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavState> {
@@ -49,6 +56,7 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
     public state: RepoSubnavState = {
         copiedLink: false,
         editorBeta: false,
+        wrapCode: localStorage.getItem('wrap-code') === 'true',
     }
 
     public componentDidMount(): void {
@@ -56,6 +64,17 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
             currentUser.subscribe(user => {
                 this.setState({ editorBeta: hasTagRecursive(user, 'editor-beta') })
             })
+        )
+
+        // When the user presses 'alt+z', wrap code.
+        this.subscriptions.add(
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                // Opt/alt+z shortcut
+                .pipe(filter(event => event.altKey && event.keyCode === 90))
+                .subscribe(event => {
+                    event.preventDefault()
+                    this.onWrapCode()
+                })
         )
     }
 
@@ -141,6 +160,18 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
                             <span className="repo-nav__action-text">Open in Sourcegraph Editor</span>
                         </a>
                     )}
+                {(this.props.viewButtonType !== 'plain' || this.props.showWrapCode) &&
+                    (this.state.wrapCode ? (
+                        <a className="repo-nav__action" title="Unwrap lines" onClick={this.onWrapCode}>
+                            <UnwrapIcon className="icon-inline" />
+                            <span className="repo-nav__action-text"> Unwrap lines </span>
+                        </a>
+                    ) : (
+                        <a className="repo-nav__action" title="Wrap lines" onClick={this.onWrapCode}>
+                            <WrapIcon className="icon-inline" />
+                            <span className="repo-nav__action-text"> Wrap lines </span>
+                        </a>
+                    ))}
             </div>
         )
     }
@@ -198,5 +229,16 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
 
     private urlToPhabricator(phabRepo: PhabricatorRepo): string {
         return `${phabRepo.url}/source/${phabRepo.callsign}/browse/${this.props.filePath}`
+    }
+
+    private onWrapCode = () => {
+        this.setState(
+            state => ({ wrapCode: !state.wrapCode }),
+            () => {
+                localStorage.setItem('wrap-code', this.state.wrapCode.toString())
+                this.props.onWrapCodeChange(this.state.wrapCode)
+                eventLogger.log(this.state.wrapCode ? 'WrappedCode' : 'UnwrappedCode')
+            }
+        )
     }
 }

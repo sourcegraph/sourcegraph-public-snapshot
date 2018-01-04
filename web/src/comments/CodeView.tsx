@@ -51,9 +51,9 @@ const splitLines = (linesToSplit: string) => {
     return linesToSplit.split('\n')
 }
 
-const itemToLines = (sharedItem: GQL.ISharedItem | { thread: GQL.IThread }): Line[] => {
-    const startLine = sharedItem.thread.startLine
-    const threadLines = sharedItem.thread.lines
+const itemToLines = (thread: GQL.ISharedItemThread | GQL.IThread): Line[] => {
+    const startLine = thread.startLine
+    const threadLines = thread.lines
 
     // Using either the HTML or the textual raw lines.
     const beforeRaw = (threadLines && threadLines.htmlBefore) || (threadLines && threadLines.textBefore) || ''
@@ -88,13 +88,20 @@ const itemToLines = (sharedItem: GQL.ISharedItem | { thread: GQL.IThread }): Lin
     }))
 }
 
-export function CodeView(sharedItem: GQL.ISharedItem | { thread: GQL.IThread }): JSX.Element | null {
-    const isSnippet = sharedItem.thread.comments.length === 0
+interface CodeViewProps {
+    thread: GQL.ISharedItemThread | GQL.IThread
+    wrapCode: boolean
+}
+
+export const CodeView: React.StatelessComponent<CodeViewProps> = ({ thread, wrapCode }) => {
+    const isSnippet = thread.comments.length === 0
+    const wrapCodeSetting = wrapCode === undefined ? localStorage.getItem('wrap-code') === 'true' : wrapCode
+
     return (
         <code>
-            <table className={`code-view__code${sharedItem.thread.lines ? '' : ' code-view__code--blurry'}`}>
+            <table className={`code-view__code${thread.lines ? '' : ' code-view__code--blurry'}`}>
                 <tbody>
-                    {itemToLines(sharedItem).map((line: Line) => (
+                    {itemToLines(thread).map(line => (
                         <tr className={line.className} key={line.number}>
                             <td
                                 className={
@@ -109,7 +116,9 @@ export function CodeView(sharedItem: GQL.ISharedItem | { thread: GQL.IThread }):
                             <td className="code-view__line-content">
                                 <code>
                                     <pre
-                                        className="code-view__pre"
+                                        className={
+                                            'code-view__pre' + (wrapCodeSetting ? ' code-view__pre--wrapped' : '')
+                                        }
                                         dangerouslySetInnerHTML={{ __html: line.content }}
                                     />
                                 </code>

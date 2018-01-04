@@ -107,6 +107,7 @@ interface Props extends AbsoluteRepoFile {
     html: string
     location: H.Location
     history: H.History
+    wrapCode: boolean
 }
 
 interface State {
@@ -173,8 +174,13 @@ export class Blob extends React.Component<Props, State> {
     }
 
     public shouldComponentUpdate(nextProps: Props): boolean {
-        // Only update the blob if the inner HTML content changes.
+        // Update the blob if the inner HTML content changes.
         if (this.props.html !== nextProps.html) {
+            return true
+        }
+
+        // Update the blob if wrapCode changes value.
+        if (this.props.wrapCode !== nextProps.wrapCode) {
             return true
         }
 
@@ -218,7 +224,13 @@ export class Blob extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        return <code className="blob" ref={this.onBlobRef} dangerouslySetInnerHTML={{ __html: this.props.html }} />
+        return (
+            <code
+                className={'blob' + (this.props.wrapCode ? ' blob--wrapped' : '')}
+                ref={this.onBlobRef}
+                dangerouslySetInnerHTML={{ __html: this.props.html }}
+            />
+        )
     }
 
     private onBlobRef = (ref: HTMLElement | null) => {
@@ -370,8 +382,8 @@ export class Blob extends React.Component<Props, State> {
         // When the user presses 'esc', dismiss tooltip.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter((event: KeyboardEvent) => event.keyCode === 27))
-                .subscribe((event: KeyboardEvent) => {
+                .pipe(filter(event => event.keyCode === 27))
+                .subscribe(event => {
                     event.preventDefault()
                     this.handleDismiss()
                 })
