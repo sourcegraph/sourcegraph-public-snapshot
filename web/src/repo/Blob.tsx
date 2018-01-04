@@ -367,6 +367,15 @@ export class Blob extends React.Component<Props, State> {
                 }
             })
         )
+        // When the user presses 'esc', dismiss tooltip.
+        this.subscriptions.add(
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                .pipe(filter((event: KeyboardEvent) => event.keyCode === 27))
+                .subscribe((event: KeyboardEvent) => {
+                    event.preventDefault()
+                    this.handleDismiss()
+                })
+        )
         this.subscriptions.add(
             fromEvent<MouseEvent>(ref, 'click')
                 .pipe(
