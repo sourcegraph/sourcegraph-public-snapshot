@@ -26,6 +26,7 @@ interface Props<C extends AbstractConnection<N>, N, NP = {}> {
     noun: string
     pluralNoun: string
     updates?: Subject<void>
+    hideFilter?: boolean
 }
 
 interface State<C extends AbstractConnection<N>, N> {
@@ -111,16 +112,18 @@ export class FilteredConnection<C extends AbstractConnection<N>, N extends GQL.N
         const NodeComponent = this.props.nodeComponent
         return (
             <div className={`filtered-connection ${this.props.className || ''}`}>
-                <form className="filtered-connection__form">
-                    <input
-                        className="form-control"
-                        type="search"
-                        placeholder="Search..."
-                        name="query"
-                        value={this.state.query}
-                        onChange={this.onChange}
-                    />
-                </form>
+                {!this.props.hideFilter && (
+                    <form className="filtered-connection__form">
+                        <input
+                            className="form-control"
+                            type="search"
+                            placeholder="Search..."
+                            name="query"
+                            value={this.state.query}
+                            onChange={this.onChange}
+                        />
+                    </form>
+                )}
                 {this.state.loading && <Loader className="icon-inline" />}
                 {!this.state.loading &&
                     this.state.connection &&
