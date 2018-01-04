@@ -44,16 +44,6 @@ func ConnectToDB(dataSource string) {
 
 	globalMigrate = newMigrate(globalDB)
 
-	// support for legacy tables
-	if _, _, err := globalMigrate.Version(); err == migrate.ErrNilVersion {
-		if _, err := globalDB.Query("select id from repo limit 0;"); err == nil {
-			// no version in DB, but "repo" table exists
-			if err := globalMigrate.Force(1503575588); err != nil {
-				log.Fatal("error force migrating DB: " + err.Error())
-			}
-		}
-	}
-
 	if err := globalMigrate.Up(); err != nil && err != migrate.ErrNoChange {
 		log.Fatal("error migrating DB: " + err.Error())
 	}

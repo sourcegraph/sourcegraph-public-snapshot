@@ -19,7 +19,9 @@ func copySSH() error {
 	fi, err := os.Stat(from)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("WARNING: %s does not exist, so only repos that do not require SSH will be accessible.", from)
+			if verbose {
+				log.Printf("%s does not exist, so only repos that do not require SSH will be accessible.", from)
+			}
 			return nil
 		}
 		return errors.Wrap(err, "failed to setup SSH auth")
@@ -51,7 +53,9 @@ func (e *execer) Command(name string, arg ...string) {
 		return
 	}
 	cmd := exec.Command(name, arg...)
-	log.Printf("$ %s %s", name, strings.Join(arg, " "))
+	if verbose {
+		log.Printf("$ %s %s", name, strings.Join(arg, " "))
+	}
 	if e.Out != nil {
 		e.Out.Write([]byte(fmt.Sprintf("\n$ %s %s\n", name, strings.Join(arg, " "))))
 		cmd.Stdout = e.Out

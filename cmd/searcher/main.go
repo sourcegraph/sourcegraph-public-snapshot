@@ -17,6 +17,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -37,6 +38,11 @@ func main() {
 	log.SetFlags(0)
 	tracer.Init("searcher")
 	gitserver.DefaultClient.NoCreds = true
+
+	// Filter log output by level.
+	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
+		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
+	}
 
 	if profBindAddr != "" {
 		go debugserver.Start(profBindAddr)
@@ -67,7 +73,7 @@ func main() {
 	server := &http.Server{Addr: addr, Handler: handler}
 	go shutdownOnSIGINT(server)
 
-	log.Println("listening on :3181")
+	log15.Info("searcher: listening", "addr", ":3181")
 	err := server.ListenAndServe()
 	if err != http.ErrServerClosed {
 		log.Fatal(err)

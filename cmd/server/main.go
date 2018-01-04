@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -36,6 +37,8 @@ var defaultEnv = map[string]string{
 	// * Guess SRC_APP_URL based on hostname
 	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 }
+
+var verbose, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 
 func main() {
 	log.SetFlags(0)
@@ -99,12 +102,12 @@ func main() {
 	// process list.
 	procfile := []string{
 		`gitserver: gitserver`,
-		`indexer: sh -c "sleep 5 && exec indexer"`, // Sleep to avoid migration race with frontend"
+		`indexer: sh -c "sleep 5 && exec indexer"`, // sleep to avoid migration race with frontend
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,
-		`repo-updater: repo-updater`,
-		`syntect_server: env QUIET=true ROCKET_LIMITS='{json=10485760}' ROCKET_PORT=3700 ROCKET_ADDRESS='"127.0.0.1"' ROCKET_ENV=production syntect_server`,
+		`repo-updater: sh -c "sleep 5 && exec repo-updater"`, // sleep because it needs frontend to be ready
+		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=3700 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
 	}
 	if line, err := maybeRedisProcFile(); err != nil {
 		log.Fatal(err)
@@ -123,6 +126,12 @@ func main() {
 	}
 	if _, ok := os.LookupEnv("LOGO"); !ok {
 		if err := os.Setenv("LOGO", "t"); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if _, ok := os.LookupEnv("SRC_LOG_LEVEL"); !ok {
+		if err := os.Setenv("SRC_LOG_LEVEL", "warn"); err != nil {
 			log.Fatal(err)
 		}
 	}

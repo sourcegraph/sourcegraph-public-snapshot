@@ -12,6 +12,7 @@ import (
 	"sync"
 	"syscall"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -46,6 +47,11 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init("github-proxy")
+
+	// Filter log output by level.
+	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
+		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
+	}
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -112,6 +118,6 @@ func main() {
 	h = prometheus.InstrumentHandler("github-proxy", h)
 	http.Handle("/", h)
 
-	log.Print("github-proxy: listening on :3180")
+	log15.Info("github-proxy: listening", "addr", ":3180")
 	log.Fatal(http.ListenAndServe(":3180", nil))
 }
