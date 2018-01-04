@@ -890,6 +890,8 @@ type Site implements ConfigurationSubject {
 	repositories(
 		# Returns the first n repositories from the list.
 		first: Int
+		# Return repositories whose names match the query.
+		query: String
 	): RepositoryConnection!
 	# List all users.
 	users(

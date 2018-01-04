@@ -10,22 +10,30 @@ import (
 
 func (r *siteResolver) Repositories(args *struct {
 	connectionArgs
+	Query *string
 }) *repositoryConnectionResolver {
 	return &repositoryConnectionResolver{
 		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
+		query: args.Query,
 	}
 }
 
 type repositoryConnectionResolver struct {
 	connectionResolverCommon
+	query *string
 }
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {
-	reposList, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
+	opt := &sourcegraph.RepoListOptions{
 		ListOptions: sourcegraph.ListOptions{
 			PerPage: r.first,
 		},
-	})
+	}
+	if r.query != nil {
+		opt.Query = *r.query
+	}
+
+	reposList, err := backend.Repos.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}

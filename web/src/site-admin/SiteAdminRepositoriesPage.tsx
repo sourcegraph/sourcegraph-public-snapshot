@@ -4,6 +4,12 @@ import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { debounceTime } from 'rxjs/operators/debounceTime'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { startWith } from 'rxjs/operators/startWith'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
+import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -13,6 +19,7 @@ import { fetchAllRepositories } from './backend'
 interface Props extends RouteComponentProps<any> {}
 
 export interface State {
+    query: string
     repos?: GQL.IRepository[]
     totalCount?: number
 }
@@ -21,20 +28,36 @@ export interface State {
  * A page displaying the repositories on this site.
  */
 export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
-    public state: State = {}
-
+    private queryInputChanges = new Subject<string>()
     private subscriptions = new Subscription()
+
+    public constructor(props: Props) {
+        super(props)
+
+        this.state = {
+            query: new URLSearchParams(this.props.location.search).get('q') || '',
+        }
+    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminRepos')
 
         this.subscriptions.add(
-            fetchAllRepositories().subscribe(resp =>
-                this.setState({
-                    repos: resp.nodes,
-                    totalCount: resp.totalCount,
-                })
-            )
+            this.queryInputChanges
+                .pipe(
+                    startWith(this.state.query),
+                    distinctUntilChanged(),
+                    tap(query => this.setState({ query })),
+                    debounceTime(500),
+                    tap(query => this.props.history.replace({ search: `q=${encodeURIComponent(query)}` })),
+                    switchMap(fetchAllRepositories)
+                )
+                .subscribe(resp =>
+                    this.setState({
+                        repos: resp.nodes,
+                        totalCount: resp.totalCount,
+                    })
+                )
         )
     }
 
@@ -60,7 +83,16 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                         <GearIcon className="icon-inline" /> Configure repositories
                     </Link>
                 </div>
-
+                <form className="site-admin-page__filter-form">
+                    <input
+                        className="form-control"
+                        type="search"
+                        placeholder="Search repositories..."
+                        name="query"
+                        value={this.state.query}
+                        onChange={this.onChange}
+                    />
+                </form>
                 {!this.state.repos && <Loader className="icon-inline" />}
                 <ul className="site-admin-detail-list__list">
                     {this.state.repos &&
@@ -89,7 +121,7 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                                 {this.state.totalCount} {pluralize('repository', this.state.totalCount, 'repositories')}{' '}
                                 total{' '}
                                 {this.state.repos.length < this.state.totalCount &&
-                                    `(showing first ${this.state.repos.length})`}
+                                    `(showing ${this.state.query ? 'matching' : 'first'} ${this.state.repos.length})`}
                             </small>
                         </p>
                     ) : (
@@ -97,5 +129,9 @@ export class SiteAdminRepositoriesPage extends React.Component<Props, State> {
                     ))}
             </div>
         )
+    }
+
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
+        this.queryInputChanges.next(e.currentTarget.value)
     }
 }
