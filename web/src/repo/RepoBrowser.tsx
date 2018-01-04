@@ -38,16 +38,7 @@ export class RepoBrowser extends React.PureComponent<{}, State> {
                 <h2>Repositories</h2>
                 {!this.state.repositories && <span>Loading...</span>}
                 {this.state.repositories && this.repoGroups()}
-                {this.state.repositories && (
-                    <h3>
-                        <a
-                            className="repo-browser__add-more"
-                            href="https://about.sourcegraph.com/docs/server/config/repositories"
-                        >
-                            Add more
-                        </a>
-                    </h3>
-                )}
+                {this.state.repositories && this.state.repositories.length === 0 && <p>No repositories.</p>}
             </div>
         )
     }
