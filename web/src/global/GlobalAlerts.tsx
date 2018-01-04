@@ -1,4 +1,6 @@
 import * as React from 'react'
+import { interval } from 'rxjs/observable/interval'
+import { catchError } from 'rxjs/operators/catchError'
 import { delay } from 'rxjs/operators/delay'
 import { filter } from 'rxjs/operators/filter'
 import { switchMap } from 'rxjs/operators/switchMap'
@@ -30,6 +32,13 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             siteFlags
                 .pipe(filter(({ repositoriesCloning }) => repositoriesCloning.totalCount > 0))
                 .pipe(delay(5000), switchMap(refreshSiteFlags))
+                .subscribe()
+        )
+
+        // Also periodically fetch (but less often) always.
+        this.subscriptions.add(
+            interval(30000)
+                .pipe(delay(5000), switchMap(refreshSiteFlags), catchError(() => []))
                 .subscribe()
         )
     }
