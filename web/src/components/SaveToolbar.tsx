@@ -32,7 +32,7 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
                     className="btn btn-sm btn-success save-toolbar__item save-toolbar__btn save-toolbar__btn-first"
                     onClick={onSave}
                 >
-                    <CheckmarkIcon className="icon-inline" /> Save
+                    <CheckmarkIcon className="icon-inline" /> Save changes
                 </button>
                 <button
                     disabled={saveDiscardDisabled}
