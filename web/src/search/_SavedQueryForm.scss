@@ -28,14 +28,6 @@
     .saved-query-form {
         background: $color-light-bg-2;
 
-        &__button-cancel {
-            background: $color-light-bg-4;
-
-            &:hover {
-                background: $color-light-bg-3;
-            }
-        }
-
         .form-control {
             background: $color-light-bg-1;
         }
