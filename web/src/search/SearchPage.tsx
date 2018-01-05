@@ -1,4 +1,3 @@
-import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
@@ -12,6 +11,7 @@ import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
 import { SavedQueries } from './SavedQueries'
 import { SearchButton } from './SearchButton'
+import { SearchHelp } from './SearchHelp'
 import { SearchSuggestionChips } from './SearchSuggestionChips'
 
 interface Props {
@@ -78,16 +78,7 @@ export class SearchPage extends React.Component<Props, State> {
                             autoFocus={'cursor-at-end'}
                         />
                         <SearchButton />
-                        <a
-                            className="search-page__help"
-                            href="https://about.sourcegraph.com/docs/search/"
-                            target="_blank"
-                        >
-                            <small className="search-page__center">
-                                <HelpIcon className="icon-inline" />
-                                Help
-                            </small>
-                        </a>
+                        <SearchHelp />
                     </div>
                     <div className="search-page__input-sub-container">
                         <SearchSuggestionChips
