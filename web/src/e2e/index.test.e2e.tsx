@@ -124,7 +124,7 @@ describe('e2e test suite', () => {
             assert.equal(currentThemes.length, 1, 'Expected 1 theme')
             const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
             await chrome.click('.theme-switcher')
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 await chrome.evaluate<string>(() =>
                     Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
                 ),
