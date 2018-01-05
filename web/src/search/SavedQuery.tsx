@@ -3,7 +3,7 @@ import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import PencilIcon from '@sourcegraph/icons/lib/Pencil'
 import * as React from 'react'
-import { Redirect } from 'react-router'
+import { Link } from 'react-router-dom'
 import { debounceTime } from 'rxjs/operators/debounceTime'
 import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
@@ -111,58 +111,47 @@ export class SavedQuery extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private handleOnClick = () => {
-        this.logEvent()
-        this.setState({ redirect: true })
-    }
-
     public render(): JSX.Element | null {
-        if (this.state.redirect) {
-            return <Redirect push={true} to={'/search?' + buildSearchURLQuery(this.props.savedQuery.query)} />
-        }
-
         return (
             <div className={`saved-query ${this.state.editing ? 'editing' : ''}`}>
-                <div
-                    title={this.props.savedQuery.query.query}
-                    onClick={this.handleOnClick}
-                    className={`saved-query__row`}
-                >
-                    <div className="saved-query__row-column">
-                        <div className="saved-query__description">{this.props.savedQuery.description}</div>
-                        <div className="saved-query__actions">
-                            {!this.state.editing && (
-                                <button className="btn btn-icon action" onClick={this.toggleEditing}>
-                                    <PencilIcon className="icon-inline" />
-                                    Edit
+                <Link onClick={this.logEvent} to={'/search?' + buildSearchURLQuery(this.props.savedQuery.query)}>
+                    <div title={this.props.savedQuery.query.query} className={`saved-query__row`}>
+                        <div className="saved-query__row-column">
+                            <div className="saved-query__description">{this.props.savedQuery.description}</div>
+                            <div className="saved-query__actions">
+                                {!this.state.editing && (
+                                    <button className="btn btn-icon action" onClick={this.toggleEditing}>
+                                        <PencilIcon className="icon-inline" />
+                                        Edit
+                                    </button>
+                                )}
+                                {!this.state.editing && (
+                                    <button className="btn btn-icon action" onClick={this.duplicate}>
+                                        <CopyIcon className="icon-inline" />
+                                        Duplicate
+                                    </button>
+                                )}
+                                <button className="btn btn-icon action" onClick={this.confirmDelete}>
+                                    <DeleteIcon className="icon-inline" />
+                                    Delete
                                 </button>
+                            </div>
+                        </div>
+                        <div className="saved-query__results-container">
+                            {!this.state.loading &&
+                                this.state.sparkline && (
+                                    <div title="Results found in the last 30 days" className="saved-query__sparkline">
+                                        <Sparkline data={this.state.sparkline} width={200} height={40} />
+                                    </div>
+                                )}
+                            {this.state.loading ? (
+                                <Loader className="icon-inline" />
+                            ) : (
+                                <div className="saved-query__result-count">{this.state.approximateResultCount}</div>
                             )}
-                            {!this.state.editing && (
-                                <button className="btn btn-icon action" onClick={this.duplicate}>
-                                    <CopyIcon className="icon-inline" />
-                                    Duplicate
-                                </button>
-                            )}
-                            <button className="btn btn-icon action" onClick={this.confirmDelete}>
-                                <DeleteIcon className="icon-inline" />
-                                Delete
-                            </button>
                         </div>
                     </div>
-                    <div className="saved-query__results-container">
-                        {!this.state.loading &&
-                            this.state.sparkline && (
-                                <div title="Results found in the last 30 days" className="saved-query__sparkline">
-                                    <Sparkline data={this.state.sparkline} width={200} height={40} />
-                                </div>
-                            )}
-                        {this.state.loading ? (
-                            <Loader className="icon-inline" />
-                        ) : (
-                            <div className="saved-query__result-count">{this.state.approximateResultCount}</div>
-                        )}
-                    </div>
-                </div>
+                </Link>
                 {this.state.editing && (
                     <div className="saved-query__row">
                         <SavedQueryUpdateForm
@@ -179,6 +168,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     private toggleEditing = (e?: React.MouseEvent<HTMLElement>) => {
         if (e) {
             e.stopPropagation()
+            e.preventDefault()
         }
         eventLogger.log('SavedQueryToggleEditing', { queries: { editing: !this.state.editing } })
         this.setState({ editing: !this.state.editing })
