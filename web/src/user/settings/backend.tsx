@@ -186,6 +186,25 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
     )
 }
 
+export function updatePassword(args: { oldPassword: string; newPassword: string }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation updatePassword($oldPassword: String!, $newPassword: String!) {
+                updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) { }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.updatePassword) {
+                eventLogger.log('UpdatePasswordFailed')
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            eventLogger.log('PasswordUpdated')
+        })
+    )
+}
+
 export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
     if (!currentUser) {
         throw new Error('User must be signed in')

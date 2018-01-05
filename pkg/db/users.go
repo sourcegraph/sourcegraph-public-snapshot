@@ -542,6 +542,33 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 	return true, nil
 }
 
+// UpdatePassword updates a user's password given the current password.
+func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error {
+	// 🚨 SECURITY: No empty passwords.
+	if oldPassword == "" {
+		return errors.New("old password was empty")
+	}
+	if newPassword == "" {
+		return errors.New("new password was empty")
+	}
+	// 🚨 SECURITY: Make sure the caller provided the correct old password.
+	if ok, err := u.IsPassword(ctx, id, oldPassword); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("wrong old password")
+	}
+
+	passwd, err := hashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	// 🚨 SECURITY: Set the new password
+	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
+		return err
+	}
+	return nil
+}
+
 // RandomizePasswordAndClearPasswordResetRateLimit overwrites a user's password with a hard-to-guess
 // random password and clears the password reset rate limit. It is intended to be used by site admins,
 // who can subsequently generate a new password reset code for the user (in case the user has locked

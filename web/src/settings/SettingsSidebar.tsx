@@ -92,6 +92,16 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     </li>
                     <li className="sidebar__item">
                         <NavLink
+                            to="/settings/account"
+                            exact={true}
+                            className={`sidebar__item-link`}
+                            activeClassName="sidebar__item--active"
+                        >
+                            Password
+                        </NavLink>
+                    </li>
+                    <li className="sidebar__item">
+                        <NavLink
                             to="/settings/emails"
                             exact={true}
                             className={`sidebar__item-link`}

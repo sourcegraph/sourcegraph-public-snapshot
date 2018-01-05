@@ -148,3 +148,49 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 		t.Fatalf("unexpected password reset error: %s", err)
 	}
 }
+
+func TestUsers_UpdatePassword(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	usr, err := Users.Create(ctx, NewUser{
+		Email:     "foo@bar.com",
+		Username:  "foo",
+		Password:  "right-password",
+		EmailCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if isPassword, err := Users.IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
+		t.Fatal("didn't accept correct password")
+	}
+	if isPassword, err := Users.IsPassword(ctx, usr.ID, "wrong-password"); err == nil && isPassword {
+		t.Fatal("accepted wrong password")
+	}
+	if err := Users.UpdatePassword(ctx, usr.ID, "wrong-password", "new-password"); err == nil {
+		t.Fatal("accepted wrong old password")
+	}
+	if isPassword, err := Users.IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
+		t.Fatal("didn't accept correct password")
+	}
+	if isPassword, err := Users.IsPassword(ctx, usr.ID, "wrong-password"); err == nil && isPassword {
+		t.Fatal("accepted wrong password")
+	}
+
+	if err := Users.UpdatePassword(ctx, usr.ID, "right-password", "new-password"); err != nil {
+		t.Fatal(err)
+	}
+	if isPassword, err := Users.IsPassword(ctx, usr.ID, "new-password"); err != nil || !isPassword {
+		t.Fatal("didn't accept correct password")
+	}
+	if isPassword, err := Users.IsPassword(ctx, usr.ID, "wrong-password"); err == nil && isPassword {
+		t.Fatal("accepted wrong password")
+	}
+	if isPassword, err := Users.IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
+		t.Fatal("accepted wrong (old) password")
+	}
+}

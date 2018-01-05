@@ -156,6 +156,8 @@ type Mutation {
 	# Deletes a user account. Only site admins may perform this mutation.
 	deleteUser(user: ID!): EmptyResponse
 	inviteUser(email: String!, orgID: ID!): InviteUserResult
+	# Updates the current user's password. The oldPassword arg must match the user's current password.
+	updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
 	acceptUserInvite(inviteToken: String!): EmptyResponse
 	removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
 	# adds a phabricator repository to the Sourcegraph server.
