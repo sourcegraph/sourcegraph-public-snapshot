@@ -43,7 +43,7 @@ func TestCleanupInactive(t *testing.T) {
 	})
 
 	s := &Server{ReposDir: root}
-	s.cloning = make(map[string]struct{})
+	s.Handler() // Handler as a side-effect sets up Server
 	s.CleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
@@ -101,7 +101,7 @@ func TestCleanupExpired(t *testing.T) {
 	})
 
 	s := &Server{ReposDir: root}
-	s.cloning = make(map[string]struct{})
+	s.Handler() // Handler as a side-effect sets up Server
 	s.CleanupRepos()
 
 	fi, err := os.Stat(repoA)

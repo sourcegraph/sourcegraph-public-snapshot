@@ -25,7 +25,6 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
@@ -41,17 +40,6 @@ var runCommand = func(cmd *exec.Cmd) (error, int) { // mocked by tests
 	return err, exitStatus
 }
 var skipCloneForTests = false // set by tests
-
-var cloneLimiter *parallel.Run
-
-func init() {
-	// Limit the number of concurrent clones to prevent hitting throttle limits by the host.
-	var maxParallelClones = conf.Get().GitMaxConcurrentClones
-	if maxParallelClones == 0 {
-		maxParallelClones = 100
-	}
-	cloneLimiter = parallel.NewRun(maxParallelClones)
-}
 
 // Server is a gitserver server.
 type Server struct {
@@ -69,10 +57,19 @@ type Server struct {
 	// attack. This should only be used for testing.
 	InsecureSkipCheckVerifySSH bool
 
+	// MaxConcurrentClones controls the maximum number of clones that can
+	// happen at once. Used to prevent throttle limits from a code
+	// host. Defaults to 100.
+	MaxConcurrentClones int
+
 	// cloning tracks repositories (key is '/'-separated path) that are
 	// in the process of being cloned.
 	cloningMu sync.Mutex
 	cloning   map[string]struct{}
+
+	// cloneLimiter limits the number of concurrent clones. Semaphore size is
+	// equal to MaxConcurrentClones.
+	cloneLimiter *parallel.Run
 
 	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
@@ -120,6 +117,10 @@ func (s *Server) Handler() http.Handler {
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[string]*locks)
+	if s.MaxConcurrentClones == 0 {
+		s.MaxConcurrentClones = 100
+	}
+	s.cloneLimiter = parallel.NewRun(s.MaxConcurrentClones)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", s.handleExec)
@@ -283,8 +284,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				s.releaseCloneLock(dir)
 			} else if !cloneInProgress {
 				go func() {
-					cloneLimiter.Acquire()
-					defer cloneLimiter.Release()
+					s.cloneLimiter.Acquire()
+					defer s.cloneLimiter.Release()
 
 					// Create a new context because this is in a background goroutine.
 					ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
