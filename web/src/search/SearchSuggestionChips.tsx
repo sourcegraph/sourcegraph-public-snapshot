@@ -122,8 +122,8 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                         {scope.name}
                     </button>
                 ))}
-                <div className="search-suggestion-chips__add">
-                    <NavLink className="search-page__help" to="/settings/configuration">
+                <div className="search-suggestion-chips__edit">
+                    <NavLink className="search-page__edit" to="/settings/configuration">
                         <small className="search-page__center">Edit</small>
                     </NavLink>
                 </div>

@@ -1,7 +1,9 @@
 .search-help {
     white-space: nowrap;
+    margin-left: 0.125rem;
+    align-self: center;
 
-    @media (max-width: $media-md) {
+    @media (max-width: $media-lg) {
         &__text {
             display: none;
         }
