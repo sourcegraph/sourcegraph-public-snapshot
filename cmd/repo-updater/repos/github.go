@@ -75,7 +75,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 				}
 				repo, _, err := c.client.Repositories.Get(ctx, ownerAndRepo[0], ownerAndRepo[1])
 				if err != nil {
-					log15.Error("Could not update public GitHubrepository", "error", err)
+					log15.Error("Could not update public GitHub repository", "error", err)
 					continue
 				}
 				explicitRepos = append(explicitRepos, repo)
