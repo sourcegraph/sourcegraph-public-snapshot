@@ -102,7 +102,7 @@ func main() {
 	// process list.
 	procfile := []string{
 		`gitserver: gitserver`,
-		`indexer: sh -c "sleep 5 && exec indexer"`, // sleep to avoid migration race with frontend
+		`indexer: indexer`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,
