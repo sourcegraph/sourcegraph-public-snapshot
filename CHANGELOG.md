@@ -20,6 +20,13 @@ Before cutting a new release, please:
 ### Added
 
 * Search files by name by including `type:path` in a search query
+* Global alerts for configuration-needed and cloning-in-progress
+* Better list interfaces for repositories, users, organizations, and threads
+* Users can change their own password in settings
+
+### Changed
+
+* Server log messages are much quieter by default
 
 ## 2.3.11
 
