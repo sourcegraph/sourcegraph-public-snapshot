@@ -64,11 +64,12 @@ func generateConfigFile(path string) (configJSON string, err error) {
 
 	// The default site configuration.
 	defaultSiteConfig := schema.SiteConfiguration{
-		AutoRepoAdd:     true,
-		SecretKey:       string(mustCryptoRand()),
-		AuthAllowSignup: true,
-		AuthProvider:    "builtin",
-		UpdateChannel:   strptr("release"),
+		AutoRepoAdd:      true,
+		SecretKey:        string(mustCryptoRand()),
+		AuthAllowSignup:  true,
+		AuthProvider:     "builtin",
+		UpdateChannel:    strptr("release"),
+		MaxReposToSearch: 50,
 	}
 
 	data, err := json.MarshalIndent(defaultSiteConfig, "", "  ")
