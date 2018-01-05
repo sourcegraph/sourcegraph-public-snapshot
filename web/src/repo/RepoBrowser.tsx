@@ -1,17 +1,25 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import Loader from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { fetchAllRepositories } from '../site-admin/backend'
+import { fetchAllRepositoriesAndPollIfAnyCloning } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: repo }) => (
-    <li key={repo.id} className="site-admin-detail-list__item site-admin-repositories-page__repo">
+    <li key={repo.id} className="site-admin-detail-list__item repo-browser__repo">
         <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
             <Link to={`/${repo.uri}`} className="site-admin-detail-list__name">
                 {repo.uri}
             </Link>
+            {repo.latest.cloneInProgress && (
+                <span className="repo-browser__repo-cloning">
+                    <small>
+                        <Loader className="icon-inline" /> Cloning
+                    </small>
+                </span>
+            )}
         </div>
     </li>
 )
@@ -46,7 +54,7 @@ export class RepoBrowser extends React.PureComponent<Props> {
                     className="repo-browser__filtered-connection"
                     noun="repository"
                     pluralNoun="repositories"
-                    queryConnection={fetchAllRepositories}
+                    queryConnection={fetchAllRepositoriesAndPollIfAnyCloning}
                     nodeComponent={RepositoryNode}
                     history={this.props.history}
                     location={this.props.location}

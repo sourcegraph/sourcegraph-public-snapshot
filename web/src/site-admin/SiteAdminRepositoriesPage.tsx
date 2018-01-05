@@ -1,4 +1,5 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -7,7 +8,7 @@ import { Subject } from 'rxjs/Subject'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchAllRepositories, setRepositoryEnabled } from './backend'
+import { fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled } from './backend'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -34,6 +35,11 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                     <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
                         {this.props.node.createdAt && (
                             <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
+                        )}
+                        {this.props.node.latest.cloneInProgress && (
+                            <li>
+                                <Loader className="icon-inline" /> Cloning
+                            </li>
                         )}
                         <li>
                             Access:{' '}
@@ -146,7 +152,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
     }
 
     private queryRepositories = (args: FilteredConnectionQueryArgs) =>
-        fetchAllRepositories({ ...args, includeDisabled: true })
+        fetchAllRepositoriesAndPollIfAnyCloning({ ...args, includeDisabled: true })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 }

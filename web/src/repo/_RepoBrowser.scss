@@ -12,5 +12,16 @@
         margin-top: 1rem;
     }
 
+    &__repo {
+        display: flex;
+        align-items: center;
+        &-cloning {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 0.5rem;
+            color: $color-success;
+        }
+    }
+
     padding: 0 2rem;
 }

@@ -1,6 +1,11 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { startWith } from 'rxjs/operators/startWith'
+import { tap } from 'rxjs/operators/tap'
+import { Subject } from 'rxjs/Subject'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { refreshSiteFlags } from '../site/backend'
 
 /**
  * Fetches all users.
@@ -93,16 +98,18 @@ export function fetchAllOrgs(args: { first?: number; query?: string }): Observab
     )
 }
 
+interface RepositoryArgs {
+    first?: number
+    query?: string
+    includeDisabled?: boolean
+}
+
 /**
  * Fetches all repositories.
  *
  * @return Observable that emits the list of repositories
  */
-export function fetchAllRepositories(args: {
-    first?: number
-    query?: string
-    includeDisabled?: boolean
-}): Observable<GQL.IRepositoryConnection> {
+export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
     args = { includeDisabled: false, ...args }
     return queryGraphQL(
         gql`
@@ -114,6 +121,9 @@ export function fetchAllRepositories(args: {
                             uri
                             enabled
                             createdAt
+                            latest {
+                                cloneInProgress
+                            }
                         }
                         totalCount
                     }
@@ -127,6 +137,27 @@ export function fetchAllRepositories(args: {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.site.repositories
+        })
+    )
+}
+
+export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
+    // Poll if there are repositories that are being cloned.
+    //
+    // TODO(sqs): This is hacky, but I couldn't figure out a better way.
+    const subject = new Subject<void>()
+    return subject.pipe(
+        startWith(void 0),
+        mergeMap(() => fetchAllRepositories(args)),
+        tap(result => {
+            if (result.nodes.some(n => n.latest.cloneInProgress)) {
+                setTimeout(() => subject.next(), 3000)
+
+                // Also trigger the global alert for "Cloning repositories...".
+                refreshSiteFlags()
+                    .toPromise()
+                    .catch(err => console.error(err))
+            }
         })
     )
 }
