@@ -18,8 +18,8 @@ import { configurationCascade } from '../settings/configuration'
 export interface SavedQueryFields {
     description: string
     query: string
-    scopeQuery: string
     subject: GQLID
+    viewOnHomepage: boolean
 }
 
 interface Props {
@@ -39,6 +39,7 @@ interface State extends SavedQueryFields {
     submitLabel: string
     cancelLabel: string
     submitting: boolean
+    canSubmit: boolean
     error?: any
 }
 
@@ -47,20 +48,38 @@ type Update = (s: State) => State
 export const SavedQueryForm = reactive<Props>(props => {
     let descriptionInput: HTMLInputElement | null = null
     let queryInput: HTMLInputElement | null = null
-    let scopeQueryInput: HTMLInputElement | null = null
-    let subjectInput: HTMLSelectElement | null = null
+    let viewLocationInput: HTMLInputElement | null = null
+    let subjectValue: string
 
     const submits = new Subject<React.FormEvent<HTMLFormElement>>()
     const nextSubmit = (e: React.FormEvent<HTMLFormElement>) => submits.next(e)
 
     const inputChanges = new Subject<SavedQueryFields>()
-    const nextInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const nextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.currentTarget.type === 'radio') {
+            subjectValue = e.target.value
+        }
+
         inputChanges.next({
             description: descriptionInput ? descriptionInput.value : '',
             query: queryInput ? queryInput.value : '',
-            scopeQuery: scopeQueryInput ? scopeQueryInput.value : '',
-            subject: subjectInput ? subjectInput.value : '',
+            subject: subjectValue,
+            viewOnHomepage: viewLocationInput ? viewLocationInput.checked : false,
         })
+    }
+
+    const isChecked = (currentSubject: string, subjectOptionID: string): boolean => {
+        const isChecked = currentSubject === subjectOptionID
+        // If the user has not selected a subject value, automatically check the first subject value.
+        if (!subjectValue || subjectValue === subjectOptionID) {
+            subjectValue = subjectOptionID
+            return true
+        }
+
+        if (isChecked) {
+            subjectValue = subjectOptionID
+        }
+        return isChecked
     }
 
     return merge(
@@ -84,16 +103,16 @@ export const SavedQueryForm = reactive<Props>(props => {
                 inputChanges.next({
                     description: defaultValues.description,
                     query: defaultValues.query,
-                    scopeQuery: defaultValues.scopeQuery,
                     subject: defaultValues.subject,
+                    viewOnHomepage: defaultValues.viewOnHomepage,
                 })
             }),
             map((defaultValues): Update => state => ({
                 ...state,
                 description: defaultValues.description,
                 query: defaultValues.query,
-                scopeQuery: defaultValues.scopeQuery,
                 subject: defaultValues.subject,
+                viewOnHomepage: defaultValues.viewOnHomepage,
             }))
         ),
 
@@ -130,7 +149,6 @@ export const SavedQueryForm = reactive<Props>(props => {
                         submitting: false,
                         description: '',
                         query: '',
-                        scopeQuery: '',
                         subject: '',
                     })),
                     catchError((error): Update[] => {
@@ -146,9 +164,9 @@ export const SavedQueryForm = reactive<Props>(props => {
             ({
                 description,
                 query,
-                scopeQuery,
                 subject,
                 subjectOptions,
+                viewOnHomepage,
                 onDidCancel,
                 title,
                 submitLabel,
@@ -158,6 +176,7 @@ export const SavedQueryForm = reactive<Props>(props => {
             }: State): JSX.Element | null => (
                 <form className="saved-query-form" onSubmit={nextSubmit}>
                     {title && <h3 className="saved-query-form__title">{title}</h3>}
+                    <span>Description</span>
                     <input
                         type="text"
                         name="description"
@@ -169,6 +188,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                         required={true}
                         ref={e => (descriptionInput = e)}
                     />
+                    <span>Search query</span>
                     <input
                         type="text"
                         name="query"
@@ -181,41 +201,47 @@ export const SavedQueryForm = reactive<Props>(props => {
                         autoCapitalize="off"
                         ref={e => (queryInput = e)}
                     />
-                    <input
-                        type="text"
-                        name="scope-query"
-                        className="form-control"
-                        placeholder="Scope query"
-                        onChange={nextInputChange}
-                        value={scopeQuery || ''}
-                        autoCorrect="off"
-                        spellCheck={false}
-                        autoCapitalize="off"
-                        ref={e => (scopeQueryInput = e)}
-                    />
-                    <select
-                        name="subject"
-                        className="form-control"
-                        onChange={nextInputChange}
-                        value={subject}
-                        ref={e => (subjectInput = e)}
-                    >
+                    <span>Save location</span>
+                    <div className="saved-query-form__save-location">
                         {subjectOptions
                             .filter(
                                 (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
                                     subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
                             )
                             .map((subjectOption, i) => (
-                                <option key={i} value={subjectOption.id}>
-                                    {configurationSubjectLabel(subjectOption)}
-                                </option>
+                                <span className="saved-query-form__save-location-options" key={i}>
+                                    <label>
+                                        <input
+                                            className="saved-query-form__save-location-input"
+                                            onChange={nextInputChange}
+                                            type="radio"
+                                            value={subjectOption.id}
+                                            checked={isChecked(subject, subjectOption.id)}
+                                        />
+                                        {configurationSubjectLabel(subjectOption)}
+                                    </label>
+                                </span>
                             ))}
-                    </select>
+                    </div>
+                    <div className="saved-query-form__save-location">
+                        <span className="saved-query-form__save-location-options">
+                            <label>
+                                <input
+                                    className="saved-query-form__save-location-input"
+                                    type="checkbox"
+                                    defaultChecked={viewOnHomepage}
+                                    onChange={nextInputChange}
+                                    ref={e => (viewLocationInput = e)}
+                                />
+                                Show on homepage
+                            </label>
+                        </span>
+                    </div>
                     <div className="saved-query-form__actions">
                         <button
                             type="submit"
                             className="btn btn-primary saved-query-form__button"
-                            disabled={submitting}
+                            disabled={!(description && query && subject) || submitting}
                         >
                             {submitLabel}
                         </button>

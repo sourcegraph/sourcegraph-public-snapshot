@@ -1,29 +1,49 @@
+@import './global-styles/colors';
+
 .saved-query {
     width: 100%;
+    cursor: pointer;
 
     &__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-style: solid none;
+        border-width: 0.5px;
+        border-color: $color-border;
+
+        &:first-child:not(:last-child) {
+            border-bottom-width: 0;
+        }
+    }
+
+    &__row-column {
         display: flex;
         align-items: center;
     }
 
     &__description,
-    &__result-count,
+    &__results-container,
     &__query,
     &__actions {
         height: 2.5rem;
     }
 
     &__description,
-    &__result-count {
+    &__results-container {
         flex: 0 0 auto;
         margin-bottom: 0;
     }
 
     &__description {
+        height: 1.5rem;
+        line-height: 1.5rem;
         font-weight: normal;
+        color: $color-text-1;
     }
 
-    &__result-count {
+    &__results-container {
+        color: #cad2e2;
         min-width: 4rem;
         margin-left: 0.5rem;
 
@@ -41,6 +61,34 @@
         flex: 0 0 auto;
     }
 
+    &__sparkline {
+        display: inline-block;
+        vertical-align: middle;
+        padding-right: 0.625rem;
+        padding-left: 0.3125rem;
+    }
+
+    &__result-count {
+        display: inline-block;
+        padding: .25rem .5rem;
+        margin: .25rem .5rem;
+        border-radius: 1.125rem;
+        background: $color-bg-2;
+    }
+
+    &__add-query {
+        display: flex;
+        flex: 1 1 auto;
+        justify-content: center;
+        align-items: center;
+        height: 2.5rem;
+    }
+
+    &__center {
+        display: flex;
+        align-items: center;
+    }
+
     .action {
         opacity: 0;
     }
@@ -51,7 +99,6 @@
 
     // stylelint-disable-next-line no-duplicate-selectors
     &__actions {
-        margin-top: -0.5rem;
         display: flex;
 
         .action {
@@ -86,5 +133,22 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+}
+
+.theme-light {
+    .saved-query {
+        &__row {
+            border-color: $color-light-border;
+        }
+
+        &__result-count {
+            background: $color-light-bg-2;
+            color: $color-light-text-3;
+        }
+
+        &__description {
+            color: $color-light-text-1;
+        }
     }
 }

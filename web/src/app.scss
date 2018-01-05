@@ -84,12 +84,14 @@ body {
 // Dark-themed elements
 
 .theme-dark {
+    border-color: $color-border;
     background-color: $color-page-background;
     color: $color-text;
 }
 // Light-themed elements
 
 .theme-light {
+    border-color: $color-light-border;
     background-color: $color-light-bg-1;
     color: $color-light-text-1;
 }
@@ -361,7 +363,6 @@ hr {
 @import './search/SearchPage';
 @import './search/SearchResults';
 @import './search/QueryInput';
-@import './search/SearchScope';
 @import './search/ScopeLabel';
 @import './search/SearchButton';
 @import './site-admin/SiteInitPage';

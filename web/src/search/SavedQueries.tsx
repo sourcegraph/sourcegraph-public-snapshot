@@ -3,9 +3,11 @@ import HelpIcon from '@sourcegraph/icons/lib/Help'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { colorTheme, getColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { observeSavedQueries } from './backend'
 import { SavedQuery } from './SavedQuery'
@@ -25,10 +27,16 @@ interface State {
 
     loading: boolean
     error?: Error
+    isLightTheme: boolean
 }
 
 export class SavedQueries extends React.Component<Props, State> {
-    public state: State = { savedQueries: [], creating: false, loading: true }
+    public state: State = {
+        savedQueries: [],
+        creating: false,
+        loading: true,
+        isLightTheme: getColorTheme() === 'light',
+    }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -57,6 +65,7 @@ export class SavedQueries extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
+        this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
         eventLogger.logViewEvent('SavedQueries')
     }
 
@@ -73,38 +82,75 @@ export class SavedQueries extends React.Component<Props, State> {
             return <Loader />
         }
 
+        const isHomepage = this.props.location.pathname === '/search'
+
+        const savedQueries = this.state.savedQueries.filter(savedQuery => {
+            if (isHomepage) {
+                return savedQuery.viewOnHomepage
+            }
+            return savedQuery
+        })
+
         return (
             <div className="saved-queries">
-                <div className="saved-queries__header">
-                    <h2>Saved queries</h2>
+                {!isHomepage && (
+                    <div>
+                        <div className="saved-queries__header">
+                            <h2>Saved queries</h2>
+                            <span className="saved-queries__center">
+                                <button
+                                    className="btn btn-link"
+                                    onClick={this.toggleCreating}
+                                    disabled={this.state.creating}
+                                >
+                                    <AddIcon className="icon-inline" /> Add new query
+                                </button>
 
-                    <button
-                        className="btn btn-primary saved-queries__header-button"
-                        onClick={this.toggleCreating}
-                        disabled={this.state.creating}
-                    >
-                        <AddIcon className="icon-inline" /> New
-                    </button>
-
-                    <a
-                        className="saved-queries__help"
-                        href="https://about.sourcegraph.com/docs/search#saved-queries"
-                        target="_blank"
-                    >
-                        <small>
-                            <HelpIcon className="icon-inline" />
-                            <span>Help</span>
-                        </small>
-                    </a>
-                </div>
-                {this.state.creating && (
-                    <SavedQueryCreateForm onDidCreate={this.onDidCreateSavedQuery} onDidCancel={this.toggleCreating} />
+                                <a
+                                    className="saved-queries__help"
+                                    href="https://about.sourcegraph.com/docs/search/#saved-queries"
+                                    target="_blank"
+                                >
+                                    <small>
+                                        <HelpIcon className="icon-inline" />
+                                        <span>Help</span>
+                                    </small>
+                                </a>
+                            </span>
+                        </div>
+                        {this.state.creating && (
+                            <SavedQueryCreateForm
+                                onDidCreate={this.onDidCreateSavedQuery}
+                                onDidCancel={this.toggleCreating}
+                            />
+                        )}
+                        {!this.state.creating &&
+                            this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
+                    </div>
                 )}
-                {!this.state.creating &&
-                    this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
-                {this.state.savedQueries.map((savedQuery, i) => (
-                    <SavedQuery key={i} savedQuery={savedQuery} onDidDuplicate={this.onDidDuplicateSavedQuery} />
-                ))}
+                <div>
+                    {savedQueries.map((savedQuery, i) => (
+                        <SavedQuery
+                            hideBottomBorder={i === 0 && savedQueries.length > 1}
+                            key={i}
+                            savedQuery={savedQuery}
+                            onDidDuplicate={this.onDidDuplicateSavedQuery}
+                        />
+                    ))}
+                </div>
+                {savedQueries.length === 0 &&
+                    isHomepage && (
+                        <div className="saved-query">
+                            <Link to="/search/queries">
+                                <div className={`saved-query__row`}>
+                                    <div className="saved-query__add-query">
+                                        <AddIcon className="icon-inline" /> Add a new query to start monitoring your
+                                        code.
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
+                    )}
             </div>
         )
     }

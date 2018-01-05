@@ -196,9 +196,20 @@ type ConfigurationMutation {
 	# type instead if possible.
 	updateConfiguration(input: UpdateConfigurationInput!): UpdateConfigurationPayload
 	# Create a saved query.
-	createSavedQuery(description: String!, query: String!, scopeQuery: String!): SavedQuery!
+	createSavedQuery(
+		description: String!
+		query: String!
+		scopeQuery: String!
+		viewOnHomepage: Boolean = false
+	): SavedQuery!
 	# Update the saved query with the given ID in the configuration.
-	updateSavedQuery(id: ID!, description: String, query: String, scopeQuery: String): SavedQuery!
+	updateSavedQuery(
+		id: ID!
+		description: String
+		query: String
+		scopeQuery: String
+		viewOnHomepage: Boolean = false
+	): SavedQuery!
 	# Delete the saved query with the given ID in the configuration.
 	deleteSavedQuery(id: ID!): EmptyResponse
 }
@@ -289,6 +300,8 @@ type SearchResults {
 	resultCount: Int!
 	approximateResultCount: String!
 	limitHit: Boolean!
+	# Integers representing the sparkline for the search results.
+	sparkline: [Int!]!
 	# Repositories that are busy cloning onto gitserver.
 	cloning: [String!]!
 	# Repositories or commits that do not exist.
@@ -328,6 +341,7 @@ type SavedQuery {
 	index: Int!
 	description: String!
 	query: SearchQuery!
+	viewOnHomepage: Boolean!
 }
 
 type SearchQueryDescription {

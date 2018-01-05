@@ -17,8 +17,8 @@ export const SavedQueryUpdateForm: React.StatelessComponent<Props> = props => (
         defaultValues={{
             description: props.savedQuery.description,
             query: props.savedQuery.query.query,
-            scopeQuery: props.savedQuery.query.scopeQuery,
             subject: props.savedQuery.subject.id,
+            viewOnHomepage: props.savedQuery.viewOnHomepage,
         }}
         onDidCommit={props.onDidUpdate}
         onDidCancel={props.onDidCancel}
@@ -33,7 +33,7 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
     // If the subject changed, we need to create it on the new subject and
     // delete it on the old subject.
     if (props.savedQuery.subject.id !== fields.subject) {
-        return createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.scopeQuery).pipe(
+        return createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.viewOnHomepage).pipe(
             mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id)),
             mergeMap(() => refreshConfiguration().pipe(concat([null])))
         )
@@ -45,6 +45,6 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
         props.savedQuery.id,
         fields.description,
         fields.query,
-        fields.scopeQuery
+        fields.viewOnHomepage
     )
 }

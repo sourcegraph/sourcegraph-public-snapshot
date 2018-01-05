@@ -1,7 +1,9 @@
+import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
+import SaveIcon from '@sourcegraph/icons/lib/Save'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
@@ -22,8 +24,10 @@ import { searchText } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { ModalContainer } from './ModalContainer'
 import { queryTelemetryData } from './queryTelemetry'
 import { RepoSearchResult } from './RepoSearchResult'
+import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SearchAlert } from './SearchAlert'
 
 interface Props {
@@ -40,6 +44,8 @@ interface State {
     cloning: string[]
     missing: string[]
     timedout: string[]
+    showModal?: boolean
+    didSave?: boolean
 }
 
 export class SearchResults extends React.Component<Props, State> {
@@ -51,6 +57,8 @@ export class SearchResults extends React.Component<Props, State> {
         cloning: [],
         missing: [],
         timedout: [],
+        didSave: false,
+        showModal: false,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -118,6 +126,8 @@ export class SearchResults extends React.Component<Props, State> {
                                     error,
                                     loading: false,
                                     searchDuration: undefined,
+                                    didSave: false,
+                                    showModal: false,
                                 },
                             ])
                         )
@@ -146,6 +156,8 @@ export class SearchResults extends React.Component<Props, State> {
                         error: undefined,
                         loading: true,
                         searchDuration: undefined,
+                        didSave: false,
+                        showModal: false,
                     }))
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
@@ -158,6 +170,29 @@ export class SearchResults extends React.Component<Props, State> {
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+    }
+
+    private showSaveQueryModal = () => {
+        this.setState({
+            showModal: true,
+            didSave: false,
+        })
+    }
+
+    private onDidCreateSavedQuery = () => {
+        eventLogger.log('SavedQueryCreated')
+        this.setState({
+            showModal: false,
+            didSave: true,
+        })
+    }
+
+    private onModalClose = () => {
+        eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: false } })
+        this.setState({
+            didSave: false,
+            showModal: false,
+        })
     }
 
     public render(): JSX.Element | null {
@@ -196,11 +231,25 @@ export class SearchResults extends React.Component<Props, State> {
             totalResults += resultItemsCount(result)
         }
 
+        const parsedQuery = parseSearchURLQuery(this.props.location.search)
+
         return (
             <div className="search-results">
+                {this.state.showModal && (
+                    <ModalContainer
+                        onClose={this.onModalClose}
+                        component={
+                            <SavedQueryCreateForm
+                                values={{ query: parsedQuery ? parsedQuery.query : '' }}
+                                onDidCancel={this.onModalClose}
+                                onDidCreate={this.onDidCreateSavedQuery}
+                            />
+                        }
+                    />
+                )}
                 <div className="search-results__header">
                     {(this.state.timedout.length > 0 || this.state.results.length > 0) && (
-                        <small>
+                        <small className="search-results__header-row">
                             {this.state.timedout.length > 0 && (
                                 <span className="search-results__header-notice" title={this.state.timedout.join('\n')}>
                                     <HourglassIcon className="icon-inline" />
@@ -214,6 +263,16 @@ export class SearchResults extends React.Component<Props, State> {
                                     {numberWithCommas(totalResults)}
                                     {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
                                     {this.state.searchDuration! / 1000} seconds
+                                </span>
+                            )}
+                            {!this.state.didSave && (
+                                <button onClick={this.showSaveQueryModal} className="btn btn-link">
+                                    <SaveIcon className="icon-inline" /> Save this search query
+                                </button>
+                            )}
+                            {this.state.didSave && (
+                                <span>
+                                    <CheckmarkIcon className="icon-inline" /> Query saved
                                 </span>
                             )}
                         </small>

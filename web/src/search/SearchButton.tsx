@@ -6,7 +6,7 @@ export class SearchButton extends React.Component {
         return (
             <button className="search-button btn btn-primary" type="submit">
                 <SearchIcon className="icon-inline" />
-                <span className="search-button__label">Search code</span>
+                <span className="search-button__label">Search</span>
             </button>
         )
     }

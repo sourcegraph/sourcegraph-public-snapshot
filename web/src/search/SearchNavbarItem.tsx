@@ -1,3 +1,4 @@
+import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as H from 'history'
 import * as React from 'react'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
@@ -8,10 +9,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { submitSearch } from './helpers'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { QueryInput } from './QueryInput'
-import { ScopeLabel } from './ScopeLabel'
 import { SearchButton } from './SearchButton'
-import { SearchHelp } from './SearchHelp'
-import { SearchScope } from './SearchScope'
 
 interface Props {
     location: H.Location
@@ -21,9 +19,6 @@ interface Props {
 interface State {
     /** The query in the input field */
     userQuery: string
-
-    /** The query value of the active search scope, or undefined if it's still loading */
-    scopeQuery: string | undefined
 }
 
 /**
@@ -84,25 +79,19 @@ export class SearchNavbarItem extends React.Component<Props, State> {
 
         return (
             <form className="search search--navbar-item" onSubmit={this.onSubmit}>
-                <div className="search--navbar-item__row">
-                    <QueryInput
-                        {...this.props}
-                        value={this.state.userQuery}
-                        onChange={this.onUserQueryChange}
-                        scopeQuery={this.state.scopeQuery}
-                        autoFocus={autoFocus ? 'cursor-at-end' : undefined}
-                    />
-                    <SearchButton />
-                    <SearchHelp />
-                </div>
-                <div className="search--navbar-item__row">
-                    <SearchScope
-                        location={this.props.location}
-                        value={this.state.scopeQuery}
-                        onChange={this.onScopeQueryChange}
-                    />
-                    <ScopeLabel scopeQuery={this.state.scopeQuery} />
-                </div>
+                <QueryInput
+                    {...this.props}
+                    value={this.state.userQuery}
+                    onChange={this.onUserQueryChange}
+                    autoFocus={autoFocus ? 'cursor-at-end' : undefined}
+                />
+                <SearchButton />
+                <a className=" search-page__help" href="https://about.sourcegraph.com/docs/search/" target="_blank">
+                    <small className="search-page__center">
+                        <HelpIcon className="icon-inline" />
+                        Help
+                    </small>
+                </a>
             </form>
         )
     }
@@ -111,7 +100,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         // Store the last-used search options ('q' and 'sq' query parameters) in the location
         // state if we're navigating to a URL that lacks them, so that we can preserve them without
         // storing them in the URL (which is ugly) and across page reloads in the same tab.
-        const oldSearch: SearchOptions = { query: this.state.userQuery, scopeQuery: this.state.scopeQuery }
+        const oldSearch: SearchOptions = { query: this.state.userQuery }
         const locationStateNeedsUpdate =
             !location.state || !searchOptionsEqual(location.state as SearchOptions, oldSearch)
         const newSearch = parseSearchURLQuery(location.search)
@@ -129,15 +118,10 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         this.setState({ userQuery })
     }
 
-    private onScopeQueryChange = (scopeQuery: string) => {
-        this.setState({ scopeQuery })
-    }
-
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         submitSearch(this.props.history, {
             query: this.state.userQuery,
-            scopeQuery: this.state.scopeQuery || '',
         })
     }
 
@@ -147,7 +131,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
     private getStateFromProps(props: Props): State {
         const options = parseSearchURLQuery(props.location.search || '')
         if (options) {
-            return { userQuery: options.query, scopeQuery: options.scopeQuery }
+            return { userQuery: options.query }
         }
 
         // If the new URL has no search options, then preserve the ones we had before.
@@ -163,8 +147,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         // We always store the last query in the location state, so check there.
         const state: SearchOptions | undefined = props.location.state
         return {
-            userQuery: state && state.query ? state.query : '',
-            scopeQuery: state ? state.scopeQuery : undefined,
+            userQuery: state ? state.query : '',
         }
     }
 }

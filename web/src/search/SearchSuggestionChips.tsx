@@ -3,11 +3,9 @@ import * as H from 'history'
 import * as path from 'path'
 import * as React from 'react'
 import { matchPath } from 'react-router'
+import { NavLink } from 'react-router-dom'
 import { catchError } from 'rxjs/operators/catchError'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { startWith } from 'rxjs/operators/startWith'
-import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { routes } from '../routes'
@@ -18,14 +16,14 @@ interface Props {
     location: H.Location
 
     /**
-     * The query of the active search scope, or undefined if it's still loading
+     * The current user query.
      */
-    value?: string
+    query: string
 
     /**
-     * Called when there is a change to the query provided by the active search scope.
+     * Called when there is a suggestion to be added to the search query.
      */
-    onChange: (query: string) => void
+    onSuggestionChosen: (query: string) => void
 }
 
 interface ISearchScope {
@@ -50,24 +48,23 @@ interface State extends PersistableState {
     configuredScopes?: ISearchScope[]
 }
 
-interface SearchScopeConfiguration {
-    ['search.scopes']?: ISearchScope[]
-}
-
-export class SearchScope extends React.PureComponent<Props, State> {
+export class SearchSuggestionChips extends React.PureComponent<Props, State> {
     private static REMOTE_SCOPES_STORAGE_KEY = 'SearchScope/remoteScopes'
     private static LAST_SCOPE_STORAGE_KEY = 'SearchScope/lastScope'
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
-    private selectElement: HTMLSelectElement | null
-
     constructor(props: Props) {
         super(props)
 
         const savedState = this.loadFromLocalStorage()
         this.state = { remoteScopes: savedState.remoteScopes }
+
+        // Always start with the scope suggestion that the user last clicked, if any.
+        if (savedState.lastScopeValue) {
+            this.props.onSuggestionChosen(savedState.lastScopeValue)
+        }
 
         this.subscriptions.add(
             fetchSearchScopes()
@@ -76,17 +73,12 @@ export class SearchScope extends React.PureComponent<Props, State> {
                         console.error(err)
                         return []
                     }),
-                    map((scopes: GQL.ISearchScope[]) => ({ remoteScopes: scopes }))
+                    map((remoteScopes: GQL.ISearchScope[]) => ({ remoteScopes }))
                 )
                 .subscribe(
                     newState =>
                         this.setState(newState, () => {
                             this.saveToLocalStorage()
-
-                            // Default to 1st remote scope if none.
-                            if (this.props.value === undefined) {
-                                this.props.onChange(newState.remoteScopes[0].value)
-                            }
                         }),
                     err => console.error(err)
                 )
@@ -95,54 +87,10 @@ export class SearchScope extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            currentConfiguration
-                .pipe(map((config: SearchScopeConfiguration) => config['search.scopes'] || []))
-                .subscribe(searchScopes =>
-                    this.setState({
-                        configuredScopes: searchScopes,
-                    })
-                )
-        )
-
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    startWith(this.props),
-                    distinctUntilChanged((a, b) => (!a && !b) || (a && b && a.value === b.value)),
-                    tap(props => {
-                        const savedState = this.loadFromLocalStorage()
-                        if (typeof savedState.lastScopeValue === 'string' && props.value === undefined) {
-                            props.onChange(savedState.lastScopeValue)
-                        } else {
-                            const value = props.value === undefined ? this.selectElement!.value : props.value
-                            if (value !== undefined) {
-                                props.onChange(value)
-                                this.saveToLocalStorage(props)
-                            }
-                        }
-                    })
-                )
-                .subscribe(undefined, err => console.error(err))
-        )
-
-        // Emits whenever a repository is browsed to or away from.
-        const repoBrowsedToOrFrom = this.componentUpdates.pipe(
-            startWith(this.props),
-            distinctUntilChanged((a, b) => a.location === b.location),
-            map(({ location }) => repoFromRoute(location)),
-            distinctUntilChanged()
-        )
-
-        // Set scope to current repository when browsing in a repository, and remove it
-        // after browsing away.
-        this.subscriptions.add(
-            repoBrowsedToOrFrom.subscribe(
-                (repoPath: string | null) => {
-                    if (repoPath) {
-                        this.props.onChange(scopeForRepo(repoPath).value)
-                    }
-                },
-                err => console.error(err)
+            currentConfiguration.pipe(map(config => config['search.scopes'] || [])).subscribe(searchScopes =>
+                this.setState({
+                    configuredScopes: searchScopes,
+                })
             )
         )
     }
@@ -159,26 +107,41 @@ export class SearchScope extends React.PureComponent<Props, State> {
         const scopes = this.getScopes()
 
         return (
-            <div className="search-scope">
-                <select
-                    className="search-scope__select form-control"
-                    onChange={this.onChange}
-                    value={this.props.value}
-                    ref={e => (this.selectElement = e)}
-                    title="Search scope"
-                >
-                    {scopes.map((scope, i) => (
-                        <option key={i} value={scope.value}>
-                            {scope.name}
-                        </option>
-                    ))}
-                </select>
+            <div className="search-suggestion-chips">
+                {/* Filtering out empty strings because old configurations have "All repositories" with empty value, which is useless with new chips design. */}
+                {scopes.filter(scope => scope.value !== '').map((scope, i) => (
+                    <button
+                        className="btn btn-secondary btn-sm search-suggestion-chips__chip"
+                        key={i}
+                        value={scope.value}
+                        title={this.props.query.includes(scope.value) ? 'Scope already in query' : scope.value}
+                        disabled={this.props.query.includes(scope.value)}
+                        onMouseDown={this.onMouseDown}
+                        onClick={this.onClick}
+                    >
+                        {scope.name}
+                    </button>
+                ))}
+                <div className="search-suggestion-chips__add">
+                    <NavLink className="search-page__help" to="/settings/configuration">
+                        <small className="search-page__center">Edit</small>
+                    </NavLink>
+                </div>
             </div>
         )
     }
 
-    private onChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
-        this.props.onChange(event.currentTarget.value)
+    private onMouseDown: React.MouseEventHandler<HTMLButtonElement> = event => {
+        // prevent clicking on chips from taking focus away from the search input.
+        event.preventDefault()
+    }
+
+    private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
+        event.preventDefault()
+        this.props.onSuggestionChosen(event.currentTarget.value)
+
+        // Persist the clicked suggestion to localstorage.
+        this.saveToLocalStorage(this.props, event.currentTarget.value)
     }
 
     private getScopes(): ISearchScope[] {
@@ -193,12 +156,6 @@ export class SearchScope extends React.PureComponent<Props, State> {
         }
 
         allScopes.push(...this.getScopesForCurrentRoute())
-
-        // If the active scope isn't in the list, then add a new custom entry for it.
-        if (this.props.value !== undefined && !allScopes.some(({ value }) => value === this.props.value)) {
-            allScopes.push({ name: 'Custom', value: this.props.value })
-        }
-
         return allScopes
     }
 
@@ -253,7 +210,7 @@ export class SearchScope extends React.PureComponent<Props, State> {
         return scopes
     }
 
-    private saveToLocalStorage(props: Props = this.props): void {
+    private saveToLocalStorage(props: Props = this.props, clickedSuggestion?: string): void {
         const writeItem = (key: string, data: any): void => {
             if (data !== undefined && data !== null) {
                 localStorage.setItem(key, JSON.stringify(data))
@@ -262,14 +219,11 @@ export class SearchScope extends React.PureComponent<Props, State> {
             }
         }
 
-        writeItem(SearchScope.REMOTE_SCOPES_STORAGE_KEY, this.state.remoteScopes)
+        writeItem(SearchSuggestionChips.REMOTE_SCOPES_STORAGE_KEY, this.state.remoteScopes)
 
-        // Don't persist if this is the automatic scope set when browsing in
-        // a repo (by repoBrowsedToOrFrom).
-        const repoPath = repoFromRoute(props.location)
-        const isAutoRepoScope = repoPath && scopeForRepo(repoPath).value === props.value
-        if (!isAutoRepoScope) {
-            writeItem(SearchScope.LAST_SCOPE_STORAGE_KEY, props.value)
+        // Persist the clicked suggestion, if any.
+        if (clickedSuggestion) {
+            writeItem(SearchSuggestionChips.LAST_SCOPE_STORAGE_KEY, clickedSuggestion)
         }
     }
 
@@ -296,10 +250,13 @@ export class SearchScope extends React.PureComponent<Props, State> {
 
         const validate = (data: ISearchScope): boolean =>
             typeof data.name === 'string' && typeof data.value === 'string'
-        const remoteScopes = readItem<ISearchScope[]>(SearchScope.REMOTE_SCOPES_STORAGE_KEY, data =>
+        const remoteScopes = readItem<ISearchScope[]>(SearchSuggestionChips.REMOTE_SCOPES_STORAGE_KEY, data =>
             data.every(validate)
         )
-        const lastScopeValue = readItem<string>(SearchScope.LAST_SCOPE_STORAGE_KEY, s => typeof s === 'string')
+        const lastScopeValue = readItem<string>(
+            SearchSuggestionChips.LAST_SCOPE_STORAGE_KEY,
+            s => typeof s === 'string'
+        )
         return { remoteScopes, lastScopeValue }
     }
 }
@@ -309,21 +266,4 @@ function scopeForRepo(repoPath: string): ISearchScope {
         name: `This repository (${path.basename(repoPath)})`,
         value: `repo:^${escapeRegexp(repoPath)}$`,
     }
-}
-
-/**
- * Returns the repo path, or null, of the location.
- */
-function repoFromRoute(loc: H.Location): string | null {
-    for (const route of routes) {
-        const match = matchPath<{ repoRev?: string }>(location.pathname, route)
-        if (match) {
-            if (match.path.startsWith('/:repoRev+')) {
-                const [repoPath] = match.params.repoRev!.split('@')
-                return repoPath
-            }
-            break
-        }
-    }
-    return null
 }

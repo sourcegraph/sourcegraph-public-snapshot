@@ -4,12 +4,8 @@ import { SearchOptions } from './index'
 export function queryTelemetryData(opt: SearchOptions): { [key: string]: any } {
     return {
         query: opt.query ? queryStringTelemetryData(opt.query) : undefined,
-        scope_query: opt.scopeQuery ? queryStringTelemetryData(opt.scopeQuery) : undefined,
-        combined:
-            opt.query || opt.scopeQuery
-                ? queryStringTelemetryData([opt.query, opt.scopeQuery].filter(s => !!s).join(' '))
-                : undefined,
-        empty: !opt.query && !opt.scopeQuery,
+        combined: opt.query,
+        empty: !opt.query,
     }
 }
 

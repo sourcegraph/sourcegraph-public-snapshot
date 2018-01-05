@@ -1,10 +1,14 @@
 package graphqlbackend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+import (
+	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+)
 
 type signatureResolver struct {
 	person *personResolver
-	date   string
+	date   time.Time
 }
 
 func (r *signatureResolver) Person() *personResolver {
@@ -12,7 +16,7 @@ func (r *signatureResolver) Person() *personResolver {
 }
 
 func (r *signatureResolver) Date() string {
-	return r.date
+	return r.date.String()
 }
 
 func toSignatureResolver(sig *vcs.Signature) *signatureResolver {
@@ -24,6 +28,6 @@ func toSignatureResolver(sig *vcs.Signature) *signatureResolver {
 			name:  sig.Name,
 			email: sig.Email,
 		},
-		date: sig.Date.String(),
+		date: sig.Date,
 	}
 }

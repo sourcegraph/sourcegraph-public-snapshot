@@ -12,7 +12,7 @@
     }
 
     .form-control:not(:first-child) {
-        margin-top: 0.5rem;
+        margin: 0.25rem 0 0.5rem 0;
     }
 
     &__button {
@@ -21,6 +21,18 @@
         &:not(:first-child) {
             margin-left: 0.5rem;
         }
+    }
+
+    &__save-location {
+        margin: 0 0 0.5rem 0;
+    }
+
+    &__save-location-options {
+        padding-right: 0.5rem;
+    }
+
+    &__save-location-input {
+        margin-right: 0.25rem;
     }
 }
 

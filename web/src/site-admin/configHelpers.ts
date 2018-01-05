@@ -44,6 +44,15 @@ const addOtherRepository: ConfigHelper = config => {
     return { edits, selectText: urlPlaceholder }
 }
 
+const addSearchScope: ConfigHelper = config => {
+    const value: { name: string; value: string } = {
+        name: '<name>',
+        value: '<partial query string that will be inserted when the scope is selected>',
+    }
+    const edits = setProperty(config, ['search.scopes', -1], value, defaultFormattingOptions)
+    return { edits, selectText: '<name>' }
+}
+
 const addSSOViaGSuite: ConfigHelper = config => {
     const value: OpenIdConnectAuthProvider = {
         issuer: 'https://accounts.google.com',
@@ -91,4 +100,8 @@ export const editorActions: EditorAction[] = [
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
     { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
     { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
+]
+
+export const editorSearchActions: EditorAction[] = [
+    { id: 'sourcegraph.site.searchScopes', label: 'Add search scope', run: addSearchScope },
 ]

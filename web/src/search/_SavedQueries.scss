@@ -2,18 +2,15 @@
 @import './SavedQuery';
 
 .saved-queries {
-    width: 100%;
-    margin: 2rem;
-
-    @media (min-width: $media-md) {
-        margin-left: 5rem;
-        margin-right: 5rem;
-    }
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
 
     &__header {
-        margin-bottom: 3rem;
+        padding: 0.5rem 0;
         display: flex;
         align-items: center;
+        justify-content: space-between;
 
         h2 {
             margin-bottom: 0;
@@ -29,11 +26,22 @@
         line-height: normal;
     }
 
+    .saved-query-form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        color: $color-text-2;
+    }
+}
+
+.theme-light {
     .saved-query {
-        margin-top: 2rem;
+        &__row {
+            border-color: $color-light-border;
+        }
     }
 
     .saved-query-form {
-        margin: 1rem 0;
+        color: $color-light-text-1;
     }
 }

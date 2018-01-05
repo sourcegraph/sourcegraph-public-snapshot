@@ -6,8 +6,10 @@ import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
+import { editorSearchActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
-import { MonacoSettingsEditor } from './MonacoSettingsEditor'
+import { addEditorAction } from '../util/monaco'
+import { isStandaloneCodeEditor, MonacoSettingsEditor } from './MonacoSettingsEditor'
 
 interface Props {
     history: H.History
@@ -40,9 +42,13 @@ interface State {
 
 const emptySettings = '{\n  // add settings here (Cmd/Ctrl+Space to see hints)\n}'
 
+const disposableToFn = (disposable: monaco.IDisposable) => () => disposable.dispose()
+
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
+    private editor: monaco.editor.ICodeEditor
+    private monaco: typeof monaco | null
 
     constructor(props: Props) {
         super(props)
@@ -123,6 +129,24 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className="settings-file">
+                <p>View and edit your personal and organization's search scopes and saved queries.</p>
+                <div className="site-admin-configuration-page__action-groups">
+                    <div className="site-admin-configuration-page__action-groups">
+                        <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
+                        <div className="site-admin-configuration-page__actions">
+                            {editorSearchActions.map(({ id, label }) => (
+                                <button
+                                    key={id}
+                                    className="btn btn-primary btn-sm site-admin-configuration-page__action"
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.runAction(id)}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
                 <SaveToolbar
                     dirty={dirty}
                     disabled={this.state.saving || !dirty}
@@ -136,9 +160,43 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
                     onChange={this.onEditorChange}
                     readOnly={this.state.saving}
+                    monacoRef={this.monacoRef}
                 />
             </div>
         )
+    }
+
+    private monacoRef = (monacoValue: typeof monaco | null) => {
+        this.monaco = monacoValue
+        if (this.monaco) {
+            this.subscriptions.add(
+                disposableToFn(
+                    this.monaco.editor.onDidCreateEditor(editor => {
+                        this.editor = editor
+                    })
+                )
+            )
+            this.subscriptions.add(
+                disposableToFn(
+                    this.monaco.editor.onDidCreateModel(model => {
+                        if (this.editor && isStandaloneCodeEditor(this.editor)) {
+                            for (const { id, label, run } of editorSearchActions) {
+                                addEditorAction(this.editor, model, label, id, run)
+                            }
+                        }
+                    })
+                )
+            )
+        }
+    }
+
+    private runAction(id: string): void {
+        if (this.editor) {
+            const action = this.editor.getAction(id)
+            action.run().done(() => void 0, (err: any) => console.error(err))
+        } else {
+            alert('Wait for editor to load before running action.')
+        }
     }
 
     private getPropsSettingsContentsOrEmpty(settings = this.props.settings): string {

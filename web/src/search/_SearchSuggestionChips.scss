@@ -1,0 +1,19 @@
+.search-suggestion-chips {
+    &__chip {
+        padding: 0 0.25rem;
+        margin: 0.25rem;
+        border-radius: 2px;
+    }
+
+    &__add {
+        display: inline-block;
+        vertical-align: middle;
+    }
+}
+
+.theme-light {
+    .search-suggestion-chips__chip {
+        color: #2b3750;
+        background-color: #f2f4f8;
+    }
+}

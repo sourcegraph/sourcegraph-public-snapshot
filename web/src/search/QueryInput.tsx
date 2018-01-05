@@ -1,5 +1,7 @@
+import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
 import * as React from 'react'
+import { matchPath } from 'react-router'
 import { Observable } from 'rxjs/Observable'
 import { fromEvent } from 'rxjs/observable/fromEvent'
 import { merge } from 'rxjs/observable/merge'
@@ -13,12 +15,14 @@ import { map } from 'rxjs/operators/map'
 import { publishReplay } from 'rxjs/operators/publishReplay'
 import { refCount } from 'rxjs/operators/refCount'
 import { repeat } from 'rxjs/operators/repeat'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
 import { tap } from 'rxjs/operators/tap'
 import { toArray } from 'rxjs/operators/toArray'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { routes } from '../routes'
 import { eventLogger } from '../tracking/eventLogger'
 import { scrollIntoView } from '../util'
 import { fetchSuggestions } from './backend'
@@ -26,6 +30,7 @@ import { SearchOptions } from './index'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
 
 interface Props {
+    location: H.Location
     history: H.History
 
     /** The value of the query input */
@@ -33,9 +38,6 @@ interface Props {
 
     /** Called when the value changes */
     onChange: (newValue: string) => void
-
-    /** The query provided by the active search scope */
-    scopeQuery?: string
 
     /**
      * A string that is appended to the query input's query before
@@ -66,6 +68,8 @@ interface State {
 
 export class QueryInput extends React.Component<Props, State> {
     private static SUGGESTIONS_QUERY_MIN_LENGTH = 2
+
+    private componentUpdates = new Subject<Props>()
 
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
@@ -115,7 +119,6 @@ export class QueryInput extends React.Component<Props, State> {
                         }
                         const options: SearchOptions = {
                             query: [this.props.prependQueryForSuggestions, this.props.value].filter(s => !!s).join(' '),
-                            scopeQuery: this.props.scopeQuery || '',
                         }
                         const suggestionsFetch = fetchSuggestions(options).pipe(
                             map(createSuggestion),
@@ -197,6 +200,23 @@ export class QueryInput extends React.Component<Props, State> {
                     }
                 })
         )
+
+        // Set scope to current repository when browsing in a repository, and remove it
+        // after browsing away.
+        this.subscriptions.add(
+            // Emits whenever a repository is browsed to or away from.
+            this.componentUpdates
+                .pipe(startWith(this.props), map(props => repoFromRoute(props.location)), distinctUntilChanged())
+                .subscribe(
+                    (repoPath: string | null) => {
+                        if (repoPath) {
+                            // Change the query input value to be scoped to just this repo.
+                            this.props.onChange(`repo:^${escapeRegexp(repoPath)}$ `)
+                        }
+                    },
+                    err => console.error(err)
+                )
+        )
     }
 
     public componentDidMount(): void {
@@ -205,6 +225,10 @@ export class QueryInput extends React.Component<Props, State> {
                 this.focusInputAndPositionCursorAtEnd()
                 break
         }
+    }
+
+    public componentWillReceiveProps(newProps: Props): void {
+        this.componentUpdates.next(newProps)
     }
 
     public componentWillUnmount(): void {
@@ -352,4 +376,21 @@ export class QueryInput extends React.Component<Props, State> {
             ),
         })
     }
+}
+
+/**
+ * Returns the repo path, or null, of the location.
+ */
+function repoFromRoute(loc: H.Location): string | null {
+    for (const route of routes) {
+        const match = matchPath<{ repoRev?: string }>(location.pathname, route)
+        if (match) {
+            if (match.path.startsWith('/:repoRev+')) {
+                const [repoPath] = match.params.repoRev!.split('@')
+                return repoPath
+            }
+            break
+        }
+    }
+    return null
 }

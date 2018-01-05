@@ -53,18 +53,11 @@ $navbar-search-height: 4.35rem;
     &__search-box-container {
         min-width: 18rem;
         align-self: flex-start;
-    }
-
-    &:not(.navbar-search) {
-        height: 3.55rem; // +.05 to avoid the search box leaking
-        .navbar__logo {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-
-        .navbar__search-box-container {
-            width: 52rem;
-        }
+        flex: 1 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     &.navbar-search {
@@ -72,10 +65,6 @@ $navbar-search-height: 4.35rem;
         .navbar__logo {
             width: 2rem;
             height: 2rem;
-        }
-
-        .navbar__search-box-container {
-            flex: 1 0;
         }
     }
 }

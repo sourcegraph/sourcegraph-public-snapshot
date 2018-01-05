@@ -33,11 +33,12 @@ func TestSavedQueries(t *testing.T) {
 	}
 	want := []*savedQueryResolver{
 		{
-			key:         "a",
-			subject:     &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}},
-			index:       0,
-			description: "d",
-			query:       searchQuery{query: "q"},
+			key:            "a",
+			subject:        &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}},
+			index:          0,
+			description:    "d",
+			query:          searchQuery{query: "q"},
+			viewOnHomepage: false,
 		},
 	}
 	if !reflect.DeepEqual(savedQueries, want) {
@@ -76,12 +77,14 @@ func TestCreateSavedQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	created, err := mutation.CreateSavedQuery(ctx, &struct {
-		Description string
-		Query       string
-		ScopeQuery  string
+		Description    string
+		Query          string
+		ScopeQuery     string
+		ViewOnHomepage bool
 	}{
-		Description: "d2",
-		Query:       "q2",
+		Description:    "d2",
+		Query:          "q2",
+		ViewOnHomepage: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -142,23 +145,26 @@ func TestUpdateSavedQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	updated, err := mutation.UpdateSavedQuery(ctx, &struct {
-		ID          graphql.ID
-		Description *string
-		Query       *string
-		ScopeQuery  *string
+		ID             graphql.ID
+		Description    *string
+		Query          *string
+		ScopeQuery     *string
+		ViewOnHomepage bool
 	}{
-		ID:          marshalSavedQueryID(savedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
-		Description: &newDescription,
+		ID:             marshalSavedQueryID(savedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
+		Description:    &newDescription,
+		ViewOnHomepage: false,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := &savedQueryResolver{
-		key:         "a",
-		subject:     subject,
-		index:       0,
-		description: "d2",
-		query:       searchQuery{query: "q"},
+		key:            "a",
+		subject:        subject,
+		index:          0,
+		description:    "d2",
+		query:          searchQuery{query: "q"},
+		viewOnHomepage: false,
 	}
 	if !reflect.DeepEqual(updated, want) {
 		t.Errorf("got %+v, want %+v", updated, want)

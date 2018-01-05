@@ -1,3 +1,4 @@
+import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
@@ -9,11 +10,9 @@ import { limitString } from '../util'
 import { submitSearch } from './helpers'
 import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
-import { ScopeLabel } from './ScopeLabel'
+import { SavedQueries } from './SavedQueries'
 import { SearchButton } from './SearchButton'
-import { SearchFields } from './SearchFields'
-import { SearchHelp } from './SearchHelp'
-import { SearchScope } from './SearchScope'
+import { SearchSuggestionChips } from './SearchSuggestionChips'
 
 interface Props {
     location: H.Location
@@ -23,9 +22,6 @@ interface Props {
 interface State {
     /** The query value entered by the user in the query input */
     userQuery: string
-
-    /** The query value of the active search scope, or undefined if it's still loading */
-    scopeQuery?: string
 
     /** The query value derived from the search fields */
     fieldsQuery: string
@@ -44,8 +40,7 @@ export class SearchPage extends React.Component<Props, State> {
 
         const searchOptions = parseSearchURLQuery(props.location.search)
         this.state = {
-            userQuery: '',
-            scopeQuery: searchOptions ? searchOptions.scopeQuery : undefined,
+            userQuery: (searchOptions && searchOptions.query) || '',
             fieldsQuery: '',
             isLightTheme: getColorTheme() === 'light',
         }
@@ -79,43 +74,48 @@ export class SearchPage extends React.Component<Props, State> {
                             {...this.props}
                             value={this.state.userQuery}
                             onChange={this.onUserQueryChange}
-                            scopeQuery={this.state.scopeQuery}
                             prependQueryForSuggestions={this.state.fieldsQuery}
                             autoFocus={'cursor-at-end'}
                         />
-                        <SearchScope
-                            location={this.props.location}
-                            value={this.state.scopeQuery}
-                            onChange={this.onScopeQueryChange}
-                        />
                         <SearchButton />
+                        <a
+                            className="search-page__help"
+                            href="https://about.sourcegraph.com/docs/search/"
+                            target="_blank"
+                        >
+                            <small className="search-page__center">
+                                <HelpIcon className="icon-inline" />
+                                Help
+                            </small>
+                        </a>
                     </div>
                     <div className="search-page__input-sub-container">
-                        <ScopeLabel scopeQuery={this.state.scopeQuery} />
-                        <SearchHelp />
+                        <SearchSuggestionChips
+                            location={this.props.location}
+                            onSuggestionChosen={this.onSuggestionChosen}
+                            query={this.state.userQuery}
+                        />
                     </div>
-                    <SearchFields onFieldsQueryChange={this.onFieldsQueryChange} />
                 </form>
+                <div className="search search-page__query-container">
+                    <SavedQueries {...this.props} />
+                </div>
             </div>
         )
+    }
+
+    private onSuggestionChosen = (query: string) => {
+        this.setState(state => ({ userQuery: [state.userQuery, query].filter(s => s).join(' ') + ' ' }))
     }
 
     private onUserQueryChange = (userQuery: string) => {
         this.setState({ userQuery })
     }
 
-    private onScopeQueryChange = (scopeQuery: string) => {
-        this.setState({ scopeQuery })
-    }
-
-    private onFieldsQueryChange = (fieldsQuery: string) => {
-        this.setState({ fieldsQuery })
-    }
-
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.fieldsQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, { query, scopeQuery: this.state.scopeQuery })
+        submitSearch(this.props.history, { query })
     }
 
     private getPageTitle(): string | undefined {

@@ -1,4 +1,4 @@
-@import './SearchFields';
+@import './SearchSuggestionChips';
 
 .search-page {
     display: flex;
@@ -29,14 +29,30 @@
     &__input-sub-container {
         width: 100%;
         display: flex;
-
-        > *:not(:first-child) {
-            margin-left: 0.35rem;
-        }
     }
 
     &__input-sub-container {
-        justify-content: space-between;
+        margin-top: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    &__query-container {
+        flex: 0 0 auto;
+        width: 49rem;
+        max-width: 90%;
+        position: relative;
+    }
+
+    &__help {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 0.25rem;
+    }
+
+    &__center {
+        display: flex;
+        align-items: center;
     }
 
     .nav-links {

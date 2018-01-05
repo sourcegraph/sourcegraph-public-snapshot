@@ -12,7 +12,7 @@ func (r *hunkResolver) Author() *signatureResolver {
 			name:  r.hunk.Author.Name,
 			email: r.hunk.Author.Email,
 		},
-		date: r.hunk.Author.Date.String(),
+		date: r.hunk.Author.Date,
 	}
 }
 

@@ -1,5 +1,4 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import { applyEdits } from '@sqs/jsonc-parser/lib/format'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -12,8 +11,9 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { SaveToolbar } from '../components/SaveToolbar'
-import { isStandaloneCodeEditor, MonacoSettingsEditor, toMonacoEdits } from '../settings/MonacoSettingsEditor'
+import { isStandaloneCodeEditor, MonacoSettingsEditor } from '../settings/MonacoSettingsEditor'
 import { eventLogger } from '../tracking/eventLogger'
+import { addEditorAction } from '../util/monaco'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { editorActions } from './configHelpers'
 
@@ -326,37 +326,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     this.monaco.editor.onDidCreateModel(model => {
                         if (this.editor && isStandaloneCodeEditor(this.editor)) {
                             for (const { id, label, run } of editorActions) {
-                                this.editor.addAction({
-                                    label,
-                                    id,
-                                    run: editor => {
-                                        eventLogger.log('SiteConfigurationActionExecuted', { id })
-                                        editor.focus()
-                                        editor.pushUndoStop()
-                                        const { edits, selectText } = run(editor.getValue())
-                                        const monacoEdits = toMonacoEdits(model, edits)
-                                        let selection: monaco.Selection | undefined
-                                        if (typeof selectText === 'string') {
-                                            const afterText = applyEdits(editor.getValue(), edits)
-                                            let offset = afterText.slice(edits[0].offset).indexOf(selectText)
-                                            if (offset !== -1) {
-                                                offset += edits[0].offset
-                                                selection = monaco.Selection.fromPositions(
-                                                    getPositionAt(afterText, offset),
-                                                    getPositionAt(afterText, offset + selectText.length)
-                                                )
-                                            }
-                                        }
-                                        if (!selection) {
-                                            selection = monaco.Selection.fromPositions(
-                                                monacoEdits[0].range.getStartPosition(),
-                                                monacoEdits[monacoEdits.length - 1].range.getEndPosition()
-                                            )
-                                        }
-                                        editor.executeEdits(id, monacoEdits, [selection])
-                                        editor.revealPositionInCenter(selection.getStartPosition())
-                                    },
-                                })
+                                addEditorAction(this.editor, model, label, id, run)
                             }
                         }
                     })
@@ -382,16 +352,4 @@ function formatEnvVar(text: string): React.ReactChild[] | string {
         return text
     }
     return [text.slice(0, idx), <code key={S}>{S}</code>, text.slice(idx + S.length)]
-}
-
-function getPositionAt(text: string, offset: number): monaco.Position {
-    const lines = text.split('\n')
-    let pos = 0
-    for (const [i, line] of lines.entries()) {
-        if (offset < pos + line.length + 1) {
-            return new monaco.Position(i + 1, offset - pos + 1)
-        }
-        pos += line.length + 1
-    }
-    throw new Error(`offset ${offset} out of bounds in text of length ${text.length}`)
 }

@@ -380,7 +380,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 func commitSearchResultsToSearchResults(results []*commitSearchResult) []*searchResult {
 	// Show most recent commits first.
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].commit.author.date > results[j].commit.author.date
+		return results[i].commit.author.Date() > results[j].commit.author.Date()
 	})
 
 	results2 := make([]*searchResult, len(results))

@@ -8,18 +8,27 @@ import { ReplaySubject } from 'rxjs/ReplaySubject'
  */
 export const configurationCascade = new ReplaySubject<GQL.IConfigurationCascade>(1)
 
-interface BaseConfiguration {
-    [key: string]: string | number | boolean | (string | number | boolean | BaseConfiguration)[] | BaseConfiguration
+export interface SearchScopeConfiguration {
+    name: string
+    value: string
+}
+
+export interface SavedQueryConfiguration {
+    description: string
+    query?: string
+    scopeQuery?: string
+    viewOnHomepage?: boolean
+}
+
+export interface Configuration {
+    ['search.scopes']?: SearchScopeConfiguration[]
+    ['search.savedQueries']?: SavedQueryConfiguration[]
 }
 
 /**
  * Always represents the latest merged configuration for the current user
  * or visitor. Callers should cast the value to their own configuration type.
- *
- * TODO(sqs): use a more sophisticated way of casting and getting component-specific
- * configuration, such as how VS Code sets defaults and ensures config sections are
- * set when you call (e.g.) getConfiguration.
  */
-export const currentConfiguration: Observable<BaseConfiguration> = configurationCascade.pipe(
+export const currentConfiguration: Observable<Configuration> = configurationCascade.pipe(
     map(cascade => JSON.parse(cascade.merged.contents))
 )

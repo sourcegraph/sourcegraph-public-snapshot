@@ -7,9 +7,8 @@ export function submitSearch(history: H.History, options: SearchOptions): void {
     const path = '/search?' + buildSearchURLQuery(options)
     eventLogger.log('SearchSubmitted', {
         code_search: {
-            pattern: options.scopeQuery ? `${options.scopeQuery} ${options.query}` : options.query,
+            pattern: options.query,
             query: options.query,
-            scopeQuery: options.scopeQuery,
         },
     })
     history.push(path, { ...history.location.state, ...options })

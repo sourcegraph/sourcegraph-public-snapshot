@@ -19,11 +19,12 @@ type savedQueryIDSpec struct {
 }
 
 type savedQueryResolver struct {
-	key         string
-	subject     *configurationSubject
-	index       int
-	description string
-	query       searchQuery
+	key            string
+	subject        *configurationSubject
+	index          int
+	description    string
+	query          searchQuery
+	viewOnHomepage bool
 }
 
 func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, error) {
@@ -76,6 +77,10 @@ func unmarshalSavedQueryID(id graphql.ID) (spec savedQueryIDSpec, err error) {
 	return
 }
 
+func (r savedQueryResolver) ViewOnHomepage() bool {
+	return r.viewOnHomepage
+}
+
 func (r savedQueryResolver) Subject() *configurationSubject { return r.subject }
 
 func (r savedQueryResolver) Key() *string {
@@ -93,21 +98,23 @@ func (r savedQueryResolver) Query() *searchQuery { return &r.query }
 
 func toSavedQueryResolver(index int, subject *configurationSubject, entry configSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
-		subject:     subject,
-		key:         entry.Key,
-		index:       index,
-		description: entry.Description,
-		query:       searchQuery{query: entry.Query, scopeQuery: entry.ScopeQuery},
+		subject:        subject,
+		key:            entry.Key,
+		index:          index,
+		description:    entry.Description,
+		query:          searchQuery{query: entry.Query, scopeQuery: entry.ScopeQuery},
+		viewOnHomepage: entry.ViewOnHomepage,
 	}
 }
 
 // configSavedQuery is the JSON shape of a saved query entry in the JSON configuration
 // (i.e., an entry in the {"search.savedQueries": [...]} array).
 type configSavedQuery struct {
-	Key         string `json:"key,omitempty"`
-	Description string `json:"description"`
-	Query       string `json:"query"`
-	ScopeQuery  string `json:"scopeQuery"`
+	Key            string `json:"key,omitempty"`
+	Description    string `json:"description"`
+	Query          string `json:"query"`
+	ScopeQuery     string `json:"scopeQuery"`
+	ViewOnHomepage bool   `json:"viewOnHomepage"`
 }
 
 // partialConfigSavedQueries is the JSON configuration shape, including only the
@@ -188,9 +195,10 @@ func (r *schemaResolver) migrateSavedQueriesAddKeys(ctx context.Context, subject
 }
 
 func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, args *struct {
-	Description string
-	Query       string
-	ScopeQuery  string
+	Description    string
+	Query          string
+	ScopeQuery     string
+	ViewOnHomepage bool
 }) (*savedQueryResolver, error) {
 	var index int
 	var key string
@@ -204,10 +212,11 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 		key = generateUniqueSavedQueryKey(config.SavedQueries)
 
 		value := configSavedQuery{
-			Key:         key,
-			Description: args.Description,
-			Query:       args.Query,
-			ScopeQuery:  args.ScopeQuery,
+			Key:            key,
+			Description:    args.Description,
+			Query:          args.Query,
+			ScopeQuery:     args.ScopeQuery,
+			ViewOnHomepage: args.ViewOnHomepage,
 		}
 		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, formatOptions)
 		return edits, err
@@ -216,11 +225,12 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 		return nil, err
 	}
 	return &savedQueryResolver{
-		subject:     r.subject,
-		key:         key,
-		index:       index,
-		description: args.Description,
-		query:       searchQuery{query: args.Query, scopeQuery: args.ScopeQuery},
+		subject:        r.subject,
+		key:            key,
+		index:          index,
+		description:    args.Description,
+		query:          searchQuery{query: args.Query, scopeQuery: args.ScopeQuery},
+		viewOnHomepage: args.ViewOnHomepage,
 	}, nil
 }
 
@@ -240,10 +250,11 @@ func (r *configurationMutationResolver) getSavedQueryIndex(ctx context.Context, 
 }
 
 func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, args *struct {
-	ID          graphql.ID
-	Description *string
-	Query       *string
-	ScopeQuery  *string
+	ID             graphql.ID
+	Description    *string
+	Query          *string
+	ScopeQuery     *string
+	ViewOnHomepage bool
 }) (*savedQueryResolver, error) {
 	spec, err := unmarshalSavedQueryID(args.ID)
 	if err != nil {
@@ -263,7 +274,7 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 
 	// Do a field-by-field update so we preserve comments and any other unrecognized fields
 	// in the object.
-	fieldUpdates := map[string]string{}
+	fieldUpdates := map[string]interface{}{}
 	if args.Description != nil {
 		fieldUpdates["description"] = *args.Description
 	}
@@ -273,6 +284,9 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	if args.ScopeQuery != nil {
 		fieldUpdates["scopeQuery"] = *args.ScopeQuery
 	}
+
+	fieldUpdates["viewOnHomepage"] = args.ViewOnHomepage
+
 	for propertyName, value := range fieldUpdates {
 		id, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 			keyPath := jsonx.MakePath("search.savedQueries", index, propertyName)

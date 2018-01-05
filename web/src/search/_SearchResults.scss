@@ -3,6 +3,7 @@
 @import './ResultContainer';
 @import './SearchAlert';
 @import '../marketing/Banner';
+@import './ModalContainer';
 
 .search-results {
     width: 100%;
@@ -17,6 +18,12 @@
 
         &-notice {
             display: flex;
+            align-items: center;
+        }
+
+        &-row {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
         }
     }

@@ -1,10 +1,11 @@
+import isEqual from 'lodash/isEqual'
 import { Observable } from 'rxjs/Observable'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
-import { currentConfiguration } from '../settings/configuration'
+import { currentConfiguration, SavedQueryConfiguration } from '../settings/configuration'
 import { SearchOptions } from './index'
 
 export function searchText(options: SearchOptions): Observable<GQL.ISearchResults> {
@@ -93,7 +94,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                 }
             }
         `,
-        { query: options.query, scopeQuery: options.scopeQuery || '' }
+        { query: options.query, scopeQuery: '' }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results) {
@@ -104,7 +105,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
     )
 }
 
-export function fetchSearchResultCount(options: SearchOptions): Observable<GQL.ISearchResults> {
+export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
         gql`
             query SearchResultsCount($query: String!, $scopeQuery: String!) {
@@ -115,11 +116,12 @@ export function fetchSearchResultCount(options: SearchOptions): Observable<GQL.I
                         cloning
                         resultCount
                         approximateResultCount
+                        sparkline
                     }
                 }
             }
         `,
-        { query: options.query, scopeQuery: options.scopeQuery || '' }
+        { query: options.query, scopeQuery: '' }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results) {
@@ -152,7 +154,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                 }
             }
         `,
-        { query: options.query, scopeQuery: options.scopeQuery || '' }
+        { query: options.query, scopeQuery: '' }
     ).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {
@@ -212,6 +214,7 @@ const savedQueryFragment = gql`
         }
         index
         description
+        viewOnHomepage
         query {
             query
             scopeQuery
@@ -219,26 +222,13 @@ const savedQueryFragment = gql`
     }
 `
 
-interface ISavedQuery {
-    id: string
-    description: string
-    query?: string
-    scopeQuery?: string
-}
-
-interface ISavedQueryConfig {
-    // TODO(sqs): can use SAVED_QUERY_CONFIG_SECTION in type literal
-    // when https://github.com/Microsoft/TypeScript/pull/15473 ships.
-    ['search.savedQueries']?: ISavedQuery[]
-}
-
-function savedQueriesEqual(a: ISavedQuery, b: ISavedQuery): boolean {
-    return a.description === b.description && a.query === b.query && a.scopeQuery === b.scopeQuery
+function savedQueriesEqual(a: SavedQueryConfiguration, b: SavedQueryConfiguration): boolean {
+    return isEqual(a, b)
 }
 
 export function observeSavedQueries(): Observable<GQL.ISavedQuery[]> {
     return currentConfiguration.pipe(
-        map((config: ISavedQueryConfig) => config['search.savedQueries']),
+        map(config => config['search.savedQueries']),
         distinctUntilChanged(
             (a, b) =>
                 (!a && !b) || (!!a && !!b && a.length === b.length && a.every((q, i) => savedQueriesEqual(q, b[i])))
@@ -269,7 +259,7 @@ export function createSavedQuery(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
     description: string,
     query: string,
-    scopeQuery: string
+    viewOnHomepage: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -280,16 +270,22 @@ export function createSavedQuery(
                 $description: String!
                 $query: String!
                 $scopeQuery: String!
+                $viewOnHomepage: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    createSavedQuery(description: $description, query: $query, scopeQuery: $scopeQuery) {
+                    createSavedQuery(
+                        description: $description
+                        query: $query
+                        scopeQuery: $scopeQuery
+                        viewOnHomepage: $viewOnHomepage
+                    ) {
                         ...SavedQueryFields
                     }
                 }
             }
             ${savedQueryFragment}
         `,
-        { description, query, scopeQuery }
+        { description, query, scopeQuery: '', viewOnHomepage }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
@@ -305,7 +301,7 @@ export function updateSavedQuery(
     id: GQLID,
     description: string,
     query: string,
-    scopeQuery: string
+    viewOnHomepage: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -317,16 +313,23 @@ export function updateSavedQuery(
                 $description: String
                 $query: String
                 $scopeQuery: String
+                $viewOnHomepage: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    updateSavedQuery(id: $id, description: $description, query: $query, scopeQuery: $scopeQuery) {
+                    updateSavedQuery(
+                        id: $id
+                        description: $description
+                        query: $query
+                        scopeQuery: $scopeQuery
+                        viewOnHomepage: $viewOnHomepage
+                    ) {
                         ...SavedQueryFields
                     }
                 }
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, scopeQuery }
+        { id, description, query, scopeQuery: '', viewOnHomepage }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {
