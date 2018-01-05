@@ -4,7 +4,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
-import { FilteredConnection } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositories, setRepositoryEnabled } from './backend'
@@ -146,7 +146,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (query: string) => fetchAllRepositories({ first: 50, query, includeDisabled: true })
+    private queryRepositories = (args: FilteredConnectionQueryArgs) =>
+        fetchAllRepositories({ ...args, includeDisabled: true })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 }

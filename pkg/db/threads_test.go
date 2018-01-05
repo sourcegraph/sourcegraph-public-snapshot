@@ -29,7 +29,7 @@ func TestThreads_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Threads.Count(ctx); err != nil {
+	if count, err := Threads.Count(ctx, ThreadsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -39,7 +39,7 @@ func TestThreads_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Threads.Count(ctx); err != nil {
+	if count, err := Threads.Count(ctx, ThreadsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)

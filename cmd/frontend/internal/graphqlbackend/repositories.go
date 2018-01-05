@@ -6,7 +6,6 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -22,19 +21,22 @@ func (r *siteResolver) Repositories(args *struct {
 		return nil, errors.New("mutually exclusive arguments: cloning, includeDisabled")
 	}
 
+	opt := db.ReposListOptions{
+		IncludeDisabled: args.IncludeDisabled,
+	}
+	if args.Query != nil {
+		opt.Query = *args.Query
+	}
+	args.connectionArgs.set(&opt.ListOptions)
 	return &repositoryConnectionResolver{
-		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
-		query:           args.Query,
-		cloning:         args.Cloning,
-		includeDisabled: args.IncludeDisabled,
+		opt:     opt,
+		cloning: args.Cloning,
 	}, nil
 }
 
 type repositoryConnectionResolver struct {
-	connectionResolverCommon
-	query           *string
-	cloning         bool
-	includeDisabled bool
+	opt     db.ReposListOptions
+	cloning bool
 }
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {
@@ -45,7 +47,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		}
 		var l []*repositoryResolver
 		for _, repoURI := range repos {
-			if len(l) == int(r.first) {
+			if len(l) == r.opt.PerPageOrDefault() {
 				break
 			}
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)
@@ -64,17 +66,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		return l, nil
 	}
 
-	opt := &db.ReposListOptions{
-		IncludeDisabled: r.includeDisabled,
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: r.first,
-		},
-	}
-	if r.query != nil {
-		opt.Query = *r.query
-	}
-
-	reposList, err := backend.Repos.List(ctx, opt)
+	reposList, err := backend.Repos.List(ctx, &r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +86,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		return int32(len(repos)), err
 	}
 
-	count, err := db.Repos.Count(ctx)
+	count, err := db.Repos.Count(ctx, r.opt)
 	return int32(count), err
 }
 

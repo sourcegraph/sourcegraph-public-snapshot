@@ -140,7 +140,7 @@ func TestRepos_Count(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if count, err := Repos.Count(ctx); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -150,7 +150,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -164,7 +164,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)

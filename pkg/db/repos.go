@@ -166,12 +166,20 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	return repos[0], nil
 }
 
-func (s *repos) Count(ctx context.Context) (int, error) {
+func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	if Mocks.Repos.Count != nil {
-		return Mocks.Repos.Count(ctx)
+		return Mocks.Repos.Count(ctx, opt)
 	}
+
+	conds, err := s.listSQL(opt)
+	if err != nil {
+		return 0, err
+	}
+
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE %s", sqlf.Join(conds, "AND"))
+
 	var count int
-	if err := globalDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM repo`).Scan(&count); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -311,8 +319,24 @@ func (s *repos) List(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph
 	if opt == nil {
 		opt = &ReposListOptions{}
 	}
+	conds, err := s.listSQL(*opt)
+	if err != nil {
+		return nil, err
+	}
 
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	// fetch matching repos
+	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
+		sqlf.Join(conds, "AND"),
+		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
+	))
+	if err != nil {
+		return nil, err
+	}
+	return rawRepos, nil
+}
+
+func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
@@ -352,16 +376,7 @@ func (s *repos) List(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph
 	if !opt.IncludeDisabled {
 		conds = append(conds, sqlf.Sprintf("enabled=true"))
 	}
-
-	// fetch matching repos
-	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
-		sqlf.Join(conds, "AND"),
-		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
-	))
-	if err != nil {
-		return nil, err
-	}
-	return rawRepos, nil
+	return conds, nil
 }
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible

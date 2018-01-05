@@ -117,7 +117,7 @@ func TestUsers_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Users.Count(ctx); err != nil {
+	if count, err := Users.Count(ctx, UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -127,7 +127,7 @@ func TestUsers_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Users.Count(ctx); err != nil {
+	if count, err := Users.Count(ctx, UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)

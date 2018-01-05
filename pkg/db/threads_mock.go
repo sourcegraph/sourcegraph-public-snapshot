@@ -13,6 +13,7 @@ type MockThreads struct {
 	Create func(ctx context.Context, newThread *sourcegraph.Thread) (*sourcegraph.Thread, error)
 	Update func(ctx context.Context, id, repoID int32, archived *bool) (*sourcegraph.Thread, error)
 	List   func(ctx context.Context, opt *ThreadsListOptions) ([]*sourcegraph.Thread, error)
+	Count  func(ctx context.Context, opt ThreadsListOptions) (int, error)
 }
 
 func (s *MockThreads) MockGet_Return(t *testing.T, returns *sourcegraph.Thread, returnsErr error) (called *bool) {

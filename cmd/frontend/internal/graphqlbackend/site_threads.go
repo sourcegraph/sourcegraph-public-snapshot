@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
@@ -11,13 +10,13 @@ import (
 func (r *siteResolver) Threads(args *struct {
 	connectionArgs
 }) *siteThreadConnectionResolver {
-	return &siteThreadConnectionResolver{
-		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
-	}
+	var opt db.ThreadsListOptions
+	args.connectionArgs.set(&opt.ListOptions)
+	return &siteThreadConnectionResolver{opt: opt}
 }
 
 type siteThreadConnectionResolver struct {
-	connectionResolverCommon
+	opt db.ThreadsListOptions
 }
 
 func (r *siteThreadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver, error) {
@@ -26,13 +25,7 @@ func (r *siteThreadConnectionResolver) Nodes(ctx context.Context) ([]*threadReso
 		return nil, err
 	}
 
-	opt := &db.ThreadsListOptions{
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: r.first,
-		},
-	}
-
-	threads, err := db.Threads.List(ctx, opt)
+	threads, err := db.Threads.List(ctx, &r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +56,6 @@ func (r *siteThreadConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	count, err := db.Threads.Count(ctx)
+	count, err := db.Threads.Count(ctx, r.opt)
 	return int32(count), err
 }

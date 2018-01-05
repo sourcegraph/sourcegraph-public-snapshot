@@ -15,7 +15,7 @@ type MockRepos struct {
 	GetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	List     func(v0 context.Context, v1 *ReposListOptions) ([]*sourcegraph.Repo, error)
 	Delete   func(ctx context.Context, repo int32) error
-	Count    func(ctx context.Context) (int, error)
+	Count    func(ctx context.Context, opt ReposListOptions) (int, error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {

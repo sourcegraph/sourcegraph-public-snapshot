@@ -254,17 +254,29 @@ func (t *threads) List(ctx context.Context, opt *ThreadsListOptions) ([]*sourceg
 	if opt == nil {
 		opt = &ThreadsListOptions{}
 	}
+	conds := t.listSQL(*opt)
 
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	q := sqlf.Sprintf("WHERE %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %d OFFSET %d",
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
 		sqlf.Join(conds, "AND"),
 		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
 	)
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) Count(ctx context.Context) (int, error) {
-	return t.getCountBySQL(ctx, "WHERE deleted_at IS NULL")
+func (*threads) listSQL(opt ThreadsListOptions) (conds []*sqlf.Query) {
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	return conds
+}
+
+func (t *threads) Count(ctx context.Context, opt ThreadsListOptions) (int, error) {
+	if Mocks.Threads.Count != nil {
+		return Mocks.Threads.Count(ctx, opt)
+	}
+
+	conds := t.listSQL(opt)
+	q := sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND"))
+	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
 func (t *threads) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int, error) {

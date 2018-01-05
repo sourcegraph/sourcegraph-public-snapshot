@@ -5,12 +5,12 @@ import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 /**
  * Fetches all users.
  */
-export function fetchAllUsers(query?: string): Observable<GQL.IUserConnection> {
+export function fetchAllUsers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
     return queryGraphQL(
         gql`
-            query Users($query: String) {
+            query Users($first: Int, $query: String) {
                 site {
-                    users(first: 100, query: $query) {
+                    users(first: $first, query: $query) {
                         nodes {
                             id
                             externalID
@@ -37,7 +37,7 @@ export function fetchAllUsers(query?: string): Observable<GQL.IUserConnection> {
                 }
             }
         `,
-        { query }
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.users) {
@@ -51,12 +51,12 @@ export function fetchAllUsers(query?: string): Observable<GQL.IUserConnection> {
 /**
  * Fetches all orgs.
  */
-export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
+export function fetchAllOrgs(args: { first?: number; query?: string }): Observable<GQL.IOrgConnection> {
     return queryGraphQL(
         gql`
-            query Orgs($query: String) {
+            query Orgs($first: Int, $query: String) {
                 site {
-                    orgs(first: 100, query: $query) {
+                    orgs(first: $first, query: $query) {
                         nodes {
                             id
                             name
@@ -82,7 +82,7 @@ export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
                 }
             }
         `,
-        { query }
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.orgs) {
@@ -98,12 +98,12 @@ export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
  *
  * @return Observable that emits the list of repositories
  */
-export function fetchAllRepositories(opt: {
+export function fetchAllRepositories(args: {
     first?: number
     query?: string
     includeDisabled?: boolean
 }): Observable<GQL.IRepositoryConnection> {
-    opt = { includeDisabled: false, ...opt }
+    args = { includeDisabled: false, ...args }
     return queryGraphQL(
         gql`
             query Repositories($first: Int, $query: String, $includeDisabled: Boolean) {
@@ -120,7 +120,7 @@ export function fetchAllRepositories(opt: {
                 }
             }
         `,
-        opt
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.repositories) {
@@ -354,48 +354,51 @@ export function deleteOrganization(organization: GQLID): Observable<void> {
 /**
  * Fetches all threads.
  */
-export function fetchAllThreads(): Observable<GQL.IThreadConnection> {
-    return queryGraphQL(gql`
-        query SiteThreads {
-            site {
-                threads {
-                    nodes {
-                        id
-                        repo {
-                            canonicalRemoteID
-                            org {
-                                name
+export function fetchAllThreads(args: { first?: number }): Observable<GQL.IThreadConnection> {
+    return queryGraphQL(
+        gql`
+            query SiteThreads($first: Int) {
+                site {
+                    threads(first: $first) {
+                        nodes {
+                            id
+                            repo {
+                                canonicalRemoteID
+                                org {
+                                    name
+                                }
                             }
-                        }
-                        repoRevisionPath
-                        branch
-                        repoRevisionPath
-                        repoRevision
-                        title
-                        createdAt
-                        archivedAt
-                        author {
-                            id
-                            username
-                            displayName
-                        }
-                        comments {
-                            id
+                            repoRevisionPath
+                            branch
+                            repoRevisionPath
+                            repoRevision
                             title
-                            contents
                             createdAt
+                            archivedAt
                             author {
                                 id
                                 username
                                 displayName
                             }
+                            comments {
+                                id
+                                title
+                                contents
+                                createdAt
+                                author {
+                                    id
+                                    username
+                                    displayName
+                                }
+                            }
                         }
+                        totalCount
                     }
-                    totalCount
                 }
             }
-        }
-    `).pipe(
+        `,
+        args
+    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.threads) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })

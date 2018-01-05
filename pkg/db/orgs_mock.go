@@ -10,7 +10,7 @@ import (
 
 type MockOrgs struct {
 	GetByID func(ctx context.Context, id int32) (*sourcegraph.Org, error)
-	Count   func(ctx context.Context) (int, error)
+	Count   func(ctx context.Context, opt OrgsListOptions) (int, error)
 	List    func(ctx context.Context, opt *OrgsListOptions) ([]*sourcegraph.Org, error)
 }
 

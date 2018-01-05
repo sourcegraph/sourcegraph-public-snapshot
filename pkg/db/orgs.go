@@ -69,12 +69,16 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*sourcegraph.Org, erro
 	return orgs[0], nil
 }
 
-func (o *orgs) Count(ctx context.Context) (int, error) {
+func (o *orgs) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
 	if Mocks.Orgs.Count != nil {
-		return Mocks.Orgs.Count(ctx)
+		return Mocks.Orgs.Count(ctx, opt)
 	}
+
+	conds := o.listSQL(opt)
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", sqlf.Join(conds, "AND"))
+
 	var count int
-	if err := globalDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM orgs WHERE deleted_at IS NULL`).Scan(&count); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -96,18 +100,23 @@ func (o *orgs) List(ctx context.Context, opt *OrgsListOptions) ([]*sourcegraph.O
 	if opt == nil {
 		opt = &OrgsListOptions{}
 	}
+	conds := o.listSQL(*opt)
 
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if opt.Query != "" {
-		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("name ILIKE %s OR display_name ILIKE %s", query, query))
-	}
-
-	q := sqlf.Sprintf("WHERE %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %d OFFSET %d",
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
 		sqlf.Join(conds, "AND"),
 		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
 	)
 	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (*orgs) listSQL(opt OrgsListOptions) (conds []*sqlf.Query) {
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	if opt.Query != "" {
+		query := "%" + opt.Query + "%"
+		conds = append(conds, sqlf.Sprintf("name ILIKE %s OR display_name ILIKE %s", query, query))
+	}
+	return conds
 }
 
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Org, error) {

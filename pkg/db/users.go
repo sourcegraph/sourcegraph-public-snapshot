@@ -349,12 +349,16 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
-func (u *users) Count(ctx context.Context) (int, error) {
+func (u *users) Count(ctx context.Context, opt UsersListOptions) (int, error) {
 	if Mocks.Users.Count != nil {
-		return Mocks.Users.Count(ctx)
+		return Mocks.Users.Count(ctx, opt)
 	}
+
+	conds := u.listSQL(opt)
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM users WHERE %s", sqlf.Join(conds, "AND"))
+
 	var count int
-	if err := globalDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`).Scan(&count); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -406,18 +410,23 @@ func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*sourcegraph
 	if opt == nil {
 		opt = &UsersListOptions{}
 	}
+	conds := u.listSQL(*opt)
 
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if opt.Query != "" {
-		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("username ILIKE %s OR display_name ILIKE %s", query, query))
-	}
-
-	q := sqlf.Sprintf("WHERE %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %d OFFSET %d",
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
 		sqlf.Join(conds, "AND"),
 		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
 	)
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	if opt.Query != "" {
+		query := "%" + opt.Query + "%"
+		conds = append(conds, sqlf.Sprintf("username ILIKE %s OR display_name ILIKE %s", query, query))
+	}
+	return conds
 }
 
 func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
