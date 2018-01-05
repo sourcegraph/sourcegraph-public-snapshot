@@ -3,10 +3,12 @@ import HelpIcon from '@sourcegraph/icons/lib/Help'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
+import { Redirect } from 'react-router'
 import { Link } from 'react-router-dom'
 import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { currentUser } from '../auth'
 import { colorTheme, getColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { observeSavedQueries } from './backend'
@@ -28,6 +30,7 @@ interface State {
     loading: boolean
     error?: Error
     isLightTheme: boolean
+    user: GQL.IUser | null
 }
 
 export class SavedQueries extends React.Component<Props, State> {
@@ -36,6 +39,7 @@ export class SavedQueries extends React.Component<Props, State> {
         creating: false,
         loading: true,
         isLightTheme: getColorTheme() === 'light',
+        user: null,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -66,6 +70,7 @@ export class SavedQueries extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
+        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
         eventLogger.logViewEvent('SavedQueries')
     }
 
@@ -80,6 +85,14 @@ export class SavedQueries extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         if (this.state.loading) {
             return <Loader />
+        }
+
+        // If not logged in, redirect to sign in
+        if (!this.state.user) {
+            const newUrl = new URL(window.location.href)
+            // Return to the current page after sign up/in.
+            newUrl.searchParams.set('returnTo', window.location.href)
+            return <Redirect to={'/sign-up' + newUrl.search} />
         }
 
         const isHomepage = this.props.location.pathname === '/search'
@@ -139,6 +152,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     ))}
                 </div>
                 {savedQueries.length === 0 &&
+                    this.state.user &&
                     isHomepage && (
                         <div className="saved-query">
                             <Link to="/search/queries">

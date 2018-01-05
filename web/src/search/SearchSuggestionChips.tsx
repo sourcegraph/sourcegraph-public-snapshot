@@ -8,6 +8,7 @@ import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { currentUser } from '../auth'
 import { routes } from '../routes'
 import { currentConfiguration } from '../settings/configuration'
 import { fetchSearchScopes } from './backend'
@@ -46,6 +47,7 @@ interface PersistedState extends PersistableState {
 interface State extends PersistableState {
     /** All search scopes from configuration */
     configuredScopes?: ISearchScope[]
+    user: GQL.IUser | null
 }
 
 export class SearchSuggestionChips extends React.PureComponent<Props, State> {
@@ -59,7 +61,7 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
         super(props)
 
         const savedState = this.loadFromLocalStorage()
-        this.state = { remoteScopes: savedState.remoteScopes }
+        this.state = { remoteScopes: savedState.remoteScopes, user: null }
 
         // Always start with the scope suggestion that the user last clicked, if any.
         if (savedState.lastScopeValue) {
@@ -93,6 +95,7 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                 })
             )
         )
+        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -122,11 +125,13 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                         {scope.name}
                     </button>
                 ))}
-                <div className="search-suggestion-chips__edit">
-                    <NavLink className="search-page__edit" to="/settings/configuration">
-                        <small className="search-page__center">Edit</small>
-                    </NavLink>
-                </div>
+                {this.state.user && (
+                    <div className="search-suggestion-chips__edit">
+                        <NavLink className="search-page__edit" to="/settings/configuration">
+                            <small className="search-page__center">Edit</small>
+                        </NavLink>
+                    </div>
+                )}
             </div>
         )
     }
