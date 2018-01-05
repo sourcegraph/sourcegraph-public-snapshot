@@ -217,6 +217,22 @@ export class QueryInput extends React.Component<Props, State> {
                     err => console.error(err)
                 )
         )
+
+        /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(props),
+                    filter(({ location }) => new URLSearchParams(location.search).get('focus') !== null)
+                )
+                .subscribe(props => {
+                    this.focusInputAndPositionCursorAtEnd()
+
+                    const q = new URLSearchParams(props.location.search)
+                    q.delete('focus')
+                    this.props.history.replace({ search: q.toString() })
+                })
+        )
     }
 
     public componentDidMount(): void {
