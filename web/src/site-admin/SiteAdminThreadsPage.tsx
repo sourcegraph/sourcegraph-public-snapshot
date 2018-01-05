@@ -105,7 +105,11 @@ export class SiteAdminThreadsPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-detail-list site-admin-threads-page">
                 <PageTitle title="Threads - Admin" />
-                <h2>Threads </h2>
+                <h2>Threads and comments (beta)</h2>
+                <p>
+                    Code comments are in beta and require{' '}
+                    <a href="https://about.sourcegraph.com/products/editor">Sourcegraph Editor</a>.
+                </p>
                 <FilteredConnection
                     className="site-admin-page__filtered-connection"
                     noun="thread"
