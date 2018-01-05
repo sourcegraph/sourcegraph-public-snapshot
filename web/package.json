@@ -115,7 +115,7 @@
     "immutable": "^3.8.1",
     "js-base64": "^2.3.2",
     "lodash": "^4.11.2",
-    "marked": "^0.3.6",
+    "marked": "^0.3.9",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-monaco-editor": "^0.13.0",
