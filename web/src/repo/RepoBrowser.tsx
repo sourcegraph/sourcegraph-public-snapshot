@@ -46,7 +46,7 @@ export class RepoBrowser extends React.PureComponent<Props> {
                     className="repo-browser__filtered-connection"
                     noun="repository"
                     pluralNoun="repositories"
-                    queryConnection={fetchAllRepositories}
+                    queryConnection={this.queryRepositories}
                     nodeComponent={RepositoryNode}
                     history={this.props.history}
                     location={this.props.location}
@@ -54,4 +54,6 @@ export class RepoBrowser extends React.PureComponent<Props> {
             </div>
         )
     }
+
+    private queryRepositories = (query: string) => fetchAllRepositories({ query })
 }

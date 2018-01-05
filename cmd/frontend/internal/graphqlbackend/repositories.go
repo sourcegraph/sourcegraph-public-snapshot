@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 
+	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -12,20 +14,27 @@ import (
 
 func (r *siteResolver) Repositories(args *struct {
 	connectionArgs
-	Query   *string
-	Cloning bool
-}) *repositoryConnectionResolver {
+	Query           *string
+	Cloning         bool
+	IncludeDisabled bool
+}) (*repositoryConnectionResolver, error) {
+	if args.Cloning && args.IncludeDisabled {
+		return nil, errors.New("mutually exclusive arguments: cloning, includeDisabled")
+	}
+
 	return &repositoryConnectionResolver{
 		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
-		query:   args.Query,
-		cloning: args.Cloning,
-	}
+		query:           args.Query,
+		cloning:         args.Cloning,
+		includeDisabled: args.IncludeDisabled,
+	}, nil
 }
 
 type repositoryConnectionResolver struct {
 	connectionResolverCommon
-	query   *string
-	cloning bool
+	query           *string
+	cloning         bool
+	includeDisabled bool
 }
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {
@@ -56,6 +65,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 	}
 
 	opt := &db.ReposListOptions{
+		IncludeDisabled: r.includeDisabled,
 		ListOptions: sourcegraph.ListOptions{
 			PerPage: r.first,
 		},
@@ -101,4 +111,24 @@ func (r *repositoryConnectionResolver) resolveCloning(ctx context.Context) (repo
 
 	// First, find out what repos are currently being cloned.
 	return gitserver.DefaultClient.ListCloning(ctx)
+}
+
+func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
+	Repository graphql.ID
+	Enabled    bool
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can enable/disable repositories, because it's a site-wide
+	// and semi-destructive action.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+	if err := db.Repos.SetEnabled(ctx, id, args.Enabled); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }

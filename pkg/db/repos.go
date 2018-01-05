@@ -292,6 +292,9 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
+	// IncludeDisabled includes disabled repositories in the list.
+	IncludeDisabled bool
+
 	sourcegraph.ListOptions
 }
 
@@ -345,6 +348,9 @@ func (s *repos) List(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph
 	}
 	if opt.ExcludePattern != "" {
 		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
+	}
+	if !opt.IncludeDisabled {
+		conds = append(conds, sqlf.Sprintf("enabled=true"))
 	}
 
 	// fetch matching repos
@@ -527,6 +533,22 @@ func (s *repos) Delete(ctx context.Context, repo int32) error {
 	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
 	_, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
+}
+
+func (s *repos) SetEnabled(ctx context.Context, id int32, enabled bool) error {
+	q := sqlf.Sprintf("UPDATE repo SET enabled=%t WHERE id=%d", enabled, id)
+	res, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrRepoNotFound
+	}
+	return nil
 }
 
 // UpdateRepoFieldsFromRemote updates the DB from the remote (e.g., GitHub).

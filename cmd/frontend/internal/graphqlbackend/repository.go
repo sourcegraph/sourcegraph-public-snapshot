@@ -52,7 +52,14 @@ func repositoryByIDInt32(ctx context.Context, id int32) (*repositoryResolver, er
 }
 
 func (r *repositoryResolver) ID() graphql.ID {
-	return relay.MarshalID("Repository", r.repo.ID)
+	return marshalRepositoryID(r.repo.ID)
+}
+
+func marshalRepositoryID(id int32) graphql.ID { return relay.MarshalID("Repository", id) }
+
+func unmarshalRepositoryID(id graphql.ID) (repositoryID int32, err error) {
+	err = relay.UnmarshalSpec(id, &repositoryID)
+	return
 }
 
 func (r *repositoryResolver) URI() string {
@@ -198,6 +205,8 @@ func (r *repositoryResolver) Private() bool {
 func (r *repositoryResolver) Language() string {
 	return r.repo.Language
 }
+
+func (r *repositoryResolver) Enabled() bool { return r.repo.Enabled }
 
 func (r *repositoryResolver) Fork() bool {
 	return r.repo.Fork

@@ -98,15 +98,20 @@ export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
  *
  * @return Observable that emits the list of repositories
  */
-export function fetchAllRepositories(query?: string): Observable<GQL.IRepositoryConnection> {
+export function fetchAllRepositories(opt: {
+    query?: string
+    includeDisabled?: boolean
+}): Observable<GQL.IRepositoryConnection> {
+    opt = { includeDisabled: false, ...opt }
     return queryGraphQL(
         gql`
-            query Repositories($query: String) {
+            query Repositories($query: String, $includeDisabled: Boolean) {
                 site {
-                    repositories(first: 100, query: $query) {
+                    repositories(first: 100, query: $query, includeDisabled: $includeDisabled) {
                         nodes {
                             id
                             uri
+                            enabled
                             createdAt
                         }
                         totalCount
@@ -114,13 +119,29 @@ export function fetchAllRepositories(query?: string): Observable<GQL.IRepository
                 }
             }
         `,
-        { query }
+        opt
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.repositories) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.site.repositories
+        })
+    )
+}
+
+export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Observable<void> {
+    return mutateGraphQL(
+        gql`
+    mutation SetRepositoryEnabled($repository: ID!, $enabled: Boolean!) {
+        setRepositoryEnabled(repository: $repository, enabled: $enabled) { }
+    }`,
+        { repository, enabled }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
         })
     )
 }
