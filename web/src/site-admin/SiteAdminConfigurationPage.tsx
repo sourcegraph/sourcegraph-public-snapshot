@@ -26,6 +26,7 @@ interface Props extends RouteComponentProps<any> {}
 
 interface State {
     site?: GQL.ISite
+    loading: boolean
     error?: Error
 
     /**
@@ -43,7 +44,9 @@ const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
  * A page displaying the site configuration.
  */
 export class SiteAdminConfigurationPage extends React.Component<Props, State> {
-    public state: State = {}
+    public state: State = {
+        loading: true,
+    }
 
     private remoteRefreshes = new Subject<void>()
     private remoteUpdates = new Subject<string>()
@@ -75,8 +78,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     this.setState({
                         site,
                         error: undefined,
+                        loading: false,
                     }),
-                error => this.setState({ error })
+                error => this.setState({ error, loading: false })
             )
         )
         this.remoteRefreshes.next()
@@ -230,6 +234,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     <a href="https://about.sourcegraph.com/docs/server/">documentation</a> for more information.
                 </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
+                {this.state.loading && <Loader className="icon-inline" />}
                 {this.state.site &&
                     this.state.site.configuration && (
                         <div>
