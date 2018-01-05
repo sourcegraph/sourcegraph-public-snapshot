@@ -22,8 +22,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var githubClientID = conf.Get().GithubClientID
-var githubClientSecret = conf.Get().GithubClientSecret
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 
@@ -65,6 +63,18 @@ func main() {
 		log.Printf("Profiler available on %s/pprof", profBindAddr)
 	}
 
+	var authenticateRequest func(query url.Values, header http.Header)
+	if clientID, clientSecret := conf.Get().GithubClientID, conf.Get().GithubClientSecret; clientID != "" && clientSecret != "" {
+		authenticateRequest = func(query url.Values, header http.Header) {
+			query.Set("client_id", clientID)
+			query.Set("client_secret", clientSecret)
+		}
+	} else if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
+		authenticateRequest = func(query url.Values, header http.Header) {
+			header.Set("authorization", "token "+c.Token)
+		}
+	}
+
 	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q2 := r.URL.Query()
 
@@ -72,9 +82,10 @@ func main() {
 		h2.Set("User-Agent", r.Header.Get("User-Agent"))
 		h2.Set("Accept", r.Header.Get("Accept"))
 
-		// Otherwise set client_id for higher rate limits.
-		q2.Set("client_id", githubClientID)
-		q2.Set("client_secret", githubClientSecret)
+		// Authenticate for higher rate limits.
+		if authenticateRequest != nil {
+			authenticateRequest(q2, h2)
+		}
 
 		req2 := &http.Request{
 			Method: r.Method,
