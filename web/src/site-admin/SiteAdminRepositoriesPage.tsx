@@ -36,11 +36,12 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                         {this.props.node.createdAt && (
                             <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
                         )}
-                        {this.props.node.latest.cloneInProgress && (
-                            <li>
-                                <Loader className="icon-inline" /> Cloning
-                            </li>
-                        )}
+                        {this.props.node.latest &&
+                            this.props.node.latest.cloneInProgress && (
+                                <li>
+                                    <Loader className="icon-inline" /> Cloning
+                                </li>
+                            )}
                         <li>
                             Access:{' '}
                             {this.props.node.enabled ? (

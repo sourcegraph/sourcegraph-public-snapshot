@@ -13,13 +13,14 @@ export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: rep
             <Link to={`/${repo.uri}`} className="site-admin-detail-list__name">
                 {repo.uri}
             </Link>
-            {repo.latest.cloneInProgress && (
-                <span className="repo-browser__repo-cloning">
-                    <small>
-                        <Loader className="icon-inline" /> Cloning
-                    </small>
-                </span>
-            )}
+            {repo.latest &&
+                repo.latest.cloneInProgress && (
+                    <span className="repo-browser__item-cloning">
+                        <small>
+                            <Loader className="icon-inline" /> Cloning
+                        </small>
+                    </span>
+                )}
         </div>
     </li>
 )

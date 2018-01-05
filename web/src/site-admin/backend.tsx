@@ -150,7 +150,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         startWith(void 0),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
-            if (result.nodes.some(n => n.latest.cloneInProgress)) {
+            if (result.nodes.some(n => n.latest && n.latest.cloneInProgress)) {
                 setTimeout(() => subject.next(), 3000)
 
                 // Also trigger the global alert for "Cloning repositories...".
