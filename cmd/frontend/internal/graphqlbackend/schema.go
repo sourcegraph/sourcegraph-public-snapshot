@@ -140,7 +140,7 @@ type Mutation {
 	): Settings!
 	# Deletes an organization. Only site admins may perform this mutation.
 	deleteOrganization(organization: ID!): EmptyResponse
-	# setRepositoryEnabled enables or disables a repository. A disabled repository is only
+	# Enables or disables a repository. A disabled repository is only
 	# accessible to site admins and never appears in search results.
 	#
 	# Only site admins may perform this mutation.
