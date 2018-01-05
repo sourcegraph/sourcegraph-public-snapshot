@@ -32,7 +32,6 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                         {this.props.node.uri}
                     </Link>
                     <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
-                        <li>ID: {this.props.node.id}</li>
                         {this.props.node.createdAt && (
                             <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
                         )}

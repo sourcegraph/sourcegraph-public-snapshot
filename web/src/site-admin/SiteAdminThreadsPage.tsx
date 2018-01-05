@@ -52,7 +52,6 @@ class ThreadNode extends React.PureComponent<ThreadNodeProps, ThreadNodeState> {
                             {this.props.node.comments.length} {pluralize('comment', this.props.node.comments.length)}
                         </Link>
                     </li>
-                    <li>ID: {this.props.node.id}</li>
                     <li>Repository: {this.props.node.repo.canonicalRemoteID}</li>
                     <li>File: {this.props.node.repoRevisionPath}</li>
                     <li>

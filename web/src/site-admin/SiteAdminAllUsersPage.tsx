@@ -107,7 +107,6 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 Email: <a href={`mailto:${this.props.node.email}`}>{this.props.node.email}</a>
                             </li>
                         )}
-                        <li>ID: {this.props.node.id}</li>
                         {this.props.node.createdAt && (
                             <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
                         )}
