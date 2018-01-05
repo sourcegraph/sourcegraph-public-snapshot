@@ -5,6 +5,7 @@ import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/AcceptInvitePage'
 import { EditorAuthPage } from '../user/settings/EditorAuthPage'
+import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
@@ -79,6 +80,12 @@ export class SettingsArea extends React.Component<Props> {
                         <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
                             component={UserSettingsConfigurationPage}
+                            exact={true}
+                            {...transferProps}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/account`}
+                            component={UserSettingsAccountPage}
                             exact={true}
                             {...transferProps}
                         />

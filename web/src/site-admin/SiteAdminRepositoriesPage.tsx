@@ -8,7 +8,7 @@ import { Subject } from 'rxjs/Subject'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled } from './backend'
+import { deleteRepository, fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled } from './backend'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -36,11 +36,12 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                         {this.props.node.createdAt && (
                             <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
                         )}
-                        {this.props.node.latest.cloneInProgress && (
-                            <li>
-                                <Loader className="icon-inline" /> Cloning
-                            </li>
-                        )}
+                        {this.props.node.latest &&
+                            this.props.node.latest.cloneInProgress && (
+                                <li>
+                                    <Loader className="icon-inline" /> Cloning
+                                </li>
+                            )}
                         <li>
                             Access:{' '}
                             {this.props.node.enabled ? (
@@ -76,6 +77,13 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                             Enable access
                         </button>
                     )}
+                    <button
+                        className="btn btn-link btn-sm"
+                        onClick={this.deleteRepository}
+                        disabled={this.state.loading}
+                    >
+                        Delete
+                    </button>
                     {this.state.errorDescription && (
                         <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
                     )}
@@ -94,6 +102,29 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
         })
 
         setRepositoryEnabled(this.props.node.id, enabled)
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({ loading: false })
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
+                },
+                err => this.setState({ loading: false, errorDescription: err.message })
+            )
+    }
+
+    private deleteRepository = () => {
+        if (!window.confirm('Really delete this repository? This is irreversible.')) {
+            return
+        }
+
+        this.setState({
+            errorDescription: undefined,
+            loading: true,
+        })
+
+        deleteRepository(this.props.node.id)
             .toPromise()
             .then(
                 () => {

@@ -150,7 +150,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         startWith(void 0),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
-            if (result.nodes.some(n => n.latest.cloneInProgress)) {
+            if (result.nodes.some(n => n.latest && n.latest.cloneInProgress)) {
                 setTimeout(() => subject.next(), 3000)
 
                 // Also trigger the global alert for "Cloning repositories...".
@@ -169,6 +169,22 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
         setRepositoryEnabled(repository: $repository, enabled: $enabled) { }
     }`,
         { repository, enabled }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+        })
+    )
+}
+
+export function deleteRepository(repository: GQLID): Observable<void> {
+    return mutateGraphQL(
+        gql`
+    mutation DeleteRepository($repository: ID!) {
+        deleteRepository(repository: $repository) { }
+    }`,
+        { repository }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {

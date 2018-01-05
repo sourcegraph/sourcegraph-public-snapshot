@@ -179,3 +179,22 @@ func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, err
 	}
 	return &userActivityResolver{activity}, nil
 }
+
+func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
+	OldPassword string
+	NewPassword string
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: A user can only change their own password.
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("no authenticated user")
+	}
+
+	if err := db.Users.UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}

@@ -133,11 +133,20 @@ type Mutation {
 	): Settings!
 	# Deletes an organization. Only site admins may perform this mutation.
 	deleteOrganization(organization: ID!): EmptyResponse
-	# setRepositoryEnabled enables or disables a repository. A disabled repository is only
+	# Enables or disables a repository. A disabled repository is only
 	# accessible to site admins and never appears in search results.
 	#
 	# Only site admins may perform this mutation.
 	setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
+	# Deletes a repository and all data associated with it, irreversibly.
+	#
+	# If the repository was added because it was present in the site configuration (directly,
+	# or because it originated from a configured code host), then it will be re-added during
+	# the next sync. If you intend to make the repository inaccessible to users and not searchable,
+	# use setRepositoryEnabled to disable the repository instead of deleteRepository.
+	#
+	# Only site admins may perform this mutation.
+	deleteRepository(repository: ID!): EmptyResponse
 	# Creates a user account for a new user and generates a reset password link that the user
 	# must visit to sign into the account. Only site admins may perform this mutation.
 	createUserBySiteAdmin(username: String!, email: String!): CreateUserBySiteAdminResult!
@@ -147,6 +156,8 @@ type Mutation {
 	# Deletes a user account. Only site admins may perform this mutation.
 	deleteUser(user: ID!): EmptyResponse
 	inviteUser(email: String!, orgID: ID!): InviteUserResult
+	# Updates the current user's password. The oldPassword arg must match the user's current password.
+	updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
 	acceptUserInvite(inviteToken: String!): EmptyResponse
 	removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
 	# adds a phabricator repository to the Sourcegraph server.

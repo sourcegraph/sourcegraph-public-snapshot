@@ -2,15 +2,21 @@ import * as H from 'history'
 import * as React from 'react'
 import { VALID_USERNAME_REGEXP } from '../user'
 
-export const PasswordInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
-    <input
-        {...props}
-        className={`form-control ${props.className || ''}`}
-        type="password"
-        placeholder="Password"
-        minLength={window.context.debug ? 1 : 6}
-    />
-)
+export const PasswordInput: React.SFC<
+    React.InputHTMLAttributes<HTMLInputElement> & { inputRef?: React.Ref<HTMLInputElement> }
+> = props => {
+    const { inputRef, ...other } = props
+    return (
+        <input
+            {...other}
+            className={`form-control ${props.className || ''}`}
+            type="password"
+            placeholder={props.placeholder === undefined ? 'Password' : props.placeholder}
+            minLength={window.context.debug ? 1 : 6}
+            ref={inputRef}
+        />
+    )
+}
 
 export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input
