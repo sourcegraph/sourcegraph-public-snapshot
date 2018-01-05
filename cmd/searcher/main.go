@@ -40,7 +40,8 @@ func main() {
 	gitserver.DefaultClient.NoCreds = true
 
 	// Filter log output by level.
-	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
+	lvl, err := log15.LvlFromString(env.LogLevel)
+	if err == nil {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}
 
@@ -64,7 +65,9 @@ func main() {
 			// Allow roughly 10 fetches per gitserver
 			MaxConcurrentFetchTar: 10 * len(gitserver.DefaultClient.Addrs),
 		},
-		RequestLog: log.New(os.Stderr, "", 0),
+	}
+	if lvl >= log15.LvlInfo {
+		service.RequestLog = log.New(os.Stderr, "", 0)
 	}
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
@@ -74,7 +77,7 @@ func main() {
 	go shutdownOnSIGINT(server)
 
 	log15.Info("searcher: listening", "addr", ":3181")
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	if err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
