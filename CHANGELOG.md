@@ -15,6 +15,12 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
+## Next
+
+### Added
+
+* Search files by name by including `type:path` in a search query
+
 ## 2.3.11
 
 ### Added
