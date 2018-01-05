@@ -86,7 +86,7 @@ export class SavedQueries extends React.Component<Props, State> {
 
         const savedQueries = this.state.savedQueries.filter(savedQuery => {
             if (isHomepage) {
-                return savedQuery.viewOnHomepage
+                return savedQuery.showOnHomepage
             }
             return savedQuery
         })

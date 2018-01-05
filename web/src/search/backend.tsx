@@ -214,7 +214,7 @@ const savedQueryFragment = gql`
         }
         index
         description
-        viewOnHomepage
+        showOnHomepage
         query {
             query
             scopeQuery
@@ -259,7 +259,7 @@ export function createSavedQuery(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
     description: string,
     query: string,
-    viewOnHomepage: boolean
+    showOnHomepage: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -270,14 +270,14 @@ export function createSavedQuery(
                 $description: String!
                 $query: String!
                 $scopeQuery: String!
-                $viewOnHomepage: Boolean
+                $showOnHomepage: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     createSavedQuery(
                         description: $description
                         query: $query
                         scopeQuery: $scopeQuery
-                        viewOnHomepage: $viewOnHomepage
+                        showOnHomepage: $showOnHomepage
                     ) {
                         ...SavedQueryFields
                     }
@@ -285,7 +285,7 @@ export function createSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { description, query, scopeQuery: '', viewOnHomepage }
+        { description, query, scopeQuery: '', showOnHomepage }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
@@ -301,7 +301,7 @@ export function updateSavedQuery(
     id: GQLID,
     description: string,
     query: string,
-    viewOnHomepage: boolean
+    showOnHomepage: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -313,7 +313,7 @@ export function updateSavedQuery(
                 $description: String
                 $query: String
                 $scopeQuery: String
-                $viewOnHomepage: Boolean
+                $showOnHomepage: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     updateSavedQuery(
@@ -321,7 +321,7 @@ export function updateSavedQuery(
                         description: $description
                         query: $query
                         scopeQuery: $scopeQuery
-                        viewOnHomepage: $viewOnHomepage
+                        showOnHomepage: $showOnHomepage
                     ) {
                         ...SavedQueryFields
                     }
@@ -329,7 +329,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, scopeQuery: '', viewOnHomepage }
+        { id, description, query, scopeQuery: '', showOnHomepage }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {

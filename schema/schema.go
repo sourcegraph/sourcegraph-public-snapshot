@@ -102,10 +102,11 @@ type SMTPServerConfig struct {
 
 // SearchSavedQueries
 type SearchSavedQueries struct {
-	Description string `json:"description"`
-	Key         string `json:"key"`
-	Query       string `json:"query"`
-	ScopeQuery  string `json:"scopeQuery,omitempty"`
+	Description    string `json:"description"`
+	Key            string `json:"key"`
+	Query          string `json:"query"`
+	ScopeQuery     string `json:"scopeQuery,omitempty"`
+	ShowOnHomepage bool   `json:"showOnHomepage,omitempty"`
 }
 
 // SearchScope

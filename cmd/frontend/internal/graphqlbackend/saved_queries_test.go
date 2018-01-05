@@ -38,7 +38,7 @@ func TestSavedQueries(t *testing.T) {
 			index:          0,
 			description:    "d",
 			query:          searchQuery{query: "q"},
-			viewOnHomepage: false,
+			showOnHomepage: false,
 		},
 	}
 	if !reflect.DeepEqual(savedQueries, want) {
@@ -80,11 +80,11 @@ func TestCreateSavedQuery(t *testing.T) {
 		Description    string
 		Query          string
 		ScopeQuery     string
-		ViewOnHomepage bool
+		ShowOnHomepage bool
 	}{
 		Description:    "d2",
 		Query:          "q2",
-		ViewOnHomepage: false,
+		ShowOnHomepage: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -149,11 +149,11 @@ func TestUpdateSavedQuery(t *testing.T) {
 		Description    *string
 		Query          *string
 		ScopeQuery     *string
-		ViewOnHomepage bool
+		ShowOnHomepage bool
 	}{
 		ID:             marshalSavedQueryID(savedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
 		Description:    &newDescription,
-		ViewOnHomepage: false,
+		ShowOnHomepage: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -164,7 +164,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 		index:          0,
 		description:    "d2",
 		query:          searchQuery{query: "q"},
-		viewOnHomepage: false,
+		showOnHomepage: false,
 	}
 	if !reflect.DeepEqual(updated, want) {
 		t.Errorf("got %+v, want %+v", updated, want)

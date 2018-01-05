@@ -19,7 +19,7 @@ export interface SavedQueryFields {
     description: string
     query: string
     subject: GQLID
-    viewOnHomepage: boolean
+    showOnHomepage: boolean
 }
 
 interface Props {
@@ -64,7 +64,7 @@ export const SavedQueryForm = reactive<Props>(props => {
             description: descriptionInput ? descriptionInput.value : '',
             query: queryInput ? queryInput.value : '',
             subject: subjectValue,
-            viewOnHomepage: viewLocationInput ? viewLocationInput.checked : false,
+            showOnHomepage: viewLocationInput ? viewLocationInput.checked : false,
         })
     }
 
@@ -104,7 +104,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                     description: defaultValues.description,
                     query: defaultValues.query,
                     subject: defaultValues.subject,
-                    viewOnHomepage: defaultValues.viewOnHomepage,
+                    showOnHomepage: defaultValues.showOnHomepage,
                 })
             }),
             map((defaultValues): Update => state => ({
@@ -112,7 +112,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                 description: defaultValues.description,
                 query: defaultValues.query,
                 subject: defaultValues.subject,
-                viewOnHomepage: defaultValues.viewOnHomepage,
+                showOnHomepage: defaultValues.showOnHomepage,
             }))
         ),
 
@@ -166,7 +166,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                 query,
                 subject,
                 subjectOptions,
-                viewOnHomepage,
+                showOnHomepage,
                 onDidCancel,
                 title,
                 submitLabel,
@@ -229,7 +229,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                                 <input
                                     className="saved-query-form__save-location-input"
                                     type="checkbox"
-                                    defaultChecked={viewOnHomepage}
+                                    defaultChecked={showOnHomepage}
                                     onChange={nextInputChange}
                                     ref={e => (viewLocationInput = e)}
                                 />

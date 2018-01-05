@@ -31,6 +31,10 @@ const SettingsSchemaJSON = `{
           "scopeQuery": {
             "type": "string",
             "description": "Scope query string"
+          },
+          "showOnHomepage": {
+            "type": "boolean",
+            "description": "Show this saved query on the homepage"
           }
         },
         "additionalProperties": false,

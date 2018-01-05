@@ -21,7 +21,7 @@ export const SavedQueryCreateForm: React.StatelessComponent<Props> = props => (
         defaultValues={props.subject ? { subject: props.subject.id } : props.values}
         // tslint:disable-next-line:jsx-no-lambda
         onSubmit={(fields: SavedQueryFields): Observable<void> =>
-            createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.viewOnHomepage).pipe(
+            createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.showOnHomepage).pipe(
                 map(() => undefined)
             )
         }

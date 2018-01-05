@@ -24,7 +24,7 @@ type savedQueryResolver struct {
 	index          int
 	description    string
 	query          searchQuery
-	viewOnHomepage bool
+	showOnHomepage bool
 }
 
 func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, error) {
@@ -77,8 +77,8 @@ func unmarshalSavedQueryID(id graphql.ID) (spec savedQueryIDSpec, err error) {
 	return
 }
 
-func (r savedQueryResolver) ViewOnHomepage() bool {
-	return r.viewOnHomepage
+func (r savedQueryResolver) ShowOnHomepage() bool {
+	return r.showOnHomepage
 }
 
 func (r savedQueryResolver) Subject() *configurationSubject { return r.subject }
@@ -103,7 +103,7 @@ func toSavedQueryResolver(index int, subject *configurationSubject, entry config
 		index:          index,
 		description:    entry.Description,
 		query:          searchQuery{query: entry.Query, scopeQuery: entry.ScopeQuery},
-		viewOnHomepage: entry.ViewOnHomepage,
+		showOnHomepage: entry.ShowOnHomepage,
 	}
 }
 
@@ -114,7 +114,7 @@ type configSavedQuery struct {
 	Description    string `json:"description"`
 	Query          string `json:"query"`
 	ScopeQuery     string `json:"scopeQuery"`
-	ViewOnHomepage bool   `json:"viewOnHomepage"`
+	ShowOnHomepage bool   `json:"showOnHomepage"`
 }
 
 // partialConfigSavedQueries is the JSON configuration shape, including only the
@@ -198,7 +198,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	Description    string
 	Query          string
 	ScopeQuery     string
-	ViewOnHomepage bool
+	ShowOnHomepage bool
 }) (*savedQueryResolver, error) {
 	var index int
 	var key string
@@ -216,7 +216,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 			Description:    args.Description,
 			Query:          args.Query,
 			ScopeQuery:     args.ScopeQuery,
-			ViewOnHomepage: args.ViewOnHomepage,
+			ShowOnHomepage: args.ShowOnHomepage,
 		}
 		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, formatOptions)
 		return edits, err
@@ -230,7 +230,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 		index:          index,
 		description:    args.Description,
 		query:          searchQuery{query: args.Query, scopeQuery: args.ScopeQuery},
-		viewOnHomepage: args.ViewOnHomepage,
+		showOnHomepage: args.ShowOnHomepage,
 	}, nil
 }
 
@@ -254,7 +254,7 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	Description    *string
 	Query          *string
 	ScopeQuery     *string
-	ViewOnHomepage bool
+	ShowOnHomepage bool
 }) (*savedQueryResolver, error) {
 	spec, err := unmarshalSavedQueryID(args.ID)
 	if err != nil {
@@ -285,7 +285,7 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 		fieldUpdates["scopeQuery"] = *args.ScopeQuery
 	}
 
-	fieldUpdates["viewOnHomepage"] = args.ViewOnHomepage
+	fieldUpdates["showOnHomepage"] = args.ShowOnHomepage
 
 	for propertyName, value := range fieldUpdates {
 		id, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {

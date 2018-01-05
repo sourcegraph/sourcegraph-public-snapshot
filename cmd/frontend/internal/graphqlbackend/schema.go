@@ -216,7 +216,7 @@ type ConfigurationMutation {
 		description: String!
 		query: String!
 		scopeQuery: String!
-		viewOnHomepage: Boolean = false
+		showOnHomepage: Boolean = false
 	): SavedQuery!
 	# Update the saved query with the given ID in the configuration.
 	updateSavedQuery(
@@ -224,7 +224,7 @@ type ConfigurationMutation {
 		description: String
 		query: String
 		scopeQuery: String
-		viewOnHomepage: Boolean = false
+		showOnHomepage: Boolean = false
 	): SavedQuery!
 	# Delete the saved query with the given ID in the configuration.
 	deleteSavedQuery(id: ID!): EmptyResponse
@@ -357,7 +357,7 @@ type SavedQuery {
 	index: Int!
 	description: String!
 	query: SearchQuery!
-	viewOnHomepage: Boolean!
+	showOnHomepage: Boolean!
 }
 
 type SearchQueryDescription {

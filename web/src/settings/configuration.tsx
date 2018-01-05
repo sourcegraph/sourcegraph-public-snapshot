@@ -17,7 +17,7 @@ export interface SavedQueryConfiguration {
     description: string
     query?: string
     scopeQuery?: string
-    viewOnHomepage?: boolean
+    showOnHomepage?: boolean
 }
 
 export interface Configuration {

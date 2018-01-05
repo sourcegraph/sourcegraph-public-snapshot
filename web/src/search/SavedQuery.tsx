@@ -86,7 +86,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             props.savedQuery.subject,
                             duplicate(props.savedQuery.description),
                             props.savedQuery.query.query,
-                            props.savedQuery.viewOnHomepage
+                            props.savedQuery.showOnHomepage
                         )
                     )
                 )
