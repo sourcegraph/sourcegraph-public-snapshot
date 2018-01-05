@@ -32,6 +32,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     /** CSS class name for the root element. */
     className?: string
 
+    /** CSS class name for the list element (<ul>). */
+    listClassName?: string
+
     /** Called to fetch the connection data to populate this component. */
     queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
 
@@ -244,7 +247,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                 {!this.state.loading &&
                     this.state.connection &&
                     this.state.connection.nodes.length > 0 && (
-                        <ul className="filtered-connection__nodes">
+                        <ul className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
                             {this.state.connection.nodes.map(node => (
                                 <NodeComponent key={node.id} node={node} {...this.props.nodeComponentProps} />
                             ))}

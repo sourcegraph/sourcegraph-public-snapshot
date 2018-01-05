@@ -2,8 +2,11 @@
     margin-top: 1rem;
     width: 100%;
 
+    &__header {
+        display: flex;
+        justify-content: space-between;
+    }
     &__actions {
-        margin-top: 1rem;
         display: flex;
         align-items: center;
     }
@@ -12,16 +15,65 @@
         margin-top: 1rem;
     }
 
-    &__repo {
+    &__items {
+        margin-top: 1rem;
+    }
+
+    &__item {
         display: flex;
         align-items: center;
+
+        padding: 0.75rem 0;
+
+        border: solid 1px #2b3750;
+        border-width: 1px 0 0 0;
+        &:last-child {
+            border-bottom-width: 1px;
+        }
+
+        &-path {
+            font-size: 18px;
+            font-weight: normal;
+            margin-bottom: 0;
+            .part:last-child {
+                font-weight: bold;
+            }
+        }
+
         &-cloning {
             display: inline-flex;
             align-items: center;
             margin-left: 0.5rem;
             color: $color-success;
         }
+        &-spacer {
+            flex: 1;
+        }
+
+        &-actions {
+            display: flex;
+            align-items: center;
+            margin: -0.25rem;
+        }
+        &-action {
+            margin: 0.25rem;
+            display: flex;
+            align-items: center;
+        }
     }
 
     padding: 0 2rem;
+}
+
+.theme-light {
+    .repo-browser {
+        &__item {
+            border-color: $color-light-border;
+            &-header {
+                &-link {
+                    color: $color-light-text-1;
+                }
+            }
+        }
+    }
 }
