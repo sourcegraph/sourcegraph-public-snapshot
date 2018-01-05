@@ -94,6 +94,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GitoliteUpdateRepos).Handler(traceutil.TraceRoute(handler(serveGitoliteUpdateRepos)))
 	m.Get(apirouter.GitInfoRefs).Handler(traceutil.TraceRoute(handler(serveGitInfoRefs)))
 	m.Get(apirouter.GitUploadPack).Handler(traceutil.TraceRoute(handler(serveGitUploadPack)))
+	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

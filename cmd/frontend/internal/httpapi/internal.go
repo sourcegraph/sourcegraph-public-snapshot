@@ -300,3 +300,7 @@ func depReferenceToPkgQuery(lang string, dep *sourcegraph.DependencyReference) m
 		return nil
 	}
 }
+
+func handlePing(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("pong"))
+}

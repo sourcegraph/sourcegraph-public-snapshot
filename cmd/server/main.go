@@ -106,7 +106,7 @@ func main() {
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,
-		`repo-updater: sh -c "sleep 5 && exec repo-updater"`, // sleep because it needs frontend to be ready
+		`repo-updater: repo-updater`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=3700 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
 	}
 	if line, err := maybeRedisProcFile(); err != nil {

@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -19,6 +21,50 @@ type internalClient struct {
 }
 
 var InternalClient = &internalClient{URL: "http://" + frontendInternal}
+
+// RetryPingUntilAvailable retries a noop request to the internal API until it is able to reach
+// the endpoint, indicating that the endpoint is available.
+func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
+	ping := func(ctx context.Context) error {
+		resp, err := http.Get(c.URL + "/.internal/ping")
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		if want := "pong"; string(body) != want {
+			const max = 15
+			if len(body) > max {
+				body = body[:max]
+			}
+			return fmt.Errorf("ping: bad HTTP response body %q (want %q)", body, want)
+		}
+		return nil
+	}
+
+	var lastErr error
+	for {
+		err := ping(ctx)
+		if err != nil {
+			if ctx.Err() != nil {
+				return fmt.Errorf("frontend API not reachable: %s (last error: %v)", err, lastErr)
+			}
+
+			// Keep trying.
+			lastErr = err
+			time.Sleep(250 * time.Millisecond)
+			continue
+		}
+		break
+	}
+	return nil
+}
 
 func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision string) error {
 	req, err := json.Marshal(&DefsRefreshIndexRequest{
