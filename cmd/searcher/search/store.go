@@ -168,7 +168,7 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 	// deadline on how long we wait to open/fetch an archive. Note: This only
 	// times out how long we wait for this request, the fetch will still
 	// happen in the background so future requests don't have to wait.
-	ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, 300*time.Millisecond)
 	defer cancel()
 
 	select {
