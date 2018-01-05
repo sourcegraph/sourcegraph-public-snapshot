@@ -2,22 +2,11 @@
   "name": "sourcegraph",
   "private": true,
   "scripts": {
-    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md},.*.js?(on)}' --write --list-different",
-    "precommit": "lint-staged"
-  },
-  "lint-staged": {
-    "linters": {
-      "{*.{js?(on),ts?(x),graphql,md},.*.js?(on)}": "node_modules/.bin/prettier --list-different",
-      "web/**/*.scss": "web/node_modules/.bin/stylelint --quiet",
-      "web/**/*.ts?(x)": "web/node_modules/.bin/tslint -c web/tslint.json -p web/tsconfig.json"
-    },
-    "concurrent": true
+    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md},.*.js?(on)}' --write --list-different"
   },
   "devDependencies": {
     "@sourcegraph/prettierrc": "^2.1.0",
     "chokidar-cli": "^1.2.0",
-    "husky": "^0.14.3",
-    "lint-staged": "^6.0.0",
     "prettier": "^1.9.2"
   }
 }
