@@ -185,6 +185,42 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
 
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
+
+        const summary =
+            !this.state.loading &&
+            this.state.connection &&
+            (this.state.connection.totalCount > 0 ? (
+                <p>
+                    <small>
+                        <span>
+                            {this.state.connection.totalCount}{' '}
+                            {pluralize(this.props.noun, this.state.connection.totalCount, this.props.pluralNoun)}{' '}
+                            {this.state.connectionQuery ? (
+                                <span>
+                                    {' '}
+                                    matching <strong>{this.state.connectionQuery}</strong>
+                                </span>
+                            ) : (
+                                'total'
+                            )}
+                        </span>{' '}
+                        {this.state.connection.nodes.length < this.state.connection.totalCount &&
+                            `(showing first ${this.state.connection.nodes.length})`}
+                    </small>
+                </p>
+            ) : (
+                <p>
+                    <small>
+                        No {this.props.pluralNoun}{' '}
+                        {this.state.connectionQuery && (
+                            <span>
+                                matching <strong>{this.state.connectionQuery}</strong>
+                            </span>
+                        )}
+                    </small>
+                </p>
+            ))
+
         return (
             <div className={`filtered-connection ${this.props.className || ''}`}>
                 {!this.props.hideFilter && (
@@ -199,44 +235,8 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                         />
                     </form>
                 )}
-                {!this.state.loading &&
-                    this.state.connection &&
-                    (this.state.connection.totalCount > 0 ? (
-                        <p>
-                            <small>
-                                <span>
-                                    {this.state.connection.totalCount}{' '}
-                                    {pluralize(
-                                        this.props.noun,
-                                        this.state.connection.totalCount,
-                                        this.props.pluralNoun
-                                    )}{' '}
-                                    {this.state.connectionQuery ? (
-                                        <span>
-                                            {' '}
-                                            matching <strong>{this.state.connectionQuery}</strong>
-                                        </span>
-                                    ) : (
-                                        'total'
-                                    )}
-                                </span>{' '}
-                                {this.state.connection.nodes.length < this.state.connection.totalCount &&
-                                    `(showing first ${this.state.connection.nodes.length})`}
-                            </small>
-                        </p>
-                    ) : (
-                        <p>
-                            <small>
-                                No {this.props.pluralNoun}{' '}
-                                {this.state.connectionQuery && (
-                                    <span>
-                                        matching <strong>{this.state.connectionQuery}</strong>
-                                    </span>
-                                )}
-                            </small>
-                        </p>
-                    ))}
                 {this.state.loading && <Loader className="icon-inline" />}
+                {this.state.connectionQuery && summary}
                 {!this.state.loading &&
                     this.state.connection &&
                     this.state.connection.nodes.length > 0 && (
@@ -246,6 +246,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                             ))}
                         </ul>
                     )}
+                {!this.state.connectionQuery && summary}
                 {!this.state.loading &&
                     this.state.connection &&
                     this.state.connection.nodes.length < this.state.connection.totalCount && (
