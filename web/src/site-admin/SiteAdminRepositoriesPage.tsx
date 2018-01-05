@@ -146,7 +146,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (query: string) => fetchAllRepositories({ query, includeDisabled: true })
+    private queryRepositories = (query: string) => fetchAllRepositories({ first: 50, query, includeDisabled: true })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 }

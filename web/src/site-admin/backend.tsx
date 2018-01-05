@@ -99,15 +99,16 @@ export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
  * @return Observable that emits the list of repositories
  */
 export function fetchAllRepositories(opt: {
+    first?: number
     query?: string
     includeDisabled?: boolean
 }): Observable<GQL.IRepositoryConnection> {
     opt = { includeDisabled: false, ...opt }
     return queryGraphQL(
         gql`
-            query Repositories($query: String, $includeDisabled: Boolean) {
+            query Repositories($first: Int, $query: String, $includeDisabled: Boolean) {
                 site {
-                    repositories(first: 100, query: $query, includeDisabled: $includeDisabled) {
+                    repositories(first: $first, query: $query, includeDisabled: $includeDisabled) {
                         nodes {
                             id
                             uri
