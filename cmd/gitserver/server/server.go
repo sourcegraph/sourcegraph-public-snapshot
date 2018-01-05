@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -49,7 +48,7 @@ func init() {
 	// Limit the number of concurrent clones to prevent hitting throttle limits by the host.
 	var maxParallelClones = conf.Get().GitMaxConcurrentClones
 	if maxParallelClones == 0 {
-		maxParallelClones = int(math.MaxInt32)
+		maxParallelClones = 100
 	}
 	cloneLimiter = parallel.NewRun(maxParallelClones)
 }
@@ -283,9 +282,10 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 			if skipCloneForTests {
 				s.releaseCloneLock(dir)
 			} else if !cloneInProgress {
-				cloneLimiter.Acquire()
 				go func() {
+					cloneLimiter.Acquire()
 					defer cloneLimiter.Release()
+
 					// Create a new context because this is in a background goroutine.
 					ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 					defer func() {
