@@ -232,6 +232,10 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                             name="query"
                             value={this.state.query}
                             onChange={this.onChange}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
                         />
                     </form>
                 )}
