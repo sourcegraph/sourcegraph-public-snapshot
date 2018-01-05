@@ -178,6 +178,22 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
     )
 }
 
+export function deleteRepository(repository: GQLID): Observable<void> {
+    return mutateGraphQL(
+        gql`
+    mutation DeleteRepository($repository: ID!) {
+        deleteRepository(repository: $repository) { }
+    }`,
+        { repository }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+        })
+    )
+}
+
 /**
  * Fetches usage analytics for all users.
  *
