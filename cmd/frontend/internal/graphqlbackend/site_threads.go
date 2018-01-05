@@ -25,7 +25,7 @@ func (r *siteThreadConnectionResolver) Nodes(ctx context.Context) ([]*threadReso
 		return nil, err
 	}
 
-	threadsList, err := db.Threads.List(ctx)
+	threadsList, err := db.Threads.List(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

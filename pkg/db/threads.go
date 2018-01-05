@@ -237,21 +237,38 @@ func (t *threads) ListByFile(ctx context.Context, orgID *int32, repoIDs []int32,
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) CountByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string) (int32, error) {
+func (t *threads) CountByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string) (int, error) {
 	q := t.listByFileQuery(orgID, repoIDs, branch, file)
 	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) List(ctx context.Context) ([]*sourcegraph.Thread, error) {
-	return t.getBySQL(ctx, "WHERE deleted_at IS NULL ORDER BY id ASC")
+type ThreadsListOptions struct {
+	sourcegraph.ListOptions
 }
 
-func (t *threads) Count(ctx context.Context) (int32, error) {
+func (t *threads) List(ctx context.Context, opt *ThreadsListOptions) ([]*sourcegraph.Thread, error) {
+	if Mocks.Threads.List != nil {
+		return Mocks.Threads.List(ctx, opt)
+	}
+
+	if opt == nil {
+		opt = &ThreadsListOptions{}
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	q := sqlf.Sprintf("WHERE %s AND deleted_at IS NULL ORDER BY id ASC LIMIT %d OFFSET %d",
+		sqlf.Join(conds, "AND"),
+		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
+	)
+	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (t *threads) Count(ctx context.Context) (int, error) {
 	return t.getCountBySQL(ctx, "WHERE deleted_at IS NULL")
 }
 
-func (t *threads) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int32, error) {
-	var count int32
+func (t *threads) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int, error) {
+	var count int
 	rows := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM threads t "+query, args...)
 	err := rows.Scan(&count)
 	return count, err
@@ -357,4 +374,19 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 	}
 
 	return threads, nil
+}
+
+func (t *threads) Delete(ctx context.Context, id int32) error {
+	res, err := globalDB.ExecContext(ctx, "UPDATE threads SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("thread %d not found", id)
+	}
+	return nil
 }
