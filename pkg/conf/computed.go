@@ -22,9 +22,13 @@ func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
 }
 
-// GitHubDotComConnection returns the github config for github.com, if present.
-func GitHubDotComConnection() *schema.GitHubConnection {
+// FirstGitHubDotComConnectionWithToken returns the first GitHub connection
+// config for github.com that contains a token, or nil if there is none.
+func FirstGitHubDotComConnectionWithToken() *schema.GitHubConnection {
 	for _, c := range Get().Github {
+		if c.Token == "" {
+			continue
+		}
 		u, _ := url.Parse(c.Url)
 		if u != nil && u.Hostname() == "github.com" {
 			return &c

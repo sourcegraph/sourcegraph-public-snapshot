@@ -69,7 +69,7 @@ func main() {
 			query.Set("client_id", clientID)
 			query.Set("client_secret", clientSecret)
 		}
-	} else if c := conf.GitHubDotComConnection(); c != nil {
+	} else if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
 		authenticateRequest = func(query url.Values, header http.Header) {
 			header.Set("authorization", "token "+c.Token)
 		}
