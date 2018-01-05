@@ -161,6 +161,7 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
                         </a>
                     )}
                 {(this.props.viewButtonType !== 'plain' || this.props.showWrapCode) &&
+                    !this.props.isDirectory &&
                     (this.state.wrapCode ? (
                         <a className="repo-nav__action" title="Unwrap lines" onClick={this.onWrapCode}>
                             <UnwrapIcon className="icon-inline" />
