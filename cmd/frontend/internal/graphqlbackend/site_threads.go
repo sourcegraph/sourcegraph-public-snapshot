@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
@@ -25,13 +26,19 @@ func (r *siteThreadConnectionResolver) Nodes(ctx context.Context) ([]*threadReso
 		return nil, err
 	}
 
-	threadsList, err := db.Threads.List(ctx, nil)
+	opt := &db.ThreadsListOptions{
+		ListOptions: sourcegraph.ListOptions{
+			PerPage: r.first,
+		},
+	}
+
+	threads, err := db.Threads.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
 
 	var l []*threadResolver
-	for _, thread := range threadsList {
+	for _, thread := range threads {
 		orgRepo, err := db.OrgRepos.GetByID(ctx, thread.OrgRepoID)
 		if err != nil {
 			return nil, err
