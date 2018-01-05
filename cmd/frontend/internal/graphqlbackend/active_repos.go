@@ -7,6 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -77,7 +78,7 @@ func listActiveAndInactive(ctx context.Context) (active []*sourcegraph.Repo, ina
 	// repos, see description of this function above).
 	var all *sourcegraph.RepoList
 	if !envvar.SourcegraphDotComMode() {
-		all, err = backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		all, err = backend.Repos.List(ctx, &db.ReposListOptions{
 			ListOptions: sourcegraph.ListOptions{
 				PerPage: 10000, // we want every repo.
 			},

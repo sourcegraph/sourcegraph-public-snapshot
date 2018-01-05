@@ -69,7 +69,7 @@ func (s *repos) TryInsertNew(ctx context.Context, uri string, description string
 	return db.Repos.TryInsertNew(ctx, uri, description, fork, private)
 }
 
-func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res *sourcegraph.RepoList, err error) {
+func (s *repos) List(ctx context.Context, opt *db.ReposListOptions) (res *sourcegraph.RepoList, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
@@ -84,16 +84,8 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}()
 
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
-	if opt == nil {
-		opt = &sourcegraph.RepoListOptions{}
-	}
 
-	repos, err := db.Repos.List(ctx, &db.RepoListOp{
-		Query:           opt.Query,
-		IncludePatterns: opt.IncludePatterns,
-		ExcludePattern:  opt.ExcludePattern,
-		ListOptions:     opt.ListOptions,
-	})
+	repos, err := db.Repos.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}

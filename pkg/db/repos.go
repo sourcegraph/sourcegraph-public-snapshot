@@ -225,25 +225,6 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 	return repos, nil
 }
 
-// RepoListOp specifies the options for listing repositories.
-//
-// Query and IncludePatterns/ExcludePatterns may not be used together.
-type RepoListOp struct {
-	// Query specifies a search query for repositories. If specified, then the Sort and
-	// Direction options are ignored
-	Query string
-
-	// IncludePatterns is a list of regular expressions, all of which must match all
-	// repositories returned in the list.
-	IncludePatterns []string
-
-	// ExcludePattern is a regular expression that must not match any repository
-	// returned in the list.
-	ExcludePattern string
-
-	sourcegraph.ListOptions
-}
-
 // makeFuzzyLikeRepoQuery turns a string of "foo/bar" into "%foo%/%bar%".
 // Anything that is not a letter or digit is turned turned surrounded by %.
 // Except for space, which is just turned into %.
@@ -295,18 +276,37 @@ func makeFuzzyLikeRepoQuery(q string) string {
 	return b.String()
 }
 
+// ReposListOptions specifies the options for listing repositories.
+//
+// Query and IncludePatterns/ExcludePatterns may not be used together.
+type ReposListOptions struct {
+	// Query specifies a search query for repositories. If specified, then the Sort and
+	// Direction options are ignored
+	Query string
+
+	// IncludePatterns is a list of regular expressions, all of which must match all
+	// repositories returned in the list.
+	IncludePatterns []string
+
+	// ExcludePattern is a regular expression that must not match any repository
+	// returned in the list.
+	ExcludePattern string
+
+	sourcegraph.ListOptions
+}
+
 // List lists repositories in the Sourcegraph repository
 //
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
-func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo, error) {
+func (s *repos) List(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph.Repo, error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
 
 	if opt == nil {
-		opt = &RepoListOp{}
+		opt = &ReposListOptions{}
 	}
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}

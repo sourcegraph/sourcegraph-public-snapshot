@@ -55,7 +55,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		return l, nil
 	}
 
-	opt := &sourcegraph.RepoListOptions{
+	opt := &db.ReposListOptions{
 		ListOptions: sourcegraph.ListOptions{
 			PerPage: r.first,
 		},
