@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -457,7 +458,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.combinedQuery.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path"}
+			resultTypes = []string{"file"}
+
+			// TODO(sqs): env var for opting into potentially slower default search type
+			if v, _ := strconv.ParseBool(os.Getenv("EXP_SEARCH_PATHS")); v {
+				resultTypes = append(resultTypes, "path")
+			}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
