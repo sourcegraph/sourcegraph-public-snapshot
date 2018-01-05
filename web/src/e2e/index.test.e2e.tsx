@@ -9,27 +9,25 @@ describe('e2e test suite', () => {
 
     let headlessChrome: any
     let chrome: Chromeless<any>
-    before(() => {
+    before(async () => {
         if (!process.env.SKIP_LAUNCH_CHROME) {
             // We manually launch chrome w/ chrome launcher because chromeless doesn't offer a way to
             // launch in headless mode.
-            return chromeLauncher
-                .launch({
-                    startingUrl: baseURL,
-                    port: 9222,
-                    chromeFlags: ['--headless', '--disable-gpu'],
-                })
-                .then((c: any) => (headlessChrome = c))
+            headlessChrome = await chromeLauncher.launch({
+                startingUrl: baseURL,
+                port: 9222,
+                chromeFlags: ['--headless', '--disable-gpu'],
+            })
         }
     })
     beforeEach(() => {
         chrome = new Chromeless({ waitTimeout: 30000, launchChrome: false })
-        return chrome.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
+        chrome.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
     })
     afterEach(() => chrome.end())
-    after(() => {
+    after(async () => {
         if (headlessChrome) {
-            return headlessChrome.kill()
+            await headlessChrome.kill()
         }
     })
 
