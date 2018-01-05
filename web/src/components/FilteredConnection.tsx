@@ -192,7 +192,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                         <input
                             className="form-control"
                             type="search"
-                            placeholder="Search..."
+                            placeholder={`Search ${this.props.pluralNoun}...`}
                             name="query"
                             value={this.state.query}
                             onChange={this.onChange}
