@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"log"
-
 	"github.com/felixfbecker/stringscore"
+	"github.com/pkg/errors"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -442,7 +442,9 @@ func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisio
 	for range repos {
 		if err := <-done; err != nil {
 			// TODO collect error
-			log.Println("searchFiles error: " + err.Error())
+			if errors.Cause(err) != context.Canceled {
+				log15.Warn("searchFiles error", "err", err)
+			}
 		}
 	}
 	return res, nil
