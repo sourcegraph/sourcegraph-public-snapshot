@@ -6,7 +6,7 @@
     flex: 1 1 auto;
     padding-top: 1.5rem;
     line-height: 1.5rem;
-    overflow-y: auto;
+    overflow-y: scroll;
     min-height: calc(100vh - $navbar-search-height - 1.5rem);
 
     &__content {
