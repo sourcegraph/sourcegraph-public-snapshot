@@ -122,6 +122,8 @@
 // ../../../migrations/1514876826_site_id.up.sql
 // ../../../migrations/1514937919_remove_user_activity_table.down.sql
 // ../../../migrations/1514937919_remove_user_activity_table.up.sql
+// ../../../migrations/1515125883_repo_blocked_to_enabled.down.sql
+// ../../../migrations/1515125883_repo_blocked_to_enabled.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2629,6 +2631,46 @@ func _1514937919_remove_user_activity_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1515125883_repo_blocked_to_enabledDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcd\x4b\xae\x82\x30\x14\xc6\xf1\x79\x57\xf1\x6d\x80\xbb\x81\x86\x41\x81\x93\x7b\x49\xfa\x20\xbd\x25\x8e\x41\x8e\x8f\x58\x8b\x41\x70\xfd\x0e\xc4\x18\x13\x9d\x9e\xfc\x7f\xe7\x2b\xe8\xb7\xb6\x52\x28\x1d\xc8\x23\xa8\x42\x13\x26\xbe\x8c\xf0\x64\x95\x21\x94\x4e\xb7\xc6\x82\x53\xd7\x47\x1e\x10\x1c\xfa\x38\x6e\x4f\x3c\x7c\x20\x8f\xc3\x2a\xd6\x0c\x95\x77\x0d\xac\x0b\xb0\xad\xd6\x52\x64\x19\xea\x74\xe3\x69\xc6\x7c\x60\x9c\xb9\x4b\xc7\xb4\xff\x11\x6d\x53\xa9\xb0\xbe\xf9\xa7\xf0\xd4\x79\x5a\x62\xc4\xe6\x8f\x3c\xbd\x76\xbf\xb5\xf3\xb4\xf0\x7b\x9b\xef\xba\x78\x65\x29\x4a\x67\x4c\x1d\xa4\xb8\x07\x00\x00\xff\xff\x72\xc2\x10\x48\xec\x00\x00\x00")
+
+func _1515125883_repo_blocked_to_enabledDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1515125883_repo_blocked_to_enabledDownSql,
+		"1515125883_repo_blocked_to_enabled.down.sql",
+	)
+}
+
+func _1515125883_repo_blocked_to_enabledDownSql() (*asset, error) {
+	bytes, err := _1515125883_repo_blocked_to_enabledDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1515125883_repo_blocked_to_enabled.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1515125883_repo_blocked_to_enabledUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8e\xcd\x4e\x85\x30\x10\x85\xf7\x7d\x8a\x59\xea\xe2\xfa\x02\x8d\x8b\x5e\xa8\x86\xa4\x3f\xa6\x4c\x1f\xa0\xc8\x80\x44\x68\x4d\xa9\x3e\xbf\x51\x29\x2b\x37\x77\x37\x99\x7c\xe7\x9c\xef\x2a\x9f\x3b\xc3\x99\x50\x28\x1d\xa0\xb8\x2a\x09\x99\x3e\x12\x38\x69\x84\x96\xd0\x58\xe5\xb5\x81\x61\x4d\xaf\xef\x34\x02\x5a\xa0\x18\x86\x95\x46\xce\x2e\x17\x70\x14\xc3\xb6\xc4\x19\xa6\x9c\xb6\x13\x2a\xa9\x42\xb0\xc4\x2f\xca\x65\x87\xf2\x46\xb0\x51\x88\x4b\x9c\x1f\x98\x7f\x69\x05\x1e\x33\xbd\xc4\x0a\x3f\xde\xd5\x63\x0a\xeb\x4e\x60\xdd\x59\xd3\xf5\x60\xbc\x52\xf7\xff\x78\xfe\x3d\x0e\xcd\xca\xff\xb4\x1a\x8b\xbf\xa1\x5b\x32\xad\x7c\x12\x5e\x21\x94\xfc\x49\x9c\x35\x56\xeb\x0e\x39\x63\xdf\x01\x00\x00\xff\xff\x0a\x1c\xce\x1e\x24\x01\x00\x00")
+
+func _1515125883_repo_blocked_to_enabledUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1515125883_repo_blocked_to_enabledUpSql,
+		"1515125883_repo_blocked_to_enabled.up.sql",
+	)
+}
+
+func _1515125883_repo_blocked_to_enabledUpSql() (*asset, error) {
+	bytes, err := _1515125883_repo_blocked_to_enabledUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1515125883_repo_blocked_to_enabled.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2803,6 +2845,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514876826_site_id.up.sql":                                   _1514876826_site_idUpSql,
 	"1514937919_remove_user_activity_table.down.sql":              _1514937919_remove_user_activity_tableDownSql,
 	"1514937919_remove_user_activity_table.up.sql":                _1514937919_remove_user_activity_tableUpSql,
+	"1515125883_repo_blocked_to_enabled.down.sql":                 _1515125883_repo_blocked_to_enabledDownSql,
+	"1515125883_repo_blocked_to_enabled.up.sql":                   _1515125883_repo_blocked_to_enabledUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2968,6 +3012,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514876826_site_id.up.sql":                                   &bintree{_1514876826_site_idUpSql, map[string]*bintree{}},
 	"1514937919_remove_user_activity_table.down.sql":              &bintree{_1514937919_remove_user_activity_tableDownSql, map[string]*bintree{}},
 	"1514937919_remove_user_activity_table.up.sql":                &bintree{_1514937919_remove_user_activity_tableUpSql, map[string]*bintree{}},
+	"1515125883_repo_blocked_to_enabled.down.sql":                 &bintree{_1515125883_repo_blocked_to_enabledDownSql, map[string]*bintree{}},
+	"1515125883_repo_blocked_to_enabled.up.sql":                   &bintree{_1515125883_repo_blocked_to_enabledUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

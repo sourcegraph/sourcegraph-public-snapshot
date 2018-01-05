@@ -38,8 +38,8 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 		return nil, err
 	}
 
-	if repo.Blocked {
-		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo.URI)
+	if !repo.Enabled {
+		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
 	}
 
 	return repo, nil
@@ -58,8 +58,8 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 		return nil, err
 	}
 
-	if repo.Blocked {
-		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo.URI)
+	if !repo.Enabled {
+		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
 	}
 
 	return repo, nil

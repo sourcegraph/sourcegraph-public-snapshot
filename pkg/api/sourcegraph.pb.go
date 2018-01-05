@@ -60,9 +60,9 @@ type Repo struct {
 	Description string `json:"Description,omitempty"`
 	// Language is the primary programming language used in this repository.
 	Language string `json:"Language,omitempty"`
-	// Blocked is whether this repo has been blocked by an admin (and
-	// will not be returned via the external API).
-	Blocked bool `json:"Blocked,omitempty"`
+	// Enabled is whether the repository is enabled. Disabled repositories are
+	// not accessible by users (except site admins).
+	Enabled bool `json:"Enabled,omitempty"`
 	// Fork is whether this repository is a fork.
 	Fork bool `json:"Fork,omitempty"`
 	// StarsCount is the number of users who have starred this repository.

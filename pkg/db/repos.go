@@ -178,7 +178,7 @@ func (s *repos) Count(ctx context.Context) (int, error) {
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourcegraph.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, uri, description, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -195,7 +195,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 			&repo.URI,
 			&repo.Description,
 			&repo.Language,
-			&repo.Blocked,
+			&repo.Enabled,
 			&repo.Fork,
 			&repo.Private,
 			&repo.IndexedRevision,
@@ -595,7 +595,7 @@ func (s *repos) TryInsertNew(ctx context.Context, uri string, description string
 		return err
 	}
 
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, language, blocked) VALUES ($1, $2, $3, $4, $5, '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, language, enabled) VALUES ($1, $2, $3, $4, $5, '', true)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {
