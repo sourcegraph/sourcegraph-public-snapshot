@@ -45,7 +45,7 @@ func maybePostgresProcFile() (string, error) {
 		if verbose {
 			log.Printf("Setting up PostgreSQL at %s", path)
 		}
-		log.Println("Initializing the database... (may take a few moments)")
+		log.Println("✱ Sourcegraph is initializing the internal database... (may take 15-20 seconds)")
 
 		var output bytes.Buffer
 		e := execer{Out: &output}
