@@ -6,6 +6,10 @@
     flex-direction: column;
     flex: 1 1 auto;
 
+    @media (max-width: $media-lg) {
+        padding: 0 2rem;
+    }
+
     &__header {
         padding: 0.5rem 0;
         display: flex;
