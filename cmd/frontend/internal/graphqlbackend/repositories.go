@@ -2,9 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 
+	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -12,19 +13,29 @@ import (
 
 func (r *siteResolver) Repositories(args *struct {
 	connectionArgs
-	Query   *string
-	Cloning bool
-}) *repositoryConnectionResolver {
-	return &repositoryConnectionResolver{
-		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
-		query:   args.Query,
-		cloning: args.Cloning,
+	Query           *string
+	Cloning         bool
+	IncludeDisabled bool
+}) (*repositoryConnectionResolver, error) {
+	if args.Cloning && args.IncludeDisabled {
+		return nil, errors.New("mutually exclusive arguments: cloning, includeDisabled")
 	}
+
+	opt := db.ReposListOptions{
+		IncludeDisabled: args.IncludeDisabled,
+	}
+	if args.Query != nil {
+		opt.Query = *args.Query
+	}
+	args.connectionArgs.set(&opt.ListOptions)
+	return &repositoryConnectionResolver{
+		opt:     opt,
+		cloning: args.Cloning,
+	}, nil
 }
 
 type repositoryConnectionResolver struct {
-	connectionResolverCommon
-	query   *string
+	opt     db.ReposListOptions
 	cloning bool
 }
 
@@ -36,7 +47,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		}
 		var l []*repositoryResolver
 		for _, repoURI := range repos {
-			if len(l) == int(r.first) {
+			if len(l) == r.opt.PerPageOrDefault() {
 				break
 			}
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)
@@ -55,16 +66,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		return l, nil
 	}
 
-	opt := &sourcegraph.RepoListOptions{
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: r.first,
-		},
-	}
-	if r.query != nil {
-		opt.Query = *r.query
-	}
-
-	reposList, err := backend.Repos.List(ctx, opt)
+	reposList, err := backend.Repos.List(ctx, &r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +86,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		return int32(len(repos)), err
 	}
 
-	count, err := db.Repos.Count(ctx)
+	count, err := db.Repos.Count(ctx, r.opt)
 	return int32(count), err
 }
 
@@ -101,4 +103,24 @@ func (r *repositoryConnectionResolver) resolveCloning(ctx context.Context) (repo
 
 	// First, find out what repos are currently being cloned.
 	return gitserver.DefaultClient.ListCloning(ctx)
+}
+
+func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
+	Repository graphql.ID
+	Enabled    bool
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can enable/disable repositories, because it's a site-wide
+	// and semi-destructive action.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+	if err := db.Repos.SetEnabled(ctx, id, args.Enabled); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
 }

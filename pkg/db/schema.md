@@ -199,7 +199,7 @@ Foreign-key constraints:
  name                    | citext                   | 
  description             | text                     | 
  language                | text                     | 
- blocked                 | boolean                  | 
+ enabled                 | boolean                  | not null default true
  fork                    | boolean                  | 
  private                 | boolean                  | 
  created_at              | timestamp with time zone | 

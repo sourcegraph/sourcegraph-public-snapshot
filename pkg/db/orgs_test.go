@@ -13,7 +13,7 @@ func TestOrgs_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Orgs.Count(ctx); err != nil {
+	if count, err := Orgs.Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -23,7 +23,7 @@ func TestOrgs_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Orgs.Count(ctx); err != nil {
+	if count, err := Orgs.Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)

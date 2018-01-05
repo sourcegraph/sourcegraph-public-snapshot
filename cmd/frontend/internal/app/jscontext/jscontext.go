@@ -123,7 +123,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	license, licenseStatus := license.Get(siteID)
 	var showOnboarding = false
 	if license == nil || license.SiteID == "" {
-		userCount, err := db.Users.Count(req.Context())
+		userCount, err := db.Users.Count(req.Context(), db.UsersListOptions{})
 		if err != nil {
 			panic("Users.Count failed: " + err.Error())
 		}

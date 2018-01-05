@@ -14,8 +14,9 @@ func TestReposService_Get(t *testing.T) {
 	ctx := testContext()
 
 	wantRepo := &sourcegraph.Repo{
-		ID:  1,
-		URI: "github.com/u/r",
+		ID:      1,
+		URI:     "github.com/u/r",
+		Enabled: true,
 	}
 	ghrepo := &sourcegraph.Repo{
 		URI: "github.com/u/r",

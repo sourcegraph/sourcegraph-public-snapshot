@@ -44,9 +44,9 @@ func TestSearchResults(t *testing.T) {
 
 	t.Run("multiple terms", func(t *testing.T) {
 		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op *db.RepoListOp) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op *db.ReposListOptions) ([]*sourcegraph.Repo, error) {
 			calledReposList = true
-			if want := (&db.RepoListOp{ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (&db.ReposListOptions{ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "repo"}}, nil

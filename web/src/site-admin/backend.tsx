@@ -1,16 +1,21 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
+import { mergeMap } from 'rxjs/operators/mergeMap'
+import { startWith } from 'rxjs/operators/startWith'
+import { tap } from 'rxjs/operators/tap'
+import { Subject } from 'rxjs/Subject'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { refreshSiteFlags } from '../site/backend'
 
 /**
  * Fetches all users.
  */
-export function fetchAllUsers(query?: string): Observable<GQL.IUserConnection> {
+export function fetchAllUsers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
     return queryGraphQL(
         gql`
-            query Users($query: String) {
+            query Users($first: Int, $query: String) {
                 site {
-                    users(first: 100, query: $query) {
+                    users(first: $first, query: $query) {
                         nodes {
                             id
                             externalID
@@ -37,7 +42,7 @@ export function fetchAllUsers(query?: string): Observable<GQL.IUserConnection> {
                 }
             }
         `,
-        { query }
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.users) {
@@ -51,12 +56,12 @@ export function fetchAllUsers(query?: string): Observable<GQL.IUserConnection> {
 /**
  * Fetches all orgs.
  */
-export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
+export function fetchAllOrgs(args: { first?: number; query?: string }): Observable<GQL.IOrgConnection> {
     return queryGraphQL(
         gql`
-            query Orgs($query: String) {
+            query Orgs($first: Int, $query: String) {
                 site {
-                    orgs(first: 100, query: $query) {
+                    orgs(first: $first, query: $query) {
                         nodes {
                             id
                             name
@@ -82,7 +87,7 @@ export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
                 }
             }
         `,
-        { query }
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.orgs) {
@@ -93,34 +98,82 @@ export function fetchAllOrgs(query?: string): Observable<GQL.IOrgConnection> {
     )
 }
 
+interface RepositoryArgs {
+    first?: number
+    query?: string
+    includeDisabled?: boolean
+}
+
 /**
  * Fetches all repositories.
  *
  * @return Observable that emits the list of repositories
  */
-export function fetchAllRepositories(query?: string): Observable<GQL.IRepositoryConnection> {
+export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
+    args = { includeDisabled: false, ...args }
     return queryGraphQL(
         gql`
-            query Repositories($query: String) {
+            query Repositories($first: Int, $query: String, $includeDisabled: Boolean) {
                 site {
-                    repositories(first: 100, query: $query) {
+                    repositories(first: $first, query: $query, includeDisabled: $includeDisabled) {
                         nodes {
                             id
                             uri
+                            enabled
                             createdAt
+                            latest {
+                                cloneInProgress
+                            }
                         }
                         totalCount
                     }
                 }
             }
         `,
-        { query }
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.repositories) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
             return data.site.repositories
+        })
+    )
+}
+
+export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
+    // Poll if there are repositories that are being cloned.
+    //
+    // TODO(sqs): This is hacky, but I couldn't figure out a better way.
+    const subject = new Subject<void>()
+    return subject.pipe(
+        startWith(void 0),
+        mergeMap(() => fetchAllRepositories(args)),
+        tap(result => {
+            if (result.nodes.some(n => n.latest.cloneInProgress)) {
+                setTimeout(() => subject.next(), 3000)
+
+                // Also trigger the global alert for "Cloning repositories...".
+                refreshSiteFlags()
+                    .toPromise()
+                    .catch(err => console.error(err))
+            }
+        })
+    )
+}
+
+export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Observable<void> {
+    return mutateGraphQL(
+        gql`
+    mutation SetRepositoryEnabled($repository: ID!, $enabled: Boolean!) {
+        setRepositoryEnabled(repository: $repository, enabled: $enabled) { }
+    }`,
+        { repository, enabled }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
         })
     )
 }
@@ -332,48 +385,51 @@ export function deleteOrganization(organization: GQLID): Observable<void> {
 /**
  * Fetches all threads.
  */
-export function fetchAllThreads(): Observable<GQL.IThreadConnection> {
-    return queryGraphQL(gql`
-        query SiteThreads {
-            site {
-                threads {
-                    nodes {
-                        id
-                        repo {
-                            canonicalRemoteID
-                            org {
-                                name
+export function fetchAllThreads(args: { first?: number }): Observable<GQL.IThreadConnection> {
+    return queryGraphQL(
+        gql`
+            query SiteThreads($first: Int) {
+                site {
+                    threads(first: $first) {
+                        nodes {
+                            id
+                            repo {
+                                canonicalRemoteID
+                                org {
+                                    name
+                                }
                             }
-                        }
-                        repoRevisionPath
-                        branch
-                        repoRevisionPath
-                        repoRevision
-                        title
-                        createdAt
-                        archivedAt
-                        author {
-                            id
-                            username
-                            displayName
-                        }
-                        comments {
-                            id
+                            repoRevisionPath
+                            branch
+                            repoRevisionPath
+                            repoRevision
                             title
-                            contents
                             createdAt
+                            archivedAt
                             author {
                                 id
                                 username
                                 displayName
                             }
+                            comments {
+                                id
+                                title
+                                contents
+                                createdAt
+                                author {
+                                    id
+                                    username
+                                    displayName
+                                }
+                            }
                         }
+                        totalCount
                     }
-                    totalCount
                 }
             }
-        }
-    `).pipe(
+        `,
+        args
+    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.threads) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })

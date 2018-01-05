@@ -166,19 +166,27 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	return repos[0], nil
 }
 
-func (s *repos) Count(ctx context.Context) (int, error) {
+func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	if Mocks.Repos.Count != nil {
-		return Mocks.Repos.Count(ctx)
+		return Mocks.Repos.Count(ctx, opt)
 	}
+
+	conds, err := s.listSQL(opt)
+	if err != nil {
+		return 0, err
+	}
+
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE %s", sqlf.Join(conds, "AND"))
+
 	var count int
-	if err := globalDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM repo`).Scan(&count); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourcegraph.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, uri, description, language, blocked, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -195,7 +203,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 			&repo.URI,
 			&repo.Description,
 			&repo.Language,
-			&repo.Blocked,
+			&repo.Enabled,
 			&repo.Fork,
 			&repo.Private,
 			&repo.IndexedRevision,
@@ -223,25 +231,6 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 	}
 
 	return repos, nil
-}
-
-// RepoListOp specifies the options for listing repositories.
-//
-// Query and IncludePatterns/ExcludePatterns may not be used together.
-type RepoListOp struct {
-	// Query specifies a search query for repositories. If specified, then the Sort and
-	// Direction options are ignored
-	Query string
-
-	// IncludePatterns is a list of regular expressions, all of which must match all
-	// repositories returned in the list.
-	IncludePatterns []string
-
-	// ExcludePattern is a regular expression that must not match any repository
-	// returned in the list.
-	ExcludePattern string
-
-	sourcegraph.ListOptions
 }
 
 // makeFuzzyLikeRepoQuery turns a string of "foo/bar" into "%foo%/%bar%".
@@ -295,21 +284,59 @@ func makeFuzzyLikeRepoQuery(q string) string {
 	return b.String()
 }
 
+// ReposListOptions specifies the options for listing repositories.
+//
+// Query and IncludePatterns/ExcludePatterns may not be used together.
+type ReposListOptions struct {
+	// Query specifies a search query for repositories. If specified, then the Sort and
+	// Direction options are ignored
+	Query string
+
+	// IncludePatterns is a list of regular expressions, all of which must match all
+	// repositories returned in the list.
+	IncludePatterns []string
+
+	// ExcludePattern is a regular expression that must not match any repository
+	// returned in the list.
+	ExcludePattern string
+
+	// IncludeDisabled includes disabled repositories in the list.
+	IncludeDisabled bool
+
+	sourcegraph.ListOptions
+}
+
 // List lists repositories in the Sourcegraph repository
 //
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
-func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo, error) {
+func (s *repos) List(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph.Repo, error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
 
 	if opt == nil {
-		opt = &RepoListOp{}
+		opt = &ReposListOptions{}
+	}
+	conds, err := s.listSQL(*opt)
+	if err != nil {
+		return nil, err
 	}
 
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	// fetch matching repos
+	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
+		sqlf.Join(conds, "AND"),
+		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
+	))
+	if err != nil {
+		return nil, err
+	}
+	return rawRepos, nil
+}
+
+func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
@@ -346,16 +373,10 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	if opt.ExcludePattern != "" {
 		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
-
-	// fetch matching repos
-	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
-		sqlf.Join(conds, "AND"),
-		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
-	))
-	if err != nil {
-		return nil, err
+	if !opt.IncludeDisabled {
+		conds = append(conds, sqlf.Sprintf("enabled=true"))
 	}
-	return rawRepos, nil
+	return conds, nil
 }
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible
@@ -529,6 +550,22 @@ func (s *repos) Delete(ctx context.Context, repo int32) error {
 	return err
 }
 
+func (s *repos) SetEnabled(ctx context.Context, id int32, enabled bool) error {
+	q := sqlf.Sprintf("UPDATE repo SET enabled=%t WHERE id=%d", enabled, id)
+	res, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrRepoNotFound
+	}
+	return nil
+}
+
 // UpdateRepoFieldsFromRemote updates the DB from the remote (e.g., GitHub).
 func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repoID int32) error {
 	repo, err := s.Get(ctx, repoID)
@@ -595,7 +632,7 @@ func (s *repos) TryInsertNew(ctx context.Context, uri string, description string
 		return err
 	}
 
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, language, blocked) VALUES ($1, $2, $3, $4, $5, '', false)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, language, enabled) VALUES ($1, $2, $3, $4, $5, '', true)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {

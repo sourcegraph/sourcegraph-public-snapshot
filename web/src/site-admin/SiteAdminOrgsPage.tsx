@@ -43,7 +43,6 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                     <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
                 </div>
                 <ul className="site-admin-detail-list__info">
-                    {this.props.node.id && <li>ID: {this.props.node.id}</li>}
                     {this.props.node.createdAt && <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>}
                     {this.props.node.members &&
                         this.props.node.members.length > 0 && (

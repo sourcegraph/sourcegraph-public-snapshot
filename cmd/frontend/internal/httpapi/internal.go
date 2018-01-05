@@ -211,7 +211,7 @@ func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var opt sourcegraph.RepoListOptions
+	var opt db.ReposListOptions
 	err := json.NewDecoder(r.Body).Decode(&opt)
 	if err != nil {
 		return err

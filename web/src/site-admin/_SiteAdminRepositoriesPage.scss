@@ -1,7 +1,16 @@
 @import './DetailList';
 
 .site-admin-repositories-page {
+    &__actions {
+        flex: 1;
+    }
+
     &__repo {
-        display: block !important;
+        &-enabled {
+            color: $color-success;
+        }
+        &-disabled {
+            color: $color-error;
+        }
     }
 }

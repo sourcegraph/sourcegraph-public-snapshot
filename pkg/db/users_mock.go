@@ -13,7 +13,7 @@ type MockUsers struct {
 	GetByUsername        func(ctx context.Context, username string) (*sourcegraph.User, error)
 	GetByExternalID      func(ctx context.Context, provider, id string) (*sourcegraph.User, error)
 	GetByCurrentAuthUser func(ctx context.Context) (*sourcegraph.User, error)
-	Count                func(ctx context.Context) (int, error)
+	Count                func(ctx context.Context, opt UsersListOptions) (int, error)
 	List                 func(ctx context.Context, opt *UsersListOptions) ([]*sourcegraph.User, error)
 	ListByOrg            func(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error)
 }

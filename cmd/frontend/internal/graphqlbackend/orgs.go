@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
@@ -12,15 +11,16 @@ func (r *siteResolver) Orgs(args *struct {
 	connectionArgs
 	Query *string
 }) *orgConnectionResolver {
-	return &orgConnectionResolver{
-		connectionResolverCommon: newConnectionResolverCommon(args.connectionArgs),
-		query: args.Query,
+	var opt db.OrgsListOptions
+	if args.Query != nil {
+		opt.Query = *args.Query
 	}
+	args.connectionArgs.set(&opt.ListOptions)
+	return &orgConnectionResolver{opt: opt}
 }
 
 type orgConnectionResolver struct {
-	connectionResolverCommon
-	query *string
+	opt db.OrgsListOptions
 }
 
 func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*orgResolver, error) {
@@ -29,16 +29,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*orgResolver, erro
 		return nil, err
 	}
 
-	opt := &db.OrgsListOptions{
-		ListOptions: sourcegraph.ListOptions{
-			PerPage: r.first,
-		},
-	}
-	if r.query != nil {
-		opt.Query = *r.query
-	}
-
-	orgs, err := db.Orgs.List(ctx, opt)
+	orgs, err := db.Orgs.List(ctx, &r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +49,6 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	count, err := db.Orgs.Count(ctx)
+	count, err := db.Orgs.Count(ctx, r.opt)
 	return int32(count), err
 }

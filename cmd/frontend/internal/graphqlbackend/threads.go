@@ -75,7 +75,8 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 
 func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	orgID, repoIDs := t.orgRepoArgs()
-	return db.Threads.CountByFile(ctx, orgID, repoIDs, t.branch, t.file)
+	count, err := db.Threads.CountByFile(ctx, orgID, repoIDs, t.branch, t.file)
+	return int32(count), err
 }
 
 type threadResolver struct {

@@ -33,7 +33,7 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     className?: string
 
     /** Called to fetch the connection data to populate this component. */
-    queryConnection: (query: string) => Observable<C>
+    queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
 
     /** The component type to use to display each node. */
     nodeComponent: React.ComponentType<{ node: N } & NP>
@@ -54,9 +54,18 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     hideFilter?: boolean
 }
 
+/**
+ * The arguments for the Props.queryConnection function.
+ */
+export interface FilteredConnectionQueryArgs {
+    first?: number
+    query?: string
+}
+
 interface State<C extends Connection<N>, N> {
     loading: boolean
     query: string
+    first: number
 
     connectionQuery?: string
     connection?: C
@@ -79,15 +88,20 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     Props<C, N>,
     State<C, N>
 > {
+    private static DEFAULT_FIRST = 20
+
     private queryInputChanges = new Subject<string>()
+    private showMoreClicks = new Subject<void>()
     private subscriptions = new Subscription()
 
     public constructor(props: Props<C, N>) {
         super(props)
 
+        const q = new URLSearchParams(this.props.location.search)
         this.state = {
             loading: true,
-            query: new URLSearchParams(this.props.location.search).get('q') || '',
+            query: q.get('q') || '',
+            first: parseQueryInt(q, 'first') || FilteredConnection.DEFAULT_FIRST,
         }
     }
 
@@ -100,11 +114,11 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     tap(query => this.setState({ query })),
                     debounceTime(200),
                     tap(query => {
-                        this.props.history.replace({ search: query ? `q=${encodeURIComponent(query)}` : '' })
+                        this.props.history.replace({ search: this.urlQuery({ query }) })
                     }),
                     switchMap(query => {
                         const result = this.props
-                            .queryConnection(query)
+                            .queryConnection({ first: this.state.first, query })
                             .pipe(
                                 map(
                                     c =>
@@ -122,13 +136,47 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                 .subscribe((stateUpdate: State<C, N>) => this.setState(stateUpdate))
         )
 
+        this.subscriptions.add(
+            this.showMoreClicks
+                .pipe(
+                    map(() => this.state.first * 2),
+                    tap(first => {
+                        this.setState({ first })
+                        this.props.history.replace({ search: this.urlQuery({ first }) })
+                    }),
+                    switchMap(first => this.props.queryConnection({ first, query: this.state.query }))
+                )
+                .subscribe(c => this.setState({ connection: c }))
+        )
+
         if (this.props.updates) {
             this.subscriptions.add(
                 this.props.updates
-                    .pipe(switchMap(() => this.props.queryConnection(this.state.query)))
+                    .pipe(
+                        switchMap(() =>
+                            this.props.queryConnection({ first: this.state.first, query: this.state.query })
+                        )
+                    )
                     .subscribe(c => this.setState({ connection: c }))
             )
         }
+    }
+
+    private urlQuery(arg: { first?: number; query?: string }): string {
+        if (!arg.first) {
+            arg.first = this.state.first
+        }
+        if (!arg.query) {
+            arg.query = this.state.query
+        }
+        const q = new URLSearchParams()
+        if (arg.query) {
+            q.set('q', arg.query)
+        }
+        if (arg.first !== FilteredConnection.DEFAULT_FIRST) {
+            q.set('first', String(arg.first))
+        }
+        return q.toString()
     }
 
     public componentWillUnmount(): void {
@@ -151,6 +199,43 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                         />
                     </form>
                 )}
+                {!this.state.loading &&
+                    this.state.connection &&
+                    (this.state.connection.totalCount > 0 ? (
+                        <p>
+                            <small>
+                                <span>
+                                    {this.state.connection.totalCount}{' '}
+                                    {pluralize(
+                                        this.props.noun,
+                                        this.state.connection.totalCount,
+                                        this.props.pluralNoun
+                                    )}{' '}
+                                    {this.state.connectionQuery ? (
+                                        <span>
+                                            {' '}
+                                            matching <strong>{this.state.connectionQuery}</strong>
+                                        </span>
+                                    ) : (
+                                        'total'
+                                    )}
+                                </span>{' '}
+                                {this.state.connection.nodes.length < this.state.connection.totalCount &&
+                                    `(showing first ${this.state.connection.nodes.length})`}
+                            </small>
+                        </p>
+                    ) : (
+                        <p>
+                            <small>
+                                No {this.props.pluralNoun}{' '}
+                                {this.state.connectionQuery && (
+                                    <span>
+                                        matching <strong>{this.state.connectionQuery}</strong>
+                                    </span>
+                                )}
+                            </small>
+                        </p>
+                    ))}
                 {this.state.loading && <Loader className="icon-inline" />}
                 {!this.state.loading &&
                     this.state.connection &&
@@ -163,40 +248,14 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     )}
                 {!this.state.loading &&
                     this.state.connection &&
-                    (this.state.connection.totalCount > 0 ? (
-                        <p>
-                            <small>
-                                {this.state.connection.totalCount}{' '}
-                                {pluralize(this.props.noun, this.state.connection.totalCount, this.props.pluralNoun)}{' '}
-                                total{' '}
-                                {this.state.connectionQuery ? (
-                                    <span>
-                                        ({this.state.connection.nodes.length}{' '}
-                                        {pluralize(
-                                            this.props.noun,
-                                            this.state.connection.nodes.length,
-                                            this.props.pluralNoun
-                                        )}{' '}
-                                        matching <strong>{this.state.connectionQuery}</strong>)
-                                    </span>
-                                ) : (
-                                    this.state.connection.nodes.length < this.state.connection.totalCount &&
-                                    `(showing ${this.state.connectionQuery ? 'matching' : 'first'} ${
-                                        this.state.connection.nodes.length
-                                    })`
-                                )}
-                            </small>
-                        </p>
-                    ) : (
-                        <p>
-                            No {this.props.pluralNoun}
-                            {this.state.connectionQuery && (
-                                <span>
-                                    matching <strong>{this.state.connectionQuery}</strong>
-                                </span>
-                            )}.
-                        </p>
-                    ))}
+                    this.state.connection.nodes.length < this.state.connection.totalCount && (
+                        <button
+                            className="btn btn-secondary btn-sm filtered-connection__show-more"
+                            onClick={this.onClickShowMore}
+                        >
+                            Show more
+                        </button>
+                    )}
             </div>
         )
     }
@@ -204,4 +263,20 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
         this.queryInputChanges.next(e.currentTarget.value)
     }
+
+    private onClickShowMore: React.MouseEventHandler<HTMLButtonElement> = e => {
+        this.showMoreClicks.next()
+    }
+}
+
+function parseQueryInt(q: URLSearchParams, name: string): number | null {
+    const s = q.get(name)
+    if (s === null) {
+        return null
+    }
+    const n = parseInt(s, 10)
+    if (n > 0) {
+        return n
+    }
+    return null
 }

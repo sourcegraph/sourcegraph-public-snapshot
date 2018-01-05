@@ -13,9 +13,9 @@ type MockRepos struct {
 	Get      func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
 	GetURI   func(ctx context.Context, repo int32) (string, error)
 	GetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-	List     func(v0 context.Context, v1 *RepoListOp) ([]*sourcegraph.Repo, error)
+	List     func(v0 context.Context, v1 *ReposListOptions) ([]*sourcegraph.Repo, error)
 	Delete   func(ctx context.Context, repo int32) error
-	Count    func(ctx context.Context) (int, error)
+	Count    func(ctx context.Context, opt ReposListOptions) (int, error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
@@ -72,7 +72,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (ca
 
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
-	s.List = func(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo, error) {
+	s.List = func(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph.Repo, error) {
 		*called = true
 		repos := make([]*sourcegraph.Repo, len(wantRepos))
 		for i, repo := range wantRepos {

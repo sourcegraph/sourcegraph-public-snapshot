@@ -60,9 +60,9 @@ type Repo struct {
 	Description string `json:"Description,omitempty"`
 	// Language is the primary programming language used in this repository.
 	Language string `json:"Language,omitempty"`
-	// Blocked is whether this repo has been blocked by an admin (and
-	// will not be returned via the external API).
-	Blocked bool `json:"Blocked,omitempty"`
+	// Enabled is whether the repository is enabled. Disabled repositories are
+	// not accessible by users (except site admins).
+	Enabled bool `json:"Enabled,omitempty"`
 	// Fork is whether this repository is a fork.
 	Fork bool `json:"Fork,omitempty"`
 	// StarsCount is the number of users who have starred this repository.
@@ -101,23 +101,6 @@ type Contributor struct {
 	Login         string `json:"Login,omitempty"`
 	AvatarURL     string `json:"AvatarURL,omitempty"`
 	Contributions int    `json:"Contributions,omitempty"`
-}
-
-// RepoListOptions specifies the options for listing repositories.
-//
-// Query and IncludePatterns/ExcludePatterns may not be used together.
-type RepoListOptions struct {
-	// Query specifies a search query for repositories. If specified, then the Sort and
-	// Direction options are ignored
-	Query string `json:"Query,omitempty" url:",omitempty"`
-	// IncludePatterns is a list of regular expressions, all of which must match all
-	// repositories returned in the list.
-	IncludePatterns []string
-	// ExcludePattern is a regular expression that must not match any repository
-	// returned in the list.
-	ExcludePattern string
-	// ListOptions controls pagination.
-	ListOptions `json:""`
 }
 
 // RepoRevSpec specifies a repository at a specific commit.

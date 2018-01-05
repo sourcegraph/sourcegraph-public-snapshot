@@ -11,7 +11,7 @@ import (
 func TestRepositories(t *testing.T) {
 	resetMocks()
 	db.Mocks.Repos.MockList(t, "repo1", "repo2")
-	db.Mocks.Repos.Count = func(context.Context) (int, error) { return 2, nil }
+	db.Mocks.Repos.Count = func(context.Context, db.ReposListOptions) (int, error) { return 2, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,

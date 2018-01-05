@@ -140,6 +140,11 @@ type Mutation {
 	): Settings!
 	# Deletes an organization. Only site admins may perform this mutation.
 	deleteOrganization(organization: ID!): EmptyResponse
+	# setRepositoryEnabled enables or disables a repository. A disabled repository is only
+	# accessible to site admins and never appears in search results.
+	#
+	# Only site admins may perform this mutation.
+	setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
 	# Creates a user account for a new user and generates a reset password link that the user
 	# must visit to sign into the account. Only site admins may perform this mutation.
 	createUserBySiteAdmin(username: String!, email: String!): CreateUserBySiteAdminResult!
@@ -540,6 +545,8 @@ type Repository implements Node {
 	uri: String!
 	description: String!
 	language: String!
+	# Whether the repository is enabled. A disabled repository is only accessible to site admins.
+	enabled: Boolean!
 	fork: Boolean!
 	starsCount: Int
 	forksCount: Int
@@ -912,6 +919,8 @@ type Site implements ConfigurationSubject {
 		query: String
 		# Returns only repositories that are currently being cloned.
 		cloning: Boolean = false
+		# Include disabled repositories.
+		includeDisabled: Boolean = false
 	): RepositoryConnection!
 	# List all users.
 	users(
