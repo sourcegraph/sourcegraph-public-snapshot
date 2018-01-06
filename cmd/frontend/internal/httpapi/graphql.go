@@ -33,6 +33,62 @@ var graphiqlPage = []byte(`
 	<body style="width: 100%; height: 100%; margin: 0; overflow: hidden;">
 		<div id="graphiql" style="height: 100vh;">Loading...</div>
 		<script>
+			// URL handling taken from https://github.com/graphql/graphiql/blob/master/example/index.html.
+
+			// Parse the search string to get url parameters.
+			var search = window.location.search;
+			var parameters = {};
+			search.substr(1).split('&').forEach(function (entry) {
+			  var eq = entry.indexOf('=');
+			  if (eq >= 0) {
+				parameters[decodeURIComponent(entry.slice(0, eq))] =
+				  decodeURIComponent(entry.slice(eq + 1));
+			  }
+			});
+			// if variables was provided, try to format it.
+			if (parameters.variables) {
+			  try {
+				parameters.variables =
+				  JSON.stringify(JSON.parse(parameters.variables), null, 2);
+			  } catch (e) {
+				// Do nothing, we want to display the invalid JSON as a string, rather
+				// than present an error.
+			  }
+			}
+			if (Object.keys(parameters).length > 0) {
+				sendParametersToParent()
+			}
+
+			// When the query and variables string is edited, update the URL bar so
+			// that it can be easily shared
+			function onEditQuery(newQuery) {
+			  parameters.query = newQuery;
+			  updateURL();
+			}
+			function onEditVariables(newVariables) {
+			  parameters.variables = newVariables;
+			  updateURL();
+			}
+			function onEditOperationName(newOperationName) {
+			  parameters.operationName = newOperationName;
+			  updateURL();
+			}
+
+			function updateURL() {
+			  var newSearch = '?' + Object.keys(parameters).filter(function (key) {
+				return Boolean(parameters[key]);
+			  }).map(function (key) {
+				return encodeURIComponent(key) + '=' +
+				  encodeURIComponent(parameters[key]);
+			  }).join('&');
+			  history.replaceState(null, null, newSearch);
+			  sendParametersToParent()
+			}
+
+			function sendParametersToParent() {
+				window.parent.postMessage(parameters, window.location.origin)
+			}
+
 			function graphQLFetcher(graphQLParams) {
 				graphQLParams.variables = graphQLParams.variables ? JSON.parse(graphQLParams.variables) : null;
 				return fetch("/.api/graphql", {
@@ -51,9 +107,20 @@ var graphiqlPage = []byte(`
 				});
 			}
 
+			var node = document.getElementById("graphiql");
+
 			ReactDOM.render(
-				React.createElement(GraphiQL, {fetcher: graphQLFetcher}),
-				document.getElementById("graphiql")
+				React.createElement(GraphiQL, {
+					query: parameters.query,
+					variables: parameters.variables,
+					operationName: parameters.operationName,
+					onEditQuery: onEditQuery,
+					onEditVariables: onEditVariables,
+					onEditOperationName: onEditOperationName,
+					fetcher: graphQLFetcher,
+					defaultQuery: "# Type queries here, with completion, validation, and hovers.\n#\n# Here's an example query to get you started:\n\nquery {\n  currentUser {\n    username\n  }\n  site {\n    repositories(first: 1) {\n      nodes {\n        uri\n      }\n    }\n  }\n}\n",
+				}),
+				node
 			);
 		</script>
 	</body>
