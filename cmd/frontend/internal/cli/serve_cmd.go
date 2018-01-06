@@ -333,7 +333,7 @@ func Main() error {
 		fmt.Println(logoColor)
 		fmt.Println(" ")
 	}
-	fmt.Printf("✱ Sourcegraph is now running at %s\n", appURL)
+	fmt.Printf("✱ Sourcegraph is ready at: %s\n", appURL)
 
 	select {}
 }
