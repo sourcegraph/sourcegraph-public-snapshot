@@ -300,8 +300,7 @@ export class QueryInput extends React.Component<Props, State> {
                         })}
                     </ul>
                 )}
-                {this.state.loading &&
-                    <Loader className="icon-inline query-input2__loading-notifier" />}
+                {this.state.loading && <Loader className="icon-inline query-input2__loading-notifier" />}
             </div>
         )
     }
