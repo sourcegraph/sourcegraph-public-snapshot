@@ -2,7 +2,6 @@
 
 .saved-query {
     width: 100%;
-    cursor: pointer;
 
     &__row {
         display: flex;
@@ -20,6 +19,7 @@
     &__row-column {
         display: flex;
         align-items: center;
+        width: calc(100% - 16.25rem);
     }
 
     &__description,
@@ -29,13 +29,11 @@
         height: 2.5rem;
     }
 
-    &__description,
-    &__results-container {
-        flex: 0 0 auto;
-        margin-bottom: 0;
-    }
-
     &__description {
+        margin-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         height: 1.5rem;
         line-height: 1.5rem;
         font-weight: normal;
@@ -43,10 +41,12 @@
     }
 
     &__results-container {
+        display: flex;
+        flex: 0 0 auto;
+        margin-bottom: 0;
         color: #cad2e2;
         min-width: 4rem;
         margin-left: 0.5rem;
-        display: flex;
         justify-content: center;
 
         .icon {

@@ -84,13 +84,6 @@ export class Sparkline extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const { width, height } = this.props
 
-        return (
-            <svg
-                viewBox={`0 0 ${width} ${height / 2}`}
-                width={width}
-                height={height}
-                ref={ref => (this.svgRef = ref)}
-            />
-        )
+        return <svg viewBox={`0 0 200 20`} width={width} height={height} ref={ref => (this.svgRef = ref)} />
     }
 }

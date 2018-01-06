@@ -118,23 +118,25 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                     <div title={this.props.savedQuery.query.query} className={`saved-query__row`}>
                         <div className="saved-query__row-column">
                             <div className="saved-query__description">{this.props.savedQuery.description}</div>
-                            <div className="saved-query__actions">
-                                {!this.state.editing && (
-                                    <button className="btn btn-icon action" onClick={this.toggleEditing}>
-                                        <PencilIcon className="icon-inline" />
-                                        Edit
+                            <div className="saved-query__row-column">
+                                <div className="saved-query__actions">
+                                    {!this.state.editing && (
+                                        <button className="btn btn-icon action" onClick={this.toggleEditing}>
+                                            <PencilIcon className="icon-inline" />
+                                            Edit
+                                        </button>
+                                    )}
+                                    {!this.state.editing && (
+                                        <button className="btn btn-icon action" onClick={this.duplicate}>
+                                            <CopyIcon className="icon-inline" />
+                                            Duplicate
+                                        </button>
+                                    )}
+                                    <button className="btn btn-icon action" onClick={this.confirmDelete}>
+                                        <DeleteIcon className="icon-inline" />
+                                        Delete
                                     </button>
-                                )}
-                                {!this.state.editing && (
-                                    <button className="btn btn-icon action" onClick={this.duplicate}>
-                                        <CopyIcon className="icon-inline" />
-                                        Duplicate
-                                    </button>
-                                )}
-                                <button className="btn btn-icon action" onClick={this.confirmDelete}>
-                                    <DeleteIcon className="icon-inline" />
-                                    Delete
-                                </button>
+                                </div>
                             </div>
                         </div>
                         <div className="saved-query__results-container">
