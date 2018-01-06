@@ -39,6 +39,7 @@ var graphiqlPage = []byte(`
 					method: "post",
 					body: JSON.stringify(graphQLParams),
 					credentials: "include",
+					headers: new Headers({ "x-requested-by": "Sourcegraph GraphQL Explorer" }), // enables authenticated queries
 				}).then(function (response) {
 					return response.text();
 				}).then(function (responseBody) {
