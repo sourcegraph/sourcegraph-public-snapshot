@@ -69,7 +69,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                 <div className="site-admin-detail-list__actions">
                     <button
                         key="deleteOrg"
-                        className="btn btn-link btn-sm"
+                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
                         onClick={this.deleteOrg}
                         disabled={this.state.loading}
                     >

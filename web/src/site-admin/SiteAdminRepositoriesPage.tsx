@@ -1,6 +1,5 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -33,9 +32,6 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                         {this.props.node.uri}
                     </Link>
                     <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
-                        {this.props.node.createdAt && (
-                            <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
-                        )}
                         {this.props.node.latest &&
                             this.props.node.latest.cloneInProgress && (
                                 <li>
@@ -78,7 +74,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                         </button>
                     )}
                     <button
-                        className="btn btn-link btn-sm"
+                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
                         onClick={this.deleteRepository}
                         disabled={this.state.loading}
                     >
