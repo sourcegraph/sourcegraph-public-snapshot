@@ -15,7 +15,7 @@ const defaultFormattingOptions: FormattingOptions = {
 }
 
 const addGitHubDotCom: ConfigHelper = config => {
-    const tokenPlaceholder = '<personal access token with repo scope>'
+    const tokenPlaceholder = '<personal access token with repo scope (https://github.com/settings/tokens/new)>'
     const value: GitHubConnection = {
         token: tokenPlaceholder,
         url: 'https://github.com',
