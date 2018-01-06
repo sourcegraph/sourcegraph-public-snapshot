@@ -81,9 +81,9 @@ export class OrgSidebar extends React.Component<Props, State> {
                         </NavLink>
                     </li>
                 </ul>
-                <div className="sidebar__item sidebar__item-action">
-                    <Link to="/settings/profile" className="sidebar__item-action-button btn">
-                        <UserIcon className="icon-inline sidebar__item-action-icon" />
+                <div className="sidebar__item sidebar__action">
+                    <Link to="/settings/profile" className="sidebar__action-button btn">
+                        <UserIcon className="icon-inline sidebar__action-icon" />
                         Personal settings
                     </Link>
                 </div>

@@ -174,13 +174,13 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 </NavLink>
                             </li>
                         ))}
-                    <li className="sidebar__item sidebar__item-action">
+                    <li className="sidebar__item sidebar__action sidebar__item-action">
                         <NavLink
                             to="/organizations/new"
-                            className="sidebar__item-action-button btn"
+                            className="sidebar__action-button btn"
                             activeClassName="sidebar__item--active"
                         >
-                            <AddIcon className="icon-inline sidebar__item-action-icon" />New organization
+                            <AddIcon className="icon-inline sidebar__action-icon" />New organization
                         </NavLink>
                     </li>
                 </ul>
@@ -188,9 +188,9 @@ export class SettingsSidebar extends React.Component<Props, State> {
                 <div className="sidebar__spacer" />
 
                 {this.state.editorBeta && (
-                    <div className="sidebar__item sidebar__item-action">
+                    <div className="sidebar__item sidebar__action">
                         <a
-                            className="sidebar__item-action-button btn"
+                            className="sidebar__action-button btn"
                             target="_blank"
                             href="https://about.sourcegraph.com/docs/editor/setup/"
                         >
@@ -200,24 +200,20 @@ export class SettingsSidebar extends React.Component<Props, State> {
                 )}
                 {this.props.user &&
                     this.props.user.siteAdmin && (
-                        <div className="sidebar__item sidebar__item-action">
+                        <div className="sidebar__item sidebar__action">
                             <NavLink
                                 to="/site-admin"
-                                className="sidebar__item-action-button btn"
+                                className="sidebar__action-button btn"
                                 activeClassName="sidebar__item--active"
                             >
-                                <GearIcon className="icon-inline sidebar__item-action-icon" />
+                                <GearIcon className="icon-inline sidebar__action-icon" />
                                 Site admin
                             </NavLink>
                         </div>
                     )}
-                <div className="sidebar__item sidebar__item-action">
-                    <a
-                        href="/-/sign-out"
-                        className="sidebar__item-action-button btn"
-                        onClick={this.logTelemetryOnSignOut}
-                    >
-                        <SignOutIcon className="icon-inline sidebar__item-action-icon" />
+                <div className="sidebar__item sidebar__action">
+                    <a href="/-/sign-out" className="sidebar__action-button btn" onClick={this.logTelemetryOnSignOut}>
+                        <SignOutIcon className="icon-inline sidebar__action-icon" />
                         Sign out
                     </a>
                 </div>

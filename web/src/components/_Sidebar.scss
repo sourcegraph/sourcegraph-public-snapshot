@@ -59,26 +59,8 @@
         }
 
         &-action {
-            padding: 0.5rem;
-            text-align: center;
-
-            &-button {
-                background-color: #2b3750;
-                color: #93a9c8;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            &-button:hover {
-                background-color: rgba(42, 58, 81, 0.7);
-                color: #f2f4f8;
-                text-decoration: none;
-            }
-
-            &-icon {
-                margin-right: 0.125rem;
-            }
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
         }
 
         &-icon {
@@ -111,6 +93,30 @@
     &__link {
         width: 50%;
         cursor: pointer;
+    }
+
+    &__action {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        text-align: center;
+
+        &-button {
+            background-color: #2b3750;
+            color: #93a9c8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        &-button:hover {
+            background-color: rgba(42, 58, 81, 0.7);
+            color: #f2f4f8;
+            text-decoration: none;
+        }
+
+        &-icon {
+            margin-right: 0.125rem;
+        }
     }
 }
 
@@ -146,16 +152,16 @@
                     color: $color-light-text-4;
                 }
             }
+        }
 
-            &-action {
-                &-button {
-                    background-color: $color-light-bg-2;
-                }
+        &__action {
+            &-button {
+                background-color: $color-light-bg-2;
+            }
 
-                &-button:hover {
-                    background-color: $color-light-bg-4;
-                    text-decoration: none;
-                }
+            &-button:hover {
+                background-color: $color-light-bg-4;
+                text-decoration: none;
             }
         }
     }
